@@ -37,36 +37,46 @@ function Start-PodeServer
             $path = ($request.RawUrl -isplit "\?")[0]
             $method = $request.HttpMethod.ToLowerInvariant()
 
-            # ensure the path has a route
-            if ($PodeSession.Routes[$method][$path] -eq $null)
+            # check to see if the path is a file, so we can check the public folder
+            if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1)
             {
-                $response.StatusCode = 404
+                $path = (Join-Path 'public' $path)
+                Write-FromFile $path $response
             }
 
-            # run the scriptblock
             else
             {
-                # read and parse any post data
-                $stream = $request.InputStream
-                $reader = New-Object -TypeName System.IO.StreamReader -ArgumentList $stream, $request.ContentEncoding
-                $data = $reader.ReadToEnd()
-                $reader.Close()
-
-                switch ($request.ContentType)
+                # ensure the path has a route
+                if ($PodeSession.Routes[$method][$path] -eq $null)
                 {
-                    { $_ -ilike '*json*' }
-                        {
-                            $data = ($data | ConvertFrom-Json)
-                        }
-
-                    { $_ -ilike '*xml*' }
-                        {
-                            $data = ($data | ConvertFrom-Xml)
-                        }
+                    $response.StatusCode = 404
                 }
 
-                # invoke route
-                Invoke-Command -ScriptBlock $PodeSession.Routes[$method][$path] -ArgumentList $response, $request, $data
+                # run the scriptblock
+                else
+                {
+                    # read and parse any post data
+                    $stream = $request.InputStream
+                    $reader = New-Object -TypeName System.IO.StreamReader -ArgumentList $stream, $request.ContentEncoding
+                    $data = $reader.ReadToEnd()
+                    $reader.Close()
+
+                    switch ($request.ContentType)
+                    {
+                        { $_ -ilike '*json*' }
+                            {
+                                $data = ($data | ConvertFrom-Json)
+                            }
+
+                        { $_ -ilike '*xml*' }
+                            {
+                                $data = ($data | ConvertFrom-Xml)
+                            }
+                    }
+
+                    # invoke route
+                    Invoke-Command -ScriptBlock $PodeSession.Routes[$method][$path] -ArgumentList $response, $request, $data
+                }
             }
 
             # close response stream
