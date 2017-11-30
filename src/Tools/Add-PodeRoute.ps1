@@ -3,7 +3,7 @@ function Add-PodeRoute
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'PATCH', 'POST', 'PUT')]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')]
         [string]
         $HttpMethod,
 

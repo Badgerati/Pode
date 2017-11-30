@@ -20,9 +20,13 @@ function Server
     $PodeSession.Routes = @{
         'delete' = @{};
         'get' = @{};
+        'head' = @{};
+        'merge' = @{};
+        'options' = @{};
         'patch' = @{};
         'post' = @{};
         'put' = @{};
+        'trace' = @{};
     }
 
     & $ScriptBlock
