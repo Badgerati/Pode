@@ -9,13 +9,15 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8085
-Server -Port 8085 {
+# create a server, and start listening on port 25
+Server -Mail {
 
-    # GET request for web page on "localhost:8085/"
-    Add-PodeRoute 'get' '/' {
-        param($res, $req, $data)
-        Write-HtmlFromFile 'simple.html' $res
+    # setup an smtp handler
+    Add-PodeSmtpHandler {
+        param($from, $tos, $data)
+        Write-Host $from
+        #Write-Host $tos
+        #Write-Host $data
     }
 
 }
