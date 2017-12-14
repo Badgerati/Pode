@@ -101,8 +101,6 @@ function Write-XmlResponseFromFile
         $Response
     )
 
-    $Path = (Join-Path 'views' $Path)
-
     if (!(Test-Path $Path))
     {
         $Response.StatusCode = 404
