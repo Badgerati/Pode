@@ -1,4 +1,5 @@
 
+# write data to main http response
 function Write-ToResponse
 {
     param (
@@ -17,7 +18,7 @@ function Write-ToResponse
 }
 
 
-function Write-FromFile
+function Write-ToResponseFromFile
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -112,7 +113,7 @@ function Write-HtmlResponse
     Write-ToResponse -Value $Value -Response $Response
 }
 
-function Write-HtmlFromFile
+function Write-HtmlResponseFromFile
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -135,4 +136,42 @@ function Write-HtmlFromFile
         $content = Get-Content -Path $Path
         Write-HtmlResponse -Value $content -Response $Response -NoConvert
     }
+}
+
+
+# write data to tcp stream
+function Write-ToTcpStream
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Client,
+
+        [Parameter()]
+        [ValidateNotNull()]
+        [string]
+        $Message
+    )
+
+    $stream = $Client.GetStream()
+    $encoder = New-Object System.Text.ASCIIEncoding
+    $buffer = $encoder.GetBytes("$($Message)`r`n")
+    $stream.Write($buffer, 0, $buffer.Length)
+    $stream.Flush()
+}
+
+function Read-FromTcpStream
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Client
+    )
+
+    $bytes = New-Object byte[] 8192
+    $stream = $client.GetStream()
+    $encoder = New-Object System.Text.ASCIIEncoding
+    $bytesRead = $stream.Read($bytes, 0, 8192)
+    $message = $encoder.GetString($bytes, 0, $bytesRead)
+    return $message
 }

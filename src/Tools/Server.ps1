@@ -8,17 +8,21 @@ function Server
         $ScriptBlock,
         
         [Parameter()]
+        [ValidateNotNull()]
         [int]
         $Port = 0,
 
         [switch]
-        $Mail
+        $Smtp,
+
+        [switch]
+        $Tcp
     )
 
     # create session object
     $PodeSession = New-Object -TypeName psobject |
         Add-Member -MemberType NoteProperty -Name Routes -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name SmtpHandlers -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name TcpHandlers -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru
 
     # setup for initial routing
@@ -34,11 +38,14 @@ function Server
         'trace' = @{};
     }
 
-    # setup for initial smtp handlers
-    $PodeSession.SmtpHandlers = @()
+    # setup for initial smtp/tcp handlers
+    $PodeSession.TcpHandlers = @{
+        'tcp' = $null;
+        'smtp' = $null;
+    }
 
-    # if mail is passed, and no port - force port to 25
-    if ($Port -eq 0 -and $Mail)
+    # if smtp is passed, and no port - force port to 25
+    if ($Port -eq 0 -and $Smtp)
     {
         $Port = 25
         $PodeSession.Port = $Port
@@ -50,15 +57,22 @@ function Server
         throw "Port cannot be negative: $($Port)"
     }
 
-    # run logic for a mail server
-    if ($Mail)
+    # run logic for a smtp server
+    if ($Smtp)
     {
         & $ScriptBlock
-        Start-PodeMailServer
+        Start-PodeSmtpServer
+    }
+
+    # run logic for a tcp server
+    elseif ($Tcp)
+    {
+        & $ScriptBlock
+        Start-PodeTcpServer
     }
 
     # if there's a port, run a web server
-    elseif ($Port -ne $null)
+    elseif ($Port -gt 0)
     {
         & $ScriptBlock
         Start-PodeWebServer

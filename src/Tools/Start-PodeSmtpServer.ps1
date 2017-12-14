@@ -1,10 +1,10 @@
 
-function Start-PodeMailServer
+function Start-PodeSmtpServer
 {
     # ensure we have smtp handlers
-    if (($PodeSession.SmtpHandlers | Measure-Object).Count -eq 0)
+    if ($PodeSession.TcpHandlers['smtp'] -eq $null)
     {
-        throw 'No SMTP handlers have been passed'
+        throw 'No SMTP handler has been passed'
     }
 
     # scriptblock for the core smtp message processing logic
@@ -26,51 +26,49 @@ function Start-PodeMailServer
         $data = [string]::Empty
 
         # open response to smtp request
-        Write-ToSmtpStream -Client $Client -Message '220 localhost -- Pode Proxy Server'
+        Write-ToTcpStream -Client $Client -Message '220 localhost -- Pode Proxy Server'
         $msg = [string]::Empty
 
         # respond to smtp request
         while ($true)
         {
-            try { $msg = Read-FromSmtpStream -Client $Client }
+            try { $msg = Read-FromTcpStream -Client $Client }
             catch { break }
             
             if (![string]::IsNullOrWhiteSpace($msg))
             {
                 if ($msg.StartsWith('QUIT'))
                 {
-                    Write-ToSmtpStream -Client $Client -Message '221 Bye'
+                    Write-ToTcpStream -Client $Client -Message '221 Bye'
                     $Client.Close()
                     break
                 }
 
                 if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO'))
                 {
-                    Write-ToSmtpStream -Client $Client -Message '250 OK'
+                    Write-ToTcpStream -Client $Client -Message '250 OK'
                 }
 
                 if ($msg.StartsWith('RCPT TO'))
                 {
-                    Write-ToSmtpStream -Client $Client -Message '250 OK'
+                    Write-ToTcpStream -Client $Client -Message '250 OK'
                     $rcpt_tos += (Get-SmtpEmail $msg)
                 }
 
                 if ($msg.StartsWith('MAIL FROM'))
                 {
-                    Write-ToSmtpStream -Client $Client -Message '250 OK'
+                    Write-ToTcpStream -Client $Client -Message '250 OK'
                     $mail_from = Get-SmtpEmail $msg
                 }
 
                 if ($msg.StartsWith('DATA'))
                 {
-                    Write-ToSmtpStream -Client $Client -Message '354 Start mail input; end with <CR><LF>.<CR><LF>'
-                    $data = Read-FromSmtpStream -Client $Client
-                    Write-ToSmtpStream -Client $Client -Message '250 OK'
+                    Write-ToTcpStream -Client $Client -Message '354 Start mail input; end with <CR><LF>.<CR><LF>'
+                    $data = Read-FromTcpStream -Client $Client
+                    Write-ToTcpStream -Client $Client -Message '250 OK'
                     
                     # call user handlers for processing smtp data
-                    $PodeSession.SmtpHandlers | ForEach-Object {
-                        Invoke-Command -ScriptBlock $_ -ArgumentList $mail_from, $rcpt_tos, $data
-                    }
+                    Invoke-Command -ScriptBlock $PodeSession.TcpHandlers['smtp'] -ArgumentList $mail_from, $rcpt_tos, $data
                 }
             }
         }
@@ -107,38 +105,6 @@ function Start-PodeMailServer
     }
 }
 
-function Write-ToSmtpStream
-{
-    param (
-        [Parameter()]
-        $Client,
-
-        [Parameter()]
-        [string]
-        $Message
-    )
-
-    $stream = $Client.GetStream()
-    $encoder = New-Object System.Text.ASCIIEncoding
-    $buffer = $encoder.GetBytes("$($Message)`r`n")
-    $stream.Write($buffer, 0, $buffer.Length)
-    $stream.Flush()
-}
-
-function Read-FromSmtpStream
-{
-    param (
-        [Parameter()]
-        $Client
-    )
-
-    $bytes = New-Object byte[] 8192
-    $stream = $client.GetStream()
-    $encoder = New-Object System.Text.ASCIIEncoding
-    $bytesRead = $stream.Read($bytes, 0, 8192)
-    $message = $encoder.GetString($bytes, 0, $bytesRead)
-    return $message
-}
 
 function Get-SmtpEmail
 {

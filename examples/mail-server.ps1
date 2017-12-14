@@ -10,14 +10,14 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 25
-Server -Mail {
+Server -Smtp {
 
     # setup an smtp handler
-    Add-PodeSmtpHandler {
+    Add-PodeTcpHandler 'smtp' {
         param($from, $tos, $data)
         Write-Host $from
-        #Write-Host $tos
-        #Write-Host $data
+        Write-Host $tos
+        Write-Host $data
     }
 
 }
