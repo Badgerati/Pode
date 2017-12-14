@@ -89,6 +89,31 @@ function Write-XmlResponse
     Write-ToResponse -Value $Value -Response $Response
 }
 
+function Write-XmlResponseFromFile
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Response
+    )
+
+    $Path = (Join-Path 'views' $Path)
+
+    if (!(Test-Path $Path))
+    {
+        $Response.StatusCode = 404
+    }
+    else
+    {
+        $content = Get-Content -Path $Path
+        Write-XmlResponse -Value $content -Response $Response -NoConvert
+    }
+}
+
 function Write-HtmlResponse
 {
     param (
