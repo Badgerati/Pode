@@ -25,7 +25,8 @@ function Start-PodeTcpServer
             if ($listener.Pending())
             {
                 $client = $listener.AcceptTcpClient()
-                Invoke-Command -ScriptBlock $PodeSession.TcpHandlers['tcp'] -ArgumentList $client
+                $PodeSession.Tcp.Client = $client
+                Invoke-Command -ScriptBlock $PodeSession.TcpHandlers['tcp'] -ArgumentList $PodeSession.Tcp
                 
                 if ($client.Connected)
                 {

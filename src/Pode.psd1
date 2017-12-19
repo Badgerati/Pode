@@ -23,7 +23,7 @@
     Copyright = 'Copyright (c) 2017 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
-    Description = 'Pode is a PowerShell framework to help write web servers to serve up REST APIs'
+    Description = 'Pode is a PowerShell framework to help write and host REST API, Web Pages and SMTP servers'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '3.0'
@@ -33,7 +33,7 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api')
+            Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

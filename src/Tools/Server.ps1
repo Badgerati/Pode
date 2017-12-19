@@ -16,14 +16,20 @@ function Server
         $Smtp,
 
         [switch]
-        $Tcp
+        $Tcp,
+
+        [switch]
+        $Https
     )
 
     # create session object
     $PodeSession = New-Object -TypeName psobject |
         Add-Member -MemberType NoteProperty -Name Routes -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name TcpHandlers -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru
+        Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru | 
+        Add-Member -MemberType NoteProperty -Name Web -Value @{} -PassThru | 
+        Add-Member -MemberType NoteProperty -Name Smtp -Value @{} -PassThru | 
+        Add-Member -MemberType NoteProperty -Name Tcp -Value @{} -PassThru
 
     # setup for initial routing
     $PodeSession.Routes = @{
@@ -75,7 +81,7 @@ function Server
     elseif ($Port -gt 0)
     {
         & $ScriptBlock
-        Start-PodeWebServer
+        Start-PodeWebServer -Https:$Https
     }
 
     # otherwise, run logic
@@ -83,4 +89,7 @@ function Server
     {
         & $ScriptBlock
     }
+
+    # clean up the session
+    $PodeSession = $null
 }

@@ -3,14 +3,35 @@
 function Write-ToResponse
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Parameter()]
         $Value,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response
+        [Parameter()]
+        $Response = $null,
+
+        [Parameter()]
+        [string]
+        $ContentType = $null,
+
+        [switch]
+        $NotFound
     )
+
+    if ($Response -eq $null)
+    {
+        $Response = $PodeSession.Web.Response
+    }
+
+    if ($NotFound)
+    {
+        $Response.StatusCode = 404
+        return
+    }
+
+    if (![string]::IsNullOrWhiteSpace($ContentType))
+    {
+        $Response.ContentType = $ContentType
+    }
 
     $writer = New-Object -TypeName System.IO.StreamWriter -ArgumentList $Response.OutputStream
     $writer.WriteLine([string]$Value)
@@ -25,14 +46,13 @@ function Write-ToResponseFromFile
         [ValidateNotNull()]
         $Path,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response
+        [Parameter()]
+        $Response = $null
     )
 
     if (!(Test-Path $Path))
     {
-        $Response.StatusCode = 404
+        Write-ToResponse -Response $Response -NotFound
     }
     else
     {
@@ -48,9 +68,8 @@ function Write-JsonResponse
         [ValidateNotNull()]
         $Value,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response,
+        [Parameter()]
+        $Response = $null,
 
         [switch]
         $NoConvert
@@ -61,8 +80,29 @@ function Write-JsonResponse
         $Value = ($Value | ConvertTo-Json)
     }
 
-    $Response.ContentType = 'application/json; charset=utf-8'
-    Write-ToResponse -Value $Value -Response $Response
+    Write-ToResponse -Value $Value -Response $Response -ContentType 'application/json; charset=utf-8'
+}
+
+function Write-JsonResponseFromFile
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path,
+
+        [Parameter()]
+        $Response = $null
+    )
+
+    if (!(Test-Path $Path))
+    {
+        Write-ToResponse -Response $Response -NotFound
+    }
+    else
+    {
+        $content = Get-Content -Path $Path
+        Write-JsonResponse -Value $content -Response $Response -NoConvert
+    }
 }
 
 function Write-XmlResponse
@@ -72,9 +112,8 @@ function Write-XmlResponse
         [ValidateNotNull()]
         $Value,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response,
+        [Parameter()]
+        $Response = $null,
 
         [switch]
         $NoConvert
@@ -85,8 +124,7 @@ function Write-XmlResponse
         $Value = ($Value | ConvertTo-Xml)
     }
 
-    $Response.ContentType = 'application/xml; charset=utf-8'
-    Write-ToResponse -Value $Value -Response $Response
+    Write-ToResponse -Value $Value -Response $Response -ContentType 'application/xml; charset=utf-8'
 }
 
 function Write-XmlResponseFromFile
@@ -96,14 +134,13 @@ function Write-XmlResponseFromFile
         [ValidateNotNull()]
         $Path,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response
+        [Parameter()]
+        $Response = $null
     )
 
     if (!(Test-Path $Path))
     {
-        $Response.StatusCode = 404
+        Write-ToResponse -Response $Response -NotFound
     }
     else
     {
@@ -119,9 +156,8 @@ function Write-HtmlResponse
         [ValidateNotNull()]
         $Value,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response,
+        [Parameter()]
+        $Response = $null,
 
         [switch]
         $NoConvert
@@ -132,8 +168,7 @@ function Write-HtmlResponse
         $Value = ($Value | ConvertTo-Html)
     }
 
-    $Response.ContentType = 'text/html; charset=utf-8'
-    Write-ToResponse -Value $Value -Response $Response
+    Write-ToResponse -Value $Value -Response $Response -ContentType 'text/html; charset=utf-8'
 }
 
 function Write-HtmlResponseFromFile
@@ -143,16 +178,15 @@ function Write-HtmlResponseFromFile
         [ValidateNotNull()]
         $Path,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response
+        [Parameter()]
+        $Response = $null
     )
 
     $Path = (Join-Path 'views' $Path)
 
     if (!(Test-Path $Path))
     {
-        $Response.StatusCode = 404
+        Write-ToResponse -Response $Response -NotFound
     }
     else
     {
@@ -166,15 +200,19 @@ function Write-HtmlResponseFromFile
 function Write-ToTcpStream
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Client,
-
         [Parameter()]
         [ValidateNotNull()]
         [string]
-        $Message
+        $Message,
+
+        [Parameter()]
+        $Client
     )
+
+    if ($Client -eq $null)
+    {
+        $Client = $PodeSession.Tcp.Client
+    }
 
     $stream = $Client.GetStream()
     $encoder = New-Object System.Text.ASCIIEncoding
@@ -186,10 +224,14 @@ function Write-ToTcpStream
 function Read-FromTcpStream
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Parameter()]
         $Client
     )
+
+    if ($Client -eq $null)
+    {
+        $Client = $PodeSession.Tcp.Client
+    }
 
     $bytes = New-Object byte[] 8192
     $stream = $client.GetStream()

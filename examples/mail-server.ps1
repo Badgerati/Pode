@@ -14,10 +14,10 @@ Server -Smtp {
 
     # setup an smtp handler
     Add-PodeTcpHandler 'smtp' {
-        param($from, $tos, $data)
-        Write-Host $from
-        Write-Host $tos
-        Write-Host $data
+        param($session)
+        Write-Host $session.From
+        Write-Host $session.To
+        Write-Host $session.Data
     }
 
 }

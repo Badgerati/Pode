@@ -1,12 +1,24 @@
 
 function Start-PodeWebServer
 {
+    param (
+        [switch]
+        $Https
+    )
+
     try
     {
-        # create the listener
+        # create the listener on http and/or https
         $listener = New-Object System.Net.HttpListener
-        $prefix = "http://*:$($PodeSession.Port)/"
-        $listener.Prefixes.Add($prefix)
+
+        if ($Https)
+        {
+            $listener.Prefixes.Add("https://*:$($PodeSession.Port)/")
+        }
+        else
+        {
+            $listener.Prefixes.Add("http://*:$($PodeSession.Port)/")
+        }
 
         # start listener
         $listener.Start()
@@ -21,6 +33,10 @@ function Start-PodeWebServer
         {
             # get request and response
             $context = $listener.GetContext()
+
+            # clear session
+            $PodeSession.Web = @{}
+
             $request = $context.Request
             $response = $context.Response
 
@@ -74,8 +90,13 @@ function Start-PodeWebServer
                             }
                     }
 
+                    # set session data
+                    $PodeSession.Web.Response = $response
+                    $PodeSession.Web.Request = $request
+                    $PodeSession.Web.Data = $data
+
                     # invoke route
-                    Invoke-Command -ScriptBlock $PodeSession.Routes[$method][$path] -ArgumentList $response, $request, $data
+                    Invoke-Command -ScriptBlock $PodeSession.Routes[$method][$path] -ArgumentList $PodeSession.Web
                 }
             }
 

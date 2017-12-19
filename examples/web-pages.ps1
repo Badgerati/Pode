@@ -14,8 +14,8 @@ Server -Port 8085 {
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute 'get' '/' {
-        param($res, $req, $data)
-        Write-HtmlResponseFromFile 'simple.html' $res
+        param($session)
+        Write-HtmlResponseFromFile 'simple.html'
     }
 
 }

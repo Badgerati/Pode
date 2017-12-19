@@ -66,9 +66,14 @@ function Start-PodeSmtpServer
                     Write-ToTcpStream -Client $Client -Message '354 Start mail input; end with <CR><LF>.<CR><LF>'
                     $data = Read-FromTcpStream -Client $Client
                     Write-ToTcpStream -Client $Client -Message '250 OK'
-                    
+
+                    # set session data
+                    $PodeSession.Smtp.From = $mail_from
+                    $PodeSession.Smtp.To = $rcpt_tos
+                    $PodeSession.Smtp.Data = $data
+
                     # call user handlers for processing smtp data
-                    Invoke-Command -ScriptBlock $PodeSession.TcpHandlers['smtp'] -ArgumentList $mail_from, $rcpt_tos, $data
+                    Invoke-Command -ScriptBlock $PodeSession.TcpHandlers['smtp'] -ArgumentList $PodeSession.Smtp
                 }
             }
         }
@@ -92,6 +97,7 @@ function Start-PodeSmtpServer
             if ($listener.Pending())
             {
                 $client = $listener.AcceptTcpClient()
+                $PodeSession.Smtp = @{}
                 Invoke-Command -ScriptBlock $process -ArgumentList $client
             }
         }

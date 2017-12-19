@@ -14,16 +14,16 @@ Server -Port 8086 {
 
     # can be hit by sending a POST request to "localhost:8086/api/test"
     Add-PodeRoute 'post' '/api/test' {
-        param($res, $req, $data)
-        Write-Host $data
-        Write-JsonResponse @{ 'hello' = 'world'; } $res
+        param($session)
+        Write-Host $session.Data
+        Write-JsonResponse @{ 'hello' = 'world'; }
     }
 
     # can be hit by sending a GET request to "localhost:8086/api/test"
     Add-PodeRoute 'get' '/api/test' {
-        param($res, $req, $data)
-        Write-Host $data
-        Write-JsonResponse @{ 'hello' = 'world'; } $res
+        param($session)
+        Write-Host $session.Data
+        Write-JsonResponse @{ 'hello' = 'world'; }
     }
 
 }

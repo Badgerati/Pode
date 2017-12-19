@@ -9,15 +9,27 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+# a typical request to "localhost:8087/api/nunit/run-rest" looks as follows:
+<#
+{
+    "dll": "/path/test.dll",
+    "tests": [
+        "Test.Tests.Method1"
+    ],
+    "categories": {}
+}
+#>
+
 # create a server, and start listening on port 8087
 Server -Port 8087 {
 
     # post endpoint, that accepts test to run, and path to test dll
     Add-PodeRoute 'post' '/api/nunit/run-test' {
-        param($res, $req, $data)
+        param($session)
 
         # general
         $date = [DateTime]::UtcNow.ToString('yyyy-MM-dd_HH-mm-ss-fffff')
+        $data = $session.Data
 
         # get data passed in
         $dll = $data.dll
@@ -43,7 +55,7 @@ Server -Port 8087 {
         Start-Process -FilePath $tool -NoNewWindow -Wait -ArgumentList $_args -ErrorAction Stop | Out-Null
 
         # return results
-        Write-XmlResponseFromFile -Path $results -Response $res
+        Write-XmlResponseFromFile -Path $results
 
         # delete results file
         Remove-Item -Path $results -Force | Out-Null

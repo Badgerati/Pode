@@ -14,9 +14,9 @@ Server -Tcp -Port 8999 {
 
     # setup a tcp handler
     Add-PodeTcpHandler 'tcp' {
-        param($client)
-        Write-ToTcpStream -Client $client -Message 'gief data'
-        $msg = Read-FromTcpStream -Client $client
+        param($session)
+        Write-ToTcpStream -Message 'gief data'
+        $msg = Read-FromTcpStream
         Write-Host $msg
     }
 
