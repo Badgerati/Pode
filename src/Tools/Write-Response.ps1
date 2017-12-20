@@ -182,6 +182,39 @@ function Write-HtmlResponseFromFile
         $Response = $null
     )
 
+    if (!(Test-Path $Path))
+    {
+        Write-ToResponse -Response $Response -NotFound
+    }
+    else
+    {
+        $content = Get-Content -Path $Path
+        Write-HtmlResponse -Value $content -Response $Response -NoConvert
+    }
+}
+
+function Write-ViewResponse
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path,
+
+        [Parameter()]
+        $Response = $null,
+
+        [Parameter()]
+        $Arguments = @{}
+    )
+
+    # add view engine extension
+    $ext = [System.IO.Path]::GetExtension($Path)
+    if ([string]::IsNullOrWhiteSpace($ext))
+    {
+        $Path += ".$($PodeSession.ViewEngine.ToLowerInvariant())"
+    }
+
+    # only look in the view directory
     $Path = (Join-Path 'views' $Path)
 
     if (!(Test-Path $Path))
@@ -190,7 +223,17 @@ function Write-HtmlResponseFromFile
     }
     else
     {
-        $content = Get-Content -Path $Path
+        $content = Get-Content -Path $Path -Raw
+
+        switch ($PodeSession.ViewEngine.ToLowerInvariant())
+        {
+            'pshtml'
+                {
+                    $content = "param(`$data)`nreturn `"$($content -replace '"', '``"')`""
+                    $content = (Invoke-Command -ScriptBlock ([scriptblock]::Create($content)) -ArgumentList $Arguments)
+                }
+        }
+
         Write-HtmlResponse -Value $content -Response $Response -NoConvert
     }
 }

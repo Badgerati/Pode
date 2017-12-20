@@ -2,6 +2,14 @@
 
 Pode is a PowerShell framework that runs a HTTP/TCP listener on a specific port, allowing you to host REST APIs, Web Pages and SMTP servers via PowerShell.
 
+## Features
+
+* Host REST APIs and Web Pages
+* Run TCP listeners
+* Host SMTP servers - great for tests and mocking
+* Use the full power of PowerShell, want a REST API for NUnit? Go for it!
+* Ability to write webpages in PowerShell using PSHTML
+
 ## Documentation
 
 This documentation will cover the basics on how to use Pode to create a simple REST API, Web Page, and SMTP Server. Further examples can be found in the examples folder.
@@ -61,17 +69,23 @@ Add-PodeRoute 'post' '/api/users' {
 
 It's actually possible for Pode to serve up webpages - css, fonts, and javascript included. They pretty much work exactly like the above REST APIs, except Pode has inbuilt logic to handle css/javascript.
 
-All HTML content *must* be placed with a `/views/` directory, which is in the same location as your pode script. In here you can place your static HTML files, so when you call `Write-HtmlResponseFromFile` Pode will automatically look in the `/views/` directory. For example, if you call `Write-HtmlResponseFromFile 'simple.html'` the Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple.html'` instead.
+Pode also has its own format for writing HTML pages: PSHTML. There are examples in the example directory, but they allow you to dynamic generate HTML using PowerShell.
 
-Any other file types, from css, javascript, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
+All HTML (and PSHTML) content *must* be placed with a `/views/` directory, which is in the same location as your pode script. In here you place your HTML/PSHTML files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
+
+> Pode uses a View Engine to either render HTML or PSHTML. Default is HTML, and you can change it by calling `Set-PodeViewEngine 'PSHTML'` at the top of your Server scriptblock
+
+Any other file types, from css to javascript, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
 A quick example of a single page site on port 8085:
 
 ```powershell
 Server -Port 8085 {
+    Set-PodeViewEngine 'HTML'
+
     Add-PodeRoute 'get' '/' {
         param($session)
-        Write-HtmlResponseFromFile 'simple.html'
+        Write-ViewResponse 'simple'
     }
 }
 ```
@@ -122,6 +136,8 @@ To help with writing and reading from the client stream, Pode has two helper fun
 
 Pode comes with a few helper functions - mostly for writing responses and reading streams:
 
+* `Add-PodeRoute`
+* `Add-PodeTcpHandler`
 * `Write-ToResponse`
 * `Write-ToResponseFromFile`
 * `Write-JsonResponse`
@@ -130,5 +146,7 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Write-XmlResponseFromFile`
 * `Write-HtmlResponse`
 * `Write-HtmlResponseFromFile`
+* `Write-ViewResponse`
 * `Write-ToTcpStream`
 * `Read-FromTcpStream`
+* `Set-PodeViewEngine`

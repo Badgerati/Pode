@@ -27,6 +27,7 @@ function Server
         Add-Member -MemberType NoteProperty -Name Routes -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name TcpHandlers -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru | 
+        Add-Member -MemberType NoteProperty -Name ViewEngine -Value 'HTML' -PassThru | 
         Add-Member -MemberType NoteProperty -Name Web -Value @{} -PassThru | 
         Add-Member -MemberType NoteProperty -Name Smtp -Value @{} -PassThru | 
         Add-Member -MemberType NoteProperty -Name Tcp -Value @{} -PassThru

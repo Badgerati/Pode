@@ -1,3 +1,14 @@
+function Set-PodeViewEngine
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('HTML', 'PSHTML')]
+        [string]
+        $Engine
+    )
+
+    $PodeSession.ViewEngine = $Engine
+}
 
 function Start-PodeWebServer
 {
