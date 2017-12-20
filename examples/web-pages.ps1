@@ -17,7 +17,7 @@ Server -Port 8085 {
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute 'get' '/' {
         param($session)
-        Write-ViewResponse 'simple'
+        Write-ViewResponse 'simple' -Arguments @{ 'numbers' = @(1, 2, 3); }
     }
 
 }
