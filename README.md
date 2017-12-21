@@ -1,6 +1,6 @@
 # Pode
 
-Pode is a PowerShell framework that runs a HTTP/TCP listener on a specific port, allowing you to host REST APIs, Web Pages and SMTP servers via PowerShell.
+Pode is a PowerShell framework that runs a HTTP/TCP listener on a specific port, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic HTML using [PSHTML](#pshtml) files.
 
 ## Features
 
@@ -8,7 +8,7 @@ Pode is a PowerShell framework that runs a HTTP/TCP listener on a specific port,
 * Run TCP listeners
 * Host SMTP servers - great for tests and mocking
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
-* Ability to write webpages in PowerShell using PSHTML
+* Ability to write dynamic webpages in PowerShell using PSHTML
 
 ## Documentation
 
@@ -16,7 +16,7 @@ This documentation will cover the basics on how to use Pode to create a simple R
 
 ### Basics
 
-Pode, at it's heart, is a PowerShell module. In order to use Pode, you'll need to start off your POSH WebServer by importing it:
+Pode, at it's heart, is a PowerShell module. In order to use Pode, you'll need to start off your script by importing it:
 
 ```powershell
 Import-Module Pode
@@ -39,9 +39,11 @@ Once you have the basics down, creating a REST API isn't far off. When creating 
 The method to create new routes is `Add-PodeRoute`, this will take your method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
 
 ```powershell
-Add-PodeRoute 'get' '/api/ping' {
-    param($session)
-    Write-JsonResponse @{ 'value' = 'pong'; }
+Server -Port 8080 {
+    Add-PodeRoute 'get' '/api/ping' {
+        param($session)
+        Write-JsonResponse @{ 'value' = 'pong'; }
+    }
 }
 ```
 
@@ -52,14 +54,16 @@ The last line is to write JSON response. So anyone hitting `http://localhost:808
 If you wanted a POST endpoint that created a user, then it would roughly look as follows:
 
 ```powershell
-Add-PodeRoute 'post' '/api/users' {
-    param($session)
+Server -Port 8080 {
+    Add-PodeRoute 'post' '/api/users' {
+        param($session)
 
-    # create the user
-    $userId = New-DummyUser $session.Email $session.Name $session.Password
+        # create the user
+        $userId = New-DummyUser $session.Email $session.Name $session.Password
 
-    # return with userId
-    Write-JsonResponse @{ 'userId' = $userId; }
+        # return with userId
+        Write-JsonResponse @{ 'userId' = $userId; }
+    }
 }
 ```
 
@@ -131,6 +135,87 @@ To help with writing and reading from the client stream, Pode has two helper fun
 
 * `Write-ToTcpStream -Message 'msg'`
 * `$msg = Read-FromTcpStream`
+
+## PSHTML
+
+PSHTML is mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
+
+To use PSHTML files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine for Pode to be PSHTML; once set, you can just write view responses as per normal
+
+```powershell
+Server -Port 8080 {
+    # set the engine to use and render PSHTML files
+    Set-PodeViewEngine 'PSHTML'
+
+    # render the index.pshtml file
+    Add-PodeRoute 'get' '/' {
+        param($session)
+        Write-ViewResponse 'index'
+    }
+}
+```
+
+Below is a basic example of a PSHTML file which just writes the current date to the browser:
+
+```html
+<!-- index.pshtml -->
+<html>
+    <head>
+        <title>Current Date</title>
+    </head>
+    <body>
+        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))</span>
+    </body>
+</html>
+```
+
+> When you need to use PowerShell, ensure you wrap them within `$(...)`
+
+You can also supply data to `Write-ViewResponse` when rendering PSHTML files. This allows you to make them far more dynamic. The data supplied to `Write-ViewResponse` must be a `hashtable`, and can be referenced within a PSHTML file by using `$data`.
+
+For example, say you need to render a search page which is a list of accounts, then you're basic pode script would look like:
+
+```powershell
+Server -Port 8080 {
+    # set the engine to use and render PSHTML files
+    Set-PodeViewEngine 'PSHTML'
+
+    # render the search.pshtml file
+    Add-PodeRoute 'get' '/' {
+        param($session)
+
+        # some logic to get accounts
+        $query = $session.Request.QueryString.Item('query')
+        $accounts = Find-Account -Query $query
+        
+        # render the file
+        Write-ViewResponse 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
+    }
+}
+```
+
+You can see that we're supplying the found accounts to the `Write-ViewResponse` function as a hashtable. Next, we see the `search.pshtml` file which generates the HTML:
+
+```html
+<!-- search.pshtml -->
+<html>
+    <head>
+        <title>Search</title>
+    </head>
+    <body>
+        <h1>Search</h1>
+        Query: $($data.query)
+
+        <div>
+            $(foreach ($account in $data.accounts) {
+                "<div>Name: $($account.Name)</div><hr/>"
+            })
+        </div>
+    </body>
+</html>
+```
+
+> Remember, you can access supplied data by using `$data`
 
 ## Inbuild Functions
 

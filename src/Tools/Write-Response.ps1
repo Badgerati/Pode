@@ -204,7 +204,7 @@ function Write-ViewResponse
         $Response = $null,
 
         [Parameter()]
-        $Arguments = @{}
+        $Data = @{}
     )
 
     # add view engine extension
@@ -230,7 +230,7 @@ function Write-ViewResponse
             'pshtml'
                 {
                     $content = "param(`$data)`nreturn `"$($content -replace '"', '``"')`""
-                    $content = (Invoke-Command -ScriptBlock ([scriptblock]::Create($content)) -ArgumentList $Arguments)
+                    $content = (Invoke-Command -ScriptBlock ([scriptblock]::Create($content)) -ArgumentList $Data)
                 }
         }
 
