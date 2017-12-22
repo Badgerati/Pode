@@ -30,7 +30,7 @@ Server -Port 8080 {
 }
 ```
 
-The above `Server` block will start a basic HTTP listener on port 8080.
+The above `Server` block will start a basic HTTP listener on port 8080. Once started, to exit out of Pode at anytime just use `Ctrl+C`.
 
 ### REST API
 
