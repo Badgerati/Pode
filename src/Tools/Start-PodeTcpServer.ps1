@@ -34,6 +34,8 @@ function Start-PodeTcpServer
                 }
             }
         }
+
+        Write-Host 'Terminating...'
     }
     finally
     {

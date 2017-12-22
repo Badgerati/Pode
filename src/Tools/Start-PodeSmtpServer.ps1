@@ -101,6 +101,8 @@ function Start-PodeSmtpServer
                 Invoke-Command -ScriptBlock $process -ArgumentList $client
             }
         }
+        
+        Write-Host 'Terminating...'
     }
     finally
     {

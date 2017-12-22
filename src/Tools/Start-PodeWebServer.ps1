@@ -35,30 +35,34 @@ function Start-PodeWebServer
         $listener.Start()
 
         # state where we're running
-        #Write-Warning "Note that thread is blocked waiting for a request.  After using Ctrl-C to stop listening, you need to send a valid HTTP request to stop the listener cleanly."
-        #Write-Warning "Sending 'exit' command will cause listener to stop immediately"
         Write-Host "Listening on http://localhost:$($PodeSession.Port)/" -ForegroundColor Yellow
+        [Console]::TreatControlCAsInput = $true
 
         # loop for http request
-        while ($true)
+        while ($listener.IsListening)
         {
             # get request and response
-            $context = $listener.GetContext()
+            $task = $listener.GetContextAsync()
+            while (!$task.IsCompleted)
+            {
+                if ([Console]::KeyAvailable)
+                {
+                    $key = [Console]::ReadKey($true)
+                    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control)
+                    {
+                        Write-Host 'Terminating...'
+                        return
+                    }
+                }
+            }
+
+            $context = $task.Result
 
             # clear session
             $PodeSession.Web = @{}
 
             $request = $context.Request
             $response = $context.Response
-
-            # check for exit command (need to remove this...)
-            $command = $request.QueryString.Item("command")
-            if ($command -ieq "exit")
-            {
-                Write-Host "Received command to exit listener"
-                $response.OutputStream.Close()
-                return
-            }
 
             # get url path and method
             $path = ($request.RawUrl -isplit "\?")[0]
