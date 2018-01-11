@@ -5,7 +5,7 @@
 [![Chocolatey](https://img.shields.io/chocolatey/v/pode.svg?colorB=a1301c)](https://chocolatey.org/packages/pode)
 [![Chocolatey](https://img.shields.io/chocolatey/dt/pode.svg?label=downloads&colorB=a1301c)](https://chocolatey.org/packages/pode)
 
-Pode is a PowerShell framework that runs a HTTP/TCP listener on a specific port, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic HTML using [PSHTML](#pshtml) files.
+Pode is a PowerShell framework that runs HTTP/TCP listeners on a specific port, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic HTML using [PSHTML](#pshtml) files.
 
 ## Features
 
