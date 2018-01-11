@@ -33,7 +33,7 @@ if ([string]::IsNullOrWhiteSpace($workspace))
 Write-Host "Copying scripts into package"
 
 New-Item -ItemType Directory -Path './Package/src/Tools'
-Copy-Item -Path './src/' -Destination './Package/src/' -Recurse -Force
+Copy-Item -Path './src/*' -Destination './Package/src/' -Recurse -Force
 
 Write-Host "Scripts copied successfully"
 
@@ -46,6 +46,11 @@ $zipName = "$($build_version)-Binaries.zip"
 try
 {
     .\7z.exe -tzip a "$($workspace)\$($zipName)" "$($workspace)\Package\*"
+	if (!$?)
+	{
+		throw 'failed to make archive'
+	}
+
     Write-Host "Package zipped successfully"
 }
 finally
@@ -78,6 +83,7 @@ try
     (Get-Content 'ChocolateyInstall.ps1') | ForEach-Object { $_ -replace '\$version\$', $build_version } | Set-Content 'ChocolateyInstall.ps1'
     (Get-Content 'ChocolateyInstall.ps1') | ForEach-Object { $_ -replace '\$checksum\$', $checksum } | Set-Content 'Chocolateyinstall.ps1'
     Set-Location ..
+	choco pack
 }
 finally
 {
