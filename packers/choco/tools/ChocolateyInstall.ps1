@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop';
+$ErrorActionPreference = 'Stop'
 
 $packageName    = 'Pode'
 $toolsDir       = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
@@ -64,9 +64,16 @@ if (!(Test-Path $podeModulePath))
 # Copy contents to module
 Write-Host 'Copying Pode to module path'
 
-New-Item -ItemType Directory -Path (Join-Path $podeModulePath 'Tools') -Force | Out-Null
-Copy-Item -Path ./src/Tools/* -Destination (Join-Path $podeModulePath 'Tools') -Force | Out-Null
+try
+{
+    Push-Location (Join-Path $env:ChocolateyPackageFolder 'tools/src')
 
-Copy-Item -Path ./src/Pode.psm1 -Destination $podeModulePath -Force | Out-Null
-Copy-Item -Path ./src/Pode.psd1 -Destination $podeModulePath -Force | Out-Null
-Copy-Item -Path ./LICENSE.txt -Destination $podeModulePath -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $podeModulePath 'Tools') -Force | Out-Null
+    Copy-Item -Path ./Tools/* -Destination (Join-Path $podeModulePath 'Tools') -Force | Out-Null
+    Copy-Item -Path ./Pode.psm1 -Destination $podeModulePath -Force | Out-Null
+    Copy-Item -Path ./Pode.psd1 -Destination $podeModulePath -Force | Out-Null
+}
+finally
+{
+    Pop-Location
+}
