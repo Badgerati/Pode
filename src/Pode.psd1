@@ -23,7 +23,7 @@
     Copyright = 'Copyright (c) 2017 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
-    Description = 'Pode is a PowerShell framework to help write and host REST API, Web Pages and SMTP servers'
+    Description = 'Pode is a PowerShell framework that runs HTTP/TCP listeners on a specific port, allowing you to host REST APIs, Web Pages and SMTP servers via PowerShell'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '3.0'
