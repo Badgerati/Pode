@@ -8,7 +8,7 @@
 
 @{
     # Script module or binary module file associated with this manifest.
-    RootModule = 'Pode.psm1'
+    ModuleToProcess = 'Pode.psm1'
 
     # Version number of this module.
     ModuleVersion = '0.9.0'
@@ -27,6 +27,29 @@
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '3.0'
+
+    # Functions to export from this Module
+    FunctionsToExport = @(
+        'Add-PodeRoute',
+        'Add-PodeTcpHandler',
+        'Get-SmtpEmail',
+        'Read-FromTcpStream',
+        'Server',
+        'Set-PodeViewEngine',
+        'Start-PodeSmtpServer',
+        'Start-PodeTcpServer',
+        'Start-PodeWebServer',
+        'Write-HtmlResponse',
+        'Write-HtmlResponseFromFile',
+        'Write-JsonResponse',
+        'Write-JsonResponseFromFile',
+        'Write-ToResponse',
+        'Write-ToResponseFromFile',
+        'Write-ToTcpStream',
+        'Write-ViewResponse',
+        'Write-XmlResponse',
+        'Write-XmlResponseFromFile'
+    )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData = @{
