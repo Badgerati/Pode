@@ -5,6 +5,9 @@
 [![Chocolatey](https://img.shields.io/chocolatey/v/pode.svg?colorB=a1301c)](https://chocolatey.org/packages/pode)
 [![Chocolatey](https://img.shields.io/chocolatey/dt/pode.svg?label=downloads&colorB=a1301c)](https://chocolatey.org/packages/pode)
 
+[![PowerShell](https://img.shields.io/powershellgallery/v/pode.svg?label=powershell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
+[![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=downloads&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
+
 Pode is a PowerShell framework that runs HTTP/TCP listeners on a specific port, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic HTML using [PSHTML](#pshtml) files.
 
 ## Features
@@ -14,6 +17,18 @@ Pode is a PowerShell framework that runs HTTP/TCP listeners on a specific port, 
 * Host SMTP servers - great for tests and mocking
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
 * Ability to write dynamic webpages in PowerShell using PSHTML
+
+## Install
+
+You can install Pode from either Chocolatey or the PowerShell Gallery:
+
+```powershell
+# chocolatey
+choco install pode
+
+# powershell gallery
+Install-Module -Name Pode
+```
 
 ## Documentation
 
