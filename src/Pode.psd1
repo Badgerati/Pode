@@ -8,7 +8,7 @@
 
 @{
     # Script module or binary module file associated with this manifest.
-    ModuleToProcess = 'Pode.psm1'
+    RootModule = 'Pode.psm1'
 
     # Version number of this module.
     ModuleVersion = '0.9.0'
