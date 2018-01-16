@@ -15,8 +15,8 @@ function Test-AdminUser
     }
     catch [exception]
     {
-        Write-Fail 'Error checking user administrator priviledges'
-        Write-Fail $_.Exception.Message
+        Write-Host 'Error checking user administrator priviledges' -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
         return $false
     }
 }
