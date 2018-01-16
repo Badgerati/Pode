@@ -115,8 +115,11 @@ function Start-PodeWebServer
                 }
             }
 
-            # close response stream
-            $response.OutputStream.Close()
+            # close response stream (check if exists, as closing the writer closes this stream on unix)
+            if ($response.OutputStream)
+            {
+                $response.OutputStream.Close()
+            }
         }
     }
     finally
