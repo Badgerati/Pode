@@ -2,6 +2,12 @@
 # test running as admin
 function Test-AdminUser
 {
+    # check the current platform, if it's unix then return true
+    if ($PSVersionTable.Platform -ieq 'unix')
+    {
+        return $true
+    }
+
     try
     {
         $principal = New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
