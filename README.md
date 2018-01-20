@@ -8,10 +8,13 @@
 [![PowerShell](https://img.shields.io/powershellgallery/v/pode.svg?label=powershell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=downloads&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 
+[![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg)](https://hub.docker.com/r/badgerati/pode/)
+
 Pode is a PowerShell framework that runs HTTP/TCP listeners on a specific port, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic HTML using [PSHTML](#pshtml) files.
 
 ## Features
 
+* Can run on Unix environments using PowerShell Core
 * Host REST APIs and Web Pages
 * Run TCP listeners
 * Host SMTP servers - great for tests and mocking
@@ -28,6 +31,9 @@ choco install pode
 
 # powershell gallery
 Install-Module -Name Pode
+
+# docker
+docker pull badgerati/pode
 ```
 
 ## Documentation
