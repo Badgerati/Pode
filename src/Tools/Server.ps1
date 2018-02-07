@@ -12,6 +12,10 @@ function Server
         [int]
         $Port = 0,
 
+        [Parameter()]
+        [ValidateNotNull()]
+        $Interval = 0,
+
         [switch]
         $Smtp,
 
@@ -88,7 +92,19 @@ function Server
     # otherwise, run logic
     else
     {
-        & $ScriptBlock
+        # are we running this logic in an interval loop?
+        if ($Interval -le 0)
+        {
+            & $ScriptBlock
+        }
+        else
+        {
+            while ($true)
+            {
+                & $ScriptBlock
+                Start-Sleep -Seconds $Interval
+            }
+        }
     }
 
     # clean up the session
