@@ -109,6 +109,7 @@ function Start-PodeWebServer
                     $PodeSession.Web.Response = $response
                     $PodeSession.Web.Request = $request
                     $PodeSession.Web.Data = $data
+                    $PodeSession.Web.Query = $request.QueryString
 
                     # invoke route
                     Invoke-Command -ScriptBlock $PodeSession.Routes[$method][$path] -ArgumentList $PodeSession.Web

@@ -73,7 +73,7 @@ Server -Port 8080 {
 }
 ```
 
-The scriptblock requires a `param` section for just one argument: `$session`. This argument will contain the `Request`, `Response` and the `Data` if the route is a POST endpoint.
+The scriptblock requires a `param` section for just one argument: `$session`. This argument will contain the `Request`, `Response`, `Data` (from POST), and the `Query` (from the query string of the URL).
 
 The last line is to write JSON response. So anyone hitting `http://localhost:8080/api/ping` will be greeted back with `{ "value": "pong" }`.
 
