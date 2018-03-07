@@ -1,8 +1,7 @@
-
 function Start-PodeSmtpServer
 {
     # ensure we have smtp handlers
-    if ($PodeSession.TcpHandlers['smtp'] -eq $null)
+    if ((Get-PodeTcpHandler -Type 'SMTP') -eq $null)
     {
         throw 'No SMTP handler has been passed'
     }
@@ -73,7 +72,7 @@ function Start-PodeSmtpServer
                     $PodeSession.Smtp.Data = $data
 
                     # call user handlers for processing smtp data
-                    Invoke-Command -ScriptBlock $PodeSession.TcpHandlers['smtp'] -ArgumentList $PodeSession.Smtp
+                    Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -ArgumentList $PodeSession.Smtp
                 }
             }
         }

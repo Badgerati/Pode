@@ -26,4 +26,11 @@ Server -Port 8086 {
         Write-JsonResponse @{ 'hello' = 'world'; }
     }
 
+    # returns details for an example user
+    Add-PodeRoute 'get' '/api/users/:userId' {
+        param($session)
+        $user = Get-DummyUser -UserId $session.Parameters['userId']
+        Write-JsonResponse @{ 'user' = $user; }
+    }
+
 }

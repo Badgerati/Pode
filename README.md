@@ -10,7 +10,7 @@
 
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a PowerShell framework that runs HTTP/TCP listeners on a specific port, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic HTML using [PSHTML](#pshtml) files.
+Pode is a PowerShell framework that runs HTTP/TCP listeners on specific ports, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic HTML using [PSHTML](#pshtml) files.
 
 ## Features
 
@@ -23,7 +23,7 @@ Pode is a PowerShell framework that runs HTTP/TCP listeners on a specific port, 
 
 ## Install
 
-You can install Pode from either Chocolatey or the PowerShell Gallery:
+You can install Pode from either Chocolatey, the PowerShell Gallery, or Docker:
 
 ```powershell
 # chocolatey
@@ -73,11 +73,11 @@ Server -Port 8080 {
 }
 ```
 
-The scriptblock requires a `param` section for just one argument: `$session`. This argument will contain the `Request`, `Response`, `Data` (from POST), and the `Query` (from the query string of the URL).
+The scriptblock requires a `param` section for just one argument: `$session`. This argument will contain the `Request` and `Response` objeccts; `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
-The last line is to write JSON response. So anyone hitting `http://localhost:8080/api/ping` will be greeted back with `{ "value": "pong" }`.
+The last line is to write the JSON response. Anyone hitting `http://localhost:8080/api/ping` will be greeted back with `{ "value": "pong" }`.
 
-If you wanted a POST endpoint that created a user, then it would roughly look as follows:
+If you wanted a POST endpoint that created a user, and a GET endpoint to get details of a user, then it would roughly look as follows:
 
 ```powershell
 Server -Port 8080 {
@@ -85,27 +85,37 @@ Server -Port 8080 {
         param($session)
 
         # create the user
-        $userId = New-DummyUser $session.Email $session.Name $session.Password
+        $userId = New-DummyUser $session.Data.Email $session.Data.Name $session.Data.Password
 
         # return with userId
         Write-JsonResponse @{ 'userId' = $userId; }
     }
+
+    Add-PodeRoute 'get' '/api/users/:userId'{
+        param($session)
+
+        # get the user
+        $user = Get-DummyUser -UserId $session.Parameters['userId']
+
+        # return the user
+        Write-JsonResponse @{ 'user' = $user; }
+    }
 }
 ```
 
-> This can be seen in the examples under `rest-api.ps1`, and `nunit-rest-api.ps1` for a more practical example
+> More can be seen in the examples under `rest-api.ps1`, and `nunit-rest-api.ps1`
 
 ### Web Pages
 
 It's actually possible for Pode to serve up webpages - css, fonts, and javascript included. They pretty much work exactly like the above REST APIs, except Pode has inbuilt logic to handle css/javascript.
 
-Pode also has its own format for writing HTML pages: PSHTML. There are examples in the example directory, but they allow you to dynamic generate HTML using PowerShell.
+Pode also has its own format for writing HTML pages: PSHTML. There are examples in the example directory, but in general they allow you to dynamically generate HTML using PowerShell.
 
-All HTML (and PSHTML) content *must* be placed with a `/views/` directory, which is in the same location as your pode script. In here you place your HTML/PSHTML files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
+All HTML (and PSHTML) content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your HTML/PSHTML files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
 
 > Pode uses a View Engine to either render HTML or PSHTML. Default is HTML, and you can change it by calling `Set-PodeViewEngine 'PSHTML'` at the top of your Server scriptblock
 
-Any other file types, from css to javascript, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
+Any other file types, from css to javascript, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your Pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
 A quick example of a single page site on port 8085:
 
@@ -166,7 +176,7 @@ To help with writing and reading from the client stream, Pode has two helper fun
 
 PSHTML is mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
 
-To use PSHTML files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine for Pode to be PSHTML; once set, you can just write view responses as per normal
+To use PSHTML files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine for Pode to be PSHTML; once set, you can just write view responses as per normal:
 
 ```powershell
 Server -Port 8080 {
@@ -199,7 +209,7 @@ Below is a basic example of a PSHTML file which just writes the current date to 
 
 You can also supply data to `Write-ViewResponse` when rendering PSHTML files. This allows you to make them far more dynamic. The data supplied to `Write-ViewResponse` must be a `hashtable`, and can be referenced within a PSHTML file by using `$data`.
 
-For example, say you need to render a search page which is a list of accounts, then you're basic pode script would look like:
+For example, say you need to render a search page which is a list of accounts, then you're basic Pode script would look like:
 
 ```powershell
 Server -Port 8080 {
@@ -211,16 +221,16 @@ Server -Port 8080 {
         param($session)
 
         # some logic to get accounts
-        $query = $session.Request.QueryString.Item('query')
+        $query = $session.Query['query']
         $accounts = Find-Account -Query $query
-        
+
         # render the file
         Write-ViewResponse 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
     }
 }
 ```
 
-You can see that we're supplying the found accounts to the `Write-ViewResponse` function as a hashtable. Next, we see the `search.pshtml` file which generates the HTML:
+You can see that we're supplying the found accounts to the `Write-ViewResponse` function as a `hashtable`. Next, we see the `search.pshtml` file which generates the HTML:
 
 ```html
 <!-- search.pshtml -->
@@ -243,12 +253,14 @@ You can see that we're supplying the found accounts to the `Write-ViewResponse` 
 
 > Remember, you can access supplied data by using `$data`
 
-## Inbuild Functions
+## Inbuilt Functions
 
 Pode comes with a few helper functions - mostly for writing responses and reading streams:
 
 * `Add-PodeRoute`
+* `Get-PodeRoute`
 * `Add-PodeTcpHandler`
+* `Get-PodeTcpHandler`
 * `Write-ToResponse`
 * `Write-ToResponseFromFile`
 * `Write-JsonResponse`
