@@ -1,4 +1,3 @@
-
 function Get-PodeRoute
 {
     param (
@@ -30,20 +29,15 @@ function Get-PodeRoute
     else
     {
         $valid = ($method.Keys | Where-Object {
-            $k = $_
-            if (!$k.EndsWith('$')) {
-                $k ="$($k)$"
-            }
-
-            $Route -imatch $k
-        })
+            $Route -imatch "$($_)$"
+        } | Select-Object -First 1)
 
         if ($valid -eq $null)
         {
             return $null
         }
 
-        $Route -imatch $valid | Out-Null
+        $Route -imatch "$($valid)$" | Out-Null
         return @{ 'Logic' = $method[$valid]; 'Parameters' = $Matches }
     }
 }

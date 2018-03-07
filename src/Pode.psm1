@@ -1,4 +1,3 @@
-
 # test running as admin
 function Test-AdminUser
 {

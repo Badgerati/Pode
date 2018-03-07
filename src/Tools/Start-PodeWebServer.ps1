@@ -78,7 +78,8 @@ function Start-PodeWebServer
             else
             {
                 # ensure the path has a route
-                if ($PodeSession.Routes[$method][$path] -eq $null)
+                $route = Get-PodeRoute -HttpMethod $method -Route $path
+                if ($route -eq $null -or $route.Logic -eq $null)
                 {
                     $response.StatusCode = 404
                 }
@@ -110,9 +111,10 @@ function Start-PodeWebServer
                     $PodeSession.Web.Request = $request
                     $PodeSession.Web.Data = $data
                     $PodeSession.Web.Query = $request.QueryString
+                    $PodeSession.Web.Parameters = $route.Parameters
 
                     # invoke route
-                    Invoke-Command -ScriptBlock $PodeSession.Routes[$method][$path] -ArgumentList $PodeSession.Web
+                    Invoke-Command -ScriptBlock $route.Logic -ArgumentList $PodeSession.Web
                 }
             }
 

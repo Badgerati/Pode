@@ -24,7 +24,7 @@ Pode is a PowerShell framework that runs HTTP/TCP listeners on a specific port, 
     <packageSourceUrl>https://github.com/Badgerati/Pode/tree/master/packers</packageSourceUrl>
     <docsUrl>https://github.com/Badgerati/Pode</docsUrl>
     <bugTrackerUrl>https://github.com/Badgerati/Pode/issues</bugTrackerUrl>
-    <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html</tags>
+    <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html pshtml unix</tags>
     <copyright>Copyright 2017</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
