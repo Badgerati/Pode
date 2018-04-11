@@ -19,7 +19,7 @@ Pode is a PowerShell framework that runs HTTP/TCP listeners on specific ports, a
 * Run TCP listeners
 * Host SMTP servers - great for tests and mocking
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
-* Ability to write dynamic webpages in PowerShell using PSHTML
+* Ability to write dynamic webpages in PowerShell using PSHTML (As well as PSCSS and PSJS)
 
 ## Install
 
@@ -107,15 +107,15 @@ Server -Port 8080 {
 
 ### Web Pages
 
-It's actually possible for Pode to serve up webpages - css, fonts, and javascript included. They pretty much work exactly like the above REST APIs, except Pode has inbuilt logic to handle css/javascript.
+It's actually possible for Pode to serve up webpages - css, fonts, and javascript included. They pretty much work exactly like the above REST APIs, except Pode has inbuilt logic to handle css/javascript and other files.
 
-Pode also has its own format for writing HTML pages: PSHTML. There are examples in the example directory, but in general they allow you to dynamically generate HTML using PowerShell.
+Pode also has its own format for writing HTML pages: PSHTML, PSCSS and PSJS. There are examples in the example directory, but in general they allow you to dynamically generate HTML, CSS and JS using PowerShell.
 
 All HTML (and PSHTML) content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your HTML/PSHTML files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
 
 > Pode uses a View Engine to either render HTML or PSHTML. Default is HTML, and you can change it by calling `Set-PodeViewEngine 'PSHTML'` at the top of your Server scriptblock
 
-Any other file types, from css to javascript, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your Pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
+Any other file types, from css/pscss to javascript/psjs, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your Pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
 A quick example of a single page site on port 8085:
 
@@ -178,6 +178,8 @@ PSHTML is mostly just an HTML file - in fact, you can write pure HTML and still 
 
 To use PSHTML files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine for Pode to be PSHTML; once set, you can just write view responses as per normal:
 
+> Any PowerShell in a PSHTML will need to use semi-colons to end each line
+
 ```powershell
 Server -Port 8080 {
     # set the engine to use and render PSHTML files
@@ -200,12 +202,12 @@ Below is a basic example of a PSHTML file which just writes the current date to 
         <title>Current Date</title>
     </head>
     <body>
-        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))</span>
+        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
     </body>
 </html>
 ```
 
-> When you need to use PowerShell, ensure you wrap them within `$(...)`
+> When you need to use PowerShell, ensure you wrap the commands within `$(...)`, and end each line with a semi-colon (as you would in C#/Java)
 
 You can also supply data to `Write-ViewResponse` when rendering PSHTML files. This allows you to make them far more dynamic. The data supplied to `Write-ViewResponse` must be a `hashtable`, and can be referenced within a PSHTML file by using `$data`.
 
@@ -240,11 +242,11 @@ You can see that we're supplying the found accounts to the `Write-ViewResponse` 
     </head>
     <body>
         <h1>Search</h1>
-        Query: $($data.query)
+        Query: $($data.query;)
 
         <div>
             $(foreach ($account in $data.accounts) {
-                "<div>Name: $($account.Name)</div><hr/>"
+                "<div>Name: $($account.Name)</div><hr/>";
             })
         </div>
     </body>
@@ -252,6 +254,28 @@ You can see that we're supplying the found accounts to the `Write-ViewResponse` 
 ```
 
 > Remember, you can access supplied data by using `$data`
+
+### PSCSS and PSJS
+The rules for PSCSS and PSJS files work exactly like the PSHTML files above, just they're placed within the `/public/` directory instead of the `/views/` directory.
+
+For example, the below PSCSS will render the page in purple on even seconds, or red on odd seconds:
+
+```css
+body {
+    $(
+        $date = [DateTime]::UtcNow;
+
+        if ($date.Second % 2 -eq 0)
+        {
+            "background-color: rebeccapurple;";
+        }
+        else
+        {
+            "background-color: red;";
+        }
+    )
+}
+```
 
 ## Inbuilt Functions
 

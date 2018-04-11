@@ -72,7 +72,7 @@ function Start-PodeWebServer
             if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1)
             {
                 $path = (Join-Path 'public' $path)
-                Write-ToResponseFromFile $path $response
+                Write-ToResponseFromFile -Path $path -Response $response
             }
 
             else

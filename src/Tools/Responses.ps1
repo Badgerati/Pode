@@ -50,6 +50,7 @@ function Write-ToResponseFromFile
         $Response = $null
     )
 
+    # if the file doesnt exist then just fail on 404
     if (!(Test-Path $Path))
     {
         Write-ToResponse -Response $Response -NotFound
@@ -57,6 +58,23 @@ function Write-ToResponseFromFile
     else
     {
         $content = Get-Content -Path $Path
+
+        # are we dealing with a dynamic ps file?
+        $ext = [System.IO.Path]::GetExtension($Path)
+        if (Test-Empty $ext)
+        {
+            Write-ToResponse -Value $content -Response $Response
+            return
+        }
+
+        switch ($ext.Trim('.').ToLowerInvariant())
+        {
+            { @('pscss', 'psjs') -icontains $_ }
+                {
+                    $content = ConvertFrom-PSFile -Content $content
+                }
+        }
+
         Write-ToResponse -Value $content -Response $Response
     }
 }
@@ -229,8 +247,7 @@ function Write-ViewResponse
         {
             'pshtml'
                 {
-                    $content = "param(`$data)`nreturn `"$($content -replace '"', '``"')`""
-                    $content = (Invoke-Command -ScriptBlock ([scriptblock]::Create($content)) -ArgumentList $Data)
+                    $content = ConvertFrom-PSFile -Content $content -Data $Data
                 }
         }
 
