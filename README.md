@@ -20,6 +20,7 @@ Pode is a PowerShell framework that runs HTTP/TCP listeners on specific ports, a
 * Host SMTP servers - great for tests and mocking
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
 * Ability to write dynamic webpages in PowerShell using PSHTML (As well as PSCSS and PSJS)
+* Can use yarn package manager to install bootstrap, or other frontend libraries
 
 ## Install
 
@@ -39,6 +40,18 @@ docker pull badgerati/pode
 ## Documentation
 
 This documentation will cover the basics on how to use Pode to create a simple REST API, Web Page, and SMTP Server. Further examples can be found in the examples folder.
+
+### Frontend
+
+You can host web-pages using Pode, and to help you can also use package managers like `yarn` to help install frontend libraries (like bootstrap).
+
+```powershell
+choco install yarn -y
+yarn init
+yarn add bootstrap
+```
+
+As `yarn` does, the packages will be installed to a `node_modules` directory. Other useful packages could include `gulp`, `lodash`, `moment`, etc.
 
 ### Basics
 
