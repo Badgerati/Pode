@@ -41,6 +41,50 @@ docker pull badgerati/pode
 
 This documentation will cover the basics on how to use Pode to create a simple REST API, Web Page, and SMTP Server. Further examples can be found in the examples folder.
 
+### Setup
+
+Pode has a couple of useful commands that you can use on the CLI, to help you initialise, start, test, build, or install any packages for your repo. These commands all utilise the `package.json` structure - as seen in Node and Yarn.
+
+> At the moment, Pode only uses the `start`, `test`, `build` and `install` properties of the `scripts` section in your `package.json`. You can still have others, like `dependencies` for Yarn
+
+```powershell
+# similar to yarn and node, init will help you create a new package.json
+pode init
+
+# if you have a "start" script this will run that property; otherwise will run the script in "main"
+pode start
+
+# if you have a "test" script this will run that property
+pode test
+
+# if you have a "install" script this will run that property
+pode install
+
+# if you have a "build" script this will run that property
+pode build
+```
+
+> By default, Pode will pre-populate `test`, `build` and `install` using `yarn`, `psake` and `pester` respectively
+
+Following is an example `package.json`
+
+```json
+{
+    "name":  "example",
+    "description":  "",
+    "version":  "1.0.0",
+    "main":  "./file.ps1",
+    "scripts":  {
+        "start":  "./file.ps1",
+        "test":  "invoke-pester ./tests/*.ps1",
+        "install":  "yarn install --force --ignore-scripts --modules-folder pode_modules",
+        "build": "psake"
+    },
+    "author":  "",
+    "license":  "MIT"
+}
+```
+
 ### Frontend
 
 You can host web-pages using Pode, and to help you can also use package managers like `yarn` to help install frontend libraries (like bootstrap).
@@ -51,7 +95,7 @@ yarn init
 yarn add bootstrap
 ```
 
-As `yarn` does, the packages will be installed to a `node_modules` directory. Other useful packages could include `gulp`, `lodash`, `moment`, etc.
+When run, Pode will tell `yarn` to install the packages to a `pode_modules` directory. Other useful packages could include `gulp`, `lodash`, `moment`, etc.
 
 ### Basics
 
