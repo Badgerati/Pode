@@ -75,7 +75,7 @@ function Write-ToResponseFromFile
                 }
         }
 
-        Write-ToResponse -Value $content -Response $Response
+        Write-ToResponse -Value $content -Response $Response -ContentType (Get-ContentType -Extension $ext)
     }
 }
 
@@ -211,6 +211,34 @@ function Write-HtmlResponseFromFile
     }
 }
 
+# include helper to import the content of a view into another view
+function Include
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    # get extension from the path
+    $ext = [System.IO.Path]::GetExtension($Path)
+    if (Test-Empty $ext)
+    {
+        throw "Missing extension on path when attempting to include: $($Path)"
+    }
+
+    # only look in the view directory
+    $Path = (Join-Path 'views' $Path)
+
+    if (!(Test-Path $Path))
+    {
+        throw "File not found at path: $($Path)"
+    }
+
+    return (Get-Content -Path $Path -Raw)
+}
+
 function Write-ViewResponse
 {
     param (
@@ -239,22 +267,19 @@ function Write-ViewResponse
     {
         Write-ToResponse -Response $Response -NotFound
     }
-    else
+
+    $content = Get-Content -Path $Path -Raw
+
+    switch ($PodeSession.ViewEngine.ToLowerInvariant())
     {
-        $content = Get-Content -Path $Path -Raw
-
-        switch ($PodeSession.ViewEngine.ToLowerInvariant())
-        {
-            'pshtml'
-                {
-                    $content = ConvertFrom-PSFile -Content $content -Data $Data
-                }
-        }
-
-        Write-HtmlResponse -Value $content -Response $Response -NoConvert
+        'pshtml'
+            {
+                $content = ConvertFrom-PSFile -Content $content -Data $Data
+            }
     }
-}
 
+    Write-HtmlResponse -Value $content -Response $Response -NoConvert
+}
 
 # write data to tcp stream
 function Write-ToTcpStream

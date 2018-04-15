@@ -64,3 +64,26 @@ function Test-Empty
 
     return ([string]::IsNullOrWhiteSpace($Value) -or ($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
 }
+
+function Get-ContentType
+{
+    param (
+        [Parameter()]
+        [string]
+        $Extension
+    )
+
+    $ctype = 'text/plain'
+    if (Test-Empty $Extension)
+    {
+        return $ctype
+    }
+
+    switch ($Extension.Trim('.').ToLowerInvariant())
+    {
+        { @('css', 'pscss') -icontains $_ } { $ctype = 'text/css' }
+        { @('js', 'psjs') -icontains $_ } { $ctype = 'text/javascript' }
+    }
+
+    return $ctype
+}

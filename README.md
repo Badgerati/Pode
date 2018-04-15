@@ -312,6 +312,24 @@ You can see that we're supplying the found accounts to the `Write-ViewResponse` 
 
 > Remember, you can access supplied data by using `$data`
 
+This next quick example allows you to include content from another view:
+
+```html
+<!-- index.pshtml -->
+<html>
+    $(include shared/head.pshtml)
+
+    <body>
+        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
+    </body>
+</html>
+
+<!-- shared/head.pshtml -->
+<head>
+    <title>Include Example</title>
+</head>
+```
+
 ### PSCSS and PSJS
 The rules for PSCSS and PSJS files work exactly like the PSHTML files above, just they're placed within the `/public/` directory instead of the `/views/` directory.
 
