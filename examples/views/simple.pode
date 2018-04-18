@@ -1,10 +1,10 @@
 <html>
     <head>
-        <title>PSHTML Page</title>
-        <link rel="stylesheet" type="text/css" href="styles/simple.pscss">
+        <title>Pode Page</title>
+        <link rel="stylesheet" type="text/css" href="styles/simple.css.pode">
     </head>
     <body>
-        Hello, world! This is PSHTML page!
+        Hello, world! This is Pode page!
         <ul>
         $(foreach ($i in $data.numbers)
         {

@@ -42,7 +42,7 @@ function Get-PodeRoute
     }
 }
 
-function Add-PodeRoute
+function Route
 {
     param (
         [Parameter(Mandatory=$true)]

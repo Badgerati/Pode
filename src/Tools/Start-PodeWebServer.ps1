@@ -1,13 +1,20 @@
-function Set-PodeViewEngine
+function Set-ViewEngine
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('HTML', 'PSHTML')]
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [string]
-        $Engine
+        $Engine,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock = $null
     )
 
-    $PodeSession.ViewEngine = $Engine
+    $PodeSession.ViewEngine = @{
+        'Extension' = $Engine.ToLowerInvariant();
+        'Script' = $ScriptBlock;
+    }
 }
 
 function Start-PodeWebServer

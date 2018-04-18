@@ -1,6 +1,6 @@
 
-# read in the content from a dynamic PS file and invoke its content, ie: pshtml and pscss files
-function ConvertFrom-PSFile
+# read in the content from a dynamic pode file and invoke its content
+function ConvertFrom-PodeFile
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -65,24 +65,31 @@ function Test-Empty
     return ([string]::IsNullOrWhiteSpace($Value) -or ($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
 }
 
-function Get-ContentType
+function Get-DynamicContentType
 {
     param (
         [Parameter()]
         [string]
-        $Extension
+        $Path
     )
 
+    # default content type
     $ctype = 'text/plain'
-    if (Test-Empty $Extension)
+
+    # if no path, return default
+    if (Test-Empty $Path)
     {
         return $ctype
     }
 
-    switch ($Extension.Trim('.').ToLowerInvariant())
+    # get secondary extension (like style.css.pode would be css)
+    $ext = [System.IO.Path]::GetExtension([System.IO.Path]::GetFileNameWithoutExtension($Path)).Trim('.')
+
+    # get content type from secondary extension
+    switch ($ext.ToLowerInvariant())
     {
-        { @('css', 'pscss') -icontains $_ } { $ctype = 'text/css' }
-        { @('js', 'psjs') -icontains $_ } { $ctype = 'text/javascript' }
+        'css' { $ctype = 'text/css' }
+        'js' { $ctype = 'text/javascript' }
     }
 
     return $ctype

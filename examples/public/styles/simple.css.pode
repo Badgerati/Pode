@@ -2,12 +2,9 @@ body {
     $(
         $date = [DateTime]::UtcNow;
 
-        if ($date.Second % 2 -eq 0)
-        {
+        if ($date.Second % 2 -eq 0) {
             "background-color: rebeccapurple;";
-        }
-        else
-        {
+        } else {
             "background-color: red;";
         }
     )

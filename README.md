@@ -10,7 +10,7 @@
 
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a PowerShell framework that runs HTTP/TCP listeners on specific ports, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic HTML using [PSHTML](#pshtml) files.
+Pode is a PowerShell framework that runs HTTP/TCP listeners on specific ports, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic files using [Pode](#pode-files) files - which is effectively embedded PowerShell.
 
 ## Features
 
@@ -19,7 +19,7 @@ Pode is a PowerShell framework that runs HTTP/TCP listeners on specific ports, a
 * Run TCP listeners
 * Host SMTP servers - great for tests and mocking
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
-* Ability to write dynamic webpages in PowerShell using PSHTML (As well as PSCSS and PSJS)
+* Ability to write dynamic files in PowerShell using Pode
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 
 ## Install
@@ -119,11 +119,11 @@ The above `Server` block will start a basic HTTP listener on port 8080. Once sta
 
 Once you have the basics down, creating a REST API isn't far off. When creating an API in Pode, you specify logic for certain routes for specific HTTP methods. Methods supported are: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
 
-The method to create new routes is `Add-PodeRoute`, this will take your method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
+The method to create new routes is `route`, this will take your method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
 
 ```powershell
 Server -Port 8080 {
-    Add-PodeRoute 'get' '/api/ping' {
+    route 'get' '/api/ping' {
         param($session)
         Write-JsonResponse @{ 'value' = 'pong'; }
     }
@@ -138,7 +138,7 @@ If you wanted a POST endpoint that created a user, and a GET endpoint to get det
 
 ```powershell
 Server -Port 8080 {
-    Add-PodeRoute 'post' '/api/users' {
+    route 'post' '/api/users' {
         param($session)
 
         # create the user
@@ -148,7 +148,7 @@ Server -Port 8080 {
         Write-JsonResponse @{ 'userId' = $userId; }
     }
 
-    Add-PodeRoute 'get' '/api/users/:userId'{
+    route 'get' '/api/users/:userId'{
         param($session)
 
         # get the user
@@ -166,21 +166,21 @@ Server -Port 8080 {
 
 It's actually possible for Pode to serve up webpages - css, fonts, and javascript included. They pretty much work exactly like the above REST APIs, except Pode has inbuilt logic to handle css/javascript and other files.
 
-Pode also has its own format for writing HTML pages: PSHTML, PSCSS and PSJS. There are examples in the example directory, but in general they allow you to dynamically generate HTML, CSS and JS using PowerShell.
+Pode also has its own format for writing dynamic HTML pages. There are examples in the example directory, but in general they allow you to dynamically generate HTML, CSS or any file type using embedded PowerShell.
 
-All HTML (and PSHTML) content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your HTML/PSHTML files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
+All static and dynamic HTML content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your view files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
 
-> Pode uses a View Engine to either render HTML or PSHTML. Default is HTML, and you can change it by calling `Set-PodeViewEngine 'PSHTML'` at the top of your Server scriptblock
+> Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it by calling `Set-ViewEngine 'Pode'` at the top of your Server scriptblock
 
-Any other file types, from css/pscss to javascript/psjs, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your Pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
+Any other file types, from css to javascript, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your Pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
 A quick example of a single page site on port 8085:
 
 ```powershell
 Server -Port 8085 {
-    Set-PodeViewEngine 'HTML'
+    Set-ViewEngine 'HTML'
 
-    Add-PodeRoute 'get' '/' {
+    route 'get' '/' {
         param($session)
         Write-ViewResponse 'simple'
     }
@@ -229,31 +229,31 @@ To help with writing and reading from the client stream, Pode has two helper fun
 * `Write-ToTcpStream -Message 'msg'`
 * `$msg = Read-FromTcpStream`
 
-## PSHTML
+## Pode Files
 
-PSHTML is mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
+Using Pode to write dynamic HTML files are mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
 
-To use PSHTML files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine for Pode to be PSHTML; once set, you can just write view responses as per normal:
+To use Pode files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine to be Pode; once set, you can just write view responses as per normal:
 
-> Any PowerShell in a PSHTML will need to use semi-colons to end each line
+> Any PowerShell in a Pode files will need to use semi-colons to end each line
 
 ```powershell
 Server -Port 8080 {
-    # set the engine to use and render PSHTML files
-    Set-PodeViewEngine 'PSHTML'
+    # set the engine to use and render Pode files
+    Set-ViewEngine 'Pode'
 
-    # render the index.pshtml file
-    Add-PodeRoute 'get' '/' {
+    # render the index.pode view
+    route 'get' '/' {
         param($session)
         Write-ViewResponse 'index'
     }
 }
 ```
 
-Below is a basic example of a PSHTML file which just writes the current date to the browser:
+Below is a basic example of a Pode file which just writes the current date to the browser:
 
 ```html
-<!-- index.pshtml -->
+<!-- /views/index.pode -->
 <html>
     <head>
         <title>Current Date</title>
@@ -266,17 +266,17 @@ Below is a basic example of a PSHTML file which just writes the current date to 
 
 > When you need to use PowerShell, ensure you wrap the commands within `$(...)`, and end each line with a semi-colon (as you would in C#/Java)
 
-You can also supply data to `Write-ViewResponse` when rendering PSHTML files. This allows you to make them far more dynamic. The data supplied to `Write-ViewResponse` must be a `hashtable`, and can be referenced within a PSHTML file by using `$data`.
+You can also supply data to `Write-ViewResponse` when rendering Pode files. This allows you to make them far more dynamic. The data supplied to `Write-ViewResponse` must be a `hashtable`, and can be referenced within the file by using the `$data` argument.
 
 For example, say you need to render a search page which is a list of accounts, then you're basic Pode script would look like:
 
 ```powershell
 Server -Port 8080 {
-    # set the engine to use and render PSHTML files
-    Set-PodeViewEngine 'PSHTML'
+    # set the engine to use and render Pode files
+    Set-ViewEngine 'Pode'
 
-    # render the search.pshtml file
-    Add-PodeRoute 'get' '/' {
+    # render the search.pode view
+    route 'get' '/' {
         param($session)
 
         # some logic to get accounts
@@ -289,10 +289,10 @@ Server -Port 8080 {
 }
 ```
 
-You can see that we're supplying the found accounts to the `Write-ViewResponse` function as a `hashtable`. Next, we see the `search.pshtml` file which generates the HTML:
+You can see that we're supplying the found accounts to the `Write-ViewResponse` function as a `hashtable`. Next, we see the `search.pode` file which generates the HTML:
 
 ```html
-<!-- search.pshtml -->
+<!-- /views/search.pode -->
 <html>
     <head>
         <title>Search</title>
@@ -315,37 +315,42 @@ You can see that we're supplying the found accounts to the `Write-ViewResponse` 
 This next quick example allows you to include content from another view:
 
 ```html
-<!-- index.pshtml -->
+<!-- /views/index.pode -->
 <html>
-    $(include shared/head.pshtml)
+    $(include shared/head)
 
     <body>
         <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
     </body>
 </html>
 
-<!-- shared/head.pshtml -->
+<!-- /views/shared/head.pode -->
 <head>
     <title>Include Example</title>
 </head>
 ```
 
-### PSCSS and PSJS
-The rules for PSCSS and PSJS files work exactly like the PSHTML files above, just they're placed within the `/public/` directory instead of the `/views/` directory.
+### Non-View Pode Files
+The rules for using Pode files for other types, like public css/js, work exactly like the above view files but they're placed within the `/public/` directory instead of the `/views/` directory. You also need to special the actual file type in the extension, for example:
 
-For example, the below PSCSS will render the page in purple on even seconds, or red on odd seconds:
+```
+/public/styles/main.css.pode
+/public/scripts/main.js.pode
+```
+
+Here you'll see the main extension is `pode`, but you need to specify a sub-extension of the main file type - this helps Pode work out the main content type.
+
+Below is a `.css.pode` file that will render the page in purple on even seconds, or red on odd seconds:
 
 ```css
+/* /public/styles/main.css.pode */
 body {
     $(
         $date = [DateTime]::UtcNow;
 
-        if ($date.Second % 2 -eq 0)
-        {
+        if ($date.Second % 2 -eq 0) {
             "background-color: rebeccapurple;";
-        }
-        else
-        {
+        } else {
             "background-color: red;";
         }
     )
@@ -356,7 +361,7 @@ body {
 
 Pode comes with a few helper functions - mostly for writing responses and reading streams:
 
-* `Add-PodeRoute`
+* `route`
 * `Get-PodeRoute`
 * `Add-PodeTcpHandler`
 * `Get-PodeTcpHandler`
@@ -371,4 +376,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Write-ViewResponse`
 * `Write-ToTcpStream`
 * `Read-FromTcpStream`
-* `Set-PodeViewEngine`
+* `Set-ViewEngine`
