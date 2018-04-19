@@ -10,7 +10,7 @@
 
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a PowerShell framework that runs HTTP/TCP listeners on specific ports, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers via PowerShell. It also allows you to render dynamic files using [Pode](#pode-files) files - which is effectively embedded PowerShell.
+Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific ports, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers. It also allows you to render dynamic files using [Pode](#pode-files) files, which is effectively embedded PowerShell, or other [Third-Party](#third-party-view-engines) template engines.
 
 ## Features
 
@@ -19,7 +19,7 @@ Pode is a PowerShell framework that runs HTTP/TCP listeners on specific ports, a
 * Run TCP listeners
 * Host SMTP servers - great for tests and mocking
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
-* Ability to write dynamic files in PowerShell using Pode
+* Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 
 ## Install
@@ -130,7 +130,7 @@ Server -Port 8080 {
 }
 ```
 
-The scriptblock requires a `param` section for just one argument: `$session`. This argument will contain the `Request` and `Response` objeccts; `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
+The scriptblock requires a `param` section for just one argument: `$session`. This argument will contain the `Request` and `Response` objects; `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
 The last line is to write the JSON response. Anyone hitting `http://localhost:8080/api/ping` will be greeted back with `{ "value": "pong" }`.
 
@@ -331,9 +331,10 @@ This next quick example allows you to include content from another view:
 ```
 
 ### Non-View Pode Files
+
 The rules for using Pode files for other types, like public css/js, work exactly like the above view files but they're placed within the `/public/` directory instead of the `/views/` directory. You also need to special the actual file type in the extension, for example:
 
-```
+```plain
 /public/styles/main.css.pode
 /public/scripts/main.js.pode
 ```
@@ -354,6 +355,29 @@ body {
             "background-color: red;";
         }
     )
+}
+```
+
+## Third-Party View Engines
+
+Pode also supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) template engine. To do this, you'll need to supply a custom scriptblock to `Set-ViewEngine` which tells Pode how use the third-party engine.
+
+If you did use `EPS`, then the following example would work:
+
+```powershell
+Server -Port 8080 {
+    # set the engine to use and render EPS files (could be index.eps, or for content scripts.css.eps)
+    # the scriptblock requires the "param($path, $data)"
+    Set-ViewEngine 'EPS' {
+        param($path, $data)
+        return Invoke-EpsTemplate -Path $path -Binding $data
+    }
+
+    # render the index.eps view
+    route 'get' '/' {
+        param($session)
+        Write-ViewResponse 'index'
+    }
 }
 ```
 
