@@ -37,7 +37,7 @@
         'Get-SmtpEmail',
         'Read-FromTcpStream',
         'Server',
-        'Set-ViewEngine',
+        'Engine',
         'Start-PodeSmtpServer',
         'Start-PodeTcpServer',
         'Start-PodeWebServer',

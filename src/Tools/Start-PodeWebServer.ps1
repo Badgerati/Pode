@@ -1,4 +1,4 @@
-function Set-ViewEngine
+function Engine
 {
     param (
         [Parameter()]

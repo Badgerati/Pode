@@ -170,7 +170,7 @@ Pode also has its own format for writing dynamic HTML pages. There are examples 
 
 All static and dynamic HTML content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your view files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
 
-> Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it by calling `Set-ViewEngine 'Pode'` at the top of your Server scriptblock
+> Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it to Pode by calling `engine pode` at the top of your Server scriptblock
 
 Any other file types, from css to javascript, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your Pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
@@ -178,7 +178,8 @@ A quick example of a single page site on port 8085:
 
 ```powershell
 Server -Port 8085 {
-    Set-ViewEngine 'HTML'
+    # default view engine is already HTML, so following can left out
+    engine html
 
     route 'get' '/' {
         param($session)
@@ -240,7 +241,7 @@ To use Pode files, you will need to place them within the `/views/` folder. Then
 ```powershell
 Server -Port 8080 {
     # set the engine to use and render Pode files
-    Set-ViewEngine 'Pode'
+    engine pode
 
     # render the index.pode view
     route 'get' '/' {
@@ -273,7 +274,7 @@ For example, say you need to render a search page which is a list of accounts, t
 ```powershell
 Server -Port 8080 {
     # set the engine to use and render Pode files
-    Set-ViewEngine 'Pode'
+    engine pode
 
     # render the search.pode view
     route 'get' '/' {
@@ -360,7 +361,7 @@ body {
 
 ## Third-Party View Engines
 
-Pode also supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) template engine. To do this, you'll need to supply a custom scriptblock to `Set-ViewEngine` which tells Pode how use the third-party engine.
+Pode also supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) template engine. To do this, you'll need to supply a custom scriptblock to `Engine` which tells Pode how use the third-party engine.
 
 If you did use `EPS`, then the following example would work:
 
@@ -368,7 +369,7 @@ If you did use `EPS`, then the following example would work:
 Server -Port 8080 {
     # set the engine to use and render EPS files (could be index.eps, or for content scripts.css.eps)
     # the scriptblock requires the "param($path, $data)"
-    Set-ViewEngine 'EPS' {
+    engine eps {
         param($path, $data)
         return Invoke-EpsTemplate -Path $path -Binding $data
     }
@@ -400,4 +401,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Write-ViewResponse`
 * `Write-ToTcpStream`
 * `Read-FromTcpStream`
-* `Set-ViewEngine`
+* `Engine`
