@@ -105,7 +105,7 @@ function Write-JsonResponse
 
     if (!$NoConvert)
     {
-        $Value = ($Value | ConvertTo-Json)
+        $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
     Write-ToResponse -Value $Value -Response $Response -ContentType 'application/json; charset=utf-8'
@@ -149,7 +149,7 @@ function Write-XmlResponse
 
     if (!$NoConvert)
     {
-        $Value = ($Value | ConvertTo-Xml)
+        $Value = ($Value | ConvertTo-Xml -Depth 10)
     }
 
     Write-ToResponse -Value $Value -Response $Response -ContentType 'application/xml; charset=utf-8'

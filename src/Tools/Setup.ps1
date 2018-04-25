@@ -88,7 +88,7 @@ function Pode
                 $v = Read-Host -Prompt "license ($($map.license))"
                 if (![string]::IsNullOrWhiteSpace($v)) { $map.license = $v }
 
-                $map | ConvertTo-Json | Out-File -FilePath $file -Encoding utf8 -Force
+                $map | ConvertTo-Json -Depth 10 | Out-File -FilePath $file -Encoding utf8 -Force
                 Write-Host 'Success, saved package.json' -ForegroundColor Green
             }
 
