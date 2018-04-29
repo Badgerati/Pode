@@ -17,7 +17,7 @@ function Engine
     }
 }
 
-function Start-PodeWebServer
+function Start-WebServer
 {
     param (
         [switch]

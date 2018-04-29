@@ -1,5 +1,5 @@
 
-function Start-PodeTcpServer
+function Start-TcpServer
 {
     # ensure we have smtp handlers
     if ((Get-PodeTcpHandler -Type 'TCP') -eq $null)

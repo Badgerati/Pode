@@ -1,4 +1,3 @@
-
 function Server
 {
     param (
@@ -14,6 +13,7 @@ function Server
 
         [Parameter()]
         [ValidateNotNull()]
+        [int]
         $Interval = 0,
 
         [switch]
@@ -78,21 +78,21 @@ function Server
     if ($Smtp)
     {
         & $ScriptBlock
-        Start-PodeSmtpServer
+        Start-SmtpServer
     }
 
     # run logic for a tcp server
     elseif ($Tcp)
     {
         & $ScriptBlock
-        Start-PodeTcpServer
+        Start-TcpServer
     }
 
     # if there's a port, run a web server
     elseif ($Port -gt 0)
     {
         & $ScriptBlock
-        Start-PodeWebServer -Https:$Https
+        Start-WebServer -Https:$Https
     }
 
     # otherwise, run logic
@@ -105,8 +105,21 @@ function Server
         }
         else
         {
+            Write-Host "Looping logic every $($Interval)secs" -ForegroundColor Yellow
+            [Console]::TreatControlCAsInput = $true
+
             while ($true)
             {
+                if ([Console]::KeyAvailable)
+                {
+                    $key = [Console]::ReadKey($true)
+                    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control)
+                    {
+                        Write-Host 'Terminating...'
+                        return
+                    }
+                }
+
                 & $ScriptBlock
                 Start-Sleep -Seconds $Interval
             }
