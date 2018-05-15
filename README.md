@@ -12,6 +12,20 @@
 
 Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific ports, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers. It also allows you to render dynamic files using [Pode](#pode-files) files, which is effectively embedded PowerShell, or other [Third-Party](#third-party-view-engines) template engines.
 
+## Contents
+
+* [Install](#install)
+* [Documentaion](#documentation)
+    * [Setup](#setup)
+    * [Docker](#docker)
+    * [Frontend](#frontend)
+    * [Basics](#basics)
+    * [REST API](#rest-api)
+    * [Web Pages](#web-pages)
+    * [SMTP Server](#smtp-server)
+* [Pode Files](#pode-files)
+    * [Third-Party Engines](#third-party-view-engines)
+
 ## Features
 
 * Can run on Unix environments using PowerShell Core
@@ -84,6 +98,33 @@ Following is an example `package.json`
     "license":  "MIT"
 }
 ```
+
+### Docker
+
+This is an example of using Docker to host your Pode scripts, using the `examples/web-pages.ps1` example from the examples directory. Below is an example `Dockerfile` to pull down the base container image, copy over the example files and then run the website (assuming this is run from the examples directory):
+
+```dockerfile
+# File: Dockerfile
+FROM badgerati/pode
+
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+COPY . .
+
+EXPOSE 8085
+
+CMD [ "pwsh", "-c", "./web-pages.ps1" ]
+```
+
+To run build and run this, use the following commands:
+
+```bash
+docker build -t pode-example .
+docker run -p 8085:8085 -d pode-example
+```
+
+Now try navigating to `localhost:8085` (or calling `curl localhost:8085`) and you should be greeted with a "Hello, world!" page.
 
 ### Frontend
 
@@ -401,4 +442,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Write-ViewResponse`
 * `Write-ToTcpStream`
 * `Read-FromTcpStream`
-* `Engine`
+* `engine`
