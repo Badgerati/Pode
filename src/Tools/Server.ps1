@@ -110,7 +110,7 @@ function Server
 
             while ($true)
             {
-                if (![Console]::IsOutputRedirected -and [Console]::KeyAvailable)
+                if (![Console]::IsInputRedirected -and [Console]::KeyAvailable)
                 {
                     $key = [Console]::ReadKey($true)
                     if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control)
