@@ -24,7 +24,7 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 Server -Port 8087 {
 
     # post endpoint, that accepts test to run, and path to test dll
-    Add-PodeRoute 'post' '/api/nunit/run-test' {
+    route 'post' '/api/nunit/run-test' {
         param($session)
 
         # general

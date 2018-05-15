@@ -12,10 +12,10 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # create a server, and start listening on port 8085
 Server -Port 8085 {
 
-    Set-PodeViewEngine 'PSHTML'
+    engine pode
 
     # GET request for web page on "localhost:8085/"
-    Add-PodeRoute 'get' '/' {
+    route 'get' '/' {
         param($session)
         Write-ViewResponse 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }

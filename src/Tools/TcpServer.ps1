@@ -1,8 +1,8 @@
 
-function Start-PodeTcpServer
+function Start-TcpServer
 {
     # ensure we have smtp handlers
-    if ($PodeSession.TcpHandlers['tcp'] -eq $null)
+    if ((Get-PodeTcpHandler -Type 'TCP') -eq $null)
     {
         throw 'No TCP handler has been passed'
     }
@@ -26,7 +26,7 @@ function Start-PodeTcpServer
             {
                 $client = $listener.AcceptTcpClient()
                 $PodeSession.Tcp.Client = $client
-                Invoke-Command -ScriptBlock $PodeSession.TcpHandlers['tcp'] -ArgumentList $PodeSession.Tcp
+                Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -ArgumentList $PodeSession.Tcp
                 
                 if ($client.Connected)
                 {

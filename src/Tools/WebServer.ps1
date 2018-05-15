@@ -1,16 +1,23 @@
-function Set-PodeViewEngine
+function Engine
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('HTML', 'PSHTML')]
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [string]
-        $Engine
+        $Engine,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock = $null
     )
 
-    $PodeSession.ViewEngine = $Engine
+    $PodeSession.ViewEngine = @{
+        'Extension' = $Engine.ToLowerInvariant();
+        'Script' = $ScriptBlock;
+    }
 }
 
-function Start-PodeWebServer
+function Start-WebServer
 {
     param (
         [switch]
@@ -45,7 +52,7 @@ function Start-PodeWebServer
             $task = $listener.GetContextAsync()
             while (!$task.IsCompleted)
             {
-                if ([Console]::KeyAvailable)
+                if (![Console]::IsInputRedirected -and [Console]::KeyAvailable)
                 {
                     $key = [Console]::ReadKey($true)
                     if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control)
@@ -72,13 +79,14 @@ function Start-PodeWebServer
             if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1)
             {
                 $path = (Join-Path 'public' $path)
-                Write-ToResponseFromFile $path $response
+                Write-ToResponseFromFile -Path $path -Response $response
             }
 
             else
             {
                 # ensure the path has a route
-                if ($PodeSession.Routes[$method][$path] -eq $null)
+                $route = Get-PodeRoute -HttpMethod $method -Route $path
+                if ($route -eq $null -or $route.Logic -eq $null)
                 {
                     $response.StatusCode = 404
                 }
@@ -109,14 +117,19 @@ function Start-PodeWebServer
                     $PodeSession.Web.Response = $response
                     $PodeSession.Web.Request = $request
                     $PodeSession.Web.Data = $data
+                    $PodeSession.Web.Query = $request.QueryString
+                    $PodeSession.Web.Parameters = $route.Parameters
 
                     # invoke route
-                    Invoke-Command -ScriptBlock $PodeSession.Routes[$method][$path] -ArgumentList $PodeSession.Web
+                    Invoke-Command -ScriptBlock $route.Logic -ArgumentList $PodeSession.Web
                 }
             }
 
-            # close response stream
-            $response.OutputStream.Close()
+            # close response stream (check if exists, as closing the writer closes this stream on unix)
+            if ($response.OutputStream)
+            {
+                $response.OutputStream.Close()
+            }
         }
     }
     finally

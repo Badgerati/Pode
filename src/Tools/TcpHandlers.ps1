@@ -1,3 +1,14 @@
+function Get-PodeTcpHandler
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('SMTP', 'TCP')]
+        [string]
+        $Type
+    )
+
+    return $PodeSession.TcpHandlers[$Type]
+}
 
 function Add-PodeTcpHandler
 {

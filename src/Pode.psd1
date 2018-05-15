@@ -23,17 +23,44 @@
     Copyright = 'Copyright (c) 2017 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
-    Description = 'Pode is a PowerShell framework to help write and host REST API, Web Pages and SMTP servers'
+    Description = 'Pode is a PowerShell web framework that runs HTTP/TCP listeners on a specific port, allowing you to host REST APIs, Web Pages and SMTP servers'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '3.0'
+
+    # Functions to export from this Module
+    FunctionsToExport = @(
+        'Route',
+        'Get-PodeRoute',
+        'Add-PodeTcpHandler',
+        'Get-PodeTcpHandler',
+        'Get-SmtpEmail',
+        'Read-FromTcpStream',
+        'Server',
+        'Engine',
+        'Start-SmtpServer',
+        'Start-TcpServer',
+        'Start-WebServer',
+        'Write-HtmlResponse',
+        'Write-HtmlResponseFromFile',
+        'Write-JsonResponse',
+        'Write-JsonResponseFromFile',
+        'Write-ToResponse',
+        'Write-ToResponseFromFile',
+        'Write-ToTcpStream',
+        'Write-ViewResponse',
+        'Write-XmlResponse',
+        'Write-XmlResponseFromFile',
+        'Pode'
+    )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData = @{
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites')
+            Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
+                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'
