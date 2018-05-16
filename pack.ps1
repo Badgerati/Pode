@@ -32,6 +32,8 @@ if ([string]::IsNullOrWhiteSpace($workspace))
 
 Write-Host "Copying scripts into package"
 
+(Get-Content './src/Pode.psd1') | ForEach-Object { $_ -replace '\$version\$', $build_version } | Set-Content './src/Pode.psd1'
+
 New-Item -ItemType Directory -Path './Package/src/Tools'
 Copy-Item -Path './src/*' -Destination './Package/src/' -Recurse -Force
 
