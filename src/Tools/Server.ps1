@@ -5,7 +5,7 @@ function Server
         [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock,
-        
+
         [Parameter()]
         [ValidateNotNull()]
         [int]
@@ -26,106 +26,63 @@ function Server
         $Https
     )
 
-    # create session object
-    $PodeSession = New-Object -TypeName psobject |
-        Add-Member -MemberType NoteProperty -Name Routes -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name TcpHandlers -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru | 
-        Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru | 
-        Add-Member -MemberType NoteProperty -Name Web -Value @{} -PassThru | 
-        Add-Member -MemberType NoteProperty -Name Smtp -Value @{} -PassThru | 
-        Add-Member -MemberType NoteProperty -Name Tcp -Value @{} -PassThru
-
-    # setup initial view engine
-    $PodeSession.ViewEngine = @{
-        'Extension' = 'html';
-        'Script' = $null;
-    }
-
-    # setup for initial routing
-    $PodeSession.Routes = @{
-        'delete' = @{};
-        'get' = @{};
-        'head' = @{};
-        'merge' = @{};
-        'options' = @{};
-        'patch' = @{};
-        'post' = @{};
-        'put' = @{};
-        'trace' = @{};
-    }
-
-    # setup for initial smtp/tcp handlers
-    $PodeSession.TcpHandlers = @{
-        'tcp' = $null;
-        'smtp' = $null;
-    }
-
     # if smtp is passed, and no port - force port to 25
-    if ($Port -eq 0 -and $Smtp)
-    {
+    if ($Port -eq 0 -and $Smtp) {
         $Port = 25
-        $PodeSession.Port = $Port
     }
-    
+
     # validate port passed
-    if ($Port -le 0)
-    {
+    if ($Port -le 0) {
         throw "Port cannot be negative: $($Port)"
     }
 
-    # run logic for a smtp server
-    if ($Smtp)
-    {
-        & $ScriptBlock
-        Start-SmtpServer
-    }
+    try {
+        # create session object
+        $PodeSession = New-PodeSession -Port $Port
 
-    # run logic for a tcp server
-    elseif ($Tcp)
-    {
-        & $ScriptBlock
-        Start-TcpServer
-    }
+        # set it so ctrl-c can terminate
+        [Console]::TreatControlCAsInput = $true
 
-    # if there's a port, run a web server
-    elseif ($Port -gt 0)
-    {
+        # run the logic
         & $ScriptBlock
-        Start-WebServer -Https:$Https
-    }
 
-    # otherwise, run logic
-    else
-    {
-        # are we running this logic in an interval loop?
-        if ($Interval -le 0)
-        {
-            & $ScriptBlock
+        # start runspace for timers
+        Start-TimerRunspace
+
+        # run logic for a smtp server
+        if ($Smtp) {
+            Start-SmtpServer
         }
-        else
-        {
-            Write-Host "Looping logic every $($Interval)secs" -ForegroundColor Yellow
-            [Console]::TreatControlCAsInput = $true
 
-            while ($true)
-            {
-                if (![Console]::IsInputRedirected -and [Console]::KeyAvailable)
-                {
-                    $key = [Console]::ReadKey($true)
-                    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control)
-                    {
-                        Write-Host 'Terminating...'
-                        return
-                    }
+        # run logic for a tcp server
+        elseif ($Tcp) {
+            Start-TcpServer
+        }
+
+        # if there's a port, run a web server
+        elseif ($Port -gt 0) {
+            Start-WebServer -Https:$Https
+        }
+
+        # otherwise, run logic
+        else {
+            # are we running this logic in an interval loop?
+            if ($Interval -gt 0) {
+                Write-Host "Looping logic every $($Interval)secs" -ForegroundColor Yellow
+
+                while ($true) {
+                    Test-CtrlCPressed
+                    Start-Sleep -Seconds $Interval
+                    & $ScriptBlock
                 }
-
-                & $ScriptBlock
-                Start-Sleep -Seconds $Interval
             }
         }
     }
+    finally {
+        # clean the runspaces
+        Close-PodeRunspaces
 
-    # clean up the session
-    $PodeSession = $null
+        # clean the session
+        $PodeSession = $null
+    }
 }

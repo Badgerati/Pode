@@ -1,34 +1,36 @@
-# test running as admin
+# is the current platform unix?
+function Test-IsUnix
+{
+    return $PSVersionTable.Platform -ieq 'unix'
+}
+
+# is the current console running as admin?
 function Test-AdminUser
 {
     # check the current platform, if it's unix then return true
-    if ($PSVersionTable.Platform -ieq 'unix')
-    {
+    if (Test-IsUnix) {
         return $true
     }
 
-    try
-    {
+    try {
         $principal = New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
 
-        if ($principal -eq $null)
-        {
+        if ($principal -eq $null) {
             return $false
         }
 
         return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
     }
-    catch [exception]
-    {
+    catch [exception] {
         Write-Host 'Error checking user administrator priviledges' -ForegroundColor Red
         Write-Host $_.Exception.Message -ForegroundColor Red
         return $false
     }
 }
 
-if (!(Test-AdminUser))
-{
-    throw 'Must be running with administrator priviledges to use pode module'
+
+if (!(Test-AdminUser)) {
+    throw 'Must be running with administrator priviledges to use Pode module'
 }
 
 
@@ -40,10 +42,14 @@ $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 Get-ChildItem "$($root)\Tools\*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
 # check if there are any extensions and load them
-$ext = 'C:\Pode\Extensions'
+$ext = 'C:/Pode/Extensions'
+if (Test-IsUnix) {
+    $ext = '/usr/src/pode/extensions'
+}
+
 if (Test-Path $ext)
 {
-    Get-ChildItem "$($ext)\*.ps1" | Resolve-Path | ForEach-Object { . $_ }
+    Get-ChildItem "$($ext)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 }
 
 # get functions from memory and compare to existing to find new functions added

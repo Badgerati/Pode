@@ -13,7 +13,7 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 Server -Smtp {
 
     # setup an smtp handler
-    Add-PodeTcpHandler 'smtp' {
+    handler 'smtp' {
         param($session)
         Write-Host $session.From
         Write-Host $session.To

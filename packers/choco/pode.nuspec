@@ -20,6 +20,7 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on a specific po
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
+* Setup async timers as one off tasks, or for housekeeping services
 
     </description>
     <projectUrl>https://github.com/Badgerati/Pode</projectUrl>
@@ -27,7 +28,7 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on a specific po
     <docsUrl>https://github.com/Badgerati/Pode</docsUrl>
     <bugTrackerUrl>https://github.com/Badgerati/Pode/issues</bugTrackerUrl>
     <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html unix</tags>
-    <copyright>Copyright 2017</copyright>
+    <copyright>Copyright 2017-2018</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <releaseNotes>https://github.com/Badgerati/Pode/releases</releaseNotes>
