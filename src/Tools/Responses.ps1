@@ -1,4 +1,3 @@
-
 # write data to main http response
 function Write-ToResponse
 {
@@ -7,62 +6,55 @@ function Write-ToResponse
         $Value,
 
         [Parameter()]
-        $Response = $null,
-
-        [Parameter()]
         [string]
-        $ContentType = $null,
-
-        [switch]
-        $NotFound
+        $ContentType = $null
     )
 
-    if ($Response -eq $null)
-    {
-        $Response = $PodeSession.Web.Response
+    if (![string]::IsNullOrWhiteSpace($ContentType)) {
+        $PodeSession.Web.Response.ContentType = $ContentType
     }
 
-    if ($NotFound)
-    {
-        $Response.StatusCode = 404
-        return
-    }
-
-    if (![string]::IsNullOrWhiteSpace($ContentType))
-    {
-        $Response.ContentType = $ContentType
-    }
-
-    $writer = New-Object -TypeName System.IO.StreamWriter -ArgumentList $Response.OutputStream
+    $writer = New-Object -TypeName System.IO.StreamWriter -ArgumentList $PodeSession.Web.Response.OutputStream
     $writer.WriteLine([string]$Value)
     $writer.Close()
 }
 
+function Status
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [int]
+        $Code,
+
+        [Parameter()]
+        [string]
+        $Description
+    )
+
+    $PodeSession.Web.Response.StatusCode = $Code
+    $PodeSession.Web.Response.StatusDescription = $Description
+}
 
 function Write-ToResponseFromFile
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Path,
-
-        [Parameter()]
-        $Response = $null
+        $Path
     )
 
     # if the file doesnt exist then just fail on 404
-    if (!(Test-Path $Path))
-    {
-        Write-ToResponse -Response $Response -NotFound
+    if (!(Test-Path $Path)) {
+        status 404
         return
     }
 
     # are we dealing with a dynamic file for the view engine?
     $ext = [System.IO.Path]::GetExtension($Path).Trim('.')
-    if ((Test-Empty $ext) -or $ext -ine $PodeSession.ViewEngine.Extension)
-    {
+    if ((Test-Empty $ext) -or $ext -ine $PodeSession.ViewEngine.Extension) {
         $content = Get-Content -Path $Path -Raw
-        Write-ToResponse -Value $content -Response $Response
+        Write-ToResponse -Value $content
         return
     }
 
@@ -71,22 +63,19 @@ function Write-ToResponseFromFile
 
     switch ($ext.ToLowerInvariant())
     {
-        'pode'
-            {
-                $content = Get-Content -Path $Path -Raw
-                $content = ConvertFrom-PodeFile -Content $content
-            }
+        'pode' {
+            $content = Get-Content -Path $Path -Raw
+            $content = ConvertFrom-PodeFile -Content $content
+        }
 
-        default
-            {
-                if ($PodeSession.ViewEngine.Script -ne $null)
-                {
-                    $content = Invoke-Command -ScriptBlock $PodeSession.ViewEngine.Script -ArgumentList $Path
-                }
+        default {
+            if ($PodeSession.ViewEngine.Script -ne $null) {
+                $content = Invoke-Command -ScriptBlock $PodeSession.ViewEngine.Script -ArgumentList $Path
             }
+        }
     }
 
-    Write-ToResponse -Value $content -Response $Response -ContentType (Get-DynamicContentType -Path $Path)
+    Write-ToResponse -Value $content -ContentType (Get-DynamicContentType -Path $Path)
 }
 
 function Write-JsonResponse
@@ -96,19 +85,15 @@ function Write-JsonResponse
         [ValidateNotNull()]
         $Value,
 
-        [Parameter()]
-        $Response = $null,
-
         [switch]
         $NoConvert
     )
 
-    if (!$NoConvert)
-    {
+    if (!$NoConvert) {
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
-    Write-ToResponse -Value $Value -Response $Response -ContentType 'application/json; charset=utf-8'
+    Write-ToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
 }
 
 function Write-JsonResponseFromFile
@@ -116,21 +101,16 @@ function Write-JsonResponseFromFile
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Path,
-
-        [Parameter()]
-        $Response = $null
+        $Path
     )
 
-    if (!(Test-Path $Path))
-    {
-        Write-ToResponse -Response $Response -NotFound
+    if (!(Test-Path $Path)) {
+        status 404
+        return
     }
-    else
-    {
-        $content = Get-Content -Path $Path
-        Write-JsonResponse -Value $content -Response $Response -NoConvert
-    }
+
+    $content = Get-Content -Path $Path
+    Write-JsonResponse -Value $content -NoConvert
 }
 
 function Write-XmlResponse
@@ -140,19 +120,15 @@ function Write-XmlResponse
         [ValidateNotNull()]
         $Value,
 
-        [Parameter()]
-        $Response = $null,
-
         [switch]
         $NoConvert
     )
 
-    if (!$NoConvert)
-    {
+    if (!$NoConvert) {
         $Value = ($Value | ConvertTo-Xml -Depth 10)
     }
 
-    Write-ToResponse -Value $Value -Response $Response -ContentType 'application/xml; charset=utf-8'
+    Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
 }
 
 function Write-XmlResponseFromFile
@@ -160,21 +136,16 @@ function Write-XmlResponseFromFile
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Path,
-
-        [Parameter()]
-        $Response = $null
+        $Path
     )
 
-    if (!(Test-Path $Path))
-    {
-        Write-ToResponse -Response $Response -NotFound
+    if (!(Test-Path $Path)) {
+        status 404
+        return
     }
-    else
-    {
-        $content = Get-Content -Path $Path
-        Write-XmlResponse -Value $content -Response $Response -NoConvert
-    }
+
+    $content = Get-Content -Path $Path
+    Write-XmlResponse -Value $content -NoConvert
 }
 
 function Write-HtmlResponse
@@ -184,19 +155,15 @@ function Write-HtmlResponse
         [ValidateNotNull()]
         $Value,
 
-        [Parameter()]
-        $Response = $null,
-
         [switch]
         $NoConvert
     )
 
-    if (!$NoConvert)
-    {
+    if (!$NoConvert) {
         $Value = ($Value | ConvertTo-Html)
     }
 
-    Write-ToResponse -Value $Value -Response $Response -ContentType 'text/html; charset=utf-8'
+    Write-ToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
 }
 
 function Write-HtmlResponseFromFile
@@ -204,21 +171,16 @@ function Write-HtmlResponseFromFile
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Path,
-
-        [Parameter()]
-        $Response = $null
+        $Path
     )
 
-    if (!(Test-Path $Path))
-    {
-        Write-ToResponse -Response $Response -NotFound
+    if (!(Test-Path $Path)) {
+        status 404
+        return
     }
-    else
-    {
-        $content = Get-Content -Path $Path
-        Write-HtmlResponse -Value $content -Response $Response -NoConvert
-    }
+
+    $content = Get-Content -Path $Path
+    Write-HtmlResponse -Value $content -NoConvert
 }
 
 # include helper to import the content of a view into another view
@@ -237,23 +199,19 @@ function Include
     # add view engine extension
     $ext = [System.IO.Path]::GetExtension($Path)
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
-    if (!$hasExt)
-    {
+    if (!$hasExt) {
         $Path += ".$($PodeSession.ViewEngine.Extension)"
     }
 
     # only look in the view directory
     $Path = (Join-Path 'views' $Path)
-
-    if (!(Test-Path $Path))
-    {
+    if (!(Test-Path $Path)) {
         throw "File not found at path: $($Path)"
     }
 
     # run any engine logic
     $engine = $PodeSession.ViewEngine.Extension
-    if ($hasExt)
-    {
+    if ($hasExt) {
         $engine = $ext.Trim('.')
     }
 
@@ -261,24 +219,20 @@ function Include
 
     switch ($engine.ToLowerInvariant())
     {
-        'html'
-            {
-                $content = Get-Content -Path $Path -Raw
-            }
+        'html' {
+            $content = Get-Content -Path $Path -Raw
+        }
 
-        'pode'
-            {
-                $content = Get-Content -Path $Path -Raw
-                $content = ConvertFrom-PodeFile -Content $content -Data $Data
-            }
+        'pode' {
+            $content = Get-Content -Path $Path -Raw
+            $content = ConvertFrom-PodeFile -Content $content -Data $Data
+        }
 
-        default
-            {
-                if ($PodeSession.ViewEngine.Script -ne $null)
-                {
-                    $content = Invoke-Command -ScriptBlock $PodeSession.ViewEngine.Script -ArgumentList $Path, $Data
-                }
+        default {
+            if ($PodeSession.ViewEngine.Script -ne $null) {
+                $content = Invoke-Command -ScriptBlock $PodeSession.ViewEngine.Script -ArgumentList $Path, $Data
             }
+        }
     }
 
     return $content
@@ -292,44 +246,36 @@ function Write-ViewResponse
         $Path,
 
         [Parameter()]
-        $Response = $null,
-
-        [Parameter()]
         $Data = @{}
     )
 
     # default data if null
-    if ($Data -eq $null)
-    {
+    if ($Data -eq $null) {
         $Data = @{}
     }
 
     # add path to data as "pagename" - unless key already exists
-    if (!$Data.ContainsKey('pagename'))
-    {
+    if (!$Data.ContainsKey('pagename')) {
         $Data['pagename'] = $Path
     }
 
     # add view engine extension
     $ext = [System.IO.Path]::GetExtension($Path)
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
-    if (!$hasExt)
-    {
+    if (!$hasExt) {
         $Path += ".$($PodeSession.ViewEngine.Extension)"
     }
 
     # only look in the view directory
     $Path = (Join-Path 'views' $Path)
-
-    if (!(Test-Path $Path))
-    {
-        Write-ToResponse -Response $Response -NotFound
+    if (!(Test-Path $Path)) {
+        status 404
+        return
     }
 
     # run any engine logic
     $engine = $PodeSession.ViewEngine.Extension
-    if ($hasExt)
-    {
+    if ($hasExt) {
         $engine = $ext.Trim('.')
     }
 
@@ -337,27 +283,23 @@ function Write-ViewResponse
 
     switch ($engine.ToLowerInvariant())
     {
-        'html'
-            {
-                $content = Get-Content -Path $Path -Raw
-            }
+        'html' {
+            $content = Get-Content -Path $Path -Raw
+        }
 
-        'pode'
-            {
-                $content = Get-Content -Path $Path -Raw
-                $content = ConvertFrom-PodeFile -Content $content -Data $Data
-            }
+        'pode' {
+            $content = Get-Content -Path $Path -Raw
+            $content = ConvertFrom-PodeFile -Content $content -Data $Data
+        }
 
-        default
-            {
-                if ($PodeSession.ViewEngine.Script -ne $null)
-                {
-                    $content = Invoke-Command -ScriptBlock $PodeSession.ViewEngine.Script -ArgumentList $Path, $Data
-                }
+        default {
+            if ($PodeSession.ViewEngine.Script -ne $null) {
+                $content = Invoke-Command -ScriptBlock $PodeSession.ViewEngine.Script -ArgumentList $Path, $Data
             }
+        }
     }
 
-    Write-HtmlResponse -Value $content -Response $Response -NoConvert
+    Write-HtmlResponse -Value $content -NoConvert
 }
 
 # write data to tcp stream
@@ -373,8 +315,7 @@ function Write-ToTcpStream
         $Client
     )
 
-    if ($Client -eq $null)
-    {
+    if ($Client -eq $null) {
         $Client = $PodeSession.Tcp.Client
     }
 
@@ -392,8 +333,7 @@ function Read-FromTcpStream
         $Client
     )
 
-    if ($Client -eq $null)
-    {
+    if ($Client -eq $null) {
         $Client = $PodeSession.Tcp.Client
     }
 

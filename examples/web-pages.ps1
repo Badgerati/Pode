@@ -20,4 +20,10 @@ Server -Port 8085 {
         Write-ViewResponse 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
+    # GET request throws fake "500" server error status code
+    route 'get' '/error' {
+        param($session)
+        status 500
+    }
+
 }

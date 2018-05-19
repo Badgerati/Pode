@@ -51,12 +51,13 @@ function Start-WebServer
             }
 
             $context = $task.Result
+            $request = $context.Request
+            $response = $context.Response
 
             # clear session
             $PodeSession.Web = @{}
-
-            $request = $context.Request
-            $response = $context.Response
+            $PodeSession.Web.Response = $response
+            $PodeSession.Web.Request = $request
 
             # get url path and method
             $path = ($request.RawUrl -isplit "\?")[0]
@@ -65,14 +66,14 @@ function Start-WebServer
             # check to see if the path is a file, so we can check the public folder
             if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
                 $path = (Join-Path 'public' $path)
-                Write-ToResponseFromFile -Path $path -Response $response
+                Write-ToResponseFromFile -Path $path
             }
 
             else {
                 # ensure the path has a route
                 $route = Get-PodeRoute -HttpMethod $method -Route $path
                 if ($route -eq $null -or $route.Logic -eq $null) {
-                    $response.StatusCode = 404
+                    status 404
                 }
 
                 # run the scriptblock
@@ -94,8 +95,6 @@ function Start-WebServer
                     }
 
                     # set session data
-                    $PodeSession.Web.Response = $response
-                    $PodeSession.Web.Request = $request
                     $PodeSession.Web.Data = $data
                     $PodeSession.Web.Query = $request.QueryString
                     $PodeSession.Web.Parameters = $route.Parameters
