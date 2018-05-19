@@ -186,7 +186,7 @@ Server -Port 8080 {
 }
 ```
 
-> Timer names are unique, if you try to create two timers with the same name an error will be thrown
+> All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic does not take a long time to process (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, use an Interval Server type (`Server -Interval 60 { ... }`)
 
 ### REST API
 
