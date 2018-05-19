@@ -30,39 +30,31 @@ function Pode
     }
 
     # check and load config if already exists
-    if (Test-Path $file)
-    {
+    if (Test-Path $file) {
         $data = (Get-Content $file | ConvertFrom-Json)
     }
 
     # quick check to see if the data is required
-    if ($Action -ine 'init')
-    {
-        if ($data -eq $null)
-        {
+    if ($Action -ine 'init') {
+        if ($data -eq $null) {
             Write-Host 'package.json file not found' -ForegroundColor Red
             return
         }
-        else
-        {
+        else {
             $value = $data.scripts.$Action
 
-            if ([string]::IsNullOrWhiteSpace($value) -and $Action -ieq 'start')
-            {
+            if ([string]::IsNullOrWhiteSpace($value) -and $Action -ieq 'start') {
                 $value = $data.main
             }
 
-            if ([string]::IsNullOrWhiteSpace($value))
-            {
+            if ([string]::IsNullOrWhiteSpace($value)) {
                 Write-Host "package.config does not contain a script for $($Action)" -ForegroundColor Yellow
                 return
             }
         }
     }
-    else
-    {
-        if ($data -ne $null)
-        {
+    else {
+        if ($data -ne $null) {
             Write-Host 'package.json already exists' -ForegroundColor Yellow
             return
         }
@@ -70,46 +62,41 @@ function Pode
 
     switch ($Action.ToLowerInvariant())
     {
-        'init'
-            {
-                $v = Read-Host -Prompt "name ($($map.name))"
-                if (![string]::IsNullOrWhiteSpace($v)) { $map.name = $v }
+        'init' {
+            $v = Read-Host -Prompt "name ($($map.name))"
+            if (![string]::IsNullOrWhiteSpace($v)) { $map.name = $v }
 
-                $v = Read-Host -Prompt "version ($($map.version))"
-                if (![string]::IsNullOrWhiteSpace($v)) { $map.version = $v }
+            $v = Read-Host -Prompt "version ($($map.version))"
+            if (![string]::IsNullOrWhiteSpace($v)) { $map.version = $v }
 
-                $map.description = Read-Host -Prompt "description"
+            $map.description = Read-Host -Prompt "description"
 
-                $v = Read-Host -Prompt "entry point ($($map.main))"
-                if (![string]::IsNullOrWhiteSpace($v)) { $map.main = $v; $map.scripts.start = $v }
+            $v = Read-Host -Prompt "entry point ($($map.main))"
+            if (![string]::IsNullOrWhiteSpace($v)) { $map.main = $v; $map.scripts.start = $v }
 
-                $map.author = Read-Host -Prompt "author"
+            $map.author = Read-Host -Prompt "author"
 
-                $v = Read-Host -Prompt "license ($($map.license))"
-                if (![string]::IsNullOrWhiteSpace($v)) { $map.license = $v }
+            $v = Read-Host -Prompt "license ($($map.license))"
+            if (![string]::IsNullOrWhiteSpace($v)) { $map.license = $v }
 
-                $map | ConvertTo-Json -Depth 10 | Out-File -FilePath $file -Encoding utf8 -Force
-                Write-Host 'Success, saved package.json' -ForegroundColor Green
-            }
+            $map | ConvertTo-Json -Depth 10 | Out-File -FilePath $file -Encoding utf8 -Force
+            Write-Host 'Success, saved package.json' -ForegroundColor Green
+        }
 
-        'test'
-            {
-                Invoke-Expression -Command $value
-            }
+        'test' {
+            Invoke-Expression -Command $value
+        }
 
-        'start'
-            {
-                Invoke-Expression -Command $value
-            }
+        'start' {
+            Invoke-Expression -Command $value
+        }
 
-        'install'
-            {
-                Invoke-Expression -Command $value
-            }
+        'install' {
+            Invoke-Expression -Command $value
+        }
 
-        'build'
-            {
-                Invoke-Expression -Command $value
-            }
+        'build' {
+            Invoke-Expression -Command $value
+        }
     }
 }

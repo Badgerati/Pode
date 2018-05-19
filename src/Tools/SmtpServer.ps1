@@ -1,8 +1,7 @@
 function Start-SmtpServer
 {
     # ensure we have smtp handlers
-    if ((Get-PodeTcpHandler -Type 'SMTP') -eq $null)
-    {
+    if ((Get-PodeTcpHandler -Type 'SMTP') -eq $null) {
         throw 'No SMTP handler has been passed'
     }
 
@@ -14,8 +13,7 @@ function Start-SmtpServer
         )
 
         # if there's no client, just return
-        if ($Client -eq $null)
-        {
+        if ($Client -eq $null) {
             return
         }
 
@@ -33,29 +31,24 @@ function Start-SmtpServer
         {
             try { $msg = Read-FromTcpStream -Client $Client }
             catch { break }
-            
-            if (![string]::IsNullOrWhiteSpace($msg))
-            {
-                if ($msg.StartsWith('QUIT'))
-                {
+
+            if (!(Test-Empty $msg)) {
+                if ($msg.StartsWith('QUIT')) {
                     Write-ToTcpStream -Client $Client -Message '221 Bye'
                     $Client.Close()
                     break
                 }
 
-                if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO'))
-                {
+                if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO')) {
                     Write-ToTcpStream -Client $Client -Message '250 OK'
                 }
 
-                if ($msg.StartsWith('RCPT TO'))
-                {
+                if ($msg.StartsWith('RCPT TO')) {
                     Write-ToTcpStream -Client $Client -Message '250 OK'
                     $rcpt_tos += (Get-SmtpEmail $msg)
                 }
 
-                if ($msg.StartsWith('MAIL FROM'))
-                {
+                if ($msg.StartsWith('MAIL FROM')) {
                     Write-ToTcpStream -Client $Client -Message '250 OK'
                     $mail_from = Get-SmtpEmail $msg
                 }
@@ -99,14 +92,13 @@ function Start-SmtpServer
                 $PodeSession.Smtp = @{}
                 Invoke-Command -ScriptBlock $process -ArgumentList $client
             }
+
+            Test-CtrlCPressed
         }
-        
-        Write-Host 'Terminating...'
     }
     finally
     {
-        if ($listener -ne $null)
-        {
+        if ($listener -ne $null) {
             $listener.Stop()
         }
     }
@@ -122,8 +114,7 @@ function Get-SmtpEmail
     )
 
     $tmp = ($Value -isplit ':')
-    if ($tmp.Length -gt 1)
-    {
+    if ($tmp.Length -gt 1) {
         return $tmp[1].Trim().Trim('<', '>')
     }
 

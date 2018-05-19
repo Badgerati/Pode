@@ -20,6 +20,7 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific port
     * [Docker](#docker)
     * [Frontend](#frontend)
     * [Basics](#basics)
+    * [Timers](#timers)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
@@ -35,6 +36,7 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific port
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
+* Setup async timers to be used as one off tasks, or for housekeeping services
 
 ## Install
 
@@ -140,13 +142,13 @@ When run, Pode will tell `yarn` to install the packages to a `pode_modules` dire
 
 ### Basics
 
-Pode, at it's heart, is a PowerShell module. In order to use Pode, you'll need to start off your script by importing it:
+Pode, at its heart, is a PowerShell module. In order to use Pode, you'll need to start off your script by importing it:
 
 ```powershell
 Import-Module Pode
 ```
 
-After that, all of your main server logic must be wrapped in a `Server` block. This lets you specify port numbers, server type, and any key logic: (you can only have one `Server` per Pode script)
+After that, all of your main server logic must be wrapped in a `Server` block. This lets you specify port numbers, server type, and any key logic: (you can only have one `Server` declared in your script)
 
 ```powershell
 Server -Port 8080 {
@@ -156,9 +158,39 @@ Server -Port 8080 {
 
 The above `Server` block will start a basic HTTP listener on port 8080. Once started, to exit out of Pode at anytime just use `Ctrl+C`.
 
+### Timers
+
+Timers are supported in all `Server` types, they are async processes that run in a separate runspace along side your main server logic. The following are a few examples of using timers, more can be found in `examples/timers.ps1`:
+
+```powershell
+Server -Port 8080 {
+    # runs forever, looping every 5secs
+    timer 'forever' 5 {
+        # logic
+    }
+
+    # run once after 2mins
+    timer 'run-once' 120 {
+        # logic
+    } -skip 1 -limit 1
+
+    # create a new timer via a route
+    route 'get' '/api/timer' {
+        param($session)
+        $query = $session.Query
+
+        timer $query['Name'] $query['Seconds'] {
+            # logic
+        }
+    }
+}
+```
+
+> Timer names are unique, if you try to create two timers with the same name an error will be thrown
+
 ### REST API
 
-Once you have the basics down, creating a REST API isn't far off. When creating an API in Pode, you specify logic for certain routes for specific HTTP methods. Methods supported are: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
+When creating an API in Pode, you specify logic for certain routes for specific HTTP methods. Methods supported are: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
 
 The method to create new routes is `route`, this will take your method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
 
@@ -241,7 +273,7 @@ Unlike with HTTP Routes, TCP and SMTP can only have one handler. To create a han
 
 ```powershell
 Server -Smtp {
-    Add-PodeTcpHandler 'smtp' {
+    handler 'smtp' {
         param($session)
         Write-Host $session.From
         Write-Host $session.To
@@ -258,7 +290,7 @@ If you want to create you own SMTP server, then you'll need to set Pode up as a 
 
 ```powershell
 Server -Tcp -Port 25 {
-    Add-PodeTcpHandler 'tcp' {
+    handler 'tcp' {
         param($session)
         $client = $session.Client
         # your stream writing/reading here
@@ -428,9 +460,12 @@ Server -Port 8080 {
 Pode comes with a few helper functions - mostly for writing responses and reading streams:
 
 * `route`
+* `handler`
+* `engine`
+* `timer`
 * `Get-PodeRoute`
-* `Add-PodeTcpHandler`
 * `Get-PodeTcpHandler`
+* `Get-PodeTimer`
 * `Write-ToResponse`
 * `Write-ToResponseFromFile`
 * `Write-JsonResponse`
@@ -442,4 +477,3 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Write-ViewResponse`
 * `Write-ToTcpStream`
 * `Read-FromTcpStream`
-* `engine`

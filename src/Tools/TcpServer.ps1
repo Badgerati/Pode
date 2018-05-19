@@ -2,8 +2,7 @@
 function Start-TcpServer
 {
     # ensure we have smtp handlers
-    if ((Get-PodeTcpHandler -Type 'TCP') -eq $null)
-    {
+    if ((Get-PodeTcpHandler -Type 'TCP') -eq $null) {
         throw 'No TCP handler has been passed'
     }
 
@@ -28,19 +27,17 @@ function Start-TcpServer
                 $PodeSession.Tcp.Client = $client
                 Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -ArgumentList $PodeSession.Tcp
                 
-                if ($client.Connected)
-                {
+                if ($client.Connected) {
                     $client.Close()
                 }
             }
-        }
 
-        Write-Host 'Terminating...'
+            Test-CtrlCPressed
+        }
     }
     finally
     {
-        if ($listener -ne $null)
-        {
+        if ($listener -ne $null) {
             $listener.Stop()
         }
     }

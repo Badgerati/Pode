@@ -7,10 +7,10 @@ function Get-PodeTcpHandler
         $Type
     )
 
-    return $PodeSession.TcpHandlers[$Type]
+    return $PodeSession.Handlers[$Type]
 }
 
-function Add-PodeTcpHandler
+function Handler
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -28,11 +28,10 @@ function Add-PodeTcpHandler
     $Type = $Type.ToLowerInvariant()
 
     # ensure handler isn't already set
-    if ($PodeSession.TcpHandlers[$Type] -ne $null)
-    {
-        throw "Handler '$($Type)' already added"
+    if ($PodeSession.Handlers[$Type] -ne $null) {
+        throw "Handler for $($Type) already added"
     }
 
     # add the handler
-    $PodeSession.TcpHandlers[$Type] = $ScriptBlock
+    $PodeSession.Handlers[$Type] = $ScriptBlock
 }

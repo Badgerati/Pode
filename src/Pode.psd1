@@ -20,7 +20,7 @@
     Author = 'Matthew Kelly (Badgerati)'
 
     # Copyright statement for this module
-    Copyright = 'Copyright (c) 2017 Matthew Kelly (Badgerati), licensed under the MIT License.'
+    Copyright = 'Copyright (c) 2017-2018 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
     Description = 'Pode is a PowerShell web framework that runs HTTP/TCP listeners on a specific port, allowing you to host REST APIs, Web Pages and SMTP servers'
@@ -32,7 +32,7 @@
     FunctionsToExport = @(
         'Route',
         'Get-PodeRoute',
-        'Add-PodeTcpHandler',
+        'Handler',
         'Get-PodeTcpHandler',
         'Get-SmtpEmail',
         'Read-FromTcpStream',
@@ -51,7 +51,8 @@
         'Write-ViewResponse',
         'Write-XmlResponse',
         'Write-XmlResponseFromFile',
-        'Pode'
+        'Pode',
+        'Timer'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
