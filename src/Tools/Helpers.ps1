@@ -85,6 +85,39 @@ function Get-DynamicContentType
     return $ctype
 }
 
+function Add-PodeRunspace
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    $ps = [powershell]::Create()
+    $ps.RunspacePool = $PodeSession.RunspacePool
+    $ps.AddScript($ScriptBlock) | Out-Null
+
+    $PodeSession.Runspaces += @{
+        'Runspace' = $ps;
+        'Status' = $ps.BeginInvoke();
+        'Stopped' = $false;
+    }
+}
+
+function Close-PodeRunspaces
+{
+    $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
+        $_.Runspace.Dispose()
+        $_.Stopped = $true
+    }
+
+    if (!$PodeSession.RunspacePool.IsDisposed) {
+        $PodeSession.RunspacePool.Close()
+        $PodeSession.RunspacePool.Dispose()
+    }
+}
+
 function Test-CtrlCPressed
 {
     if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
@@ -95,14 +128,7 @@ function Test-CtrlCPressed
 
     if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
         Write-Host 'Terminating...' -NoNewline
-
-        $PodeSession.Runspaces | ForEach-Object {
-            $_.Runspace.Dispose()
-        }
-
-        $PodeSession.RunspacePool.Close()
-        $PodeSession.RunspacePool.Dispose()
-
+        Close-PodeRunspaces
         Write-Host " Done" -ForegroundColor Green
         exit 0
     }

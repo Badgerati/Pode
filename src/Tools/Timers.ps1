@@ -16,9 +16,7 @@ function Start-TimerRunspace
         return
     }
 
-    $ps = [powershell]::Create()
-    $ps.RunspacePool = $PodeSession.RunspacePool
-    $ps.AddScript({
+    $script = {
         while ($true)
         {
             $_remove = @()
@@ -55,12 +53,9 @@ function Start-TimerRunspace
 
             Start-Sleep -Seconds 1
         }
-    }) | Out-Null
-
-    $PodeSession.Runspaces += @{
-        'Runspace' = $ps;
-        'Status' = $ps.BeginInvoke();
     }
+
+    Add-PodeRunspace $script
 }
 
 function Timer
