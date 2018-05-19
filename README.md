@@ -207,7 +207,7 @@ The scriptblock requires a `param` section for just one argument: `$session`. Th
 
 The last line is to write the JSON response. Anyone hitting `http://localhost:8080/api/ping` will be greeted back with `{ "value": "pong" }`.
 
-If you wanted a POST endpoint that created a user, and a GET endpoint to get details of a user, then it would roughly look as follows:
+If you wanted a POST endpoint that created a user, and a GET endpoint to get details of a user (returning a 404 if the user isn't found), then it would roughly look as follows:
 
 ```powershell
 Server -Port 8080 {
@@ -228,7 +228,12 @@ Server -Port 8080 {
         $user = Get-DummyUser -UserId $session.Parameters['userId']
 
         # return the user
-        Write-JsonResponse @{ 'user' = $user; }
+        if ($user -eq $null) {
+            status 404
+        }
+        else {
+            Write-JsonResponse @{ 'user' = $user; }
+        }
     }
 }
 ```
