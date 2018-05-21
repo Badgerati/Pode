@@ -80,6 +80,7 @@ function Write-ToResponseFromFile
 
 function Write-JsonResponse
 {
+    [obsolete("Use 'json' instead")]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -89,32 +90,51 @@ function Write-JsonResponse
         $NoConvert
     )
 
-    if (!$NoConvert) {
+    json -Value $Value
+}
+
+function Write-JsonResponseFromFile
+{
+    [obsolete("Use 'json' instead")]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path
+    )
+
+    json -Value $Path -File
+}
+
+function Json
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Value,
+
+        [switch]
+        $File
+    )
+
+    if ($File) {
+        if (!(Test-Path $Value)) {
+            status 404
+            return
+        }
+        else {
+            $Value = Get-Content -Path $Value
+        }
+    }
+    elseif ((Get-Type $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
     Write-ToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
 }
 
-function Write-JsonResponseFromFile
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    if (!(Test-Path $Path)) {
-        status 404
-        return
-    }
-
-    $content = Get-Content -Path $Path
-    Write-JsonResponse -Value $content -NoConvert
-}
-
 function Write-XmlResponse
 {
+    [obsolete("Use 'xml' instead")]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -124,32 +144,51 @@ function Write-XmlResponse
         $NoConvert
     )
 
-    if (!$NoConvert) {
+    xml -Value $Value
+}
+
+function Write-XmlResponseFromFile
+{
+    [obsolete("Use 'xml' instead")]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path
+    )
+
+    xml -Value $Path -File
+}
+
+function Xml
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Value,
+
+        [switch]
+        $File
+    )
+
+    if ($File) {
+        if (!(Test-Path $Value)) {
+            status 404
+            return
+        }
+        else {
+            $Value = Get-Content -Path $Value
+        }
+    }
+    elseif ((Get-Type $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Xml -Depth 10)
     }
 
     Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
 }
 
-function Write-XmlResponseFromFile
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    if (!(Test-Path $Path)) {
-        status 404
-        return
-    }
-
-    $content = Get-Content -Path $Path
-    Write-XmlResponse -Value $content -NoConvert
-}
-
 function Write-HtmlResponse
 {
+    [obsolete("Use 'html' instead")]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -159,28 +198,46 @@ function Write-HtmlResponse
         $NoConvert
     )
 
-    if (!$NoConvert) {
-        $Value = ($Value | ConvertTo-Html)
-    }
-
-    Write-ToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
+    html -Value $Value
 }
 
 function Write-HtmlResponseFromFile
 {
+    [obsolete("Use 'html' instead")]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         $Path
     )
 
-    if (!(Test-Path $Path)) {
-        status 404
-        return
+    html -Value $Path -File
+}
+
+function Html
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Value,
+
+        [switch]
+        $File
+    )
+
+    if ($File) {
+        if (!(Test-Path $Value)) {
+            status 404
+            return
+        }
+        else {
+            $Value = Get-Content -Path $Value
+        }
+    }
+    elseif ((Get-Type $Value).Name -ine 'string') {
+        $Value = ($Value | ConvertTo-Html)
     }
 
-    $content = Get-Content -Path $Path
-    Write-HtmlResponse -Value $content -NoConvert
+    Write-ToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
 }
 
 # include helper to import the content of a view into another view
@@ -238,7 +295,22 @@ function Include
     return $content
 }
 
-function Write-ViewResponse
+function  Write-ViewResponse
+{
+    [obsolete("Use 'view' instead")]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path,
+
+        [Parameter()]
+        $Data = @{}
+    )
+
+    view -Path $Path -Data $Data
+}
+
+function View
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -299,7 +371,7 @@ function Write-ViewResponse
         }
     }
 
-    Write-HtmlResponse -Value $content -NoConvert
+    html -Value $content
 }
 
 # write data to tcp stream

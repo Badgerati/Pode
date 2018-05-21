@@ -24,7 +24,7 @@ function ConvertFrom-PodeFile
     return $Content
 }
 
-function Test-Empty
+function Get-Type
 {
     param (
         [Parameter()]
@@ -32,19 +32,36 @@ function Test-Empty
     )
 
     if ($Value -eq $null) {
+        return $null
+    }
+
+    return @{
+        'Name' = $Value.GetType().Name.ToLowerInvariant();
+        'BaseName' = $Value.GetType().BaseType.Name.ToLowerInvariant();
+    }
+}
+
+function Test-Empty
+{
+    param (
+        [Parameter()]
+        $Value
+    )
+
+    $type = Get-Type $Value
+    if ($type -eq $null) {
         return $true
     }
 
-    if ($Value.GetType().Name -ieq 'string') {
+    if ($type.Name -ieq 'string') {
         return [string]::IsNullOrWhiteSpace($Value)
     }
 
-    if ($Value.GetType().Name -ieq 'hashtable') {
+    if ($type.Name -ieq 'hashtable') {
         return $Value.Count -eq 0
     }
 
-    $type = $Value.GetType().BaseType.Name.ToLowerInvariant()
-    switch ($type) {
+    switch ($type.BaseName) {
         'valuetype' {
             return $false
         }

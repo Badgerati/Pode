@@ -198,7 +198,7 @@ The method to create new routes is `route`, this will take your method, route, a
 Server -Port 8080 {
     route 'get' '/api/ping' {
         param($session)
-        Write-JsonResponse @{ 'value' = 'pong'; }
+        json @{ 'value' = 'pong'; }
     }
 }
 ```
@@ -218,7 +218,7 @@ Server -Port 8080 {
         $userId = New-DummyUser $session.Data.Email $session.Data.Name $session.Data.Password
 
         # return with userId
-        Write-JsonResponse @{ 'userId' = $userId; }
+        json @{ 'userId' = $userId; }
     }
 
     route 'get' '/api/users/:userId'{
@@ -232,7 +232,7 @@ Server -Port 8080 {
             status 404
         }
         else {
-            Write-JsonResponse @{ 'user' = $user; }
+            json @{ 'user' = $user; }
         }
     }
 }
@@ -246,7 +246,7 @@ It's actually possible for Pode to serve up webpages - css, fonts, and javascrip
 
 Pode also has its own format for writing dynamic HTML pages. There are examples in the example directory, but in general they allow you to dynamically generate HTML, CSS or any file type using embedded PowerShell.
 
-All static and dynamic HTML content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your view files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
+All static and dynamic HTML content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your view files, so when you call the `view` function in Pode, it will automatically look in the `/views/` directory. For example, if you call `view 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
 
 > Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it to Pode by calling `engine pode` at the top of your Server scriptblock
 
@@ -261,7 +261,7 @@ Server -Port 8085 {
 
     route 'get' '/' {
         param($session)
-        Write-ViewResponse 'simple'
+        view 'simple'
     }
 }
 ```
@@ -324,7 +324,7 @@ Server -Port 8080 {
     # render the index.pode view
     route 'get' '/' {
         param($session)
-        Write-ViewResponse 'index'
+        view 'index'
     }
 }
 ```
@@ -345,7 +345,7 @@ Below is a basic example of a Pode file which just writes the current date to th
 
 > When you need to use PowerShell, ensure you wrap the commands within `$(...)`, and end each line with a semi-colon (as you would in C#/Java)
 
-You can also supply data to `Write-ViewResponse` when rendering Pode files. This allows you to make them far more dynamic. The data supplied to `Write-ViewResponse` must be a `hashtable`, and can be referenced within the file by using the `$data` argument.
+You can also supply data to the `view` function when rendering Pode files. This allows you to make them far more dynamic. The data supplied to `view` must be a `hashtable`, and can be referenced within the file by using the `$data` argument.
 
 For example, say you need to render a search page which is a list of accounts, then you're basic Pode script would look like:
 
@@ -363,12 +363,12 @@ Server -Port 8080 {
         $accounts = Find-Account -Query $query
 
         # render the file
-        Write-ViewResponse 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
+        view 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
     }
 }
 ```
 
-You can see that we're supplying the found accounts to the `Write-ViewResponse` function as a `hashtable`. Next, we see the `search.pode` file which generates the HTML:
+You can see that we're supplying the found accounts to the `view` function as a `hashtable`. Next, we see the `search.pode` file which generates the HTML:
 
 ```html
 <!-- /views/search.pode -->
@@ -455,7 +455,7 @@ Server -Port 8080 {
     # render the index.eps view
     route 'get' '/' {
         param($session)
-        Write-ViewResponse 'index'
+        view 'index'
     }
 }
 ```
@@ -468,17 +468,14 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `handler`
 * `engine`
 * `timer`
+* `html`
+* `xml`
+* `json`
+* `view`
 * `Get-PodeRoute`
 * `Get-PodeTcpHandler`
 * `Get-PodeTimer`
 * `Write-ToResponse`
 * `Write-ToResponseFromFile`
-* `Write-JsonResponse`
-* `Write-JsonResponseFromFile`
-* `Write-XmlResponse`
-* `Write-XmlResponseFromFile`
-* `Write-HtmlResponse`
-* `Write-HtmlResponseFromFile`
-* `Write-ViewResponse`
 * `Write-ToTcpStream`
 * `Read-FromTcpStream`
