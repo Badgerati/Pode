@@ -35,7 +35,7 @@
         'Handler',
         'Get-PodeTcpHandler',
         'Get-SmtpEmail',
-        'Read-FromTcpStream',
+        'Tcp',
         'Server',
         'Engine',
         'Start-SmtpServer',
@@ -45,11 +45,11 @@
         'Json',
         'Write-ToResponse',
         'Write-ToResponseFromFile',
-        'Write-ToTcpStream',
         'View',
         'Xml',
         'Pode',
-        'Timer'
+        'Timer',
+        'Csv'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

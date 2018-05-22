@@ -74,34 +74,6 @@ function Test-Empty
     return ([string]::IsNullOrWhiteSpace($Value) -or ($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
 }
 
-function Get-DynamicContentType
-{
-    param (
-        [Parameter()]
-        [string]
-        $Path
-    )
-
-    # default content type
-    $ctype = 'text/plain'
-
-    # if no path, return default
-    if (Test-Empty $Path) {
-        return $ctype
-    }
-
-    # get secondary extension (like style.css.pode would be css)
-    $ext = [System.IO.Path]::GetExtension([System.IO.Path]::GetFileNameWithoutExtension($Path)).Trim('.')
-
-    # get content type from secondary extension
-    switch ($ext.ToLowerInvariant()) {
-        'css' { $ctype = 'text/css' }
-        'js' { $ctype = 'text/javascript' }
-    }
-
-    return $ctype
-}
-
 function Add-PodeRunspace
 {
     param (

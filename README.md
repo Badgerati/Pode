@@ -303,10 +303,10 @@ Server -Tcp -Port 25 {
 }
 ```
 
-To help with writing and reading from the client stream, Pode has two helper functions
+To help with writing and reading from the client stream, Pode has a helper function with two actions for `read` and `write`:
 
-* `Write-ToTcpStream -Message 'msg'`
-* `$msg = Read-FromTcpStream`
+* `tcp write $msg`
+* `$msg = (tcp read)`
 
 ## Pode Files
 
@@ -471,11 +471,11 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `html`
 * `xml`
 * `json`
+* `csv`
 * `view`
+* `tcp`
 * `Get-PodeRoute`
 * `Get-PodeTcpHandler`
 * `Get-PodeTimer`
 * `Write-ToResponse`
 * `Write-ToResponseFromFile`
-* `Write-ToTcpStream`
-* `Read-FromTcpStream`
