@@ -19,23 +19,6 @@ function Write-ToResponse
     $writer.Close()
 }
 
-function Status
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [int]
-        $Code,
-
-        [Parameter()]
-        [string]
-        $Description
-    )
-
-    $PodeSession.Web.Response.StatusCode = $Code
-    $PodeSession.Web.Response.StatusDescription = $Description
-}
-
 function Write-ToResponseFromFile
 {
     param (
@@ -54,7 +37,7 @@ function Write-ToResponseFromFile
     $ext = [System.IO.Path]::GetExtension($Path).Trim('.')
     if ((Test-Empty $ext) -or $ext -ine $PodeSession.ViewEngine.Extension) {
         $content = Get-Content -Path $Path -Raw
-        Write-ToResponse -Value $content
+        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
         return
     }
 
@@ -75,11 +58,30 @@ function Write-ToResponseFromFile
         }
     }
 
-    Write-ToResponse -Value $content -ContentType (Get-DynamicContentType -Path $Path)
+    $ext = [System.IO.Path]::GetExtension([System.IO.Path]::GetFileNameWithoutExtension($Path)).Trim('.')
+    Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
+}
+
+function Status
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [int]
+        $Code,
+
+        [Parameter()]
+        [string]
+        $Description
+    )
+
+    $PodeSession.Web.Response.StatusCode = $Code
+    $PodeSession.Web.Response.StatusDescription = $Description
 }
 
 function Write-JsonResponse
 {
+    [obsolete("Use 'json' instead")]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -89,32 +91,78 @@ function Write-JsonResponse
         $NoConvert
     )
 
-    if (!$NoConvert) {
+    json -Value $Value
+}
+
+function Write-JsonResponseFromFile
+{
+    [obsolete("Use 'json' instead")]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path
+    )
+
+    json -Value $Path -File
+}
+
+function Json
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Value,
+
+        [switch]
+        $File
+    )
+
+    if ($File) {
+        if (!(Test-Path $Value)) {
+            status 404
+            return
+        }
+        else {
+            $Value = Get-Content -Path $Value
+        }
+    }
+    elseif ((Get-Type $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
     Write-ToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
 }
 
-function Write-JsonResponseFromFile
+function Csv
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Path
+        $Value,
+
+        [switch]
+        $File
     )
 
-    if (!(Test-Path $Path)) {
-        status 404
-        return
+    if ($File) {
+        if (!(Test-Path $Value)) {
+            status 404
+            return
+        }
+        else {
+            $Value = Get-Content -Path $Value
+        }
+    }
+    elseif ((Get-Type $Value).Name -ine 'string') {
+        $Value = ($Value | ConvertTo-Csv -Delimiter ',')
     }
 
-    $content = Get-Content -Path $Path
-    Write-JsonResponse -Value $content -NoConvert
+    Write-ToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
 }
 
 function Write-XmlResponse
 {
+    [obsolete("Use 'xml' instead")]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -124,32 +172,51 @@ function Write-XmlResponse
         $NoConvert
     )
 
-    if (!$NoConvert) {
+    xml -Value $Value
+}
+
+function Write-XmlResponseFromFile
+{
+    [obsolete("Use 'xml' instead")]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path
+    )
+
+    xml -Value $Path -File
+}
+
+function Xml
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Value,
+
+        [switch]
+        $File
+    )
+
+    if ($File) {
+        if (!(Test-Path $Value)) {
+            status 404
+            return
+        }
+        else {
+            $Value = Get-Content -Path $Value
+        }
+    }
+    elseif ((Get-Type $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Xml -Depth 10)
     }
 
     Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
 }
 
-function Write-XmlResponseFromFile
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    if (!(Test-Path $Path)) {
-        status 404
-        return
-    }
-
-    $content = Get-Content -Path $Path
-    Write-XmlResponse -Value $content -NoConvert
-}
-
 function Write-HtmlResponse
 {
+    [obsolete("Use 'html' instead")]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -159,28 +226,46 @@ function Write-HtmlResponse
         $NoConvert
     )
 
-    if (!$NoConvert) {
-        $Value = ($Value | ConvertTo-Html)
-    }
-
-    Write-ToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
+    html -Value $Value
 }
 
 function Write-HtmlResponseFromFile
 {
+    [obsolete("Use 'html' instead")]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         $Path
     )
 
-    if (!(Test-Path $Path)) {
-        status 404
-        return
+    html -Value $Path -File
+}
+
+function Html
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Value,
+
+        [switch]
+        $File
+    )
+
+    if ($File) {
+        if (!(Test-Path $Value)) {
+            status 404
+            return
+        }
+        else {
+            $Value = Get-Content -Path $Value
+        }
+    }
+    elseif ((Get-Type $Value).Name -ine 'string') {
+        $Value = ($Value | ConvertTo-Html)
     }
 
-    $content = Get-Content -Path $Path
-    Write-HtmlResponse -Value $content -NoConvert
+    Write-ToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
 }
 
 # include helper to import the content of a view into another view
@@ -238,7 +323,22 @@ function Include
     return $content
 }
 
-function Write-ViewResponse
+function  Write-ViewResponse
+{
+    [obsolete("Use 'view' instead")]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path,
+
+        [Parameter()]
+        $Data = @{}
+    )
+
+    view -Path $Path -Data $Data
+}
+
+function View
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -299,12 +399,13 @@ function Write-ViewResponse
         }
     }
 
-    Write-HtmlResponse -Value $content -NoConvert
+    html -Value $content
 }
 
 # write data to tcp stream
 function Write-ToTcpStream
 {
+    [obsolete("Use 'tcp write <msg>' instead")]
     param (
         [Parameter()]
         [ValidateNotNull()]
@@ -319,15 +420,12 @@ function Write-ToTcpStream
         $Client = $PodeSession.Tcp.Client
     }
 
-    $stream = $Client.GetStream()
-    $encoder = New-Object System.Text.ASCIIEncoding
-    $buffer = $encoder.GetBytes("$($Message)`r`n")
-    $stream.Write($buffer, 0, $buffer.Length)
-    $stream.Flush()
+    tcp write $Message -Client $Client
 }
 
 function Read-FromTcpStream
 {
+    [obsolete("Use 'tcp read' instead")]
     param (
         [Parameter()]
         $Client
@@ -337,10 +435,46 @@ function Read-FromTcpStream
         $Client = $PodeSession.Tcp.Client
     }
 
-    $bytes = New-Object byte[] 8192
-    $stream = $client.GetStream()
-    $encoder = New-Object System.Text.ASCIIEncoding
-    $bytesRead = $stream.Read($bytes, 0, 8192)
-    $message = $encoder.GetString($bytes, 0, $bytesRead)
-    return $message
+    return (tcp read -Client $Client)
+}
+
+function Tcp
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('write', 'read')]
+        [string]
+        $Action,
+
+        [Parameter()]
+        [string]
+        $Message,
+
+        [Parameter()]
+        $Client
+    )
+
+    if ($client -eq $null) {
+        $client = $PodeSession.Tcp.Client
+    }
+
+    switch ($Action.ToLowerInvariant())
+    {
+        'write' {
+            $stream = $client.GetStream()
+            $encoder = New-Object System.Text.ASCIIEncoding
+            $buffer = $encoder.GetBytes("$($Message)`r`n")
+            $stream.Write($buffer, 0, $buffer.Length)
+            $stream.Flush()
+        }
+
+        'read' {
+            $bytes = New-Object byte[] 8192
+            $stream = $client.GetStream()
+            $encoder = New-Object System.Text.ASCIIEncoding
+            $bytesRead = $stream.Read($bytes, 0, 8192)
+            $message = $encoder.GetString($bytes, 0, $bytesRead)
+            return $message
+        }
+    }
 }

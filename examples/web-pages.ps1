@@ -17,7 +17,7 @@ Server -Port 8085 {
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
         param($session)
-        Write-ViewResponse 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code

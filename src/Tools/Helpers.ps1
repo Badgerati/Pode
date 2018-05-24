@@ -24,7 +24,7 @@ function ConvertFrom-PodeFile
     return $Content
 }
 
-function Test-Empty
+function Get-Type
 {
     param (
         [Parameter()]
@@ -32,19 +32,36 @@ function Test-Empty
     )
 
     if ($Value -eq $null) {
+        return $null
+    }
+
+    return @{
+        'Name' = $Value.GetType().Name.ToLowerInvariant();
+        'BaseName' = $Value.GetType().BaseType.Name.ToLowerInvariant();
+    }
+}
+
+function Test-Empty
+{
+    param (
+        [Parameter()]
+        $Value
+    )
+
+    $type = Get-Type $Value
+    if ($type -eq $null) {
         return $true
     }
 
-    if ($Value.GetType().Name -ieq 'string') {
+    if ($type.Name -ieq 'string') {
         return [string]::IsNullOrWhiteSpace($Value)
     }
 
-    if ($Value.GetType().Name -ieq 'hashtable') {
+    if ($type.Name -ieq 'hashtable') {
         return $Value.Count -eq 0
     }
 
-    $type = $Value.GetType().BaseType.Name.ToLowerInvariant()
-    switch ($type) {
+    switch ($type.BaseName) {
         'valuetype' {
             return $false
         }
@@ -55,34 +72,6 @@ function Test-Empty
     }
 
     return ([string]::IsNullOrWhiteSpace($Value) -or ($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
-}
-
-function Get-DynamicContentType
-{
-    param (
-        [Parameter()]
-        [string]
-        $Path
-    )
-
-    # default content type
-    $ctype = 'text/plain'
-
-    # if no path, return default
-    if (Test-Empty $Path) {
-        return $ctype
-    }
-
-    # get secondary extension (like style.css.pode would be css)
-    $ext = [System.IO.Path]::GetExtension([System.IO.Path]::GetFileNameWithoutExtension($Path)).Trim('.')
-
-    # get content type from secondary extension
-    switch ($ext.ToLowerInvariant()) {
-        'css' { $ctype = 'text/css' }
-        'js' { $ctype = 'text/javascript' }
-    }
-
-    return $ctype
 }
 
 function Add-PodeRunspace

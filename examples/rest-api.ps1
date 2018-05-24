@@ -15,22 +15,20 @@ Server -Port 8086 {
     # can be hit by sending a POST request to "localhost:8086/api/test"
     route 'post' '/api/test' {
         param($session)
-        Write-Host $session.Data
-        Write-JsonResponse @{ 'hello' = 'world'; }
+        json @{ 'hello' = 'world'; }
     }
 
     # can be hit by sending a GET request to "localhost:8086/api/test"
     route 'get' '/api/test' {
         param($session)
-        Write-Host $session.Data
-        Write-JsonResponse @{ 'hello' = 'world'; }
+        json @{ 'hello' = 'world'; }
     }
 
     # returns details for an example user
     route 'get' '/api/users/:userId' {
         param($session)
         $user = Get-DummyUser -UserId $session.Parameters['userId']
-        Write-JsonResponse @{ 'user' = $user; }
+        json @{ 'user' = $user; }
     }
 
 }

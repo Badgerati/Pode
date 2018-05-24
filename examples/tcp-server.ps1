@@ -15,8 +15,8 @@ Server -Tcp -Port 8999 {
     # setup a tcp handler
     handler 'tcp' {
         param($session)
-        Write-ToTcpStream -Message 'gief data'
-        $msg = Read-FromTcpStream
+        tcp write 'gief data'
+        $msg = (tcp read)
         Write-Host $msg
     }
 
