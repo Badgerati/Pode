@@ -12,18 +12,33 @@ function ConvertFrom-PodeFile
     )
 
     # if we have data, then setup the data param
-    if (!(Test-Empty $Data))
-    {
+    if (!(Test-Empty $Data)) {
         $Content = "param(`$data)`nreturn `"$($Content -replace '"', '``"')`""
     }
-    else
-    {
+    else {
         $Content = "return `"$($Content -replace '"', '``"')`""
     }
 
     # invoke the content as a script to generate the dynamic content
     $Content = (Invoke-Command -ScriptBlock ([scriptblock]::Create($Content)) -ArgumentList $Data)
     return $Content
+}
+
+function Get-Type
+{
+    param (
+        [Parameter()]
+        $Value
+    )
+
+    if ($Value -eq $null) {
+        return $null
+    }
+
+    return @{
+        'Name' = $Value.GetType().Name.ToLowerInvariant();
+        'BaseName' = $Value.GetType().BaseType.Name.ToLowerInvariant();
+    }
 }
 
 function Test-Empty
@@ -33,64 +48,77 @@ function Test-Empty
         $Value
     )
 
-    if ($Value -eq $null)
-    {
+    $type = Get-Type $Value
+    if ($type -eq $null) {
         return $true
     }
 
-    if ($Value.GetType().Name -ieq 'string')
-    {
+    if ($type.Name -ieq 'string') {
         return [string]::IsNullOrWhiteSpace($Value)
     }
 
-    if ($Value.GetType().Name -ieq 'hashtable')
-    {
+    if ($type.Name -ieq 'hashtable') {
         return $Value.Count -eq 0
     }
 
-    $type = $Value.GetType().BaseType.Name.ToLowerInvariant()
-    switch ($type)
-    {
-        'valuetype'
-            {
-                return $false
-            }
+    switch ($type.BaseName) {
+        'valuetype' {
+            return $false
+        }
 
-        'array'
-            {
-                return (($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
-            }
+        'array' {
+            return (($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
+        }
     }
 
     return ([string]::IsNullOrWhiteSpace($Value) -or ($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
 }
 
-function Get-DynamicContentType
+function Add-PodeRunspace
 {
     param (
-        [Parameter()]
-        [string]
-        $Path
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock
     )
 
-    # default content type
-    $ctype = 'text/plain'
+    $ps = [powershell]::Create()
+    $ps.RunspacePool = $PodeSession.RunspacePool
+    $ps.AddScript($ScriptBlock) | Out-Null
 
-    # if no path, return default
-    if (Test-Empty $Path)
-    {
-        return $ctype
+    $PodeSession.Runspaces += @{
+        'Runspace' = $ps;
+        'Status' = $ps.BeginInvoke();
+        'Stopped' = $false;
+    }
+}
+
+function Close-PodeRunspaces
+{
+    $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
+        $_.Runspace.Dispose()
+        $_.Stopped = $true
     }
 
-    # get secondary extension (like style.css.pode would be css)
-    $ext = [System.IO.Path]::GetExtension([System.IO.Path]::GetFileNameWithoutExtension($Path)).Trim('.')
+    if (!$PodeSession.RunspacePool.IsDisposed) {
+        $PodeSession.RunspacePool.Close()
+        $PodeSession.RunspacePool.Dispose()
+    }
+}
 
-    # get content type from secondary extension
-    switch ($ext.ToLowerInvariant())
-    {
-        'css' { $ctype = 'text/css' }
-        'js' { $ctype = 'text/javascript' }
+function Test-CtrlCPressed
+{
+    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+        return
     }
 
-    return $ctype
+    $key = [Console]::ReadKey($true)
+
+    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
+        Write-Host 'Terminating...' -NoNewline
+        Close-PodeRunspaces
+        Write-Host " Done" -ForegroundColor Green
+        exit 0
+    }
 }

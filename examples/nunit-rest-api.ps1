@@ -55,7 +55,7 @@ Server -Port 8087 {
         Start-Process -FilePath $tool -NoNewWindow -Wait -ArgumentList $_args -ErrorAction Stop | Out-Null
 
         # return results
-        Write-XmlResponseFromFile -Path $results
+        xml $results -file
 
         # delete results file
         Remove-Item -Path $results -Force | Out-Null

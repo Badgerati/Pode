@@ -20,6 +20,7 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific port
     * [Docker](#docker)
     * [Frontend](#frontend)
     * [Basics](#basics)
+    * [Timers](#timers)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
@@ -35,6 +36,7 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific port
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
+* Setup async timers to be used as one off tasks, or for housekeeping services
 
 ## Install
 
@@ -140,13 +142,13 @@ When run, Pode will tell `yarn` to install the packages to a `pode_modules` dire
 
 ### Basics
 
-Pode, at it's heart, is a PowerShell module. In order to use Pode, you'll need to start off your script by importing it:
+Pode, at its heart, is a PowerShell module. In order to use Pode, you'll need to start off your script by importing it:
 
 ```powershell
 Import-Module Pode
 ```
 
-After that, all of your main server logic must be wrapped in a `Server` block. This lets you specify port numbers, server type, and any key logic: (you can only have one `Server` per Pode script)
+After that, all of your main server logic must be wrapped in a `Server` block. This lets you specify port numbers, server type, and any key logic: (you can only have one `Server` declared in your script)
 
 ```powershell
 Server -Port 8080 {
@@ -156,9 +158,39 @@ Server -Port 8080 {
 
 The above `Server` block will start a basic HTTP listener on port 8080. Once started, to exit out of Pode at anytime just use `Ctrl+C`.
 
+### Timers
+
+Timers are supported in all `Server` types, they are async processes that run in a separate runspace along side your main server logic. The following are a few examples of using timers, more can be found in `examples/timers.ps1`:
+
+```powershell
+Server -Port 8080 {
+    # runs forever, looping every 5secs
+    timer 'forever' 5 {
+        # logic
+    }
+
+    # run once after 2mins
+    timer 'run-once' 120 {
+        # logic
+    } -skip 1 -limit 1
+
+    # create a new timer via a route
+    route 'get' '/api/timer' {
+        param($session)
+        $query = $session.Query
+
+        timer $query['Name'] $query['Seconds'] {
+            # logic
+        }
+    }
+}
+```
+
+> All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic does not take a long time to process (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, use an Interval Server type (`Server -Interval 60 { ... }`)
+
 ### REST API
 
-Once you have the basics down, creating a REST API isn't far off. When creating an API in Pode, you specify logic for certain routes for specific HTTP methods. Methods supported are: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
+When creating an API in Pode, you specify logic for certain routes for specific HTTP methods. Methods supported are: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
 
 The method to create new routes is `route`, this will take your method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
 
@@ -166,7 +198,7 @@ The method to create new routes is `route`, this will take your method, route, a
 Server -Port 8080 {
     route 'get' '/api/ping' {
         param($session)
-        Write-JsonResponse @{ 'value' = 'pong'; }
+        json @{ 'value' = 'pong'; }
     }
 }
 ```
@@ -175,7 +207,7 @@ The scriptblock requires a `param` section for just one argument: `$session`. Th
 
 The last line is to write the JSON response. Anyone hitting `http://localhost:8080/api/ping` will be greeted back with `{ "value": "pong" }`.
 
-If you wanted a POST endpoint that created a user, and a GET endpoint to get details of a user, then it would roughly look as follows:
+If you wanted a POST endpoint that created a user, and a GET endpoint to get details of a user (returning a 404 if the user isn't found), then it would roughly look as follows:
 
 ```powershell
 Server -Port 8080 {
@@ -186,7 +218,7 @@ Server -Port 8080 {
         $userId = New-DummyUser $session.Data.Email $session.Data.Name $session.Data.Password
 
         # return with userId
-        Write-JsonResponse @{ 'userId' = $userId; }
+        json @{ 'userId' = $userId; }
     }
 
     route 'get' '/api/users/:userId'{
@@ -196,7 +228,12 @@ Server -Port 8080 {
         $user = Get-DummyUser -UserId $session.Parameters['userId']
 
         # return the user
-        Write-JsonResponse @{ 'user' = $user; }
+        if ($user -eq $null) {
+            status 404
+        }
+        else {
+            json @{ 'user' = $user; }
+        }
     }
 }
 ```
@@ -209,7 +246,7 @@ It's actually possible for Pode to serve up webpages - css, fonts, and javascrip
 
 Pode also has its own format for writing dynamic HTML pages. There are examples in the example directory, but in general they allow you to dynamically generate HTML, CSS or any file type using embedded PowerShell.
 
-All static and dynamic HTML content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your view files, so when you call `Write-ViewResponse` Pode will automatically look in the `/views/` directory. For example, if you call `Write-ViewResponse 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
+All static and dynamic HTML content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your view files, so when you call the `view` function in Pode, it will automatically look in the `/views/` directory. For example, if you call `view 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
 
 > Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it to Pode by calling `engine pode` at the top of your Server scriptblock
 
@@ -224,7 +261,7 @@ Server -Port 8085 {
 
     route 'get' '/' {
         param($session)
-        Write-ViewResponse 'simple'
+        view 'simple'
     }
 }
 ```
@@ -241,7 +278,7 @@ Unlike with HTTP Routes, TCP and SMTP can only have one handler. To create a han
 
 ```powershell
 Server -Smtp {
-    Add-PodeTcpHandler 'smtp' {
+    handler 'smtp' {
         param($session)
         Write-Host $session.From
         Write-Host $session.To
@@ -258,7 +295,7 @@ If you want to create you own SMTP server, then you'll need to set Pode up as a 
 
 ```powershell
 Server -Tcp -Port 25 {
-    Add-PodeTcpHandler 'tcp' {
+    handler 'tcp' {
         param($session)
         $client = $session.Client
         # your stream writing/reading here
@@ -266,10 +303,10 @@ Server -Tcp -Port 25 {
 }
 ```
 
-To help with writing and reading from the client stream, Pode has two helper functions
+To help with writing and reading from the client stream, Pode has a helper function with two actions for `read` and `write`:
 
-* `Write-ToTcpStream -Message 'msg'`
-* `$msg = Read-FromTcpStream`
+* `tcp write $msg`
+* `$msg = (tcp read)`
 
 ## Pode Files
 
@@ -287,7 +324,7 @@ Server -Port 8080 {
     # render the index.pode view
     route 'get' '/' {
         param($session)
-        Write-ViewResponse 'index'
+        view 'index'
     }
 }
 ```
@@ -308,7 +345,7 @@ Below is a basic example of a Pode file which just writes the current date to th
 
 > When you need to use PowerShell, ensure you wrap the commands within `$(...)`, and end each line with a semi-colon (as you would in C#/Java)
 
-You can also supply data to `Write-ViewResponse` when rendering Pode files. This allows you to make them far more dynamic. The data supplied to `Write-ViewResponse` must be a `hashtable`, and can be referenced within the file by using the `$data` argument.
+You can also supply data to the `view` function when rendering Pode files. This allows you to make them far more dynamic. The data supplied to `view` must be a `hashtable`, and can be referenced within the file by using the `$data` argument.
 
 For example, say you need to render a search page which is a list of accounts, then you're basic Pode script would look like:
 
@@ -326,12 +363,12 @@ Server -Port 8080 {
         $accounts = Find-Account -Query $query
 
         # render the file
-        Write-ViewResponse 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
+        view 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
     }
 }
 ```
 
-You can see that we're supplying the found accounts to the `Write-ViewResponse` function as a `hashtable`. Next, we see the `search.pode` file which generates the HTML:
+You can see that we're supplying the found accounts to the `view` function as a `hashtable`. Next, we see the `search.pode` file which generates the HTML:
 
 ```html
 <!-- /views/search.pode -->
@@ -418,7 +455,7 @@ Server -Port 8080 {
     # render the index.eps view
     route 'get' '/' {
         param($session)
-        Write-ViewResponse 'index'
+        view 'index'
     }
 }
 ```
@@ -428,18 +465,17 @@ Server -Port 8080 {
 Pode comes with a few helper functions - mostly for writing responses and reading streams:
 
 * `route`
+* `handler`
+* `engine`
+* `timer`
+* `html`
+* `xml`
+* `json`
+* `csv`
+* `view`
+* `tcp`
 * `Get-PodeRoute`
-* `Add-PodeTcpHandler`
 * `Get-PodeTcpHandler`
+* `Get-PodeTimer`
 * `Write-ToResponse`
 * `Write-ToResponseFromFile`
-* `Write-JsonResponse`
-* `Write-JsonResponseFromFile`
-* `Write-XmlResponse`
-* `Write-XmlResponseFromFile`
-* `Write-HtmlResponse`
-* `Write-HtmlResponseFromFile`
-* `Write-ViewResponse`
-* `Write-ToTcpStream`
-* `Read-FromTcpStream`
-* `engine`

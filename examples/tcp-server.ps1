@@ -13,10 +13,10 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 Server -Tcp -Port 8999 {
 
     # setup a tcp handler
-    Add-PodeTcpHandler 'tcp' {
+    handler 'tcp' {
         param($session)
-        Write-ToTcpStream -Message 'gief data'
-        $msg = Read-FromTcpStream
+        tcp write 'gief data'
+        $msg = (tcp read)
         Write-Host $msg
     }
 

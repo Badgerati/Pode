@@ -28,94 +28,73 @@ function Start-WebServer
     {
         # create the listener on http and/or https
         $listener = New-Object System.Net.HttpListener
+        $protocol = 'http'
+        if ($Https) {
+            $protocol = 'https'
+        }
 
-        if ($Https)
-        {
-            $listener.Prefixes.Add("https://*:$($PodeSession.Port)/")
-        }
-        else
-        {
-            $listener.Prefixes.Add("http://*:$($PodeSession.Port)/")
-        }
+        $listener.Prefixes.Add("$($protocol)://*:$($PodeSession.Port)/")
 
         # start listener
         $listener.Start()
 
         # state where we're running
-        Write-Host "Listening on http://localhost:$($PodeSession.Port)/" -ForegroundColor Yellow
-        [Console]::TreatControlCAsInput = $true
+        Write-Host "Listening on $($protocol)://localhost:$($PodeSession.Port)/" -ForegroundColor Yellow
 
         # loop for http request
         while ($listener.IsListening)
         {
             # get request and response
             $task = $listener.GetContextAsync()
-            while (!$task.IsCompleted)
-            {
-                if (![Console]::IsInputRedirected -and [Console]::KeyAvailable)
-                {
-                    $key = [Console]::ReadKey($true)
-                    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control)
-                    {
-                        Write-Host 'Terminating...'
-                        return
-                    }
-                }
+            while (!$task.IsCompleted) {
+                Test-CtrlCPressed
             }
 
             $context = $task.Result
+            $request = $context.Request
+            $response = $context.Response
 
             # clear session
             $PodeSession.Web = @{}
-
-            $request = $context.Request
-            $response = $context.Response
+            $PodeSession.Web.Response = $response
+            $PodeSession.Web.Request = $request
 
             # get url path and method
             $path = ($request.RawUrl -isplit "\?")[0]
             $method = $request.HttpMethod.ToLowerInvariant()
 
             # check to see if the path is a file, so we can check the public folder
-            if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1)
-            {
+            if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
                 $path = (Join-Path 'public' $path)
-                Write-ToResponseFromFile -Path $path -Response $response
+                Write-ToResponseFromFile -Path $path
             }
 
-            else
-            {
+            else {
                 # ensure the path has a route
                 $route = Get-PodeRoute -HttpMethod $method -Route $path
-                if ($route -eq $null -or $route.Logic -eq $null)
-                {
-                    $response.StatusCode = 404
+                if ($route -eq $null -or $route.Logic -eq $null) {
+                    status 404
                 }
 
                 # run the scriptblock
-                else
-                {
+                else {
                     # read and parse any post data
                     $stream = $request.InputStream
                     $reader = New-Object -TypeName System.IO.StreamReader -ArgumentList $stream, $request.ContentEncoding
                     $data = $reader.ReadToEnd()
                     $reader.Close()
 
-                    switch ($request.ContentType)
-                    {
-                        { $_ -ilike '*json*' }
-                            {
-                                $data = ($data | ConvertFrom-Json)
-                            }
+                    switch ($request.ContentType) {
+                        { $_ -ilike '*json*' } {
+                            $data = ($data | ConvertFrom-Json)
+                        }
 
-                        { $_ -ilike '*xml*' }
-                            {
-                                $data = ($data | ConvertFrom-Xml)
-                            }
+                        { $_ -ilike '*xml*' } {
+                            $data = ($data | ConvertFrom-Xml)
+                        }
                     }
 
                     # set session data
-                    $PodeSession.Web.Response = $response
-                    $PodeSession.Web.Request = $request
                     $PodeSession.Web.Data = $data
                     $PodeSession.Web.Query = $request.QueryString
                     $PodeSession.Web.Parameters = $route.Parameters
@@ -126,16 +105,13 @@ function Start-WebServer
             }
 
             # close response stream (check if exists, as closing the writer closes this stream on unix)
-            if ($response.OutputStream)
-            {
+            if ($response.OutputStream) {
                 $response.OutputStream.Close()
             }
         }
     }
-    finally
-    {
-        if ($listener -ne $null)
-        {
+    finally {
+        if ($listener -ne $null) {
             $listener.Stop()
         }
     }

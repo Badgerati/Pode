@@ -1,21 +1,14 @@
 function Start-SmtpServer
 {
     # ensure we have smtp handlers
-    if ((Get-PodeTcpHandler -Type 'SMTP') -eq $null)
-    {
+    if ((Get-PodeTcpHandler -Type 'SMTP') -eq $null) {
         throw 'No SMTP handler has been passed'
     }
 
     # scriptblock for the core smtp message processing logic
     $process = {
-        param (
-            [Parameter()]
-            $Client
-        )
-
         # if there's no client, just return
-        if ($Client -eq $null)
-        {
+        if ($PodeSession.Tcp.Client -eq $null) {
             return
         }
 
@@ -25,46 +18,41 @@ function Start-SmtpServer
         $data = [string]::Empty
 
         # open response to smtp request
-        Write-ToTcpStream -Client $Client -Message '220 localhost -- Pode Proxy Server'
+        tcp write '220 localhost -- Pode Proxy Server'
         $msg = [string]::Empty
 
         # respond to smtp request
         while ($true)
         {
-            try { $msg = Read-FromTcpStream -Client $Client }
+            try { $msg = (tcp read) }
             catch { break }
-            
-            if (![string]::IsNullOrWhiteSpace($msg))
-            {
-                if ($msg.StartsWith('QUIT'))
-                {
-                    Write-ToTcpStream -Client $Client -Message '221 Bye'
+
+            if (!(Test-Empty $msg)) {
+                if ($msg.StartsWith('QUIT')) {
+                    tcp write '221 Bye'
                     $Client.Close()
                     break
                 }
 
-                if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO'))
-                {
-                    Write-ToTcpStream -Client $Client -Message '250 OK'
+                if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO')) {
+                    tcp write '250 OK'
                 }
 
-                if ($msg.StartsWith('RCPT TO'))
-                {
-                    Write-ToTcpStream -Client $Client -Message '250 OK'
+                if ($msg.StartsWith('RCPT TO')) {
+                    tcp write '250 OK'
                     $rcpt_tos += (Get-SmtpEmail $msg)
                 }
 
-                if ($msg.StartsWith('MAIL FROM'))
-                {
-                    Write-ToTcpStream -Client $Client -Message '250 OK'
+                if ($msg.StartsWith('MAIL FROM')) {
+                    tcp write '250 OK'
                     $mail_from = Get-SmtpEmail $msg
                 }
 
                 if ($msg.StartsWith('DATA'))
                 {
-                    Write-ToTcpStream -Client $Client -Message '354 Start mail input; end with <CR><LF>.<CR><LF>'
-                    $data = Read-FromTcpStream -Client $Client
-                    Write-ToTcpStream -Client $Client -Message '250 OK'
+                    tcp write '354 Start mail input; end with <CR><LF>.<CR><LF>'
+                    $data = (tcp read)
+                    tcp write '250 OK'
 
                     # set session data
                     $PodeSession.Smtp.From = $mail_from
@@ -96,17 +84,17 @@ function Start-SmtpServer
             if ($listener.Pending())
             {
                 $client = $listener.AcceptTcpClient()
+                $PodeSession.Tcp.Client = $client
                 $PodeSession.Smtp = @{}
-                Invoke-Command -ScriptBlock $process -ArgumentList $client
+                Invoke-Command -ScriptBlock $process #-ArgumentList $client
             }
+
+            Test-CtrlCPressed
         }
-        
-        Write-Host 'Terminating...'
     }
     finally
     {
-        if ($listener -ne $null)
-        {
+        if ($listener -ne $null) {
             $listener.Stop()
         }
     }
@@ -122,8 +110,7 @@ function Get-SmtpEmail
     )
 
     $tmp = ($Value -isplit ':')
-    if ($tmp.Length -gt 1)
-    {
+    if ($tmp.Length -gt 1) {
         return $tmp[1].Trim().Trim('<', '>')
     }
 
