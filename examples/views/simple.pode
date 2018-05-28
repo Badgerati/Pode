@@ -11,5 +11,7 @@
             "<li>value: $i</li>";
         })
         </ul>
+
+        <img src="Anger.jpg" />
     </body>
 </html>
