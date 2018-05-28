@@ -48,7 +48,13 @@ function Write-ToResponseFromFile
     # are we dealing with a dynamic file for the view engine?
     $ext = [System.IO.Path]::GetExtension($Path).Trim('.')
     if ((Test-Empty $ext) -or $ext -ine $PodeSession.ViewEngine.Extension) {
-        $content = Get-Content -Path $Path -Raw -Encoding byte
+        if ($PSVersionTable.PSEdition -ieq 'core') {
+            $content = Get-Content -Path $Path -Raw -AsByteStream
+        }
+        else {
+            $content = Get-Content -Path $Path -Raw -Encoding byte
+        }
+
         Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
         return
     }
