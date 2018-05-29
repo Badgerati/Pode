@@ -10,13 +10,25 @@ function Write-ToResponse
         $ContentType = $null
     )
 
-    if (![string]::IsNullOrWhiteSpace($ContentType)) {
+    if (Test-Empty $Value) {
+        return
+    }
+
+    if (!(Test-Empty $ContentType)) {
         $PodeSession.Web.Response.ContentType = $ContentType
     }
 
-    $writer = New-Object -TypeName System.IO.StreamWriter -ArgumentList $PodeSession.Web.Response.OutputStream
-    $writer.WriteLine([string]$Value)
-    $writer.Close()
+    if ((Get-Type $Value).Name -ieq 'string') {
+        $writer = New-Object -TypeName System.IO.StreamWriter -ArgumentList $PodeSession.Web.Response.OutputStream
+        $writer.WriteLine([string]$Value)
+        $writer.Close()
+    }
+    else {
+        $memory = New-Object -TypeName System.IO.MemoryStream
+        $memory.Write($Value, 0, $Value.Length)
+        $memory.WriteTo($PodeSession.Web.Response.OutputStream)
+        $memory.Close()
+    }
 }
 
 function Write-ToResponseFromFile
@@ -36,7 +48,13 @@ function Write-ToResponseFromFile
     # are we dealing with a dynamic file for the view engine?
     $ext = [System.IO.Path]::GetExtension($Path).Trim('.')
     if ((Test-Empty $ext) -or $ext -ine $PodeSession.ViewEngine.Extension) {
-        $content = Get-Content -Path $Path -Raw
+        if (Test-IsPSCore) {
+            $content = Get-Content -Path $Path -Raw -AsByteStream
+        }
+        else {
+            $content = Get-Content -Path $Path -Raw -Encoding byte
+        }
+
         Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
         return
     }
@@ -47,7 +65,7 @@ function Write-ToResponseFromFile
     switch ($ext.ToLowerInvariant())
     {
         'pode' {
-            $content = Get-Content -Path $Path -Raw
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
             $content = ConvertFrom-PodeFile -Content $content
         }
 
@@ -123,7 +141,7 @@ function Json
             return
         }
         else {
-            $Value = Get-Content -Path $Value
+            $Value = Get-Content -Path $Value -Encoding utf8
         }
     }
     elseif ((Get-Type $Value).Name -ine 'string') {
@@ -150,7 +168,7 @@ function Csv
             return
         }
         else {
-            $Value = Get-Content -Path $Value
+            $Value = Get-Content -Path $Value -Encoding utf8
         }
     }
     elseif ((Get-Type $Value).Name -ine 'string') {
@@ -204,7 +222,7 @@ function Xml
             return
         }
         else {
-            $Value = Get-Content -Path $Value
+            $Value = Get-Content -Path $Value -Encoding utf8
         }
     }
     elseif ((Get-Type $Value).Name -ine 'string') {
@@ -258,7 +276,7 @@ function Html
             return
         }
         else {
-            $Value = Get-Content -Path $Value
+            $Value = Get-Content -Path $Value -Encoding utf8
         }
     }
     elseif ((Get-Type $Value).Name -ine 'string') {
@@ -305,11 +323,11 @@ function Include
     switch ($engine.ToLowerInvariant())
     {
         'html' {
-            $content = Get-Content -Path $Path -Raw
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
         }
 
         'pode' {
-            $content = Get-Content -Path $Path -Raw
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
             $content = ConvertFrom-PodeFile -Content $content -Data $Data
         }
 
@@ -384,11 +402,11 @@ function View
     switch ($engine.ToLowerInvariant())
     {
         'html' {
-            $content = Get-Content -Path $Path -Raw
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
         }
 
         'pode' {
-            $content = Get-Content -Path $Path -Raw
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
             $content = ConvertFrom-PodeFile -Content $content -Data $Data
         }
 
