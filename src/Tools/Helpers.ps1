@@ -74,6 +74,16 @@ function Test-Empty
     return ([string]::IsNullOrWhiteSpace($Value) -or ($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
 }
 
+function Test-IsUnix
+{
+    return $PSVersionTable.Platform -ieq 'unix'
+}
+
+function Test-IsPSCore
+{
+    return $PSVersionTable.PSEdition -ieq 'core'
+}
+
 function Add-PodeRunspace
 {
     param (
