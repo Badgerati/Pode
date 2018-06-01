@@ -8,6 +8,7 @@
 [![PowerShell](https://img.shields.io/powershellgallery/v/pode.svg?label=powershell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=downloads&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 
+[![Docker](https://img.shields.io/docker/stars/badgerati/pode.svg)](https://hub.docker.com/r/badgerati/pode/)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg)](https://hub.docker.com/r/badgerati/pode/)
 
 Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific ports, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers. It also allows you to render dynamic files using [Pode](#pode-files) files, which is effectively embedded PowerShell, or other [Third-Party](#third-party-view-engines) template engines.
@@ -479,3 +480,7 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Get-PodeTimer`
 * `Write-ToResponse`
 * `Write-ToResponseFromFile`
+* `Test-IsUnix`
+* `Test-IsPSCore`
+* `status`
+* `include`
