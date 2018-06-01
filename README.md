@@ -480,3 +480,7 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Get-PodeTimer`
 * `Write-ToResponse`
 * `Write-ToResponseFromFile`
+* `Test-IsUnix`
+* `Test-IsPSCore`
+* `status`
+* `include`
