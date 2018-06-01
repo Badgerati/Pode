@@ -49,7 +49,11 @@
         'Xml',
         'Pode',
         'Timer',
-        'Csv'
+        'Csv',
+        'Test-IsUnix',
+        'Test-IsPSCore',
+        'Status',
+        'Include'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
