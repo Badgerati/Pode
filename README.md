@@ -109,15 +109,9 @@ This is an example of using Docker to host your Pode scripts, using the `example
 ```dockerfile
 # File: Dockerfile
 FROM badgerati/pode
-
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-
-COPY . .
-
+COPY . /usr/src/app/
 EXPOSE 8085
-
-CMD [ "pwsh", "-c", "./web-pages.ps1" ]
+CMD [ "pwsh", "-c", "cd /usr/src/app; ./web-pages-docker.ps1" ]
 ```
 
 To run build and run this, use the following commands:
