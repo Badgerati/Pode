@@ -406,7 +406,7 @@ This next quick example allows you to include content from another view:
 
 ### Non-View Pode Files
 
-The rules for using Pode files for other types, like public css/js, work exactly like the above view files but they're placed within the `/public/` directory instead of the `/views/` directory. You also need to special the actual file type in the extension, for example:
+The rules for using Pode files for other types, like public css/js, work exactly like the above view files but they're placed within the `/public/` directory instead of the `/views/` directory. You also need to specify the actual file type in the extension, for example:
 
 ```plain
 /public/styles/main.css.pode
