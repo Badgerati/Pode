@@ -32,6 +32,7 @@ function Start-TcpServer
                 }
             }
 
+            Start-Sleep -Milliseconds 1
             Test-CtrlCPressed
         }
     }
