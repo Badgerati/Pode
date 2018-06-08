@@ -89,6 +89,7 @@ function Start-SmtpServer
                 Invoke-Command -ScriptBlock $process #-ArgumentList $client
             }
 
+            Start-Sleep -Milliseconds 1
             Test-CtrlCPressed
         }
     }

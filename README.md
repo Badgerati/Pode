@@ -109,15 +109,9 @@ This is an example of using Docker to host your Pode scripts, using the `example
 ```dockerfile
 # File: Dockerfile
 FROM badgerati/pode
-
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-
-COPY . .
-
+COPY . /usr/src/app/
 EXPOSE 8085
-
-CMD [ "pwsh", "-c", "./web-pages.ps1" ]
+CMD [ "pwsh", "-c", "cd /usr/src/app; ./web-pages-docker.ps1" ]
 ```
 
 To run build and run this, use the following commands:
@@ -412,7 +406,7 @@ This next quick example allows you to include content from another view:
 
 ### Non-View Pode Files
 
-The rules for using Pode files for other types, like public css/js, work exactly like the above view files but they're placed within the `/public/` directory instead of the `/views/` directory. You also need to special the actual file type in the extension, for example:
+The rules for using Pode files for other types, like public css/js, work exactly like the above view files but they're placed within the `/public/` directory instead of the `/views/` directory. You also need to specify the actual file type in the extension, for example:
 
 ```plain
 /public/styles/main.css.pode

@@ -1,10 +1,4 @@
 FROM badgerati/pode:latest
-
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-
-COPY . .
-
+COPY . /usr/src/app/
 EXPOSE 8085
-
-CMD [ "pwsh", "-c", "./web-pages-docker.ps1" ]
+CMD [ "pwsh", "-c", "cd /usr/src/app; ./web-pages-docker.ps1" ]
