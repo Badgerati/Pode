@@ -47,6 +47,7 @@ function Start-WebServer
             # get request and response
             $task = $listener.GetContextAsync()
             while (!$task.IsCompleted) {
+                Start-Sleep -Milliseconds 1
                 Test-CtrlCPressed
             }
 
