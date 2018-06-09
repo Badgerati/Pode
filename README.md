@@ -437,9 +437,9 @@ To load the above `.css.pode` file:
 ```html
 <!-- /views/index.pode -->
 <html>
-   
-   <link rel="stylesheet" href="styles/main.css.pode"> 
-   
+   <head>
+      <link rel="stylesheet" href="styles/main.css.pode"> 
+   </head>
    <body>
         <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
     </body>
