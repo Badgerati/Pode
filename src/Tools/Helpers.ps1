@@ -120,15 +120,29 @@ function Close-PodeRunspaces
 function Start-CtrlCListener
 {
     Add-PodeRunspace {
+        # default variables
         $options = "AllowCtrlC,IncludeKeyUp,NoEcho"
         $ctrlState = "LeftCtrlPressed"
+        $char = 'c'
+        $cancel = $false
+
+        # are we on ps-core?
+        $onCore = ($PSVersionTable.PSEdition -ieq 'core')
 
         while ($true) {
             if ($console.UI.RawUI.KeyAvailable) {
                 $key = $console.UI.RawUI.ReadKey($options)
 
-                if (($key.ControlKeyState -band $ctrlState) -ieq $ctrlState -and [char]$key.VirtualKeyCode -ieq 'c')
-                {
+                if ([char]$key.VirtualKeyCode -ieq $char) {
+                    if ($onCore) {
+                        $cancel = ($key.Character -ine $char)
+                    }
+                    else {
+                        $cancel = (($key.ControlKeyState -band $ctrlState) -ieq $ctrlState)
+                    }
+                }
+
+                if ($cancel) {
                     Write-Host 'Terminating...' -NoNewline
                     $token.Cancel()
                     break
