@@ -117,17 +117,43 @@ function Close-PodeRunspaces
     }
 }
 
-function Test-CtrlCPressed
+function Start-CtrlCListener
 {
-    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
-        return
+    Add-PodeRunspace {
+        $options = "AllowCtrlC,IncludeKeyUp,NoEcho"
+        $ctrlState = "LeftCtrlPressed"
+
+        while ($true) {
+            if ($console.UI.RawUI.KeyAvailable) {
+                $key = $console.UI.RawUI.ReadKey($options)
+
+                if (($key.ControlKeyState -band $ctrlState) -ieq $ctrlState -and [char]$key.VirtualKeyCode -ieq 'c')
+                {
+                    Write-Host 'Terminating...' -NoNewline
+                    $token.Cancel()
+                    break
+                }
+            }
+
+            Start-Sleep -Milliseconds 10
+        }
     }
+}
 
-    $key = [Console]::ReadKey($true)
+function Close-Pode
+{
+    param (
+        [switch]
+        $Exit
+    )
 
-    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
-        Write-Host 'Terminating...' -NoNewline
-        Close-PodeRunspaces
+    Close-PodeRunspaces
+
+    try {
+        $PodeSession.CancelToken.Dispose()
+    } catch { }
+
+    if ($Exit) {
         Write-Host " Done" -ForegroundColor Green
         exit 0
     }

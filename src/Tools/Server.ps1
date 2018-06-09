@@ -32,7 +32,7 @@ function Server
     }
 
     # validate port passed
-    if ($Port -le 0) {
+    if ($Port -lt 0) {
         throw "Port cannot be negative: $($Port)"
     }
 
@@ -48,6 +48,11 @@ function Server
 
         # start runspace for timers
         Start-TimerRunspace
+
+        # start runspace to monitor for ctrl-c
+        if (![Console]::IsInputRedirected) {
+            Start-CtrlCListener
+        }
 
         # run logic for a smtp server
         if ($Smtp) {
@@ -71,7 +76,10 @@ function Server
                 Write-Host "Looping logic every $($Interval)secs" -ForegroundColor Yellow
 
                 while ($true) {
-                    Test-CtrlCPressed
+                    if ($PodeSession.CancelToken.IsCancellationRequested) {
+                        Close-Pode -Exit
+                    }
+
                     Start-Sleep -Seconds $Interval
                     & $ScriptBlock
                 }
@@ -79,8 +87,8 @@ function Server
         }
     }
     finally {
-        # clean the runspaces
-        Close-PodeRunspaces
+        # clean the runspaces and tokens
+        Close-Pode
 
         # clean the session
         $PodeSession = $null

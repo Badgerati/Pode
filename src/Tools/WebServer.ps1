@@ -46,10 +46,7 @@ function Start-WebServer
         {
             # get request and response
             $task = $listener.GetContextAsync()
-            while (!$task.IsCompleted) {
-                Start-Sleep -Milliseconds 1
-                Test-CtrlCPressed
-            }
+            $task.Wait($PodeSession.CancelToken.Token)
 
             $context = $task.Result
             $request = $context.Request
@@ -110,6 +107,9 @@ function Start-WebServer
                 $response.OutputStream.Close()
             }
         }
+    }
+    catch [System.OperationCanceledException] {
+        Close-Pode -Exit
     }
     finally {
         if ($listener -ne $null) {
