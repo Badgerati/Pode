@@ -432,6 +432,20 @@ body {
 }
 ```
 
+To load the above `.css.pode` file:
+
+```html
+<!-- /views/index.pode -->
+<html>
+   <head>
+      <link rel="stylesheet" href="styles/main.css.pode"> 
+   </head>
+   <body>
+        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
+    </body>
+</html>
+```
+
 ## Third-Party View Engines
 
 Pode also supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) template engine. To do this, you'll need to supply a custom scriptblock to `Engine` which tells Pode how use the third-party engine.
