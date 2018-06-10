@@ -117,17 +117,57 @@ function Close-PodeRunspaces
     }
 }
 
-function Test-CtrlCPressed
+function Start-TerminationListener
 {
-    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
-        return
+    Add-PodeRunspace {
+        # default variables
+        $options = "AllowCtrlC,IncludeKeyUp,NoEcho"
+        $ctrlState = "LeftCtrlPressed"
+        $char = 'c'
+        $cancel = $false
+
+        # are we on ps-core?
+        $onCore = ($PSVersionTable.PSEdition -ieq 'core')
+
+        while ($true) {
+            if ($console.UI.RawUI.KeyAvailable) {
+                $key = $console.UI.RawUI.ReadKey($options)
+
+                if ([char]$key.VirtualKeyCode -ieq $char) {
+                    if ($onCore) {
+                        $cancel = ($key.Character -ine $char)
+                    }
+                    else {
+                        $cancel = (($key.ControlKeyState -band $ctrlState) -ieq $ctrlState)
+                    }
+                }
+
+                if ($cancel) {
+                    Write-Host 'Terminating...' -NoNewline
+                    $token.Cancel()
+                    break
+                }
+            }
+
+            Start-Sleep -Milliseconds 10
+        }
     }
+}
 
-    $key = [Console]::ReadKey($true)
+function Close-Pode
+{
+    param (
+        [switch]
+        $Exit
+    )
 
-    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
-        Write-Host 'Terminating...' -NoNewline
-        Close-PodeRunspaces
+    Close-PodeRunspaces
+
+    try {
+        $PodeSession.CancelToken.Dispose()
+    } catch { }
+
+    if ($Exit) {
         Write-Host " Done" -ForegroundColor Green
         exit 0
     }

@@ -21,23 +21,24 @@ function Start-TcpServer
         # loop for tcp request
         while ($true)
         {
-            if ($listener.Pending())
-            {
-                $client = $listener.AcceptTcpClient()
-                $PodeSession.Tcp.Client = $client
-                Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -ArgumentList $PodeSession.Tcp
-                
-                if ($client.Connected) {
-                    $client.Close()
-                }
-            }
+            $task = $listener.AcceptTcpClientAsync()
+            $task.Wait($PodeSession.CancelToken.Token)
 
-            Start-Sleep -Milliseconds 1
-            Test-CtrlCPressed
+            $PodeSession.Tcp.Client = $client
+            Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -ArgumentList $PodeSession.Tcp
+
+            if ($client -ne $null -and $client.Connected) {
+                try {
+                    $client.Close()
+                    $client.Dispose()
+                } catch { }
+            }
         }
     }
-    finally
-    {
+    catch [System.OperationCanceledException] {
+        Close-Pode -Exit
+    }
+    finally {
         if ($listener -ne $null) {
             $listener.Stop()
         }
