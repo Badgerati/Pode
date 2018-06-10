@@ -157,13 +157,13 @@ The above `Server` script will start a basic HTTP listener on port 8080. To star
 * Directly run the `./server.ps1` script, or
 * If you've created a `package.json` file, ensure the `./server.ps1` script is set as your `main` or `scripts/start`, then just run `pode start`
 
-Once Pode has started, you can exit out at any time using `Ctrl+C`. For some environments you probably don't want to allow exiting, so you can disable the `Ctrl+C` by setting the `-DisableCtrlC` switch on the `Server`:
+Once Pode has started, you can exit out at any time using `Ctrl+C`. For some environments you probably don't want to allow exiting, so you can disable the `Ctrl+C` by setting the `-DisableTermination` switch on the `Server`:
 
 ```powershell
 # server.ps1
 Server -Port 8080 {
     # logic
-} -DisableCtrlC
+} -DisableTermination
 ```
 
 > By default `Ctrl+C` is disabled in Docker containers due to the way input is treated. Supplying `-t` when running the container will allow exiting

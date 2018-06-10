@@ -26,7 +26,7 @@ function Server
         $Https,
 
         [switch]
-        $DisableCtrlC
+        $DisableTermination
     )
 
     # if smtp is passed, and no port - force port to 25
@@ -52,9 +52,9 @@ function Server
         # start runspace for timers
         Start-TimerRunspace
 
-        # start runspace to monitor for ctrl-c
-        if (!$DisableCtrlC -and ![Console]::IsInputRedirected) {
-            Start-CtrlCListener
+        # start runspace to monitor for terminating server
+        if (!$DisableTermination -and ![Console]::IsInputRedirected) {
+            Start-TerminationListener
         }
 
         # run logic for a smtp server

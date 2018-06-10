@@ -117,7 +117,7 @@ function Close-PodeRunspaces
     }
 }
 
-function Start-CtrlCListener
+function Start-TerminationListener
 {
     Add-PodeRunspace {
         # default variables
