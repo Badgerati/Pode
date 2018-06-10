@@ -16,7 +16,8 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name Tcp -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru
+        Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name CancelToken -Value $null -PassThru
 
     # session engine for rendering views
     $session.ViewEngine = @{
@@ -43,13 +44,18 @@ function New-PodeSession
         'smtp' = $null;
     }
 
+    # create new cancellation token
+    $session.CancelToken = New-Object System.Threading.CancellationTokenSource
+
     # async timers
     $session.Timers = @{}
 
     # session state
     $state = [initialsessionstate]::CreateDefault()
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'timers', $session.Timers, $null)
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'timers', $session.Timers, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'console', $Host, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'token', $session.CancelToken, $null)
     )
 
     $variables | ForEach-Object {

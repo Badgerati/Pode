@@ -27,41 +27,53 @@ function Start-SmtpServer
             try { $msg = (tcp read) }
             catch { break }
 
-            if (!(Test-Empty $msg)) {
-                if ($msg.StartsWith('QUIT')) {
-                    tcp write '221 Bye'
-                    $Client.Close()
-                    break
+            try {
+                if (!(Test-Empty $msg)) {
+                    if ($msg.StartsWith('QUIT')) {
+                        tcp write '221 Bye'
+
+                        if ($Client -ne $null -and $Client.Connected) {
+                            try {
+                                $Client.Close()
+                                $Client.Dispose()
+                            } catch { }
+                        }
+
+                        break
+                    }
+
+                    if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO')) {
+                        tcp write '250 OK'
+                    }
+
+                    if ($msg.StartsWith('RCPT TO')) {
+                        tcp write '250 OK'
+                        $rcpt_tos += (Get-SmtpEmail $msg)
+                    }
+
+                    if ($msg.StartsWith('MAIL FROM')) {
+                        tcp write '250 OK'
+                        $mail_from = Get-SmtpEmail $msg
+                    }
+
+                    if ($msg.StartsWith('DATA'))
+                    {
+                        tcp write '354 Start mail input; end with <CR><LF>.<CR><LF>'
+                        $data = (tcp read)
+                        tcp write '250 OK'
+
+                        # set session data
+                        $PodeSession.Smtp.From = $mail_from
+                        $PodeSession.Smtp.To = $rcpt_tos
+                        $PodeSession.Smtp.Data = $data
+
+                        # call user handlers for processing smtp data
+                        Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -ArgumentList $PodeSession.Smtp
+                    }
                 }
-
-                if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO')) {
-                    tcp write '250 OK'
-                }
-
-                if ($msg.StartsWith('RCPT TO')) {
-                    tcp write '250 OK'
-                    $rcpt_tos += (Get-SmtpEmail $msg)
-                }
-
-                if ($msg.StartsWith('MAIL FROM')) {
-                    tcp write '250 OK'
-                    $mail_from = Get-SmtpEmail $msg
-                }
-
-                if ($msg.StartsWith('DATA'))
-                {
-                    tcp write '354 Start mail input; end with <CR><LF>.<CR><LF>'
-                    $data = (tcp read)
-                    tcp write '250 OK'
-
-                    # set session data
-                    $PodeSession.Smtp.From = $mail_from
-                    $PodeSession.Smtp.To = $rcpt_tos
-                    $PodeSession.Smtp.Data = $data
-
-                    # call user handlers for processing smtp data
-                    Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -ArgumentList $PodeSession.Smtp
-                }
+            }
+            catch [exception] {
+                throw $_.exception
             }
         }
     }
@@ -81,20 +93,18 @@ function Start-SmtpServer
         # loop for tcp request
         while ($true)
         {
-            if ($listener.Pending())
-            {
-                $client = $listener.AcceptTcpClient()
-                $PodeSession.Tcp.Client = $client
-                $PodeSession.Smtp = @{}
-                Invoke-Command -ScriptBlock $process #-ArgumentList $client
-            }
+            $task = $listener.AcceptTcpClientAsync()
+            $task.Wait($PodeSession.CancelToken.Token)
 
-            Start-Sleep -Milliseconds 1
-            Test-CtrlCPressed
+            $PodeSession.Tcp.Client = $task.Result
+            $PodeSession.Smtp = @{}
+            Invoke-Command -ScriptBlock $process
         }
     }
-    finally
-    {
+    catch [System.OperationCanceledException] {
+        Close-Pode -Exit
+    }
+    finally {
         if ($listener -ne $null) {
             $listener.Stop()
         }

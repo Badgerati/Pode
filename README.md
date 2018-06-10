@@ -146,12 +146,27 @@ Import-Module Pode
 After that, all of your main server logic must be wrapped in a `Server` block. This lets you specify port numbers, server type, and any key logic: (you can only have one `Server` declared in your script)
 
 ```powershell
+# server.ps1
 Server -Port 8080 {
     # logic
 }
 ```
 
-The above `Server` block will start a basic HTTP listener on port 8080. Once started, to exit out of Pode at anytime just use `Ctrl+C`.
+The above `Server` script will start a basic HTTP listener on port 8080. To start the above server you can either:
+
+* Directly run the `./server.ps1` script, or
+* If you've created a `package.json` file, ensure the `./server.ps1` script is set as your `main` or `scripts/start`, then just run `pode start`
+
+Once Pode has started, you can exit out at any time using `Ctrl+C`. For some environments you probably don't want to allow exiting, so you can disable the `Ctrl+C` by setting the `-DisableTermination` switch on the `Server`:
+
+```powershell
+# server.ps1
+Server -Port 8080 {
+    # logic
+} -DisableTermination
+```
+
+> By default `Ctrl+C` is disabled in Docker containers due to the way input is treated. Supplying `-t` when running the container will allow exiting
 
 ### Timers
 
@@ -430,6 +445,20 @@ body {
         }
     )
 }
+```
+
+To load the above `.css.pode` file:
+
+```html
+<!-- /views/index.pode -->
+<html>
+   <head>
+      <link rel="stylesheet" href="styles/main.css.pode"> 
+   </head>
+   <body>
+        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
+    </body>
+</html>
 ```
 
 ## Third-Party View Engines

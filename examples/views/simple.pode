@@ -2,6 +2,7 @@
     <head>
         <title>Pode Page</title>
         <link rel="stylesheet" type="text/css" href="styles/simple.css.pode">
+        <script type="text/javascript" src="scripts/simple.js.pode"></script>
     </head>
     <body>
         Hello, world! This is Pode page!
