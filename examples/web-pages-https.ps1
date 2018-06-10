@@ -20,7 +20,7 @@ Server -Port $port -Https {
     #get all current sslcert bindings
     $bindings = netsh http show sslcert
     #check if selected port is already bound to an sslcert
-    $sslPortInUse = $bindings | Where-Object{$_ -like "*IP:port*"} | Where-Object{$_ -like "*:$port"}
+    $sslPortInUse = $bindings | Where-Object{$_ -like "*IP:port*" -and $_ -like "*:$port"}
     #if port is not yet bound, create self signed cert, and bind it to all IPs (0.0.0.0)
     if(!$sslPortInUse){
         #create cert, store it in personal cert store
