@@ -84,6 +84,53 @@ function Test-IsPSCore
     return $PSVersionTable.PSEdition -ieq 'core'
 }
 
+function Test-IPAddress
+{
+    param (
+        [Parameter()]
+        [string]
+        $IP
+    )
+
+    if ((Test-Empty $IP) -or $IP -ieq '*') {
+        return $true
+    }
+
+    try {
+        [System.Net.IPAddress]::Parse($IP) | Out-Null
+        return $true
+    }
+    catch [exception] {
+        return $false
+    }
+}
+
+function Test-IPAddressLocal
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $IP
+    )
+
+    return (@('0.0.0.0', '*', '127.0.0.1') -icontains $IP)
+}
+
+function Get-IPAddress
+{
+    param (
+        [Parameter()]
+        [string]
+        $IP
+    )
+
+    if ((Test-Empty $IP) -or $IP -ieq '*') {
+        return [System.Net.IPAddress]::Any
+    }
+
+    return [System.Net.IPAddress]::Parse($IP)
+}
+
 function Add-PodeRunspace
 {
     param (

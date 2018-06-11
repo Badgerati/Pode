@@ -1,3 +1,9 @@
+param (
+    [Parameter()]
+    [string]
+    $IP
+)
+
 if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
 {
     Remove-Module -Name Pode
@@ -10,7 +16,7 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -Port 8085 {
+Server -IP $IP -Port 8085 {
 
     engine pode
 

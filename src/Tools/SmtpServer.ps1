@@ -18,7 +18,7 @@ function Start-SmtpServer
         $data = [string]::Empty
 
         # open response to smtp request
-        tcp write '220 localhost -- Pode Proxy Server'
+        tcp write "220 $($PodeSession.IP.Name) -- Pode Proxy Server"
         $msg = [string]::Empty
 
         # respond to smtp request
@@ -81,14 +81,14 @@ function Start-SmtpServer
     # setup and run the smtp listener
     try
     {
-        $endpoint = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, $PodeSession.Port)
+        $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $PodeSession.Port)
         $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
-        
+
         # start listener
         $listener.Start()
 
         # state where we're running
-        Write-Host "Listening on smtp://localhost:$($PodeSession.Port)" -ForegroundColor Yellow
+        Write-Host "Listening on smtp://$($PodeSession.IP.Name):$($PodeSession.Port)" -ForegroundColor Yellow
 
         # loop for tcp request
         while ($true)

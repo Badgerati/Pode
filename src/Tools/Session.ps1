@@ -2,22 +2,36 @@ function New-PodeSession
 {
     param (
         [int]
-        $Port = 0
+        $Port = 0,
+
+        [string]
+        $IP = $null
     )
 
     # basic session object
     $session = New-Object -TypeName psobject |
         Add-Member -MemberType NoteProperty -Name Routes -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Handlers -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru | 
-        Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru | 
-        Add-Member -MemberType NoteProperty -Name Web -Value @{} -PassThru | 
-        Add-Member -MemberType NoteProperty -Name Smtp -Value @{} -PassThru | 
+        Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru |
+        Add-Member -MemberType NoteProperty -Name IP -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name Web -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Smtp -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Tcp -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name CancelToken -Value $null -PassThru
+
+    # set the IP address details
+    $session.IP = @{
+        'Address' = (Get-IPAddress $IP);
+        'Name' = 'localhost'
+    }
+
+    if (!(Test-IPAddressLocal -IP $session.IP.Address)) {
+        $session.IP.Name = $session.IP.Address
+    }
 
     # session engine for rendering views
     $session.ViewEngine = @{

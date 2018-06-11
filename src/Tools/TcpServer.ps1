@@ -9,14 +9,14 @@ function Start-TcpServer
     # setup and run the smtp listener
     try
     {
-        $endpoint = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, $PodeSession.Port)
+        $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $PodeSession.Port)
         $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
-        
+
         # start listener
         $listener.Start()
 
         # state where we're running
-        Write-Host "Listening on tcp://localhost:$($PodeSession.Port)" -ForegroundColor Yellow
+        Write-Host "Listening on tcp://$($PodeSession.IP.Name):$($PodeSession.Port)" -ForegroundColor Yellow
 
         # loop for tcp request
         while ($true)
