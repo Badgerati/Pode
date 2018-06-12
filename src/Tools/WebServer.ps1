@@ -33,13 +33,18 @@ function Start-WebServer
             $protocol = 'https'
         }
 
-        $listener.Prefixes.Add("$($protocol)://*:$($PodeSession.Port)/")
+        $_ip = "$($PodeSession.IP.Address)"
+        if ($_ip -ieq '0.0.0.0') {
+            $_ip = '*'
+        }
+
+        $listener.Prefixes.Add("$($protocol)://$($_ip):$($PodeSession.Port)/")
 
         # start listener
         $listener.Start()
 
         # state where we're running
-        Write-Host "Listening on $($protocol)://localhost:$($PodeSession.Port)/" -ForegroundColor Yellow
+        Write-Host "Listening on $($protocol)://$($PodeSession.IP.Name):$($PodeSession.Port)/" -ForegroundColor Yellow
 
         # loop for http request
         while ($listener.IsListening)

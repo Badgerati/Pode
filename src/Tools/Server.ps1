@@ -16,6 +16,10 @@ function Server
         [int]
         $Interval = 0,
 
+        [Parameter()]
+        [string]
+        $IP,
+
         [switch]
         $Smtp,
 
@@ -39,9 +43,14 @@ function Server
         throw "Port cannot be negative: $($Port)"
     }
 
+    # if an ip address was passed, ensure it's valid
+    if (!(Test-IPAddress $IP)) {
+        throw "Invalid IP address has been supplied: $($IP)"
+    }
+
     try {
         # create session object
-        $PodeSession = New-PodeSession -Port $Port
+        $PodeSession = New-PodeSession -Port $Port -IP $IP
 
         # set it so ctrl-c can terminate
         [Console]::TreatControlCAsInput = $true

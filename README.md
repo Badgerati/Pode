@@ -21,6 +21,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
     * [Docker](#docker)
     * [Frontend](#frontend)
     * [Basics](#basics)
+        * [Specific IP](#specific-ip-address)
     * [Timers](#timers)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
@@ -167,6 +168,16 @@ Server -Port 8080 {
 ```
 
 > By default `Ctrl+C` is disabled in Docker containers due to the way input is treated. Supplying `-t` when running the container will allow exiting
+
+#### Specific IP Address
+
+By default Pode will listen across all IP addresses for Web, TCP and SMTP servers. To specify a specific IP address to listen on you can use the `-IP` parameter on a `Server`; the following example will listen on `127.0.0.2:8080` only:
+
+```powershell
+Server -IP 127.0.0.2 -Port 8080 {
+    # logic
+}
+```
 
 ### Timers
 
