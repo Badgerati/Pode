@@ -32,4 +32,10 @@ Server -IP $IP -Port 8085 {
         status 500
     }
 
+    # GET request to download a file
+    route 'get' '/download' {
+        param($session)
+        attach 'Anger.jpg'
+    }
+
 }

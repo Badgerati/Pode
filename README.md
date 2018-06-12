@@ -26,6 +26,8 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
+    * [Misc](#misc)
+        * [Attach File](#attach-file)
 * [Pode Files](#pode-files)
     * [Third-Party Engines](#third-party-view-engines)
 
@@ -328,6 +330,23 @@ To help with writing and reading from the client stream, Pode has a helper funct
 
 * `tcp write $msg`
 * `$msg = (tcp read)`
+
+### Misc
+
+#### Attach File
+
+There is an internal helper function to aid attaching files to a response, so that they can be downloaded on the client end. Files to attach must be placed within the `public/` directory, much like the content files for JavaScript and CSS.
+
+An example of attaching a file to a response in a route is as follows, and here it will start a download of the file at `public/downloads/installer.exe`:
+
+```powershell
+Server -Port 8080 {
+    route get '/app/install' {
+        param($session)
+        attach 'downloads/installer.exe'
+    }
+}
+```
 
 ## Pode Files
 
