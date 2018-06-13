@@ -219,3 +219,20 @@ function Close-Pode
         exit 0
     }
 }
+
+function Join-ServerRoot
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Public', 'Views')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $FilePath
+    )
+
+    return (Join-Path $PodeSession.ServerRoot (Join-Path $Type.ToLowerInvariant() $FilePath))
+}
