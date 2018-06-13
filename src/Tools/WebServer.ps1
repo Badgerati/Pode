@@ -66,6 +66,10 @@ function Start-WebServer
             $path = ($request.RawUrl -isplit "\?")[0]
             $method = $request.HttpMethod.ToLowerInvariant()
 
+            $PodeSession.RequestsToLog.Add(@{
+                'Message' = 'hello, world'
+            }) | Out-Null
+
             # check to see if the path is a file, so we can check the public folder
             if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
                 $path = (Join-Path 'public' $path)
