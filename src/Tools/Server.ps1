@@ -50,7 +50,7 @@ function Server
 
     try {
         # create session object
-        $PodeSession = New-PodeSession -Port $Port -IP $IP
+        $PodeSession = New-PodeSession -Port $Port -IP $IP -ServerRoot $MyInvocation.PSScriptRoot
 
         # set it so ctrl-c can terminate
         [Console]::TreatControlCAsInput = $true
