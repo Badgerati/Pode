@@ -15,6 +15,7 @@ Server -IP $IP -Port 8085 {
     engine pode
 
     logger 'terminal'
+    #logger 'file'
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {

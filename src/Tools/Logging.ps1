@@ -17,6 +17,10 @@ function Start-LoggerRunspace
     }
 
     $script = {
+        function Get-ResponseString($req) {
+            return "$($req.Host) $($req.Ident) $($req.User) [$($req.Date)] `"$($req.Request.Method) $($req.Request.Resource) $($req.Request.Protocol)`" $($req.Response.StatusCode) $($req.Response.Size)"
+        }
+
         while ($true)
         {
             # if there are no requests to log, just sleep
@@ -26,10 +30,10 @@ function Start-LoggerRunspace
             }
 
             # loop through each of the requests, and invoke the loggers
-            $request = $null
+            $r = $null
 
             lock $requests {
-                $request = $requests[0]
+                $r = $requests[0]
                 $requests.RemoveAt(0) | Out-Null
             }
 
@@ -37,7 +41,11 @@ function Start-LoggerRunspace
                 switch ($_.ToLowerInvariant())
                 {
                     'terminal' {
-                        $request.Message | Out-Default
+                        (Get-ResponseString $r) | Out-Default
+                    }
+
+                    'file' {
+                        (Get-ResponseString $r) | Out-File -FilePath 'C:\Projects\Pode\examples\logs.log' -Encoding utf8 -Append -Force
                     }
                 }
             }
@@ -71,7 +79,7 @@ function Logger
     $PodeSession.Loggers[$Name] = @{}
 
     # if this is the first logger, start the logging runspace
-    if (($PodeSession.Loggers | Measure-Object).Count -eq 1) {
+    if ($PodeSession.Loggers.Count -eq 1) {
         Start-LoggerRunspace
     }
 }
