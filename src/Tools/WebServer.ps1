@@ -85,7 +85,7 @@ function Start-WebServer
 
             # check to see if the path is a file, so we can check the public folder
             if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
-                $path = (Join-Path 'public' $path)
+                $path = Join-ServerRoot 'public' $path
                 Write-ToResponseFromFile -Path $path
             }
 

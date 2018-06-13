@@ -5,7 +5,10 @@ function New-PodeSession
         $Port = 0,
 
         [string]
-        $IP = $null
+        $IP = $null,
+
+        [string]
+        $ServerRoot
     )
 
     # basic session object
@@ -23,7 +26,8 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name CancelToken -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru
+        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name ServerRoot -Value $ServerRoot -PassThru
 
     # set the IP address details
     $session.IP = @{

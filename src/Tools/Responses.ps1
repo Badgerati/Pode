@@ -89,7 +89,7 @@ function Attach
     )
 
     # only download files from the public/ dir
-    $Path = (Resolve-Path (Join-Path 'public' $Path))
+    $Path = Join-ServerRoot 'public' $Path
 
     # if the file doesnt exist then just fail on 404
     if (!(Test-Path $Path)) {
@@ -347,7 +347,7 @@ function Include
     }
 
     # only look in the view directory
-    $Path = (Join-Path 'views' $Path)
+    $Path = Join-ServerRoot 'views' $Path
     if (!(Test-Path $Path)) {
         throw "File not found at path: $($Path)"
     }
@@ -425,7 +425,7 @@ function View
     }
 
     # only look in the view directory
-    $Path = (Join-Path 'views' $Path)
+    $Path = Join-ServerRoot 'views' $Path
     if (!(Test-Path $Path)) {
         status 404
         return
