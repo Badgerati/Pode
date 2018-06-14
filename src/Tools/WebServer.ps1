@@ -80,7 +80,8 @@ function Start-WebServer
                     'Agent' = $request.UserAgent;
                 };
                 'Response' = @{
-                    'StatusCode' = '418';
+                    'StatusCode' = '-';
+                    'StautsDescription' = '-'
                     'Size' = '-';
                 };
             }
@@ -133,6 +134,7 @@ function Start-WebServer
 
             # add the log object to the list
             $logObject.Response.StatusCode = $response.StatusCode
+            $logObject.Response.StatusDescription = $response.StatusDescription
 
             if ($response.ContentLength64 -gt 0) {
                 $logObject.Response.Size = $response.ContentLength64

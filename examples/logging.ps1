@@ -14,8 +14,20 @@ Server -Port 8085 {
 
     engine pode
 
+    # termial/cli logger
     logger 'terminal'
-    logger 'file'
+
+    # daily file logger
+    logger 'file' @{
+        'Path' = $null; # default is '<root>/logs'
+        'MaxDays' = 4;
+    }
+
+    # custom logger
+    logger 'custom_output' {
+        param($log)
+        $log.Request.Protocol | Out-Default
+    }
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
