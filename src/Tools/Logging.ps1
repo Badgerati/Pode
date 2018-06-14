@@ -17,8 +17,16 @@ function Start-LoggerRunspace
     }
 
     $script = {
-        function Get-ResponseString($req) {
-            return "$($req.Host) $($req.Ident) $($req.User) [$($req.Date)] `"$($req.Request.Method) $($req.Request.Resource) $($req.Request.Protocol)`" $($req.Response.StatusCode) $($req.Response.Size)"
+        function sg($value) {
+            if (Test-Empty $value) {
+                return '-'
+            }
+
+            return $value
+        }
+
+        function Get-RequestString($req) {
+            return "$(sg $req.Host) $(sg $req.RfcUserIdentity) $(sg $req.User) [$(sg $req.Date)] `"$(sg $req.Request.Method) $(sg $req.Request.Resource) $(sg $req.Request.Protocol)`" $(sg $req.Response.StatusCode) $(sg $req.Response.Size) `"$(sg $req.Request.Referrer)`" `"$(sg $req.Request.Agent)`""
         }
 
         while ($true)
@@ -37,15 +45,20 @@ function Start-LoggerRunspace
                 $requests.RemoveAt(0) | Out-Null
             }
 
+            # convert the request into a log string
+            $str = (Get-RequestString $r)
+
+            # apply request to loggers
             $loggers.Keys | ForEach-Object {
                 switch ($_.ToLowerInvariant())
                 {
                     'terminal' {
-                        (Get-ResponseString $r) | Out-Default
+                        $str | Out-Default
                     }
 
                     'file' {
-                        (Get-ResponseString $r) | Out-File -FilePath 'C:\Projects\Pode\examples\logs.log' -Encoding utf8 -Append -Force
+                        $path = (Join-ServerRoot 'logs' 'log.txt' -Root $root)
+                        $str | Out-File -FilePath $path -Encoding utf8 -Append -Force
                     }
                 }
             }
@@ -67,6 +80,12 @@ function Logger
         $Name
     )
 
+    # is logging disabled?
+    if ($PodeSession.DisableLogging) {
+        Write-Host "Logging has been disabled for $($Name)" -ForegroundColor DarkBlue
+        return
+    }
+
     # lower the name
     $Name = $Name.ToLowerInvariant()
 
@@ -77,6 +96,12 @@ function Logger
 
     # add the logger
     $PodeSession.Loggers[$Name] = @{}
+
+    # if a file logger, create base directory
+    if ($Name -ieq 'file') {
+        $path = (Split-Path -Parent -Path (Join-ServerRoot 'logs' 'tmp.txt'))
+        New-Item -Path $path -ItemType Directory -Force | Out-Null
+    }
 
     # if this is the first logger, start the logging runspace
     if ($PodeSession.Loggers.Count -eq 1) {

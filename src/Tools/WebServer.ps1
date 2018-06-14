@@ -69,13 +69,15 @@ function Start-WebServer
             # setup the base request to log later
             $logObject = @{
                 'Host' = $request.RemoteEndPoint.Address.IPAddressToString;
-                'Ident' = '-';
+                'RfcUserIdentity' = '-';
                 'User' = '-';
                 'Date' = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz');
                 'Request' = @{
                     'Method' = $method.ToUpperInvariant();
                     'Resource' = $path;
-                    'Protocol' = "HTTP/$($request.ProtocolVersion.ToString())";
+                    'Protocol' = "HTTP/$($request.ProtocolVersion)";
+                    'Referrer' = $request.UrlReferrer;
+                    'Agent' = $request.UserAgent;
                 };
                 'Response' = @{
                     'StatusCode' = '418';
@@ -131,7 +133,11 @@ function Start-WebServer
 
             # add the log object to the list
             $logObject.Response.StatusCode = $response.StatusCode
-            $logObject.Response.Size = $response.ContentLength64
+
+            if ($response.ContentLength64 -gt 0) {
+                $logObject.Response.Size = $response.ContentLength64
+            }
+
             $PodeSession.RequestsToLog.Add($logObject) | Out-Null
         }
     }

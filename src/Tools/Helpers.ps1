@@ -268,15 +268,23 @@ function Join-ServerRoot
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Public', 'Views')]
+        [ValidateSet('Public', 'Views', 'Logs')]
         [string]
         $Type,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $FilePath
+        $FilePath,
+
+        [Parameter()]
+        [string]
+        $Root
     )
 
-    return (Join-Path $PodeSession.ServerRoot (Join-Path $Type.ToLowerInvariant() $FilePath))
+    if (Test-Empty $Root) {
+        $Root = $PodeSession.ServerRoot
+    }
+
+    return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
 }

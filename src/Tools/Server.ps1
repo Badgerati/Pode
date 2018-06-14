@@ -30,7 +30,10 @@ function Server
         $Https,
 
         [switch]
-        $DisableTermination
+        $DisableTermination,
+
+        [switch]
+        $DisableLogging
     )
 
     # if smtp is passed, and no port - force port to 25
@@ -50,7 +53,8 @@ function Server
 
     try {
         # create session object
-        $PodeSession = New-PodeSession -Port $Port -IP $IP -ServerRoot $MyInvocation.PSScriptRoot
+        $PodeSession = New-PodeSession -Port $Port -IP $IP `
+            -ServerRoot $MyInvocation.PSScriptRoot -DisableLogging:$DisableLogging
 
         # set it so ctrl-c can terminate
         [Console]::TreatControlCAsInput = $true

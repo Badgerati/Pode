@@ -10,12 +10,12 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -IP $IP -Port 8085 {
+Server -Port 8085 {
 
     engine pode
 
     logger 'terminal'
-    #logger 'file'
+    logger 'file'
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
