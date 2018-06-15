@@ -137,12 +137,21 @@ function Add-PodeRunspace
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [Parameter()]
+        $Parameters
     )
 
     $ps = [powershell]::Create()
     $ps.RunspacePool = $PodeSession.RunspacePool
     $ps.AddScript($ScriptBlock) | Out-Null
+
+    if (!(Test-Empty $Parameters)) {
+        $Parameters.Keys | ForEach-Object {
+            $ps.AddParameter($_, $Parameters[$_]) | Out-Null
+        }
+    }
 
     $PodeSession.Runspaces += @{
         'Runspace' = $ps;
@@ -220,19 +229,62 @@ function Close-Pode
     }
 }
 
+<#
+# Sourced and editted from https://davewyatt.wordpress.com/2014/04/06/thread-synchronization-in-powershell/
+#>
+function Lock
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [object]
+        $InputObject,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    if ($InputObject.GetType().IsValueType) {
+        throw 'Cannot lock value types'
+    }
+
+    $locked = $false
+
+    try {
+        [System.Threading.Monitor]::Enter($InputObject.SyncRoot)
+        $locked = $true
+        . $ScriptBlock
+    }
+    finally {
+        if ($locked) {
+            [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
+        }
+    }
+}
+
 function Join-ServerRoot
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Public', 'Views')]
+        [ValidateSet('Public', 'Views', 'Logs')]
         [string]
         $Type,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $FilePath
+        $FilePath,
+
+        [Parameter()]
+        [string]
+        $Root
     )
 
-    return (Join-Path $PodeSession.ServerRoot (Join-Path $Type.ToLowerInvariant() $FilePath))
+    if (Test-Empty $Root) {
+        $Root = $PodeSession.ServerRoot
+    }
+
+    return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
 }

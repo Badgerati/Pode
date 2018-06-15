@@ -8,7 +8,10 @@ function New-PodeSession
         $IP = $null,
 
         [string]
-        $ServerRoot
+        $ServerRoot,
+
+        [switch]
+        $DisableLogging
     )
 
     # basic session object
@@ -25,6 +28,9 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name CancelToken -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name DisableLogging -Value $DisableLogging -PassThru |
+        Add-Member -MemberType NoteProperty -Name Loggers -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name ServerRoot -Value $ServerRoot -PassThru
 
     # set the IP address details
@@ -68,12 +74,20 @@ function New-PodeSession
     # async timers
     $session.Timers = @{}
 
+    # requests that should be logged
+    $session.RequestsToLog = New-Object System.Collections.ArrayList
+
     # session state
     $state = [initialsessionstate]::CreateDefault()
+    $state.ImportPSModule((Get-Module -Name Pode).Path)
+
     $variables = @(
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'timers', $session.Timers, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'console', $Host, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'token', $session.CancelToken, $null)
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'token', $session.CancelToken, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'loggers', $session.Loggers, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'requests', $session.RequestsToLog, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'root', $session.ServerRoot, $null)
     )
 
     $variables | ForEach-Object {
@@ -82,7 +96,7 @@ function New-PodeSession
 
     # runspace and pool
     $session.Runspaces = @()
-    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
+    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, 3, $state, $Host)
     $session.RunspacePool.Open()
 
     return $session
