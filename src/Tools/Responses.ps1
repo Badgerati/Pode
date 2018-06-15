@@ -19,8 +19,10 @@ function Write-ToResponse
     }
 
     if ((Get-Type $Value).Name -ieq 'string') {
+        [byte[]] $buffer = [System.Text.Encoding]::UTF8.GetBytes([string]$Value)
+        $PodeSession.Web.Response.ContentLength64 = $buffer.Length
         $writer = New-Object -TypeName System.IO.StreamWriter -ArgumentList $PodeSession.Web.Response.OutputStream
-        $writer.WriteLine([string]$Value)
+        $writer.Write($buffer, 0, $buffer.Length)
         $writer.Close()
     }
     else {
