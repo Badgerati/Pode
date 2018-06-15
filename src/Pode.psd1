@@ -23,7 +23,7 @@
     Copyright = 'Copyright (c) 2017-2018 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
-    Description = 'Pode is a PowerShell web framework that runs HTTP/TCP listeners on a specific port, allowing you to host REST APIs, Web Pages and SMTP servers'
+    Description = 'Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs, Web Sites, and TCP/SMTP Servers'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '3.0'
@@ -49,11 +49,13 @@
         'Xml',
         'Pode',
         'Timer',
+        'Logger',
         'Csv',
         'Test-IsUnix',
         'Test-IsPSCore',
         'Status',
-        'Include'
+        'Include',
+        'Lock'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
@@ -62,7 +64,7 @@
 
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
-                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core')
+                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

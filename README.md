@@ -11,7 +11,7 @@
 [![Docker](https://img.shields.io/docker/stars/badgerati/pode.svg)](https://hub.docker.com/r/badgerati/pode/)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific ports, allowing you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers. It also allows you to render dynamic files using [Pode](#pode-files) files, which is effectively embedded PowerShell, or other [Third-Party](#third-party-view-engines) template engines.
+Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers. It also allows you to render dynamic files using [Pode](#pode-files) files, which is effectively embedded PowerShell, or other [Third-Party](#third-party-view-engines) template engines.
 
 ## Contents
 
@@ -21,10 +21,14 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific port
     * [Docker](#docker)
     * [Frontend](#frontend)
     * [Basics](#basics)
+        * [Specific IP](#specific-ip-address)
     * [Timers](#timers)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
+    * [Misc](#misc)
+        * [Attach File](#attach-file)
+        * [Logging](#logging)
 * [Pode Files](#pode-files)
     * [Third-Party Engines](#third-party-view-engines)
 
@@ -38,6 +42,7 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on specific port
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 * Setup async timers to be used as one off tasks, or for housekeeping services
+* Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 
 ## Install
 
@@ -167,6 +172,16 @@ Server -Port 8080 {
 ```
 
 > By default `Ctrl+C` is disabled in Docker containers due to the way input is treated. Supplying `-t` when running the container will allow exiting
+
+#### Specific IP Address
+
+By default Pode will listen across all IP addresses for Web, TCP and SMTP servers. To specify a specific IP address to listen on you can use the `-IP` parameter on a `Server`; the following example will listen on `127.0.0.2:8080` only:
+
+```powershell
+Server -IP 127.0.0.2 -Port 8080 {
+    # logic
+}
+```
 
 ### Timers
 
@@ -317,6 +332,82 @@ To help with writing and reading from the client stream, Pode has a helper funct
 
 * `tcp write $msg`
 * `$msg = (tcp read)`
+
+### Misc
+
+#### Attach File
+
+There is an internal helper function to aid attaching files to a response, so that they can be downloaded on the client end. Files to attach must be placed within the `public/` directory, much like the content files for JavaScript and CSS.
+
+An example of attaching a file to a response in a route is as follows, and here it will start a download of the file at `public/downloads/installer.exe`:
+
+```powershell
+Server -Port 8080 {
+    route get '/app/install' {
+        param($session)
+        attach 'downloads/installer.exe'
+    }
+}
+```
+
+#### Logging
+
+Allows you to define `Logger`s within a Server that will send [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) rows to either the terminal, a file, or a custom scriptblock that allows you to log to a variety of services - e.g. Splunk/FluentD/LogStash
+
+An example of logging to the terminal, and to a file with removal of old log files after 7 days:
+
+```powershell
+Server -Port 8085 {
+    logger 'terminal'
+    logger 'file' @{
+        'Path' = '<path_to_put_logs>';
+        'MaxDays' = 7;
+    }
+
+    # GET "localhost:8085/"
+    route 'get' '/' {
+        param($session)
+        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+    }
+}
+```
+
+The hashtable supplied to `logger 'file'` is completely optional. If no Path is supplied then a `logs` directory will be created at the server script root path, and if `MaxDays is <= 0` then log files will be kept forever.
+
+* If `Path` is supplied, then the logs will be placed at that location (and any directories along that path are created).
+* If `MaxDays` is supplied, then once a day Pode will clean-up log files older than that many days.
+
+Custom loggers must have a name like `custom_*` and have a supplied scriptblock. When the scriptblock is invoked, the log request object will be passed to it:
+
+```powershell
+logger 'custom_output' {
+    param($log)
+    $log.Request.Resource | Out-Default
+}
+```
+
+The `$log` object passed will have the following structure:
+
+```powershell
+@{
+    'Host' = '10.10.0.3';
+    'RfcUserIdentity' = '-';
+    'User' = '-';
+    'Date' = '14/Jun/2018:20:23:52 +01:00';
+    'Request' = @{
+        'Method' = 'GET';
+        'Resource' = '/api/users';
+        'Protocol' = "HTTP/1.1";
+        'Referrer' = '-';
+        'Agent' = '<user-agent>';
+    };
+    'Response' = @{
+        'StatusCode' = '200';
+        'StautsDescription' = 'OK'
+        'Size' = '9001';
+    };
+}
+```
 
 ## Pode Files
 
@@ -492,6 +583,7 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `handler`
 * `engine`
 * `timer`
+* `logger`
 * `html`
 * `xml`
 * `json`
@@ -507,3 +599,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Test-IsPSCore`
 * `status`
 * `include`
+* `lock`

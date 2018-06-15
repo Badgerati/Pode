@@ -1,9 +1,3 @@
-param (
-    [Parameter()]
-    [string]
-    $IP
-)
-
 if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
 {
     Remove-Module -Name Pode
@@ -16,9 +10,24 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -IP $IP -Port 8085 {
+Server -Port 8085 {
 
     engine pode
+
+    # termial/cli logger
+    logger 'terminal'
+
+    # daily file logger
+    logger 'file' @{
+        'Path' = $null; # default is '<root>/logs'
+        'MaxDays' = 4;
+    }
+
+    # custom logger
+    logger 'custom_output' {
+        param($log)
+        $log.Request.Protocol | Out-Default
+    }
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {

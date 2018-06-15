@@ -7,9 +7,9 @@
     <version>$version$</version>
     <authors>Badgerati</authors>
     <owners>Badgerati</owners>
-    <summary>Pode is a PowerShell web framework that runs a HTTP/TCP listener on a specific port, allowing you to host REST APIs, Web Pages and SMTP servers</summary>
+    <summary>Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs, Web Sites, and TCP/SMTP Servers</summary>
     <description>
-Pode is a PowerShell web framework that runs HTTP/TCP listeners on a specific port, allowing you to host REST APIs, Web Pages and SMTP servers
+Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs, Web Sites, and TCP/SMTP Servers
 
 ### Features
 
@@ -21,6 +21,7 @@ Pode is a PowerShell web framework that runs HTTP/TCP listeners on a specific po
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 * Setup async timers as one off tasks, or for housekeeping services
+* Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 
     </description>
     <projectUrl>https://github.com/Badgerati/Pode</projectUrl>

@@ -84,18 +84,74 @@ function Test-IsPSCore
     return $PSVersionTable.PSEdition -ieq 'core'
 }
 
+function Test-IPAddress
+{
+    param (
+        [Parameter()]
+        [string]
+        $IP
+    )
+
+    if ((Test-Empty $IP) -or $IP -ieq '*') {
+        return $true
+    }
+
+    try {
+        [System.Net.IPAddress]::Parse($IP) | Out-Null
+        return $true
+    }
+    catch [exception] {
+        return $false
+    }
+}
+
+function Test-IPAddressLocal
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $IP
+    )
+
+    return (@('0.0.0.0', '*', '127.0.0.1') -icontains $IP)
+}
+
+function Get-IPAddress
+{
+    param (
+        [Parameter()]
+        [string]
+        $IP
+    )
+
+    if ((Test-Empty $IP) -or $IP -ieq '*') {
+        return [System.Net.IPAddress]::Any
+    }
+
+    return [System.Net.IPAddress]::Parse($IP)
+}
+
 function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [Parameter()]
+        $Parameters
     )
 
     $ps = [powershell]::Create()
     $ps.RunspacePool = $PodeSession.RunspacePool
     $ps.AddScript($ScriptBlock) | Out-Null
+
+    if (!(Test-Empty $Parameters)) {
+        $Parameters.Keys | ForEach-Object {
+            $ps.AddParameter($_, $Parameters[$_]) | Out-Null
+        }
+    }
 
     $PodeSession.Runspaces += @{
         'Runspace' = $ps;
@@ -171,4 +227,64 @@ function Close-Pode
         Write-Host " Done" -ForegroundColor Green
         exit 0
     }
+}
+
+<#
+# Sourced and editted from https://davewyatt.wordpress.com/2014/04/06/thread-synchronization-in-powershell/
+#>
+function Lock
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [object]
+        $InputObject,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    if ($InputObject.GetType().IsValueType) {
+        throw 'Cannot lock value types'
+    }
+
+    $locked = $false
+
+    try {
+        [System.Threading.Monitor]::Enter($InputObject.SyncRoot)
+        $locked = $true
+        . $ScriptBlock
+    }
+    finally {
+        if ($locked) {
+            [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
+        }
+    }
+}
+
+function Join-ServerRoot
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Public', 'Views', 'Logs')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $FilePath,
+
+        [Parameter()]
+        [string]
+        $Root
+    )
+
+    if (Test-Empty $Root) {
+        $Root = $PodeSession.ServerRoot
+    }
+
+    return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
 }

@@ -19,16 +19,15 @@ function Write-ToResponse
     }
 
     if ((Get-Type $Value).Name -ieq 'string') {
-        $writer = New-Object -TypeName System.IO.StreamWriter -ArgumentList $PodeSession.Web.Response.OutputStream
-        $writer.WriteLine([string]$Value)
-        $writer.Close()
+        $Value = [System.Text.Encoding]::UTF8.GetBytes($Value)
     }
-    else {
-        $memory = New-Object -TypeName System.IO.MemoryStream
-        $memory.Write($Value, 0, $Value.Length)
-        $memory.WriteTo($PodeSession.Web.Response.OutputStream)
-        $memory.Close()
-    }
+
+    $PodeSession.Web.Response.ContentLength64 = $Value.Length
+
+    $memory = New-Object -TypeName System.IO.MemoryStream
+    $memory.Write($Value, 0, $Value.Length)
+    $memory.WriteTo($PodeSession.Web.Response.OutputStream)
+    $memory.Close()
 }
 
 function Write-ToResponseFromFile
@@ -78,6 +77,46 @@ function Write-ToResponseFromFile
 
     $ext = [System.IO.Path]::GetExtension([System.IO.Path]::GetFileNameWithoutExtension($Path)).Trim('.')
     Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
+}
+
+function Attach
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Path
+    )
+
+    # only download files from the public/ dir
+    $Path = Join-ServerRoot 'public' $Path
+
+    # if the file doesnt exist then just fail on 404
+    if (!(Test-Path $Path)) {
+        status 404
+        return
+    }
+
+    $filename = [System.IO.Path]::GetFileName($Path)
+    $ext = [System.IO.Path]::GetExtension($Path).Trim('.')
+
+    # open up the file as a stream
+    $fs = [System.IO.File]::OpenRead($Path)
+
+    # setup the response details and headers
+    $PodeSession.Web.Response.ContentLength64 = $fs.Length
+    $PodeSession.Web.Response.SendChunked = $false
+    $PodeSession.Web.Response.ContentType = (Get-PodeContentType -Extension $ext)
+    $PodeSession.Web.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
+
+    # set file as an attachment on the response
+    $buffer = [byte[]]::new(64 * 1024)
+    $read = 0
+
+    while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
+        $PodeSession.Web.Response.OutputStream.Write($buffer, 0, $read)
+    }
+
+    $fs.Dispose()
 }
 
 function Status
@@ -307,7 +346,7 @@ function Include
     }
 
     # only look in the view directory
-    $Path = (Join-Path 'views' $Path)
+    $Path = Join-ServerRoot 'views' $Path
     if (!(Test-Path $Path)) {
         throw "File not found at path: $($Path)"
     }
@@ -385,7 +424,7 @@ function View
     }
 
     # only look in the view directory
-    $Path = (Join-Path 'views' $Path)
+    $Path = Join-ServerRoot 'views' $Path
     if (!(Test-Path $Path)) {
         status 404
         return

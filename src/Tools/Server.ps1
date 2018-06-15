@@ -16,6 +16,10 @@ function Server
         [int]
         $Interval = 0,
 
+        [Parameter()]
+        [string]
+        $IP,
+
         [switch]
         $Smtp,
 
@@ -26,7 +30,10 @@ function Server
         $Https,
 
         [switch]
-        $DisableTermination
+        $DisableTermination,
+
+        [switch]
+        $DisableLogging
     )
 
     # if smtp is passed, and no port - force port to 25
@@ -39,9 +46,15 @@ function Server
         throw "Port cannot be negative: $($Port)"
     }
 
+    # if an ip address was passed, ensure it's valid
+    if (!(Test-IPAddress $IP)) {
+        throw "Invalid IP address has been supplied: $($IP)"
+    }
+
     try {
         # create session object
-        $PodeSession = New-PodeSession -Port $Port
+        $PodeSession = New-PodeSession -Port $Port -IP $IP `
+            -ServerRoot $MyInvocation.PSScriptRoot -DisableLogging:$DisableLogging
 
         # set it so ctrl-c can terminate
         [Console]::TreatControlCAsInput = $true

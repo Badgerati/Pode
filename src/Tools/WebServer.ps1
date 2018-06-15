@@ -33,13 +33,18 @@ function Start-WebServer
             $protocol = 'https'
         }
 
-        $listener.Prefixes.Add("$($protocol)://*:$($PodeSession.Port)/")
+        $_ip = "$($PodeSession.IP.Address)"
+        if ($_ip -ieq '0.0.0.0') {
+            $_ip = '*'
+        }
+
+        $listener.Prefixes.Add("$($protocol)://$($_ip):$($PodeSession.Port)/")
 
         # start listener
         $listener.Start()
 
         # state where we're running
-        Write-Host "Listening on $($protocol)://localhost:$($PodeSession.Port)/" -ForegroundColor Yellow
+        Write-Host "Listening on $($protocol)://$($PodeSession.IP.Name):$($PodeSession.Port)/" -ForegroundColor Yellow
 
         # loop for http request
         while ($listener.IsListening)
@@ -61,9 +66,29 @@ function Start-WebServer
             $path = ($request.RawUrl -isplit "\?")[0]
             $method = $request.HttpMethod.ToLowerInvariant()
 
+            # setup the base request to log later
+            $logObject = @{
+                'Host' = $request.RemoteEndPoint.Address.IPAddressToString;
+                'RfcUserIdentity' = '-';
+                'User' = '-';
+                'Date' = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz');
+                'Request' = @{
+                    'Method' = $method.ToUpperInvariant();
+                    'Resource' = $path;
+                    'Protocol' = "HTTP/$($request.ProtocolVersion)";
+                    'Referrer' = $request.UrlReferrer;
+                    'Agent' = $request.UserAgent;
+                };
+                'Response' = @{
+                    'StatusCode' = '-';
+                    'StautsDescription' = '-'
+                    'Size' = '-';
+                };
+            }
+
             # check to see if the path is a file, so we can check the public folder
             if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
-                $path = (Join-Path 'public' $path)
+                $path = Join-ServerRoot 'public' $path
                 Write-ToResponseFromFile -Path $path
             }
 
@@ -106,6 +131,16 @@ function Start-WebServer
             if ($response.OutputStream) {
                 $response.OutputStream.Close()
             }
+
+            # add the log object to the list
+            $logObject.Response.StatusCode = $response.StatusCode
+            $logObject.Response.StatusDescription = $response.StatusDescription
+
+            if ($response.ContentLength64 -gt 0) {
+                $logObject.Response.Size = $response.ContentLength64
+            }
+
+            $PodeSession.RequestsToLog.Add($logObject) | Out-Null
         }
     }
     catch [System.OperationCanceledException] {
