@@ -42,6 +42,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 * Setup async timers to be used as one off tasks, or for housekeeping services
+* Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 
 ## Install
 
@@ -582,6 +583,7 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `handler`
 * `engine`
 * `timer`
+* `logger`
 * `html`
 * `xml`
 * `json`
@@ -597,3 +599,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Test-IsPSCore`
 * `status`
 * `include`
+* `lock`
