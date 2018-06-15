@@ -373,8 +373,8 @@ Server -Port 8085 {
 
 The logger 'file' hashtable is completely optional. If no Path is supplied then a logs dir will be created at the server script root path, and if MaxDays is <= 0 then log files will be kept forever.
 
-If a Path is supplied, then the logs will be placed there (and any directories along that path created).
-If MaxDays it supplied, then once a day Pode will clean-up log files older than that many days.
+If Path is supplied, then the logs will be placed there (and any directories along that path created).
+If MaxDays is supplied, then once a day Pode will clean-up log files older than that many days.
 
 Custom loggers must have a name like custom_* and have a supplied scriptblock. When the scriptblock is invoked, the log request object will be passed to it:
 
