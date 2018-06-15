@@ -351,9 +351,9 @@ Server -Port 8080 {
 
 #### Logging
 
-Allows you to define Loggers within a Server that will send [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) to either the terminal, a file, or a custom scriptblock to allow you to log to a variety of services - e.g. Splunk/FluentD/LogStash
+Allows you to define `Logger`s within a Server that will send [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) rows to either the terminal, a file, or a custom scriptblock that allows you to log to a variety of services - e.g. Splunk/FluentD/LogStash
 
-An example of logging to the terminal and to a file with removal of old log files after 7 days:
+An example of logging to the terminal, and to a file with removal of old log files after 7 days:
 
 ```powershell
 Server -Port 8085 {
@@ -371,12 +371,12 @@ Server -Port 8085 {
 }
 ```
 
-The logger 'file' hashtable is completely optional. If no Path is supplied then a logs dir will be created at the server script root path, and if MaxDays is <= 0 then log files will be kept forever.
+The hashtable supplied to `logger 'file'` is completely optional. If no Path is supplied then a `logs` directory will be created at the server script root path, and if `MaxDays is <= 0` then log files will be kept forever.
 
-If Path is supplied, then the logs will be placed there (and any directories along that path created).
-If MaxDays is supplied, then once a day Pode will clean-up log files older than that many days.
+* If `Path` is supplied, then the logs will be placed at that location (and any directories along that path are created).
+* If `MaxDays` is supplied, then once a day Pode will clean-up log files older than that many days.
 
-Custom loggers must have a name like custom_* and have a supplied scriptblock. When the scriptblock is invoked, the log request object will be passed to it:
+Custom loggers must have a name like `custom_*` and have a supplied scriptblock. When the scriptblock is invoked, the log request object will be passed to it:
 
 ```powershell
 logger 'custom_output' {
@@ -385,7 +385,7 @@ logger 'custom_output' {
 }
 ```
 
-The $log object passed will have the following structure:
+The `$log` object passed will have the following structure:
 
 ```powershell
 @{
@@ -403,7 +403,7 @@ The $log object passed will have the following structure:
     'Response' = @{
         'StatusCode' = '200';
         'StautsDescription' = 'OK'
-        'Size' = '-';
+        'Size' = '9001';
     };
 }
 ```
