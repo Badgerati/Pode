@@ -28,6 +28,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
     * [SMTP Server](#smtp-server)
     * [Misc](#misc)
         * [Attach File](#attach-file)
+        * [Logging](#logging)
 * [Pode Files](#pode-files)
     * [Third-Party Engines](#third-party-view-engines)
 
@@ -345,6 +346,65 @@ Server -Port 8080 {
         param($session)
         attach 'downloads/installer.exe'
     }
+}
+```
+
+#### Logging
+
+Allows you to define Loggers within a Server that will send [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) to either the terminal, a file, or a custom scriptblock to allow you to log to a variety of services - e.g. Splunk/FluentD/LogStash
+
+An example of logging to the terminal and to a file with removal of old log files after 7 days:
+
+```powershell
+Server -Port 8085 {
+    logger 'terminal'
+    logger 'file' @{
+        'Path' = '<path_to_put_logs>';
+        'MaxDays' = 7;
+    }
+
+    # GET "localhost:8085/"
+    route 'get' '/' {
+        param($session)
+        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+    }
+}
+```
+
+The logger 'file' hashtable is completely optional. If no Path is supplied then a logs dir will be created at the server script root path, and if MaxDays is <= 0 then log files will be kept forever.
+
+If Path is supplied, then the logs will be placed there (and any directories along that path created).
+If MaxDays is supplied, then once a day Pode will clean-up log files older than that many days.
+
+Custom loggers must have a name like custom_* and have a supplied scriptblock. When the scriptblock is invoked, the log request object will be passed to it:
+
+```powershell
+logger 'custom_output' {
+    param($log)
+    $log.Request.Resource | Out-Default
+}
+```
+
+The $log object passed will have the following structure:
+
+```powershell
+@{
+    'Host' = '10.10.0.3';
+    'RfcUserIdentity' = '-';
+    'User' = '-';
+    'Date' = '14/Jun/2018:20:23:52 +01:00';
+    'Request' = @{
+        'Method' = 'GET';
+        'Resource' = '/api/users';
+        'Protocol' = "HTTP/1.1";
+        'Referrer' = '-';
+        'Agent' = '<user-agent>';
+    };
+    'Response' = @{
+        'StatusCode' = '200';
+        'StautsDescription' = 'OK'
+        'Size' = '-';
+    };
 }
 ```
 
