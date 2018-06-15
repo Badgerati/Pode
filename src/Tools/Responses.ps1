@@ -19,18 +19,15 @@ function Write-ToResponse
     }
 
     if ((Get-Type $Value).Name -ieq 'string') {
-        [byte[]] $buffer = [System.Text.Encoding]::UTF8.GetBytes([string]$Value)
-        $PodeSession.Web.Response.ContentLength64 = $buffer.Length
-        $writer = New-Object -TypeName System.IO.StreamWriter -ArgumentList $PodeSession.Web.Response.OutputStream
-        $writer.Write($buffer, 0, $buffer.Length)
-        $writer.Close()
+        $Value = [System.Text.Encoding]::UTF8.GetBytes($Value)
     }
-    else {
-        $memory = New-Object -TypeName System.IO.MemoryStream
-        $memory.Write($Value, 0, $Value.Length)
-        $memory.WriteTo($PodeSession.Web.Response.OutputStream)
-        $memory.Close()
-    }
+
+    $PodeSession.Web.Response.ContentLength64 = $Value.Length
+
+    $memory = New-Object -TypeName System.IO.MemoryStream
+    $memory.Write($Value, 0, $Value.Length)
+    $memory.WriteTo($PodeSession.Web.Response.OutputStream)
+    $memory.Close()
 }
 
 function Write-ToResponseFromFile
