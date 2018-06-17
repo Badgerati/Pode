@@ -146,6 +146,10 @@ function Start-WebServer
     catch [System.OperationCanceledException] {
         Close-Pode -Exit
     }
+    catch [exception] {
+        $_.exception | Out-Default
+        throw $_.exception
+    }
     finally {
         if ($listener -ne $null) {
             $listener.Stop()

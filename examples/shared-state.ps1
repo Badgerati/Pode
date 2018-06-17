@@ -12,6 +12,8 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # create a basic server
 Server -Port 8085 {
 
+    logger 'terminal'
+
     # create timer to update a hashtable and make it globally accessible
     timer 'forever' 2 {
         if (($hash = (state get 'hash')) -eq $null) {
@@ -25,14 +27,24 @@ Server -Port 8085 {
     # route to retrieve and return the value of the hashtable from global state
     route get '/get-array' {
         param($session)
-        $hash = (state get 'hash')
-        json $hash
+        try {
+            $hash = (state get 'hash')
+            json $hash
+        }
+        catch {
+            throw $_.Exception
+        }
     }
 
     # route to remove the hashtable from global state
     route delete '/remove-array' {
         param($session)
-        state remove 'hash' | Out-Null
+        try {
+            state remove 'hash' | Out-Null
+        }
+        catch {
+            throw $_.Exception
+        }
     }
 
 }

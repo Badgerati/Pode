@@ -82,8 +82,10 @@ function New-PodeSession
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule((Get-Module -Name Pode).Path)
 
+    $_session = New-PodeStateSession $session
+
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeSession', $session, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeSession', $_session, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null)
     )
 
@@ -97,6 +99,26 @@ function New-PodeSession
     $session.RunspacePool.Open()
 
     return $session
+}
+
+function New-PodeStateSession
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    return (New-Object -TypeName psobject |
+        Add-Member -MemberType NoteProperty -Name Port -Value $Session.Port -PassThru |
+        Add-Member -MemberType NoteProperty -Name IP -Value $Session.IP -PassThru |
+        Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
+        Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
+        Add-Member -MemberType NoteProperty -Name CancelToken -Value $Session.CancelToken -PassThru |
+        Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |
+        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
+        Add-Member -MemberType NoteProperty -Name ServerRoot -Value $Session.ServerRoot -PassThru |
+        Add-Member -MemberType NoteProperty -Name SharedState -Value $Session.SharedState -PassThru)
 }
 
 function State
