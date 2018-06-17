@@ -186,8 +186,8 @@ function Start-TerminationListener
         $onCore = ($PSVersionTable.PSEdition -ieq 'core')
 
         while ($true) {
-            if ($console.UI.RawUI.KeyAvailable) {
-                $key = $console.UI.RawUI.ReadKey($options)
+            if ($Console.UI.RawUI.KeyAvailable) {
+                $key = $Console.UI.RawUI.ReadKey($options)
 
                 if ([char]$key.VirtualKeyCode -ieq $char) {
                     if ($onCore) {
@@ -200,7 +200,7 @@ function Start-TerminationListener
 
                 if ($cancel) {
                     Write-Host 'Terminating...' -NoNewline
-                    $token.Cancel()
+                    $PodeSession.CancelToken.Cancel()
                     break
                 }
             }

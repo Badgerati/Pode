@@ -31,7 +31,8 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $DisableLogging -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name ServerRoot -Value $ServerRoot -PassThru
+        Add-Member -MemberType NoteProperty -Name ServerRoot -Value $ServerRoot -PassThru |
+        Add-Member -MemberType NoteProperty -Name SharedState -Value @{} -PassThru
 
     # set the IP address details
     $session.IP = @{
@@ -82,12 +83,8 @@ function New-PodeSession
     $state.ImportPSModule((Get-Module -Name Pode).Path)
 
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'timers', $session.Timers, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'console', $Host, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'token', $session.CancelToken, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'loggers', $session.Loggers, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'requests', $session.RequestsToLog, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'root', $session.ServerRoot, $null)
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeSession', $session, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null)
     )
 
     $variables | ForEach-Object {
@@ -100,4 +97,45 @@ function New-PodeSession
     $session.RunspacePool.Open()
 
     return $session
+}
+
+function State
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('set', 'get', 'remove')]
+        [string]
+        $Action,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [object]
+        $Object
+    )
+
+    if ($PodeSession -eq $null) {
+        return
+    }
+
+    switch ($Action.ToLowerInvariant())
+    {
+        'set' {
+            $PodeSession.SharedState[$Name] = $Object
+        }
+
+        'get' {
+            $Object = $PodeSession.SharedState[$Name]
+        }
+
+        'remove' {
+            $Object = $PodeSession.SharedState[$Name]
+            $PodeSession.SharedState.Remove($Name) | Out-Null
+        }
+    }
+
+    return $Object
 }

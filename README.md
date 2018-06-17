@@ -29,6 +29,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
     * [Misc](#misc)
         * [Attach File](#attach-file)
         * [Logging](#logging)
+        * [Shared State](#shared-state)
 * [Pode Files](#pode-files)
     * [Third-Party Engines](#third-party-view-engines)
 
@@ -43,6 +44,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 * Setup async timers to be used as one off tasks, or for housekeeping services
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
+* Cross-state runspace variable access for timers, routes and loggers
 
 ## Install
 
@@ -409,6 +411,48 @@ The `$log` object passed will have the following structure:
 }
 ```
 
+#### Shared State
+
+Routes, timers, and loggers in Pode all run within separate runspaces; this means normally you can't create a variable in a timer and then access that variable in a route.
+
+Pode overcomes this by allowing you to set/get/remove custom variables on the session state shared between runspaces. This means you can create a variable in a timer and set it against the shared state; then you can retrieve that variable from the state in a route.
+
+To do this, you use the `state` function with an action of `set`, `get` or `remove`. Each require you to name the variable, and `set` takes the variable itself.
+
+The following example is a simple `timer` to create and update a `hashtable`, and then retrieve that variable in a `route` (this can also be seen in `examples/shared-state.ps1`):
+
+```powershell
+Server -Port 8085 {
+
+    # create timer to update a hashtable and make it globally accessible
+    timer 'forever' 2 {
+        # first, attempt to get the hashtable from the state
+        $hash = (state get 'hash')
+
+        # if it doesn't exist yet, set it against the state
+        if ($hash -eq $null) {
+            $hash = (state set 'hash' @{})
+            $hash['values'] = @()
+        }
+
+        # every 2secs, add a random number
+        $hash['values'] += (Get-Random -Minimum 0 -Maximum 10)
+    }
+
+    # route to retrieve and return the value of the hashtable from global state
+    route get '/get-array' {
+        param($session)
+
+        # get the hashtable defined in the timer above, and return it as json
+        $hash = (state get 'hash')
+        json $hash
+    }
+
+}
+```
+
+> You can put any type of variable into the state, including `scriptblock`s
+
 ## Pode Files
 
 Using Pode to write dynamic HTML files are mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
@@ -599,4 +643,5 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Test-IsPSCore`
 * `status`
 * `include`
-* `lock`
+* `lock`,
+* `state`
