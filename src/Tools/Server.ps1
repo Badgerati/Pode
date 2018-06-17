@@ -33,7 +33,10 @@ function Server
         $DisableTermination,
 
         [switch]
-        $DisableLogging
+        $DisableLogging,
+
+        [switch]
+        $FileMonitor
     )
 
     # if smtp is passed, and no port - force port to 25
@@ -55,6 +58,11 @@ function Server
         # create session object
         $PodeSession = New-PodeSession -Port $Port -IP $IP `
             -ServerRoot $MyInvocation.PSScriptRoot -DisableLogging:$DisableLogging
+
+        # start the file monitor for interally restarting
+        if ($FileMonitor) {
+            Start-FileMonitor
+        }
 
         # set it so ctrl-c can terminate
         [Console]::TreatControlCAsInput = $true
@@ -105,6 +113,10 @@ function Server
     finally {
         # clean the runspaces and tokens
         Close-Pode
+
+        if ($FileMonitor) {
+            Unregister-Event -SourceIdentifier 'FileChanged' -Force
+        }
 
         # clean the session
         $PodeSession = $null

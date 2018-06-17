@@ -72,6 +72,9 @@ function New-PodeSession
     # create new cancellation token
     $session.CancelToken = New-Object System.Threading.CancellationTokenSource
 
+    # setup system state shared variable
+    $session.SharedState['__system__'] = @{}
+
     # async timers
     $session.Timers = @{}
 
@@ -138,4 +141,24 @@ function State
     }
 
     return $Object
+}
+
+function Start-FileMonitor
+{
+    $folder = $PodeSession.ServerRoot
+    $filter = '*.*'
+
+    $watcher = New-Object System.IO.FileSystemWatcher $folder, $filter -Property @{
+        IncludeSubdirectories = $false;
+        NotifyFilter = [System.IO.NotifyFilters]'FileName, LastWrite';
+    }
+
+    $watcher.EnableRaisingEvents = $true
+
+    Register-ObjectEvent -InputObject $watcher -EventName 'Changed' -SourceIdentifier 'FileChanged' -Action { 
+        $name = $Event.SourceEventArgs.Name 
+        $changeType = $Event.SourceEventArgs.ChangeType 
+        $timeStamp = $Event.TimeGenerated 
+        "The file '$name' was $changeType at $timeStamp" | Out-Default
+    }
 }

@@ -1,9 +1,3 @@
-param (
-    [Parameter()]
-    [string]
-    $IP
-)
-
 if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
 {
     Remove-Module -Name Pode
@@ -15,8 +9,8 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8085
-Server -IP $IP -Port 8085 {
+# create a server listening on port 8085, set to monitor file changes and restart the server
+Server -Port 8085 {
 
     engine pode
 
@@ -26,17 +20,4 @@ Server -IP $IP -Port 8085 {
         view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
-    # GET request throws fake "500" server error status code
-    route 'get' '/error' {
-        param($session)
-        status 500
-    }
-
-    # GET request to download a file
-    route 'get' '/download' {
-        param($session)
-        attach 'Anger.jpg'
-    }
-
-}
- 
+} -FileMonitor
