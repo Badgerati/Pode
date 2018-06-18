@@ -36,6 +36,9 @@ function Server
         $DisableLogging
     )
 
+    # ensure the session is clean
+    $PodeSession = $null
+
     # if smtp is passed, and no port - force port to 25
     if ($Port -eq 0 -and $Smtp) {
         $Port = 25
@@ -102,11 +105,13 @@ function Server
             }
         }
     }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
+    }
     finally {
         # clean the runspaces and tokens
         Close-Pode
-
-        # clean the session
         $PodeSession = $null
     }
 }

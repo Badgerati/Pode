@@ -246,6 +246,10 @@ function Lock
         $ScriptBlock
     )
 
+    if ($InputObject -eq $null) {
+        return
+    }
+
     if ($InputObject.GetType().IsValueType) {
         throw 'Cannot lock value types'
     }
@@ -255,7 +259,10 @@ function Lock
     try {
         [System.Threading.Monitor]::Enter($InputObject.SyncRoot)
         $locked = $true
-        . $ScriptBlock
+
+        if ($ScriptBlock -ne $null) {
+            . $ScriptBlock
+        }
     }
     finally {
         if ($locked) {

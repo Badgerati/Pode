@@ -25,6 +25,7 @@ function Start-TcpServer
             $task.Wait($PodeSession.CancelToken.Token)
 
             $PodeSession.Tcp.Client = $client
+            $PodeSession.Tcp.Lockable = $PodeSession.Lockable
             Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -ArgumentList $PodeSession.Tcp
 
             if ($client -ne $null -and $client.Connected) {

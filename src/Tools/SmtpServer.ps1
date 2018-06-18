@@ -66,6 +66,7 @@ function Start-SmtpServer
                         $PodeSession.Smtp.From = $mail_from
                         $PodeSession.Smtp.To = $rcpt_tos
                         $PodeSession.Smtp.Data = $data
+                        $PodeSession.Smtp.Lockable = $PodeSession.Lockable
 
                         # call user handlers for processing smtp data
                         Invoke-Command -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -ArgumentList $PodeSession.Smtp

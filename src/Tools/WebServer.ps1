@@ -61,6 +61,7 @@ function Start-WebServer
             $PodeSession.Web = @{}
             $PodeSession.Web.Response = $response
             $PodeSession.Web.Request = $request
+            $PodeSession.Web.Lockable = $PodeSession.Lockable
 
             # get url path and method
             $path = ($request.RawUrl -isplit "\?")[0]
@@ -140,15 +141,13 @@ function Start-WebServer
                 $logObject.Response.Size = $response.ContentLength64
             }
 
-            $PodeSession.RequestsToLog.Add($logObject) | Out-Null
+            if (!$PodeSession.DisableLogging) {
+                $PodeSession.RequestsToLog.Add($logObject) | Out-Null
+            }
         }
     }
     catch [System.OperationCanceledException] {
         Close-Pode -Exit
-    }
-    catch [exception] {
-        $_.exception | Out-Default
-        throw $_.exception
     }
     finally {
         if ($listener -ne $null) {

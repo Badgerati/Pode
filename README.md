@@ -383,12 +383,12 @@ Custom loggers must have a name like `custom_*` and have a supplied scriptblock.
 
 ```powershell
 logger 'custom_output' {
-    param($log)
-    $log.Request.Resource | Out-Default
+    param($session)
+    $session.Log.Request.Resource | Out-Default
 }
 ```
 
-The `$log` object passed will have the following structure:
+The `$session` object passed contains a `Log` which will have the following structure:
 
 ```powershell
 @{
@@ -417,41 +417,54 @@ Routes, timers, and loggers in Pode all run within separate runspaces; this mean
 
 Pode overcomes this by allowing you to set/get/remove custom variables on the session state shared between runspaces. This means you can create a variable in a timer and set it against the shared state; then you can retrieve that variable from the state in a route.
 
-To do this, you use the `state` function with an action of `set`, `get` or `remove`. Each require you to name the variable, and `set` takes the variable itself.
+To do this, you use the `state` function with an action of `set`, `get` or `remove`, in combination with the `lock` function to ensure thread safety. Each  state action requires you to supply a name, and `set` takes the variable itself.
 
 The following example is a simple `timer` to create and update a `hashtable`, and then retrieve that variable in a `route` (this can also be seen in `examples/shared-state.ps1`):
+
+> If you omit the use of `lock`, you will run into errors due to multi-threading. Only omit if you are absolutely confident you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable). Routes, timers, and custom loggers are all supplied a `Lockable` resource you can use with `lock`.
 
 ```powershell
 Server -Port 8085 {
 
     # create timer to update a hashtable and make it globally accessible
     timer 'forever' 2 {
-        # first, attempt to get the hashtable from the state
-        $hash = (state get 'hash')
+        param($session)
+        $hash = $null
 
-        # if it doesn't exist yet, set it against the state
-        if ($hash -eq $null) {
-            $hash = (state set 'hash' @{})
-            $hash['values'] = @()
+        # create a lock on a pode lockable resource for safety
+        lock $session.Lockable {
+
+            # first, attempt to get the hashtable from the state
+            $hash = (state get 'hash')
+
+            # if it doesn't exist yet, set it against the state
+            if ($hash -eq $null) {
+                $hash = (state set 'hash' @{})
+                $hash['values'] = @()
+            }
+
+            # every 2secs, add a random number
+            $hash['values'] += (Get-Random -Minimum 0 -Maximum 10)
         }
-
-        # every 2secs, add a random number
-        $hash['values'] += (Get-Random -Minimum 0 -Maximum 10)
     }
 
     # route to retrieve and return the value of the hashtable from global state
     route get '/get-array' {
         param($session)
 
-        # get the hashtable defined in the timer above, and return it as json
-        $hash = (state get 'hash')
-        json $hash
+        # create another lock on the same lockable resource
+        lock $session.Lockable {
+
+            # get the hashtable defined in the timer above, and return it as json
+            $hash = (state get 'hash')
+            json $hash
+        }
     }
 
 }
 ```
 
-> You can put any type of variable into the state, including `scriptblock`s
+> You can put any type of variable into the global state, including `scriptblock`s
 
 ## Pode Files
 
