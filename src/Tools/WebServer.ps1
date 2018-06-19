@@ -124,7 +124,7 @@ function Start-WebServer
                     $PodeSession.Web.Parameters = $route.Parameters
 
                     # invoke route
-                    Invoke-Command -ScriptBlock $route.Logic -ArgumentList $PodeSession.Web
+                    & $route.Logic $PodeSession.Web
                 }
             }
 

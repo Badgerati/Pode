@@ -105,10 +105,6 @@ function Server
             }
         }
     }
-    catch {
-        $Error[0] | Out-Default
-        throw $_.Exception
-    }
     finally {
         # clean the runspaces and tokens
         Close-Pode

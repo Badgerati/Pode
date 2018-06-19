@@ -20,7 +20,7 @@ function ConvertFrom-PodeFile
     }
 
     # invoke the content as a script to generate the dynamic content
-    $Content = (Invoke-Command -ScriptBlock ([scriptblock]::Create($Content)) -ArgumentList $Data)
+    $Content = (& ([scriptblock]::Create($Content)) $Data)
     return $Content
 }
 
@@ -256,17 +256,22 @@ function Lock
 
     $locked = $false
 
-    try {
-        [System.Threading.Monitor]::Enter($InputObject.SyncRoot)
+    if ([System.Threading.Monitor]::TryEnter($InputObject.SyncRoot)) {
         $locked = $true
 
-        if ($ScriptBlock -ne $null) {
-            . $ScriptBlock
+        try {
+            if ($ScriptBlock -ne $null) {
+                . $ScriptBlock
+            }
         }
-    }
-    finally {
-        if ($locked) {
-            [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
+        catch {
+            $Error[0] | Out-Default
+            throw $_.Exception
+        }
+        finally {
+            if ($locked) {
+                [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
+            }
         }
     }
 }

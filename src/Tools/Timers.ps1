@@ -43,7 +43,7 @@ function Start-TimerRunspace
 
                 if ($run) {
                     try {
-                        Invoke-Command -ScriptBlock $_.Script -ArgumentList @{ 'Lockable' = $PodeSession.Lockable }
+                        & $_.Script @{ 'Lockable' = $PodeSession.Lockable }
                     }
                     catch {
                         $Error[0]
@@ -121,7 +121,7 @@ function Timer
 
     # run script if it's not being skipped
     if ($Skip -eq 0) {
-        Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList @{ 'Lockable' = $PodeSession.Lockable }
+        & $ScriptBlock @{ 'Lockable' = $PodeSession.Lockable }
     }
 
     # add the timer
