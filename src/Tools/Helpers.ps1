@@ -20,7 +20,7 @@ function ConvertFrom-PodeFile
     }
 
     # invoke the content as a script to generate the dynamic content
-    $Content = (& ([scriptblock]::Create($Content)) $Data)
+    $Content = (. ([scriptblock]::Create($Content)) $Data)
     return $Content
 }
 

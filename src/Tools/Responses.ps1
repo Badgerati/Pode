@@ -70,7 +70,7 @@ function Write-ToResponseFromFile
 
         default {
             if ($PodeSession.ViewEngine.Script -ne $null) {
-                $content = & $PodeSession.ViewEngine.Script $Path
+                $content = (. $PodeSession.ViewEngine.Script $Path)
             }
         }
     }
@@ -374,7 +374,7 @@ function Include
 
         default {
             if ($PodeSession.ViewEngine.Script -ne $null) {
-                $content = & $PodeSession.ViewEngine.Script $Path, $Data
+                $content = (. $PodeSession.ViewEngine.Script $Path, $Data)
             }
         }
     }
@@ -453,7 +453,7 @@ function View
 
         default {
             if ($PodeSession.ViewEngine.Script -ne $null) {
-                $content = & $PodeSession.ViewEngine.Script $Path, $Data
+                $content = (. $PodeSession.ViewEngine.Script $Path, $Data)
             }
         }
     }

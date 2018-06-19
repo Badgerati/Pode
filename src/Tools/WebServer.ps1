@@ -124,7 +124,7 @@ function Start-WebServer
                     $PodeSession.Web.Parameters = $route.Parameters
 
                     # invoke route
-                    & $route.Logic $PodeSession.Web
+                    . $route.Logic $PodeSession.Web
                 }
             }
 
@@ -141,7 +141,7 @@ function Start-WebServer
                 $logObject.Response.Size = $response.ContentLength64
             }
 
-            if (!$PodeSession.DisableLogging) {
+            if (!$PodeSession.DisableLogging -and ($PodeSession.Loggers | Measure-Object).Count -gt 0) {
                 $PodeSession.RequestsToLog.Add($logObject) | Out-Null
             }
         }

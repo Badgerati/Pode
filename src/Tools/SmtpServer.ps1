@@ -69,7 +69,7 @@ function Start-SmtpServer
                         $PodeSession.Smtp.Lockable = $PodeSession.Lockable
 
                         # call user handlers for processing smtp data
-                        & (Get-PodeTcpHandler -Type 'SMTP') $PodeSession.Smtp
+                        . (Get-PodeTcpHandler -Type 'SMTP') $PodeSession.Smtp
                     }
                 }
             }
@@ -99,7 +99,7 @@ function Start-SmtpServer
 
             $PodeSession.Tcp.Client = $task.Result
             $PodeSession.Smtp = @{}
-            & $process
+            . $process
         }
     }
     catch [System.OperationCanceledException] {

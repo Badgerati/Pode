@@ -63,7 +63,7 @@ function Server
         [Console]::TreatControlCAsInput = $true
 
         # run the logic
-        & $ScriptBlock
+        . $ScriptBlock
 
         # start runspace for timers
         Start-TimerRunspace
@@ -100,7 +100,7 @@ function Server
                     }
 
                     Start-Sleep -Seconds $Interval
-                    & $ScriptBlock
+                    . $ScriptBlock
                 }
             }
         }
