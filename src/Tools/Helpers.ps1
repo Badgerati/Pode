@@ -256,23 +256,22 @@ function Lock
 
     $locked = $false
 
-    if ([System.Threading.Monitor]::TryEnter($InputObject.SyncRoot)) {
+    try {
+        [System.Threading.Monitor]::Enter($InputObject.SyncRoot)
         $locked = $true
 
-        try {
-            if ($ScriptBlock -ne $null) {
-                . $ScriptBlock
-            }
+        if ($ScriptBlock -ne $null) {
+            . $ScriptBlock
         }
-        catch {
-            $Error[0] | Out-Default
-            throw $_.Exception
-        }
-        finally {
-            if ($locked) {
-                [System.Threading.Monitor]::Pulse($InputObject.SyncRoot)
-                [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
-            }
+    }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
+    }
+    finally {
+        if ($locked) {
+            [System.Threading.Monitor]::Pulse($InputObject.SyncRoot)
+            [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
         }
     }
 }
