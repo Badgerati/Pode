@@ -124,7 +124,7 @@ function Start-WebServer
                     $PodeSession.Web.Parameters = $route.Parameters
 
                     # invoke route
-                    . $route.Logic $PodeSession.Web
+                    & $route.Logic $PodeSession.Web
                 }
             }
 

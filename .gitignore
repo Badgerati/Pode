@@ -6,6 +6,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+*-issue*/
 
 # Build results
 [Dd]ebug/

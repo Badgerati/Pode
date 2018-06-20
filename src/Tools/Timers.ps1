@@ -43,7 +43,7 @@ function Start-TimerRunspace
 
                 if ($run) {
                     try {
-                        . $_.Script @{ 'Lockable' = $PodeSession.Lockable }
+                        & (($_.Script).GetNewClosure()) @{ 'Lockable' = $PodeSession.Lockable }
                     }
                     catch {
                         $Error[0]
@@ -120,7 +120,7 @@ function Timer
 
     # run script if it's not being skipped
     if ($Skip -eq 0) {
-        . $ScriptBlock @{ 'Lockable' = $PodeSession.Lockable }
+        & $ScriptBlock @{ 'Lockable' = $PodeSession.Lockable }
     }
 
     # add the timer

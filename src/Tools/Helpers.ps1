@@ -270,6 +270,7 @@ function Lock
         }
         finally {
             if ($locked) {
+                [System.Threading.Monitor]::Pulse($InputObject.SyncRoot)
                 [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
             }
         }
