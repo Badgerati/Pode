@@ -1,12 +1,6 @@
 function New-PodeSession
 {
     param (
-        [int]
-        $Port = 0,
-
-        [string]
-        $IP = $null,
-
         [string]
         $ServerRoot,
 
@@ -18,7 +12,7 @@ function New-PodeSession
     $session = New-Object -TypeName psobject |
         Add-Member -MemberType NoteProperty -Name Routes -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Handlers -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru |
+        Add-Member -MemberType NoteProperty -Name Port -Value 0 -PassThru |
         Add-Member -MemberType NoteProperty -Name IP -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Web -Value @{} -PassThru |
@@ -33,16 +27,13 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name ServerRoot -Value $ServerRoot -PassThru |
         Add-Member -MemberType NoteProperty -Name SharedState -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru
+        Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name Security -Value @{} -PassThru
 
     # set the IP address details
     $session.IP = @{
-        'Address' = (Get-IPAddress $IP);
-        'Name' = 'localhost'
-    }
-
-    if (!(Test-IPAddressLocal -IP $session.IP.Address)) {
-        $session.IP.Name = $session.IP.Address
+        'Address' = $null;
+        'Name' = 'localhost';
     }
 
     # session engine for rendering views
@@ -68,6 +59,12 @@ function New-PodeSession
     $session.Handlers = @{
         'tcp' = $null;
         'smtp' = $null;
+    }
+
+    # setup basic security placeholders
+    $session.Security = @{
+        'Whitelist' = @{};
+        'Blacklist' = @{};
     }
 
     # create new cancellation token
@@ -122,7 +119,8 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
         Add-Member -MemberType NoteProperty -Name ServerRoot -Value $Session.ServerRoot -PassThru |
         Add-Member -MemberType NoteProperty -Name SharedState -Value $Session.SharedState -PassThru |
-        Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru)
+        Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
+        Add-Member -MemberType NoteProperty -Name Security -Value $Session.Security -PassThru)
 }
 
 function State
@@ -170,4 +168,39 @@ function State
         $Error[0] | Out-Default
         throw $_.Exception
     }
+}
+
+function Listen
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $IPPort
+    )
+
+    $hostRgx = '(?<host>(\[[a-z0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+))'
+    $portRgx = '(?<port>\d+)'
+    $cmbdRgx = "$($hostRgx)\:$($portRgx)"
+
+    if (!($IPPort -imatch "^$($cmbdRgx)$" -or $IPPort -imatch "^$($hostRgx)[\:]{0,1}" -or $IPPort -imatch "[\:]{0,1}$($portRgx)$")) {
+        throw "Failed to parse '$($IPPort)' as a valid IP:Port address"
+    }
+
+    $_host = $Matches['host']
+    if (Test-Empty $_host) {
+        $_host = '*'
+    }
+
+    $_port = $Matches['port']
+    if (Test-Empty $_port) {
+        $_port = 0
+    }
+
+    $PodeSession.IP.Address = (Get-IPAddress $_host)
+    if (!(Test-IPAddressLocal -IP $PodeSession.IP.Address)) {
+        $PodeSession.IP.Name = $PodeSession.IP.Address
+    }
+
+    $PodeSession.Port = $_port
 }

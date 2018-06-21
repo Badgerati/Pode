@@ -87,8 +87,13 @@ function Start-WebServer
                 };
             }
 
+            # ensure the request ip is allowed
+            if (!(Test-ValueAllowed -Type 'IP' -Value $request.RemoteEndPoint.Address.IPAddressToString)) {
+                status 401
+            }
+
             # check to see if the path is a file, so we can check the public folder
-            if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
+            elseif ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
                 $path = Join-ServerRoot 'public' $path
                 Write-ToResponseFromFile -Path $path
             }

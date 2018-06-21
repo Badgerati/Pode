@@ -27,6 +27,9 @@ function Server
         $Tcp,
 
         [switch]
+        $Http,
+
+        [switch]
         $Https,
 
         [switch]
@@ -39,31 +42,45 @@ function Server
     # ensure the session is clean
     $PodeSession = $null
 
-    # if smtp is passed, and no port - force port to 25
-    if ($Port -eq 0 -and $Smtp) {
-        $Port = 25
-    }
-
-    # validate port passed
-    if ($Port -lt 0) {
-        throw "Port cannot be negative: $($Port)"
-    }
-
     # if an ip address was passed, ensure it's valid
-    if (!(Test-IPAddress $IP)) {
+    if (!(Test-Empty $IP) -and !(Test-IPAddress $IP)) {
         throw "Invalid IP address has been supplied: $($IP)"
     }
 
     try {
         # create session object
-        $PodeSession = New-PodeSession -Port $Port -IP $IP `
-            -ServerRoot $MyInvocation.PSScriptRoot -DisableLogging:$DisableLogging
+        $PodeSession = New-PodeSession -ServerRoot $MyInvocation.PSScriptRoot -DisableLogging:$DisableLogging
+
+        # parse ip:port to listen on (if both have been supplied)
+        if (!(Test-Empty $IP) -or $Port -gt 0) {
+            listen "$($IP):$($Port)"
+        }
 
         # set it so ctrl-c can terminate
         [Console]::TreatControlCAsInput = $true
 
-        # run the logic
+        # run the server logic
         . $ScriptBlock
+
+        # if smtp/https is passed, and no port - force port to 25/443
+        if ($PodeSession.Port -eq 0) {
+            if ($Smtp) {
+                $PodeSession.Port = 25
+            }
+
+            elseif ($Https) {
+                $PodeSession.Port = 443
+            }
+
+            elseif ($Http -or (!$Tcp -and !$Smtp -and !$Https)) {
+                $PodeSession.Port = 80
+            }
+        }
+
+        # validate port passed
+        if ($PodeSession.Port -lt 0) {
+            throw "Port cannot be negative: $($PodeSession.Port)"
+        }
 
         # start runspace for timers
         Start-TimerRunspace
@@ -84,7 +101,7 @@ function Server
         }
 
         # if there's a port, run a web server
-        elseif ($Port -gt 0) {
+        elseif ($Http -or $Https -or $PodeSession.Port -gt 0) {
             Start-WebServer -Https:$Https
         }
 
