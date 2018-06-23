@@ -39,7 +39,7 @@ function Start-LoggerRunspace
         while ($true)
         {
             # if there are no requests to log, just sleep
-            if (($requests | Measure-Object).Count -eq 0) {
+            if (($PodeSession.RequestsToLog | Measure-Object).Count -eq 0) {
                 Start-Sleep -Seconds 1
                 continue
             }
@@ -47,16 +47,16 @@ function Start-LoggerRunspace
             # safetly pop off the first log request from the array
             $r = $null
 
-            lock $requests {
-                $r = $requests[0]
-                $requests.RemoveAt(0) | Out-Null
+            lock $PodeSession.RequestsToLog {
+                $r = $PodeSession.RequestsToLog[0]
+                $PodeSession.RequestsToLog.RemoveAt(0) | Out-Null
             }
 
             # convert the request into a log string
             $str = (Get-RequestString $r)
 
             # apply log request to supplied loggers
-            $loggers.Keys | ForEach-Object {
+            $PodeSession.Loggers.Keys | ForEach-Object {
                 switch ($_.ToLowerInvariant())
                 {
                     'terminal' {
@@ -64,12 +64,12 @@ function Start-LoggerRunspace
                     }
 
                     'file' {
-                        $details = $loggers[$_]
+                        $details = $PodeSession.Loggers[$_]
                         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
                         # generate path to log path and date file
                         if ($details -eq $null -or (Test-Empty $details.Path)) {
-                            $path = (Join-ServerRoot 'logs' "$($date).log" -Root $root)
+                            $path = (Join-ServerRoot 'logs' "$($date).log" ) #-Root $PodeSession.ServerRoot)
                         }
                         else {
                             $path = (Join-Path $details.Path "$($date).log")
@@ -91,7 +91,10 @@ function Start-LoggerRunspace
                     }
 
                     { $_ -ilike 'custom_*' } {
-                        Invoke-Command -ScriptBlock $loggers[$_] -ArgumentList $r
+                        . $PodeSession.Loggers[$_] @{
+                            'Log' = $r;
+                            'Lockable' = $PodeSession.Lockable;
+                        }
                     }
                 }
             }

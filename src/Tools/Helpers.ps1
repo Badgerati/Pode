@@ -20,7 +20,7 @@ function ConvertFrom-PodeFile
     }
 
     # invoke the content as a script to generate the dynamic content
-    $Content = (Invoke-Command -ScriptBlock ([scriptblock]::Create($Content)) -ArgumentList $Data)
+    $Content = (. ([scriptblock]::Create($Content)) $Data)
     return $Content
 }
 
@@ -186,8 +186,8 @@ function Start-TerminationListener
         $onCore = ($PSVersionTable.PSEdition -ieq 'core')
 
         while ($true) {
-            if ($console.UI.RawUI.KeyAvailable) {
-                $key = $console.UI.RawUI.ReadKey($options)
+            if ($Console.UI.RawUI.KeyAvailable) {
+                $key = $Console.UI.RawUI.ReadKey($options)
 
                 if ([char]$key.VirtualKeyCode -ieq $char) {
                     if ($onCore) {
@@ -200,7 +200,7 @@ function Start-TerminationListener
 
                 if ($cancel) {
                     Write-Host 'Terminating...' -NoNewline
-                    $token.Cancel()
+                    $PodeSession.CancelToken.Cancel()
                     break
                 }
             }
@@ -246,6 +246,10 @@ function Lock
         $ScriptBlock
     )
 
+    if ($InputObject -eq $null) {
+        return
+    }
+
     if ($InputObject.GetType().IsValueType) {
         throw 'Cannot lock value types'
     }
@@ -255,10 +259,18 @@ function Lock
     try {
         [System.Threading.Monitor]::Enter($InputObject.SyncRoot)
         $locked = $true
-        . $ScriptBlock
+
+        if ($ScriptBlock -ne $null) {
+            . $ScriptBlock
+        }
+    }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
     }
     finally {
         if ($locked) {
+            [System.Threading.Monitor]::Pulse($InputObject.SyncRoot)
             [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
         }
     }

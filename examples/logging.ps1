@@ -25,8 +25,8 @@ Server -Port 8085 {
 
     # custom logger
     logger 'custom_output' {
-        param($log)
-        $log.Request.Protocol | Out-Default
+        param($session)
+        $session.Log.Request.Protocol | Out-Default
     }
 
     # GET request for web page on "localhost:8085/"
