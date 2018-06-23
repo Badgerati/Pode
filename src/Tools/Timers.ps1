@@ -21,7 +21,7 @@ function Start-TimerRunspace
         {
             $_remove = @()
 
-            $timers.Values | Where-Object { $_.NextTick -le [DateTime]::UtcNow } | ForEach-Object {
+            $PodeSession.Timers.Values | Where-Object { $_.NextTick -le [DateTime]::UtcNow } | ForEach-Object {
                 $run = $true
 
                 # increment total number of runs for timer (do we still need to count?)
@@ -42,13 +42,19 @@ function Start-TimerRunspace
                 }
 
                 if ($run) {
-                    & $_.Script
+                    try {
+                        & (($_.Script).GetNewClosure()) @{ 'Lockable' = $PodeSession.Lockable }
+                    }
+                    catch {
+                        $Error[0]
+                    }
+
                     $_.NextTick = [DateTime]::UtcNow.AddSeconds($_.Interval)
                 }
             }
 
             $_remove | ForEach-Object {
-                $timers.Remove($_)
+                $PodeSession.Timers.Remove($_)
             }
 
             Start-Sleep -Seconds 1
@@ -114,7 +120,7 @@ function Timer
 
     # run script if it's not being skipped
     if ($Skip -eq 0) {
-        & $ScriptBlock
+        & $ScriptBlock @{ 'Lockable' = $PodeSession.Lockable }
     }
 
     # add the timer
