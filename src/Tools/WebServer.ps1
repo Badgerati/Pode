@@ -89,7 +89,7 @@ function Start-WebServer
 
             # ensure the request ip is allowed
             if (!(Test-ValueAllowed -Type 'IP' -Value $request.RemoteEndPoint.Address.IPAddressToString)) {
-                status 401
+                status 403
             }
 
             # check to see if the path is a file, so we can check the public folder
