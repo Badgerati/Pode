@@ -44,7 +44,8 @@ Server -Port 8085 {
         param($session)
 
         lock $session.Lockable {
-            state set 'hash' @{} | Out-Null
+            $hash = (state set 'hash' @{})
+            $hash['values'] = @()
         }
     }
 
