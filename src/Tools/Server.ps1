@@ -39,6 +39,9 @@ function Server
         $FileMonitor
     )
 
+    # ensure the session is clean
+    $PodeSession = $null
+
     # if smtp is passed, and no port - force port to 25
     if ($Port -eq 0 -and $Smtp) {
         $Port = 25
@@ -68,7 +71,7 @@ function Server
         [Console]::TreatControlCAsInput = $true
 
         # run the logic
-        & $ScriptBlock
+        . $ScriptBlock
 
         # start runspace for timers
         Start-TimerRunspace
@@ -105,7 +108,7 @@ function Server
                     }
 
                     Start-Sleep -Seconds $Interval
-                    & $ScriptBlock
+                    . $ScriptBlock
                 }
             }
         }

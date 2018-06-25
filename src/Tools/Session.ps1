@@ -32,7 +32,8 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name Loggers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name ServerRoot -Value $ServerRoot -PassThru |
-        Add-Member -MemberType NoteProperty -Name SharedState -Value @{} -PassThru
+        Add-Member -MemberType NoteProperty -Name SharedState -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru
 
     # set the IP address details
     $session.IP = @{
@@ -82,11 +83,15 @@ function New-PodeSession
     $session.RequestsToLog = New-Object System.Collections.ArrayList
 
     # session state
+    $session.Lockable = [hashtable]::Synchronized(@{})
+
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule((Get-Module -Name Pode).Path)
 
+    $_session = New-PodeStateSession $session
+
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeSession', $session, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeSession', $_session, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null)
     )
 
@@ -100,6 +105,27 @@ function New-PodeSession
     $session.RunspacePool.Open()
 
     return $session
+}
+
+function New-PodeStateSession
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    return (New-Object -TypeName psobject |
+        Add-Member -MemberType NoteProperty -Name Port -Value $Session.Port -PassThru |
+        Add-Member -MemberType NoteProperty -Name IP -Value $Session.IP -PassThru |
+        Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
+        Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
+        Add-Member -MemberType NoteProperty -Name CancelToken -Value $Session.CancelToken -PassThru |
+        Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |
+        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
+        Add-Member -MemberType NoteProperty -Name ServerRoot -Value $Session.ServerRoot -PassThru |
+        Add-Member -MemberType NoteProperty -Name SharedState -Value $Session.SharedState -PassThru |
+        Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru)
 }
 
 function State
@@ -120,27 +146,33 @@ function State
         $Object
     )
 
-    if ($PodeSession -eq $null) {
-        return
+    try {
+        if ($PodeSession -eq $null -or $PodeSession.SharedState -eq $null) {
+            return
+        }
+
+        switch ($Action.ToLowerInvariant())
+        {
+            'set' {
+                $PodeSession.SharedState[$Name] = $Object
+            }
+
+            'get' {
+                $Object = $PodeSession.SharedState[$Name]
+            }
+
+            'remove' {
+                $Object = $PodeSession.SharedState[$Name]
+                $PodeSession.SharedState.Remove($Name) | Out-Null
+            }
+        }
+
+        return $Object
     }
-
-    switch ($Action.ToLowerInvariant())
-    {
-        'set' {
-            $PodeSession.SharedState[$Name] = $Object
-        }
-
-        'get' {
-            $Object = $PodeSession.SharedState[$Name]
-        }
-
-        'remove' {
-            $Object = $PodeSession.SharedState[$Name]
-            $PodeSession.SharedState.Remove($Name) | Out-Null
-        }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
     }
-
-    return $Object
 }
 
 function Start-FileMonitor

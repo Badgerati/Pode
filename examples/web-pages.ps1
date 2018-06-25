@@ -38,5 +38,11 @@ Server -IP $IP -Port 8085 {
         attach 'Anger.jpg'
     }
 
+    # GET request with parameters
+    route 'get' '/:userId/details' {
+        param($session)
+        json @{ 'userId' = $session.Parameters['userId'] }
+    }
+
 }
  
