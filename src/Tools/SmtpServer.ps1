@@ -82,7 +82,12 @@ function Start-SmtpServer
     # setup and run the smtp listener
     try
     {
-        $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $PodeSession.Port)
+        $port = $PodeSession.Port
+        if ($port -eq 0) {
+            $port = 25
+        }
+
+        $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $port)
         $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
 
         # start listener

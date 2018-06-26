@@ -162,16 +162,45 @@ function Add-PodeRunspace
 
 function Close-PodeRunspaces
 {
-    $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
-        $_.Runspace.Dispose()
-        $_.Stopped = $true
+    param (
+        [switch]
+        $ClosePool
+    )
+
+    if (!(Test-Empty $PodeSession.Runspaces)) {
+        $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
+            $_.Runspace.Dispose()
+            $_.Stopped = $true
+        }
+
+        $PodeSession.Runspaces.Clear()
     }
 
-    if (!$PodeSession.RunspacePool.IsDisposed) {
+    if ($ClosePool -and $PodeSession.RunspacePool -ne $null -and !$PodeSession.RunspacePool.IsDisposed) {
         $PodeSession.RunspacePool.Close()
         $PodeSession.RunspacePool.Dispose()
     }
 }
+
+function Test-TerminationPressed
+{
+    if ($PodeSession.DisableTermination -or [Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+        return $false
+    }
+
+    $key = [Console]::ReadKey($true)
+
+    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
+        return $true
+        #Write-Host 'Terminating...' -NoNewline
+        #Close-PodeRunspaces
+        #Write-Host " Done" -ForegroundColor Green
+        #exit 0
+    }
+
+    return $false
+}
+
 
 function Start-TerminationListener
 {
@@ -217,7 +246,12 @@ function Close-Pode
         $Exit
     )
 
-    Close-PodeRunspaces
+    Close-PodeRunspaces -ClosePool
+
+    if ($PodeSession.FileMonitor) {
+        Unregister-Event -SourceIdentifier 'PodeFileMonitor' -Force
+        Unregister-Event -SourceIdentifier 'PodeFileMonitorTimer' -Force
+    }
 
     try {
         $PodeSession.CancelToken.Dispose()
@@ -225,7 +259,6 @@ function Close-Pode
 
     if ($Exit) {
         Write-Host " Done" -ForegroundColor Green
-        exit 0
     }
 }
 
