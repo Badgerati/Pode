@@ -22,4 +22,10 @@ Server -Port 8085 {
         status 500
     }
 
-}
+    # PUT update a file to trigger monitor
+    route 'put' '/file' {
+        param($session)
+        'Hello, world!' | Out-File -FilePath "$($PodeSession.ServerRoot)/file.txt" -Append -Force
+    }
+
+} -FileMonitor

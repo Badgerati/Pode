@@ -21,11 +21,21 @@ function Start-PodeFileMonitor
     $timer.AutoReset = $false
     $timer.Interval = 2000
 
-    # listen out of file changed events
-    Register-ObjectEvent -InputObject $watcher -EventName 'Changed' -SourceIdentifier (Get-PodeFileMonitorName) -Action { 
+    # listen out of file created, changed, deleted events
+    Register-ObjectEvent -InputObject $watcher -EventName 'Created' -SourceIdentifier (Get-PodeFileMonitorName Create) -Action {
         $Event.MessageData.Timer.Stop()
         $Event.MessageData.Timer.Start()
-    } -MessageData @{ 'Session' = $PodeSession; 'Timer' = $timer; } -SupportEvent
+    } -MessageData @{ 'Timer' = $timer; } -SupportEvent
+
+    Register-ObjectEvent -InputObject $watcher -EventName 'Changed' -SourceIdentifier (Get-PodeFileMonitorName Update) -Action {
+        $Event.MessageData.Timer.Stop()
+        $Event.MessageData.Timer.Start()
+    } -MessageData @{ 'Timer' = $timer; } -SupportEvent
+
+    Register-ObjectEvent -InputObject $watcher -EventName 'Deleted' -SourceIdentifier (Get-PodeFileMonitorName Delete) -Action {
+        $Event.MessageData.Timer.Stop()
+        $Event.MessageData.Timer.Start()
+    } -MessageData @{ 'Timer' = $timer; } -SupportEvent
 
     # listen out for timer ticks to reset server
     Register-ObjectEvent -InputObject $timer -EventName 'Elapsed' -SourceIdentifier (Get-PodeFileMonitorTimerName) -Action {
@@ -38,14 +48,22 @@ function Start-PodeFileMonitor
 function Stop-PodeFileMonitor
 {
     if ($PodeSession.FileMonitor) {
-        Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName) -Force
+        Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Create) -Force
+        Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Delete) -Force
+        Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Update) -Force
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorTimerName) -Force
     }
 }
 
 function Get-PodeFileMonitorName
 {
-    return 'PodeFileMonitor'
+    param (
+        [ValidateSet('Create', 'Delete', 'Update')]
+        [string]
+        $Type
+    )
+
+    return "PodeFileMonitor$($Type)"
 }
 
 function Get-PodeFileMonitorTimerName
