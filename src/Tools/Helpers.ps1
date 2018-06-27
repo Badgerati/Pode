@@ -167,18 +167,24 @@ function Close-PodeRunspaces
         $ClosePool
     )
 
-    if (!(Test-Empty $PodeSession.Runspaces)) {
-        $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
-            $_.Runspace.Dispose()
-            $_.Stopped = $true
+    try {
+        if (!(Test-Empty $PodeSession.Runspaces)) {
+            $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
+                $_.Runspace.Dispose()
+                $_.Stopped = $true
+            }
+
+            $PodeSession.Runspaces = @()
         }
 
-        $PodeSession.Runspaces.Clear()
+        if ($ClosePool -and $PodeSession.RunspacePool -ne $null -and !$PodeSession.RunspacePool.IsDisposed) {
+            $PodeSession.RunspacePool.Close()
+            $PodeSession.RunspacePool.Dispose()
+        }
     }
-
-    if ($ClosePool -and $PodeSession.RunspacePool -ne $null -and !$PodeSession.RunspacePool.IsDisposed) {
-        $PodeSession.RunspacePool.Close()
-        $PodeSession.RunspacePool.Dispose()
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
     }
 }
 
@@ -192,10 +198,6 @@ function Test-TerminationPressed
 
     if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
         return $true
-        #Write-Host 'Terminating...' -NoNewline
-        #Close-PodeRunspaces
-        #Write-Host " Done" -ForegroundColor Green
-        #exit 0
     }
 
     return $false
@@ -229,7 +231,7 @@ function Start-TerminationListener
 
                 if ($cancel) {
                     Write-Host 'Terminating...' -NoNewline
-                    $PodeSession.CancelToken.Cancel()
+                    $PodeSession.Tokens.Cancellation.Cancel()
                     break
                 }
             }
@@ -247,15 +249,13 @@ function Close-Pode
     )
 
     Close-PodeRunspaces -ClosePool
-
-    if ($PodeSession.FileMonitor) {
-        Unregister-Event -SourceIdentifier 'PodeFileMonitor' -Force
-        Unregister-Event -SourceIdentifier 'PodeFileMonitorTimer' -Force
-    }
+    Stop-PodeFileMonitor
 
     try {
-        $PodeSession.CancelToken.Dispose()
-    } catch { }
+        $PodeSession.Tokens.Cancellation.Dispose()
+    } catch {
+        $Error[0] | Out-Default
+    }
 
     if ($Exit) {
         Write-Host " Done" -ForegroundColor Green
@@ -332,4 +332,49 @@ function Join-ServerRoot
     }
 
     return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
+}
+
+function Get-PodeEnvServerName
+{
+    param (
+        [string]
+        $Name
+    )
+
+    return "PODE_SERVER_$($Name)"
+}
+
+function Get-PodeEnvVar
+{
+    param (
+        [string]
+        $Name
+    )
+
+    return [Environment]::GetEnvironmentVariable($Name, [EnvironmentVariableTarget]::Process)
+}
+
+function Set-PodeEnvVar
+{
+    param (
+        [string]
+        $Name,
+
+        [string]
+        $Value = $null
+    )
+
+    [Environment]::SetEnvironmentVariable($Name, $Value, [EnvironmentVariableTarget]::Process)
+}
+
+function Test-PodeEnvServerRestart
+{
+    $name = (Get-PodeEnvServerName $PodeSession.ServerName)
+    $restart = (Get-PodeEnvVar -Name $name)
+
+    if ($restart -ieq '1') {
+        Set-PodeEnvVar -Name $name
+    }
+
+    return ($restart -ieq '1')
 }

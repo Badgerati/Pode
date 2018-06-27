@@ -100,7 +100,7 @@ function Start-SmtpServer
         while ($true)
         {
             $task = $listener.AcceptTcpClientAsync()
-            $task.Wait($PodeSession.CancelToken.Token)
+            $task.Wait($PodeSession.Tokens.Cancellation.Token)
 
             $PodeSession.Tcp.Client = $task.Result
             $PodeSession.Smtp = @{}

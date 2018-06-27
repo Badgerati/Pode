@@ -56,7 +56,7 @@ function Start-WebServer
             {
                 # get request and response
                 $task = $listener.GetContextAsync()
-                $task.Wait($PodeSession.CancelToken.Token)
+                $task.Wait($PodeSession.Tokens.Cancellation.Token)
 
                 $context = $task.Result
                 $request = $context.Request

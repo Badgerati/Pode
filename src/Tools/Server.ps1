@@ -20,6 +20,10 @@ function Server
         [string]
         $IP,
 
+        [Parameter()]
+        [string]
+        $Name,
+
         [switch]
         $Smtp,
 
@@ -65,7 +69,7 @@ function Server
         [Console]::TreatControlCAsInput = $true
 
         # start the file monitor for interally restarting
-        Start-FileMonitor
+        Start-PodeFileMonitor
 
         # start the server
         Start-PodeServer
@@ -74,10 +78,15 @@ function Server
         if ($PodeSession.ServerType -ine 'script') {
             while (!(Test-TerminationPressed)) {
                 Start-Sleep -Seconds 1
+
+                # check for internal restart
+                if (Test-PodeEnvServerRestart) {
+                    Restart-PodeServer
+                }
             }
 
             Write-Host 'Terminating...' -NoNewline
-            $PodeSession.CancelToken.Cancel()
+            $PodeSession.Tokens.Cancellation.Cancel()
         }
     }
     finally {
@@ -120,7 +129,7 @@ function Start-PodeServer
             Write-Host "Looping logic every $($PodeSession.Interval)secs" -ForegroundColor Yellow
 
             while ($true) {
-                if ($PodeSession.CancelToken.IsCancellationRequested) {
+                if ($PodeSession.Tokens.Cancellation.IsCancellationRequested) {
                     Close-Pode -Exit
                 }
 
@@ -135,8 +144,10 @@ function Restart-PodeServer
 {
     try
     {
+        Write-Host 'Restarting server...' -NoNewline -ForegroundColor Cyan
+
         # cancel the session token
-        $PodeSession.CancelToken.Cancel()
+        $PodeSession.Tokens.Cancellation.Cancel()
 
         # close all current runspaces
         Close-PodeRunspaces
@@ -160,8 +171,10 @@ function Restart-PodeServer
         $PodeSession.SharedState.Clear()
 
         # recreate the session token
-        $PodeSession.CancelToken.Dispose()
-        $PodeSession.CancelToken = New-Object System.Threading.CancellationTokenSource
+        $PodeSession.Tokens.Cancellation.Dispose()
+        $PodeSession.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
+
+        Write-Host " Done" -ForegroundColor Green
 
         # restart the server
         Start-PodeServer
