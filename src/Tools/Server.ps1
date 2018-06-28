@@ -80,12 +80,12 @@ function Server
                 Start-Sleep -Seconds 1
 
                 # check for internal restart
-                if (Test-PodeEnvServerRestart) {
+                if ($PodeSession.Tokens.Restart.IsCancellationRequested) {
                     Restart-PodeServer
                 }
             }
 
-            Write-Host 'Terminating...' -NoNewline
+            Write-Host 'Terminating...' -NoNewline -ForegroundColor Yellow
             $PodeSession.Tokens.Cancellation.Cancel()
         }
     }
@@ -100,43 +100,50 @@ function Server
 
 function Start-PodeServer
 {
-    # run the logic
-    . ($PodeSession.ScriptBlock)
-
-    # start runspace for timers
-    Start-TimerRunspace
-
-    # start the appropriate server
-    switch ($PodeSession.ServerType.ToUpperInvariant())
+    try
     {
-        'SMTP' {
-            Start-SmtpServer
-        }
+        # run the logic
+        . ($PodeSession.ScriptBlock)
 
-        'TCP' {
-            Start-TcpServer
-        }
+        # start runspace for timers
+        Start-TimerRunspace
 
-        'HTTP' {
-            Start-WebServer
-        }
+        # start the appropriate server
+        switch ($PodeSession.ServerType.ToUpperInvariant())
+        {
+            'SMTP' {
+                Start-SmtpServer
+            }
 
-        'HTTPS' {
-            Start-WebServer -Https
-        }
+            'TCP' {
+                Start-TcpServer
+            }
 
-        'SERVICE' {
-            Write-Host "Looping logic every $($PodeSession.Interval)secs" -ForegroundColor Yellow
+            'HTTP' {
+                Start-WebServer
+            }
 
-            while ($true) {
-                if ($PodeSession.Tokens.Cancellation.IsCancellationRequested) {
-                    Close-Pode -Exit
+            'HTTPS' {
+                Start-WebServer -Https
+            }
+
+            'SERVICE' {
+                Write-Host "Looping logic every $($PodeSession.Interval)secs" -ForegroundColor Yellow
+
+                while ($true) {
+                    if ($PodeSession.Tokens.Cancellation.IsCancellationRequested) {
+                        Close-Pode -Exit
+                    }
+
+                    Start-Sleep -Seconds $PodeSession.Interval
+                    . ($PodeSession.ScriptBlock)
                 }
-
-                Start-Sleep -Seconds $PodeSession.Interval
-                . ($PodeSession.ScriptBlock)
             }
         }
+    }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
     }
 }
 
@@ -144,6 +151,7 @@ function Restart-PodeServer
 {
     try
     {
+        # inform restart
         Write-Host 'Restarting server...' -NoNewline -ForegroundColor Cyan
 
         # cancel the session token
@@ -170,9 +178,12 @@ function Restart-PodeServer
         # clear up shared state
         $PodeSession.SharedState.Clear()
 
-        # recreate the session token
+        # recreate the session tokens
         $PodeSession.Tokens.Cancellation.Dispose()
         $PodeSession.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
+
+        $PodeSession.Tokens.Restart.Dispose()
+        $PodeSession.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
 
         Write-Host " Done" -ForegroundColor Green
 

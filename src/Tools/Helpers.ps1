@@ -169,6 +169,10 @@ function Close-PodeRunspaces
 
     try {
         if (!(Test-Empty $PodeSession.Runspaces)) {
+            # sleep for 1s before doing this, to let listeners dispose
+            Start-Sleep -Seconds 1
+
+            # now dispose runspaces
             $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
                 $_.Runspace.Dispose()
                 $_.Stopped = $true
@@ -253,6 +257,7 @@ function Close-Pode
 
     try {
         $PodeSession.Tokens.Cancellation.Dispose()
+        $PodeSession.Tokens.Restart.Dispose()
     } catch {
         $Error[0] | Out-Default
     }
@@ -332,49 +337,4 @@ function Join-ServerRoot
     }
 
     return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
-}
-
-function Get-PodeEnvServerName
-{
-    param (
-        [string]
-        $Name
-    )
-
-    return "PODE_SERVER_$($Name)"
-}
-
-function Get-PodeEnvVar
-{
-    param (
-        [string]
-        $Name
-    )
-
-    return [Environment]::GetEnvironmentVariable($Name, [EnvironmentVariableTarget]::Process)
-}
-
-function Set-PodeEnvVar
-{
-    param (
-        [string]
-        $Name,
-
-        [string]
-        $Value = $null
-    )
-
-    [Environment]::SetEnvironmentVariable($Name, $Value, [EnvironmentVariableTarget]::Process)
-}
-
-function Test-PodeEnvServerRestart
-{
-    $name = (Get-PodeEnvServerName $PodeSession.ServerName)
-    $restart = (Get-PodeEnvVar -Name $name)
-
-    if ($restart -ieq '1') {
-        Set-PodeEnvVar -Name $name
-    }
-
-    return ($restart -ieq '1')
 }

@@ -16,7 +16,7 @@ function Start-PodeFileMonitor
 
     $watcher.EnableRaisingEvents = $true
 
-    # setup the monitor timer - only restart server after changes + 1s of no changes
+    # setup the monitor timer - only restart server after changes + 2s of no changes
     $timer = New-Object System.Timers.Timer
     $timer.AutoReset = $false
     $timer.Interval = 2000
@@ -39,10 +39,9 @@ function Start-PodeFileMonitor
 
     # listen out for timer ticks to reset server
     Register-ObjectEvent -InputObject $timer -EventName 'Elapsed' -SourceIdentifier (Get-PodeFileMonitorTimerName) -Action {
-        $_id = $Event.MessageData.ServerName
-        Set-PodeEnvVar -Name (Get-PodeEnvServerName $_id) -Value '1'
+        $Event.MessageData.Session.Tokens.Restart.Cancel()
         $Event.Sender.Stop()
-    } -MessageData @{ 'ServerName' = $PodeSession.ServerName; } -SupportEvent
+    } -MessageData @{ 'Session' = $PodeSession; } -SupportEvent
 }
 
 function Stop-PodeFileMonitor

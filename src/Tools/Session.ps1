@@ -95,9 +95,10 @@ function New-PodeSession
         'smtp' = $null;
     }
 
-    # create new cancellation token
+    # create new cancellation tokens
     $session.Tokens = @{
-        'Cancellation' = New-Object System.Threading.CancellationTokenSource
+        'Cancellation' = New-Object System.Threading.CancellationTokenSource;
+        'Restart' = New-Object System.Threading.CancellationTokenSource;
     }
 
     # requests that should be logged
@@ -125,7 +126,6 @@ function New-PodeSession
     $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, 4, $state, $Host)
     $session.RunspacePool.Open()
 
-    Write-Host "Server: $($session.ServerName)" -ForegroundColor Magenta
     return $session
 }
 

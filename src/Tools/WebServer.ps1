@@ -152,9 +152,15 @@ function Start-WebServer
             }
         }
         catch [System.OperationCanceledException] {}
+        catch {
+            $Error[0] | Out-Default
+            throw $_.Exception
+        }
         finally {
             if ($listener -ne $null) {
                 $listener.Stop()
+                $listener.Close()
+                $listener.Dispose()
             }
         }
     }
