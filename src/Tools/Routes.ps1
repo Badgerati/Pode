@@ -47,7 +47,6 @@ function Route
         $HttpMethod,
 
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
         [string]
         $Route,
 
