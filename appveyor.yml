@@ -1,5 +1,5 @@
 version: 0.13.{build}
-os: Windows Server 2016
+image: Visual Studio 2017
 
 branches:
   except:
