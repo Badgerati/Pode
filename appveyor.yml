@@ -12,7 +12,7 @@ configuration: Release
 install:
   - cinst -y pester --version 4.1.0
   - cinst -y psake --version 4.7.0
-  - ps: Import-Module .\build\appveyor.psm1
+  - ps: Import-Module "$($pwd)\build\appveyor.psm1"
 
 build: off
 
