@@ -35,9 +35,10 @@ function Get-Type
         return $null
     }
 
+    $type = $Value.GetType()
     return @{
-        'Name' = $Value.GetType().Name.ToLowerInvariant();
-        'BaseName' = $Value.GetType().BaseType.Name.ToLowerInvariant();
+        'Name' = $type.Name.ToLowerInvariant();
+        'BaseName' = $type.BaseType.Name.ToLowerInvariant();
     }
 }
 

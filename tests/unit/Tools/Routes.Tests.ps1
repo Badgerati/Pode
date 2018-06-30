@@ -4,7 +4,6 @@ $sut = (Split-Path -Leaf -Path $path) -ireplace '\.Tests\.', '.'
 . "$($src)\$($sut)"
 
 Describe 'Get-PodeRoute' {
-
     Context 'Invalid parameters supplied' {
         It 'Throw invalid method error for no method' {
             { Get-PodeRoute -HttpMethod 'MOO' -Route '/' } | Should Throw "Cannot validate argument on parameter 'HttpMethod'"
@@ -50,11 +49,9 @@ Describe 'Get-PodeRoute' {
             $result.Parameters['userId'] | Should Be '123'
         }
     }
-
 }
 
 Describe 'Route' {
-
     Context 'Invalid parameters supplied' {
         It 'Throw invalid method error for no method' {
             { Route -HttpMethod 'MOO' -Route '/' -ScriptBlock {} } | Should Throw "Cannot validate argument on parameter 'HttpMethod'"
@@ -78,5 +75,4 @@ Describe 'Route' {
             { Route -HttpMethod GET -Route "?k=v" -ScriptBlock {} } | Should Throw "No route supplied for GET request"
         }
     }
-
 }
