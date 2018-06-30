@@ -19,6 +19,7 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 Server -IP $IP -Port 8085 {
 
     engine pode
+    logger terminal
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
@@ -44,4 +45,5 @@ Server -IP $IP -Port 8085 {
         json @{ 'userId' = $session.Parameters['userId'] }
     }
 
-}
+} -FileMonitor
+ 

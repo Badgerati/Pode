@@ -162,16 +162,51 @@ function Add-PodeRunspace
 
 function Close-PodeRunspaces
 {
-    $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
-        $_.Runspace.Dispose()
-        $_.Stopped = $true
-    }
+    param (
+        [switch]
+        $ClosePool
+    )
 
-    if (!$PodeSession.RunspacePool.IsDisposed) {
-        $PodeSession.RunspacePool.Close()
-        $PodeSession.RunspacePool.Dispose()
+    try {
+        if (!(Test-Empty $PodeSession.Runspaces)) {
+            # sleep for 1s before doing this, to let listeners dispose
+            Start-Sleep -Seconds 1
+
+            # now dispose runspaces
+            $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
+                $_.Runspace.Dispose()
+                $_.Stopped = $true
+            }
+
+            $PodeSession.Runspaces = @()
+        }
+
+        if ($ClosePool -and $PodeSession.RunspacePool -ne $null -and !$PodeSession.RunspacePool.IsDisposed) {
+            $PodeSession.RunspacePool.Close()
+            $PodeSession.RunspacePool.Dispose()
+        }
+    }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
     }
 }
+
+function Test-TerminationPressed
+{
+    if ($PodeSession.DisableTermination -or [Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+        return $false
+    }
+
+    $key = [Console]::ReadKey($true)
+
+    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
+        return $true
+    }
+
+    return $false
+}
+
 
 function Start-TerminationListener
 {
@@ -200,7 +235,7 @@ function Start-TerminationListener
 
                 if ($cancel) {
                     Write-Host 'Terminating...' -NoNewline
-                    $PodeSession.CancelToken.Cancel()
+                    $PodeSession.Tokens.Cancellation.Cancel()
                     break
                 }
             }
@@ -217,15 +252,18 @@ function Close-Pode
         $Exit
     )
 
-    Close-PodeRunspaces
+    Close-PodeRunspaces -ClosePool
+    Stop-PodeFileMonitor
 
     try {
-        $PodeSession.CancelToken.Dispose()
-    } catch { }
+        $PodeSession.Tokens.Cancellation.Dispose()
+        $PodeSession.Tokens.Restart.Dispose()
+    } catch {
+        $Error[0] | Out-Default
+    }
 
     if ($Exit) {
         Write-Host " Done" -ForegroundColor Green
-        exit 0
     }
 }
 
