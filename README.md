@@ -31,6 +31,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Attach File](#attach-file)
         * [Logging](#logging)
         * [Shared State](#shared-state)
+        * [File Monitor](#file-monitor)
 * [Pode Files](#pode-files)
     * [Third-Party Engines](#third-party-view-engines)
 
@@ -46,6 +47,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Setup async timers to be used as one off tasks, or for housekeeping services
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 * Cross-state runspace variable access for timers, routes and loggers
+* Optional file monitoring to trigger internal server restart on file changes
 
 ## Install
 
@@ -466,6 +468,28 @@ Server -Port 8085 {
 ```
 
 > You can put any type of variable into the global state, including `scriptblock`s
+
+#### File Monitor
+
+> Warning: Monitoring currently only works in Windows and some Unix environments - on Unix you *will* need dotnet-core 2.1 installed. Monitoring does not work in Docker at the moment, as the official PowerShell container only supports dotnet-core 2.0/powershell-core 6.0. Once the container supports powershell-core 6.1 I'll release a hot-fix container for Docker to support monitoring
+
+Pode has inbuilt file monitoring that can be enabled, whereby Pode will trigger an internal server restart if it detects file changes within the same directory as your Pode script. To enable the monitoring supply the `-FileMonitor` switch to your `Server`:
+
+```powershell
+Server -Port 8085 {
+    # logic
+} -FileMonitor
+```
+
+Once enabled, Pode will actively monitor all file changes within the directory of your script - if your script was at `C:/Apps/Pode/server.ps1`, then Pode will monitor the `C:/Apps/Pode` directory and sub-directories.
+
+Changes being monitored are:
+
+* Updates
+* Creation
+* Deletion
+
+Please note that if you change the main server script itself, those changes will not be picked up. It's best to import/dot-source other modules/scripts into your `Server` scriptblock, as the internal restart re-executes this scriptblock. If you do make changes to the main server script, you'll need to terminate and restart the server.
 
 ## Pode Files
 
