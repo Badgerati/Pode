@@ -481,7 +481,7 @@ Server -Port 8085 {
 } -FileMonitor
 ```
 
-Once enabled, Pode will actively monitor all file changes within the directory of your script - if your script was at `C:/Apps/Pode/server.ps1`, then Pode will monitor the `C:/Apps/Pode` directory and sub-directories.
+Once enabled, Pode will actively monitor all file changes within the directory of your script - if your script was at `C:/Apps/Pode/server.ps1`, then Pode will monitor the `C:/Apps/Pode` directory and sub-directories. When a change is detected, Pode will wait a couple of seconds before triggering the restart; this is so multiple rapid changes don't trigger multiple restarts.
 
 Changes being monitored are:
 
