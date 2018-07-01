@@ -103,7 +103,7 @@ function Start-PodeServer
     try
     {
         # run the logic
-        . ($PodeSession.ScriptBlock)
+        Invoke-ScriptBlock -ScriptBlock $PodeSession.ScriptBlock
 
         # start runspace for timers
         Start-TimerRunspace
@@ -136,7 +136,7 @@ function Start-PodeServer
                     }
 
                     Start-Sleep -Seconds $PodeSession.Interval
-                    . ($PodeSession.ScriptBlock)
+                    Invoke-ScriptBlock -ScriptBlock $PodeSession.ScriptBlock
                 }
             }
         }
@@ -200,12 +200,10 @@ function Get-PodeServerType
 {
     param (
         [Parameter()]
-        [ValidateNotNull()]
         [int]
         $Port = 0,
 
         [Parameter()]
-        [ValidateNotNull()]
         [int]
         $Interval = 0,
 

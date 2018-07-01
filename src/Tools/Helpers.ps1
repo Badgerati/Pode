@@ -20,8 +20,7 @@ function ConvertFrom-PodeFile
     }
 
     # invoke the content as a script to generate the dynamic content
-    $Content = (. ([scriptblock]::Create($Content)) $Data)
-    return $Content
+    return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data)
 }
 
 function Get-Type
@@ -35,9 +34,10 @@ function Get-Type
         return $null
     }
 
+    $type = $Value.GetType()
     return @{
-        'Name' = $Value.GetType().Name.ToLowerInvariant();
-        'BaseName' = $Value.GetType().BaseType.Name.ToLowerInvariant();
+        'Name' = $type.Name.ToLowerInvariant();
+        'BaseName' = $type.BaseType.Name.ToLowerInvariant();
     }
 }
 
@@ -74,14 +74,19 @@ function Test-Empty
     return ([string]::IsNullOrWhiteSpace($Value) -or ($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
 }
 
+function Get-PSVersionTable
+{
+    return $PSVersionTable
+}
+
 function Test-IsUnix
 {
-    return $PSVersionTable.Platform -ieq 'unix'
+    return (Get-PSVersionTable).Platform -ieq 'unix'
 }
 
 function Test-IsPSCore
 {
-    return $PSVersionTable.PSEdition -ieq 'core'
+    return (Get-PSVersionTable).PSEdition -ieq 'core'
 }
 
 function Test-IPAddress
@@ -299,7 +304,7 @@ function Lock
         $locked = $true
 
         if ($ScriptBlock -ne $null) {
-            . $ScriptBlock
+            Invoke-ScriptBlock -ScriptBlock $ScriptBlock
         }
     }
     catch {
@@ -337,4 +342,28 @@ function Join-ServerRoot
     }
 
     return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
+}
+
+function Invoke-ScriptBlock
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock,
+        
+        [Parameter()]
+        [hashtable]
+        $Arguments = $null,
+
+        [switch]
+        $Scoped
+    )
+
+    if ($Scoped) {
+        & $ScriptBlock $Arguments
+    }
+    else {
+        . $ScriptBlock $Arguments
+    }
 }
