@@ -25,8 +25,6 @@ Describe 'Get-PodeLogger' {
             $result = (Get-PodeLogger -Name 'test')
 
             $result | Should Be $null
-            $result | Should BeOfType System.Collections.Hashtable
-            $result.Name | Should Be 'test'
         }
 
         It 'Returns custom logger for name' {
