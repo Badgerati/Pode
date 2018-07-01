@@ -1,8 +1,6 @@
 $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '\\tests\\unit\\', '\src\'
-$sut = (Split-Path -Leaf -Path $path) -ireplace '\.Tests\.', '.'
-. "$($src)\$($sut)"
-. "$($src)\Helpers.ps1"
+Get-ChildItem "$($src)\*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
 Describe 'Start-PodeServer' {
     Mock Invoke-ScriptBlock { }
