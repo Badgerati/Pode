@@ -70,7 +70,7 @@ function Write-ToResponseFromFile
 
         default {
             if ($PodeSession.ViewEngine.Script -ne $null) {
-                $content = (. $PodeSession.ViewEngine.Script $Path)
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.ViewEngine.Script -Arguments $Path)
             }
         }
     }

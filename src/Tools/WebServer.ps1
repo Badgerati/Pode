@@ -129,7 +129,7 @@ function Start-WebServer
                         $PodeSession.Web.Parameters = $route.Parameters
 
                         # invoke route
-                        & (($route.Logic).GetNewClosure()) $PodeSession.Web
+                        Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $PodeSession.Web -Scoped
                     }
                 }
 

@@ -20,8 +20,7 @@ function ConvertFrom-PodeFile
     }
 
     # invoke the content as a script to generate the dynamic content
-    $Content = (. ([scriptblock]::Create($Content)) $Data)
-    return $Content
+    return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data)
 }
 
 function Get-Type
@@ -305,7 +304,7 @@ function Lock
         $locked = $true
 
         if ($ScriptBlock -ne $null) {
-            . $ScriptBlock
+            Invoke-ScriptBlock -ScriptBlock $ScriptBlock
         }
     }
     catch {
@@ -343,4 +342,28 @@ function Join-ServerRoot
     }
 
     return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
+}
+
+function Invoke-ScriptBlock
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock,
+        
+        [Parameter()]
+        [hashtable]
+        $Arguments = $null,
+
+        [switch]
+        $Scoped
+    )
+
+    if ($Scoped) {
+        & $ScriptBlock $Arguments
+    }
+    else {
+        . $ScriptBlock $Arguments
+    }
 }

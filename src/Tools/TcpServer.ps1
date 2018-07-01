@@ -26,7 +26,7 @@ function Start-TcpServer
 
             $PodeSession.Tcp.Client = $client
             $PodeSession.Tcp.Lockable = $PodeSession.Lockable
-            & (Get-PodeTcpHandler -Type 'TCP') $PodeSession.Tcp
+            Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $PodeSession.Tcp -Scoped
 
             if ($client -ne $null -and $client.Connected) {
                 try {
