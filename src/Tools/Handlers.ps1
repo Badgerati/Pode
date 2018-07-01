@@ -29,7 +29,7 @@ function Handler
 
     # ensure handler isn't already set
     if ($PodeSession.Handlers[$Type] -ne $null) {
-        throw "Handler for $($Type) already added"
+        throw "Handler for $($Type) already defined"
     }
 
     # add the handler

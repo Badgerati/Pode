@@ -110,6 +110,42 @@ Describe 'Test-Empty' {
     }
 }
 
+Describe 'Get-PSVersionTable' {
+    It 'Returns valid hashtable' {
+        $table = Get-PSVersionTable
+        $table | Should Not Be $null
+        $table | Should BeOfType System.Collections.Hashtable
+    }
+}
+
+Describe 'Test-IsUnix' {
+    It 'Returns false for non-unix' {
+        Mock Get-PSVersionTable { return @{ 'Platform' = 'Windows' } }
+        Test-IsUnix | Should Be $false
+        Assert-MockCalled Get-PSVersionTable -Times 1
+    }
+
+    It 'Returns true for unix' {
+        Mock Get-PSVersionTable { return @{ 'Platform' = 'Unix' } }
+        Test-IsUnix | Should Be $true
+        Assert-MockCalled Get-PSVersionTable -Times 1
+    }
+}
+
+Describe 'Test-IsPSCore' {
+    It 'Returns false for non-core' {
+        Mock Get-PSVersionTable { return @{ 'PSEdition' = 'Desktop' } }
+        Test-IsPSCore | Should Be $false
+        Assert-MockCalled Get-PSVersionTable -Times 1
+    }
+
+    It 'Returns true for unix' {
+        Mock Get-PSVersionTable { return @{ 'PSEdition' = 'Core' } }
+        Test-IsPSCore | Should Be $true
+        Assert-MockCalled Get-PSVersionTable -Times 1
+    }
+}
+
 Describe 'Test-IPAddress' {
     Context 'Values that are for any IP' {
         It 'Returns true for no value' {

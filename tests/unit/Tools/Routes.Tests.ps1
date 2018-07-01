@@ -80,8 +80,6 @@ Describe 'Route' {
             { Route -HttpMethod GET -Route '/' -ScriptBlock {} } | Should Throw 'request logic defined'
         }
 
-
-
         It 'Adds route with simple url' {
             $PodeSession = @{ 'Routes' = @{ 'GET' = @{}; }; }
             Route -HttpMethod GET -Route '/users' -ScriptBlock { Write-Host 'hello' }
