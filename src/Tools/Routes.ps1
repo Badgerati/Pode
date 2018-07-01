@@ -84,7 +84,7 @@ function Route
 
     # ensure route doesn't already exist
     if ($PodeSession.Routes[$HttpMethod].ContainsKey($Route)) {
-        throw "Route '$($Route)' already has $($HttpMethod) request logic added"
+        throw "Route '$($Route)' already has $($HttpMethod) request logic defined"
     }
 
     # add the route logic
