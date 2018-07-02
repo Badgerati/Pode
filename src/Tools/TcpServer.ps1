@@ -22,11 +22,11 @@ function Start-TcpServer
         while ($true)
         {
             $task = $listener.AcceptTcpClientAsync()
-            $task.Wait($PodeSession.CancelToken.Token)
+            $task.Wait($PodeSession.Tokens.Cancellation.Token)
 
             $PodeSession.Tcp.Client = $client
             $PodeSession.Tcp.Lockable = $PodeSession.Lockable
-            & (Get-PodeTcpHandler -Type 'TCP') $PodeSession.Tcp
+            Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $PodeSession.Tcp -Scoped
 
             if ($client -ne $null -and $client.Connected) {
                 try {

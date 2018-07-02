@@ -91,7 +91,7 @@ function Start-LoggerRunspace
                     }
 
                     { $_ -ilike 'custom_*' } {
-                        . $PodeSession.Loggers[$_] @{
+                        Invoke-ScriptBlock -ScriptBlock $PodeSession.Loggers[$_] -Arguments @{
                             'Log' = $r;
                             'Lockable' = $PodeSession.Lockable;
                         }

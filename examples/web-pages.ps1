@@ -27,6 +27,7 @@ Server {
 
     # set view engine to pode renderer
     engine pode
+    logger terminal
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
@@ -46,4 +47,11 @@ Server {
         attach 'Anger.jpg'
     }
 
-}
+    # GET request with parameters
+    route 'get' '/:userId/details' {
+        param($session)
+        json @{ 'userId' = $session.Parameters['userId'] }
+    }
+
+} -FileMonitor
+ 

@@ -69,7 +69,7 @@ function Start-SmtpServer
                         $PodeSession.Smtp.Lockable = $PodeSession.Lockable
 
                         # call user handlers for processing smtp data
-                        & (Get-PodeTcpHandler -Type 'SMTP') $PodeSession.Smtp
+                        Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $PodeSession.Smtp -Scoped
                     }
                 }
             }
@@ -82,7 +82,12 @@ function Start-SmtpServer
     # setup and run the smtp listener
     try
     {
-        $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $PodeSession.Port)
+        $port = $PodeSession.Port
+        if ($port -eq 0) {
+            $port = 25
+        }
+
+        $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $port)
         $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
 
         # start listener
@@ -95,11 +100,11 @@ function Start-SmtpServer
         while ($true)
         {
             $task = $listener.AcceptTcpClientAsync()
-            $task.Wait($PodeSession.CancelToken.Token)
+            $task.Wait($PodeSession.Tokens.Cancellation.Token)
 
             $PodeSession.Tcp.Client = $task.Result
             $PodeSession.Smtp = @{}
-            . $process
+            Invoke-ScriptBlock -ScriptBlock $process
         }
     }
     catch [System.OperationCanceledException] {

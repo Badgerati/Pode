@@ -6,6 +6,10 @@ function Get-PodeContentType
         $Extension
     )
 
+    if ($Extension -eq $null) {
+        $Extension = '.'
+    }
+
     if (!$Extension.StartsWith('.')) {
         $Extension = ".$($Extension)"
     }

@@ -1,34 +1,65 @@
 function New-PodeSession
 {
     param (
+        [scriptblock]
+        $ScriptBlock,
+
+        [int]
+        $Port = 0,
+
+        [string]
+        $IP = $null,
+
+        [int]
+        $Interval = 0,
+
         [string]
         $ServerRoot,
 
+        [ValidateSet('HTTP', 'HTTPS', 'SCRIPT', 'SERVICE', 'SMTP', 'TCP')]
+        [string]
+        $ServerType,
+
+        [string]
+        $Name = $null,
+
         [switch]
-        $DisableLogging
+        $DisableLogging,
+
+        [switch]
+        $FileMonitor
     )
+
+    if (Test-Empty $Name) {
+        $Name = Get-RandomServerName
+    }
 
     # basic session object
     $session = New-Object -TypeName psobject |
+        Add-Member -MemberType NoteProperty -Name ServerName -Value $Name -PassThru |
+        Add-Member -MemberType NoteProperty -Name ScriptBlock -Value $ScriptBlock -PassThru |
         Add-Member -MemberType NoteProperty -Name Routes -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Handlers -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Port -Value 0 -PassThru |
+        Add-Member -MemberType NoteProperty -Name Port -Value $Port -PassThru |
+        Add-Member -MemberType NoteProperty -Name Interval -Value $Interval -PassThru |
         Add-Member -MemberType NoteProperty -Name IP -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Web -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Smtp -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Tcp -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Timers -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name CancelToken -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $DisableLogging -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name ServerRoot -Value $ServerRoot -PassThru |
+        Add-Member -MemberType NoteProperty -Name ServerType -Value $ServerType -PassThru |
         Add-Member -MemberType NoteProperty -Name SharedState -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Security -Value @{} -PassThru
+        Add-Member -MemberType NoteProperty -Name Security -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name FileMonitor -Value $FileMonitor -PassThru
 
     # set the IP address details
     $session.IP = @{
@@ -67,11 +98,11 @@ function New-PodeSession
         'Blacklist' = @{};
     }
 
-    # create new cancellation token
-    $session.CancelToken = New-Object System.Threading.CancellationTokenSource
-
-    # async timers
-    $session.Timers = @{}
+    # create new cancellation tokens
+    $session.Tokens = @{
+        'Cancellation' = New-Object System.Threading.CancellationTokenSource;
+        'Restart' = New-Object System.Threading.CancellationTokenSource;
+    }
 
     # requests that should be logged
     $session.RequestsToLog = New-Object System.Collections.ArrayList
@@ -95,7 +126,7 @@ function New-PodeSession
 
     # runspace and pool
     $session.Runspaces = @()
-    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, 3, $state, $Host)
+    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, 4, $state, $Host)
     $session.RunspacePool.Open()
 
     return $session
@@ -110,11 +141,15 @@ function New-PodeStateSession
     )
 
     return (New-Object -TypeName psobject |
+        Add-Member -MemberType NoteProperty -Name ServerName -Value $Session.ServerName -PassThru |
+        Add-Member -MemberType NoteProperty -Name Routes -Value $Session.Routes -PassThru |
         Add-Member -MemberType NoteProperty -Name Port -Value $Session.Port -PassThru |
         Add-Member -MemberType NoteProperty -Name IP -Value $Session.IP -PassThru |
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
+        Add-Member -MemberType NoteProperty -Name Web -Value $Session.Web -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
-        Add-Member -MemberType NoteProperty -Name CancelToken -Value $Session.CancelToken -PassThru |
+        Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
+        Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
         Add-Member -MemberType NoteProperty -Name ServerRoot -Value $Session.ServerRoot -PassThru |
