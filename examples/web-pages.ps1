@@ -13,21 +13,20 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 Server {
 
     # listen on localhost:8085
-    listen 127.0.0.1:8085
+    listen 127.0.0.1:8085 http
 
-    # whitelist the local ip and some other ips
-    whitelist ip 127.0.0.1
-    whitelist ip @('192.169.0.1', '192.168.0.2')
+    # allow the local ip and some other ips
+    access allow ip 127.0.0.1
+    access allow ip @('192.169.0.1', '192.168.0.2')
 
-    # blacklist an ip
-    blacklist ip 10.10.10.10
+    # deny an ip
+    access deny ip 10.10.10.10
 
     # log requests to the terminal
     logger terminal
 
     # set view engine to pode renderer
     engine pode
-    logger terminal
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {

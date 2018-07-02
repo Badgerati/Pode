@@ -70,7 +70,7 @@ function Server
 
         # parse ip:port to listen on (if both have been supplied)
         if (!(Test-Empty $IP) -or $Port -gt 0) {
-            listen "$($IP):$($Port)"
+            listen -IPPort "$($IP):$($Port)" -Type $PodeSession.ServerType
         }
 
         # set it so ctrl-c can terminate
@@ -112,26 +112,6 @@ function Start-PodeServer
     {
         # run the logic
         Invoke-ScriptBlock -ScriptBlock $PodeSession.ScriptBlock
-
-        # if smtp/https is passed, and no port - force port to 25/443
-        if ($PodeSession.Port -eq 0) {
-            if ($Smtp) {
-                $PodeSession.Port = 25
-            }
-
-            elseif ($Https) {
-                $PodeSession.Port = 443
-            }
-
-            elseif ($Http -or (!$Tcp -and !$Smtp -and !$Https)) {
-                $PodeSession.Port = 80
-            }
-        }
-
-        # validate port passed
-        if ($PodeSession.Port -lt 0) {
-            throw "Port cannot be negative: $($PodeSession.Port)"
-        }
 
         # start runspace for timers
         Start-TimerRunspace

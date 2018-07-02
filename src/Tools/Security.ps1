@@ -1,4 +1,4 @@
-function Test-ValueAllowed
+function Test-ValueAccess
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -12,41 +12,46 @@ function Test-ValueAllowed
         $Value
     )
 
-    # get black/white lists for type
-    $whitelist = $PodeSession.Security.Whitelist[$Type]
-    $blacklist = $PodeSession.Security.Blacklist[$Type]
+    # get permission lists for type
+    $allow = $PodeSession.Access.Allow[$Type]
+    $deny = $PodeSession.Access.Deny[$Type]
 
     # are they empty?
-    $wlEmpty = (Test-Empty $whitelist)
-    $blEmpty = (Test-Empty $blacklist)
+    $alEmpty = (Test-Empty $allow)
+    $dnEmpty = (Test-Empty $deny)
 
     # if both are empty, value is valid
-    if ($wlEmpty -and $blEmpty) {
+    if ($alEmpty -and $dnEmpty) {
         return $true
     }
 
-    # if value in blacklist, it's disallowed
-    if (!$blEmpty -and $blacklist.ContainsKey($Value)) {
-        return $false
-    }
-
-    # if value in whitelist, it's allowed
-    if (!$wlEmpty -and $whitelist.ContainsKey($Value)) {
+    # if value in allow, it's allowed
+    if (!$alEmpty -and $allow.ContainsKey($Value)) {
         return $true
     }
 
-    # if we have a whitelist, it's disallowed (because it's not in there)
-    if (!$wlEmpty) {
+    # if value in deny, it's disallowed
+    if (!$dnEmpty -and $deny.ContainsKey($Value)) {
         return $false
     }
 
-    # otherwise it's allowed (because it's not in the blacklist)
+    # if we have an allow, it's disallowed (because it's not in there)
+    if (!$alEmpty) {
+        return $false
+    }
+
+    # otherwise it's allowed (because it's not in the deny)
     return $true
 }
 
-function Whitelist
+function Access
 {
     param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Allow', 'Deny')]
+        [string]
+        $Permission,
+
         [Parameter(Mandatory=$true)]
         [ValidateSet('IP')]
         [string]
@@ -61,79 +66,35 @@ function Whitelist
     # if it's array add them all
     if ((Get-Type $Value).BaseName -ieq 'array') {
         $Value | ForEach-Object {
-            whitelist $Type $_
+            access $Permission $Type $_
         }
 
         return
     }
 
-    # get black/white lists for type
-    $whitelist = $PodeSession.Security.Whitelist[$Type]
-    $blacklist = $PodeSession.Security.Blacklist[$Type]
+    # get opposite permission
+    $opp = "$(if ($Permission -ieq 'allow') { 'Deny' } else { 'Allow' })"
 
-    # setup up whitelist type
-    if ($whitelist -eq $null) {
-        $PodeSession.Security.Whitelist[$Type] = @{}
-        $whitelist = $PodeSession.Security.Whitelist[$Type]
+    # get permission lists for type
+    $permType = $PodeSession.Access[$Permission][$Type]
+    $oppType = $PodeSession.Access[$opp][$Type]
+
+    # setup up perm type
+    if ($permType -eq $null) {
+        $PodeSession.Access[$Permission][$Type] = @{}
+        $permType = $PodeSession.Access[$Permission][$Type]
     }
 
-    # ensure value not already in list
-    elseif ($whitelist.ContainsKey($Value)) {
+    # ensure value not already in perm type list
+    elseif ($permType.ContainsKey($Value)) {
         return
     }
 
-    # remove from blacklist
-    if ($blacklist -ne $null -and $blacklist.ContainsKey($Value)) {
-        $blacklist.Remove($Value)
+    # remove from opp type
+    if ($oppType -ne $null -and $oppType.ContainsKey($Value)) {
+        $oppType.Remove($Value)
     }
 
-    # add to whitelist
-    $whitelist.Add($Value, $true)
-}
-
-function Blacklist
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('IP')]
-        [string]
-        $Type,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [object]
-        $Value
-    )
-
-    # if it's array add them all
-    if ((Get-Type $Value).BaseName -ieq 'array') {
-        $Value | ForEach-Object {
-            blacklist $Type $_
-        }
-
-        return
-    }
-
-    # get black/white lists for type
-    $whitelist = $PodeSession.Security.Whitelist[$Type]
-    $blacklist = $PodeSession.Security.Blacklist[$Type]
-
-    # setup up blacklist type
-    if ($blacklist -eq $null) {
-        $PodeSession.Security.Blacklist[$Type] = @{}
-        $blacklist = $PodeSession.Security.Blacklist[$Type]
-    }
-
-    # ensure value not already in list
-    elseif ($blacklist.ContainsKey($Value)) {
-        return
-    }
-
-    # remove from whitelist
-    if ($whitelist -ne $null -and $whitelist.ContainsKey($Value)) {
-        $whitelist.Remove($Value)
-    }
-
-    # add to blacklist
-    $blacklist.Add($Value, $true)
+    # add to perm type
+    $permType.Add($Value, $true)
 }
