@@ -68,9 +68,12 @@ function Server
             -Interval $Interval -ServerRoot $MyInvocation.PSScriptRoot -ServerType $ServerType `
             -DisableLogging:$DisableLogging -FileMonitor:$FileMonitor
 
+        # set ad efault port for the server type
+        Set-PodePortForServerType
+
         # parse ip:port to listen on (if both have been supplied)
-        if (!(Test-Empty $IP) -or $Port -gt 0) {
-            listen -IPPort "$($IP):$($Port)" -Type $PodeSession.ServerType
+        if (!(Test-Empty $IP) -or $PodeSession.IP.Port -gt 0) {
+            listen -IPPort "$($IP):$($PodeSession.IP.Port)" -Type $PodeSession.ServerType
         }
 
         # set it so ctrl-c can terminate
@@ -246,4 +249,26 @@ function Get-PodeServerType
     }
 
     return 'SCRIPT'
+}
+
+function Set-PodePortForServerType
+{
+    if ($PodeSession.IP.Port -gt 0) {
+        return
+    }
+
+    switch ($PodeSession.ServerType.ToUpperInvariant())
+    {
+        'SMTP' {
+            $PodeSession.IP.Port = 25
+        }
+
+        'HTTP' {
+            $PodeSession.IP.Port = 8080
+        }
+
+        'HTTPS' {
+            $PodeSession.IP.Port = 8443
+        }
+    }
 }

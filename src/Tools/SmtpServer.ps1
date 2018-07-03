@@ -101,10 +101,22 @@ function Start-SmtpServer
         {
             $task = $listener.AcceptTcpClientAsync()
             $task.Wait($PodeSession.Tokens.Cancellation.Token)
+            $client = $task.Result
 
-            $PodeSession.Tcp.Client = $task.Result
-            $PodeSession.Smtp = @{}
-            Invoke-ScriptBlock -ScriptBlock $process
+            # ensure the request ip is allowed
+            if (!(Test-IPAccess -IP (ConvertTo-IPEndpoint -Endpoint $client.Client.RemoteEndPoint))) {
+                try {
+                    $client.Close()
+                    $client.Dispose()
+                } catch { }
+            }
+
+            # deal with smtp call
+            else {
+                $PodeSession.Tcp.Client = $client
+                $PodeSession.Smtp = @{}
+                Invoke-ScriptBlock -ScriptBlock $process
+            }
         }
     }
     catch [System.OperationCanceledException] {

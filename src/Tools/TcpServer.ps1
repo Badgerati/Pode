@@ -28,11 +28,16 @@ function Start-TcpServer
         {
             $task = $listener.AcceptTcpClientAsync()
             $task.Wait($PodeSession.Tokens.Cancellation.Token)
+            $client = $task.Result
 
-            $PodeSession.Tcp.Client = $client
-            $PodeSession.Tcp.Lockable = $PodeSession.Lockable
-            Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $PodeSession.Tcp -Scoped
+            # ensure the request ip is allowed and deal with the tcp call
+            if (Test-IPAccess -IP (ConvertTo-IPEndpoint -Endpoint $client.Client.RemoteEndPoint)) {
+                $PodeSession.Tcp.Client = $client
+                $PodeSession.Tcp.Lockable = $PodeSession.Lockable
+                Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $PodeSession.Tcp -Scoped
+            }
 
+            # close the connection
             if ($client -ne $null -and $client.Connected) {
                 try {
                     $client.Close()

@@ -110,6 +110,17 @@ function Test-IPAddress
     }
 }
 
+function ConvertTo-IPEndpoint
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Endpoint
+    )
+
+    return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Endpoint).Address.ToString())
+}
+
 function Test-IPAddressLocal
 {
     param (
