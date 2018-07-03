@@ -218,7 +218,7 @@ function Listen
         $Type
     )
 
-    $hostRgx = '(?<host>(\[[a-z0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+))'
+    $hostRgx = '(?<host>(\[[a-z0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all))'
     $portRgx = '(?<port>\d+)'
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
