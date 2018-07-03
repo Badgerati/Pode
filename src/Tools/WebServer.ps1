@@ -105,7 +105,7 @@ function Start-WebServer
                 }
 
                 # ensure the request ip is allowed
-                if (!(Test-ValueAccess -Type IP -Value $request.RemoteEndPoint.Address.IPAddressToString)) {
+                if (!(Test-IPAccess -IP $request.RemoteEndPoint.Address)) {
                     status 403
                 }
 

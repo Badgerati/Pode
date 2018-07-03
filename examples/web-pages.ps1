@@ -21,6 +21,8 @@ Server {
 
     # deny an ip
     access deny ip 10.10.10.10
+    access deny ip '10.10.0.0/24'
+    access deny ip all
 
     # log requests to the terminal
     logger terminal

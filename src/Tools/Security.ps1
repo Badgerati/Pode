@@ -1,20 +1,20 @@
-function Test-ValueAccess
+function Test-IPAccess
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('IP')]
-        [string]
-        $Type,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Value
+        [ValidateNotNull()]
+        $IP
     )
 
-    # get permission lists for type
-    $allow = $PodeSession.Access.Allow[$Type]
-    $deny = $PodeSession.Access.Deny[$Type]
+    $type = 'IP'
+    $IP = @{
+        'Family' = $IP.AddressFamily;
+        'Bytes' = $IP.GetAddressBytes();
+    }
+
+    # get permission lists for ip
+    $allow = $PodeSession.Access.Allow[$type]
+    $deny = $PodeSession.Access.Deny[$type]
 
     # are they empty?
     $alEmpty = (Test-Empty $allow)
@@ -26,12 +26,12 @@ function Test-ValueAccess
     }
 
     # if value in allow, it's allowed
-    if (!$alEmpty -and $allow.ContainsKey($Value)) {
+    if (!$alEmpty -and ($allow.Values | Where-Object { Test-IPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Measure-Object).Count -gt 0) {
         return $true
     }
 
     # if value in deny, it's disallowed
-    if (!$dnEmpty -and $deny.ContainsKey($Value)) {
+    if (!$dnEmpty -and ($deny.Values | Where-Object { Test-IPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Measure-Object).Count -gt 0) {
         return $false
     }
 
@@ -72,29 +72,78 @@ function Access
         return
     }
 
+    # call the appropriate access method
+    switch ($Type.ToLowerInvariant())
+    {
+        'ip' {
+            Add-IPAccess -Permission $Permission -IP $Value
+        }
+    }
+}
+
+function Add-IPAccess
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Allow', 'Deny')]
+        [string]
+        $Permission,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [string]
+        $IP
+    )
+
+    # current access type
+    $type = 'IP'
+
     # get opposite permission
     $opp = "$(if ($Permission -ieq 'allow') { 'Deny' } else { 'Allow' })"
 
     # get permission lists for type
-    $permType = $PodeSession.Access[$Permission][$Type]
-    $oppType = $PodeSession.Access[$opp][$Type]
+    $permType = $PodeSession.Access[$Permission][$type]
+    $oppType = $PodeSession.Access[$opp][$type]
 
     # setup up perm type
     if ($permType -eq $null) {
-        $PodeSession.Access[$Permission][$Type] = @{}
-        $permType = $PodeSession.Access[$Permission][$Type]
+        $PodeSession.Access[$Permission][$type] = @{}
+        $permType = $PodeSession.Access[$Permission][$type]
     }
 
-    # ensure value not already in perm type list
-    elseif ($permType.ContainsKey($Value)) {
+    # have we already added the ip?
+    elseif ($permType.ContainsKey($IP)) {
         return
     }
 
     # remove from opp type
-    if ($oppType -ne $null -and $oppType.ContainsKey($Value)) {
-        $oppType.Remove($Value)
+    if ($oppType -ne $null -and $oppType.ContainsKey($IP)) {
+        $oppType.Remove($IP)
     }
 
-    # add to perm type
-    $permType.Add($Value, $true)
+    # calculate the lower/upper ip bounds
+    if (Test-IPAddressIsSubnetMask -IP $IP) {
+        $_tmp = Get-SubnetRange -SubnetMask $IP
+        $_tmpLo = Get-IPAddress -IP $_tmp.Lower
+        $_tmpHi = Get-IPAddress -IP $_tmp.Upper
+    }
+    elseif (Test-IPAddressAny -IP $IP) {
+        $_tmpLo = Get-IPAddress -IP '0.0.0.0'
+        $_tmpHi = Get-IPAddress -IP '255.255.255.255'
+    }
+    else {
+        $_tmpLo = Get-IPAddress -IP $IP
+        $_tmpHi = $_tmpLo
+    }
+
+    $permType.Add($IP, @{
+        'Lower' = @{
+            'Family' = $_tmpLo.AddressFamily;
+            'Bytes' = $_tmpLo.GetAddressBytes();
+        };
+        'Upper' = @{
+            'Family' = $_tmpHi.AddressFamily;
+            'Bytes' = $_tmpHi.GetAddressBytes();
+        }
+    })
 }
