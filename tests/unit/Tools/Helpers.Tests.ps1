@@ -189,6 +189,31 @@ Describe 'Test-IPAddress' {
     }
 }
 
+Describe 'ConvertTo-IPAddress' {
+    Context 'Null values' {
+        It 'Throws error for null' {
+            { ConvertTo-IPAddress -Endpoint $null } | Should Throw 'the argument is null'
+        }
+    }
+
+    Context 'Valid parameters' {
+        It 'Returns IPAddress from IPEndpoint' {
+            $_a = [System.Net.IPAddress]::Parse('127.0.0.1')
+            $addr = ConvertTo-IPAddress -Endpoint ([System.Net.IPEndpoint]::new($_a, 8080))
+            $addr | Should Not Be $null
+            $addr.ToString() | Should Be '127.0.0.1'
+        }
+
+        It 'Returns IPAddress from Endpoint' {
+            $_a = [System.Net.IPAddress]::Parse('127.0.0.1')
+            $_a = [System.Net.IPEndpoint]::new($_a, 8080)
+            $addr = ConvertTo-IPAddress -Endpoint ([System.Net.Endpoint]$_a)
+            $addr | Should Not Be $null
+            $addr.ToString() | Should Be '127.0.0.1'
+        }
+    }
+}
+
 Describe 'Test-IPAddressLocal' {
     Context 'Null values' {
         It 'Throws error for empty' {

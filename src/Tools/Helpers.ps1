@@ -110,7 +110,7 @@ function Test-IPAddress
     }
 }
 
-function ConvertTo-IPEndpoint
+function ConvertTo-IPAddress
 {
     param (
         [Parameter(Mandatory=$true)]

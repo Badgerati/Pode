@@ -31,7 +31,7 @@ function Start-TcpServer
             $client = $task.Result
 
             # ensure the request ip is allowed and deal with the tcp call
-            if (Test-IPAccess -IP (ConvertTo-IPEndpoint -Endpoint $client.Client.RemoteEndPoint)) {
+            if (Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)) {
                 $PodeSession.Tcp.Client = $client
                 $PodeSession.Tcp.Lockable = $PodeSession.Lockable
                 Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $PodeSession.Tcp -Scoped

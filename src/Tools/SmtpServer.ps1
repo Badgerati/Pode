@@ -104,7 +104,7 @@ function Start-SmtpServer
             $client = $task.Result
 
             # ensure the request ip is allowed
-            if (!(Test-IPAccess -IP (ConvertTo-IPEndpoint -Endpoint $client.Client.RemoteEndPoint))) {
+            if (!(Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint))) {
                 try {
                     $client.Close()
                     $client.Dispose()

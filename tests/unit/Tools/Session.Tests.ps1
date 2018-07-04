@@ -32,6 +32,17 @@ Describe 'Listen' {
             $PodeSession.IP.Address.ToString() | Should Be '127.0.0.1'
         }
 
+        It 'Set just an IPv4 address for all' {
+            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            Listen -IP 'all' -Type 'HTTP'
+
+            $PodeSession.ServerType | Should Be 'HTTP'
+            $PodeSession.IP | Should Not Be $null
+            $PodeSession.IP.Port | Should Be 0
+            $PodeSession.IP.Name | Should Be 'localhost'
+            $PodeSession.IP.Address.ToString() | Should Be '0.0.0.0'
+        }
+
         It 'Set just an IPv4 address with colon' {
             $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
             Listen -IP '127.0.0.1:' -Type 'HTTP'
@@ -74,6 +85,17 @@ Describe 'Listen' {
             $PodeSession.IP.Port | Should Be 80
             $PodeSession.IP.Name | Should Be 'localhost'
             $PodeSession.IP.Address.ToString() | Should Be '127.0.0.1'
+        }
+
+        It 'Set both IPv4 address and port for all' {
+            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            Listen -IP '*:80' -Type 'HTTP'
+
+            $PodeSession.ServerType | Should Be 'HTTP'
+            $PodeSession.IP | Should Not Be $null
+            $PodeSession.IP.Port | Should Be 80
+            $PodeSession.IP.Name | Should Be 'localhost'
+            $PodeSession.IP.Address.ToString() | Should Be '0.0.0.0'
         }
 
         It 'Throws error for just an invalid IPv4' {
