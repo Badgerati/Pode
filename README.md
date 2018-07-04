@@ -33,6 +33,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Logging](#logging)
         * [Shared State](#shared-state)
         * [File Monitor](#file-monitor)
+        * [Access Rules](#access-rules)
 * [Pode Files](#pode-files)
     * [Third-Party Engines](#third-party-view-engines)
 
@@ -186,6 +187,23 @@ By default Pode will listen across all IP addresses for Web, TCP and SMTP server
 ```powershell
 Server -IP 127.0.0.2 -Port 8080 {
     # logic
+}
+```
+
+Conversely, you can also use `listen`. If you use `listen` then you do *not* need to supply any of the following parameters to `Server`: `IP`, `Port`, `Smtp`, `Https`, `Tcp`. If you do, then `listen` will just override them.
+
+You can use `listen` within your `Server` block, specifying the IP, Port and Protocol:
+
+```powershell
+Server {
+    # listen on everything for http
+    listen *:8080 http
+
+    # listen on localhost for smtp
+    listen 127.0.0.1:25 smtp
+
+    # listen on ip for https
+    listen 10.10.1.4:8443 https
 }
 ```
 
@@ -492,8 +510,29 @@ Changes being monitored are:
 
 Please note that if you change the main server script itself, those changes will not be picked up. It's best to import/dot-source other modules/scripts into your `Server` scriptblock, as the internal restart re-executes this scriptblock. If you do make changes to the main server script, you'll need to terminate and restart the server.
 
-## Pode Files
+#### Access Rules
 
+Access rules in Pode allow you to specify allow/deny rules for IP addresses and subnet masks. This means you can deny certain IPs from accessing the server, and vice-versa by allowing them. You use `access` within your `Server`, specifying the permission, type and IP/subnet:
+
+```powershell
+Server {
+    # allow access from localhost
+    access allow ip 127.0.0.1
+
+    # allow access from multiple IPs
+    access allow ip @('192.168.1.1', '192.168.1.2')
+
+    # deny access from a subnet
+    access deny ip '10.10.0.0/24'
+
+    # deny access from everything
+    access deny ip all
+}
+```
+
+If an IP hits your server that you've denied access, then a `403` response is returned and the connection immediately closed. For SMTP/TCP servers the connection is just closed with no response.
+
+## Pode Files
 Using Pode to write dynamic HTML files are mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
 
 To use Pode files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine to be Pode; once set, you can just write view responses as per normal:

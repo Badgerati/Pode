@@ -6,8 +6,12 @@ if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
 Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -Port 8085 {
+Server {
 
+    # listen on *:8085
+    listen *:8085 http
+
+    # set view engine to pode renderer
     engine pode
 
     # GET request for web page on "localhost:8085/"
