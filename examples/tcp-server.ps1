@@ -12,6 +12,9 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # create a server, and start listening on port 8999
 Server -Tcp -Port 8999 {
 
+    # allow the local ip
+    access allow ip 127.0.0.1
+
     # setup a tcp handler
     handler 'tcp' {
         param($session)

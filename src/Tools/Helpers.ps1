@@ -97,7 +97,7 @@ function Test-IPAddress
         $IP
     )
 
-    if ((Test-Empty $IP) -or $IP -ieq '*') {
+    if ((Test-Empty $IP) -or $IP -ieq '*' -or $IP -ieq 'all') {
         return $true
     }
 
@@ -110,6 +110,17 @@ function Test-IPAddress
     }
 }
 
+function ConvertTo-IPAddress
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Endpoint
+    )
+
+    return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Endpoint).Address.ToString())
+}
+
 function Test-IPAddressLocal
 {
     param (
@@ -118,7 +129,18 @@ function Test-IPAddressLocal
         $IP
     )
 
-    return (@('0.0.0.0', '*', '127.0.0.1') -icontains $IP)
+    return (@('0.0.0.0', '*', '127.0.0.1', 'all') -icontains $IP)
+}
+
+function Test-IPAddressAny
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $IP
+    )
+
+    return (@('0.0.0.0', '*', 'all') -icontains $IP)
 }
 
 function Get-IPAddress
@@ -129,11 +151,109 @@ function Get-IPAddress
         $IP
     )
 
-    if ((Test-Empty $IP) -or $IP -ieq '*') {
+    if ((Test-Empty $IP) -or $IP -ieq '*' -or $IP -ieq 'all') {
         return [System.Net.IPAddress]::Any
     }
 
     return [System.Net.IPAddress]::Parse($IP)
+}
+
+function Test-IPAddressInRange
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        $IP,
+
+        [Parameter(Mandatory=$true)]
+        $LowerIP,
+
+        [Parameter(Mandatory=$true)]
+        $UpperIP
+    )
+
+    if ($IP.Family -ine $LowerIP.Family) {
+        return $false
+    }
+
+    $valid = $true
+
+    0..3 | ForEach-Object {
+        if ($valid -and (($IP.Bytes[$_] -lt $LowerIP.Bytes[$_]) -or ($IP.Bytes[$_] -gt $UpperIP.Bytes[$_]))) {
+            $valid = $false
+        }
+    }
+
+    return $valid
+}
+
+function Test-IPAddressIsSubnetMask
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $IP
+    )
+
+    return (($IP -split '/').Length -gt 1)
+}
+
+function Get-SubnetRange
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SubnetMask
+    )
+
+    # split for ip and number of 1 bits
+    $split = $SubnetMask -split '/'
+    if ($split.Length -le 1) {
+        return $null
+    }
+
+    $ip_parts = $split[0] -isplit '\.'
+    $bits = [int]$split[1]
+
+    # generate the netmask
+    $network = @("", "", "", "")
+    $count = 0
+
+    foreach ($i in 0..3) {
+        foreach ($b in 1..8) {
+            $count++
+
+            if ($count -le $bits) {
+                $network[$i] += "1"
+            }
+            else {
+                $network[$i] += "0"
+            }
+        }
+    }
+
+    # covert netmask to bytes
+    0..3 | ForEach-Object {
+        $network[$_] = [Convert]::ToByte($network[$_], 2)
+    }
+
+    # calculate the bottom range
+    $bottom = @(0..3 | ForEach-Object { [byte]([byte]$network[$_] -band [byte]$ip_parts[$_]) })
+
+    # calculate the range
+    $range = @(0..3 | ForEach-Object { 256 + (-bnot [byte]$network[$_]) })
+
+    # calculate the top range
+    $top = @(0..3 | ForEach-Object { [byte]([byte]$ip_parts[$_] + [byte]$range[$_]) })
+
+    return @{
+        'Lower' = ($bottom -join '.');
+        'Upper' = ($top -join '.');
+        'Range' = ($range -join '.');
+        'Netmask' = ($network -join '.');
+        'IP' = ($ip_parts -join '.');
+    }
 }
 
 function Add-PodeRunspace

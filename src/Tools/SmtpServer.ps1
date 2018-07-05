@@ -82,7 +82,7 @@ function Start-SmtpServer
     # setup and run the smtp listener
     try
     {
-        $port = $PodeSession.Port
+        $port = $PodeSession.IP.Port
         if ($port -eq 0) {
             $port = 25
         }
@@ -94,17 +94,29 @@ function Start-SmtpServer
         $listener.Start()
 
         # state where we're running
-        Write-Host "Listening on smtp://$($PodeSession.IP.Name):$($PodeSession.Port)" -ForegroundColor Yellow
+        Write-Host "Listening on smtp://$($PodeSession.IP.Name):$($port)" -ForegroundColor Yellow
 
         # loop for tcp request
         while ($true)
         {
             $task = $listener.AcceptTcpClientAsync()
             $task.Wait($PodeSession.Tokens.Cancellation.Token)
+            $client = $task.Result
 
-            $PodeSession.Tcp.Client = $task.Result
-            $PodeSession.Smtp = @{}
-            Invoke-ScriptBlock -ScriptBlock $process
+            # ensure the request ip is allowed
+            if (!(Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint))) {
+                try {
+                    $client.Close()
+                    $client.Dispose()
+                } catch { }
+            }
+
+            # deal with smtp call
+            else {
+                $PodeSession.Tcp.Client = $client
+                $PodeSession.Smtp = @{}
+                Invoke-ScriptBlock -ScriptBlock $process
+            }
         }
     }
     catch [System.OperationCanceledException] {

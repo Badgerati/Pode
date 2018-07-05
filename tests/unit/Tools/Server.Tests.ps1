@@ -93,3 +93,43 @@ Describe 'Get-PodeServerType' {
         }
     }
 }
+
+Describe 'Set-PodePortForServerType' {
+    Context 'Valid parameters supplied' {
+        It 'Uses 25 for smtp' {
+            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'SMTP' }
+            Set-PodePortForServerType
+            $PodeSession.IP.Port | Should Be 25
+        }
+
+        It 'Uses 8080 for http' {
+            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'HTTP' }
+            Set-PodePortForServerType
+            $PodeSession.IP.Port | Should Be 8080
+        }
+
+        It 'Uses 8443 for https' {
+            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'HTTPS' }
+            Set-PodePortForServerType
+            $PodeSession.IP.Port | Should Be 8443
+        }
+
+        It 'Uses 0 for tcp' {
+            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'TCP' }
+            Set-PodePortForServerType
+            $PodeSession.IP.Port | Should Be 0
+        }
+
+        It 'Uses 0 for script' {
+            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'SCRIPT' }
+            Set-PodePortForServerType
+            $PodeSession.IP.Port | Should Be 0
+        }
+
+        It 'Uses 0 for service' {
+            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'SERVICE' }
+            Set-PodePortForServerType
+            $PodeSession.IP.Port | Should Be 0
+        }
+    }
+}

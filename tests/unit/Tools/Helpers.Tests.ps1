@@ -158,6 +158,10 @@ Describe 'Test-IPAddress' {
         It 'Returns true for asterisk' {
             Test-IPAddress -IP '*' | Should Be $true
         }
+
+        It 'Returns true for all' {
+            Test-IPAddress -IP 'all' | Should Be $true
+        }
     }
 
     Context 'Values for IPv4' {
@@ -181,6 +185,31 @@ Describe 'Test-IPAddress' {
 
         It 'Returns false for invalid IP' {
             Test-IPAddress -IP '[]' | Should Be $false
+        }
+    }
+}
+
+Describe 'ConvertTo-IPAddress' {
+    Context 'Null values' {
+        It 'Throws error for null' {
+            { ConvertTo-IPAddress -Endpoint $null } | Should Throw 'the argument is null'
+        }
+    }
+
+    Context 'Valid parameters' {
+        It 'Returns IPAddress from IPEndpoint' {
+            $_a = [System.Net.IPAddress]::Parse('127.0.0.1')
+            $addr = ConvertTo-IPAddress -Endpoint ([System.Net.IPEndpoint]::new($_a, 8080))
+            $addr | Should Not Be $null
+            $addr.ToString() | Should Be '127.0.0.1'
+        }
+
+        It 'Returns IPAddress from Endpoint' {
+            $_a = [System.Net.IPAddress]::Parse('127.0.0.1')
+            $_a = [System.Net.IPEndpoint]::new($_a, 8080)
+            $addr = ConvertTo-IPAddress -Endpoint ([System.Net.Endpoint]$_a)
+            $addr | Should Not Be $null
+            $addr.ToString() | Should Be '127.0.0.1'
         }
     }
 }
@@ -211,8 +240,44 @@ Describe 'Test-IPAddressLocal' {
             Test-IPAddressLocal -IP '*' | Should Be $true
         }
 
+        It 'Returns true for all' {
+            Test-IPAddressLocal -IP 'all' | Should Be $true
+        }
+
         It 'Returns true for 127.0.0.1' {
             Test-IPAddressLocal -IP '127.0.0.1' | Should Be $true
+        }
+    }
+}
+
+Describe 'Test-IPAddressAny' {
+    Context 'Null values' {
+        It 'Throws error for empty' {
+            { Test-IPAddressLocal -IP ([string]::Empty) } | Should Throw 'because it is an empty'
+        }
+
+        It 'Throws error for null' {
+            { Test-IPAddressLocal -IP $null } | Should Throw 'because it is an empty'
+        }
+    }
+
+    Context 'Values not any' {
+        It 'Returns false for non-any IP' {
+            Test-IPAddressLocal -IP '192.168.10.10' | Should Be $false
+        }
+    }
+
+    Context 'Values that are any' {
+        It 'Returns true for 0.0.0.0' {
+            Test-IPAddressLocal -IP '0.0.0.0' | Should Be $true
+        }
+
+        It 'Returns true for asterisk' {
+            Test-IPAddressLocal -IP '*' | Should Be $true
+        }
+
+        It 'Returns true for all' {
+            Test-IPAddressLocal -IP 'all' | Should Be $true
         }
     }
 }
@@ -229,6 +294,10 @@ Describe 'Get-IPAddress' {
 
         It 'Returns any IP for asterisk' {
             (Get-IPAddress -IP '*').ToString() | Should Be '0.0.0.0'
+        }
+
+        It 'Returns any IP for all' {
+            (Get-IPAddress -IP 'all').ToString() | Should Be '0.0.0.0'
         }
     }
 
@@ -253,6 +322,108 @@ Describe 'Get-IPAddress' {
 
         It 'Throws error for invalid IP' {
             { Get-IPAddress -IP '[]' } | Should Throw 'invalid ip address'
+        }
+    }
+}
+
+Describe 'Test-IPAddressInRange' {
+    Context 'No parameters supplied' {
+        It 'Throws error for no ip' {
+            { Test-IPAddressInRange -IP $null -LowerIP @{} -UpperIP @{} } | Should Throw 'because it is null'
+        }
+
+        It 'Throws error for no lower ip' {
+            { Test-IPAddressInRange -IP @{} -LowerIP $null -UpperIP @{} } | Should Throw 'because it is null'
+        }
+
+        It 'Throws error for no upper ip' {
+            { Test-IPAddressInRange -IP @{} -LowerIP @{} -UpperIP $null } | Should Throw 'because it is null'
+        }
+    }
+
+    Context 'Valid parameters supplied' {
+        It 'Returns false because families are different' {
+            $ip = @{ 'Bytes' = @(127, 0, 0, 4); 'Family' = 'different' }
+            $lower = @{ 'Bytes' = @(127, 0, 0, 2); 'Family' = 'test' }
+            $upper = @{ 'Bytes' = @(127, 0, 0, 10); 'Family' = 'test' }
+            Test-IPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should Be $false
+        }
+
+        It 'Returns false because ip is above range' {
+            $ip = @{ 'Bytes' = @(127, 0, 0, 11); 'Family' = 'test' }
+            $lower = @{ 'Bytes' = @(127, 0, 0, 2); 'Family' = 'test' }
+            $upper = @{ 'Bytes' = @(127, 0, 0, 10); 'Family' = 'test' }
+            Test-IPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should Be $false
+        }
+
+        It 'Returns false because ip is under range' {
+            $ip = @{ 'Bytes' = @(127, 0, 0, 1); 'Family' = 'test' }
+            $lower = @{ 'Bytes' = @(127, 0, 0, 2); 'Family' = 'test' }
+            $upper = @{ 'Bytes' = @(127, 0, 0, 10); 'Family' = 'test' }
+            Test-IPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should Be $false
+        }
+
+        It 'Returns true because ip is in range' {
+            $ip = @{ 'Bytes' = @(127, 0, 0, 4); 'Family' = 'test' }
+            $lower = @{ 'Bytes' = @(127, 0, 0, 2); 'Family' = 'test' }
+            $upper = @{ 'Bytes' = @(127, 0, 0, 10); 'Family' = 'test' }
+            Test-IPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should Be $true
+        }
+
+        It 'Returns false because ip is above range, bounds are same' {
+            $ip = @{ 'Bytes' = @(127, 0, 0, 11); 'Family' = 'test' }
+            $lower = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
+            $upper = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
+            Test-IPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should Be $false
+        }
+
+        It 'Returns false because ip is under range, bounds are same' {
+            $ip = @{ 'Bytes' = @(127, 0, 0, 1); 'Family' = 'test' }
+            $lower = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
+            $upper = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
+            Test-IPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should Be $false
+        }
+
+        It 'Returns true because ip is in range, bounds are same' {
+            $ip = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
+            $lower = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
+            $upper = @{ 'Bytes' = @(127, 0, 0, 5); 'Family' = 'test' }
+            Test-IPAddressInRange -IP $ip -LowerIP $lower -UpperIP $upper | Should Be $true
+        }
+    }
+}
+
+Describe 'Test-IPAddressIsSubnetMask' {
+    Context 'Null values' {
+        It 'Throws error for empty' {
+            { Test-IPAddressIsSubnetMask -IP ([string]::Empty) } | Should Throw 'argument is null or empty'
+        }
+
+        It 'Throws error for null' {
+            { Test-IPAddressIsSubnetMask -IP $null } | Should Throw 'argument is null or empty'
+        }
+    }
+
+    Context 'Valid parameters' {
+        It 'Returns false for non-subnet' {
+            Test-IPAddressIsSubnetMask -IP '127.0.0.1' | Should Be $false
+        }
+
+        It 'Returns true for subnet' {
+            Test-IPAddressIsSubnetMask -IP '10.10.0.0/24' | Should Be $true
+        }
+    }
+}
+
+Describe 'Get-SubnetRange' {
+    Context 'Valid parameter supplied' {
+        It 'Returns valid subnet range' {
+            $range = Get-SubnetRange -SubnetMask '10.10.0.0/24'
+            $range.Lower | Should Be '10.10.0.0'
+            $range.Upper | Should Be '10.10.0.255'
+            $range.Range | Should Be '0.0.0.255'
+            $range.Netmask | Should Be '255.255.255.0'
+            $range.IP | Should Be '10.10.0.0'
         }
     }
 }

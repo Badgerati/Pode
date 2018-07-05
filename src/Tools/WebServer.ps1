@@ -33,23 +33,35 @@ function Start-WebServer
         {
             # create the listener on http and/or https
             $listener = New-Object System.Net.HttpListener
+
+            # grab the protocol
             $protocol = 'http'
             if ($Https) {
                 $protocol = 'https'
             }
 
+            # grab the ip address
             $_ip = "$($PodeSession.IP.Address)"
             if ($_ip -ieq '0.0.0.0') {
                 $_ip = '*'
             }
 
-            $listener.Prefixes.Add("$($protocol)://$($_ip):$($PodeSession.Port)/")
+            # grab the port
+            $port = $PodeSession.IP.Port
+            if ($port -eq 0) {
+                $port = 8080
+                if ($Https) {
+                    $port = 8443
+                }
+            }
+
+            $listener.Prefixes.Add("$($protocol)://$($_ip):$($port)/")
 
             # start listener
             $listener.Start()
 
             # state where we're running
-            Write-Host "Listening on $($protocol)://$($PodeSession.IP.Name):$($PodeSession.Port)/" -ForegroundColor Yellow
+            Write-Host "Listening on $($protocol)://$($PodeSession.IP.Name):$($port)/" -ForegroundColor Yellow
 
             # loop for http request
             while ($listener.IsListening)
@@ -92,8 +104,13 @@ function Start-WebServer
                     };
                 }
 
+                # ensure the request ip is allowed
+                if (!(Test-IPAccess -IP $request.RemoteEndPoint.Address)) {
+                    status 403
+                }
+
                 # check to see if the path is a file, so we can check the public folder
-                if ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
+                elseif ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
                     $path = Join-ServerRoot 'public' $path
                     Write-ToResponseFromFile -Path $path
                 }
