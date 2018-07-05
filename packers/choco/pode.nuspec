@@ -24,6 +24,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 * Cross-state runspace variable access for timers, routes and loggers
 * Optional file monitoring to trigger internal server restart on file changes
+* Ability to allow/deny request from certain IP addresses and subnets
 
     </description>
     <projectUrl>https://github.com/Badgerati/Pode</projectUrl>
