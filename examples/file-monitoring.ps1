@@ -9,18 +9,15 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 25
-Server -Smtp {
+# create a server listening on port 8085, set to monitor file changes and restart the server
+Server -Port 8085 {
 
-    # allow the local ip
-    access allow ip 127.0.0.1
+    engine pode
 
-    # setup an smtp handler
-    handler 'smtp' {
+    # GET request for web page on "localhost:8085/"
+    route 'get' '/' {
         param($session)
-        Write-Host $session.From
-        Write-Host $session.To
-        Write-Host $session.Data
+        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
-}
+} -FileMonitor

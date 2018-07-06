@@ -1,0 +1,20 @@
+version: 0.14.{build}
+image: Visual Studio 2017
+
+branches:
+  except:
+    - gh-pages
+
+skip_tags: true
+
+configuration: Release
+
+install:
+  - cinst -y pester --version 4.1.0
+  - cinst -y psake --version 4.7.0
+  - ps: Import-Module "$($pwd)\build\appveyor.psm1"
+
+build: off
+
+test_script:
+  - ps: Invoke-AppVeyorTest
