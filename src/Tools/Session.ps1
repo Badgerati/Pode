@@ -143,9 +143,12 @@ function New-PodeStateSession
     return (New-Object -TypeName psobject |
         Add-Member -MemberType NoteProperty -Name ServerName -Value $Session.ServerName -PassThru |
         Add-Member -MemberType NoteProperty -Name Routes -Value $Session.Routes -PassThru |
+        Add-Member -MemberType NoteProperty -Name Handlers -Value $Session.Handlers -PassThru |
         Add-Member -MemberType NoteProperty -Name IP -Value $Session.IP -PassThru |
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
         Add-Member -MemberType NoteProperty -Name Web -Value $Session.Web -PassThru |
+        Add-Member -MemberType NoteProperty -Name Tcp -Value $Session.Tcp -PassThru |
+        Add-Member -MemberType NoteProperty -Name Smtp -Value $Session.Smtp -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
