@@ -268,20 +268,27 @@ function Add-PodeRunspace
         $Parameters
     )
 
-    $ps = [powershell]::Create()
-    $ps.RunspacePool = $PodeSession.RunspacePool
-    $ps.AddScript($ScriptBlock) | Out-Null
+    try
+    {
+        $ps = [powershell]::Create()
+        $ps.RunspacePool = $PodeSession.RunspacePool
+        $ps.AddScript($ScriptBlock) | Out-Null
 
-    if (!(Test-Empty $Parameters)) {
-        $Parameters.Keys | ForEach-Object {
-            $ps.AddParameter($_, $Parameters[$_]) | Out-Null
+        if (!(Test-Empty $Parameters)) {
+            $Parameters.Keys | ForEach-Object {
+                $ps.AddParameter($_, $Parameters[$_]) | Out-Null
+            }
+        }
+
+        $PodeSession.Runspaces += @{
+            'Runspace' = $ps;
+            'Status' = $ps.BeginInvoke();
+            'Stopped' = $false;
         }
     }
-
-    $PodeSession.Runspaces += @{
-        'Runspace' = $ps;
-        'Status' = $ps.BeginInvoke();
-        'Stopped' = $false;
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
     }
 }
 
