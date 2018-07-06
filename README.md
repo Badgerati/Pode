@@ -491,7 +491,7 @@ Server -Port 8085 {
 
 #### File Monitor
 
-> Warning: Monitoring currently only works in Windows and some Unix environments - on Unix you *will* need dotnet-core 2.1 installed. Monitoring does not work in Docker at the moment, as the official PowerShell container only supports dotnet-core 2.0/powershell-core 6.0. Once the container supports powershell-core 6.1 I'll release a hot-fix container for Docker to support monitoring
+> Note: For docker you'll need to use any of the tags labeled "-ps.6.1.0-preview", and on Unix you will need dotnet-core 2.1 installed
 
 Pode has inbuilt file monitoring that can be enabled, whereby Pode will trigger an internal server restart if it detects file changes within the same directory as your Pode script. To enable the monitoring supply the `-FileMonitor` switch to your `Server`:
 
