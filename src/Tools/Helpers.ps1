@@ -306,7 +306,7 @@ function Close-PodeRunspaces
 
             # now dispose runspaces
             $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
-                $_.Runspace.Dispose()
+                dispose $_.Runspace
                 $_.Stopped = $true
             }
 
@@ -314,8 +314,7 @@ function Close-PodeRunspaces
         }
 
         if ($ClosePool -and $PodeSession.RunspacePool -ne $null -and !$PodeSession.RunspacePool.IsDisposed) {
-            $PodeSession.RunspacePool.Close()
-            $PodeSession.RunspacePool.Dispose()
+            dispose $PodeSession.RunspacePool -Close
         }
     }
     catch {
@@ -388,8 +387,8 @@ function Close-Pode
     Stop-PodeFileMonitor
 
     try {
-        $PodeSession.Tokens.Cancellation.Dispose()
-        $PodeSession.Tokens.Restart.Dispose()
+        dispose $PodeSession.Tokens.Cancellation
+        dispose $PodeSession.Tokens.Restart
     } catch {
         $Error[0] | Out-Default
     }
@@ -480,7 +479,7 @@ function Invoke-ScriptBlock
         $ScriptBlock,
         
         [Parameter()]
-        [hashtable]
+        [object]
         $Arguments = $null,
 
         [switch]
@@ -493,4 +492,209 @@ function Invoke-ScriptBlock
     else {
         . $ScriptBlock $Arguments
     }
+}
+
+<#
+    If-This-Else-That. If Check is true return Value1, else return Value2
+#>
+function Iftet
+{
+    param (
+        [Parameter()]
+        [bool]
+        $Check,
+
+        [Parameter()]
+        $Value1,
+
+        [Parameter()]
+        $Value2
+    )
+
+    if ($Check) {
+        return $Value1
+    }
+
+    return $Value2
+}
+
+function Get-FileExtension
+{
+    param (
+        [Parameter()]
+        [string]
+        $Path,
+
+        [switch]
+        $TrimPeriod
+    )
+
+    $ext = [System.IO.Path]::GetExtension($Path)
+
+    if ($TrimPeriod) {
+        $ext = $ext.Trim('.')
+    }
+
+    return $ext
+}
+
+function Get-FileName
+{
+    param (
+        [Parameter()]
+        [string]
+        $Path,
+
+        [switch]
+        $WithoutExtension
+    )
+
+    if ($WithoutExtension) {
+        return [System.IO.Path]::GetFileNameWithoutExtension($Path)
+    }
+
+    return [System.IO.Path]::GetFileName($Path)
+}
+
+<#
+    This is basically like "using" in .Net
+#>
+function Stream
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [System.IDisposable]
+        $InputObject,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    try {
+        return (Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments $InputObject)
+    }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
+    }
+    finally {
+        $InputObject.Dispose()
+    }
+}
+
+function Dispose
+{
+    param (
+        [Parameter()]
+        [System.IDisposable]
+        $InputObject,
+
+        [switch]
+        $Close,
+
+        [switch]
+        $CheckNetwork
+    )
+
+    if ($InputObject -eq $null) {
+        return
+    }
+
+    try {
+        if ($Close) {
+            $InputObject.Close()
+        }
+    }
+    catch [exception] {
+        if ($CheckNetwork -and (Test-ValidNetworkFailure $_.Exception)) {
+            return
+        }
+
+        $Error[0] | Out-Default
+        throw $_.Exception
+    }
+    finally {
+        $InputObject.Dispose()
+    }
+}
+
+function Stopwatch
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    try {
+        $watch = [System.Diagnostics.Stopwatch]::StartNew()
+        . $ScriptBlock
+    }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
+    }
+    finally {
+        $watch.Stop()
+        Out-Default -InputObject "[Stopwatch]: $($watch.Elapsed) [$($Name)]"
+    }
+}
+
+function Test-ValidNetworkFailure
+{
+    param (
+        [Parameter()]
+        $Exception
+    )
+
+    if ($Exception.Message -ilike '*network name is no longer available*') {
+        return $true
+    }
+
+    if ($Exception.Message -ilike '*nonexistent network connection*') {
+        return $true
+    }
+
+    return $false
+}
+
+function ConvertFrom-PodeContent
+{
+    param (
+        [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        $Content
+    )
+
+    if (Test-Empty $Content) {
+        return $Content
+    }
+
+    switch ($ContentType) {
+        { $_ -ilike '*/json' } {
+            $Content = ($Content | ConvertFrom-Json)
+        }
+
+        { $_ -ilike '*/xml' } {
+            $Content = ($Content | ConvertFrom-Xml)
+        }
+
+        { $_ -ilike '*/csv' } {
+            $Content = ($Content | ConvertFrom-Csv)
+        }
+    }
+
+    return $Content
 }

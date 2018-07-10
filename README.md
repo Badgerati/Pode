@@ -18,7 +18,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 ## Contents
 
 * [Install](#install)
-* [Documentaion](#documentation)
+* [Documentation](#documentation)
     * [Setup](#setup)
     * [Docker](#docker)
     * [Frontend](#frontend)
@@ -722,7 +722,10 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Test-IsPSCore`
 * `status`
 * `include`
-* `lock`,
-* `state`,
-* `listen`,
+* `lock`
+* `state`
+* `listen`
 * `access`
+* `stopwatch`
+* `dispose`
+* `stream`

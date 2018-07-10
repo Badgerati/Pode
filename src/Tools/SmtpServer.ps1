@@ -29,10 +29,7 @@ function Start-SmtpServer
                             tcp write '221 Bye'
 
                             if ($Client -ne $null -and $Client.Connected) {
-                                try {
-                                    $Client.Close()
-                                    $Client.Dispose()
-                                } catch { }
+                                dispose $Client -Close
                             }
 
                             break
@@ -107,10 +104,7 @@ function Start-SmtpServer
 
                 # ensure the request ip is allowed
                 if (!(Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint))) {
-                    try {
-                        $client.Close()
-                        $client.Dispose()
-                    } catch { }
+                    dispose $client -Close
                 }
 
                 # deal with smtp call

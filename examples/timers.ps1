@@ -28,7 +28,7 @@ Server -Port 8081 {
     } -limit 10
 
     # skip the first 2 loops, then run for 15 loops
-    timer 'pause-then-limit' {
+    timer 'pause-then-limit' 5 {
         # logic
     } -skip 2 -limit 15
 

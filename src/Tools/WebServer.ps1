@@ -22,52 +22,68 @@ function Start-WebServer
         $Https
     )
 
-    $script = {
+    # grab the protocol
+    $protocol = 'http'
+    if ($Https) {
+        $protocol = 'https'
+    }
+
+    # grab the ip address
+    $_ip = "$($PodeSession.IP.Address)"
+    if ($_ip -ieq '0.0.0.0') {
+        $_ip = '*'
+    }
+
+    # grab the port
+    $port = $PodeSession.IP.Port
+    if ($port -eq 0) {
+        $port = (iftet $Https 8443 8080)
+    }
+
+    # create the listener on http and/or https
+    $listener = New-Object System.Net.HttpListener
+
+    try
+    {
+        # start listening on ip:port
+        $listener.Prefixes.Add("$($protocol)://$($_ip):$($port)/")
+        $listener.Start()
+    }
+    catch {
+        $Error[0] | Out-Default
+
+        if ($Listener -ne $null) {
+            if ($Listener.IsListening) {
+                $Listener.Stop()
+            }
+
+            dispose $Listener -Close
+        }
+
+        throw $_.Exception
+    }
+
+    # state where we're running
+    Write-Host "Listening on $($protocol)://$($PodeSession.IP.Name):$($port)/ [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+
+    # script for listening out for incoming requests
+    $listenScript = {
         param (
-            [Parameter()]
-            [boolean]
-            $Https
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener,
+
+            [Parameter(Mandatory=$true)]
+            [int]
+            $ThreadId
         )
 
         try
         {
-            # create the listener on http and/or https
-            $listener = New-Object System.Net.HttpListener
-
-            # grab the protocol
-            $protocol = 'http'
-            if ($Https) {
-                $protocol = 'https'
-            }
-
-            # grab the ip address
-            $_ip = "$($PodeSession.IP.Address)"
-            if ($_ip -ieq '0.0.0.0') {
-                $_ip = '*'
-            }
-
-            # grab the port
-            $port = $PodeSession.IP.Port
-            if ($port -eq 0) {
-                $port = 8080
-                if ($Https) {
-                    $port = 8443
-                }
-            }
-
-            $listener.Prefixes.Add("$($protocol)://$($_ip):$($port)/")
-
-            # start listener
-            $listener.Start()
-
-            # state where we're running
-            Write-Host "Listening on $($protocol)://$($PodeSession.IP.Name):$($port)/" -ForegroundColor Yellow
-
-            # loop for http request
-            while ($listener.IsListening)
+            while ($Listener.IsListening -and !$PodeSession.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get request and response
-                $task = $listener.GetContextAsync()
+                $task = $Listener.GetContextAsync()
                 $task.Wait($PodeSession.Tokens.Cancellation.Token)
 
                 $context = $task.Result
@@ -75,10 +91,10 @@ function Start-WebServer
                 $response = $context.Response
 
                 # clear session
-                $PodeSession.Web = @{}
-                $PodeSession.Web.Response = $response
-                $PodeSession.Web.Request = $request
-                $PodeSession.Web.Lockable = $PodeSession.Lockable
+                $WebSession = @{}
+                $WebSession.Response = $response
+                $WebSession.Request = $request
+                $WebSession.Lockable = $PodeSession.Lockable
 
                 # get url path and method
                 $path = ($request.RawUrl -isplit "\?")[0]
@@ -124,35 +140,28 @@ function Start-WebServer
 
                     # run the scriptblock
                     else {
-                        # read and parse any post data
-                        $stream = $request.InputStream
-                        $reader = New-Object -TypeName System.IO.StreamReader -ArgumentList $stream, $request.ContentEncoding
-                        $data = $reader.ReadToEnd()
-                        $reader.Close()
-
-                        switch ($request.ContentType) {
-                            { $_ -ilike '*json*' } {
-                                $data = ($data | ConvertFrom-Json)
-                            }
-
-                            { $_ -ilike '*xml*' } {
-                                $data = ($data | ConvertFrom-Xml)
-                            }
+                        # read any post data
+                        $data = stream ([System.IO.StreamReader]::new($request.InputStream, $request.ContentEncoding)) {
+                            param($r)
+                            return $r.ReadToEnd()
                         }
 
+                        # attempt to parse that data
+                        $data = ConvertFrom-PodeContent -ContentType $request.ContentType -Content $data
+
                         # set session data
-                        $PodeSession.Web.Data = $data
-                        $PodeSession.Web.Query = $request.QueryString
-                        $PodeSession.Web.Parameters = $route.Parameters
+                        $WebSession.Data = $data
+                        $WebSession.Query = $request.QueryString
+                        $WebSession.Parameters = $route.Parameters
 
                         # invoke route
-                        Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $PodeSession.Web -Scoped
+                        Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
                     }
                 }
 
                 # close response stream (check if exists, as closing the writer closes this stream on unix)
                 if ($response.OutputStream) {
-                    $response.OutputStream.Close()
+                    dispose $response.OutputStream -Close -CheckNetwork
                 }
 
                 # add the log object to the list
@@ -173,14 +182,43 @@ function Start-WebServer
             $Error[0] | Out-Default
             throw $_.Exception
         }
+    }
+
+    # start the runspace for listening on x-number of threads
+    1..$PodeSession.Threads | ForEach-Object {
+        Add-PodeRunspace $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+    }
+
+    # script to keep web server listening until cancelled
+    $waitScript = {
+        param (
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener
+        )
+
+        try
+        {
+            while ($Listener.IsListening -and !$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            {
+                Start-Sleep -Seconds 1
+            }
+        }
+        catch [System.OperationCanceledException] {}
+        catch {
+            $Error[0] | Out-Default
+            throw $_.Exception
+        }
         finally {
-            if ($listener -ne $null) {
-                $listener.Stop()
-                $listener.Close()
-                $listener.Dispose()
+            if ($Listener -ne $null) {
+                if ($Listener.IsListening) {
+                    $Listener.Stop()
+                }
+
+                dispose $Listener -Close
             }
         }
     }
 
-    Add-PodeRunspace $script -Parameters @{ 'Https' = [bool]$Https }
+    Add-PodeRunspace $waitScript -Parameters @{ 'Listener' = $listener }
 }

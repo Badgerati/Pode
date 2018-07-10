@@ -427,3 +427,15 @@ Describe 'Get-SubnetRange' {
         }
     }
 }
+
+Describe 'Iftet' {
+    Context 'Valid values' {
+        It 'Returns Value2 for False Check' {
+            iftet -Check $false -Value1 'test' -Value2 'hello' | Should Be 'hello'
+        }
+
+        It 'Returns Value1 for True Check' {
+            iftet -Check $true -Value1 'test' -Value2 'hello' | Should Be 'test'
+        }
+    }
+}

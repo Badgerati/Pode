@@ -41,10 +41,7 @@ function Start-TcpServer
 
                 # close the connection
                 if ($client -ne $null -and $client.Connected) {
-                    try {
-                        $client.Close()
-                        $client.Dispose()
-                    } catch { }
+                    dispose $client -Close
                 }
             }
         }
