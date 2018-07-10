@@ -135,7 +135,7 @@ function New-PodeSession
 
     # runspace and pool
     $session.Runspaces = @()
-    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, 10, $state, $Host)
+    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, (4 + $Threads), $state, $Host)
     $session.RunspacePool.Open()
 
     return $session
