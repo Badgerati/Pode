@@ -656,15 +656,13 @@ function Test-ValidNetworkFailure
         $Exception
     )
 
-    if ($Exception.Message -ilike '*network name is no longer available*') {
-        return $true
-    }
+    $msgs = @(
+        '*network name is no longer available*',
+        '*nonexistent network connection*',
+        '*broken pipe*'
+    )
 
-    if ($Exception.Message -ilike '*nonexistent network connection*') {
-        return $true
-    }
-
-    return $false
+    return (($msgs | Where-Object { $Exception.Message -ilike $_ } | Measure-Object).Count -gt 0)
 }
 
 function ConvertFrom-PodeContent

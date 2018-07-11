@@ -4,7 +4,7 @@ function Start-SmtpServer
         # scriptblock for the core smtp message processing logic
         $process = {
             # if there's no client, just return
-            if ($PodeSession.Tcp.Client -eq $null) {
+            if ($null -eq $PodeSession.Tcp.Client) {
                 return
             }
 
@@ -28,8 +28,8 @@ function Start-SmtpServer
                         if ($msg.StartsWith('QUIT')) {
                             tcp write '221 Bye'
 
-                            if ($Client -ne $null -and $Client.Connected) {
-                                dispose $Client -Close
+                            if ($null -ne $PodeSession.Tcp.Client -and $PodeSession.Tcp.Client.Connected) {
+                                dispose $PodeSession.Tcp.Client -Close
                             }
 
                             break
@@ -76,7 +76,7 @@ function Start-SmtpServer
         try
         {
             # ensure we have smtp handlers
-            if ((Get-PodeTcpHandler -Type 'SMTP') -eq $null) {
+            if ($null -eq (Get-PodeTcpHandler -Type 'SMTP')) {
                 throw 'No SMTP handler has been passed'
             }
 
@@ -121,7 +121,7 @@ function Start-SmtpServer
             throw $_.Exception
         }
         finally {
-            if ($listener -ne $null) {
+            if ($null -ne $listener) {
                 $listener.Stop()
             }
         }

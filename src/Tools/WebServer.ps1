@@ -52,7 +52,7 @@ function Start-WebServer
     catch {
         $Error[0] | Out-Default
 
-        if ($Listener -ne $null) {
+        if ($null -ne $Listener) {
             if ($Listener.IsListening) {
                 $Listener.Stop()
             }
@@ -134,7 +134,7 @@ function Start-WebServer
                 else {
                     # ensure the path has a route
                     $route = Get-PodeRoute -HttpMethod $method -Route $path
-                    if ($route -eq $null -or $route.Logic -eq $null) {
+                    if ($null -eq $route -or $null -eq $route.Logic) {
                         status 404
                     }
 
@@ -210,7 +210,7 @@ function Start-WebServer
             throw $_.Exception
         }
         finally {
-            if ($Listener -ne $null) {
+            if ($null -ne $Listener) {
                 if ($Listener.IsListening) {
                     $Listener.Stop()
                 }

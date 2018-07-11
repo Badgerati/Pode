@@ -1,7 +1,7 @@
 import http from "k6/http";
 import { check } from "k6";
 
-export let urlbase = 'http://localhost:8085';
+export let urlbase = 'http://127.0.0.1:8085';
 
 export function check_response(res, opts) {
     opts = (opts || { duration: 800, status: 200 });
