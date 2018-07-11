@@ -1,33 +1,55 @@
 function Start-TcpServer
 {
-    $script = {
-        # setup and run the tcp listener
+    # ensure we have tcp handlers
+    if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {
+        throw 'No TCP handler has been passed'
+    }
+
+    # grab the relavant port
+    $port = $PodeSession.IP.Port
+    if ($port -eq 0) {
+        $port = 9001
+    }
+
+    $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $port)
+    $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
+
+    try
+    {
+        # start listener
+        $listener.Start()
+    }
+    catch {
+        $Error[0] | Out-Default
+
+        if ($null -ne $listener) {
+            $listener.Stop()
+        }
+
+        throw $_.Exception
+    }
+
+    # state where we're running
+    Write-Host "Listening on tcp://$($PodeSession.IP.Name):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+
+    # script for listening out of for incoming requests
+    $listenScript = {
+        param (
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener,
+
+            [Parameter(Mandatory=$true)]
+            [int]
+            $ThreadId
+        )
+
         try
         {
-            # ensure we have smtp handlers
-            if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {
-                throw 'No TCP handler has been passed'
-            }
-
-            # grab the relavant port
-            $port = $PodeSession.IP.Port
-            if ($port -eq 0) {
-                $port = 9001
-            }
-
-            $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $port)
-            $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
-
-            # start listener
-            $listener.Start()
-
-            # state where we're running
-            Write-Host "Listening on tcp://$($PodeSession.IP.Name):$($port)" -ForegroundColor Yellow
-
-            # loop for tcp request
-            while ($true)
+            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
             {
-                $task = $listener.AcceptTcpClientAsync()
+                # get an incoming request
+                $task = $Listener.AcceptTcpClientAsync()
                 $task.Wait($PodeSession.Tokens.Cancellation.Token)
                 $client = $task.Result
 
@@ -52,12 +74,39 @@ function Start-TcpServer
             $Error[0] | Out-Default
             throw $_.Exception
         }
+    }
+
+    # start the runspace for listening on x-number of threads
+    1..$PodeSession.Threads | ForEach-Object {
+        Add-PodeRunspace $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+    }
+
+    # script to keep tcp server listening until cancelled
+    $waitScript = {
+        param (
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener
+        )
+
+        try
+        {
+            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            {
+                Start-Sleep -Seconds 1
+            }
+        }
+        catch [System.OperationCanceledException] {}
+        catch {
+            $Error[0] | Out-Default
+            throw $_.Exception
+        }
         finally {
-            if ($null -ne $listener) {
-                $listener.Stop()
+            if ($null -ne $Listener) {
+                $Listener.Stop()
             }
         }
     }
 
-    Add-PodeRunspace $script
+    Add-PodeRunspace $waitScript -Parameters @{ 'Listener' = $listener }
 }
