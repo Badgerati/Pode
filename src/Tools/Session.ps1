@@ -53,8 +53,6 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name IP -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
-        Add-Member -MemberType NoteProperty -Name Smtp -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Tcp -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
@@ -156,8 +154,6 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name IP -Value $Session.IP -PassThru |
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Session.Threads -PassThru |
-        Add-Member -MemberType NoteProperty -Name Tcp -Value $Session.Tcp -PassThru |
-        Add-Member -MemberType NoteProperty -Name Smtp -Value $Session.Smtp -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
@@ -188,7 +184,7 @@ function State
     )
 
     try {
-        if ($PodeSession -eq $null -or $PodeSession.SharedState -eq $null) {
+        if ($null -eq $PodeSession -or $null -eq $PodeSession.SharedState) {
             return
         }
 

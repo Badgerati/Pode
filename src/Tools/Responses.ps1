@@ -15,7 +15,7 @@ function Write-ToResponse
     }
 
     $res = $WebSession.Response
-    if ($res -eq $null -or $res.OutputStream -eq $null -or !$res.OutputStream.CanWrite) {
+    if ($null -eq $res -or $null -eq $res.OutputStream -or !$res.OutputStream.CanWrite) {
         return
     }
 
@@ -85,7 +85,7 @@ function Write-ToResponseFromFile
         }
 
         default {
-            if ($PodeSession.ViewEngine.Script -ne $null) {
+            if ($null -ne $PodeSession.ViewEngine.Script) {
                 $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.ViewEngine.Script -Arguments $Path)
             }
         }
@@ -190,7 +190,7 @@ function Json
     )
 
     if ($File) {
-        if ($Value -eq $null -or !(Test-Path $Value)) {
+        if ($null -eq $Value -or !(Test-Path $Value)) {
             status 404
             return
         }
@@ -389,7 +389,7 @@ function Include
         }
 
         default {
-            if ($PodeSession.ViewEngine.Script -ne $null) {
+            if ($null -ne $PodeSession.ViewEngine.Script) {
                 $content = (. $PodeSession.ViewEngine.Script $Path, $Data)
             }
         }
@@ -425,7 +425,7 @@ function View
     )
 
     # default data if null
-    if ($Data -eq $null) {
+    if ($null -eq $Data) {
         $Data = @{}
     }
 
@@ -468,7 +468,7 @@ function View
         }
 
         default {
-            if ($PodeSession.ViewEngine.Script -ne $null) {
+            if ($null -ne $PodeSession.ViewEngine.Script) {
                 $content = (. $PodeSession.ViewEngine.Script $Path, $Data)
             }
         }
@@ -491,8 +491,8 @@ function Write-ToTcpStream
         $Client
     )
 
-    if ($Client -eq $null) {
-        $Client = $PodeSession.Tcp.Client
+    if ($null -eq $Client) {
+        $Client = $TcpSession.Client
     }
 
     tcp write $Message -Client $Client
@@ -506,8 +506,8 @@ function Read-FromTcpStream
         $Client
     )
 
-    if ($Client -eq $null) {
-        $Client = $PodeSession.Tcp.Client
+    if ($null -eq $Client) {
+        $Client = $TcpSession.Client
     }
 
     return (tcp read -Client $Client)
@@ -529,14 +529,14 @@ function Tcp
         $Client
     )
 
-    if ($client -eq $null) {
-        $client = $PodeSession.Tcp.Client
+    if ($null -eq $Client) {
+        $Client = $TcpSession.Client
     }
 
     switch ($Action.ToLowerInvariant())
     {
         'write' {
-            $stream = $client.GetStream()
+            $stream = $Client.GetStream()
             $encoder = New-Object System.Text.ASCIIEncoding
             $buffer = $encoder.GetBytes("$($Message)`r`n")
             $stream.Write($buffer, 0, $buffer.Length)
@@ -545,7 +545,7 @@ function Tcp
 
         'read' {
             $bytes = New-Object byte[] 8192
-            $stream = $client.GetStream()
+            $stream = $Client.GetStream()
             $encoder = New-Object System.Text.ASCIIEncoding
             $bytesRead = $stream.Read($bytes, 0, 8192)
             $message = $encoder.GetString($bytes, 0, $bytesRead)

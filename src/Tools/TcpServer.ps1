@@ -1,4 +1,3 @@
-
 function Start-TcpServer
 {
     $script = {
@@ -6,7 +5,7 @@ function Start-TcpServer
         try
         {
             # ensure we have smtp handlers
-            if ((Get-PodeTcpHandler -Type 'TCP') -eq $null) {
+            if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {
                 throw 'No TCP handler has been passed'
             }
 
@@ -34,13 +33,16 @@ function Start-TcpServer
 
                 # ensure the request ip is allowed and deal with the tcp call
                 if (Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)) {
-                    $PodeSession.Tcp.Client = $client
-                    $PodeSession.Tcp.Lockable = $PodeSession.Lockable
-                    Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $PodeSession.Tcp -Scoped
+                    $TcpSession = @{
+                        'Client' = $client;
+                        'Lockalble' = $PodeSession.Lockable
+                    }
+
+                    Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $TcpSession -Scoped
                 }
 
                 # close the connection
-                if ($client -ne $null -and $client.Connected) {
+                if ($null -ne $client -and $client.Connected) {
                     dispose $client -Close
                 }
             }
@@ -51,7 +53,7 @@ function Start-TcpServer
             throw $_.Exception
         }
         finally {
-            if ($listener -ne $null) {
+            if ($null -ne $listener) {
                 $listener.Stop()
             }
         }
