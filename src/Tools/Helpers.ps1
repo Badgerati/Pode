@@ -30,7 +30,7 @@ function Get-Type
         $Value
     )
 
-    if ($Value -eq $null) {
+    if ($null -eq $Value) {
         return $null
     }
 
@@ -49,7 +49,7 @@ function Test-Empty
     )
 
     $type = Get-Type $Value
-    if ($type -eq $null) {
+    if ($null -eq $type) {
         return $true
     }
 
@@ -313,7 +313,7 @@ function Close-PodeRunspaces
             $PodeSession.Runspaces = @()
         }
 
-        if ($ClosePool -and $PodeSession.RunspacePool -ne $null -and !$PodeSession.RunspacePool.IsDisposed) {
+        if ($ClosePool -and $null -ne $PodeSession.RunspacePool -and !$PodeSession.RunspacePool.IsDisposed) {
             dispose $PodeSession.RunspacePool -Close
         }
     }
@@ -415,7 +415,7 @@ function Lock
         $ScriptBlock
     )
 
-    if ($InputObject -eq $null) {
+    if ($null -eq $InputObject) {
         return
     }
 
