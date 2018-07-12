@@ -477,7 +477,7 @@ function Invoke-ScriptBlock
         [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock,
-        
+
         [Parameter()]
         [object]
         $Arguments = $null,
@@ -686,7 +686,7 @@ function ConvertFrom-PodeContent
         }
 
         { $_ -ilike '*/xml' } {
-            $Content = ($Content | ConvertFrom-Xml)
+            $Content = [xml]($Content)
         }
 
         { $_ -ilike '*/csv' } {
