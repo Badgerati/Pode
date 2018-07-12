@@ -28,7 +28,7 @@ function Handler
     $Type = $Type.ToLowerInvariant()
 
     # ensure handler isn't already set
-    if ($PodeSession.Handlers[$Type] -ne $null) {
+    if ($null -ne $PodeSession.Handlers[$Type]) {
         throw "Handler for $($Type) already defined"
     }
 

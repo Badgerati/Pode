@@ -427,3 +427,115 @@ Describe 'Get-SubnetRange' {
         }
     }
 }
+
+Describe 'Iftet' {
+    Context 'Valid values' {
+        It 'Returns Value2 for False Check' {
+            iftet -Check $false -Value1 'test' -Value2 'hello' | Should Be 'hello'
+        }
+
+        It 'Returns Value1 for True Check' {
+            iftet -Check $true -Value1 'test' -Value2 'hello' | Should Be 'test'
+        }
+    }
+}
+
+Describe 'Get-FileExtension' {
+    Context 'Valid values' {
+        It 'Returns extension for file' {
+            Get-FileExtension -Path 'test.txt' | Should Be '.txt'
+        }
+
+        It 'Returns extension for file with no period' {
+            Get-FileExtension -Path 'test.txt' -TrimPeriod | Should Be 'txt'
+        }
+
+        It 'Returns extension for path' {
+            Get-FileExtension -Path 'this/is/some/test.txt' | Should Be '.txt'
+        }
+
+        It 'Returns extension for path with no period' {
+            Get-FileExtension -Path 'this/is/some/test.txt' -TrimPeriod | Should Be 'txt'
+        }
+    }
+}
+
+Describe 'Get-FileName' {
+    Context 'Valid values' {
+        It 'Returns name for file with extension' {
+            Get-FileName -Path 'test.txt' | Should Be 'test.txt'
+        }
+
+        It 'Returns name for file with no period with extension' {
+            Get-FileName -Path 'test.txt' -WithoutExtension | Should Be 'test'
+        }
+
+        It 'Returns name for path' {
+            Get-FileName -Path 'this/is/some/test.txt' | Should Be 'test.txt'
+        }
+
+        It 'Returns name for path with no period with extension' {
+            Get-FileName -Path 'this/is/some/test.txt' -WithoutExtension | Should Be 'test'
+        }
+    }
+}
+
+Describe 'Test-ValidNetworkFailure' {
+    Context 'Valid values' {
+        It 'Returns true for network name' {
+            $ex = @{ 'Message' = 'the network name is no longer available for use' }
+            Test-ValidNetworkFailure -Exception $ex | Should Be $true
+        }
+
+        It 'Returns true for network connection' {
+            $ex = @{ 'Message' = 'a nonexistent network connection was detected' }
+            Test-ValidNetworkFailure -Exception $ex | Should Be $true
+        }
+
+        It 'Returns true for network pipe' {
+            $ex = @{ 'Message' = 'network connection fail: broken pipe' }
+            Test-ValidNetworkFailure -Exception $ex | Should Be $true
+        }
+
+        It 'Returns false for empty' {
+            $ex = @{ 'Message' = '' }
+            Test-ValidNetworkFailure -Exception $ex | Should Be $false
+        }
+
+        It 'Returns false for null' {
+            $ex = @{ 'Message' = $null }
+            Test-ValidNetworkFailure -Exception $ex | Should Be $false
+        }
+    }
+}
+
+Describe 'ConvertFrom-PodeContent' {
+    Context 'Valid values' {
+        It 'Returns xml data' {
+            $value = '<root><value>test</value></root>'
+            $data = ConvertFrom-PodeContent -ContentType 'text/xml' -Content $value
+            $data | Should Not Be $null
+            $data.root | Should Not Be $null
+            $data.root.value | Should Be 'test'
+        }
+
+        It 'Returns json data' {
+            $value = '{ "value": "test" }'
+            $data = ConvertFrom-PodeContent -ContentType 'application/json' -Content $value
+            $data | Should Not Be $null
+            $data.value | Should Be 'test'
+        }
+
+        It 'Returns csv data' {
+            $value = "value`ntest"
+            $data = ConvertFrom-PodeContent -ContentType 'text/csv' -Content $value
+            $data | Should Not Be $null
+            $data[0].value | Should Be 'test'
+        }
+
+        It 'Returns original data' {
+            $value = "test"
+            ConvertFrom-PodeContent -ContentType 'text/custom' -Content $value | Should Be 'test'
+        }
+    }
+}

@@ -6,7 +6,7 @@ if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
 Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server {
+Server -Threads 2 {
 
     # listen on *:8085
     listen *:8085 http

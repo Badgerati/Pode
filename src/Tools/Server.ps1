@@ -24,6 +24,10 @@ function Server
         [string]
         $Name,
 
+        [Parameter()]
+        [int]
+        $Threads = 1,
+
         [switch]
         $Smtp,
 
@@ -64,7 +68,7 @@ function Server
         $serverType = Get-PodeServerType -Port $Port -Interval $Interval -Smtp:$Smtp -Tcp:$Tcp -Https:$Https
 
         # create session object
-        $PodeSession = New-PodeSession -ScriptBlock $ScriptBlock -Port $Port -IP $IP `
+        $PodeSession = New-PodeSession -ScriptBlock $ScriptBlock -Port $Port -IP $IP -Threads $Threads `
             -Interval $Interval -ServerRoot $MyInvocation.PSScriptRoot -ServerType $ServerType `
             -DisableLogging:$DisableLogging -FileMonitor:$FileMonitor
 
@@ -190,10 +194,10 @@ function Restart-PodeServer
         $PodeSession.SharedState.Clear()
 
         # recreate the session tokens
-        $PodeSession.Tokens.Cancellation.Dispose()
+        dispose $PodeSession.Tokens.Cancellation
         $PodeSession.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
 
-        $PodeSession.Tokens.Restart.Dispose()
+        dispose $PodeSession.Tokens.Restart
         $PodeSession.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
 
         Write-Host " Done" -ForegroundColor Green

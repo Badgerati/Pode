@@ -18,12 +18,13 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 ## Contents
 
 * [Install](#install)
-* [Documentaion](#documentation)
+* [Documentation](#documentation)
     * [Setup](#setup)
     * [Docker](#docker)
     * [Frontend](#frontend)
     * [Basics](#basics)
         * [Specific IP](#specific-ip-address)
+        * [Threading](#threading)
     * [Timers](#timers)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
@@ -41,8 +42,8 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 
 * Can run on Unix environments using PowerShell Core
 * Host REST APIs and Web Pages
-* Run TCP listeners
-* Host SMTP servers - great for tests and mocking
+* Host TCP and SMTP server - great for tests and mocking
+* Multiple threads can be used to response to incoming requests
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
@@ -127,11 +128,11 @@ EXPOSE 8085
 CMD [ "pwsh", "-c", "cd /usr/src/app; ./web-pages-docker.ps1" ]
 ```
 
-To run build and run this, use the following commands:
+To build and run this, use the following commands:
 
 ```bash
-docker build -t pode-example .
-docker run -p 8085:8085 -d pode-example
+docker build -t pode/example .
+docker run -p 8085:8085 -d pode/example
 ```
 
 Now try navigating to `localhost:8085` (or calling `curl localhost:8085`) and you should be greeted with a "Hello, world!" page.
@@ -207,6 +208,18 @@ Server {
     listen 10.10.1.4:8443 https
 }
 ```
+
+#### Threading
+
+Pode deals with incoming request synchronously, by default, in a single thread. You can increase the number of threads/processes that Pode uses to handle requests by using the `-Threads` parameter on your `Server`.
+
+```powershell
+Server -Threads 2 {
+    # logic
+}
+```
+
+The number of threads supplied only applies to Web, SMTP, and TCP servers. If `-Threads` is not supplied, or is <=0 then the number of threads is forced to the default of 1.
 
 ### Timers
 
@@ -722,7 +735,10 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Test-IsPSCore`
 * `status`
 * `include`
-* `lock`,
-* `state`,
-* `listen`,
+* `lock`
+* `state`
+* `listen`
 * `access`
+* `stopwatch`
+* `dispose`
+* `stream`
