@@ -152,33 +152,6 @@ function Status
     $WebSession.Response.StatusDescription = $Description
 }
 
-function Write-JsonResponse
-{
-    [obsolete("Use 'json' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Value,
-
-        [switch]
-        $NoConvert
-    )
-
-    json -Value $Value
-}
-
-function Write-JsonResponseFromFile
-{
-    [obsolete("Use 'json' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    json -Value $Path -File
-}
-
 function Json
 {
     param (
@@ -235,33 +208,6 @@ function Csv
     Write-ToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
 }
 
-function Write-XmlResponse
-{
-    [obsolete("Use 'xml' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Value,
-
-        [switch]
-        $NoConvert
-    )
-
-    xml -Value $Value
-}
-
-function Write-XmlResponseFromFile
-{
-    [obsolete("Use 'xml' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    xml -Value $Path -File
-}
-
 function Xml
 {
     param (
@@ -287,33 +233,6 @@ function Xml
     }
 
     Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
-}
-
-function Write-HtmlResponse
-{
-    [obsolete("Use 'html' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Value,
-
-        [switch]
-        $NoConvert
-    )
-
-    html -Value $Value
-}
-
-function Write-HtmlResponseFromFile
-{
-    [obsolete("Use 'html' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    html -Value $Path -File
 }
 
 function Html
@@ -398,21 +317,6 @@ function Include
     return $content
 }
 
-function  Write-ViewResponse
-{
-    [obsolete("Use 'view' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path,
-
-        [Parameter()]
-        $Data = @{}
-    )
-
-    view -Path $Path -Data $Data
-}
-
 function View
 {
     param (
@@ -475,42 +379,6 @@ function View
     }
 
     html -Value $content
-}
-
-# write data to tcp stream
-function Write-ToTcpStream
-{
-    [obsolete("Use 'tcp write <msg>' instead")]
-    param (
-        [Parameter()]
-        [ValidateNotNull()]
-        [string]
-        $Message,
-
-        [Parameter()]
-        $Client
-    )
-
-    if ($null -eq $Client) {
-        $Client = $TcpSession.Client
-    }
-
-    tcp write $Message -Client $Client
-}
-
-function Read-FromTcpStream
-{
-    [obsolete("Use 'tcp read' instead")]
-    param (
-        [Parameter()]
-        $Client
-    )
-
-    if ($null -eq $Client) {
-        $Client = $TcpSession.Client
-    }
-
-    return (tcp read -Client $Client)
 }
 
 function Tcp
