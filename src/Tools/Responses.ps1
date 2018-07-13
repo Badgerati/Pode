@@ -14,20 +14,35 @@ function Write-ToResponse
         return
     }
 
+    $res = $WebSession.Response
+    if ($null -eq $res -or $null -eq $res.OutputStream -or !$res.OutputStream.CanWrite) {
+        return
+    }
+
     if (!(Test-Empty $ContentType)) {
-        $PodeSession.Web.Response.ContentType = $ContentType
+        $res.ContentType = $ContentType
     }
 
     if ((Get-Type $Value).Name -ieq 'string') {
         $Value = [System.Text.Encoding]::UTF8.GetBytes($Value)
     }
 
-    $PodeSession.Web.Response.ContentLength64 = $Value.Length
+    $res.ContentLength64 = $Value.Length
 
-    $memory = New-Object -TypeName System.IO.MemoryStream
-    $memory.Write($Value, 0, $Value.Length)
-    $memory.WriteTo($PodeSession.Web.Response.OutputStream)
-    $memory.Close()
+    try {
+        $memory = New-Object -TypeName System.IO.MemoryStream
+        $memory.Write($Value, 0, $Value.Length)
+        $memory.WriteTo($res.OutputStream)
+        $memory.Close()
+    }
+    catch {
+        if (Test-ValidNetworkFailure $_.Exception) {
+            return
+        }
+
+        $Error[0] | Out-Default
+        throw $_.Exception
+    }
 }
 
 function Write-ToResponseFromFile
@@ -45,7 +60,8 @@ function Write-ToResponseFromFile
     }
 
     # are we dealing with a dynamic file for the view engine?
-    $ext = [System.IO.Path]::GetExtension($Path).Trim('.')
+    $ext = Get-FileExtension -Path $Path -TrimPeriod
+
     if ((Test-Empty $ext) -or $ext -ine $PodeSession.ViewEngine.Extension) {
         if (Test-IsPSCore) {
             $content = Get-Content -Path $Path -Raw -AsByteStream
@@ -69,13 +85,13 @@ function Write-ToResponseFromFile
         }
 
         default {
-            if ($PodeSession.ViewEngine.Script -ne $null) {
+            if ($null -ne $PodeSession.ViewEngine.Script) {
                 $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.ViewEngine.Script -Arguments $Path)
             }
         }
     }
 
-    $ext = [System.IO.Path]::GetExtension([System.IO.Path]::GetFileNameWithoutExtension($Path)).Trim('.')
+    $ext = Get-FileExtension -Path (Get-FileName -Path $Path -WithoutExtension) -TrimPeriod
     Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
 }
 
@@ -96,27 +112,27 @@ function Attach
         return
     }
 
-    $filename = [System.IO.Path]::GetFileName($Path)
-    $ext = [System.IO.Path]::GetExtension($Path).Trim('.')
+    $filename = Get-FileName -Path $Path
+    $ext = Get-FileExtension -Path $Path -TrimPeriod
 
     # open up the file as a stream
     $fs = [System.IO.File]::OpenRead($Path)
 
     # setup the response details and headers
-    $PodeSession.Web.Response.ContentLength64 = $fs.Length
-    $PodeSession.Web.Response.SendChunked = $false
-    $PodeSession.Web.Response.ContentType = (Get-PodeContentType -Extension $ext)
-    $PodeSession.Web.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
+    $WebSession.Response.ContentLength64 = $fs.Length
+    $WebSession.Response.SendChunked = $false
+    $WebSession.Response.ContentType = (Get-PodeContentType -Extension $ext)
+    $WebSession.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
 
     # set file as an attachment on the response
     $buffer = [byte[]]::new(64 * 1024)
     $read = 0
 
     while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-        $PodeSession.Web.Response.OutputStream.Write($buffer, 0, $read)
+        $WebSession.Response.OutputStream.Write($buffer, 0, $read)
     }
 
-    $fs.Dispose()
+    dispose $fs
 }
 
 function Status
@@ -132,35 +148,8 @@ function Status
         $Description
     )
 
-    $PodeSession.Web.Response.StatusCode = $Code
-    $PodeSession.Web.Response.StatusDescription = $Description
-}
-
-function Write-JsonResponse
-{
-    [obsolete("Use 'json' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Value,
-
-        [switch]
-        $NoConvert
-    )
-
-    json -Value $Value
-}
-
-function Write-JsonResponseFromFile
-{
-    [obsolete("Use 'json' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    json -Value $Path -File
+    $WebSession.Response.StatusCode = $Code
+    $WebSession.Response.StatusDescription = $Description
 }
 
 function Json
@@ -174,7 +163,7 @@ function Json
     )
 
     if ($File) {
-        if ($Value -eq $null -or !(Test-Path $Value)) {
+        if ($null -eq $Value -or !(Test-Path $Value)) {
             status 404
             return
         }
@@ -219,33 +208,6 @@ function Csv
     Write-ToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
 }
 
-function Write-XmlResponse
-{
-    [obsolete("Use 'xml' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Value,
-
-        [switch]
-        $NoConvert
-    )
-
-    xml -Value $Value
-}
-
-function Write-XmlResponseFromFile
-{
-    [obsolete("Use 'xml' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    xml -Value $Path -File
-}
-
 function Xml
 {
     param (
@@ -271,33 +233,6 @@ function Xml
     }
 
     Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
-}
-
-function Write-HtmlResponse
-{
-    [obsolete("Use 'html' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Value,
-
-        [switch]
-        $NoConvert
-    )
-
-    html -Value $Value
-}
-
-function Write-HtmlResponseFromFile
-{
-    [obsolete("Use 'html' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path
-    )
-
-    html -Value $Path -File
 }
 
 function Html
@@ -341,7 +276,7 @@ function Include
     )
 
     # add view engine extension
-    $ext = [System.IO.Path]::GetExtension($Path)
+    $ext = Get-FileExtension -Path $Path
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
     if (!$hasExt) {
         $Path += ".$($PodeSession.ViewEngine.Extension)"
@@ -373,28 +308,13 @@ function Include
         }
 
         default {
-            if ($PodeSession.ViewEngine.Script -ne $null) {
+            if ($null -ne $PodeSession.ViewEngine.Script) {
                 $content = (. $PodeSession.ViewEngine.Script $Path, $Data)
             }
         }
     }
 
     return $content
-}
-
-function  Write-ViewResponse
-{
-    [obsolete("Use 'view' instead")]
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Path,
-
-        [Parameter()]
-        $Data = @{}
-    )
-
-    view -Path $Path -Data $Data
 }
 
 function View
@@ -409,7 +329,7 @@ function View
     )
 
     # default data if null
-    if ($Data -eq $null) {
+    if ($null -eq $Data) {
         $Data = @{}
     }
 
@@ -419,7 +339,7 @@ function View
     }
 
     # add view engine extension
-    $ext = [System.IO.Path]::GetExtension($Path)
+    $ext = Get-FileExtension -Path $Path
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
     if (!$hasExt) {
         $Path += ".$($PodeSession.ViewEngine.Extension)"
@@ -452,49 +372,13 @@ function View
         }
 
         default {
-            if ($PodeSession.ViewEngine.Script -ne $null) {
+            if ($null -ne $PodeSession.ViewEngine.Script) {
                 $content = (. $PodeSession.ViewEngine.Script $Path, $Data)
             }
         }
     }
 
     html -Value $content
-}
-
-# write data to tcp stream
-function Write-ToTcpStream
-{
-    [obsolete("Use 'tcp write <msg>' instead")]
-    param (
-        [Parameter()]
-        [ValidateNotNull()]
-        [string]
-        $Message,
-
-        [Parameter()]
-        $Client
-    )
-
-    if ($Client -eq $null) {
-        $Client = $PodeSession.Tcp.Client
-    }
-
-    tcp write $Message -Client $Client
-}
-
-function Read-FromTcpStream
-{
-    [obsolete("Use 'tcp read' instead")]
-    param (
-        [Parameter()]
-        $Client
-    )
-
-    if ($Client -eq $null) {
-        $Client = $PodeSession.Tcp.Client
-    }
-
-    return (tcp read -Client $Client)
 }
 
 function Tcp
@@ -513,14 +397,14 @@ function Tcp
         $Client
     )
 
-    if ($client -eq $null) {
-        $client = $PodeSession.Tcp.Client
+    if ($null -eq $Client) {
+        $Client = $TcpSession.Client
     }
 
     switch ($Action.ToLowerInvariant())
     {
         'write' {
-            $stream = $client.GetStream()
+            $stream = $Client.GetStream()
             $encoder = New-Object System.Text.ASCIIEncoding
             $buffer = $encoder.GetBytes("$($Message)`r`n")
             $stream.Write($buffer, 0, $buffer.Length)
@@ -529,7 +413,7 @@ function Tcp
 
         'read' {
             $bytes = New-Object byte[] 8192
-            $stream = $client.GetStream()
+            $stream = $Client.GetStream()
             $encoder = New-Object System.Text.ASCIIEncoding
             $bytesRead = $stream.Read($bytes, 0, 8192)
             $message = $encoder.GetString($bytes, 0, $bytesRead)

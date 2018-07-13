@@ -3,7 +3,10 @@ function Get-PodeContentType
     param (
         [Parameter()]
         [string]
-        $Extension
+        $Extension,
+
+        [switch]
+        $DefaultIsNull
     )
 
     if ($Extension -eq $null) {
@@ -377,6 +380,7 @@ function Get-PodeContentType
         '.pnt' { return 'image/x-macpaint' }
         '.pntg' { return 'image/x-macpaint' }
         '.pnz' { return 'image/png' }
+        '.pode' { return 'application/PowerShell' }
         '.pot' { return 'application/vnd.ms-powerpoint' }
         '.potm' { return 'application/vnd.ms-powerpoint.template.macroEnabled.12' }
         '.potx' { return 'application/vnd.openxmlformats-officedocument.presentationml.template' }
@@ -393,7 +397,10 @@ function Get-PodeContentType
         '.prm' { return 'application/octet-stream' }
         '.prx' { return 'application/octet-stream' }
         '.ps' { return 'application/postscript' }
+        '.ps1' { return 'application/PowerShell' }
         '.psc1' { return 'application/PowerShell' }
+        '.psd1' { return 'application/PowerShell' }
+        '.psm1' { return 'application/PowerShell' }
         '.psd' { return 'application/octet-stream' }
         '.psess' { return 'application/xml' }
         '.psm' { return 'application/octet-stream' }
@@ -629,6 +636,6 @@ function Get-PodeContentType
         '.xwd' { return 'image/x-xwindowdump' }
         '.z' { return 'application/x-compress' }
         '.zip' { return 'application/zip'}
-        default { return 'text/plain' }
+        default { return (iftet $DefaultIsNull $null 'text/plain') }
     }
 }

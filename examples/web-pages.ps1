@@ -10,13 +10,13 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server {
+Server -Threads 2 {
 
     # listen on localhost:8085
-    listen 127.0.0.1:8085 http
+    listen *:8085 http
 
     # allow the local ip and some other ips
-    access allow ip 127.0.0.1
+    access allow ip @('127.0.0.1', '[::1]')
     access allow ip @('192.169.0.1', '192.168.0.2')
 
     # deny an ip
@@ -55,4 +55,3 @@ Server {
     }
 
 } -FileMonitor
- 

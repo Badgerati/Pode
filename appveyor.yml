@@ -1,4 +1,4 @@
-version: 0.14.{build}
+version: 0.15.{build}
 image: Visual Studio 2017
 
 branches:

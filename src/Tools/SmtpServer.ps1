@@ -1,10 +1,54 @@
 function Start-SmtpServer
 {
-    $script = {
+    # ensure we have smtp handlers
+    if ($null -eq (Get-PodeTcpHandler -Type 'SMTP')) {
+        throw 'No SMTP handler has been passed'
+    }
+
+    # grab the relavant port
+    $port = $PodeSession.IP.Port
+    if ($port -eq 0) {
+        $port = 25
+    }
+
+    # create the listener for smtp
+    $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $port)
+    $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
+
+    try
+    {
+        # start listener
+        $listener.Start()
+    }
+    catch {
+        $Error[0] | Out-Default
+
+        if ($null -ne $listener) {
+            $listener.Stop()
+        }
+
+        throw $_.Exception
+    }
+
+    # state where we're running
+    Write-Host "Listening on smtp://$($PodeSession.IP.Name):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+
+    # script for listening out of for incoming requests
+    $listenScript = {
+        param (
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener,
+
+            [Parameter(Mandatory=$true)]
+            [int]
+            $ThreadId
+        )
+
         # scriptblock for the core smtp message processing logic
         $process = {
             # if there's no client, just return
-            if ($PodeSession.Tcp.Client -eq $null) {
+            if ($null -eq $TcpSession.Client) {
                 return
             }
 
@@ -28,11 +72,8 @@ function Start-SmtpServer
                         if ($msg.StartsWith('QUIT')) {
                             tcp write '221 Bye'
 
-                            if ($Client -ne $null -and $Client.Connected) {
-                                try {
-                                    $Client.Close()
-                                    $Client.Dispose()
-                                } catch { }
+                            if ($null -ne $TcpSession.Client -and $TcpSession.Client.Connected) {
+                                dispose $TcpSession.Client -Close
                             }
 
                             break
@@ -59,13 +100,16 @@ function Start-SmtpServer
                             tcp write '250 OK'
 
                             # set session data
-                            $PodeSession.Smtp.From = $mail_from
-                            $PodeSession.Smtp.To = $rcpt_tos
-                            $PodeSession.Smtp.Data = $data
-                            $PodeSession.Smtp.Lockable = $PodeSession.Lockable
+                            $SmtpSession.From = $mail_from
+                            $SmtpSession.To = $rcpt_tos
+                            $SmtpSession.Data = $data
+                            $SmtpSession.Lockable = $PodeSession.Lockable
 
                             # call user handlers for processing smtp data
-                            Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $PodeSession.Smtp -Scoped
+                            Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpSession -Scoped
+
+                            # reset the to list
+                            $rcpt_tos = @()
                         }
                     }
                 }
@@ -75,48 +119,28 @@ function Start-SmtpServer
             }
         }
 
-        # setup and run the smtp listener
         try
         {
-            # ensure we have smtp handlers
-            if ((Get-PodeTcpHandler -Type 'SMTP') -eq $null) {
-                throw 'No SMTP handler has been passed'
-            }
-
-            # grab the relavant port
-            $port = $PodeSession.IP.Port
-            if ($port -eq 0) {
-                $port = 25
-            }
-
-            $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $port)
-            $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
-
-            # start listener
-            $listener.Start()
-
-            # state where we're running
-            Write-Host "Listening on smtp://$($PodeSession.IP.Name):$($port)" -ForegroundColor Yellow
-
-            # loop for tcp request
-            while ($true)
+            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
             {
-                $task = $listener.AcceptTcpClientAsync()
+                # get an incoming request
+                $task = $Listener.AcceptTcpClientAsync()
                 $task.Wait($PodeSession.Tokens.Cancellation.Token)
                 $client = $task.Result
 
                 # ensure the request ip is allowed
                 if (!(Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint))) {
-                    try {
-                        $client.Close()
-                        $client.Dispose()
-                    } catch { }
+                    dispose $client -Close
                 }
 
                 # deal with smtp call
                 else {
-                    $PodeSession.Tcp.Client = $client
-                    $PodeSession.Smtp = @{}
+                    $SmtpSession = @{}
+                    $TcpSession = @{
+                        'Client' = $client;
+                        'Lockable' = $PodeSession.Lockable
+                    }
+
                     Invoke-ScriptBlock -ScriptBlock $process
                 }
             }
@@ -126,14 +150,41 @@ function Start-SmtpServer
             $Error[0] | Out-Default
             throw $_.Exception
         }
+    }
+
+    # start the runspace for listening on x-number of threads
+    1..$PodeSession.Threads | ForEach-Object {
+        Add-PodeRunspace $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+    }
+
+    # script to keep smtp server listening until cancelled
+    $waitScript = {
+        param (
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener
+        )
+
+        try
+        {
+            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            {
+                Start-Sleep -Seconds 1
+            }
+        }
+        catch [System.OperationCanceledException] {}
+        catch {
+            $Error[0] | Out-Default
+            throw $_.Exception
+        }
         finally {
-            if ($listener -ne $null) {
-                $listener.Stop()
+            if ($null -ne $Listener) {
+                $Listener.Stop()
             }
         }
     }
 
-    Add-PodeRunspace $script
+    Add-PodeRunspace $waitScript -Parameters @{ 'Listener' = $listener }
 }
 
 

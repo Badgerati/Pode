@@ -11,6 +11,9 @@ function New-PodeSession
         $IP = $null,
 
         [int]
+        $Threads = 1,
+
+        [int]
         $Interval = 0,
 
         [string]
@@ -30,8 +33,14 @@ function New-PodeSession
         $FileMonitor
     )
 
+    # set a random server name if one not supplied
     if (Test-Empty $Name) {
         $Name = Get-RandomServerName
+    }
+
+    # ensure threads are always >0
+    if ($Threads -le 0) {
+        $Threads = 1
     }
 
     # basic session object
@@ -43,9 +52,7 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name Interval -Value $Interval -PassThru |
         Add-Member -MemberType NoteProperty -Name IP -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Web -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Smtp -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Tcp -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
@@ -126,7 +133,7 @@ function New-PodeSession
 
     # runspace and pool
     $session.Runspaces = @()
-    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, 4, $state, $Host)
+    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, (4 + $Threads), $state, $Host)
     $session.RunspacePool.Open()
 
     return $session
@@ -146,9 +153,7 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name Handlers -Value $Session.Handlers -PassThru |
         Add-Member -MemberType NoteProperty -Name IP -Value $Session.IP -PassThru |
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
-        Add-Member -MemberType NoteProperty -Name Web -Value $Session.Web -PassThru |
-        Add-Member -MemberType NoteProperty -Name Tcp -Value $Session.Tcp -PassThru |
-        Add-Member -MemberType NoteProperty -Name Smtp -Value $Session.Smtp -PassThru |
+        Add-Member -MemberType NoteProperty -Name Threads -Value $Session.Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
@@ -179,7 +184,7 @@ function State
     )
 
     try {
-        if ($PodeSession -eq $null -or $PodeSession.SharedState -eq $null) {
+        if ($null -eq $PodeSession -or $null -eq $PodeSession.SharedState) {
             return
         }
 

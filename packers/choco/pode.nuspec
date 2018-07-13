@@ -15,8 +15,8 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
 
 * Can run on Unix environments using PowerShell Core
 * Host REST APIs and Web Pages
-* Run TCP listeners
-* Host SMTP servers - great for tests and mocking
+* Host TCP and SMTP server - great for tests and mocking
+* Multiple threads can be used to response to incoming requests
 * Use the full power of PowerShell, want a REST API for NUnit? Go for it!
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
@@ -31,10 +31,11 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
     <packageSourceUrl>https://github.com/Badgerati/Pode/tree/master/packers</packageSourceUrl>
     <docsUrl>https://github.com/Badgerati/Pode</docsUrl>
     <bugTrackerUrl>https://github.com/Badgerati/Pode/issues</bugTrackerUrl>
-    <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html unix</tags>
+    <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html unix cross-platform access-control file-monitoring multithreaded</tags>
     <copyright>Copyright 2017-2018</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <iconUrl>https://cdn.rawgit.com/Badgerati/Pode/master/images/icon.png</iconUrl>
     <releaseNotes>https://github.com/Badgerati/Pode/releases</releaseNotes>
   </metadata>
   <files>

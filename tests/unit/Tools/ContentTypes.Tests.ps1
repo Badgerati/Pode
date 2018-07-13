@@ -11,6 +11,14 @@ Describe 'Get-PodeContentType' {
         It 'Return the default type for null' {
             Get-PodeContentType -Extension $null | Should Be 'text/plain'
         }
+
+        It 'Return the default type for empty when DefaultIsNull' {
+            Get-PodeContentType -Extension ([string]::Empty) -DefaultIsNull | Should Be $null
+        }
+
+        It 'Return the default type for null when DefaultIsNull' {
+            Get-PodeContentType -Extension $null -DefaultIsNull | Should Be $null
+        }
     }
 
     Context 'Extension with no period' {
