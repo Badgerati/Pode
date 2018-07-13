@@ -35,6 +35,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
     <copyright>Copyright 2017-2018</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <iconUrl>https://cdn.rawgit.com/Badgerati/Pode/master/images/icon.png</iconUrl>
     <releaseNotes>https://github.com/Badgerati/Pode/releases</releaseNotes>
   </metadata>
   <files>
