@@ -54,6 +54,7 @@
         'Test-IsUnix',
         'Test-IsPSCore',
         'Status',
+        'Redirect',
         'Include',
         'Lock',
         'State',
