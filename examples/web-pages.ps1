@@ -42,6 +42,11 @@ Server -Threads 2 {
         status 500
     }
 
+    # GET request to page that merely redirects to google
+    route 'get' '/redirect' {
+        redirect 'https://google.com'
+    }
+
     # GET request to download a file
     route 'get' '/download' {
         param($session)

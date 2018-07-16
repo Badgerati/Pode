@@ -152,6 +152,28 @@ function Status
     $WebSession.Response.StatusDescription = $Description
 }
 
+function Redirect
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Url,
+
+        [switch]
+        $Moved
+    )
+
+    $WebSession.Response.RedirectLocation = $Url
+
+    if ($Moved) {
+        status 301 'Moved'
+    }
+    else {
+        status 302 'Redirect'
+    }
+}
+
 function Json
 {
     param (
