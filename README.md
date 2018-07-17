@@ -30,11 +30,14 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
     * [Misc](#misc)
-        * [Attach File](#attach-file)
         * [Logging](#logging)
         * [Shared State](#shared-state)
         * [File Monitor](#file-monitor)
         * [Access Rules](#access-rules)
+    * [Helpers](#helpers)
+        * [Attach File](#attach-file)
+        * [Status Code](#status-code)
+        * [Redirect](#redirect)
 * [Pode Files](#pode-files)
     * [Third-Party Engines](#third-party-view-engines)
 
@@ -373,21 +376,6 @@ To help with writing and reading from the client stream, Pode has a helper funct
 
 ### Misc
 
-#### Attach File
-
-There is an internal helper function to aid attaching files to a response, so that they can be downloaded on the client end. Files to attach must be placed within the `public/` directory, much like the content files for JavaScript and CSS.
-
-An example of attaching a file to a response in a route is as follows, and here it will start a download of the file at `public/downloads/installer.exe`:
-
-```powershell
-Server -Port 8080 {
-    route get '/app/install' {
-        param($session)
-        attach 'downloads/installer.exe'
-    }
-}
-```
-
 #### Logging
 
 Allows you to define `Logger`s within a Server that will send [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) rows to either the terminal, a file, or a custom scriptblock that allows you to log to a variety of services - e.g. Splunk/FluentD/LogStash
@@ -546,7 +534,73 @@ Server {
 
 If an IP hits your server that you've denied access, then a `403` response is returned and the connection immediately closed. For SMTP/TCP servers the connection is just closed with no response.
 
+### Helpers
+
+#### Attach File
+
+`Attach` is a helper function to aid attaching files to a response, so that they can be downloaded on the client end. Files to attach must be placed within the `public/` directory, much like the content files for JavaScript and CSS.
+
+An example of attaching a file to a response in a route is as follows, and here it will start a download of the file at `public/downloads/installer.exe`:
+
+```powershell
+Server -Port 8080 {
+    route get '/app/install' {
+        param($session)
+        attach 'downloads/installer.exe'
+    }
+}
+```
+
+#### Status Code
+
+`Status` is a helper function to aid setting the status code and description on the response. When called you must specify a status code, and the description is optional.
+
+```powershell
+Server -Port 8080 {
+    # returns a 404 code
+    route get '/not-here' {
+        status 404
+    }
+
+    # returns a 500 code, with description
+    route get '/eek' {
+        status 500 'oh no! something went wrong!'
+    }
+}
+```
+
+#### Redirect
+
+`Redirect` is a helper function to aid URL redirection from the server. You can either redirect via a 301 or 302 code - the default is a 302 redirect.
+
+```powershell
+Server -Port 8080 {
+    # redirects to google
+    route get '/redirect' {
+        redirect -url 'https://google.com'
+    }
+
+    # moves to google
+    route get '/moved' {
+        redirect -moved -url 'https://google.com'
+    }
+
+    # redirect to different port - same host, path and query
+    route get '/redirect-port' {
+        redirect -port 8086
+    }
+
+    # redirect to same host, etc; but this time to https
+    route get '/redirect-https' {
+        redirect -protocol https
+    }
+}
+```
+
+Supplying `-url` will redirect literally to that URL, or you can supply a relative path to the current host. `-port` and `-protocol` can be used separately or together, but not with `-url`. Using `-port`/`-protocol` will use the URI object in the current Request to generate the redirect URL.
+
 ## Pode Files
+
 Using Pode to write dynamic HTML files are mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
 
 To use Pode files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine to be Pode; once set, you can just write view responses as per normal:
@@ -680,7 +734,7 @@ To load the above `.css.pode` file:
 <!-- /views/index.pode -->
 <html>
    <head>
-      <link rel="stylesheet" href="styles/main.css.pode"> 
+      <link rel="stylesheet" href="styles/main.css.pode">
    </head>
    <body>
         <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
@@ -734,6 +788,7 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Test-IsUnix`
 * `Test-IsPSCore`
 * `status`
+* `redirect`
 * `include`
 * `lock`
 * `state`

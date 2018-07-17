@@ -152,6 +152,56 @@ function Status
     $WebSession.Response.StatusDescription = $Description
 }
 
+function Redirect
+{
+    param (
+        [Parameter()]
+        [string]
+        $Url,
+
+        [Parameter()]
+        [int]
+        $Port = 0,
+
+        [Parameter()]
+        [ValidateSet('', 'HTTP', 'HTTPS')]
+        [string]
+        $Protocol,
+
+        [switch]
+        $Moved
+    )
+
+    if (Test-Empty $Url) {
+        $uri = $WebSession.Request.Url
+
+        $Protocol = $Protocol.ToLowerInvariant()
+        if (Test-Empty $Protocol) {
+            $Protocol = $uri.Scheme
+        }
+
+        if ($Port -le 0) {
+            $Port = $uri.Port
+        }
+
+        $PortStr = [string]::Empty
+        if ($Port -ne 80 -and $Port -ne 443) {
+            $PortStr = ":$($Port)"
+        }
+
+        $Url = "$($Protocol)://$($uri.Host)$($PortStr)$($uri.PathAndQuery)"
+    }
+
+    $WebSession.Response.RedirectLocation = $Url
+
+    if ($Moved) {
+        status 301 'Moved'
+    }
+    else {
+        status 302 'Redirect'
+    }
+}
+
 function Json
 {
     param (

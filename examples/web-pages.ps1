@@ -1,3 +1,8 @@
+param (
+    [int]
+    $Port = 8085
+)
+
 if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
 {
     Remove-Module -Name Pode
@@ -13,7 +18,7 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 Server -Threads 2 {
 
     # listen on localhost:8085
-    listen *:8085 http
+    listen *:$Port http
 
     # allow the local ip and some other ips
     access allow ip @('127.0.0.1', '[::1]')
@@ -40,6 +45,22 @@ Server -Threads 2 {
     route 'get' '/error' {
         param($session)
         status 500
+    }
+
+    # GET request to page that merely redirects to google
+    route 'get' '/redirect' {
+        redirect 'https://google.com'
+    }
+
+    # GET request that redirects to same host, just different port
+    route 'get' '/redirect-port' {
+        param($session)
+        if ($session.Request.Url.Port -ne 8086) {
+            redirect -port 8086
+        }
+        else {
+            json @{ 'value' = 'you got redirected!'; }
+        }
     }
 
     # GET request to download a file
