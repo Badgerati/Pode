@@ -577,15 +577,27 @@ Server -Port 8080 {
 Server -Port 8080 {
     # redirects to google
     route get '/redirect' {
-        redirect 'https://google.com'
+        redirect -url 'https://google.com'
     }
 
     # moves to google
     route get '/moved' {
-        redirect -moved 'https://google.com'
+        redirect -moved -url 'https://google.com'
+    }
+
+    # redirect to different port - same host, path and query
+    route get '/redirect-port' {
+        redirect -port 8086
+    }
+
+    # redirect to same host, etc; but this time to https
+    route get '/redirect-https' {
+        redirect -protocol https
     }
 }
 ```
+
+Supplying `-url` will redirect literally to that URL, or you can supply a relative path to the current host. `-port` and `-protocol` can be used separately or together, but not with `-url`. Using `-port`/`-protocol` will use the URI object in the current Request to generate the redirect URL.
 
 ## Pode Files
 
