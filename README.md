@@ -258,7 +258,9 @@ Server -Port 8080 {
 
 When creating an API in Pode, you specify logic for certain routes for specific HTTP methods. Methods supported are: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
 
-The method to create new routes is `route`, this will take your method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
+> There is a special `*` method you can use, which means a route applies to every HTTP method
+
+The method to create new routes is `route`, this will take your HTTP method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
 
 ```powershell
 Server -Port 8080 {
@@ -592,6 +594,11 @@ Server -Port 8080 {
 
     # redirect to same host, etc; but this time to https
     route get '/redirect-https' {
+        redirect -protocol https
+    }
+
+    # redirect every method and route to https
+    route * * {
         redirect -protocol https
     }
 }
