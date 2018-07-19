@@ -91,6 +91,7 @@ function New-PodeSession
         'post' = @{};
         'put' = @{};
         'trace' = @{};
+        '*' = @{};
     }
 
     # handlers for tcp

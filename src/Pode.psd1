@@ -80,6 +80,9 @@
             # A URL to the main website for this project.
             ProjectUri = 'https://github.com/Badgerati/Pode'
 
+            # A URL to an icon representing this module.
+            IconUri = 'https://cdn.rawgit.com/Badgerati/Pode/master/images/icon.png'
+
         }
     }
 }

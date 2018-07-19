@@ -75,4 +75,18 @@ Server -Threads 2 {
         json @{ 'userId' = $session.Parameters['userId'] }
     }
 
+    # ALL request, that supports every method and it a default drop route
+    route * '/all' {
+        json @{ 'value' = 'works for every http method' }
+    }
+
+    route get '/api/*/hello' {
+        json @{ 'value' = 'works for every hello route' }
+    }
+
+    # ALL request, supports every method and route (good for mass https redirect)
+    route * * {
+        redirect -protocol https
+    }
+
 } -FileMonitor

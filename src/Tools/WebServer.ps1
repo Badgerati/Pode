@@ -134,6 +134,10 @@ function Start-WebServer
                 else {
                     # ensure the path has a route
                     $route = Get-PodeRoute -HttpMethod $method -Route $path
+                    if ($null -eq $route) {
+                        $route = Get-PodeRoute -HttpMethod '*' -Route $path
+                    }
+
                     if ($null -eq $route -or $null -eq $route.Logic) {
                         status 404
                     }

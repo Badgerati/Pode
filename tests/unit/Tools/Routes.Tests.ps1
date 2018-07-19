@@ -37,13 +37,22 @@ Describe 'Get-PodeRoute' {
             $result.Parameters | Should Be $null
         }
 
+        It 'Returns logic for method and exact route under star' {
+            $PodeSession = @{ 'Routes' = @{ '*' = @{ '/' = { Write-Host 'Test' }; }; }; }
+            $result = (Get-PodeRoute -HttpMethod * -Route '/')
+
+            $result | Should BeOfType System.Collections.Hashtable
+            $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
+            $result.Parameters | Should Be $null
+        }
+
         It 'Returns logic and parameters for parameterised route' {
             $PodeSession = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[\w-_]+?)' = { Write-Host 'Test' }; }; }; }
             $result = (Get-PodeRoute -HttpMethod GET -Route '/123')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-            
+
             $result.Parameters | Should BeOfType System.Collections.Hashtable
             $result.Parameters['userId'] | Should Be '123'
         }
