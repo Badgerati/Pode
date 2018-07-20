@@ -125,6 +125,11 @@ function Start-WebServer
                     status 403
                 }
 
+                # ensure the request ip has hit a rate limit
+                elseif (!(Test-IPLimit -IP $request.RemoteEndPoint.Address)) {
+                    status 429
+                }
+
                 # check to see if the path is a file, so we can check the public folder
                 elseif ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
                     $path = Join-ServerRoot 'public' $path

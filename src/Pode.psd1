@@ -60,6 +60,7 @@
         'State',
         'Listen',
         'Access',
+        'Limit',
         'Stopwatch',
         'Dispose',
         'Stream'

@@ -53,8 +53,11 @@ function Start-TcpServer
                 $task.Wait($PodeSession.Tokens.Cancellation.Token)
                 $client = $task.Result
 
+                # convert the ip
+                $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)
+
                 # ensure the request ip is allowed and deal with the tcp call
-                if (Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)) {
+                if ((Test-IPAccess -IP $ip) -and (Test-IPLimit -IP $ip)) {
                     $TcpSession = @{
                         'Client' = $client;
                         'Lockalble' = $PodeSession.Lockable

@@ -65,6 +65,7 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name SharedState -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Access -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Limits -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name FileMonitor -Value $FileMonitor -PassThru
 
     # set the IP address details
@@ -104,6 +105,12 @@ function New-PodeSession
     $session.Access = @{
         'Allow' = @{};
         'Deny' = @{};
+    }
+
+    # setup basic limit rules
+    $session.Limits = @{
+        'Rules' = @{};
+        'Active' = @{};
     }
 
     # create new cancellation tokens
@@ -163,7 +170,8 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name ServerRoot -Value $Session.ServerRoot -PassThru |
         Add-Member -MemberType NoteProperty -Name SharedState -Value $Session.SharedState -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
-        Add-Member -MemberType NoteProperty -Name Access -Value $Session.Access -PassThru)
+        Add-Member -MemberType NoteProperty -Name Access -Value $Session.Access -PassThru |
+        Add-Member -MemberType NoteProperty -Name Limits -Value $Session.Limits -PassThru)
 }
 
 function State
