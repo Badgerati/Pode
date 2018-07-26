@@ -25,24 +25,28 @@ function Test-IPLimit
         return $true
     }
 
-    # is the ip active?
+    # is the ip active? (get a direct match, then try grouped subnets)
     $_active_ip = $active[$IP.String]
+    if ($null -eq $_active_ip) {
+        $_groups = ($active.Keys | Where-Object { $active[$_].Rule.Grouped } | ForEach-Object { $active[$_] })
+        $_active_ip = ($_groups | Where-Object { Test-IPAddressInRange -IP $IP -LowerIP $_.Rule.Lower -UpperIP $_.Rule.Upper } | Select-Object -First 1)
+    }
 
-    # the ip is active
+    # the ip is active, or part of a grouped subnet
     if ($null -ne $_active_ip) {
         # if limit is -1, always allowed
-        if ($_active_ip.Limit -eq -1) {
+        if ($_active_ip.Rule.Limit -eq -1) {
             return $true
         }
 
         # check expire time, a reset if needed
         if ($now -ge $_active_ip.Expire) {
             $_active_ip.Rate = 0
-            $_active_ip.Expire = $now.AddSeconds($_active_ip.Seconds)
+            $_active_ip.Expire = $now.AddSeconds($_active_ip.Rule.Seconds)
         }
 
         # are we over the limit?
-        if ($_active_ip.Rate -ge $_active_ip.Limit) {
+        if ($_active_ip.Rate -ge $_active_ip.Rule.Limit) {
             return $false
         }
 
@@ -60,17 +64,20 @@ function Test-IPLimit
         # (add to active list as always allowed - saves running where search everytime)
         if ($null -eq $_rule_ip) {
             $active.Add($IP.String, @{
-                'Limit' = -1
+                'Rule' = @{
+                    'Limit' = -1
+                }
             })
 
             return $true
         }
 
-        # add ip to active list
-        $active.Add($IP.String, @{
-            'Limit' = $_rule_ip.Limit;
+        # add ip to active list (ip if not grouped, else the subnet if it's grouped)
+        $_ip = (iftet $_rule_ip.Grouped $_rule_ip.IP $IP.String)
+
+        $active.Add($_ip, @{
+            'Rule' = $_rule_ip;
             'Rate' = 1;
-            'Seconds' = $_rule_ip.Seconds;
             'Expire' = $now.AddSeconds($_rule_ip.Seconds);
         })
 
@@ -146,13 +153,16 @@ function Limit
 
         [Parameter(Mandatory=$true)]
         [int]
-        $Seconds
+        $Seconds,
+
+        [switch]
+        $Group
     )
 
     # if it's array add them all
     if ((Get-Type $Value).BaseName -ieq 'array') {
         $Value | ForEach-Object {
-            limit -Type $Type -Value $_ -Limit $Limit -Seconds $Seconds
+            limit -Type $Type -Value $_ -Limit $Limit -Seconds $Seconds -Group:$Group
         }
 
         return
@@ -162,7 +172,7 @@ function Limit
     switch ($Type.ToLowerInvariant())
     {
         'ip' {
-            Add-IPLimit -IP $Value -Limit $Limit -Seconds $Seconds
+            Add-IPLimit -IP $Value -Limit $Limit -Seconds $Seconds -Group:$Group
         }
     }
 }
@@ -181,7 +191,10 @@ function Add-IPLimit
 
         [Parameter(Mandatory=$true)]
         [int]
-        $Seconds
+        $Seconds,
+
+        [switch]
+        $Group
     )
 
     # current limit type
@@ -221,6 +234,8 @@ function Add-IPLimit
     $rules.Add($IP, @{
         'Limit' = $Limit;
         'Seconds' = $Seconds;
+        'Grouped' = [bool]$Group;
+        'IP' = $IP;
         'Lower' = @{
             'Family' = $_tmpLo.AddressFamily;
             'Bytes' = $_tmpLo.GetAddressBytes();

@@ -158,6 +158,30 @@ Describe 'Add-IPLimit' {
             $k = $a['10.10.0.0/24']
             $k.Limit | Should Be 1
             $k.Seconds | Should Be 1
+            $k.Grouped | Should Be $false
+
+            $k.Lower | Should Not Be $null
+            $k.Lower.Family | Should Be 'InterNetwork'
+            $k.Lower.Bytes | Should Be @(10, 10, 0, 0)
+
+            $k.Upper | Should Not Be $null
+            $k.Upper.Family | Should Be 'InterNetwork'
+            $k.Upper.Bytes | Should Be @(10, 10, 0, 255)
+        }
+
+        It 'Adds a grouped subnet mask to limit' {
+            $PodeSession = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
+            Add-IPLimit -IP '10.10.0.0/24' -Limit 1 -Seconds 1 -Group
+
+            $a = $PodeSession.Limits.Rules.IP
+            $a | Should Not Be $null
+            $a.Count | Should Be 1
+            $a.ContainsKey('10.10.0.0/24') | Should Be $true
+
+            $k = $a['10.10.0.0/24']
+            $k.Limit | Should Be 1
+            $k.Seconds | Should Be 1
+            $k.Grouped | Should Be $true
 
             $k.Lower | Should Not Be $null
             $k.Lower.Family | Should Be 'InterNetwork'
