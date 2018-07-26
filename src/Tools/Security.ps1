@@ -200,6 +200,15 @@ function Add-IPLimit
     # current limit type
     $type = 'IP'
 
+    # ensure limit and seconds are non-zero and negative
+    if ($Limit -le 0) {
+        throw "Limit value cannot be 0 or less for $($IP)"
+    }
+
+    if ($Seconds -le 0) {
+        throw "Seconds value cannot be 0 or less for $($IP)"
+    }
+
     # get current rules
     $rules = $PodeSession.Limits.Rules[$type]
 

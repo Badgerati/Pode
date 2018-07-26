@@ -99,6 +99,22 @@ Describe 'Add-IPLimit' {
         It 'Throws error for invalid IP' {
             { Add-IPLimit -IP $null -Limit 1 -Seconds 1 } | Should Throw "because it is an empty string"
         }
+
+        It 'Throws error for negative limit' {
+            { Add-IPLimit -IP '127.0.0.1' -Limit -1 -Seconds 1 } | Should Throw '0 or less'
+        }
+
+        It 'Throws error for negative seconds' {
+            { Add-IPLimit -IP '127.0.0.1' -Limit 1 -Seconds -1 } | Should Throw '0 or less'
+        }
+
+        It 'Throws error for zero limit' {
+            { Add-IPLimit -IP '127.0.0.1' -Limit 0 -Seconds 1 } | Should Throw '0 or less'
+        }
+
+        It 'Throws error for zero seconds' {
+            { Add-IPLimit -IP '127.0.0.1' -Limit 1 -Seconds 0 } | Should Throw '0 or less'
+        }
     }
 
     Context 'Valid parameters' {
