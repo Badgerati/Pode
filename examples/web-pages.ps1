@@ -20,6 +20,8 @@ Server -Threads 2 {
     # listen on localhost:8085
     listen *:$Port http
 
+    limit ip @('127.0.0.1', '[::1]') 5 10
+
     # allow the local ip and some other ips
     access allow ip @('127.0.0.1', '[::1]')
     access allow ip @('192.169.0.1', '192.168.0.2')

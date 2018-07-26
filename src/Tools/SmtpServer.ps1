@@ -128,8 +128,11 @@ function Start-SmtpServer
                 $task.Wait($PodeSession.Tokens.Cancellation.Token)
                 $client = $task.Result
 
+                # convert the ip
+                $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)
+
                 # ensure the request ip is allowed
-                if (!(Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint))) {
+                if (!(Test-IPAccess -IP $ip) -or !(Test-IPLimit -IP $ip)) {
                     dispose $client -Close
                 }
 

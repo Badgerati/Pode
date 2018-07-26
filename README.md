@@ -34,6 +34,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Shared State](#shared-state)
         * [File Monitor](#file-monitor)
         * [Access Rules](#access-rules)
+        * [Rate Limiting](#rate-limiting)
     * [Helpers](#helpers)
         * [Attach File](#attach-file)
         * [Status Code](#status-code)
@@ -55,6 +56,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Cross-state runspace variable access for timers, routes and loggers
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
+* Basic rate limiting for IP addresses and subnets
 
 ## Install
 
@@ -536,6 +538,33 @@ Server {
 
 If an IP hits your server that you've denied access, then a `403` response is returned and the connection immediately closed. For SMTP/TCP servers the connection is just closed with no response.
 
+#### Rate Limiting
+
+Pode has basic support for rate limiting requests for IP addresses and subnet masks. This allows you to cap the number of requests for an IP/subnet over a given number of seconds. When limiting a subnet you can choose to either individually limit each IP address in a subnet, or you can group all IPs in a subnet together under a single cap.
+
+To start rate limiting, you can use `limit` within your `Server`, specifying the type, IP/subnet, limit and number of seconds the limit lasts for:
+
+```powershell
+Server {
+    # limit localhost to 5 requests per second
+    limit ip 127.0.0.1 -limit 5 -seconds 1
+
+    # limit multiple IPs to 5 request per 10secs
+    limit ip @('192.168.1.1', '192.168.1.2') 5 10
+
+    # limit a subnet to 5reqs per 1sec, per IP
+    limit ip '10.10.0.0/24' 5 1
+
+    # limit a subnet to 5reqs per 1sec, all IPs as one
+    limit ip '10.10.0.0/24' 5 1 -group
+
+    # limit everything to 10reqs per 1min
+    limit ip all 10 60
+}
+```
+
+If an IP/subnet hits the limit within the given period, then a `429` response is returned and the connection immediately closed. For SMTP/TCP servers the connection is just closed with no response.
+
 ### Helpers
 
 #### Attach File
@@ -801,6 +830,7 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `state`
 * `listen`
 * `access`
+* `limit`
 * `stopwatch`
 * `dispose`
 * `stream`
