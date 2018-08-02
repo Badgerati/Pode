@@ -20,19 +20,12 @@ function Get-CronFieldConstraints
             @(0, 6)
         );
         'DaysInMonths' = @(
-            31,
-            28,
-            31,
-            30,
-            31,
-            30,
-            31,
-            31,
-            30,
-            31,
-            30,
-            31
+            31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
         );
+        'Months' = @(
+            'January', 'February', 'March', 'April', 'May', 'June', 'July',
+            'August', 'September', 'October', 'November', 'December'
+        )
     }
 }
 
@@ -40,6 +33,7 @@ function Get-CronPredefined
 {
     return @{
         # normal
+        '@minutely' = '* * * * *';
         '@hourly' = '0 * * * *';
         '@daily' = '0 0 * * *';
         '@weekly' = '0 0 * * 0';
@@ -99,7 +93,7 @@ function ConvertFrom-CronExpression
 
     # check predefineds
     $predef = Get-CronPredefined
-    if ($null -ne $predef[$Expression]) {
+    if (!(Test-Empty $predef[$Expression])) {
         $Expression = $predef[$Expression]
     }
 
@@ -158,23 +152,40 @@ function ConvertFrom-CronExpression
         # parse the atom for either a literal, range, array, or interval
         # literal
         if ($_atom -imatch '^\d+$') {
-            $_cronExp.Values = @($_atom)
+            $_cronExp.Values = @([int]$_atom)
         }
 
         # range
-        elseif ($_atom -imatch '^\d+\-\d+$') {
-            $s = $_atom -split '-'
-            $_cronExp.Range = @{ 'Min' = $s[0].Trim(); 'Max' = $s[1].Trim(); }
+        elseif ($_atom -imatch '^(?<min>\d+)\-(?<max>\d+)$') {
+            $_cronExp.Range = @{ 'Min' = [int]($Matches['min'].Trim()); 'Max' = [int]($Matches['max'].Trim()); }
         }
 
         # array
         elseif ($_atom -imatch '^[\d,]+$') {
-            $_cronExp.Values = @($_atom -split ',').Trim()
+            $_cronExp.Values = [int[]](@($_atom -split ',').Trim())
         }
 
         # interval
-        elseif ($_atom -imatch '\/\d+$') {
-            # TODO:
+        elseif ($_atom -imatch '(?<start>(\d+|\*))\/(?<interval>\d+)$') {
+            $start = $Matches['start']
+            $interval = [int]$Matches['interval']
+
+            if ($interval -ieq 0) {
+                $interval = 1
+            }
+
+            if ([string]::IsNullOrWhiteSpace($start) -or $start -ieq '*') {
+                $start = 0
+            }
+
+            $start = [int]$start
+            $_cronExp.Values = @($start)
+
+            $next = $start + $interval
+            while ($next -le $_constraint[1]) {
+                $_cronExp.Values += $next
+                $next += $interval
+            }
         }
 
         # error
@@ -210,7 +221,17 @@ function ConvertFrom-CronExpression
     }
 
     # post validation for month/days in month
-    # TODO: (dont forget leap years)
+    if ($null -ne $cron['Month'].Values -and $null -ne $cron['DayOfMonth'].Values)
+    {
+        foreach ($mon in $cron['Month'].Values) {
+            foreach ($day in $cron['DayOfMonth'].Values) {
+                if ($day -gt $constraints.DaysInMonths[$mon - 1]) {
+                    throw "$($constraints.Months[$mon - 1]) only has $($constraints.DaysInMonths[$mon - 1]) days, but $($day) was supplied"
+                }
+            }
+        }
+
+    }
 
     # return the parsed cron expression
     return $cron
@@ -221,7 +242,11 @@ function Test-CronExpression
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Expression
+        $Expression,
+
+        [Parameter()]
+        [datetime]
+        $DateTime = $null
     )
 
     function Test-RangeAndValue($AtomContraint, $NowValue) {
@@ -238,26 +263,28 @@ function Test-CronExpression
     }
 
     # current time
-    $now = [datetime]::Now
+    if ($null -eq $DateTime) {
+        $DateTime = [datetime]::Now
+    }
 
     # check day of week and day of month (both must fail)
-    if (!(Test-RangeAndValue -AtomContraint $Expression.DayOfWeek -NowValue ([int]$now.DayOfWeek)) -and
-        !(Test-RangeAndValue -AtomContraint $Expression.DayOfMonth -NowValue $now.Day)) {
+    if (!(Test-RangeAndValue -AtomContraint $Expression.DayOfWeek -NowValue ([int]$DateTime.DayOfWeek)) -and
+        !(Test-RangeAndValue -AtomContraint $Expression.DayOfMonth -NowValue $DateTime.Day)) {
         return $false
     }
 
     # check month
-    if (!(Test-RangeAndValue -AtomContraint $Expression.Month -NowValue $now.Month)) {
+    if (!(Test-RangeAndValue -AtomContraint $Expression.Month -NowValue $DateTime.Month)) {
         return $false
     }
 
     # check hour
-    if (!(Test-RangeAndValue -AtomContraint $Expression.Hour -NowValue $now.Hour)) {
+    if (!(Test-RangeAndValue -AtomContraint $Expression.Hour -NowValue $DateTime.Hour)) {
         return $false
     }
 
     # check minute
-    if (!(Test-RangeAndValue -AtomContraint $Expression.Minute -NowValue $now.Minute)) {
+    if (!(Test-RangeAndValue -AtomContraint $Expression.Minute -NowValue $DateTime.Minute)) {
         return $false
     }
 
@@ -266,5 +293,6 @@ function Test-CronExpression
 }
 
 # <min> <hour> <day-of-month> <month> <day-of-week>
-$e = (ConvertFrom-CronExpression -Expression '* * 30 * TUE')
-Test-CronExpression -Expression $e
+#$e = (ConvertFrom-CronExpression -Expression '5/7 * 29 FEB,MAR *')
+#$e = (ConvertFrom-CronExpression -Expression '@hourly')
+#Test-CronExpression -Expression $e

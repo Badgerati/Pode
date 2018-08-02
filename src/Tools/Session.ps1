@@ -54,6 +54,7 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
@@ -141,7 +142,7 @@ function New-PodeSession
 
     # runspace and pool
     $session.Runspaces = @()
-    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, (4 + $Threads), $state, $Host)
+    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, (6 + $Threads), $state, $Host)
     $session.RunspacePool.Open()
 
     return $session
@@ -163,6 +164,7 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Session.Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
+        Add-Member -MemberType NoteProperty -Name Schedules -Value $Session.Schedules -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |

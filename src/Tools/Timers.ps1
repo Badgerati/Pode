@@ -20,8 +20,9 @@ function Start-TimerRunspace
         while ($true)
         {
             $_remove = @()
+            $_now = [DateTime]::UtcNow
 
-            $PodeSession.Timers.Values | Where-Object { $_.NextTick -le [DateTime]::UtcNow } | ForEach-Object {
+            $PodeSession.Timers.Values | Where-Object { $_.NextTick -le $_now } | ForEach-Object {
                 $run = $true
 
                 # increment total number of runs for timer (do we still need to count?)
@@ -49,7 +50,7 @@ function Start-TimerRunspace
                         $Error[0]
                     }
 
-                    $_.NextTick = [DateTime]::UtcNow.AddSeconds($_.Interval)
+                    $_.NextTick = $_now.AddSeconds($_.Interval)
                 }
             }
 
