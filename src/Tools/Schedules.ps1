@@ -32,7 +32,8 @@ function Start-ScheduleRunspace
                 } | ForEach-Object {
 
                 try {
-                    Invoke-ScriptBlock -ScriptBlock (($_.Script).GetNewClosure()) -Arguments @{ 'Lockable' = $PodeSession.Lockable } -Scoped
+                    Add-PodeRunspace -ScriptBlock (($_.Script).GetNewClosure()) `
+                        -Parameters @{ 'Lockable' = $PodeSession.Lockable } -Forget
                 }
                 catch {
                     $Error[0]

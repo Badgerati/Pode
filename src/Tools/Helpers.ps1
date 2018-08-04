@@ -265,13 +265,16 @@ function Add-PodeRunspace
         $ScriptBlock,
 
         [Parameter()]
-        $Parameters
+        $Parameters,
+
+        [switch]
+        $Forget
     )
 
     try
     {
         $ps = [powershell]::Create()
-        $ps.RunspacePool = $PodeSession.RunspacePool
+        $ps.RunspacePool = $PodeSession.RunspacePools.Main
         $ps.AddScript($ScriptBlock) | Out-Null
 
         if (!(Test-Empty $Parameters)) {
@@ -280,10 +283,15 @@ function Add-PodeRunspace
             }
         }
 
-        $PodeSession.Runspaces += @{
-            'Runspace' = $ps;
-            'Status' = $ps.BeginInvoke();
-            'Stopped' = $false;
+        if ($Forget) {
+            $ps.BeginInvoke() | Out-Null
+        }
+        else {
+            $PodeSession.Runspaces += @{
+                'Runspace' = $ps;
+                'Status' = $ps.BeginInvoke();
+                'Stopped' = $false;
+            }
         }
     }
     catch {
@@ -313,8 +321,8 @@ function Close-PodeRunspaces
             $PodeSession.Runspaces = @()
         }
 
-        if ($ClosePool -and $null -ne $PodeSession.RunspacePool -and !$PodeSession.RunspacePool.IsDisposed) {
-            dispose $PodeSession.RunspacePool -Close
+        if ($ClosePool -and $null -ne $PodeSession.RunspacePools.Main -and !$PodeSession.RunspacePools.Main.IsDisposed) {
+            dispose $PodeSession.RunspacePools.Main -Close
         }
     }
     catch {

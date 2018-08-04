@@ -55,7 +55,7 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $DisableLogging -PassThru |
@@ -123,6 +123,11 @@ function New-PodeSession
     # requests that should be logged
     $session.RequestsToLog = New-Object System.Collections.ArrayList
 
+    # runspace pools
+    $session.RunspacePools = @{
+        'Main' = $null;
+    }
+
     # session state
     $session.Lockable = [hashtable]::Synchronized(@{})
 
@@ -140,10 +145,21 @@ function New-PodeSession
         $state.Variables.Add($_)
     }
 
+    # thread counts
+    $threadsCounts = @{
+        'Default' = 1;
+        'Timer' = 1;
+        'Log' = 1;
+        'Schedule' = 2;
+        'Misc' = 1;
+    }
+
+    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $Threads
+
     # runspace and pool
     $session.Runspaces = @()
-    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, (6 + $Threads), $state, $Host)
-    $session.RunspacePool.Open()
+    $session.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $state, $Host)
+    $session.RunspacePools.Main.Open()
 
     return $session
 }
@@ -165,6 +181,7 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name Threads -Value $Session.Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Session.Schedules -PassThru |
+        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Session.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |

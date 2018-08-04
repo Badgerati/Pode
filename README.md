@@ -52,6 +52,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 * Setup async timers to be used as one off tasks, or for housekeeping services
+* Ability to schedule async tasks using cron expressions
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 * Cross-state runspace variable access for timers, routes and loggers
 * Optional file monitoring to trigger internal server restart on file changes

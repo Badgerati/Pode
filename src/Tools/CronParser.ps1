@@ -38,16 +38,17 @@ function Get-CronPredefined
         '@daily' = '0 0 * * *';
         '@weekly' = '0 0 * * 0';
         '@monthly' = '0 0 1 * *';
+        '@quaterly' = '0 0 1 1,4,8,7,10';
         '@yearly' = '0 0 1 1 *';
         '@annually' = '0 0 1 1 *';
 
         # twice
-        '@semihourly' = '0,30 * * * *';
-        '@semidaily' = '0,12 0 * * *';
-        '@semiweekly' = '0 0 * * 0,4';
-        '@semimonthly' = '0 0 1,15 * *';
-        '@semiyearly' = '0 0 1 1,6 *';
-        '@semiannually' = '0 0 1 1,6 *';
+        '@twice-hourly' = '0,30 * * * *';
+        '@twice-daily' = '0,12 0 * * *';
+        '@twice-weekly' = '0 0 * * 0,4';
+        '@twice-monthly' = '0 0 1,15 * *';
+        '@twice-yearly' = '0 0 1 1,6 *';
+        '@twice-annually' = '0 0 1 1,6 *';
     }
 }
 
@@ -245,7 +246,6 @@ function Test-CronExpression
         $Expression,
 
         [Parameter()]
-        [datetime]
         $DateTime = $null
     )
 
@@ -291,8 +291,3 @@ function Test-CronExpression
     # date is valid
     return $true
 }
-
-# <min> <hour> <day-of-month> <month> <day-of-week>
-#$e = (ConvertFrom-CronExpression -Expression '5/7 * 29 FEB,MAR *')
-#$e = (ConvertFrom-CronExpression -Expression '@hourly')
-#Test-CronExpression -Expression $e

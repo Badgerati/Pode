@@ -68,7 +68,7 @@ function Start-LoggerRunspace
                         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
                         # generate path to log path and date file
-                        if ($details -eq $null -or (Test-Empty $details.Path)) {
+                        if ($null -eq $details -or (Test-Empty $details.Path)) {
                             $path = (Join-ServerRoot 'logs' "$($date).log" ) #-Root $PodeSession.ServerRoot)
                         }
                         else {
@@ -79,7 +79,7 @@ function Start-LoggerRunspace
                         $str | Out-File -FilePath $path -Encoding utf8 -Append -Force
 
                         # if set, remove log files beyond days set (ensure this is only run once a day)
-                        if ($details -ne $null -and [int]$details.MaxDays -gt 0 -and $_files_next_run -lt [DateTime]::Now) {
+                        if ($null -ne $details -and [int]$details.MaxDays -gt 0 -and $_files_next_run -lt [DateTime]::Now) {
                             $date = [DateTime]::Now.AddDays(-$details.MaxDays)
 
                             Get-ChildItem -Path $path -Filter '*.log' -Force |
@@ -138,7 +138,7 @@ function Logger
     $type = (Get-Type $Details)
 
     if ($Name -ilike 'custom_*') {
-        if ($Details -eq $null) {
+        if ($null -eq $Details) {
             throw 'For custom loggers, a ScriptBlock is required'
         }
 
@@ -147,7 +147,7 @@ function Logger
         }
     }
     else {
-        if ($Details -ne $null -and $type.Name -ine 'hashtable') {
+        if ($null -ne $Details -and $type.Name -ine 'hashtable') {
             throw "Inbuilt logger details should be a HashTable, but got: $($type.Name)"
         }
     }
@@ -158,7 +158,7 @@ function Logger
     # if a file logger, create base directory (file is a dummy file, and won't be created)
     if ($Name -ieq 'file') {
         # has a specific logging path been supplied?
-        if ($Details -eq $null -or (Test-Empty $Details.Path)) {
+        if ($null -eq $Details -or (Test-Empty $Details.Path)) {
             $path = (Split-Path -Parent -Path (Join-ServerRoot 'logs' 'tmp.txt'))
         }
         else {
