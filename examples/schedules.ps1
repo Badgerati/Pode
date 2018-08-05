@@ -30,4 +30,9 @@ Server {
         # logic
     } -StartTime ([DateTime]::Now.AddHours(2))
 
+    # schedule to run every 10 minutes, and end in 2hrs
+    schedule 'every-10mins-end' '0/10 * * * *' {
+        # logic
+    } -EndTime ([DateTime]::Now.AddHours(2))
+
 }
