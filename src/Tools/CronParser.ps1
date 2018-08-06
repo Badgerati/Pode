@@ -118,6 +118,8 @@ function ConvertFrom-CronExpression
         $_cronExp = @{
             'Range' = $null;
             'Values' = $null;
+            'Constraints' = $null;
+            'Random' = $false;
         }
 
         $_atom = $atoms[$i]
@@ -143,7 +145,7 @@ function ConvertFrom-CronExpression
         }
 
         # ensure atom is a valid value
-        if (!($_atom -imatch '^[\d|/|*|\-|,]+$')) {
+        if (!($_atom -imatch '^[\d|/|*|\-|,r]+$')) {
             throw "Invalid atom character: $($_atom)"
         }
 
@@ -152,8 +154,15 @@ function ConvertFrom-CronExpression
 
         # parse the atom for either a literal, range, array, or interval
         # literal
-        if ($_atom -imatch '^\d+$') {
-            $_cronExp.Values = @([int]$_atom)
+        if ($_atom -imatch '^(\d+|r)$') {
+            # check if it's random
+            if ($_atom -ieq 'r') {
+                $_cronExp.Values = @(Get-Random -Minimum $_constraint[0] -Maximum ($_constraint[1] + 1))
+                $_cronExp.Random = $true
+            }
+            else {
+                $_cronExp.Values = @([int]$_atom)
+            }
         }
 
         # range
@@ -167,25 +176,32 @@ function ConvertFrom-CronExpression
         }
 
         # interval
-        elseif ($_atom -imatch '(?<start>(\d+|\*))\/(?<interval>\d+)$') {
+        elseif ($_atom -imatch '(?<start>(\d+|\*))\/(?<interval>(\d+|r))$') {
             $start = $Matches['start']
-            $interval = [int]$Matches['interval']
+            $interval = $Matches['interval']
 
-            if ($interval -ieq 0) {
-                $interval = 1
+            if ($interval -ieq '0') {
+                $interval = '1'
             }
 
             if ([string]::IsNullOrWhiteSpace($start) -or $start -ieq '*') {
-                $start = 0
+                $start = '0'
             }
 
-            $start = [int]$start
-            $_cronExp.Values = @($start)
+            # set the initial trigger value
+            $_cronExp.Values = @([int]$start)
 
-            $next = $start + $interval
-            while ($next -le $_constraint[1]) {
-                $_cronExp.Values += $next
-                $next += $interval
+            # check if it's random
+            if ($interval -ieq 'r') {
+                $_cronExp.Random = $true
+            }
+            else {
+                # loop to get all next values
+                $next = [int]$start + [int]$interval
+                while ($next -le $_constraint[1]) {
+                    $_cronExp.Values += $next
+                    $next += [int]$interval
+                }
             }
         }
 
@@ -218,6 +234,7 @@ function ConvertFrom-CronExpression
         }
 
         # assign value
+        $_cronExp.Constraints = $_constraint
         $cron[$_field] = $_cronExp
     }
 
@@ -231,11 +248,49 @@ function ConvertFrom-CronExpression
                 }
             }
         }
-
     }
 
+    # flag if this cron contains a random atom
+    $cron['Random'] = (($cron.Values | Where-Object { $_.Random } | Measure-Object).Count -gt 0)
+
     # return the parsed cron expression
+    $cron | ConvertTo-Json | Out-Default
     return $cron
+}
+
+function Reset-RandomCronExpression
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Expression
+    )
+
+    function Reset-Atom($Atom) {
+        if (!$Atom.Random) {
+            return $Atom
+        }
+
+        if ($Atom.Random) {
+            $Atom.Values = @(Get-Random -Minimum $Atom.Constraints[0] -Maximum ($Atom.Constraints[1] + 1))
+        }
+
+        return $Atom
+    }
+
+    if (!$Expression.Random) {
+        return $Expression
+    }
+
+    $Expression.Minute = (Reset-Atom -Atom $Expression.Minute)
+    $Expression.Hour = (Reset-Atom -Atom $Expression.Hour)
+    $Expression.DayOfMonth = (Reset-Atom -Atom $Expression.DayOfMonth)
+    $Expression.Month = (Reset-Atom -Atom $Expression.Month)
+    $Expression.DayOfWeek = (Reset-Atom -Atom $Expression.DayOfWeek)
+
+    $Expression | ConvertTo-Json | Out-Default
+
+    return $Expression
 }
 
 function Test-CronExpression

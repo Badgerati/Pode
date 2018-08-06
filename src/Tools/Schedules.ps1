@@ -32,8 +32,12 @@ function Start-ScheduleRunspace
                 } | ForEach-Object {
 
                 try {
+                    # trigger the schedules logic
                     Add-PodeRunspace -ScriptBlock (($_.Script).GetNewClosure()) `
                         -Parameters @{ 'Lockable' = $PodeSession.Lockable } -Forget
+
+                    # reset the cron if it's random
+                    $_.Cron = Reset-RandomCronExpression -Expression $_.Cron
                 }
                 catch {
                     $Error[0]
@@ -67,9 +71,11 @@ function Schedule
         $ScriptBlock,
 
         [Parameter()]
+        [Alias('Start')]
         $StartTime = $null,
 
         [Parameter()]
+        [Alias('End')]
         $EndTime = $null
     )
 

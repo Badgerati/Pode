@@ -283,7 +283,7 @@ Server {
 
 #### Cron Expressions
 
-Pode supports basic cron expressions in the format: `<min> <hour> <day-of-month> <month> <day-of-week>`. For example, running every tuesday at midnight: `0 0 * * TUE`.
+Pode supports basic cron expressions in the format: `<min> <hour> <day-of-month> <month> <day-of-week>`. For example, running every Tuesday at midnight: `0 0 * * TUE`.
 
 Pode also supports some common predefined expressions:
 
