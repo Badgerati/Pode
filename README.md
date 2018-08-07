@@ -28,6 +28,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
     * [Timers](#timers)
     * [Schedules](#schedules)
         * [Cron Expressions](#cron-expressions)
+        * [Advanced Cron](#advanced-cron)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
@@ -303,6 +304,10 @@ Pode also supports some common predefined expressions:
 | @twice-monthly | 0 0 1,15 * *' |
 | @twice-yearly | 0 0 1 1,6 *' |
 | @twice-annually | 0 0 1 1,6 *' |
+
+#### Advanced Cron
+
+* `R`: using this on an atom will use a random value between that atom's constraints. When the expression is triggered the atom is re-randomised. You can force an intial trigger using `/R`. For example, `30/R * * * *` will trigger on 30mins, then random afterwards.
 
 ### REST API
 

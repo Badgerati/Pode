@@ -33,7 +33,7 @@ function Start-ScheduleRunspace
 
                 try {
                     # trigger the schedules logic
-                    Add-PodeRunspace -ScriptBlock (($_.Script).GetNewClosure()) `
+                    Add-PodeRunspace -Type 'Schedules' -ScriptBlock (($_.Script).GetNewClosure()) `
                         -Parameters @{ 'Lockable' = $PodeSession.Lockable } -Forget
 
                     # reset the cron if it's random
@@ -45,11 +45,11 @@ function Start-ScheduleRunspace
             }
 
             # cron expression only goes down to the minute, so sleep for 1min
-            Start-Sleep -Seconds 60
+            Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
         }
     }
 
-    Add-PodeRunspace $script
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $script
 }
 
 function Schedule

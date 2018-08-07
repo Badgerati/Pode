@@ -104,7 +104,7 @@ function Start-LoggerRunspace
         }
     }
 
-    Add-PodeRunspace $script
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $script
 }
 
 function Logger

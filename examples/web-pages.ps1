@@ -37,6 +37,10 @@ Server -Threads 2 {
     # set view engine to pode renderer
     engine pode
 
+    schedule 'test' '@minutely' {
+        'hello' | Out-Default
+    }
+
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
         param($session)

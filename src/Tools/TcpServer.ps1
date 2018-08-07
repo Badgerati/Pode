@@ -81,7 +81,8 @@ function Start-TcpServer
 
     # start the runspace for listening on x-number of threads
     1..$PodeSession.Threads | ForEach-Object {
-        Add-PodeRunspace $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
+            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep tcp server listening until cancelled
@@ -111,5 +112,5 @@ function Start-TcpServer
         }
     }
 
-    Add-PodeRunspace $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 }

@@ -126,6 +126,7 @@ function New-PodeSession
     # runspace pools
     $session.RunspacePools = @{
         'Main' = $null;
+        'Schedules' = $null;
     }
 
     # session state
@@ -145,22 +146,27 @@ function New-PodeSession
         $state.Variables.Add($_)
     }
 
-    # thread counts
+    # setup runspaces
+    $session.Runspaces = @()
+
+    # setup main runspace pool
     $threadsCounts = @{
         'Default' = 1;
         'Timer' = 1;
         'Log' = 1;
-        'Schedule' = 2;
+        'Schedule' = 1;
         'Misc' = 1;
     }
 
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $Threads
-
-    # runspace and pool
-    $session.Runspaces = @()
     $session.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $state, $Host)
     $session.RunspacePools.Main.Open()
 
+    # setup schedule runspace pool
+    $session.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
+    $session.RunspacePools.Schedules.Open()
+
+    # return the new session
     return $session
 }
 

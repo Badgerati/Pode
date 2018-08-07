@@ -254,7 +254,6 @@ function ConvertFrom-CronExpression
     $cron['Random'] = (($cron.Values | Where-Object { $_.Random } | Measure-Object).Count -gt 0)
 
     # return the parsed cron expression
-    $cron | ConvertTo-Json | Out-Default
     return $cron
 }
 
@@ -287,8 +286,6 @@ function Reset-RandomCronExpression
     $Expression.DayOfMonth = (Reset-Atom -Atom $Expression.DayOfMonth)
     $Expression.Month = (Reset-Atom -Atom $Expression.Month)
     $Expression.DayOfWeek = (Reset-Atom -Atom $Expression.DayOfWeek)
-
-    $Expression | ConvertTo-Json | Out-Default
 
     return $Expression
 }

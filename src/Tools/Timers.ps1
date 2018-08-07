@@ -62,7 +62,7 @@ function Start-TimerRunspace
         }
     }
 
-    Add-PodeRunspace $script
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $script
 }
 
 function Timer

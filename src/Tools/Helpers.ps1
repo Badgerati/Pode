@@ -260,6 +260,11 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
+        [ValidateSet('Main', 'Schedules')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock,
@@ -274,7 +279,7 @@ function Add-PodeRunspace
     try
     {
         $ps = [powershell]::Create()
-        $ps.RunspacePool = $PodeSession.RunspacePools.Main
+        $ps.RunspacePool = $PodeSession.RunspacePools[$Type]
         $ps.AddScript($ScriptBlock) | Out-Null
 
         if (!(Test-Empty $Parameters)) {
@@ -288,6 +293,7 @@ function Add-PodeRunspace
         }
         else {
             $PodeSession.Runspaces += @{
+                'Pool' = $Type;
                 'Runspace' = $ps;
                 'Status' = $ps.BeginInvoke();
                 'Stopped' = $false;
@@ -321,8 +327,11 @@ function Close-PodeRunspaces
             $PodeSession.Runspaces = @()
         }
 
-        if ($ClosePool -and $null -ne $PodeSession.RunspacePools.Main -and !$PodeSession.RunspacePools.Main.IsDisposed) {
-            dispose $PodeSession.RunspacePools.Main -Close
+        # dispose the runspace pools
+        if ($ClosePool -and $null -ne $PodeSession.RunspacePools) {
+            $PodeSession.RunspacePools.Values | Where-Object { !$_.IsDisposed } | ForEach-Object {
+                dispose $_ -Close
+            }
         }
     }
     catch {
@@ -349,7 +358,7 @@ function Test-TerminationPressed
 
 function Start-TerminationListener
 {
-    Add-PodeRunspace {
+    Add-PodeRunspace -Type 'Main' {
         # default variables
         $options = "AllowCtrlC,IncludeKeyUp,NoEcho"
         $ctrlState = "LeftCtrlPressed"
