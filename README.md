@@ -26,6 +26,9 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Specific IP](#specific-ip-address)
         * [Threading](#threading)
     * [Timers](#timers)
+    * [Schedules](#schedules)
+        * [Cron Expressions](#cron-expressions)
+        * [Advanced Cron](#advanced-cron)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
@@ -52,6 +55,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 * Setup async timers to be used as one off tasks, or for housekeeping services
+* Ability to schedule async tasks using cron expressions
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 * Cross-state runspace variable access for timers, routes and loggers
 * Optional file monitoring to trigger internal server restart on file changes
@@ -254,7 +258,56 @@ Server -Port 8080 {
 }
 ```
 
-> All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic does not take a long time to process (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, use an Interval Server type (`Server -Interval 60 { ... }`)
+> All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic does not take a long time to process (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, try using `schedule` instead
+
+### Schedules
+
+Schedules are supports in all `Server` types, like `timers` they are async processes that run in separate runspaces. Unlike timer however, when a `schedule` is triggered it's logic is run in its own runspace - so they don't affect each other if they take a while to process.
+
+Schedule triggers are defined using cron expressions, basic syntax is supported as well as some predefined expressions. They can start immediately, have a delayed start time, and also have a a defined end time.
+
+A couple examples are below, more can seen in the examples directory:
+
+```powershell
+Server {
+     # schedule to run every tuesday at midnight
+    schedule 'tuesdays' '0 0 * * TUE' {
+        # logic
+    }
+
+    # schedule to run every 5 past the hour, starting in 2hrs
+    schedule 'hourly-start' '5 * * * *' {
+        # logic
+    } -StartTime ([DateTime]::Now.AddHours(2))
+}
+```
+
+#### Cron Expressions
+
+Pode supports basic cron expressions in the format: `<min> <hour> <day-of-month> <month> <day-of-week>`. For example, running every Tuesday at midnight: `0 0 * * TUE`.
+
+Pode also supports some common predefined expressions:
+
+| Predefined | Expression |
+| ---------- | ---------- |
+| @minutely | * * * * *' |
+| @hourly | 0 * * * *' |
+| @daily | 0 0 * * *' |
+| @weekly | 0 0 * * 0' |
+| @monthly | 0 0 1 * *' |
+| @quaterly | 0 0 1 1,4,8,7,10' |
+| @yearly | 0 0 1 1 *' |
+| @annually | 0 0 1 1 *' |
+| @twice-hourly | 0,30 * * * *' |
+| @twice-daily | 0,12 0 * * *' |
+| @twice-weekly | 0 0 * * 0,4' |
+| @twice-monthly | 0 0 1,15 * *' |
+| @twice-yearly | 0 0 1 1,6 *' |
+| @twice-annually | 0 0 1 1,6 *' |
+
+#### Advanced Cron
+
+* `R`: using this on an atom will use a random value between that atom's constraints. When the expression is triggered the atom is re-randomised. You can force an intial trigger using `/R`. For example, `30/R * * * *` will trigger on 30mins, then random afterwards.
 
 ### REST API
 
@@ -834,3 +887,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `stopwatch`
 * `dispose`
 * `stream`
+* `schedule`

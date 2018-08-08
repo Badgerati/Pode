@@ -157,7 +157,8 @@ function Start-SmtpServer
 
     # start the runspace for listening on x-number of threads
     1..$PodeSession.Threads | ForEach-Object {
-        Add-PodeRunspace $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
+            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep smtp server listening until cancelled
@@ -187,7 +188,7 @@ function Start-SmtpServer
         }
     }
 
-    Add-PodeRunspace $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 }
 
 

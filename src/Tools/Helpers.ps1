@@ -260,18 +260,26 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
+        [ValidateSet('Main', 'Schedules')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock,
 
         [Parameter()]
-        $Parameters
+        $Parameters,
+
+        [switch]
+        $Forget
     )
 
     try
     {
         $ps = [powershell]::Create()
-        $ps.RunspacePool = $PodeSession.RunspacePool
+        $ps.RunspacePool = $PodeSession.RunspacePools[$Type]
         $ps.AddScript($ScriptBlock) | Out-Null
 
         if (!(Test-Empty $Parameters)) {
@@ -280,10 +288,16 @@ function Add-PodeRunspace
             }
         }
 
-        $PodeSession.Runspaces += @{
-            'Runspace' = $ps;
-            'Status' = $ps.BeginInvoke();
-            'Stopped' = $false;
+        if ($Forget) {
+            $ps.BeginInvoke() | Out-Null
+        }
+        else {
+            $PodeSession.Runspaces += @{
+                'Pool' = $Type;
+                'Runspace' = $ps;
+                'Status' = $ps.BeginInvoke();
+                'Stopped' = $false;
+            }
         }
     }
     catch {
@@ -313,8 +327,11 @@ function Close-PodeRunspaces
             $PodeSession.Runspaces = @()
         }
 
-        if ($ClosePool -and $null -ne $PodeSession.RunspacePool -and !$PodeSession.RunspacePool.IsDisposed) {
-            dispose $PodeSession.RunspacePool -Close
+        # dispose the runspace pools
+        if ($ClosePool -and $null -ne $PodeSession.RunspacePools) {
+            $PodeSession.RunspacePools.Values | Where-Object { !$_.IsDisposed } | ForEach-Object {
+                dispose $_ -Close
+            }
         }
     }
     catch {
@@ -341,7 +358,7 @@ function Test-TerminationPressed
 
 function Start-TerminationListener
 {
-    Add-PodeRunspace {
+    Add-PodeRunspace -Type 'Main' {
         # default variables
         $options = "AllowCtrlC,IncludeKeyUp,NoEcho"
         $ctrlState = "LeftCtrlPressed"

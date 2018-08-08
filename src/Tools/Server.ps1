@@ -123,6 +123,9 @@ function Start-PodeServer
         # start runspace for timers
         Start-TimerRunspace
 
+        # start runspace for schedules
+        Start-ScheduleRunspace
+
         # start the appropriate server
         switch ($PodeSession.ServerType.ToUpperInvariant())
         {
@@ -175,7 +178,7 @@ function Restart-PodeServer
         # close all current runspaces
         Close-PodeRunspaces
 
-        # clear up timers and loggers
+        # clear up timers, schedules and loggers
         $PodeSession.Routes.Keys.Clone() | ForEach-Object {
             $PodeSession.Routes[$_].Clear()
         }
@@ -185,6 +188,7 @@ function Restart-PodeServer
         }
 
         $PodeSession.Timers.Clear()
+        $PodeSession.Schedules.Clear()
         $PodeSession.Loggers.Clear()
 
         # clear up view engine
