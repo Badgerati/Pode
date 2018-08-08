@@ -125,6 +125,11 @@ function Start-WebServer
                     status 403
                 }
 
+                # ensure the request ip has hit a rate limit
+                elseif (!(Test-IPLimit -IP $request.RemoteEndPoint.Address)) {
+                    status 429
+                }
+
                 # check to see if the path is a file, so we can check the public folder
                 elseif ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
                     $path = Join-ServerRoot 'public' $path
@@ -134,6 +139,10 @@ function Start-WebServer
                 else {
                     # ensure the path has a route
                     $route = Get-PodeRoute -HttpMethod $method -Route $path
+                    if ($null -eq $route) {
+                        $route = Get-PodeRoute -HttpMethod '*' -Route $path
+                    }
+
                     if ($null -eq $route -or $null -eq $route.Logic) {
                         status 404
                     }
@@ -186,7 +195,8 @@ function Start-WebServer
 
     # start the runspace for listening on x-number of threads
     1..$PodeSession.Threads | ForEach-Object {
-        Add-PodeRunspace $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
+            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep web server listening until cancelled
@@ -220,5 +230,5 @@ function Start-WebServer
         }
     }
 
-    Add-PodeRunspace $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 }

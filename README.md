@@ -26,15 +26,22 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Specific IP](#specific-ip-address)
         * [Threading](#threading)
     * [Timers](#timers)
+    * [Schedules](#schedules)
+        * [Cron Expressions](#cron-expressions)
+        * [Advanced Cron](#advanced-cron)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
     * [Misc](#misc)
-        * [Attach File](#attach-file)
         * [Logging](#logging)
         * [Shared State](#shared-state)
         * [File Monitor](#file-monitor)
         * [Access Rules](#access-rules)
+        * [Rate Limiting](#rate-limiting)
+    * [Helpers](#helpers)
+        * [Attach File](#attach-file)
+        * [Status Code](#status-code)
+        * [Redirect](#redirect)
 * [Pode Files](#pode-files)
     * [Third-Party Engines](#third-party-view-engines)
 
@@ -48,10 +55,12 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
 * Can use yarn package manager to install bootstrap, or other frontend libraries
 * Setup async timers to be used as one off tasks, or for housekeeping services
+* Ability to schedule async tasks using cron expressions
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 * Cross-state runspace variable access for timers, routes and loggers
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
+* Basic rate limiting for IP addresses and subnets
 
 ## Install
 
@@ -249,13 +258,64 @@ Server -Port 8080 {
 }
 ```
 
-> All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic does not take a long time to process (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, use an Interval Server type (`Server -Interval 60 { ... }`)
+> All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic does not take a long time to process (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, try using `schedule` instead
+
+### Schedules
+
+Schedules are supports in all `Server` types, like `timers` they are async processes that run in separate runspaces. Unlike timer however, when a `schedule` is triggered it's logic is run in its own runspace - so they don't affect each other if they take a while to process.
+
+Schedule triggers are defined using cron expressions, basic syntax is supported as well as some predefined expressions. They can start immediately, have a delayed start time, and also have a a defined end time.
+
+A couple examples are below, more can seen in the examples directory:
+
+```powershell
+Server {
+     # schedule to run every tuesday at midnight
+    schedule 'tuesdays' '0 0 * * TUE' {
+        # logic
+    }
+
+    # schedule to run every 5 past the hour, starting in 2hrs
+    schedule 'hourly-start' '5 * * * *' {
+        # logic
+    } -StartTime ([DateTime]::Now.AddHours(2))
+}
+```
+
+#### Cron Expressions
+
+Pode supports basic cron expressions in the format: `<min> <hour> <day-of-month> <month> <day-of-week>`. For example, running every Tuesday at midnight: `0 0 * * TUE`.
+
+Pode also supports some common predefined expressions:
+
+| Predefined | Expression |
+| ---------- | ---------- |
+| @minutely | * * * * *' |
+| @hourly | 0 * * * *' |
+| @daily | 0 0 * * *' |
+| @weekly | 0 0 * * 0' |
+| @monthly | 0 0 1 * *' |
+| @quaterly | 0 0 1 1,4,8,7,10' |
+| @yearly | 0 0 1 1 *' |
+| @annually | 0 0 1 1 *' |
+| @twice-hourly | 0,30 * * * *' |
+| @twice-daily | 0,12 0 * * *' |
+| @twice-weekly | 0 0 * * 0,4' |
+| @twice-monthly | 0 0 1,15 * *' |
+| @twice-yearly | 0 0 1 1,6 *' |
+| @twice-annually | 0 0 1 1,6 *' |
+
+#### Advanced Cron
+
+* `R`: using this on an atom will use a random value between that atom's constraints. When the expression is triggered the atom is re-randomised. You can force an intial trigger using `/R`. For example, `30/R * * * *` will trigger on 30mins, then random afterwards.
 
 ### REST API
 
 When creating an API in Pode, you specify logic for certain routes for specific HTTP methods. Methods supported are: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
 
-The method to create new routes is `route`, this will take your method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
+> There is a special `*` method you can use, which means a route applies to every HTTP method
+
+The method to create new routes is `route`, this will take your HTTP method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
 
 ```powershell
 Server -Port 8080 {
@@ -372,21 +432,6 @@ To help with writing and reading from the client stream, Pode has a helper funct
 * `$msg = (tcp read)`
 
 ### Misc
-
-#### Attach File
-
-There is an internal helper function to aid attaching files to a response, so that they can be downloaded on the client end. Files to attach must be placed within the `public/` directory, much like the content files for JavaScript and CSS.
-
-An example of attaching a file to a response in a route is as follows, and here it will start a download of the file at `public/downloads/installer.exe`:
-
-```powershell
-Server -Port 8080 {
-    route get '/app/install' {
-        param($session)
-        attach 'downloads/installer.exe'
-    }
-}
-```
 
 #### Logging
 
@@ -546,7 +591,105 @@ Server {
 
 If an IP hits your server that you've denied access, then a `403` response is returned and the connection immediately closed. For SMTP/TCP servers the connection is just closed with no response.
 
+#### Rate Limiting
+
+Pode has basic support for rate limiting requests for IP addresses and subnet masks. This allows you to cap the number of requests for an IP/subnet over a given number of seconds. When limiting a subnet you can choose to either individually limit each IP address in a subnet, or you can group all IPs in a subnet together under a single cap.
+
+To start rate limiting, you can use `limit` within your `Server`, specifying the type, IP/subnet, limit and number of seconds the limit lasts for:
+
+```powershell
+Server {
+    # limit localhost to 5 requests per second
+    limit ip 127.0.0.1 -limit 5 -seconds 1
+
+    # limit multiple IPs to 5 request per 10secs
+    limit ip @('192.168.1.1', '192.168.1.2') 5 10
+
+    # limit a subnet to 5reqs per 1sec, per IP
+    limit ip '10.10.0.0/24' 5 1
+
+    # limit a subnet to 5reqs per 1sec, all IPs as one
+    limit ip '10.10.0.0/24' 5 1 -group
+
+    # limit everything to 10reqs per 1min
+    limit ip all 10 60
+}
+```
+
+If an IP/subnet hits the limit within the given period, then a `429` response is returned and the connection immediately closed. For SMTP/TCP servers the connection is just closed with no response.
+
+### Helpers
+
+#### Attach File
+
+`Attach` is a helper function to aid attaching files to a response, so that they can be downloaded on the client end. Files to attach must be placed within the `public/` directory, much like the content files for JavaScript and CSS.
+
+An example of attaching a file to a response in a route is as follows, and here it will start a download of the file at `public/downloads/installer.exe`:
+
+```powershell
+Server -Port 8080 {
+    route get '/app/install' {
+        param($session)
+        attach 'downloads/installer.exe'
+    }
+}
+```
+
+#### Status Code
+
+`Status` is a helper function to aid setting the status code and description on the response. When called you must specify a status code, and the description is optional.
+
+```powershell
+Server -Port 8080 {
+    # returns a 404 code
+    route get '/not-here' {
+        status 404
+    }
+
+    # returns a 500 code, with description
+    route get '/eek' {
+        status 500 'oh no! something went wrong!'
+    }
+}
+```
+
+#### Redirect
+
+`Redirect` is a helper function to aid URL redirection from the server. You can either redirect via a 301 or 302 code - the default is a 302 redirect.
+
+```powershell
+Server -Port 8080 {
+    # redirects to google
+    route get '/redirect' {
+        redirect -url 'https://google.com'
+    }
+
+    # moves to google
+    route get '/moved' {
+        redirect -moved -url 'https://google.com'
+    }
+
+    # redirect to different port - same host, path and query
+    route get '/redirect-port' {
+        redirect -port 8086
+    }
+
+    # redirect to same host, etc; but this time to https
+    route get '/redirect-https' {
+        redirect -protocol https
+    }
+
+    # redirect every method and route to https
+    route * * {
+        redirect -protocol https
+    }
+}
+```
+
+Supplying `-url` will redirect literally to that URL, or you can supply a relative path to the current host. `-port` and `-protocol` can be used separately or together, but not with `-url`. Using `-port`/`-protocol` will use the URI object in the current Request to generate the redirect URL.
+
 ## Pode Files
+
 Using Pode to write dynamic HTML files are mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
 
 To use Pode files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine to be Pode; once set, you can just write view responses as per normal:
@@ -680,7 +823,7 @@ To load the above `.css.pode` file:
 <!-- /views/index.pode -->
 <html>
    <head>
-      <link rel="stylesheet" href="styles/main.css.pode"> 
+      <link rel="stylesheet" href="styles/main.css.pode">
    </head>
    <body>
         <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
@@ -734,11 +877,14 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `Test-IsUnix`
 * `Test-IsPSCore`
 * `status`
+* `redirect`
 * `include`
 * `lock`
 * `state`
 * `listen`
 * `access`
+* `limit`
 * `stopwatch`
 * `dispose`
 * `stream`
+* `schedule`

@@ -128,8 +128,11 @@ function Start-SmtpServer
                 $task.Wait($PodeSession.Tokens.Cancellation.Token)
                 $client = $task.Result
 
+                # convert the ip
+                $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)
+
                 # ensure the request ip is allowed
-                if (!(Test-IPAccess -IP (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint))) {
+                if (!(Test-IPAccess -IP $ip) -or !(Test-IPLimit -IP $ip)) {
                     dispose $client -Close
                 }
 
@@ -154,7 +157,8 @@ function Start-SmtpServer
 
     # start the runspace for listening on x-number of threads
     1..$PodeSession.Threads | ForEach-Object {
-        Add-PodeRunspace $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
+            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep smtp server listening until cancelled
@@ -184,7 +188,7 @@ function Start-SmtpServer
         }
     }
 
-    Add-PodeRunspace $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 }
 
 

@@ -2,7 +2,7 @@ function Get-PodeRoute
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', '*')]
         [string]
         $HttpMethod,
 
@@ -13,13 +13,13 @@ function Get-PodeRoute
     )
 
     # first ensure we have the method
-    $method = $PodeSession.Routes[$HttpMethod] 
-    if ($method -eq $null) {
+    $method = $PodeSession.Routes[$HttpMethod]
+    if ($null -eq $method) {
         return $null
     }
 
     # if we have a perfect match for the route, return it
-    if ($method[$Route] -ne $null) {
+    if ($null -ne $method[$Route]) {
         return @{ 'Logic' = $method[$Route]; 'Parameters' = $null }
     }
 
@@ -29,7 +29,7 @@ function Get-PodeRoute
             $Route -imatch "$($_)$"
         } | Select-Object -First 1)
 
-        if ($valid -eq $null) {
+        if ($null -eq $valid) {
             return $null
         }
 
@@ -42,7 +42,7 @@ function Route
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', '*')]
         [string]
         $HttpMethod,
 
@@ -81,6 +81,9 @@ function Route
     while ($Route -imatch $placeholder) {
         $Route = ($Route -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
     }
+
+    # replace * with .*
+    $Route = ($Route -ireplace '\*', '.*')
 
     # ensure route doesn't already exist
     if ($PodeSession.Routes[$HttpMethod].ContainsKey($Route)) {

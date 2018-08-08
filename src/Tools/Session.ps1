@@ -54,7 +54,8 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name RunspacePool -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $DisableLogging -PassThru |
@@ -65,6 +66,7 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name SharedState -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Access -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Limits -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name FileMonitor -Value $FileMonitor -PassThru
 
     # set the IP address details
@@ -91,6 +93,7 @@ function New-PodeSession
         'post' = @{};
         'put' = @{};
         'trace' = @{};
+        '*' = @{};
     }
 
     # handlers for tcp
@@ -105,6 +108,12 @@ function New-PodeSession
         'Deny' = @{};
     }
 
+    # setup basic limit rules
+    $session.Limits = @{
+        'Rules' = @{};
+        'Active' = @{};
+    }
+
     # create new cancellation tokens
     $session.Tokens = @{
         'Cancellation' = New-Object System.Threading.CancellationTokenSource;
@@ -113,6 +122,12 @@ function New-PodeSession
 
     # requests that should be logged
     $session.RequestsToLog = New-Object System.Collections.ArrayList
+
+    # runspace pools
+    $session.RunspacePools = @{
+        'Main' = $null;
+        'Schedules' = $null;
+    }
 
     # session state
     $session.Lockable = [hashtable]::Synchronized(@{})
@@ -131,11 +146,27 @@ function New-PodeSession
         $state.Variables.Add($_)
     }
 
-    # runspace and pool
+    # setup runspaces
     $session.Runspaces = @()
-    $session.RunspacePool = [runspacefactory]::CreateRunspacePool(1, (4 + $Threads), $state, $Host)
-    $session.RunspacePool.Open()
 
+    # setup main runspace pool
+    $threadsCounts = @{
+        'Default' = 1;
+        'Timer' = 1;
+        'Log' = 1;
+        'Schedule' = 1;
+        'Misc' = 1;
+    }
+
+    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $Threads
+    $session.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $state, $Host)
+    $session.RunspacePools.Main.Open()
+
+    # setup schedule runspace pool
+    $session.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
+    $session.RunspacePools.Schedules.Open()
+
+    # return the new session
     return $session
 }
 
@@ -155,6 +186,8 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Session.Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
+        Add-Member -MemberType NoteProperty -Name Schedules -Value $Session.Schedules -PassThru |
+        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Session.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |
@@ -162,7 +195,8 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name ServerRoot -Value $Session.ServerRoot -PassThru |
         Add-Member -MemberType NoteProperty -Name SharedState -Value $Session.SharedState -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
-        Add-Member -MemberType NoteProperty -Name Access -Value $Session.Access -PassThru)
+        Add-Member -MemberType NoteProperty -Name Access -Value $Session.Access -PassThru |
+        Add-Member -MemberType NoteProperty -Name Limits -Value $Session.Limits -PassThru)
 }
 
 function State
