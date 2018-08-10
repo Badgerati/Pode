@@ -303,3 +303,19 @@ function Listen
     # set the server type
     $PodeSession.ServerType = $Type
 }
+
+function Script
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    $Path = Resolve-Path -Path $Path
+
+    $PodeSession.RunspacePools.Values | ForEach-Object {
+        $_.InitialSessionState.ImportPSModule($Path)
+    }
+}
