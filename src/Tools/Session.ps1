@@ -219,7 +219,7 @@ function State
 
     try {
         if ($null -eq $PodeSession -or $null -eq $PodeSession.SharedState) {
-            return
+            return $null
         }
 
         switch ($Action.ToLowerInvariant())

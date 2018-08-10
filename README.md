@@ -38,6 +38,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [File Monitor](#file-monitor)
         * [Access Rules](#access-rules)
         * [Rate Limiting](#rate-limiting)
+        * [External Scripts](#external-scripts)
     * [Helpers](#helpers)
         * [Attach File](#attach-file)
         * [Status Code](#status-code)
@@ -617,6 +618,20 @@ Server {
 ```
 
 If an IP/subnet hits the limit within the given period, then a `429` response is returned and the connection immediately closed. For SMTP/TCP servers the connection is just closed with no response.
+
+#### External Scripts
+
+Because Pode runs most things in isolated runspaces, importing and using external scripts/modules to Pode can be quite bothersome. To overcome this, Pode has an inbuilt `script` call that will allow you to declare modules that need to be imported into each runspace.
+
+The `script` takes a path to a module (`.psm1` file), can be literal or relative, and adds it to the session state for each runspace pool.
+
+```powershell
+Server {
+    script './path/to/module.psm1'
+}
+```
+
+> This will now allow the functions defined in the `module.psm1` file to be accessible to timers, routes, scheduled, etc.
 
 ### Helpers
 
