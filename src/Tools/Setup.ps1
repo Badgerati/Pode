@@ -84,19 +84,19 @@ function Pode
         }
 
         'test' {
-            Invoke-Expression -Command $value
+            powershell.exe /c "$($value)"
         }
 
         'start' {
-            Invoke-Expression -Command $value
+            powershell.exe /c "$($value)"
         }
 
         'install' {
-            Invoke-Expression -Command $value
+            powershell.exe /c "$($value)"
         }
 
         'build' {
-            Invoke-Expression -Command $value
+            powershell.exe /c "$($value)"
         }
     }
 }
