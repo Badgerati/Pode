@@ -131,7 +131,6 @@ function New-PodeSession
 
     # session state
     $session.Lockable = [hashtable]::Synchronized(@{})
-
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule((Get-Module -Name Pode).Path)
 
