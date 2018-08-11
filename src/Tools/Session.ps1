@@ -219,7 +219,7 @@ function State
 
     try {
         if ($null -eq $PodeSession -or $null -eq $PodeSession.SharedState) {
-            return
+            return $null
         }
 
         switch ($Action.ToLowerInvariant())
@@ -302,4 +302,20 @@ function Listen
 
     # set the server type
     $PodeSession.ServerType = $Type
+}
+
+function Script
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    $Path = Resolve-Path -Path $Path
+
+    $PodeSession.RunspacePools.Values | ForEach-Object {
+        $_.InitialSessionState.ImportPSModule($Path)
+    }
 }

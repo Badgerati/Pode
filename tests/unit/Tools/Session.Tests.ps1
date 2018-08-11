@@ -2,6 +2,52 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '\\tests\\unit\\', '\src\'
 Get-ChildItem "$($src)\*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
+Describe 'State' {
+    Context 'Invalid parameters supplied' {
+        It 'Throw null name parameter error' {
+            { State -Action Set -Name $null } | Should Throw 'The argument is null or empty'
+        }
+
+        It 'Throw empty name parameter error' {
+            { State -Action Set -Name ([string]::Empty) } | Should Throw 'The argument is null or empty'
+        }
+
+        It 'Throw invalid action error' {
+            { State -Action 'MOO' -Name 'test' } | Should Throw "Cannot validate argument on parameter 'Action'"
+        }
+    }
+
+    Context 'Valid parameters supplied' {
+        It 'Returns null for no session' {
+            State -Action Set -Name 'test' | Should Be $null
+        }
+
+        It 'Returns null for no shared state in session' {
+            $PodeSession = @{ 'SharedState' = $null }
+            State -Action Set -Name 'test' | Should Be $null
+        }
+
+        It 'Sets and returns an object' {
+            $PodeSession = @{ 'SharedState' = @{} }
+            $result = State -Action Set -Name 'test' -Object 7
+
+            $result | Should Be 7
+            $PodeSession.SharedState['test'] | Should Be 7
+        }
+
+        It 'Gets an object' {
+            $PodeSession = @{ 'SharedState' = @{ 'test' = 8 } }
+            State -Action Get -Name 'test' | Should Be 8
+        }
+
+        It 'Removes an object' {
+            $PodeSession = @{ 'SharedState' = @{ 'test' = 8 } }
+            State -Action Remove -Name 'test' | Should Be 8
+            $PodeSession.SharedState['test'] | Should Be $null
+        }
+    }
+}
+
 Describe 'Listen' {
     Context 'Invalid parameters supplied' {
         It 'Throw null IP:Port parameter error' {
@@ -118,6 +164,36 @@ Describe 'Listen' {
             $PodeSession.IP.Port | Should Be 0
             $PodeSession.IP.Name | Should Be 'localhost'
             $PodeSession.IP.Address | Should Be $null
+        }
+    }
+}
+
+Describe 'Script' {
+    Context 'Invalid parameters supplied' {
+        It 'Throw null path parameter error' {
+            { Script -Path $null } | Should Throw 'The argument is null or empty'
+        }
+
+        It 'Throw empty path parameter error' {
+            { Script -Path ([string]::Empty) } | Should Throw 'The argument is null or empty'
+        }
+    }
+
+    Context 'Valid parameters supplied' {
+        Mock 'Resolve-Path' { return 'c:/some/file.txt' }
+
+        It 'Returns null for no shared state in session' {
+            $PodeSession = @{ 'RunspacePools' = @{
+                'Main' = @{
+                    'InitialSessionState' = [initialsessionstate]::CreateDefault()
+                }
+            } }
+
+            Script -Path 'file.txt'
+
+            $modules = @($PodeSession.RunspacePools.Main.InitialSessionState.Modules)
+            $modules.Length | Should Be 1
+            $modules[0].Name | Should Be 'c:/some/file.txt'
         }
     }
 }
