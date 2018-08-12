@@ -44,7 +44,9 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Status Code](#status-code)
         * [Redirect](#redirect)
 * [Pode Files](#pode-files)
+    * [Non-View Pode Files](#non-view-pode-files)
     * [Third-Party Engines](#third-party-view-engines)
+* [FAQ](#faq)
 
 ## Features
 
@@ -868,6 +870,14 @@ Server -Port 8080 {
     }
 }
 ```
+
+## FAQ
+
+* Running `pode start` throws an `ImportPSModule` error.
+  > This error occurs when you are using the source code for Pode, and also have the Pode module installed. To resolve you can do one of the following:
+  > * Uninstall the Pode module from PowerShell, and re-`Import-Module` the source code version
+  > * Manually call the `start` script
+  > * Remove calls to `Remove-Module -Name Pode` within your scripts
 
 ## Inbuilt Functions
 

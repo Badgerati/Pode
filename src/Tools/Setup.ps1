@@ -36,7 +36,7 @@ function Pode
 
     # quick check to see if the data is required
     if ($Action -ine 'init') {
-        if ($data -eq $null) {
+        if ($null -eq $data) {
             Write-Host 'package.json file not found' -ForegroundColor Red
             return
         }
@@ -54,7 +54,7 @@ function Pode
         }
     }
     else {
-        if ($data -ne $null) {
+        if ($null -ne $data) {
             Write-Host 'package.json already exists' -ForegroundColor Yellow
             return
         }
@@ -84,19 +84,39 @@ function Pode
         }
 
         'test' {
-            Invoke-Expression -Command $value
+            Invoke-PodePackageScript -Value $value
         }
 
         'start' {
-            Invoke-Expression -Command $value
+            Invoke-PodePackageScript -Value $value
         }
 
         'install' {
-            Invoke-Expression -Command $value
+            Invoke-PodePackageScript -Value $value
         }
 
         'build' {
-            Invoke-Expression -Command $value
+            Invoke-PodePackageScript -Value $value
         }
+    }
+}
+
+function Invoke-PodePackageScript
+{
+    param (
+        [Parameter()]
+        [string]
+        $Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return
+    }
+
+    if (Test-IsPSCore) {
+        pwsh.exe /c "$($value)"
+    }
+    else {
+        powershell.exe /c "$($value)"
     }
 }
