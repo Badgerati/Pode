@@ -84,19 +84,39 @@ function Pode
         }
 
         'test' {
-            powershell.exe /c "$($value)"
+            Invoke-PodePackageScript -Value $value
         }
 
         'start' {
-            powershell.exe /c "$($value)"
+            Invoke-PodePackageScript -Value $value
         }
 
         'install' {
-            powershell.exe /c "$($value)"
+            Invoke-PodePackageScript -Value $value
         }
 
         'build' {
-            powershell.exe /c "$($value)"
+            Invoke-PodePackageScript -Value $value
         }
+    }
+}
+
+function Invoke-PodePackageScript
+{
+    param (
+        [Parameter()]
+        [string]
+        $Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return
+    }
+
+    if (Test-IsPSCore) {
+        pwsh.exe /c "$($value)"
+    }
+    else {
+        powershell.exe /c "$($value)"
     }
 }
