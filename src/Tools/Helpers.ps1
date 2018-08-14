@@ -84,9 +84,97 @@ function Test-IsUnix
     return (Get-PSVersionTable).Platform -ieq 'unix'
 }
 
+function Test-IsWindows
+{
+    $v = Get-PSVersionTable
+    return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
+}
+
 function Test-IsPSCore
 {
     return (Get-PSVersionTable).PSEdition -ieq 'core'
+}
+
+function New-PodeSelfSignedCertificate
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $IP,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Port,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Certificate
+    )
+
+    # only bind if windows at the moment
+    if (!(Test-IsWindows)) {
+        Write-Host "Certificates are currently only supported on Windows" -ForegroundColor Yellow
+        return
+    }
+
+    # check if this ip/port is already bound
+    $sslPortInUse = (netsh http show sslcert) | Where-Object { $_ -ilike "*IP:port*" -and $_ -ilike "*$($IP):$($Port)" }
+    if ($sslPortInUse)
+    {
+        Write-Host "$($IP):$($Port) already has a certificate bound" -ForegroundColor Green
+        return
+    }
+
+    # generate a self-signed cert
+    if (@('self', 'self-signed') -icontains $Certificate)
+    {
+        Write-Host "Generating self-signed certificate for $($IP):$($Port)..." -NoNewline -ForegroundColor Cyan
+
+        # generate the cert -- has to call "powershell.exe" for ps-core on windows
+        $cert = (PowerShell.exe -NoProfile -Command {
+            $expire = (Get-Date).AddYears(1)
+
+            $c = New-SelfSignedCertificate -DnsName 'localhost' -CertStoreLocation 'Cert:\LocalMachine\My' -NotAfter $expire `
+                    -KeyAlgorithm RSA -HashAlgorithm SHA256 -KeyLength 4096 -Subject 'CN=localhost';
+
+            if ($null -eq $c.Thumbprint) {
+                return $c
+            }
+
+            return $c.Thumbprint
+        })
+
+        if ($LASTEXITCODE -ne 0 -or !$?) {
+            throw "Failed to generate self-signed certificte:`n$($cert)"
+        }
+    }
+
+    # ensure a given cert exists for binding
+    else
+    {
+        Write-Host "Binding $($Certificate) to $($IP):$($Port)..." -NoNewline -ForegroundColor Cyan
+
+        # ensure the certificate exists, and get it's thumbprint
+        $cert = (Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -imatch [regex]::Escape($Certificate) })
+        if (Test-Empty $cert) {
+            throw "Failed to find the $($Certificate) certificate at LocalMachine\My"
+        }
+
+        $cert = ($cert)[0].Thumbprint
+    }
+
+    # bind the cert to the ip:port
+    $ipport = "$($IP):$($Port)"
+
+    $result = netsh http add sslcert ipport=$ipport certhash=$cert appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
+    if ($LASTEXITCODE -ne 0 -or !$?) {
+        throw "Failed to attach certificate:`n$($result)"
+    }
+
+    Write-Host " Done" -ForegroundColor Green
 }
 
 function Test-IPAddress

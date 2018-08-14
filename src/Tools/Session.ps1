@@ -74,6 +74,10 @@ function New-PodeSession
         'Address' = $null;
         'Port' = $Port;
         'Name' = 'localhost';
+        'Ssl' = ($ServerType -ieq 'https');
+        'Certificate' = @{
+            'Name' = $null;
+        };
     }
 
     # session engine for rendering views
@@ -256,7 +260,12 @@ function Listen
         [Parameter()]
         [ValidateSet('HTTP', 'HTTPS', 'SMTP', 'TCP')]
         [string]
-        $Type
+        $Type,
+
+        [Parameter()]
+        [Alias('Cert')]
+        [string]
+        $Certificate = $null
     )
 
     $hostRgx = '(?<host>(\[[a-z0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all))'
@@ -301,6 +310,21 @@ function Listen
 
     # set the server type
     $PodeSession.ServerType = $Type
+
+    # if the server type is https, we need a cert
+    if ($Type -ieq 'https' -and (Test-IsWindows)) {
+        $PodeSession.IP.Ssl = $true
+
+        # a cert should be supplied
+        if (Test-Empty $Certificate) {
+            throw "A certificate needs to be supplied for a $($Type) endpoint"
+        }
+
+        $PodeSession.IP.Certificate.Name = $Certificate
+    }
+    else {
+        $PodeSession.IP.Ssl = ($Type -ieq 'https')
+    }
 }
 
 function Script

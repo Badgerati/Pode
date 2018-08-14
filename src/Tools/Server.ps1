@@ -68,11 +68,17 @@ function Server
         $serverType = Get-PodeServerType -Port $Port -Interval $Interval -Smtp:$Smtp -Tcp:$Tcp -Https:$Https
 
         # create session object
-        $PodeSession = New-PodeSession -ScriptBlock $ScriptBlock -Port $Port -IP $IP -Threads $Threads `
-            -Interval $Interval -ServerRoot $MyInvocation.PSScriptRoot -ServerType $ServerType `
-            -DisableLogging:$DisableLogging -FileMonitor:$FileMonitor
+        $PodeSession = New-PodeSession -ScriptBlock $ScriptBlock `
+            -Port $Port `
+            -IP $IP `
+            -Threads $Threads `
+            -Interval $Interval `
+            -ServerRoot $MyInvocation.PSScriptRoot `
+            -ServerType $ServerType `
+            -DisableLogging:$DisableLogging `
+            -FileMonitor:$FileMonitor
 
-        # set ad efault port for the server type
+        # set a default port for the server type
         Set-PodePortForServerType
 
         # parse ip:port to listen on (if both have been supplied)
