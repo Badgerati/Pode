@@ -131,6 +131,26 @@ Describe 'Test-IsUnix' {
     }
 }
 
+Describe 'Test-IsWindows' {
+    It 'Returns false for non-windows' {
+        Mock Get-PSVersionTable { return @{ 'Platform' = 'Unix' } }
+        Test-IsWindows | Should Be $false
+        Assert-MockCalled Get-PSVersionTable -Times 1
+    }
+
+    It 'Returns true for windows and desktop' {
+        Mock Get-PSVersionTable { return @{ 'PSEdition' = 'Desktop' } }
+        Test-IsWindows | Should Be $true
+        Assert-MockCalled Get-PSVersionTable -Times 1
+    }
+
+    It 'Returns true for windows and core' {
+        Mock Get-PSVersionTable { return @{ 'Platform' = 'Win32NT'; 'PSEdition' = 'Core' } }
+        Test-IsWindows | Should Be $true
+        Assert-MockCalled Get-PSVersionTable -Times 1
+    }
+}
+
 Describe 'Test-IsPSCore' {
     It 'Returns false for non-core' {
         Mock Get-PSVersionTable { return @{ 'PSEdition' = 'Desktop' } }

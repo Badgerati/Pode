@@ -10,8 +10,9 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a server listening on port 8085, set to monitor file changes and restart the server
-Server -Port 8085 {
+Server {
 
+    listen *:8085 http
     engine pode
 
     # GET request for web page on "localhost:8085/"
