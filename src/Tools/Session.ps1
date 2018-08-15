@@ -311,19 +311,10 @@ function Listen
     # set the server type
     $PodeSession.ServerType = $Type
 
-    # if the server type is https, we need a cert
-    if ($Type -ieq 'https' -and (Test-IsWindows)) {
+    # if the server type is https, set cert details
+    if ($Type -ieq 'https') {
         $PodeSession.IP.Ssl = $true
-
-        # a cert should be supplied
-        if (Test-Empty $Certificate) {
-            throw "A certificate needs to be supplied for a $($Type) endpoint"
-        }
-
         $PodeSession.IP.Certificate.Name = $Certificate
-    }
-    else {
-        $PodeSession.IP.Ssl = ($Type -ieq 'https')
     }
 }
 

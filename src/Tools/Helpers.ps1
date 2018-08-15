@@ -108,8 +108,7 @@ function New-PodeSelfSignedCertificate
         [string]
         $Port,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter()]
         [string]
         $Certificate
     )
@@ -126,6 +125,11 @@ function New-PodeSelfSignedCertificate
     {
         Write-Host "$($IP):$($Port) already has a certificate bound" -ForegroundColor Green
         return
+    }
+
+    # ensure a cert has been supplied
+    if (Test-Empty $Certificate) {
+        throw "A certificate is required for ssl connections, either 'self' or '*.example.com' can be supplied to the 'listen' command"
     }
 
     # generate a self-signed cert
