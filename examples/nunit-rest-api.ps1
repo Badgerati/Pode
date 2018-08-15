@@ -21,7 +21,9 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 #>
 
 # create a server, and start listening on port 8087
-Server -Port 8087 {
+Server {
+
+    listen *:8087 http
 
     # post endpoint, that accepts test to run, and path to test dll
     route 'post' '/api/nunit/run-test' {

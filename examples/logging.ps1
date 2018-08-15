@@ -10,8 +10,9 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -Port 8085 {
+Server {
 
+    listen *:8085 http
     engine pode
 
     # termial/cli logger
