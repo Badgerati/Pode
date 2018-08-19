@@ -38,12 +38,16 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [File Monitor](#file-monitor)
         * [Access Rules](#access-rules)
         * [Rate Limiting](#rate-limiting)
+        * [External Scripts](#external-scripts)
+        * [Certificates](#certificates)
     * [Helpers](#helpers)
         * [Attach File](#attach-file)
         * [Status Code](#status-code)
         * [Redirect](#redirect)
 * [Pode Files](#pode-files)
+    * [Non-View Pode Files](#non-view-pode-files)
     * [Third-Party Engines](#third-party-view-engines)
+* [FAQ](#faq)
 
 ## Features
 
@@ -61,6 +65,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
+* Support for generating/binding self-signed certificates, and binding signed certificates
 
 ## Install
 
@@ -170,8 +175,11 @@ After that, all of your main server logic must be wrapped in a `Server` block. T
 
 ```powershell
 # server.ps1
-Server -Port 8080 {
-    # logic
+Server {
+    # attach to port 8080
+    listen *:8080 http
+
+    # logic for routes, timers, schedules, etc
 }
 ```
 
@@ -184,7 +192,7 @@ Once Pode has started, you can exit out at any time using `Ctrl+C`. For some env
 
 ```powershell
 # server.ps1
-Server -Port 8080 {
+Server {
     # logic
 } -DisableTermination
 ```
@@ -193,17 +201,7 @@ Server -Port 8080 {
 
 #### Specific IP Address
 
-By default Pode will listen across all IP addresses for Web, TCP and SMTP servers. To specify a specific IP address to listen on you can use the `-IP` parameter on a `Server`; the following example will listen on `127.0.0.2:8080` only:
-
-```powershell
-Server -IP 127.0.0.2 -Port 8080 {
-    # logic
-}
-```
-
-Conversely, you can also use `listen`. If you use `listen` then you do *not* need to supply any of the following parameters to `Server`: `IP`, `Port`, `Smtp`, `Https`, `Tcp`. If you do, then `listen` will just override them.
-
-You can use `listen` within your `Server` block, specifying the IP, Port and Protocol:
+You can use `listen` within your `Server` block to specify a specific IP, Port and Protocol:
 
 ```powershell
 Server {
@@ -213,8 +211,8 @@ Server {
     # listen on localhost for smtp
     listen 127.0.0.1:25 smtp
 
-    # listen on ip for https
-    listen 10.10.1.4:8443 https
+    # listen on ip for https (and create a self-signed cert)
+    listen 10.10.1.4:8443 https -cert self
 }
 ```
 
@@ -235,7 +233,10 @@ The number of threads supplied only applies to Web, SMTP, and TCP servers. If `-
 Timers are supported in all `Server` types, they are async processes that run in a separate runspace along side your main server logic. The following are a few examples of using timers, more can be found in `examples/timers.ps1`:
 
 ```powershell
-Server -Port 8080 {
+Server {
+
+    listen *:8080 http
+
     # runs forever, looping every 5secs
     timer 'forever' 5 {
         # logic
@@ -318,7 +319,9 @@ When creating an API in Pode, you specify logic for certain routes for specific 
 The method to create new routes is `route`, this will take your HTTP method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
 
 ```powershell
-Server -Port 8080 {
+Server {
+    listen *:8080 http
+
     route 'get' '/api/ping' {
         param($session)
         json @{ 'value' = 'pong'; }
@@ -333,7 +336,9 @@ The last line is to write the JSON response. Anyone hitting `http://localhost:80
 If you wanted a POST endpoint that created a user, and a GET endpoint to get details of a user (returning a 404 if the user isn't found), then it would roughly look as follows:
 
 ```powershell
-Server -Port 8080 {
+Server {
+    listen *:8080 http
+
     route 'post' '/api/users' {
         param($session)
 
@@ -378,7 +383,9 @@ Any other file types, from css to javascript, fonts and images, must all be plac
 A quick example of a single page site on port 8085:
 
 ```powershell
-Server -Port 8085 {
+Server {
+    listen *:8085 http
+
     # default view engine is already HTML, so following can left out
     engine html
 
@@ -417,7 +424,9 @@ The SMTP Handler will be passed a session already populated with the `From` addr
 If you want to create you own SMTP server, then you'll need to set Pode up as a TCP listener and manually read the SMTP stream yourself:
 
 ```powershell
-Server -Tcp -Port 25 {
+Server {
+    listen *:25 tcp
+
     handler 'tcp' {
         param($session)
         $client = $session.Client
@@ -440,7 +449,9 @@ Allows you to define `Logger`s within a Server that will send [Combined Log Form
 An example of logging to the terminal, and to a file with removal of old log files after 7 days:
 
 ```powershell
-Server -Port 8085 {
+Server {
+    listen *:8085 http
+
     logger 'terminal'
     logger 'file' @{
         'Path' = '<path_to_put_logs>';
@@ -505,7 +516,8 @@ The following example is a simple `timer` to create and update a `hashtable`, an
 > If you omit the use of `lock`, you will run into errors due to multi-threading. Only omit if you are absolutely confident you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable). Routes, timers, and custom loggers are all supplied a `Lockable` resource you can use with `lock`.
 
 ```powershell
-Server -Port 8085 {
+Server {
+    listen *:8085 http
 
     # create timer to update a hashtable and make it globally accessible
     timer 'forever' 2 {
@@ -554,7 +566,7 @@ Server -Port 8085 {
 Pode has inbuilt file monitoring that can be enabled, whereby Pode will trigger an internal server restart if it detects file changes within the same directory as your Pode script. To enable the monitoring supply the `-FileMonitor` switch to your `Server`:
 
 ```powershell
-Server -Port 8085 {
+Server {
     # logic
 } -FileMonitor
 ```
@@ -618,6 +630,42 @@ Server {
 
 If an IP/subnet hits the limit within the given period, then a `429` response is returned and the connection immediately closed. For SMTP/TCP servers the connection is just closed with no response.
 
+#### External Scripts
+
+Because Pode runs most things in isolated runspaces, importing and using external scripts/modules to Pode can be quite bothersome. To overcome this, Pode has an inbuilt `script` call that will allow you to declare modules that need to be imported into each runspace.
+
+The `script` takes a path to a module (`.psm1` file), can be literal or relative, and adds it to the session state for each runspace pool.
+
+```powershell
+Server {
+    script './path/to/module.psm1'
+}
+```
+
+> This will now allow the functions defined in the `module.psm1` file to be accessible to timers, routes, scheduled, etc.
+
+#### Certificates
+
+> Binding existing, and generating self-signed certificates is only supported on Windows
+
+Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing - already installed - certificates for HTTPS. If Pode detects that the IP:Port binding already has a certificate bound, then Pode will not create a self-signed cert, or bind a new certificate - you'll have to clean-up the binding first: `netsh http delete sslcert 0.0.0.0:8443`.
+
+For example, if you are developing/testing a site on HTTPS then Pode can generate and bind quick self-signed certificates. To do this you can pass the value `"self"` to the `-cert` parameter of `listen`:
+
+```powershell
+Server {
+    listen *:8443 https -cert self
+}
+```
+
+To bind a signed certificate, the certificate *must* be installed to `Cert:/LocalMachine/My`; then you can pass the certificate name/domain to `-cert`. An example for `*.example.com`:
+
+```powershell
+Server {
+    listen *:8443 https -cert '*.example.com'
+}
+```
+
 ### Helpers
 
 #### Attach File
@@ -627,7 +675,9 @@ If an IP/subnet hits the limit within the given period, then a `429` response is
 An example of attaching a file to a response in a route is as follows, and here it will start a download of the file at `public/downloads/installer.exe`:
 
 ```powershell
-Server -Port 8080 {
+Server {
+    listen *:8080 http
+
     route get '/app/install' {
         param($session)
         attach 'downloads/installer.exe'
@@ -640,7 +690,9 @@ Server -Port 8080 {
 `Status` is a helper function to aid setting the status code and description on the response. When called you must specify a status code, and the description is optional.
 
 ```powershell
-Server -Port 8080 {
+Server {
+    listen *:8080 http
+
     # returns a 404 code
     route get '/not-here' {
         status 404
@@ -658,7 +710,9 @@ Server -Port 8080 {
 `Redirect` is a helper function to aid URL redirection from the server. You can either redirect via a 301 or 302 code - the default is a 302 redirect.
 
 ```powershell
-Server -Port 8080 {
+Server {
+    listen *:8080 http
+
     # redirects to google
     route get '/redirect' {
         redirect -url 'https://google.com'
@@ -697,7 +751,9 @@ To use Pode files, you will need to place them within the `/views/` folder. Then
 > Any PowerShell in a Pode files will need to use semi-colons to end each line
 
 ```powershell
-Server -Port 8080 {
+Server {
+    listen *:8080 http
+
     # set the engine to use and render Pode files
     engine pode
 
@@ -730,7 +786,9 @@ You can also supply data to the `view` function when rendering Pode files. This 
 For example, say you need to render a search page which is a list of accounts, then you're basic Pode script would look like:
 
 ```powershell
-Server -Port 8080 {
+Server {
+    listen *:8080 http
+
     # set the engine to use and render Pode files
     engine pode
 
@@ -838,7 +896,9 @@ Pode also supports the use of third-party view engines, for example you could us
 If you did use `EPS`, then the following example would work:
 
 ```powershell
-Server -Port 8080 {
+Server {
+    listen *:8080 http
+
     # set the engine to use and render EPS files (could be index.eps, or for content scripts.css.eps)
     # the scriptblock requires the "param($path, $data)"
     engine eps {
@@ -853,6 +913,14 @@ Server -Port 8080 {
     }
 }
 ```
+
+## FAQ
+
+* Running `pode start` throws an `ImportPSModule` error.
+  > This error occurs when you are using the source code for Pode, and also have the Pode module installed. To resolve you can do one of the following:
+  > * Uninstall the Pode module from PowerShell, and re-`Import-Module` the source code version
+  > * Manually call the `start` script
+  > * Remove calls to `Remove-Module -Name Pode` within your scripts
 
 ## Inbuilt Functions
 

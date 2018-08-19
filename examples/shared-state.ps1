@@ -10,8 +10,9 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a basic server
-Server -Port 8085 {
+Server {
 
+    listen *:8085 http
     logger 'terminal'
 
     # create timer to update a hashtable and make it globally accessible

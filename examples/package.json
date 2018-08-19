@@ -1,0 +1,15 @@
+{
+    "name": "pode",
+    "version": "0.0.0",
+    "main": "./web-pages.ps1",
+    "scripts": {
+        "start": "./web-pages.ps1",
+        "install": "",
+        "test": "",
+        "build": ""
+    },
+    "dependencies": {
+    },
+    "author": "Matthew Kelly (Badgerati)",
+    "license": "MIT"
+}

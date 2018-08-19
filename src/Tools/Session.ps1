@@ -74,6 +74,10 @@ function New-PodeSession
         'Address' = $null;
         'Port' = $Port;
         'Name' = 'localhost';
+        'Ssl' = ($ServerType -ieq 'https');
+        'Certificate' = @{
+            'Name' = $null;
+        };
     }
 
     # session engine for rendering views
@@ -131,7 +135,6 @@ function New-PodeSession
 
     # session state
     $session.Lockable = [hashtable]::Synchronized(@{})
-
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule((Get-Module -Name Pode).Path)
 
@@ -219,7 +222,7 @@ function State
 
     try {
         if ($null -eq $PodeSession -or $null -eq $PodeSession.SharedState) {
-            return
+            return $null
         }
 
         switch ($Action.ToLowerInvariant())
@@ -257,7 +260,12 @@ function Listen
         [Parameter()]
         [ValidateSet('HTTP', 'HTTPS', 'SMTP', 'TCP')]
         [string]
-        $Type
+        $Type,
+
+        [Parameter()]
+        [Alias('Cert')]
+        [string]
+        $Certificate = $null
     )
 
     $hostRgx = '(?<host>(\[[a-z0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all))'
@@ -302,4 +310,26 @@ function Listen
 
     # set the server type
     $PodeSession.ServerType = $Type
+
+    # if the server type is https, set cert details
+    if ($Type -ieq 'https') {
+        $PodeSession.IP.Ssl = $true
+        $PodeSession.IP.Certificate.Name = $Certificate
+    }
+}
+
+function Script
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    $Path = Resolve-Path -Path $Path
+
+    $PodeSession.RunspacePools.Values | ForEach-Object {
+        $_.InitialSessionState.ImportPSModule($Path)
+    }
 }

@@ -23,10 +23,7 @@ function Start-WebServer
     )
 
     # grab the protocol
-    $protocol = 'http'
-    if ($Https) {
-        $protocol = 'https'
-    }
+    $protocol = (iftet $Https 'https' 'http')
 
     # grab the ip address
     $_ip = "$($PodeSession.IP.Address)"
@@ -38,6 +35,11 @@ function Start-WebServer
     $port = $PodeSession.IP.Port
     if ($port -eq 0) {
         $port = (iftet $Https 8443 8080)
+    }
+
+    # if it's https, generate a self-signed cert or bind an existing one
+    if ($Https -and $PodeSession.IP.Ssl) {
+        New-PodeSelfSignedCertificate -IP $PodeSession.IP.Address -Port $port -Certificate $PodeSession.IP.Certificate.Name
     }
 
     # create the listener on http and/or https
