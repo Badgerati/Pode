@@ -592,14 +592,27 @@ function Invoke-ScriptBlock
         $Arguments = $null,
 
         [switch]
-        $Scoped
+        $Scoped,
+
+        [switch]
+        $Return
     )
 
     if ($Scoped) {
-        & $ScriptBlock $Arguments
+        if ($Return) {
+            return (& $ScriptBlock $Arguments)
+        }
+        else {
+            & $ScriptBlock $Arguments
+        }
     }
     else {
-        . $ScriptBlock $Arguments
+        if ($Return) {
+            return (. $ScriptBlock $Arguments)
+        }
+        else {
+            . $ScriptBlock $Arguments
+        }
     }
 }
 

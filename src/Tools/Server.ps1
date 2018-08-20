@@ -197,6 +197,9 @@ function Restart-PodeServer
         $PodeSession.Schedules.Clear()
         $PodeSession.Loggers.Clear()
 
+        # clear middleware
+        $PodeSession.Server.Middleware.Clear()
+
         # clear up view engine
         $PodeSession.ViewEngine.Clear()
 

@@ -10,6 +10,38 @@ function Get-PodeLogger
     return $PodeSession.Loggers[$Name]
 }
 
+function New-PodeLogObject
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Request,
+
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    return @{
+        'Host' = $Request.RemoteEndPoint.Address.IPAddressToString;
+        'RfcUserIdentity' = '-';
+        'User' = '-';
+        'Date' = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz');
+        'Request' = @{
+            'Method' = $Request.HttpMethod.ToUpperInvariant();
+            'Resource' = $Path;
+            'Protocol' = "HTTP/$($Request.ProtocolVersion)";
+            'Referrer' = $Request.UrlReferrer;
+            'Agent' = $Request.UserAgent;
+        };
+        'Response' = @{
+            'StatusCode' = '-';
+            'StautsDescription' = '-';
+            'Size' = '-';
+        };
+    }
+}
+
 function Start-LoggerRunspace
 {
     if (($PodeSession.Loggers | Measure-Object).Count -eq 0) {

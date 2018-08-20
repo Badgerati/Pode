@@ -92,7 +92,7 @@ function Start-WebServer
                 $request = $context.Request
                 $response = $context.Response
 
-                # clear session
+                # reset session data
                 $WebSession = @{}
                 $WebSession.Response = $response
                 $WebSession.Request = $request
@@ -103,24 +103,7 @@ function Start-WebServer
                 $method = $request.HttpMethod.ToLowerInvariant()
 
                 # setup the base request to log later
-                $logObject = @{
-                    'Host' = $request.RemoteEndPoint.Address.IPAddressToString;
-                    'RfcUserIdentity' = '-';
-                    'User' = '-';
-                    'Date' = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz');
-                    'Request' = @{
-                        'Method' = $method.ToUpperInvariant();
-                        'Resource' = $path;
-                        'Protocol' = "HTTP/$($request.ProtocolVersion)";
-                        'Referrer' = $request.UrlReferrer;
-                        'Agent' = $request.UserAgent;
-                    };
-                    'Response' = @{
-                        'StatusCode' = '-';
-                        'StautsDescription' = '-'
-                        'Size' = '-';
-                    };
-                }
+                $logObject = New-PodeLogObject -Request $request -Path $path
 
                 # ensure the request ip is allowed
                 if (!(Test-IPAccess -IP $request.RemoteEndPoint.Address)) {
@@ -145,11 +128,12 @@ function Start-WebServer
                         $route = Get-PodeRoute -HttpMethod '*' -Route $path
                     }
 
+                    # if there's no route defined, it's a 404
                     if ($null -eq $route -or $null -eq $route.Logic) {
                         status 404
                     }
 
-                    # run the scriptblock
+                    # begin route logic and middleware
                     else {
                         # read any post data
                         $data = stream ([System.IO.StreamReader]::new($request.InputStream, $request.ContentEncoding)) {
@@ -165,8 +149,11 @@ function Start-WebServer
                         $WebSession.Query = $request.QueryString
                         $WebSession.Parameters = $route.Parameters
 
-                        # invoke route
-                        Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
+                        # invoke middleware
+                        if ((Invoke-PodeMiddleware -Session $WebSession)) {
+                            # invoke route
+                            Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
+                        }
                     }
                 }
 

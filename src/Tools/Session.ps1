@@ -67,7 +67,8 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Access -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Limits -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name FileMonitor -Value $FileMonitor -PassThru
+        Add-Member -MemberType NoteProperty -Name FileMonitor -Value $FileMonitor -PassThru |
+        Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
 
     # set the IP address details
     $session.IP = @{
@@ -126,6 +127,9 @@ function New-PodeSession
 
     # requests that should be logged
     $session.RequestsToLog = New-Object System.Collections.ArrayList
+
+    # middleware that needs to run
+    $session.Server.Middleware = @()
 
     # runspace pools
     $session.RunspacePools = @{
@@ -199,7 +203,8 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name SharedState -Value $Session.SharedState -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
         Add-Member -MemberType NoteProperty -Name Access -Value $Session.Access -PassThru |
-        Add-Member -MemberType NoteProperty -Name Limits -Value $Session.Limits -PassThru)
+        Add-Member -MemberType NoteProperty -Name Limits -Value $Session.Limits -PassThru |
+        Add-Member -MemberType NoteProperty -Name Server -Value $Session.Server -PassThru)
 }
 
 function State
