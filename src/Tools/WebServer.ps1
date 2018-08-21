@@ -116,15 +116,18 @@ function Start-WebServer
                 $logObject = New-PodeLogObject -Request $request -Path $WebSession.Path
 
                 # invoke middleware
-                if ((Invoke-PodeMiddleware -Session $WebSession)) {
+                $_midware = ($PodeSession.Server.Middleware).Logic
+                if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $_midware)) {
                     # get the route logic
                     $route = Get-PodeRoute -HttpMethod $WebSession.Method -Route $WebSession.Path
                     if ($null -eq $route) {
                         $route = Get-PodeRoute -HttpMethod '*' -Route $WebSession.Path
                     }
 
-                    # invoke route
-                    Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
+                    # invoke route and custom middleware
+                    if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $route.Middleware)) {
+                        Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
+                    }
                 }
 
                 # close response stream (check if exists, as closing the writer closes this stream on unix)

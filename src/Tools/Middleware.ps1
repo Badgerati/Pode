@@ -3,11 +3,14 @@ function Invoke-PodeMiddleware
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Session
+        $Session,
+
+        [Parameter()]
+        $Middleware
     )
 
     # if there's no middleware, do nothing
-    if (Test-Empty $PodeSession.Server.Middleware) {
+    if (Test-Empty $Middleware) {
         return $true
     }
 
@@ -15,9 +18,9 @@ function Invoke-PodeMiddleware
     $continue = $true
 
     # loop through each of the middleware, invoking the next if it returns true
-    foreach ($midware in $PodeSession.Server.Middleware)
+    foreach ($midware in @($Middleware))
     {
-        $continue = Invoke-ScriptBlock -ScriptBlock (($midware.Logic).GetNewClosure()) `
+        $continue = Invoke-ScriptBlock -ScriptBlock ($midware.GetNewClosure()) `
             -Arguments $Session -Scoped -Return
 
         if (!$continue) {
