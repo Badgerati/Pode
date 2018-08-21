@@ -956,3 +956,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `dispose`
 * `stream`
 * `schedule`
+* `middleware`

@@ -42,6 +42,18 @@ function Start-WebServer
         New-PodeSelfSignedCertificate -IP $PodeSession.IP.Address -Port $port -Certificate $PodeSession.IP.Certificate.Name
     }
 
+    # setup any inbuilt middleware
+    $inbuilt_middleware = @(
+        (Get-PodeAccessMiddleware),
+        (Get-PodeLimitMiddleware),
+        (Get-PodePublicMiddleware),
+        (Get-PodeRouteValidateMiddleware),
+        (Get-PodeBodyMiddleware),
+        (Get-PodeQueryMiddleware)
+    )
+
+    $PodeSession.Server.Middleware = ($inbuilt_middleware + $PodeSession.Server.Middleware)
+
     # create the listener on http and/or https
     $listener = New-Object System.Net.HttpListener
 
@@ -97,64 +109,22 @@ function Start-WebServer
                 $WebSession.Response = $response
                 $WebSession.Request = $request
                 $WebSession.Lockable = $PodeSession.Lockable
-
-                # get url path and method
-                $path = ($request.RawUrl -isplit "\?")[0]
-                $method = $request.HttpMethod.ToLowerInvariant()
+                $WebSession.Path = ($request.RawUrl -isplit "\?")[0]
+                $WebSession.Method = $request.HttpMethod.ToLowerInvariant()
 
                 # setup the base request to log later
-                $logObject = New-PodeLogObject -Request $request -Path $path
+                $logObject = New-PodeLogObject -Request $request -Path $WebSession.Path
 
-                # ensure the request ip is allowed
-                if (!(Test-IPAccess -IP $request.RemoteEndPoint.Address)) {
-                    status 403
-                }
-
-                # ensure the request ip has hit a rate limit
-                elseif (!(Test-IPLimit -IP $request.RemoteEndPoint.Address)) {
-                    status 429
-                }
-
-                # check to see if the path is a file, so we can check the public folder
-                elseif ((Split-Path -Leaf -Path $path).IndexOf('.') -ne -1) {
-                    $path = Join-ServerRoot 'public' $path
-                    Write-ToResponseFromFile -Path $path
-                }
-
-                else {
-                    # ensure the path has a route
-                    $route = Get-PodeRoute -HttpMethod $method -Route $path
+                # invoke middleware
+                if ((Invoke-PodeMiddleware -Session $WebSession)) {
+                    # get the route logic
+                    $route = Get-PodeRoute -HttpMethod $WebSession.Method -Route $WebSession.Path
                     if ($null -eq $route) {
-                        $route = Get-PodeRoute -HttpMethod '*' -Route $path
+                        $route = Get-PodeRoute -HttpMethod '*' -Route $WebSession.Path
                     }
 
-                    # if there's no route defined, it's a 404
-                    if ($null -eq $route -or $null -eq $route.Logic) {
-                        status 404
-                    }
-
-                    # begin route logic and middleware
-                    else {
-                        # read any post data
-                        $data = stream ([System.IO.StreamReader]::new($request.InputStream, $request.ContentEncoding)) {
-                            param($r)
-                            return $r.ReadToEnd()
-                        }
-
-                        # attempt to parse that data
-                        $data = ConvertFrom-PodeContent -ContentType $request.ContentType -Content $data
-
-                        # set session data
-                        $WebSession.Data = $data
-                        $WebSession.Query = $request.QueryString
-                        $WebSession.Parameters = $route.Parameters
-
-                        # invoke middleware
-                        if ((Invoke-PodeMiddleware -Session $WebSession)) {
-                            # invoke route
-                            Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
-                        }
-                    }
+                    # invoke route
+                    Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
                 }
 
                 # close response stream (check if exists, as closing the writer closes this stream on unix)
@@ -163,16 +133,7 @@ function Start-WebServer
                 }
 
                 # add the log object to the list
-                $logObject.Response.StatusCode = $response.StatusCode
-                $logObject.Response.StatusDescription = $response.StatusDescription
-
-                if ($response.ContentLength64 -gt 0) {
-                    $logObject.Response.Size = $response.ContentLength64
-                }
-
-                if (!$PodeSession.DisableLogging -and ($PodeSession.Loggers | Measure-Object).Count -gt 0) {
-                    $PodeSession.RequestsToLog.Add($logObject) | Out-Null
-                }
+                Add-PodeLogObject -LogObject $logObject -Response $response
             }
         }
         catch [System.OperationCanceledException] {}

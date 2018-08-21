@@ -37,16 +37,9 @@ Server -Threads 2 {
     # set view engine to pode renderer
     engine pode
 
-    middleware {
-        param($s)
-        json @{ 'Value' = 'Test' }
-        return $false
-    }
-
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
         param($session)
-        $session | Out-Default
         view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 

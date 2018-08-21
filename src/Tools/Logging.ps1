@@ -42,6 +42,32 @@ function New-PodeLogObject
     }
 }
 
+function Add-PodeLogObject
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $LogObject,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Response
+    )
+
+    if ($PodeSession.DisableLogging -or ($PodeSession.Loggers | Measure-Object).Count -eq 0) {
+        return
+    }
+
+    $LogObject.Response.StatusCode = $Response.StatusCode
+    $LogObject.Response.StatusDescription = $Response.StatusDescription
+
+    if ($Response.ContentLength64 -gt 0) {
+        $LogObject.Response.Size = $Response.ContentLength64
+    }
+
+    $PodeSession.RequestsToLog.Add($LogObject) | Out-Null
+}
+
 function Start-LoggerRunspace
 {
     if (($PodeSession.Loggers | Measure-Object).Count -eq 0) {
