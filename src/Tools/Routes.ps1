@@ -61,7 +61,6 @@ function Route
         $Route,
 
         [Parameter()]
-        [scriptblock]
         $Middleware,
 
         [Parameter()]
