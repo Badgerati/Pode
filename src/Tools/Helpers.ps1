@@ -573,7 +573,7 @@ function Join-ServerRoot
     )
 
     if (Test-Empty $Root) {
-        $Root = $PodeSession.ServerRoot
+        $Root = $PodeSession.Server.Root
     }
 
     return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))

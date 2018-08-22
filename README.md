@@ -66,6 +66,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
 * Support for generating/binding self-signed certificates, and binding signed certificates
+* Support for middleware on web servers
 
 ## Install
 

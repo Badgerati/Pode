@@ -1,11 +1,11 @@
 function Start-PodeFileMonitor
 {
-    if (!$PodeSession.FileMonitor) {
+    if (!$PodeSession.Server.FileMonitor) {
         return
     }
 
     # what folder and filter are we moitoring?
-    $folder = $PodeSession.ServerRoot
+    $folder = $PodeSession.Server.Root
     $filter = '*.*'
 
     # setup the file monitor
@@ -46,7 +46,7 @@ function Start-PodeFileMonitor
 
 function Stop-PodeFileMonitor
 {
-    if ($PodeSession.FileMonitor) {
+    if ($PodeSession.Server.FileMonitor) {
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Create) -Force
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Delete) -Force
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Update) -Force

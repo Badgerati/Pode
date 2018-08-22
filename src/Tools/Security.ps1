@@ -16,8 +16,8 @@ function Test-IPLimit
     }
 
     # get the limit rules and active list
-    $rules = $PodeSession.Limits.Rules[$type]
-    $active = $PodeSession.Limits.Active[$type]
+    $rules = $PodeSession.Server.Limits.Rules[$type]
+    $active = $PodeSession.Server.Limits.Active[$type]
     $now = [DateTime]::UtcNow
 
     # if there are no rules, it's valid
@@ -103,8 +103,8 @@ function Test-IPAccess
     }
 
     # get permission lists for ip
-    $allow = $PodeSession.Access.Allow[$type]
-    $deny = $PodeSession.Access.Deny[$type]
+    $allow = $PodeSession.Server.Access.Allow[$type]
+    $deny = $PodeSession.Server.Access.Deny[$type]
 
     # are they empty?
     $alEmpty = (Test-Empty $allow)
@@ -210,13 +210,13 @@ function Add-IPLimit
     }
 
     # get current rules
-    $rules = $PodeSession.Limits.Rules[$type]
+    $rules = $PodeSession.Server.Limits.Rules[$type]
 
     # setup up perm type
     if ($null -eq $rules) {
-        $PodeSession.Limits.Rules[$type] = @{}
-        $PodeSession.Limits.Active[$type] = @{}
-        $rules = $PodeSession.Limits.Rules[$type]
+        $PodeSession.Server.Limits.Rules[$type] = @{}
+        $PodeSession.Server.Limits.Active[$type] = @{}
+        $rules = $PodeSession.Server.Limits.Rules[$type]
     }
 
     # have we already added the ip?
@@ -314,13 +314,13 @@ function Add-IPAccess
     $opp = "$(if ($Permission -ieq 'allow') { 'Deny' } else { 'Allow' })"
 
     # get permission lists for type
-    $permType = $PodeSession.Access[$Permission][$type]
-    $oppType = $PodeSession.Access[$opp][$type]
+    $permType = $PodeSession.Server.Access[$Permission][$type]
+    $oppType = $PodeSession.Server.Access[$opp][$type]
 
     # setup up perm type
     if ($null -eq $permType) {
-        $PodeSession.Access[$Permission][$type] = @{}
-        $permType = $PodeSession.Access[$Permission][$type]
+        $PodeSession.Server.Access[$Permission][$type] = @{}
+        $permType = $PodeSession.Server.Access[$Permission][$type]
     }
 
     # have we already added the ip?

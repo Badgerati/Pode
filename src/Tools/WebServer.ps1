@@ -11,8 +11,8 @@ function Engine
         $ScriptBlock = $null
     )
 
-    $PodeSession.ViewEngine.Extension = $Engine.ToLowerInvariant()
-    $PodeSession.ViewEngine.Script = $ScriptBlock
+    $PodeSession.Server.ViewEngine.Extension = $Engine.ToLowerInvariant()
+    $PodeSession.Server.ViewEngine.Script = $ScriptBlock
 }
 
 function Start-WebServer
@@ -26,20 +26,20 @@ function Start-WebServer
     $protocol = (iftet $Https 'https' 'http')
 
     # grab the ip address
-    $_ip = "$($PodeSession.IP.Address)"
+    $_ip = "$($PodeSession.Server.IP.Address)"
     if ($_ip -ieq '0.0.0.0') {
         $_ip = '*'
     }
 
     # grab the port
-    $port = $PodeSession.IP.Port
+    $port = $PodeSession.Server.IP.Port
     if ($port -eq 0) {
         $port = (iftet $Https 8443 8080)
     }
 
     # if it's https, generate a self-signed cert or bind an existing one
-    if ($Https -and $PodeSession.IP.Ssl) {
-        New-PodeSelfSignedCertificate -IP $PodeSession.IP.Address -Port $port -Certificate $PodeSession.IP.Certificate.Name
+    if ($Https -and $PodeSession.Server.IP.Ssl) {
+        New-PodeSelfSignedCertificate -IP $PodeSession.Server.IP.Address -Port $port -Certificate $PodeSession.Server.IP.Certificate.Name
     }
 
     # setup any inbuilt middleware
@@ -78,7 +78,7 @@ function Start-WebServer
     }
 
     # state where we're running
-    Write-Host "Listening on $($protocol)://$($PodeSession.IP.Name):$($port)/ [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on $($protocol)://$($PodeSession.Server.IP.Name):$($port)/ [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out for incoming requests
     $listenScript = {

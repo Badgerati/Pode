@@ -127,7 +127,7 @@ function Start-LoggerRunspace
 
                         # generate path to log path and date file
                         if ($null -eq $details -or (Test-Empty $details.Path)) {
-                            $path = (Join-ServerRoot 'logs' "$($date).log" ) #-Root $PodeSession.ServerRoot)
+                            $path = (Join-ServerRoot 'logs' "$($date).log" )
                         }
                         else {
                             $path = (Join-Path $details.Path "$($date).log")

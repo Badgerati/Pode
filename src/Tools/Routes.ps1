@@ -13,7 +13,7 @@ function Get-PodeRoute
     )
 
     # first ensure we have the method
-    $method = $PodeSession.Routes[$HttpMethod]
+    $method = $PodeSession.Server.Routes[$HttpMethod]
     if ($null -eq $method) {
         return $null
     }
@@ -113,12 +113,12 @@ function Route
     $Route = ($Route -ireplace '\*', '.*')
 
     # ensure route doesn't already exist
-    if ($PodeSession.Routes[$HttpMethod].ContainsKey($Route)) {
+    if ($PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
         throw "[$($HttpMethod)] $($Route) is already defined"
     }
 
     # add the route logic
-    $PodeSession.Routes[$HttpMethod][$Route] = @{
+    $PodeSession.Server.Routes[$HttpMethod][$Route] = @{
         'Logic' = $ScriptBlock;
         'Middleware' = $Middleware;
     }
