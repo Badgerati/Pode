@@ -75,6 +75,7 @@ function Timer
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('i')]
         [int]
         $Interval,
 
@@ -84,10 +85,12 @@ function Timer
         $ScriptBlock,
 
         [Parameter()]
+        [Alias('l')]
         [int]
         $Limit = 0,
 
         [Parameter()]
+        [Alias('s')]
         [int]
         $Skip = 0
     )

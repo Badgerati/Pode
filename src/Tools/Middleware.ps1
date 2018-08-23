@@ -196,6 +196,7 @@ function Middleware
         $ScriptBlock,
 
         [Parameter()]
+        [Alias('n')]
         [string]
         $Name
     )
