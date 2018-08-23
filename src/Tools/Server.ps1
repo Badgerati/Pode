@@ -8,11 +8,13 @@ function Server
 
         [Parameter()]
         [ValidateNotNull()]
+        [Alias('p')]
         [int]
         $Port = 0,
 
         [Parameter()]
         [ValidateNotNull()]
+        [Alias('i')]
         [int]
         $Interval = 0,
 
@@ -21,10 +23,12 @@ function Server
         $IP,
 
         [Parameter()]
+        [Alias('n')]
         [string]
         $Name,
 
         [Parameter()]
+        [Alias('t')]
         [int]
         $Threads = 1,
 
