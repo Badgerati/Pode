@@ -6,13 +6,13 @@ function Start-SmtpServer
     }
 
     # grab the relavant port
-    $port = $PodeSession.IP.Port
+    $port = $PodeSession.Server.IP.Port
     if ($port -eq 0) {
         $port = 25
     }
 
     # create the listener for smtp
-    $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $port)
+    $endpoint = New-Object System.Net.IPEndPoint($PodeSession.Server.IP.Address, $port)
     $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
 
     try
@@ -31,7 +31,7 @@ function Start-SmtpServer
     }
 
     # state where we're running
-    Write-Host "Listening on smtp://$($PodeSession.IP.Name):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on smtp://$($PodeSession.Server.IP.Name):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {
@@ -58,7 +58,7 @@ function Start-SmtpServer
             $data = [string]::Empty
 
             # open response to smtp request
-            tcp write "220 $($PodeSession.IP.Name) -- Pode Proxy Server"
+            tcp write "220 $($PodeSession.Server.IP.Name) -- Pode Proxy Server"
             $msg = [string]::Empty
 
             # respond to smtp request

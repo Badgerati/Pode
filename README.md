@@ -31,6 +31,9 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Advanced Cron](#advanced-cron)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
+    * [Middleware](#middleware)
+        * [Order of Running](#order-of-running)
+        * [Overriding Inbuilt Logic](#overriding-inbuilt-logic)
     * [SMTP Server](#smtp-server)
     * [Misc](#misc)
         * [Logging](#logging)
@@ -66,6 +69,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
 * Support for generating/binding self-signed certificates, and binding signed certificates
+* Support for middleware on web servers
 
 ## Install
 
@@ -397,6 +401,116 @@ Server {
 ```
 
 > This can be seen in the examples under `web-pages.ps1`
+
+### Middleware
+
+When working with web servers in Pode - rest apis, routes, web-pages, etc. - then it does have support for using `middleware`. Middleware in Pode allows you to observe and edit the request/response objects for a current web request - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the `route`.
+
+Middleware is supported as a general `middleware` function, as well as on the `route` function for custom middleware - like authentication. Pode itself has some inbuilt middleware, which is overriable so you can use your own custom middleware; for example, Pode has inbuilt middleware for rate limiting, but you can override this with `middleware` and the name `@limit` (more further down).
+
+The general `middleware` function takes a `scriptblock`, which accepts a single parameter for the current web session (similar to `route`s). The session object contains the `Request` and `Response` objects; you can also add more custom objects as the session is just a `hashtable`. If you want to keep processing the next middleware then `return $true`, otherwise `return $false` and the response will be closed immediately.
+
+The following example is `middleware` that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new `Agent` key on the session for later `middleware`/`route`:
+
+```powershell
+Server {
+    middleware {
+        # session parameter which contains the Request/Response, and any other
+        # keys added in any prior middleware
+        param($session)
+
+        # if the user agent is powershell, deny access
+        if ($session.Request.UserAgent -ilike '*powershell*') {
+            # forbidden
+            status 403
+
+            # stop processing
+            return $false
+        }
+
+        # create a new key on the session for the next middleware/route
+        $session.Agent = $session.Request.UserAgent
+
+        # continue processing other middleware
+        return $true
+    }
+}
+```
+
+Custom middleware on a `route` is basically the same as above. Normally a route is defined as "`route <method> <path> <logic>`", but you can also add custom middleware to a route as follows: "`route <method> <path> <middleware> <logic>`". The middleware on a route can either be a single `scriptblock` or an an array of `scriptblock`s.
+
+The following example defines a `scriptblock` to reject calls that come from a specific IP address on a specific `route`:
+
+```powershell
+Server {
+    # custom middleware to reject access to a specific IP address
+    $reject_ip = {
+        param($session)
+
+        if ($session.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
+            status 403
+            return $false
+        }
+
+        return $true
+    }
+
+    # the middleware above is linked to this route, and checked before running the route logic
+    route get '/users' $reject_ip {
+        # route logic
+    }
+
+    # this route has no custom middleware, and just runs the route logic
+    route get '/alive' {
+        # route logic
+    }
+}
+```
+
+#### Order of Running
+
+Middleware in Pode is executed in a specific order, this order of running is as follows:
+
+* Access control    - allowing/denying IP addresses (if `access` logic is defined)
+* Rate limiting     - limiting access to IP addresses (if `limit` logic is defined)
+* Public content    - content such as images/css/js in the `public` directory
+* Body parsing      - parsing request payload a JSON or XML
+* Querystring       - getting any query string parameters currently on the request URL
+* Custom middleware - runs any defined `middleware` in the order it was created
+* Route middleware  - runs any `route` middleware for the current route being processed
+* Route             - finally, the route itself is processed
+
+#### Overriding Inbuilt Logic
+
+Pode has some inbuilt middleware, as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS. Each of the inbuilt middlewares have a defined name, that you can pass to the `middleware` function:
+
+* Access control    - `@access`
+* Rate limiting     - `@limit`
+* Public content    - `@public`
+* Body parsing      - `@body`
+* Querystring       - `@query`
+
+The following example uses rate limiting, and defines `middleware` that will override the inbuilt rate limiting logic:
+
+```powershell
+Server {
+    # attach to port 8080
+    listen *:8080 http
+
+    # assign rate limiting to localhost, and allow 8 request per 5 seconds
+    limit ip @('127.0.0.1', '[::1]') 8 5
+
+    # create middleware to override the inbuilt rate limiting (to stop the limiting)
+    middleware -Name '@limit' {
+        return $true
+    }
+
+    # basic route
+    route get '/' {
+        # logic
+    }
+}
+```
 
 ### SMTP Server
 
@@ -956,3 +1070,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `dispose`
 * `stream`
 * `schedule`
+* `middleware`

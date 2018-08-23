@@ -1,4 +1,4 @@
-function Get-RandomServerName
+function Get-RandomName
 {
     $adjs = @(
         "admiring",

@@ -3,10 +3,10 @@ param (
     $Port = 8085
 )
 
-# if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
-# {
-#     Remove-Module -Name Pode
-# }
+if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
+{
+    Remove-Module -Name Pode
+}
 
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
 Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop

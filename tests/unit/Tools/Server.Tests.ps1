@@ -2,6 +2,8 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '\\tests\\unit\\', '\src\'
 Get-ChildItem "$($src)\*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
+$PodeSession = @{ 'Server' = $null; }
+
 Describe 'Start-PodeServer' {
     Mock Invoke-ScriptBlock { }
     Mock Start-TimerRunspace { }
@@ -11,7 +13,7 @@ Describe 'Start-PodeServer' {
     Mock Start-WebServer { }
 
     It 'Calls one-off script logic' {
-        $PodeSession = @{ 'ServerType' = 'SCRIPT'; 'ScriptBlock' = {} }
+        $PodeSession.Server = @{ 'Type' = 'SCRIPT'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -22,7 +24,7 @@ Describe 'Start-PodeServer' {
     }
 
     It 'Calls smtp server logic' {
-        $PodeSession = @{ 'ServerType' = 'SMTP'; 'ScriptBlock' = {} }
+        $PodeSession.Server = @{ 'Type' = 'SMTP'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -33,7 +35,7 @@ Describe 'Start-PodeServer' {
     }
 
     It 'Calls tcp server logic' {
-        $PodeSession = @{ 'ServerType' = 'TCP'; 'ScriptBlock' = {} }
+        $PodeSession.Server = @{ 'Type' = 'TCP'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -44,7 +46,7 @@ Describe 'Start-PodeServer' {
     }
 
     It 'Calls http web server logic' {
-        $PodeSession = @{ 'ServerType' = 'HTTP'; 'ScriptBlock' = {} }
+        $PodeSession.Server = @{ 'Type' = 'HTTP'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -55,7 +57,7 @@ Describe 'Start-PodeServer' {
     }
 
     It 'Calls https web server logic' {
-        $PodeSession = @{ 'ServerType' = 'HTTPS'; 'ScriptBlock' = {} }
+        $PodeSession.Server = @{ 'Type' = 'HTTPS'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -97,39 +99,39 @@ Describe 'Get-PodeServerType' {
 Describe 'Set-PodePortForServerType' {
     Context 'Valid parameters supplied' {
         It 'Uses 25 for smtp' {
-            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'SMTP' }
+            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'SMTP' }
             Set-PodePortForServerType
-            $PodeSession.IP.Port | Should Be 25
+            $PodeSession.Server.IP.Port | Should Be 25
         }
 
         It 'Uses 8080 for http' {
-            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'HTTP' }
+            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'HTTP' }
             Set-PodePortForServerType
-            $PodeSession.IP.Port | Should Be 8080
+            $PodeSession.Server.IP.Port | Should Be 8080
         }
 
         It 'Uses 8443 for https' {
-            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'HTTPS' }
+            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'HTTPS' }
             Set-PodePortForServerType
-            $PodeSession.IP.Port | Should Be 8443
+            $PodeSession.Server.IP.Port | Should Be 8443
         }
 
         It 'Uses 0 for tcp' {
-            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'TCP' }
+            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'TCP' }
             Set-PodePortForServerType
-            $PodeSession.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Port | Should Be 0
         }
 
         It 'Uses 0 for script' {
-            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'SCRIPT' }
+            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'SCRIPT' }
             Set-PodePortForServerType
-            $PodeSession.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Port | Should Be 0
         }
 
         It 'Uses 0 for service' {
-            $PodeSession = @{ 'IP' = @{ 'Port' = 0 }; 'ServerType' = 'SERVICE' }
+            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'SERVICE' }
             Set-PodePortForServerType
-            $PodeSession.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Port | Should Be 0
         }
     }
 }

@@ -35,7 +35,7 @@ function New-PodeSession
 
     # set a random server name if one not supplied
     if (Test-Empty $Name) {
-        $Name = Get-RandomServerName
+        $Name = Get-RandomName
     }
 
     # ensure threads are always >0
@@ -45,13 +45,6 @@ function New-PodeSession
 
     # basic session object
     $session = New-Object -TypeName psobject |
-        Add-Member -MemberType NoteProperty -Name ServerName -Value $Name -PassThru |
-        Add-Member -MemberType NoteProperty -Name ScriptBlock -Value $ScriptBlock -PassThru |
-        Add-Member -MemberType NoteProperty -Name Routes -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Handlers -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Interval -Value $Interval -PassThru |
-        Add-Member -MemberType NoteProperty -Name IP -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name ViewEngine -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
@@ -61,16 +54,19 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $DisableLogging -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name ServerRoot -Value $ServerRoot -PassThru |
-        Add-Member -MemberType NoteProperty -Name ServerType -Value $ServerType -PassThru |
-        Add-Member -MemberType NoteProperty -Name SharedState -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Access -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Limits -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name FileMonitor -Value $FileMonitor -PassThru
+        Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
+
+    # set the server type, name, logic and root
+    $session.Server.Name = $Name
+    $session.Server.Type = $ServerType
+    $session.Server.Root = $ServerRoot
+    $session.Server.Logic = $ScriptBlock
+    $session.Server.Interval = $Interval
+    $session.Server.FileMonitor = $FileMonitor
 
     # set the IP address details
-    $session.IP = @{
+    $session.Server.IP = @{
         'Address' = $null;
         'Port' = $Port;
         'Name' = 'localhost';
@@ -80,14 +76,17 @@ function New-PodeSession
         };
     }
 
+    # shared state between runspaces
+    $session.Server.State = @{}
+
     # session engine for rendering views
-    $session.ViewEngine = @{
+    $session.Server.ViewEngine = @{
         'Extension' = 'html';
         'Script' = $null;
     }
 
     # routes for pages and api
-    $session.Routes = @{
+    $session.Server.Routes = @{
         'delete' = @{};
         'get' = @{};
         'head' = @{};
@@ -101,19 +100,19 @@ function New-PodeSession
     }
 
     # handlers for tcp
-    $session.Handlers = @{
+    $session.Server.Handlers = @{
         'tcp' = $null;
         'smtp' = $null;
     }
 
     # setup basic access placeholders
-    $session.Access = @{
+    $session.Server.Access = @{
         'Allow' = @{};
         'Deny' = @{};
     }
 
     # setup basic limit rules
-    $session.Limits = @{
+    $session.Server.Limits = @{
         'Rules' = @{};
         'Active' = @{};
     }
@@ -126,6 +125,9 @@ function New-PodeSession
 
     # requests that should be logged
     $session.RequestsToLog = New-Object System.Collections.ArrayList
+
+    # middleware that needs to run
+    $session.Server.Middleware = @()
 
     # runspace pools
     $session.RunspacePools = @{
@@ -182,11 +184,6 @@ function New-PodeStateSession
     )
 
     return (New-Object -TypeName psobject |
-        Add-Member -MemberType NoteProperty -Name ServerName -Value $Session.ServerName -PassThru |
-        Add-Member -MemberType NoteProperty -Name Routes -Value $Session.Routes -PassThru |
-        Add-Member -MemberType NoteProperty -Name Handlers -Value $Session.Handlers -PassThru |
-        Add-Member -MemberType NoteProperty -Name IP -Value $Session.IP -PassThru |
-        Add-Member -MemberType NoteProperty -Name ViewEngine -Value $Session.ViewEngine -PassThru |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Session.Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Session.Schedules -PassThru |
@@ -195,11 +192,8 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
         Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
-        Add-Member -MemberType NoteProperty -Name ServerRoot -Value $Session.ServerRoot -PassThru |
-        Add-Member -MemberType NoteProperty -Name SharedState -Value $Session.SharedState -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
-        Add-Member -MemberType NoteProperty -Name Access -Value $Session.Access -PassThru |
-        Add-Member -MemberType NoteProperty -Name Limits -Value $Session.Limits -PassThru)
+        Add-Member -MemberType NoteProperty -Name Server -Value $Session.Server -PassThru)
 }
 
 function State
@@ -221,23 +215,23 @@ function State
     )
 
     try {
-        if ($null -eq $PodeSession -or $null -eq $PodeSession.SharedState) {
+        if ($null -eq $PodeSession -or $null -eq $PodeSession.Server.State) {
             return $null
         }
 
         switch ($Action.ToLowerInvariant())
         {
             'set' {
-                $PodeSession.SharedState[$Name] = $Object
+                $PodeSession.Server.State[$Name] = $Object
             }
 
             'get' {
-                $Object = $PodeSession.SharedState[$Name]
+                $Object = $PodeSession.Server.State[$Name]
             }
 
             'remove' {
-                $Object = $PodeSession.SharedState[$Name]
-                $PodeSession.SharedState.Remove($Name) | Out-Null
+                $Object = $PodeSession.Server.State[$Name]
+                $PodeSession.Server.State.Remove($Name) | Out-Null
             }
         }
 
@@ -300,21 +294,21 @@ function Listen
     }
 
     # set the ip for the session
-    $PodeSession.IP.Address = (Get-IPAddress $_host)
-    if (!(Test-IPAddressLocal -IP $PodeSession.IP.Address)) {
-        $PodeSession.IP.Name = $PodeSession.IP.Address
+    $PodeSession.Server.IP.Address = (Get-IPAddress $_host)
+    if (!(Test-IPAddressLocal -IP $PodeSession.Server.IP.Address)) {
+        $PodeSession.Server.IP.Name = $PodeSession.Server.IP.Address
     }
 
     # set the port for the session
-    $PodeSession.IP.Port = $_port
+    $PodeSession.Server.IP.Port = $_port
 
     # set the server type
-    $PodeSession.ServerType = $Type
+    $PodeSession.Server.Type = $Type
 
     # if the server type is https, set cert details
     if ($Type -ieq 'https') {
-        $PodeSession.IP.Ssl = $true
-        $PodeSession.IP.Certificate.Name = $Certificate
+        $PodeSession.Server.IP.Ssl = $true
+        $PodeSession.Server.IP.Certificate.Name = $Certificate
     }
 }
 

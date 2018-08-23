@@ -10,6 +10,64 @@ function Get-PodeLogger
     return $PodeSession.Loggers[$Name]
 }
 
+function New-PodeLogObject
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Request,
+
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    return @{
+        'Host' = $Request.RemoteEndPoint.Address.IPAddressToString;
+        'RfcUserIdentity' = '-';
+        'User' = '-';
+        'Date' = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz');
+        'Request' = @{
+            'Method' = $Request.HttpMethod.ToUpperInvariant();
+            'Resource' = $Path;
+            'Protocol' = "HTTP/$($Request.ProtocolVersion)";
+            'Referrer' = $Request.UrlReferrer;
+            'Agent' = $Request.UserAgent;
+        };
+        'Response' = @{
+            'StatusCode' = '-';
+            'StautsDescription' = '-';
+            'Size' = '-';
+        };
+    }
+}
+
+function Add-PodeLogObject
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $LogObject,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Response
+    )
+
+    if ($PodeSession.DisableLogging -or ($PodeSession.Loggers | Measure-Object).Count -eq 0) {
+        return
+    }
+
+    $LogObject.Response.StatusCode = $Response.StatusCode
+    $LogObject.Response.StatusDescription = $Response.StatusDescription
+
+    if ($Response.ContentLength64 -gt 0) {
+        $LogObject.Response.Size = $Response.ContentLength64
+    }
+
+    $PodeSession.RequestsToLog.Add($LogObject) | Out-Null
+}
+
 function Start-LoggerRunspace
 {
     if (($PodeSession.Loggers | Measure-Object).Count -eq 0) {
@@ -69,7 +127,7 @@ function Start-LoggerRunspace
 
                         # generate path to log path and date file
                         if ($null -eq $details -or (Test-Empty $details.Path)) {
-                            $path = (Join-ServerRoot 'logs' "$($date).log" ) #-Root $PodeSession.ServerRoot)
+                            $path = (Join-ServerRoot 'logs' "$($date).log" )
                         }
                         else {
                             $path = (Join-Path $details.Path "$($date).log")
