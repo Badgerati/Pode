@@ -117,6 +117,11 @@ function New-PodeSession
         'Active' = @{};
     }
 
+    # cookies and session logic
+    $session.Server.Cookies = @{
+        'Session' = @{};
+    }
+
     # create new cancellation tokens
     $session.Tokens = @{
         'Cancellation' = New-Object System.Threading.CancellationTokenSource;
