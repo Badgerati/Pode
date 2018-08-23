@@ -460,7 +460,7 @@ Server {
         # route logic
     }
 
-    # this route has not middleware, and just runs the route logic
+    # this route has no custom middleware, and just runs the route logic
     route get '/alive' {
         # route logic
     }
