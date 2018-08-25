@@ -2,6 +2,8 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '\\tests\\unit\\', '\src\'
 Get-ChildItem "$($src)\*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
+$PodeSession = @{ 'Server' = $null; }
+
 Describe 'State' {
     Context 'Invalid parameters supplied' {
         It 'Throw null name parameter error' {
@@ -23,27 +25,27 @@ Describe 'State' {
         }
 
         It 'Returns null for no shared state in session' {
-            $PodeSession = @{ 'SharedState' = $null }
+            $PodeSession.Server = @{ 'State' = $null }
             State -Action Set -Name 'test' | Should Be $null
         }
 
         It 'Sets and returns an object' {
-            $PodeSession = @{ 'SharedState' = @{} }
+            $PodeSession.Server = @{ 'State' = @{} }
             $result = State -Action Set -Name 'test' -Object 7
 
             $result | Should Be 7
-            $PodeSession.SharedState['test'] | Should Be 7
+            $PodeSession.Server.State['test'] | Should Be 7
         }
 
         It 'Gets an object' {
-            $PodeSession = @{ 'SharedState' = @{ 'test' = 8 } }
+            $PodeSession.Server = @{ 'State' = @{ 'test' = 8 } }
             State -Action Get -Name 'test' | Should Be 8
         }
 
         It 'Removes an object' {
-            $PodeSession = @{ 'SharedState' = @{ 'test' = 8 } }
+            $PodeSession.Server = @{ 'State' = @{ 'test' = 8 } }
             State -Action Remove -Name 'test' | Should Be 8
-            $PodeSession.SharedState['test'] | Should Be $null
+            $PodeSession.Server.State['test'] | Should Be $null
         }
     }
 }
@@ -68,102 +70,102 @@ Describe 'Listen' {
         Mock Test-IPAddressLocal { return $true }
 
         It 'Set just an IPv4 address' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             Listen -IP '127.0.0.1' -Type 'HTTP'
 
-            $PodeSession.ServerType | Should Be 'HTTP'
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 0
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address.ToString() | Should Be '127.0.0.1'
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set just an IPv4 address for all' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             Listen -IP 'all' -Type 'HTTP'
 
-            $PodeSession.ServerType | Should Be 'HTTP'
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 0
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address.ToString() | Should Be '0.0.0.0'
         }
 
         It 'Set just an IPv4 address with colon' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             Listen -IP '127.0.0.1:' -Type 'HTTP'
 
-            $PodeSession.ServerType | Should Be 'HTTP'
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 0
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address.ToString() | Should Be '127.0.0.1'
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set just a port' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             Listen -IP '80' -Type 'HTTP'
 
-            $PodeSession.ServerType | Should Be 'HTTP'
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 80
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 80
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address.ToString() | Should Be '0.0.0.0'
         }
 
         It 'Set just a port with colon' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             Listen -IP ':80' -Type 'HTTP'
 
-            $PodeSession.ServerType | Should Be 'HTTP'
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 80
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 80
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address.ToString() | Should Be '0.0.0.0'
         }
 
         It 'Set both IPv4 address and port' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             Listen -IP '127.0.0.1:80' -Type 'HTTP'
 
-            $PodeSession.ServerType | Should Be 'HTTP'
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 80
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address.ToString() | Should Be '127.0.0.1'
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 80
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set both IPv4 address and port for all' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             Listen -IP '*:80' -Type 'HTTP'
 
-            $PodeSession.ServerType | Should Be 'HTTP'
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 80
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 80
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address.ToString() | Should Be '0.0.0.0'
         }
 
         It 'Throws error for just an invalid IPv4' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             { Listen -IP '256.0.0.1' -Type 'HTTP' } | Should Throw 'Invalid IP Address'
 
-            $PodeSession.ServerType | Should Be $null
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 0
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address | Should Be $null
+            $PodeSession.Server.Type | Should Be $null
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address | Should Be $null
         }
 
         It 'Throws error for an invalid IPv4 address with port' {
-            $PodeSession = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'ServerType' = $null }
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
             { Listen -IP '256.0.0.1:80' -Type 'HTTP' } | Should Throw 'Invalid IP Address'
 
-            $PodeSession.ServerType | Should Be $null
-            $PodeSession.IP | Should Not Be $null
-            $PodeSession.IP.Port | Should Be 0
-            $PodeSession.IP.Name | Should Be 'localhost'
-            $PodeSession.IP.Address | Should Be $null
+            $PodeSession.Server.Type | Should Be $null
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Name | Should Be 'localhost'
+            $PodeSession.Server.IP.Address | Should Be $null
         }
     }
 }

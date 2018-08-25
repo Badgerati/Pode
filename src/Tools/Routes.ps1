@@ -13,14 +13,19 @@ function Get-PodeRoute
     )
 
     # first ensure we have the method
-    $method = $PodeSession.Routes[$HttpMethod]
+    $method = $PodeSession.Server.Routes[$HttpMethod]
     if ($null -eq $method) {
         return $null
     }
 
     # if we have a perfect match for the route, return it
-    if ($null -ne $method[$Route]) {
-        return @{ 'Logic' = $method[$Route]; 'Parameters' = $null }
+    $found = $method[$Route]
+    if ($null -ne $found) {
+        return @{
+            'Logic' = $found.Logic;
+            'Middleware' = $found.Middleware;
+            'Parameters' = $null;
+        }
     }
 
     # otherwise, attempt to match on regex parameters
@@ -33,8 +38,13 @@ function Get-PodeRoute
             return $null
         }
 
+        $found = $method[$valid]
         $Route -imatch "$($valid)$" | Out-Null
-        return @{ 'Logic' = $method[$valid]; 'Parameters' = $Matches }
+        return @{
+            'Logic' = $found.Logic;
+            'Middleware' = $found.Middleware;
+            'Parameters' = $Matches;
+        }
     }
 }
 
@@ -50,11 +60,28 @@ function Route
         [string]
         $Route,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Parameter()]
+        $Middleware,
+
+        [Parameter()]
         [scriptblock]
         $ScriptBlock
     )
+
+    # if middleware and scriptblock are null, error
+    if ($null -eq $Middleware -and $null -eq $ScriptBlock) {
+        throw "[$($HttpMethod)] $($Route) has no logic defined"
+    }
+
+    # if middleware set, but not scriptblock, set middle and script
+    if (!(Test-Empty $Middleware) -and $null -eq $ScriptBlock) {
+        if ((Get-Type $Middleware).BaseName -ieq 'array') {
+            throw "[$($HttpMethod)] $($Route) has no logic defined"
+        }
+
+        $ScriptBlock = $Middleware
+        $Middleware = $null
+    }
 
     # lower the method
     $HttpMethod = $HttpMethod.ToLowerInvariant()
@@ -86,10 +113,13 @@ function Route
     $Route = ($Route -ireplace '\*', '.*')
 
     # ensure route doesn't already exist
-    if ($PodeSession.Routes[$HttpMethod].ContainsKey($Route)) {
-        throw "Route '$($Route)' already has $($HttpMethod) request logic defined"
+    if ($PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
+        throw "[$($HttpMethod)] $($Route) is already defined"
     }
 
     # add the route logic
-    $PodeSession.Routes[$HttpMethod][$Route] = $ScriptBlock
+    $PodeSession.Server.Routes[$HttpMethod][$Route] = @{
+        'Logic' = $ScriptBlock;
+        'Middleware' = $Middleware;
+    }
 }

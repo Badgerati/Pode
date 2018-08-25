@@ -8,11 +8,13 @@ function Server
 
         [Parameter()]
         [ValidateNotNull()]
+        [Alias('p')]
         [int]
         $Port = 0,
 
         [Parameter()]
         [ValidateNotNull()]
+        [Alias('i')]
         [int]
         $Interval = 0,
 
@@ -21,10 +23,12 @@ function Server
         $IP,
 
         [Parameter()]
+        [Alias('n')]
         [string]
         $Name,
 
         [Parameter()]
+        [Alias('t')]
         [int]
         $Threads = 1,
 
@@ -82,8 +86,8 @@ function Server
         Set-PodePortForServerType
 
         # parse ip:port to listen on (if both have been supplied)
-        if (!(Test-Empty $IP) -or $PodeSession.IP.Port -gt 0) {
-            listen -IPPort "$($IP):$($PodeSession.IP.Port)" -Type $PodeSession.ServerType
+        if (!(Test-Empty $IP) -or $PodeSession.Server.IP.Port -gt 0) {
+            listen -IPPort "$($IP):$($PodeSession.Server.IP.Port)" -Type $PodeSession.Server.Type
         }
 
         # set it so ctrl-c can terminate
@@ -96,7 +100,7 @@ function Server
         Start-PodeServer
 
         # sit here waiting for termination (unless it's one-off script)
-        if ($PodeSession.ServerType -ine 'script') {
+        if ($PodeSession.Server.Type -ine 'script') {
             while (!(Test-TerminationPressed)) {
                 Start-Sleep -Seconds 1
 
@@ -124,7 +128,7 @@ function Start-PodeServer
     try
     {
         # run the logic
-        Invoke-ScriptBlock -ScriptBlock $PodeSession.ScriptBlock
+        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic
 
         # start runspace for timers
         Start-TimerRunspace
@@ -133,7 +137,7 @@ function Start-PodeServer
         Start-ScheduleRunspace
 
         # start the appropriate server
-        switch ($PodeSession.ServerType.ToUpperInvariant())
+        switch ($PodeSession.Server.Type.ToUpperInvariant())
         {
             'SMTP' {
                 Start-SmtpServer
@@ -152,15 +156,15 @@ function Start-PodeServer
             }
 
             'SERVICE' {
-                Write-Host "Looping logic every $($PodeSession.Interval)secs" -ForegroundColor Yellow
+                Write-Host "Looping logic every $($PodeSession.Server.Interval)secs" -ForegroundColor Yellow
 
                 while ($true) {
                     if ($PodeSession.Tokens.Cancellation.IsCancellationRequested) {
                         Close-Pode -Exit
                     }
 
-                    Start-Sleep -Seconds $PodeSession.Interval
-                    Invoke-ScriptBlock -ScriptBlock $PodeSession.ScriptBlock
+                    Start-Sleep -Seconds $PodeSession.Server.Interval
+                    Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic
                 }
             }
         }
@@ -185,23 +189,26 @@ function Restart-PodeServer
         Close-PodeRunspaces
 
         # clear up timers, schedules and loggers
-        $PodeSession.Routes.Keys.Clone() | ForEach-Object {
-            $PodeSession.Routes[$_].Clear()
+        $PodeSession.Server.Routes.Keys.Clone() | ForEach-Object {
+            $PodeSession.Server.Routes[$_].Clear()
         }
 
-        $PodeSession.Handlers.Keys.Clone() | ForEach-Object {
-            $PodeSession.Handlers[$_] = $null
+        $PodeSession.Server.Handlers.Keys.Clone() | ForEach-Object {
+            $PodeSession.Server.Handlers[$_] = $null
         }
 
         $PodeSession.Timers.Clear()
         $PodeSession.Schedules.Clear()
         $PodeSession.Loggers.Clear()
 
+        # clear middleware
+        $PodeSession.Server.Middleware.Clear()
+
         # clear up view engine
-        $PodeSession.ViewEngine.Clear()
+        $PodeSession.Server.ViewEngine.Clear()
 
         # clear up shared state
-        $PodeSession.SharedState.Clear()
+        $PodeSession.Server.State.Clear()
 
         # recreate the session tokens
         dispose $PodeSession.Tokens.Cancellation
@@ -267,22 +274,22 @@ function Get-PodeServerType
 
 function Set-PodePortForServerType
 {
-    if ($PodeSession.IP.Port -gt 0) {
+    if ($PodeSession.Server.IP.Port -gt 0) {
         return
     }
 
-    switch ($PodeSession.ServerType.ToUpperInvariant())
+    switch ($PodeSession.Server.Type.ToUpperInvariant())
     {
         'SMTP' {
-            $PodeSession.IP.Port = 25
+            $PodeSession.Server.IP.Port = 25
         }
 
         'HTTP' {
-            $PodeSession.IP.Port = 8080
+            $PodeSession.Server.IP.Port = 8080
         }
 
         'HTTPS' {
-            $PodeSession.IP.Port = 8443
+            $PodeSession.Server.IP.Port = 8443
         }
     }
 }

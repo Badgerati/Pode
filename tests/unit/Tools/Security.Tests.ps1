@@ -2,6 +2,8 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '\\tests\\unit\\', '\src\'
 Get-ChildItem "$($src)\*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
+$PodeSession = @{ 'Server' = $null; }
+
 Describe 'Test-IPAccess' {
     Context 'Invalid parameters' {
         It 'Throws error for invalid IP' {
@@ -119,10 +121,10 @@ Describe 'Add-IPLimit' {
 
     Context 'Valid parameters' {
         It 'Adds an IP to limit' {
-            $PodeSession = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
+            $PodeSession.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
             Add-IPLimit -IP '127.0.0.1' -Limit 1 -Seconds 1
 
-            $a = $PodeSession.Limits.Rules.IP
+            $a = $PodeSession.Server.Limits.Rules.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('127.0.0.1') | Should Be $true
@@ -141,10 +143,10 @@ Describe 'Add-IPLimit' {
         }
 
         It 'Adds any IP to limit' {
-            $PodeSession = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
+            $PodeSession.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
             Add-IPLimit -IP 'all' -Limit 1 -Seconds 1
 
-            $a = $PodeSession.Limits.Rules.IP
+            $a = $PodeSession.Server.Limits.Rules.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('all') | Should Be $true
@@ -163,10 +165,10 @@ Describe 'Add-IPLimit' {
         }
 
         It 'Adds a subnet mask to limit' {
-            $PodeSession = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
+            $PodeSession.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
             Add-IPLimit -IP '10.10.0.0/24' -Limit 1 -Seconds 1
 
-            $a = $PodeSession.Limits.Rules.IP
+            $a = $PodeSession.Server.Limits.Rules.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('10.10.0.0/24') | Should Be $true
@@ -186,10 +188,10 @@ Describe 'Add-IPLimit' {
         }
 
         It 'Adds a grouped subnet mask to limit' {
-            $PodeSession = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
+            $PodeSession.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
             Add-IPLimit -IP '10.10.0.0/24' -Limit 1 -Seconds 1 -Group
 
-            $a = $PodeSession.Limits.Rules.IP
+            $a = $PodeSession.Server.Limits.Rules.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('10.10.0.0/24') | Should Be $true
@@ -209,7 +211,7 @@ Describe 'Add-IPLimit' {
         }
 
         It 'Throws error for invalid IP' {
-            $PodeSession = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
+            $PodeSession.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
             { Add-IPLimit -IP '256.0.0.0' -Limit 1 -Seconds 1 } | Should Throw 'invalid ip address'
         }
     }
@@ -228,10 +230,10 @@ Describe 'Add-IPAccess' {
 
     Context 'Valid parameters' {
         It 'Adds an IP to allow' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
             Add-IPAccess -Permission 'Allow' -IP '127.0.0.1'
 
-            $a = $PodeSession.Access.Allow.IP
+            $a = $PodeSession.Server.Access.Allow.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('127.0.0.1') | Should Be $true
@@ -247,10 +249,10 @@ Describe 'Add-IPAccess' {
         }
 
         It 'Adds any IP to allow' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
             Add-IPAccess -Permission 'Allow' -IP 'all'
 
-            $a = $PodeSession.Access.Allow.IP
+            $a = $PodeSession.Server.Access.Allow.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('all') | Should Be $true
@@ -266,10 +268,10 @@ Describe 'Add-IPAccess' {
         }
 
         It 'Adds a subnet mask to allow' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
             Add-IPAccess -Permission 'Allow' -IP '10.10.0.0/24'
 
-            $a = $PodeSession.Access.Allow.IP
+            $a = $PodeSession.Server.Access.Allow.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('10.10.0.0/24') | Should Be $true
@@ -285,10 +287,10 @@ Describe 'Add-IPAccess' {
         }
 
         It 'Adds an IP to deny' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
             Add-IPAccess -Permission 'Deny' -IP '127.0.0.1'
 
-            $a = $PodeSession.Access.Deny.IP
+            $a = $PodeSession.Server.Access.Deny.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('127.0.0.1') | Should Be $true
@@ -304,10 +306,10 @@ Describe 'Add-IPAccess' {
         }
 
         It 'Adds any IP to deny' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
             Add-IPAccess -Permission 'Deny' -IP 'all'
 
-            $a = $PodeSession.Access.Deny.IP
+            $a = $PodeSession.Server.Access.Deny.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('all') | Should Be $true
@@ -323,10 +325,10 @@ Describe 'Add-IPAccess' {
         }
 
         It 'Adds a subnet mask to deny' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
             Add-IPAccess -Permission 'Deny' -IP '10.10.0.0/24'
 
-            $a = $PodeSession.Access.Deny.IP
+            $a = $PodeSession.Server.Access.Deny.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('10.10.0.0/24') | Should Be $true
@@ -342,12 +344,12 @@ Describe 'Add-IPAccess' {
         }
 
         It 'Adds an IP to allow and removes one from deny' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
 
             # add to deny first
             Add-IPAccess -Permission 'Deny' -IP '127.0.0.1'
 
-            $a = $PodeSession.Access.Deny.IP
+            $a = $PodeSession.Server.Access.Deny.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('127.0.0.1') | Should Be $true
@@ -356,7 +358,7 @@ Describe 'Add-IPAccess' {
             Add-IPAccess -Permission 'Allow' -IP '127.0.0.1'
 
             # check allow
-            $a = $PodeSession.Access.Allow.IP
+            $a = $PodeSession.Server.Access.Allow.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('127.0.0.1') | Should Be $true
@@ -371,19 +373,19 @@ Describe 'Add-IPAccess' {
             $k.Upper.Bytes | Should Be @(127, 0, 0, 1)
 
             # check deny
-            $a = $PodeSession.Access.Deny.IP
+            $a = $PodeSession.Server.Access.Deny.IP
             $a | Should Not Be $null
             $a.Count | Should Be 0
             $a.ContainsKey('127.0.0.1') | Should Be $false
         }
 
         It 'Adds an IP to deny and removes one from allow' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
 
             # add to allow first
             Add-IPAccess -Permission 'Allow' -IP '127.0.0.1'
 
-            $a = $PodeSession.Access.Allow.IP
+            $a = $PodeSession.Server.Access.Allow.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('127.0.0.1') | Should Be $true
@@ -392,7 +394,7 @@ Describe 'Add-IPAccess' {
             Add-IPAccess -Permission 'Deny' -IP '127.0.0.1'
 
             # check deny
-            $a = $PodeSession.Access.Deny.IP
+            $a = $PodeSession.Server.Access.Deny.IP
             $a | Should Not Be $null
             $a.Count | Should Be 1
             $a.ContainsKey('127.0.0.1') | Should Be $true
@@ -407,14 +409,14 @@ Describe 'Add-IPAccess' {
             $k.Upper.Bytes | Should Be @(127, 0, 0, 1)
 
             # check allow
-            $a = $PodeSession.Access.Allow.IP
+            $a = $PodeSession.Server.Access.Allow.IP
             $a | Should Not Be $null
             $a.Count | Should Be 0
             $a.ContainsKey('127.0.0.1') | Should Be $false
         }
 
         It 'Throws error for invalid IP' {
-            $PodeSession = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
+            $PodeSession.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
             { Add-IPAccess -Permission 'Allow' -IP '256.0.0.0' } | Should Throw 'invalid ip address'
         }
     }

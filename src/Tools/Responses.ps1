@@ -62,7 +62,7 @@ function Write-ToResponseFromFile
     # are we dealing with a dynamic file for the view engine?
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
-    if ((Test-Empty $ext) -or $ext -ine $PodeSession.ViewEngine.Extension) {
+    if ((Test-Empty $ext) -or $ext -ine $PodeSession.Server.ViewEngine.Extension) {
         if (Test-IsPSCore) {
             $content = Get-Content -Path $Path -Raw -AsByteStream
         }
@@ -85,8 +85,8 @@ function Write-ToResponseFromFile
         }
 
         default {
-            if ($null -ne $PodeSession.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.ViewEngine.Script -Arguments $Path)
+            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments $Path)
             }
         }
     }
@@ -329,7 +329,7 @@ function Include
     $ext = Get-FileExtension -Path $Path
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
     if (!$hasExt) {
-        $Path += ".$($PodeSession.ViewEngine.Extension)"
+        $Path += ".$($PodeSession.Server.ViewEngine.Extension)"
     }
 
     # only look in the view directory
@@ -339,7 +339,7 @@ function Include
     }
 
     # run any engine logic
-    $engine = $PodeSession.ViewEngine.Extension
+    $engine = $PodeSession.Server.ViewEngine.Extension
     if ($hasExt) {
         $engine = $ext.Trim('.')
     }
@@ -358,8 +358,8 @@ function Include
         }
 
         default {
-            if ($null -ne $PodeSession.ViewEngine.Script) {
-                $content = (. $PodeSession.ViewEngine.Script $Path, $Data)
+            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
+                $content = (. $PodeSession.Server.ViewEngine.Script $Path, $Data)
             }
         }
     }
@@ -392,7 +392,7 @@ function View
     $ext = Get-FileExtension -Path $Path
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
     if (!$hasExt) {
-        $Path += ".$($PodeSession.ViewEngine.Extension)"
+        $Path += ".$($PodeSession.Server.ViewEngine.Extension)"
     }
 
     # only look in the view directory
@@ -403,7 +403,7 @@ function View
     }
 
     # run any engine logic
-    $engine = $PodeSession.ViewEngine.Extension
+    $engine = $PodeSession.Server.ViewEngine.Extension
     if ($hasExt) {
         $engine = $ext.Trim('.')
     }
@@ -422,8 +422,8 @@ function View
         }
 
         default {
-            if ($null -ne $PodeSession.ViewEngine.Script) {
-                $content = (. $PodeSession.ViewEngine.Script $Path, $Data)
+            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
+                $content = (. $PodeSession.Server.ViewEngine.Script $Path, $Data)
             }
         }
     }

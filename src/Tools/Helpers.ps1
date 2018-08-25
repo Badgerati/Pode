@@ -573,7 +573,7 @@ function Join-ServerRoot
     )
 
     if (Test-Empty $Root) {
-        $Root = $PodeSession.ServerRoot
+        $Root = $PodeSession.Server.Root
     }
 
     return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
@@ -592,14 +592,27 @@ function Invoke-ScriptBlock
         $Arguments = $null,
 
         [switch]
-        $Scoped
+        $Scoped,
+
+        [switch]
+        $Return
     )
 
     if ($Scoped) {
-        & $ScriptBlock $Arguments
+        if ($Return) {
+            return (& $ScriptBlock $Arguments)
+        }
+        else {
+            & $ScriptBlock $Arguments
+        }
     }
     else {
-        . $ScriptBlock $Arguments
+        if ($Return) {
+            return (. $ScriptBlock $Arguments)
+        }
+        else {
+            . $ScriptBlock $Arguments
+        }
     }
 }
 

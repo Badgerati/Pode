@@ -6,12 +6,12 @@ function Start-TcpServer
     }
 
     # grab the relavant port
-    $port = $PodeSession.IP.Port
+    $port = $PodeSession.Server.IP.Port
     if ($port -eq 0) {
         $port = 9001
     }
 
-    $endpoint = New-Object System.Net.IPEndPoint($PodeSession.IP.Address, $port)
+    $endpoint = New-Object System.Net.IPEndPoint($PodeSession.Server.IP.Address, $port)
     $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
 
     try
@@ -30,7 +30,7 @@ function Start-TcpServer
     }
 
     # state where we're running
-    Write-Host "Listening on tcp://$($PodeSession.IP.Name):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on tcp://$($PodeSession.Server.IP.Name):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {
