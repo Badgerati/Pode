@@ -30,7 +30,7 @@ function Invoke-CookieSign
         $Secret
     )
 
-    return "$($Value).$(Invoke-SHA256Encrypt -Value $Value -Secret $Secret)"
+    return "s:$($Value).$(Invoke-SHA256Encrypt -Value $Value -Secret $Secret)"
 }
 
 function Invoke-CookieUnsign
@@ -47,6 +47,11 @@ function Invoke-CookieUnsign
         $Secret
     )
 
+    if (!$Signature.StartsWith('s:')) {
+        return $null
+    }
+
+    $Signature = $Signature.Substring(2)
     $periodIndex = $Signature.LastIndexOf('.')
     $value = $Signature.Substring(0, $periodIndex)
     $sig = $Signature.Substring($periodIndex + 1)

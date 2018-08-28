@@ -20,8 +20,14 @@ function Invoke-PodeMiddleware
     # loop through each of the middleware, invoking the next if it returns true
     foreach ($midware in @($Middleware))
     {
-        $continue = Invoke-ScriptBlock -ScriptBlock ($midware.GetNewClosure()) `
-            -Arguments $Session -Scoped -Return
+        try {
+            $continue = Invoke-ScriptBlock -ScriptBlock ($midware.GetNewClosure()) `
+                -Arguments $Session -Scoped -Return
+        }
+        catch {
+            $Error[0] | Out-Default
+            $continue = $false
+        }
 
         if (!$continue) {
             break

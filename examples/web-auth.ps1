@@ -24,17 +24,16 @@ Server {
     middleware {
         param($s)
 
-        $v = $s.Session.Get($s.Request, 'pode-sid')
-        if (![string]::IsNullOrWhiteSpace($v)) {
-            $v | Out-Default
-        }
+        $v = $s.Session.GetSession($s.Request, 'pode-sid')
+        $v | Out-Default
 
         return $true
     }
 
     middleware {
         param($s)
-        $s.Session.Set($s.Response, 'pode-sid', 'hello')
+        $sid = $s.Session.GenerateSessionId()
+        $s.Session.SetSession($s.Response, 'pode-sid', $sid, $null, [DateTime]::Now.AddDays(1))
         return $true
     }
 
