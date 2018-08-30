@@ -20,11 +20,11 @@ Server {
 
     # setup session details
     middleware (session @{
-        'Secret' = 'schwifty';
-        'Name' = 'pode.sid';
-        'Duration' = 120;
-        'Rolling' = $true; # extend the duration each time
-        'GenerateId' = {
+        'Secret' = 'schwifty';  # secret-key used to sign session cookie
+        'Name' = 'pode.sid';    # session cookie name (def: pode.sid)
+        'Duration' = 120;       # duration of the cookie, in seconds
+        'Extend' = $true;       # extend the duration of the cookie on each call
+        'GenerateId' = {        # custom SessionId generator (def: guid)
             return [System.IO.Path]::GetRandomFileName()
         };
     })

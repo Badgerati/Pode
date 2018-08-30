@@ -46,7 +46,7 @@ function Session
         'Store' = (coalesce $Options.Store (Get-PodeSessionCookieInMemStore));
         'Info' = @{
             'Duration' = [int]($Options.Duration);
-            'Rolling' = [bool]($Options.Rolling);
+            'Extend' = [bool]($Options.Extend);
             'Secure' = [bool]($Options.Secure);
             'Discard' = [bool]($Options.Discard);
         };
@@ -87,8 +87,8 @@ function Session
             # add helper methods to session
             Set-PodeSessionCookieHelpers -Session $s.Session
 
-            # add session cookie to response if it's new or rolling
-            if ($new -or $s.Session.Cookie.Rolling) {
+            # add cookie to response if it's new or extendible
+            if ($new -or $s.Session.Cookie.Extend) {
                 Set-PodeSessionCookie -Response $s.Response -Session $s.Session
             }
 
@@ -219,7 +219,7 @@ function Get-PodeSessionCookieExpiry
         $Session
     )
 
-    $expiry = (iftet $Session.Cookie.Rolling ([DateTime]::UtcNow) $Session.Cookie.TimeStamp)
+    $expiry = (iftet $Session.Cookie.Extend ([DateTime]::UtcNow) $Session.Cookie.TimeStamp)
     $expiry = $expiry.AddSeconds($Session.Cookie.Duration)
     return $expiry
 }
