@@ -19,28 +19,21 @@ Server {
     engine pode
 
     # setup session details
-    session @{ 'secret' = 'schwifty' }
-
-    middleware {
-        param($s)
-
-        $v = $s.Session.GetSession($s.Request, 'pode-sid')
-        $v | Out-Default
-
-        return $true
-    }
-
-    middleware {
-        param($s)
-        $sid = $s.Session.GenerateSessionId()
-        $s.Session.SetSession($s.Response, 'pode-sid', $sid, $null, [DateTime]::Now.AddDays(1))
-        return $true
-    }
+    middleware (session @{
+        'Secret' = 'schwifty';
+        'Name' = 'pode.sid';
+        'Duration' = 120;
+        'Rolling' = $true; # extend the duration each time
+        'GenerateId' = {
+            return [System.IO.Path]::GetRandomFileName()
+        };
+    })
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        param($session)
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        param($s)
+        $s.Session.Data.Views++
+        view 'simple' -Data @{ 'numbers' = @($s.Session.Data.Views); }
     }
 
 }

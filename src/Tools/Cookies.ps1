@@ -7,138 +7,297 @@ function Session
         $Options
     )
 
-    # assign secret to to active server
+    # check that session logic hasn't already been defined
+    if (!(Test-Empty $PodeSession.Server.Cookies.Session)) {
+        throw 'Session middleware logic has already been defined'
+    }
+
+    # ensure a secret was actually passed
     if (Test-Empty $Options.Secret) {
         throw 'A secret key is required for session cookies'
     }
 
-    $PodeSession.Server.Cookies.Session.SecretKey = $Options.Secret
-    Add-PodeSessionFunctions -Options $Options
+    # ensure the override generator is a scriptblock
+    if (!(Test-Empty $Options.GenerateId) -and (Get-Type $Options.GenerateId).Name -ine 'scriptblock') {
+        throw "Session GenerateId should be a ScriptBlock, but got: $((Get-Type $Options.GenerateId).Name)"
+    }
+
+    # ensure the override store has the required methods
+    if (!(Test-Empty $Options.Store)) {
+        $members = @($Options.Store | Get-Member | Select-Object -ExpandProperty Name)
+        @('delete', 'get', 'set', 'active') | ForEach-Object {
+            if ($members -inotcontains $_) {
+                throw "Custom session store does not implement the required '$($_)' method"
+            }
+        }
+    }
+
+    # ensure the duration is not <0
+    $Options.Duration = [int]($Options.Duration)
+    if ($Options.Duration -lt 0) {
+        throw "Session duration must be 0 or greater, but got: $($Options.Duration)s"
+    }
+
+    # set options against session
+    $PodeSession.Server.Cookies.Session = @{
+        'Name' = (coalesce $Options.Name 'pode.sid');
+        'SecretKey' = $Options.Secret;
+        'GenerateId' = (coalesce $Options.GenerateId { return (Get-NewGuid) });
+        'Store' = (coalesce $Options.Store (Get-PodeSessionCookieInMemStore));
+        'Info' = @{
+            'Duration' = [int]($Options.Duration);
+            'Rolling' = [bool]($Options.Rolling);
+            'Secure' = [bool]($Options.Secure);
+            'Discard' = [bool]($Options.Discard);
+        };
+    }
 
     # bind session middleware to attach session function
-    middleware {
+    return {
         param($s)
 
-        $s.Session = $PodeSession.Server.Cookies.Session
+        # if session already set, return
+        if ($s.Session) {
+            return $true
+        }
 
-        #$s.Session = @{}
+        try
+        {
+            # get the session cookie
+            $s.Session = Get-PodeSessionCookie -Request $s.Request
 
-        # get a session
-        #$s.Session | Add-Member -MemberType ScriptMethod -Name Get -Value {
-        #    param($req, $name)
+            # if no session on browser, create a new one
+            if (!$s.Session) {
+                $s.Session = (New-PodeSessionCookie)
+                $new = $true
+            }
 
-        #    $cookie = $req.Cookies[$name]
-        #    if ($null -eq $cookie -or !$cookie.Value) {
-        #        return $null
-        #    }
+            # get the session's data
+            elseif (($data = $PodeSession.Server.Cookies.Session.Store.Get($s.Session.Id)) -ne $null) {
+                $s.Session.Data = $data
+                Set-PodeSessionCookieDataHash -Session $s.Session
+            }
 
-        #    return (Invoke-CookieUnsign -Signature $cookie.Value -Secret $PodeSession.Server.Cookies.Session.SecretKey)
-        #}
+            # session not in store, create a new one
+            else {
+                $s.Session = (New-PodeSessionCookie)
+                $new = $true
+            }
 
-        # set a session
-        #$s.Session | Add-Member -MemberType ScriptMethod -Name Set -Value {
-        #    param($res, $name, $sessionId, $expires)
+            # add helper methods to session
+            Set-PodeSessionCookieHelpers -Session $s.Session
 
-        #    $signedValue = (Invoke-CookieSign -Value $sessionId -Secret $PodeSession.Server.Cookies.Session.SecretKey)
+            # add session cookie to response if it's new or rolling
+            if ($new -or $s.Session.Cookie.Rolling) {
+                Set-PodeSessionCookie -Response $s.Response -Session $s.Session
+            }
 
-        #    $cookie = [System.Net.Cookie]::new($name, $signedValue)
-        #    $cookie.Expires = $expires
+            # assign endware for session to set cookie/storage
+            $s.OnEnd += {
+                param($s)
+                $s.Session.Save()
+            }
+        }
+        catch {
+            $Error[0] | Out-Default
+            return $false
+        }
 
-        #    $res.AppendCookie($cookie) | Out-Null
-        #}
-
+        # move along
         return $true
     }
 }
 
-function Add-PodeSessionFunctions
+function Get-PodeSessionCookie
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        [hashtable]
-        $Options
+        $Request
     )
 
-    # get a sessionId from cookie name (ensures cookie is signed), and returns the session/stored data
-    $PodeSession.Server.Cookies.Session | Add-Member -MemberType ScriptMethod -Name GetSession -Value {
-        param($req, $name)
+    # get the session from cookie
+    $cookie = $Request.Cookies[$PodeSession.Server.Cookies.Session.Name]
+    if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
+        return $null
+    }
 
-        # get the session from cookie
-        $cookie = $req.Cookies[$name]
-        if ($null -eq $cookie -or !$cookie.Value) {
+    # ensure the session was signed
+    $session = (Invoke-CookieUnsign -Signature $cookie.Value -Secret $PodeSession.Server.Cookies.Session.SecretKey)
+    if (Test-Empty $session) {
+        return $null
+    }
+
+    # return session cookie data
+    $data = @{
+        'Name' = $cookie.Name;
+        'Id' = $session;
+        'Cookie' = $PodeSession.Server.Cookies.Session.Info;
+        'Data' = @{};
+    }
+
+    $data.Cookie.TimeStamp = $cookie.TimeStamp
+    return $data
+}
+
+function Set-PodeSessionCookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Response,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    # sign the session
+    $signedValue = (Invoke-CookieSign -Value $Session.Id -Secret $PodeSession.Server.Cookies.Session.SecretKey)
+
+    # create a new cookie
+    $cookie = [System.Net.Cookie]::new($Session.Name, $signedValue)
+    $cookie.Secure = $Session.Cookie.Secure
+    $cookie.Discard = $Session.Cookie.Discard
+
+    # calculate the expiry
+    $cookie.Expires = (Get-PodeSessionCookieExpiry -Session $Session)
+
+    # assign cookie to response
+    $Response.AppendCookie($cookie) | Out-Null
+}
+
+function New-PodeSessionCookie
+{
+    $sid = @{
+        'Name' = $PodeSession.Server.Cookies.Session.Name;
+        'Id' = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Cookies.Session.GenerateId -Return);
+        'Cookie' = $PodeSession.Server.Cookies.Session.Info;
+        'Data' = @{};
+    }
+
+    Set-PodeSessionCookieDataHash -Session $sid
+
+    $sid.Cookie.TimeStamp = [DateTime]::UtcNow
+    return $sid
+}
+
+function Set-PodeSessionCookieDataHash
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    $Session.Data = (coalesce $Session.Data @{})
+    $Session.DataHash = (Invoke-SHA256Hash -Value ($Session.Data | ConvertTo-Json))
+}
+
+function Test-PodeSessionCookieDataHash
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    if (Test-Empty $Session.DataHash) {
+        return $false
+    }
+
+    $Session.Data = (coalesce $Session.Data @{})
+    $hash = (Invoke-SHA256Hash -Value ($Session.Data | ConvertTo-Json))
+    return ($Session.DataHash -eq $hash)
+}
+
+function Get-PodeSessionCookieExpiry
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    $expiry = (iftet $Session.Cookie.Rolling ([DateTime]::UtcNow) $Session.Cookie.TimeStamp)
+    $expiry = $expiry.AddSeconds($Session.Cookie.Duration)
+    return $expiry
+}
+
+function Set-PodeSessionCookieHelpers
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    # force save a session's data to the store
+    $Session | Add-Member -MemberType ScriptMethod -Name Save -Value {
+        param($check)
+
+        # only save if check and hashes different
+        if ($check -and !(Test-PodeSessionCookieDataHash -Session $this)) {
+            return
+        }
+
+        # generate the expiry
+        $expiry = (Get-PodeSessionCookieExpiry -Session $this)
+
+        # save session data to store
+        $PodeSession.Server.Cookies.Session.Store.Set($this.Id, $this.Data, $expiry)
+
+        # update session's data hash
+        Set-PodeSessionCookieDataHash -Session $this
+    }
+
+    # delete the current session
+    $Session | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+        # remove data from store
+        $PodeSession.Server.Cookies.Session.Store.Delete($this.Id)
+
+        # clear session
+        $this.Clear()
+    }
+}
+
+function Get-PodeSessionCookieInMemStore
+{
+    $store = New-Object -TypeName psobject
+
+    # add in-mem storage
+    $store | Add-Member -MemberType NoteProperty -Name Memory -Value @{}
+
+    # delete a sessionId and data
+    $store | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+        param($sessionId)
+        $this.Memory.Remove($sessionId) | Out-Null
+    }
+
+    # get a sessionId's data
+    $store | Add-Member -MemberType ScriptMethod -Name Get -Value {
+        param($sessionId)
+
+        $s = $this.Memory[$sessionId]
+
+        # if expire, remove
+        if ($null -ne $s -and $s.Expiry -lt [DateTime]::UtcNow) {
+            $this.Memory.Remove($sessionId) | Out-Null
             return $null
         }
 
-        # ensure the session was signed
-        $session = (Invoke-CookieUnsign -Signature $cookie.Value -Secret $this.SecretKey)
+        return $s.Data
+    }
 
-        # get session data
+    # update/insert a sessionId and data
+    $store | Add-Member -MemberType ScriptMethod -Name Set -Value {
+        param($sessionId, $data, $expiry)
 
-        # return data
-        return @{
-            'SessionId' = $session;
-            'Data' = $null;
+        $this.Memory[$sessionId] = @{
+            'Data' = $data;
+            'Expiry' = $expiry;
         }
     }
 
-    # set a sessionId on a cookie, and stores some data against it
-    $PodeSession.Server.Cookies.Session | Add-Member -MemberType ScriptMethod -Name SetSession -Value {
-        param($res, $name, $sessionId, $data, $expires)
-
-        # ensure the session doesn't already exist
-
-        # sign the session
-        $signedValue = (Invoke-CookieSign -Value $sessionId -Secret $this.SecretKey)
-
-        # create a new cookie, and set expiry
-        $cookie = [System.Net.Cookie]::new($name, $signedValue)
-        $cookie.Expires = $expires
-
-        # store data against the session
-
-        # assign cookie to response
-        $res.AppendCookie($cookie) | Out-Null
-    }
-
-    # deletes the sessionId from the store
-    $PodeSession.Server.Cookies.Session | Add-Member -MemberType ScriptMethod -Name RemoveSession -Value {
-        param($res, $sessionId)
-
-        # remove any data stored for the session
-    }
-
-    # returns any stored data for a sessionId
-    $PodeSession.Server.Cookies.Session | Add-Member -MemberType ScriptMethod -Name GetSessionData -Value {
-        param($res, $sessionId)
-
-        # get any data stored for the session
-
-        # return the data
-        return @{
-            'SessionId' = $sessionId;
-            'Data' = $null;
-        }
-    }
-
-    # set some data for a stored sessionId (overwrite existing data)
-    $PodeSession.Server.Cookies.Session | Add-Member -MemberType ScriptMethod -Name SetSessionData -Value {
-        param($res, $sessionId, $data)
-
-        # store data against the session
-    }
-
-    # generate a new sessionId (overridable)
-    $PodeSession.Server.Cookies.Session | Add-Member -MemberType ScriptMethod -Name GenerateSessionId -Value {
-        return ([guid]::NewGuid()).ToString()
-    }
-
-    # checks that a session is stored in memory (returns true/false)
-    $PodeSession.Server.Cookies.Session | Add-Member -MemberType ScriptMethod -Name IsSessionValid -Value {
-        param($res, $sessionId, $data)
-
-        # check if the session exists in the store
-
-        return $true
-    }
+    return $store
 }

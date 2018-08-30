@@ -53,12 +53,18 @@ function Test-Empty
         return $true
     }
 
-    if ($type.Name -ieq 'string') {
-        return [string]::IsNullOrWhiteSpace($Value)
-    }
+    switch ($type.Name) {
+        'string' {
+            return [string]::IsNullOrWhiteSpace($Value)
+        }
 
-    if ($type.Name -ieq 'hashtable') {
-        return $Value.Count -eq 0
+        'hashtable' {
+            return ($Value.Count -eq 0)
+        }
+
+        'scriptblock' {
+            return ($null -eq $Value -or [string]::IsNullOrWhiteSpace($Value.ToString()))
+        }
     }
 
     switch ($type.BaseName) {
@@ -640,6 +646,19 @@ function Iftet
     return $Value2
 }
 
+function Coalesce
+{
+    param (
+        [Parameter()]
+        $Value1,
+
+        [Parameter()]
+        $Value2
+    )
+
+    return (iftet (Test-Empty $Value1) $Value2 $Value1)
+}
+
 function Get-FileExtension
 {
     param (
@@ -817,4 +836,9 @@ function ConvertFrom-PodeContent
     }
 
     return $Content
+}
+
+function Get-NewGuid
+{
+    return ([guid]::NewGuid()).ToString()
 }

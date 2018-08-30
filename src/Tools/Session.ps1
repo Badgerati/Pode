@@ -134,6 +134,9 @@ function New-PodeSession
     # middleware that needs to run
     $session.Server.Middleware = @()
 
+    # endware that needs to run
+    $session.Server.Endware = @()
+
     # runspace pools
     $session.RunspacePools = @{
         'Main' = $null;

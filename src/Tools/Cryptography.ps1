@@ -1,4 +1,4 @@
-function Invoke-SHA256Encrypt
+function Invoke-HMACSHA256Hash
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -16,6 +16,19 @@ function Invoke-SHA256Encrypt
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
+function Invoke-SHA256Hash
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Value
+    )
+
+    $crypto = [System.Security.Cryptography.SHA256]::Create()
+    return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
+}
+
 function Invoke-CookieSign
 {
     param (
@@ -30,7 +43,7 @@ function Invoke-CookieSign
         $Secret
     )
 
-    return "s:$($Value).$(Invoke-SHA256Encrypt -Value $Value -Secret $Secret)"
+    return "s:$($Value).$(Invoke-HMACSHA256Hash -Value $Value -Secret $Secret)"
 }
 
 function Invoke-CookieUnsign
@@ -56,7 +69,7 @@ function Invoke-CookieUnsign
     $value = $Signature.Substring(0, $periodIndex)
     $sig = $Signature.Substring($periodIndex + 1)
 
-    if ((Invoke-SHA256Encrypt -Value $value -Secret $Secret) -ne $sig) {
+    if ((Invoke-HMACSHA256Hash -Value $value -Secret $Secret) -ne $sig) {
         return $null
     }
 
