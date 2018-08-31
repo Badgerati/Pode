@@ -38,12 +38,21 @@ function Session
         throw "Session duration must be 0 or greater, but got: $($Options.Duration)s"
     }
 
+    # get the appropriate store
+    $store = $Options.Store
+
+    # if no custom store, use the inmem one
+    if (Test-Empty $store) {
+        $store = (Get-PodeSessionCookieInMemStore)
+        Set-PodeSessionCookieInMemClearDown
+    }
+
     # set options against session
     $PodeSession.Server.Cookies.Session = @{
         'Name' = (coalesce $Options.Name 'pode.sid');
         'SecretKey' = $Options.Secret;
         'GenerateId' = (coalesce $Options.GenerateId { return (Get-NewGuid) });
-        'Store' = (coalesce $Options.Store (Get-PodeSessionCookieInMemStore));
+        'Store' = $store;
         'Info' = @{
             'Duration' = [int]($Options.Duration);
             'Extend' = [bool]($Options.Extend);
@@ -300,4 +309,23 @@ function Get-PodeSessionCookieInMemStore
     }
 
     return $store
+}
+
+function Set-PodeSessionCookieInMemClearDown
+{
+    # cleardown expired inmem session every 10 minutes
+    schedule '__pode_session_inmem_cleanup__' '0/10 * * * *' {
+        $store = $PodeSession.Server.Cookies.Session.Store
+        if (Test-Empty $store.Memory) {
+            return
+        }
+
+        # remove sessions that have expired
+        $now = [DateTime]::UtcNow
+        $store.Memory.Keys | ForEach-Object {
+            if ($store.Memory[$_].Expiry -lt $now) {
+                $store.Memory.Remove($_)
+            }
+        }
+    }
 }

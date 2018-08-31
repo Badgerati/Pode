@@ -70,6 +70,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Basic rate limiting for IP addresses and subnets
 * Support for generating/binding self-signed certificates, and binding signed certificates
 * Support for middleware on web servers
+* Session middleware support on web requests
 
 ## Install
 
@@ -1051,13 +1052,6 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `csv`
 * `view`
 * `tcp`
-* `Get-PodeRoute`
-* `Get-PodeTcpHandler`
-* `Get-PodeTimer`
-* `Write-ToResponse`
-* `Write-ToResponseFromFile`
-* `Test-IsUnix`
-* `Test-IsPSCore`
 * `status`
 * `redirect`
 * `include`
@@ -1072,3 +1066,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `schedule`
 * `middleware`
 * `endware`
+* `session`
