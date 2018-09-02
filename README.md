@@ -546,9 +546,9 @@ If supplied, the `GenerateId` must be a scriptblock that returns a valid string.
 If supplied, the `Store` must be a valid object with the followed required functions:
 
 ```powershell
-.Get([string] $sessionId)
-.Set([string] $sessionId, [hashtable] $data, [datetime] $expiry)
-.Delete([string] $sessionId)
+[hashtable] Get([string] $sessionId)
+[void]      Set([string] $sessionId, [hashtable] $data, [datetime] $expiry)
+[void]      Delete([string] $sessionId)
 ```
 
 If no store is supplied, then a default in-memory store is used - with auto-cleanup for expired sessions.

@@ -25,7 +25,7 @@ function Session
     # ensure the override store has the required methods
     if (!(Test-Empty $Options.Store)) {
         $members = @($Options.Store | Get-Member | Select-Object -ExpandProperty Name)
-        @('delete', 'get', 'set', 'active') | ForEach-Object {
+        @('delete', 'get', 'set') | ForEach-Object {
             if ($members -inotcontains $_) {
                 throw "Custom session store does not implement the required '$($_)' method"
             }
