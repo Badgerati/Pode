@@ -34,6 +34,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
     * [Middleware](#middleware)
         * [Order of Running](#order-of-running)
         * [Overriding Inbuilt Logic](#overriding-inbuilt-logic)
+        * [Sessions](#sessions)
     * [SMTP Server](#smtp-server)
     * [Misc](#misc)
         * [Logging](#logging)
@@ -70,6 +71,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Basic rate limiting for IP addresses and subnets
 * Support for generating/binding self-signed certificates, and binding signed certificates
 * Support for middleware on web servers
+* Session middleware support on web requests
 
 ## Install
 
@@ -480,6 +482,8 @@ Middleware in Pode is executed in a specific order, this order of running is as 
 * Route middleware  - runs any `route` middleware for the current route being processed
 * Route             - finally, the route itself is processed
 
+> This order will be fully customisable in future releases, which will also remove the overriding logic below
+
 #### Overriding Inbuilt Logic
 
 Pode has some inbuilt middleware, as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS. Each of the inbuilt middlewares have a defined name, that you can pass to the `middleware` function:
@@ -509,6 +513,61 @@ Server {
     route get '/' {
         # logic
     }
+}
+```
+
+#### Sessions
+
+Session `middleware` is supported in Pode on web requests/responses, in the form of signed-cookies and server-side data storage. When configured, the middleware will check for a session-cookie on the request; if a cookie is not found on the request, or the session is not in the store, then a new session is created and attached to the response. If there is a session, then the appropriate data is loaded from the store.
+
+The age of the session-cookie can be specified (and whether to extend the duration each time), as well as a secret-key to sign cookies, and the ability to specify custom data stores - the default is in-mem, custom could be anything like redis/mongo.
+
+The following is an example of how to setup session middleware:
+
+```powershell
+Server {
+
+    middleware (session @{
+        'Secret' = 'schwifty';  # secret-key used to sign session cookie
+        'Name' = 'pode.sid';    # session cookie name (def: pode.sid)
+        'Duration' = 120;       # duration of the cookie, in seconds
+        'Extend' = $true;       # extend the duration of the cookie on each call
+        'GenerateId' = {        # custom SessionId generator (def: guid)
+            return [System.IO.Path]::GetRandomFileName()
+        };
+        'Store' = $null;        # custom object with required methods (def: in-mem)
+    })
+
+}
+```
+
+##### GenerateId
+
+If supplied, the `GenerateId` must be a scriptblock that returns a valid string. The string itself should be a random unique value, that can be used as a session identifier. The default `sessionId` is a `guid`.
+
+##### Store
+
+If supplied, the `Store` must be a valid object with the following required functions:
+
+```powershell
+[hashtable] Get([string] $sessionId)
+[void]      Set([string] $sessionId, [hashtable] $data, [datetime] $expiry)
+[void]      Delete([string] $sessionId)
+```
+
+If no store is supplied, then a default in-memory store is used - with auto-cleanup for expired sessions.
+
+To add data to a session you can utilise the `.Session.Data` object within a `route`. The data will be saved at the end of the route logic autmoatically using `endware`. When a request comes in using the same session, the data is loaded from the store. An example of using a `session` in a `route` to increment a views counter could be as follows (the counter will continue to increment on each call to the route until the session expires):
+
+```powershell
+Server {
+
+    route 'get' '/' {
+        param($s)
+        $s.Session.Data.Views++
+        json @{ 'Views' = $s.Session.Data.Views }
+    }
+
 }
 ```
 
@@ -1051,13 +1110,6 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `csv`
 * `view`
 * `tcp`
-* `Get-PodeRoute`
-* `Get-PodeTcpHandler`
-* `Get-PodeTimer`
-* `Write-ToResponse`
-* `Write-ToResponseFromFile`
-* `Test-IsUnix`
-* `Test-IsPSCore`
 * `status`
 * `redirect`
 * `include`
@@ -1071,3 +1123,5 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `stream`
 * `schedule`
 * `middleware`
+* `endware`
+* `session`

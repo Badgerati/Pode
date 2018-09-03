@@ -88,6 +88,10 @@ Describe 'Test-Empty' {
         It 'Return true for a whitespace string' {
             Test-Empty -Value "  " | Should Be $true
         }
+        
+        It 'Return true for an empty scriptblock' {
+            Test-Empty -Value {} | Should Be $true
+        }
     }
 
     Context 'Valid value is passed' {
@@ -105,6 +109,10 @@ Describe 'Test-Empty' {
 
         It 'Return false for a hashtable' {
             Test-Empty -Value @{'key'='value';} | Should Be $false
+        }
+
+        It 'Return false for a scriptblock' {
+            Test-Empty -Value { write-host '' } | Should Be $false
         }
     }
 }

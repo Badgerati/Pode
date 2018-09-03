@@ -29,13 +29,14 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
 * Basic rate limiting for IP addresses and subnets
 * Support for generating/binding self-signed certificates, and binding signed certificates
 * Support for middleware on web servers
+* Session middleware support on web requests
 
     </description>
     <projectUrl>https://github.com/Badgerati/Pode</projectUrl>
     <packageSourceUrl>https://github.com/Badgerati/Pode/tree/master/packers</packageSourceUrl>
     <docsUrl>https://github.com/Badgerati/Pode</docsUrl>
     <bugTrackerUrl>https://github.com/Badgerati/Pode/issues</bugTrackerUrl>
-    <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html unix cross-platform access-control file-monitoring multithreaded rate-limiting cron schedule middleware</tags>
+    <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html unix cross-platform access-control file-monitoring multithreaded rate-limiting cron schedule middleware session</tags>
     <copyright>Copyright 2017-2018</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

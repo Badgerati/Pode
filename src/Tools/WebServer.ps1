@@ -106,6 +106,7 @@ function Start-WebServer
 
                 # reset session data
                 $WebSession = @{}
+                $WebSession.OnEnd = @()
                 $WebSession.Response = $response
                 $WebSession.Request = $request
                 $WebSession.Lockable = $PodeSession.Lockable
@@ -129,6 +130,10 @@ function Start-WebServer
                         Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
                     }
                 }
+
+                # invoke endware specifc to the current websession
+                $_endware = ($WebSession.OnEnd + @(($PodeSession.Server.Endware).Logic))
+                Invoke-PodeEndware -Session $WebSession -Endware $_endware
 
                 # close response stream (check if exists, as closing the writer closes this stream on unix)
                 if ($response.OutputStream) {

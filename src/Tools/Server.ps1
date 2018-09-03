@@ -201,11 +201,15 @@ function Restart-PodeServer
         $PodeSession.Schedules.Clear()
         $PodeSession.Loggers.Clear()
 
-        # clear middleware
+        # clear middle/endware
         $PodeSession.Server.Middleware.Clear()
+        $PodeSession.Server.Endware.Clear()
 
         # clear up view engine
         $PodeSession.Server.ViewEngine.Clear()
+
+        # clear up cookie sessions
+        $PodeSession.Server.Cookies.Session.Clear()
 
         # clear up shared state
         $PodeSession.Server.State.Clear()
