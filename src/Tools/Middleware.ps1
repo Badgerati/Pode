@@ -21,8 +21,15 @@ function Invoke-PodeMiddleware
     foreach ($midware in @($Middleware))
     {
         try {
-            $continue = Invoke-ScriptBlock -ScriptBlock ($midware.GetNewClosure()) `
+            # set any custom middleware options
+            $Session.Middleware = @{ 'Options' = $midware.Options }
+
+            # invoke the middleware logic
+            $continue = Invoke-ScriptBlock -ScriptBlock ($midware.Logic.GetNewClosure()) `
                 -Arguments $Session -Scoped -Return
+
+            # remove any custom middleware options
+            $Session.Middleware.Clear()
         }
         catch {
             $Error[0] | Out-Default

@@ -211,6 +211,9 @@ function Restart-PodeServer
         # clear up cookie sessions
         $PodeSession.Server.Cookies.Session.Clear()
 
+        # clear up authentication methods
+        $PodeSession.Server.Authentications.Clear()
+
         # clear up shared state
         $PodeSession.Server.State.Clear()
 

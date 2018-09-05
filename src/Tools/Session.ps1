@@ -122,6 +122,9 @@ function New-PodeSession
         'Session' = @{};
     }
 
+    # authnetication methods
+    $session.Server.Authentications = @{}
+
     # create new cancellation tokens
     $session.Tokens = @{
         'Cancellation' = New-Object System.Threading.CancellationTokenSource;

@@ -117,8 +117,7 @@ function Start-WebServer
                 $logObject = New-PodeLogObject -Request $request -Path $WebSession.Path
 
                 # invoke middleware
-                $_midware = ($PodeSession.Server.Middleware).Logic
-                if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $_midware)) {
+                if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $PodeSession.Server.Middleware)) {
                     # get the route logic
                     $route = Get-PodeRoute -HttpMethod $WebSession.Method -Route $WebSession.Path
                     if ($null -eq $route) {

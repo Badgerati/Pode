@@ -149,7 +149,10 @@ function Status
     )
 
     $WebSession.Response.StatusCode = $Code
-    $WebSession.Response.StatusDescription = $Description
+
+    if (!(Test-Empty $Description)) {
+        $WebSession.Response.StatusDescription = $Description
+    }
 }
 
 function Redirect
