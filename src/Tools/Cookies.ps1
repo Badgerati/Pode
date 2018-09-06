@@ -82,7 +82,7 @@ function Session
             }
 
             # get the session's data
-            elseif (($data = $PodeSession.Server.Cookies.Session.Store.Get($s.Session.Id)) -ne $null) {
+            elseif ($null -ne ($data = $PodeSession.Server.Cookies.Session.Store.Get($s.Session.Id))) {
                 $s.Session.Data = $data
                 Set-PodeSessionCookieDataHash -Session $s.Session
             }
@@ -104,7 +104,12 @@ function Session
             # assign endware for session to set cookie/storage
             $s.OnEnd += {
                 param($s)
-                $s.Session.Save()
+
+                if (!(Test-Empty $s.Session.Auth) -and $s.Session.Auth.Store) {
+                    $s.Session.Data.Auth = $s.Session.Auth
+                }
+
+                $s.Session.Save($true)
             }
         }
         catch {
@@ -246,7 +251,7 @@ function Set-PodeSessionCookieHelpers
         param($check)
 
         # only save if check and hashes different
-        if ($check -and !(Test-PodeSessionCookieDataHash -Session $this)) {
+        if ($check -and (Test-PodeSessionCookieDataHash -Session $this)) {
             return
         }
 
@@ -306,6 +311,8 @@ function Get-PodeSessionCookieInMemStore
             'Data' = $data;
             'Expiry' = $expiry;
         }
+
+        $this.Memory | Out-Default
     }
 
     return $store

@@ -594,31 +594,37 @@ function Invoke-ScriptBlock
         $ScriptBlock,
 
         [Parameter()]
-        [object]
         $Arguments = $null,
 
         [switch]
         $Scoped,
 
         [switch]
-        $Return
+        $Return,
+
+        [switch]
+        $Splat
     )
 
     if ($Scoped) {
-        if ($Return) {
-            return (& $ScriptBlock $Arguments)
+        if ($Splat) {
+            $result = (& $ScriptBlock @Arguments)
         }
         else {
-            & $ScriptBlock $Arguments
+            $result = (& $ScriptBlock $Arguments)
         }
     }
     else {
-        if ($Return) {
-            return (. $ScriptBlock $Arguments)
+        if ($Splat) {
+            $result = (. $ScriptBlock @Arguments)
         }
         else {
-            . $ScriptBlock $Arguments
+            $result = (. $ScriptBlock $Arguments)
         }
+    }
+
+    if ($Return) {
+        return $result
     }
 }
 

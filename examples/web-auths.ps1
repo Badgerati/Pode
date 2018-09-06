@@ -43,7 +43,7 @@ Server {
     })
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' (auth check basic) {
+    route 'get' '/' (auth check basic @{ 'session' = $false }) {
         param($s)
         $s.Session.Data.Views++
         json @{ 'User' = $s.User(); 'Views' = $s.Session.Data.Views }

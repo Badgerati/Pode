@@ -79,10 +79,11 @@ function Invoke-AuthUse
     # setup object for auth method
     $obj = @{
         'Options' = $Options;
+        'Validator' = $Type.Validator;
     }
 
     $obj | Add-Member -MemberType ScriptMethod -Name Parse -Value $Type.Parser
-    $obj | Add-Member -MemberType ScriptMethod -Name Validate -Value $Type.Validator
+    #$obj | Add-Member -MemberType ScriptMethod -Name Validate -Value $Type.Validator
 
     # apply auth method to session
     $PodeSession.Server.Authentications[$Type.Name] = $obj
@@ -118,9 +119,11 @@ function Invoke-AuthCheck
         $useSessions = ($s.Middleware.Options.Session -ne $false)
 
         # if the session already has a user/isAuth'd, then setup method and return
-        if ($useSessions -and !(Test-Empty $s.Session.Data.User) -and $s.Session.Data.IsAuthenticated) {
+        if ($useSessions -and !(Test-Empty $s.Session.Data.Auth.User) -and $s.Session.Data.Auth.IsAuthenticated) {
+            $s.Session.Auth = $s.Session.Data.Auth
+
             $s | Add-Member -MemberType ScriptMethod -Name User -Value {
-                return $this.Session.Data.User
+                return $this.Session.Auth.User
             }
 
             return $true
@@ -139,14 +142,13 @@ function Invoke-AuthCheck
         }
 
         # assign the user to the session, and wire up a quick method
-        if ($useSessions)
-        {
-            $s.Session.Data.User = $user
-            $s.Session.Data.IsAuthenticated = $true
+        $s.Session.Auth = @{}
+        $s.Session.Auth.User = $result.User
+        $s.Session.Auth.IsAuthenticated = $true
+        $s.Session.Auth.Store = $useSessions
 
-            $s | Add-Member -MemberType ScriptMethod -Name User -Value {
-                return $this.Session.Data.User
-            }
+        $s | Add-Member -MemberType ScriptMethod -Name User -Value {
+            return $this.Session.Auth.User
         }
 
         # continue
@@ -192,7 +194,9 @@ function Get-AuthBasic
         
         # validate and return user/result
         $index = $decoded.IndexOf(':')
-        return $auth.Validate($decoded.Substring(0, $index), $decoded.Substring($index + 1))
+        $u = $decoded.Substring(0, $index)
+        $p = $decoded.Substring($index + 1)
+        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($u, $p) -Return -Splat)
     }
 
     return @{
