@@ -137,7 +137,9 @@ Describe 'Route' {
             $route | Should Not Be $null
 
             $route.Logic.ToString() | Should Be ({ Write-Host 'logic' }).ToString()
-            $route.Middleware.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+
+            $route.Middleware.Length | Should Be 1
+            $route.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
         }
 
         It 'Throws error for route with array of middleware and no logic supplied' {
@@ -170,8 +172,8 @@ Describe 'Route' {
 
             $route.Logic.ToString() | Should Be ({ Write-Host 'logic' }).ToString()
             $route.Middleware.Length | Should Be 2
-            $route.Middleware[0].ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $route.Middleware[1].ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
+            $route.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $route.Middleware[1].Logic.ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
         }
 
         It 'Adds route with simple url and querystring' {
