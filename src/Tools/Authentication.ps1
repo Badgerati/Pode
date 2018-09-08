@@ -120,7 +120,7 @@ function Invoke-AuthCheck
         # if the session already has a user/isAuth'd, then setup method and return
         if ($usingSessions -and !(Test-Empty $s.Session.Data.Auth.User) -and $s.Session.Data.Auth.IsAuthenticated) {
             $s.Auth = $s.Session.Data.Auth
-            return $true
+            return (Set-PodeAuthStatus -Options $s.Middleware.Options)
         }
 
         # get the auth type
@@ -132,15 +132,13 @@ function Invoke-AuthCheck
         }
         catch {
             $_.Exception | Out-Default
-            Set-PodeAuthFailStatus -StatusCode 500 -Options $s.Middleware.Options
-            return $false
+            return (Set-PodeAuthStatus -StatusCode 500 -Options $s.Middleware.Options)
         }
 
         # if there is no result return false (failed auth)
         if ((Test-Empty $result) -or (Test-Empty $result.User)) {
-            Set-PodeAuthFailStatus -StatusCode (coalesce $result.Code 401) `
-                -Description $result.Message -Options $s.Middleware.Options
-            return $false
+            return (Set-PodeAuthStatus -StatusCode (coalesce $result.Code 401) `
+                -Description $result.Message -Options $s.Middleware.Options)
         }
 
         # assign the user to the session, and wire up a quick method
@@ -150,7 +148,7 @@ function Invoke-AuthCheck
         $s.Auth.Store = $storeInSession
 
         # continue
-        return $true
+        return (Set-PodeAuthStatus -Options $s.Middleware.Options)
     }
 
     # return the middleware
@@ -160,13 +158,12 @@ function Invoke-AuthCheck
     }
 }
 
-function Set-PodeAuthFailStatus
+function Set-PodeAuthStatus
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Parameter()]
         [int]
-        $StatusCode,
+        $StatusCode = 0,
 
         [Parameter()]
         [string]
@@ -177,14 +174,31 @@ function Set-PodeAuthFailStatus
         $Options
     )
 
-    # check if we have a failure url redirect
-    if (!(Test-Empty $Options.FailureUrl)) {
-        redirect $Options.FailureUrl
-        return
+    # if a statuscode supplied, assume failure
+    if ($StatusCode -gt 0)
+    {
+        # check if we have a failure url redirect
+        if (!(Test-Empty $Options.FailureUrl)) {
+            redirect $Options.FailureUrl
+        }
+        else {
+            status $StatusCode $Description
+        }
+
+        return $false
     }
 
-    # set a specific code
-    status $StatusCode $Description
+    # if no statuscode, success
+    else
+    {
+        # check if we have a success url redirect
+        if (!(Test-Empty $Options.SuccessUrl)) {
+            redirect $Options.SuccessUrl
+            return $false
+        }
+
+        return $true
+    }
 }
 
 function Get-AuthBasic

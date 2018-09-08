@@ -43,7 +43,12 @@ Server -Threads 2 {
     })
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' (auth check basic @{ 'session' = $true; 'failureUrl' = '/login' }) {
+    $opts = @{
+        'session' = $true;
+        'failureUrl' = '/login';
+    }
+
+    route 'get' '/' (auth check basic $opts) {
         param($s)
         #$s.Session.Data.Views++
         json @{ 'User' = $s.Auth.User; } # 'Views' = $s.Session.Data.Views }
