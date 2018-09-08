@@ -113,7 +113,7 @@ function Invoke-AuthCheck
     $logic = {
         param($s)
 
-        # TODO: Route options for using sessions, and failure redirects
+        # Route options for using sessions
         $storeInSession = ($s.Middleware.Options.Session -ne $false)
         $usingSessions = (!(Test-Empty $s.Session))
 
@@ -132,17 +132,14 @@ function Invoke-AuthCheck
         }
         catch {
             $_.Exception | Out-Default
-            status 500
+            Set-PodeAuthFailStatus -StatusCode 500 -Options $s.Middleware.Options
             return $false
         }
 
         # if there is no result return false (failed auth)
         if ((Test-Empty $result) -or (Test-Empty $result.User)) {
-            if (Test-Empty $result) {
-                'here' | Out-Default
-            }
-
-            status (coalesce $result.Code 401) $result.Message
+            Set-PodeAuthFailStatus -StatusCode (coalesce $result.Code 401) `
+                -Description $result.Message -Options $s.Middleware.Options
             return $false
         }
 
@@ -161,6 +158,33 @@ function Invoke-AuthCheck
         'Logic' = $logic;
         'Options' = $Options;
     }
+}
+
+function Set-PodeAuthFailStatus
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [int]
+        $StatusCode,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [hashtable]
+        $Options
+    )
+
+    # check if we have a failure url redirect
+    if (!(Test-Empty $Options.FailureUrl)) {
+        redirect $Options.FailureUrl
+        return
+    }
+
+    # set a specific code
+    status $StatusCode $Description
 }
 
 function Get-AuthBasic
