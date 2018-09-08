@@ -25,8 +25,7 @@ function Invoke-PodeMiddleware
             $Session.Middleware = @{ 'Options' = $midware.Options }
 
             # invoke the middleware logic
-            $continue = Invoke-ScriptBlock -ScriptBlock ($midware.Logic.GetNewClosure()) `
-                -Arguments $Session -Scoped -Return
+            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $Session -Scoped -Return
 
             # remove any custom middleware options
             $Session.Middleware.Clear()

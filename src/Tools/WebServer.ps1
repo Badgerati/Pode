@@ -107,6 +107,7 @@ function Start-WebServer
                 # reset session data
                 $WebSession = @{}
                 $WebSession.OnEnd = @()
+                $WebSession.Auth = @{}
                 $WebSession.Response = $response
                 $WebSession.Request = $request
                 $WebSession.Lockable = $PodeSession.Lockable
@@ -126,7 +127,7 @@ function Start-WebServer
 
                     # invoke route and custom middleware
                     if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $route.Middleware)) {
-                        Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
+                        Invoke-ScriptBlock -ScriptBlock $route.Logic -Arguments $WebSession -Scoped
                     }
                 }
 

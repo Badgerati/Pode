@@ -10,7 +10,7 @@ Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server {
+Server -Threads 2 {
 
     # listen on localhost:8085
     listen *:8085 http
@@ -43,10 +43,10 @@ Server {
     })
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' (auth check basic @{ 'session' = $false }) {
+    route 'get' '/' (auth check basic @{ 'session' = $true }) {
         param($s)
-        $s.Session.Data.Views++
-        json @{ 'User' = $s.User(); 'Views' = $s.Session.Data.Views }
+        #$s.Session.Data.Views++
+        json @{ 'User' = $s.Auth.User; } # 'Views' = $s.Session.Data.Views }
     }
 
 }

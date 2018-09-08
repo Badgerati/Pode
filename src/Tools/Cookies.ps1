@@ -105,11 +105,12 @@ function Session
             $s.OnEnd += {
                 param($s)
 
-                if (!(Test-Empty $s.Session.Auth) -and $s.Session.Auth.Store) {
-                    $s.Session.Data.Auth = $s.Session.Auth
+                # if auth is in use, then assign to session store
+                if (!(Test-Empty $s.Auth) -and $s.Auth.Store) {
+                    $s.Session.Data.Auth = $s.Auth
                 }
 
-                $s.Session.Save($true)
+                Invoke-ScriptBlock -ScriptBlock $s.Session.Save -Arguments @($true) -Splat
             }
         }
         catch {
@@ -247,7 +248,7 @@ function Set-PodeSessionCookieHelpers
     )
 
     # force save a session's data to the store
-    $Session | Add-Member -MemberType ScriptMethod -Name Save -Value {
+    $Session | Add-Member -MemberType NoteProperty -Name Save -Value {
         param($check)
 
         # only save if check and hashes different
@@ -266,7 +267,7 @@ function Set-PodeSessionCookieHelpers
     }
 
     # delete the current session
-    $Session | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+    $Session | Add-Member -MemberType NoteProperty -Name Delete -Value {
         # remove data from store
         $PodeSession.Server.Cookies.Session.Store.Delete($this.Id)
 
@@ -311,8 +312,6 @@ function Get-PodeSessionCookieInMemStore
             'Data' = $data;
             'Expiry' = $expiry;
         }
-
-        $this.Memory | Out-Default
     }
 
     return $store

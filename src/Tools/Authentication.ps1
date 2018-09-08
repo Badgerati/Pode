@@ -79,11 +79,9 @@ function Invoke-AuthUse
     # setup object for auth method
     $obj = @{
         'Options' = $Options;
+        'Parser' = $Type.Parser;
         'Validator' = $Type.Validator;
     }
-
-    $obj | Add-Member -MemberType ScriptMethod -Name Parse -Value $Type.Parser
-    #$obj | Add-Member -MemberType ScriptMethod -Name Validate -Value $Type.Validator
 
     # apply auth method to session
     $PodeSession.Server.Authentications[$Type.Name] = $obj
@@ -112,20 +110,16 @@ function Invoke-AuthCheck
     $Options.AuthType = $Type
 
     # setup the middleware logic
-    $logic ={
+    $logic = {
         param($s)
 
         # TODO: Route options for using sessions, and failure redirects
-        $useSessions = ($s.Middleware.Options.Session -ne $false)
+        $storeInSession = ($s.Middleware.Options.Session -ne $false)
+        $usingSessions = (!(Test-Empty $s.Session))
 
         # if the session already has a user/isAuth'd, then setup method and return
-        if ($useSessions -and !(Test-Empty $s.Session.Data.Auth.User) -and $s.Session.Data.Auth.IsAuthenticated) {
-            $s.Session.Auth = $s.Session.Data.Auth
-
-            $s | Add-Member -MemberType ScriptMethod -Name User -Value {
-                return $this.Session.Auth.User
-            }
-
+        if ($usingSessions -and !(Test-Empty $s.Session.Data.Auth.User) -and $s.Session.Data.Auth.IsAuthenticated) {
+            $s.Auth = $s.Session.Data.Auth
             return $true
         }
 
@@ -133,23 +127,30 @@ function Invoke-AuthCheck
         $auth = $PodeSession.Server.Authentications[$s.Middleware.Options.AuthType]
 
         # validate the request and get a user
-        $result = $auth.Parse($s, $auth)
+        try {
+            $result = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($s, $auth) -Return -Splat)
+        }
+        catch {
+            $_.Exception | Out-Default
+            status 500
+            return $false
+        }
 
         # if there is no result return false (failed auth)
         if ((Test-Empty $result) -or (Test-Empty $result.User)) {
-            status 401 $result.Message
+            if (Test-Empty $result) {
+                'here' | Out-Default
+            }
+
+            status (coalesce $result.Code 401) $result.Message
             return $false
         }
 
         # assign the user to the session, and wire up a quick method
-        $s.Session.Auth = @{}
-        $s.Session.Auth.User = $result.User
-        $s.Session.Auth.IsAuthenticated = $true
-        $s.Session.Auth.Store = $useSessions
-
-        $s | Add-Member -MemberType ScriptMethod -Name User -Value {
-            return $this.Session.Auth.User
-        }
+        $s.Auth = @{}
+        $s.Auth.User = $result.User
+        $s.Auth.IsAuthenticated = $true
+        $s.Auth.Store = $storeInSession
 
         # continue
         return $true
@@ -174,12 +175,20 @@ function Get-AuthBasic
     $parser = {
         param($s, $auth)
 
-        # get the auth header and atoms
+        # get the auth header
         $header = $s.Request.Headers['Authorization']
-        $atoms = $header -isplit '\s+'
+        if ($null -eq $header) {
+            return @{
+                'User' = $null;
+                'Message' = 'No Authorization header found';
+                'Code' = 401;
+            }
+        }
 
         # ensure the first atom is basic (or opt override)
+        $atoms = $header -isplit '\s+'
         $authType = (coalesce $auth.Options.Name 'Basic')
+
         if ($atoms[0] -ine $authType) {
             return @{
                 'User' = $null;
@@ -189,13 +198,34 @@ function Get-AuthBasic
 
         # decode the aut header
         $encType = (coalesce $auth.Options.Encoding 'ISO-8859-1')
-        $enc = [System.Text.Encoding]::GetEncoding($encType)
-        $decoded = $enc.GetString([System.Convert]::FromBase64String($atoms[1]))
-        
+
+        try {
+            $enc = [System.Text.Encoding]::GetEncoding($encType)
+        }
+        catch {
+            return @{
+                'User' = $null;
+                'Message' = 'Invalid encoding specified for Authorization';
+                'Code' = 400;
+            }
+        }
+
+        try {
+            $decoded = $enc.GetString([System.Convert]::FromBase64String($atoms[1]))
+        }
+        catch {
+            return @{
+                'User' = $null;
+                'Message' = 'Invalid Base64 string found in Authorization header';
+                'Code' = 400;
+            }
+        }
+
         # validate and return user/result
         $index = $decoded.IndexOf(':')
         $u = $decoded.Substring(0, $index)
         $p = $decoded.Substring($index + 1)
+
         return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($u, $p) -Return -Splat)
     }
 

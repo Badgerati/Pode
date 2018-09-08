@@ -608,18 +608,18 @@ function Invoke-ScriptBlock
 
     if ($Scoped) {
         if ($Splat) {
-            $result = (& $ScriptBlock @Arguments)
+            $result = (& ($ScriptBlock).GetNewClosure() @Arguments)
         }
         else {
-            $result = (& $ScriptBlock $Arguments)
+            $result = (& ($ScriptBlock).GetNewClosure() $Arguments)
         }
     }
     else {
         if ($Splat) {
-            $result = (. $ScriptBlock @Arguments)
+            $result = (. ($ScriptBlock).GetNewClosure() @Arguments)
         }
         else {
-            $result = (. $ScriptBlock $Arguments)
+            $result = (. ($ScriptBlock).GetNewClosure() $Arguments)
         }
     }
 

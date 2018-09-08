@@ -21,8 +21,7 @@ function Invoke-PodeEndware
     foreach ($eware in @($Endware))
     {
         try {
-            $continue = Invoke-ScriptBlock -ScriptBlock ($eware.GetNewClosure()) `
-                -Arguments $Session -Scoped -Return
+            $continue = Invoke-ScriptBlock -ScriptBlock $eware -Arguments $Session -Scoped -Return
         }
         catch {
             $Error[0] | Out-Default
