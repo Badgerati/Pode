@@ -102,7 +102,7 @@ function Invoke-AuthCheck
 
     # ensure the auth type exists
     if (!$PodeSession.Server.Authentications.ContainsKey($Type)) {
-        throw "Authentication type '$($Type.Name)' is not defined"
+        throw "Authentication type '$($Type)' is not defined"
     }
 
     # coalesce the options, and set auth type for middleware
@@ -117,10 +117,22 @@ function Invoke-AuthCheck
         $storeInSession = ($s.Middleware.Options.Session -ne $false)
         $usingSessions = (!(Test-Empty $s.Session))
 
+        # check for logout command
+        if ($s.Middleware.Options.Logout -eq $true) {
+            Remove-PodeAuth -Session $s
+            return (Set-PodeAuthStatus -StatusCode 302 -Options $s.Middleware.Options)
+        }
+
         # if the session already has a user/isAuth'd, then setup method and return
         if ($usingSessions -and !(Test-Empty $s.Session.Data.Auth.User) -and $s.Session.Data.Auth.IsAuthenticated) {
             $s.Auth = $s.Session.Data.Auth
             return (Set-PodeAuthStatus -Options $s.Middleware.Options)
+        }
+
+        # check if the login flag is set, in which case just return
+        if ($s.Middleware.Options.Login -eq $true) {
+            Remove-PodeSessionCookie -Response $s.Response -Session $s.Session
+            return $true
         }
 
         # get the auth type
@@ -156,6 +168,31 @@ function Invoke-AuthCheck
         'Logic' = $logic;
         'Options' = $Options;
     }
+}
+
+function Remove-PodeAuth
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    # blank out the auth
+    $Session.Auth = @{}
+
+    # if a session auth is found, blank it
+    if (!(Test-Empty $Session.Session.Data.Auth)) {
+        $Session.Session.Data.Remove('Auth')
+    }
+
+    # redirect to a failure url, or onto the current path?
+    if (Test-Empty $Session.Middleware.Options.FailureUrl) {
+        $Session.Middleware.Options.FailureUrl = $Session.Request.Url.AbsolutePath
+    }
+
+    # Delete the session (remove from store, blank it, and remove from Response)
+    Remove-PodeSessionCookie -Response $Session.Response -Session $Session.Session
 }
 
 function Set-PodeAuthStatus
@@ -269,6 +306,46 @@ function Get-AuthBasic
 
     return @{
         'Name' = 'Basic';
+        'Parser' = $parser;
+        'Validator' = $ScriptBlock;
+    }
+}
+
+function Get-AuthForm
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    $parser = {
+        param($s, $auth)
+
+        # get user/pass keys to get from payload
+        $userField = (coalesce $auth.Options.UsernameField 'username')
+        $passField = (coalesce $auth.Options.PasswordField 'password')
+
+        # get the user/pass
+        $username = $s.Data.$userField
+        $password = $s.Data.$passField
+
+        # if either are empty, deny
+        if ((Test-Empty $username) -or (Test-Empty $password)) {
+            return @{
+                'User' = $null;
+                'Message' = 'Username or Password not supplied';
+                'Code' = 401;
+            }
+        }
+
+        # validate and return
+        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($username, $password) -Return -Splat)
+    }
+
+    return @{
+        'Name' = 'Form';
         'Parser' = $parser;
         'Validator' = $ScriptBlock;
     }

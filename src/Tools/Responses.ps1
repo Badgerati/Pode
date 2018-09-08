@@ -86,7 +86,7 @@ function Write-ToResponseFromFile
 
         default {
             if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments $Path)
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments $Path -Return)
             }
         }
     }

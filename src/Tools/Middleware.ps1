@@ -31,7 +31,7 @@ function Invoke-PodeMiddleware
             $Session.Middleware.Clear()
         }
         catch {
-            $Error[0] | Out-Default
+            $_.Exception | Out-Default
             $continue = $false
         }
 
@@ -188,7 +188,7 @@ function Get-PodeQueryMiddleware
         try
         {
             # set the query string from the request
-            $s.Query = $s.Request.QueryString
+            $s.Query = (ConvertFrom-NameValueToHashTable -Collection $s.Request.QueryString)
             return $true
         }
         catch [exception]
