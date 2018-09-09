@@ -128,7 +128,7 @@ function Start-PodeServer
     try
     {
         # run the logic
-        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic
+        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
 
         # start runspace for timers
         Start-TimerRunspace
@@ -202,8 +202,8 @@ function Restart-PodeServer
         $PodeSession.Loggers.Clear()
 
         # clear middle/endware
-        $PodeSession.Server.Middleware.Clear()
-        $PodeSession.Server.Endware.Clear()
+        $PodeSession.Server.Middleware = @()
+        $PodeSession.Server.Endware = @()
 
         # clear up view engine
         $PodeSession.Server.ViewEngine.Clear()

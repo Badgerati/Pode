@@ -1,13 +1,18 @@
-if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
-{
-    Remove-Module -Name Pode
-}
-
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -ErrorAction Stop
+Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 # or just:
 # Import-Module Pode
+
+<#
+This examples shows how to use session persistant authentication, for things like logins on websites.
+The example used here is Form authentication, sent from the <form> in HTML.
+
+Navigating to the 'http://localhost:8085' endpoint in your browser will auto-rediect you to the '/login'
+page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
+back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
+take you back to the login page.
+#>
 
 # create a server, and start listening on port 8085
 Server -Threads 2 {
@@ -29,6 +34,7 @@ Server -Threads 2 {
     auth use (Get-AuthForm {
         param($username, $password)
 
+        # here you'd check a real user storage, this is just for example
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{ 'user' = @{
                 'ID' ='M0R7Y302'
