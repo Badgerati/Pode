@@ -2,36 +2,55 @@ function Auth
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('USE', 'CHECK')]
+        [ValidateSet('use', 'check')]
+        [Alias('a')]
         [string]
         $Action,
 
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Type,
+        [ValidateNotNullOrEmpty()]
+        [Alias('n')]
+        [string]
+        $Name,
 
         [Parameter()]
+        [Alias('v')]
+        [scriptblock]
+        $Validator,
+
+        [Parameter()]
+        [Alias('p')]
+        [scriptblock]
+        $Parser,
+
+        [Parameter()]
+        [Alias('o')]
         [hashtable]
-        $Options
+        $Options,
+
+        [switch]
+        [Alias('c')]
+        $Custom
     )
 
-    $_type = (Get-Type $Type).Name
-    if ($Action -ieq 'USE' -and $_type -ine 'hashtable') {
-        throw "When setting to use a new Authentication, the Type should be a Hashtable but got: $($_type)"
-    }
+    if ($Action -ieq 'use') {
+        if (Test-Empty $Validator) {
+            throw "Authentication method '$($Name)' is missing required Validator script"
+        }
 
-    if ($Action -ieq 'CHECK' -and $_type -ine 'string') {
-        throw "When checking an Authentication method, the Type should be a String but got: $($_type)"
+        if ($Custom -and (Test-Empty $Parser)) {
+            throw "Custom authentication method '$($Name)' is missing required Parser script"
+        }
     }
 
     switch ($Action.ToLowerInvariant())
     {
         'use' {
-            Invoke-AuthUse -Type $Type -Options $Options
+            Invoke-AuthUse -Name $Name -Validator $Validator -Parser $Parser -Options $Options
         }
 
         'check' {
-            return (Invoke-AuthCheck -Type $Type -Options $Options)
+            return (Invoke-AuthCheck -Name $Name -Options $Options)
         }
     }
 }
@@ -40,51 +59,52 @@ function Invoke-AuthUse
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [hashtable]
-        $Type,
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $Validator,
+
+        [Parameter()]
+        [scriptblock]
+        $Parser,
 
         [Parameter()]
         [hashtable]
-        $Options
+        $Options,
+
+        [switch]
+        $Custom
     )
 
-    # ensure that the hashtable has the required keys
-    if (!$Type.ContainsKey('Name')) {
-        throw "Type Hashtable from Authentication function is missing the Name key"
-    }
-
-    if (!$Type.ContainsKey('Parser')) {
-        throw "Type Hashtable from Authentication function is missing the Parser key"
-    }
-
-    if (!$Type.ContainsKey('Validator')) {
-        throw "Type Hashtable from Authentication function is missing the Validator key"
-    }
+    # get the auth data
+    $AuthData = (Get-PodeAuthMethod -Name $Name -Validator $Validator -Parser $Parser -Custom:$Custom)
 
     # ensure the name doesn't already exist
-    if ($PodeSession.Server.Authentications.ContainsKey($Type.Name)) {
-        throw "Authentication logic with name '$($Type.Name)' already defined"
+    if ($PodeSession.Server.Authentications.ContainsKey($AuthData.Name)) {
+        throw "Authentication method '$($AuthData.Name)' already defined"
     }
 
     # ensure the parser/validators aren't just empty scriptblocks
-    if (Test-Empty $Type.Parser) {
-        throw "Authentication method '$($Type.Name)' is has no Parser ScriptBlock logic defined"
+    if (Test-Empty $AuthData.Parser) {
+        throw "Authentication method '$($AuthData.Name)' is has no Parser ScriptBlock logic defined"
     }
 
-    if (Test-Empty $Type.Validator) {
-        throw "Authentication method '$($Type.Name)' is has no Validator ScriptBlock logic defined"
+    if (Test-Empty $AuthData.Validator) {
+        throw "Authentication method '$($AuthData.Name)' is has no Validator ScriptBlock logic defined"
     }
 
     # setup object for auth method
     $obj = @{
         'Options' = $Options;
-        'Parser' = $Type.Parser;
-        'Validator' = $Type.Validator;
+        'Parser' = $AuthData.Parser;
+        'Validator' = $AuthData.Validator;
     }
 
     # apply auth method to session
-    $PodeSession.Server.Authentications[$Type.Name] = $obj
+    $PodeSession.Server.Authentications[$AuthData.Name] = $obj
 }
 
 function Invoke-AuthCheck
@@ -93,7 +113,7 @@ function Invoke-AuthCheck
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Type,
+        $Name,
 
         [Parameter()]
         [hashtable]
@@ -101,13 +121,13 @@ function Invoke-AuthCheck
     )
 
     # ensure the auth type exists
-    if (!$PodeSession.Server.Authentications.ContainsKey($Type)) {
-        throw "Authentication type '$($Type)' is not defined"
+    if (!$PodeSession.Server.Authentications.ContainsKey($Name)) {
+        throw "Authentication method '$($Name)' is not defined"
     }
 
     # coalesce the options, and set auth type for middleware
     $Options = (coalesce $Options @{})
-    $Options.AuthType = $Type
+    $Options.AuthType = $Name
 
     # setup the middleware logic
     $logic = {
@@ -167,6 +187,60 @@ function Invoke-AuthCheck
     return @{
         'Logic' = $logic;
         'Options' = $Options;
+    }
+}
+
+function Get-PodeAuthMethod
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $Validator,
+
+        [Parameter()]
+        [scriptblock]
+        $Parser,
+
+        [switch]
+        $Custom
+    )
+
+    # first, is it just a custom type?
+    if ($Custom) {
+        return @{
+            'Name' = $Name;
+            'Parser' = $Parser;
+            'Validator' = $Validator;
+        }
+    }
+
+    # otherwise, check the inbuilt ones
+    switch ($Name.ToLowerInvariant())
+    {
+        'basic' {
+            return (Get-PodeAuthBasic -ScriptBlock $Validator)
+        }
+
+        'form' {
+            return (Get-PodeAuthForm -ScriptBlock $Validator)
+        }
+    }
+
+    # if we get here, check if a parser was passed for custom type
+    if (Test-Empty $Parser) {
+        throw "Authentication method '$($Name)' does not exist as an inbuilt type, nor has a Parser been passed for a custom type"
+    }
+
+    # a parser was passed, so it is a custom type
+    return @{
+        'Name' = $Name;
+        'Parser' = $Parser;
+        'Validator' = $Validator;
     }
 }
 
@@ -238,7 +312,7 @@ function Set-PodeAuthStatus
     }
 }
 
-function Get-AuthBasic
+function Get-PodeAuthBasic
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -311,7 +385,7 @@ function Get-AuthBasic
     }
 }
 
-function Get-AuthForm
+function Get-PodeAuthForm
 {
     param (
         [Parameter(Mandatory=$true)]

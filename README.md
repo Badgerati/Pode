@@ -72,6 +72,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Support for generating/binding self-signed certificates, and binding signed certificates
 * Support for middleware on web servers
 * Session middleware support on web requests
+* Can use authentication on requests, which can either be sessionless or session persistant
 
 ## Install
 
@@ -1125,3 +1126,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `middleware`
 * `endware`
 * `session`
+* `auth`

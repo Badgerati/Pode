@@ -20,7 +20,7 @@ Server -Threads 2 {
     listen *:8085 http
 
     # setup basic auth (base64> username:password)
-    auth use (Get-AuthBasic {
+    auth use basic -v {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -33,7 +33,7 @@ Server -Threads 2 {
         }
 
         return $null
-    })
+    }
 
     # POST request for to get users
     route 'post' '/users' (auth check basic) {

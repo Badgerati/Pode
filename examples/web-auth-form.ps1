@@ -31,7 +31,7 @@ Server -Threads 2 {
     })
 
     # setup basic auth
-    auth use (Get-AuthForm {
+    auth use form -v {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -44,10 +44,10 @@ Server -Threads 2 {
         }
 
         return $null
-    })
+    }
 
     # home page
-    route 'get' '/' (auth check form @{ 'failureUrl' = '/login' }) {
+    route 'get' '/' (auth check form -o @{ 'failureUrl' = '/login' }) {
         param($s)
 
         $s.Session.Data.Views++
@@ -59,18 +59,18 @@ Server -Threads 2 {
     }
 
     # login
-    route 'get' '/login' (auth check form @{ 'login' = $true; 'successUrl' = '/' }) {
+    route 'get' '/login' (auth check form -o @{ 'login' = $true; 'successUrl' = '/' }) {
         param($s)
         view 'auth-login'
     }
 
-    route 'post' '/login' (auth check form @{
+    route 'post' '/login' (auth check form -o @{
         'failureUrl' = '/login';
         'successUrl' = '/';
     }) {}
 
     # logout
-    route 'post' '/logout' (auth check form @{
+    route 'post' '/logout' (auth check form -o @{
         'logout' = $true;
         'failureUrl' = '/login';
     }) {}

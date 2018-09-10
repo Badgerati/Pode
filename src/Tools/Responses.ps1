@@ -375,9 +375,11 @@ function View
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('p')]
         $Path,
 
         [Parameter()]
+        [Alias('d')]
         $Data = @{}
     )
 
