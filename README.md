@@ -35,6 +35,9 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Order of Running](#order-of-running)
         * [Overriding Inbuilt Logic](#overriding-inbuilt-logic)
         * [Sessions](#sessions)
+    * [Authentication](#authentication)
+        * [Basic](#basic)
+        * [Form](#form)
     * [SMTP Server](#smtp-server)
     * [Misc](#misc)
         * [Logging](#logging)
@@ -571,6 +574,60 @@ Server {
 
 }
 ```
+
+### Authentication
+
+Using middleware and sessions (optional), Pode has support for authentication on web requests. This authentication can either be session-persistant (ie, logins on websites), or sessionless (ie, auths on rest api calls). Examples of both types can be seen in the `web-auth-basic.ps1` and `web-auth-forms.ps1` example scripts.
+
+To use authentication in Pode there are two key calls: `auth use` and `auth check`.
+
+* `auth use` is used to setup a auth type (basic/form/custom); this is where you specify the auth type, a validator script (to check the user exists in your storage), any options, and if using a custom type a parser script (to parse headers/payloads to pass to the validator). An example:
+
+    ```powershell
+    Server {
+        auth use basic -v {
+            param($user, $pass)
+            # logic to check user
+            return @{ 'user' = $user }
+        }
+    }
+    ```
+
+    The validator (`-v`) script is used to find a user, checking if they exist and the password is correct. If the validator passes, then a `user` needs to be returned from the script via `@{ 'user' = $user }` - if `$null` or a null user are returned then the validator is assumed to have failed, and a 401 status will be thrown.
+
+    Some auth methods also have options (`-o`) that can be supplied, such as field name or encoding overrides - more below.
+
+* `auth check` is used in `route` calls, to check a specific auth method against the incoming request. If the validator defined is the `auth use` returns no user, then the check fails with a 401 status; if a user is found, then it is set against the session (if session middleware is enabled) and the route logic is invoked. An example:
+
+    ```powershell
+    Server {
+        # assume the above 'auth use'
+
+        route get '/users' (auth check basic) {
+            param($s)
+            # route logic
+        }
+    }
+    ```
+
+    This is the most simple call to check authentication, the call also accepts options (`-o`) such as:
+
+    | Key | Description |
+    | --- | ----------- |
+    | `FailureUrl` | URL to redirect to should auth fail |
+    | `SuccessUrl`| URL to redirect to should auth succeed |
+    | `Session`| When true: check the session for a valid auth (def: true) |
+    | `Login`| When true: check the auth status in session and redirect to SuccessUrl, else proceed to page with no auth (def: false) |
+    | `Logout`| When true: purge the session and redirect to the FailureUrl (def: false) |
+
+#### Basic Auth
+TODO
+
+#### Form Auth
+TODO
+
+#### Custom Auth
+TODO
 
 ### SMTP Server
 
