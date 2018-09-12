@@ -30,7 +30,7 @@ Server -Threads 2 {
         'Extend' = $true;
     })
 
-    # setup basic auth
+    # setup form auth (<form> in HTML)
     auth use form -v {
         param($username, $password)
 
@@ -46,7 +46,8 @@ Server -Threads 2 {
         return $null
     }
 
-    # home page
+    # home page:
+    # redirects to login page if not authenticated
     route 'get' '/' (auth check form -o @{ 'failureUrl' = '/login' }) {
         param($s)
 
@@ -58,25 +59,29 @@ Server -Threads 2 {
         }
     }
 
-    # login
+    # login page:
+    # the login flag set below checks if there is already an authenticated session cookie. If there is, then
+    # the user is redirected to the home page. If there is no session then the login page will load without
+    # checking user authetication (to prevent a 401 status)
     route 'get' '/login' (auth check form -o @{ 'login' = $true; 'successUrl' = '/' }) {
         param($s)
         view 'auth-login'
     }
 
+    # login check:
+    # this is the endpoint the <form>'s action will invoke. If the user validates then they are set against
+    # the session as authenticated, and redirect to the home page. If they fail, then the login page reloads
     route 'post' '/login' (auth check form -o @{
         'failureUrl' = '/login';
         'successUrl' = '/';
     }) {}
 
-    # logout
+    # logout check:
+    # when the logout button is click, this endpoint is invoked. The logout flag set below informs this call
+    # to purge the currently authenticated session, and then redirect back to the login page
     route 'post' '/logout' (auth check form -o @{
         'logout' = $true;
         'failureUrl' = '/login';
     }) {}
-
-    route 'get' '/logout' {
-        redirect '/login'
-    }
 
 }

@@ -582,7 +582,7 @@ Using middleware and sessions, Pode has support for authentication on web reques
 
 To use authentication in Pode there are two key commands: `auth use` and `auth check`.
 
-* `auth use` is used to setup an auth type (basic/form/custom); this is where you specify the auth type, a validator script (to check the user exists in your storage), any options, and if using a custom type a parser script (to parse headers/payloads to pass to the validator). An example:
+* `auth use` is used to setup an auth type (basic/form/custom); this is where you specify a validator script (to check the user exists in your storage), any options, and if using a custom type a parser script (to parse headers/payloads to pass to the validator). An example:
 
     ```powershell
     Server {
@@ -600,7 +600,7 @@ To use authentication in Pode there are two key commands: `auth use` and `auth c
 
     Some auth methods also have options (`-o`) that can be supplied as a hashtable, such as field name or encoding overrides - more below.
 
-* `auth check` is used in `route` calls, to check a specific auth method against the incoming request. If the validator defined is the `auth use` returns no user, then the check fails with a 401 status; if a user is found, then it is set against the session (if session middleware is enabled) and the route logic is invoked. An example:
+* `auth check` is used in `route` calls, to check a specific auth method against the incoming request. If the validator defined in `auth use` returns no user, then the check fails with a 401 status; if a user is found, then it is set against the session (if session middleware is enabled) and the route logic is invoked. An example:
 
     ```powershell
     Server {
@@ -617,11 +617,11 @@ To use authentication in Pode there are two key commands: `auth use` and `auth c
 
     | Name | Description |
     | --- | ----------- |
-    | `FailureUrl` | URL to redirect to should auth fail |
-    | `SuccessUrl` | URL to redirect to should auth succeed |
-    | `Session` | When true: check the session for a valid auth (def: true) |
-    | `Login` | When true: check the auth status in session and redirect to SuccessUrl, else proceed to page with no auth (def: false) |
-    | `Logout` | When true: purge the session and redirect to the FailureUrl (def: false) |
+    | FailureUrl | URL to redirect to should auth fail |
+    | SuccessUrl | URL to redirect to should auth succeed |
+    | Session | When true: check if the session already has a validated user, and store the validated user in the session (def: true) |
+    | Login | When true: check the auth status in session and redirect to SuccessUrl, else proceed to the page with no auth required (def: false) |
+    | Logout | When true: purge the session and redirect to the FailureUrl (def: false) |
 
 If you have defined session-middleware to be used in your script, then when an `auth check` call succeeds the user with be authenticated against that session. When the user makes another call using the same session-cookie, then the `auth check` will detect the already authenticated session and skip the validator script. If you're using sessions and you don't want the `auth check` to check the session, or store the user against the session, then pass `-o @{ 'Session' = $false }` to the `auth check`.
 
@@ -647,8 +647,6 @@ Server {
 | ---- | ----------- |
 | Encoding | Defines which encoding to use when decoding the auth header (def: `ISO-8859-1`) |
 | Name | Defines the name part of the header, infront of the encoded sting (def: Basic) |
-
-TODO
 
 #### Form Auth
 

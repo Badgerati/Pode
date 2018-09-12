@@ -19,7 +19,7 @@ Server -Threads 2 {
     # listen on localhost:8085
     listen *:8085 http
 
-    # setup basic auth (base64> username:password)
+    # setup basic auth (base64> username:password in header)
     auth use basic -v {
         param($username, $password)
 
@@ -35,7 +35,7 @@ Server -Threads 2 {
         return $null
     }
 
-    # POST request for to get users
+    # POST request to get list of users (since there's no session, the auth check will always happen)
     route 'post' '/users' (auth check basic) {
         param($s)
         json @{ 'Users' = @(
