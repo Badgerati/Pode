@@ -164,7 +164,7 @@ function Start-PodeServer
                     }
 
                     Start-Sleep -Seconds $PodeSession.Server.Interval
-                    Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic
+                    Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
                 }
             }
         }
