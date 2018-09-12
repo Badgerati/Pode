@@ -101,6 +101,7 @@ function Invoke-AuthUse
         'Options' = $Options;
         'Parser' = $AuthData.Parser;
         'Validator' = $AuthData.Validator;
+        'Custom' = $AuthData.Custom;
     }
 
     # apply auth method to session
@@ -160,7 +161,14 @@ function Invoke-AuthCheck
 
         # validate the request and get a user
         try {
-            $result = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($s, $auth) -Return -Splat)
+            # if it's a custom type the parser will return the dat for use to pass to the validator
+            if ($auth.Custom) {
+                $data = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($s, $auth.Options) -Return -Splat)
+                $result = (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments $data -Return -Splat)
+            }
+            else {
+                $result = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($s, $auth) -Return -Splat)
+            }
         }
         catch {
             $_.Exception | Out-Default
@@ -214,6 +222,7 @@ function Get-PodeAuthMethod
     if ($Custom) {
         return @{
             'Name' = $Name;
+            'Custom' = $true;
             'Parser' = $Parser;
             'Validator' = $Validator;
         }
@@ -239,6 +248,7 @@ function Get-PodeAuthMethod
     # a parser was passed, so it is a custom type
     return @{
         'Name' = $Name;
+        'Custom' = $true;
         'Parser' = $Parser;
         'Validator' = $Validator;
     }
@@ -380,6 +390,7 @@ function Get-PodeAuthBasic
 
     return @{
         'Name' = 'Basic';
+        'Custom' = $false;
         'Parser' = $parser;
         'Validator' = $ScriptBlock;
     }
@@ -420,6 +431,7 @@ function Get-PodeAuthForm
 
     return @{
         'Name' = 'Form';
+        'Custom' = $false;
         'Parser' = $parser;
         'Validator' = $ScriptBlock;
     }
