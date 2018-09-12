@@ -20,7 +20,7 @@ function ConvertFrom-PodeFile
     }
 
     # invoke the content as a script to generate the dynamic content
-    return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data)
+    return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
 }
 
 function Get-Type
@@ -545,7 +545,7 @@ function Lock
         $locked = $true
 
         if ($ScriptBlock -ne $null) {
-            Invoke-ScriptBlock -ScriptBlock $ScriptBlock
+            Invoke-ScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure
         }
     }
     catch {
@@ -594,31 +594,44 @@ function Invoke-ScriptBlock
         $ScriptBlock,
 
         [Parameter()]
-        [object]
         $Arguments = $null,
 
         [switch]
         $Scoped,
 
         [switch]
-        $Return
+        $Return,
+
+        [switch]
+        $Splat,
+
+        [switch]
+        $NoNewClosure
     )
 
+    if (!$NoNewClosure) {
+        $ScriptBlock = ($ScriptBlock).GetNewClosure()
+    }
+
     if ($Scoped) {
-        if ($Return) {
-            return (& $ScriptBlock $Arguments)
+        if ($Splat) {
+            $result = (& $ScriptBlock @Arguments)
         }
         else {
-            & $ScriptBlock $Arguments
+            $result = (& $ScriptBlock $Arguments)
         }
     }
     else {
-        if ($Return) {
-            return (. $ScriptBlock $Arguments)
+        if ($Splat) {
+            $result = (. $ScriptBlock @Arguments)
         }
         else {
-            . $ScriptBlock $Arguments
+            $result = (. $ScriptBlock $Arguments)
         }
+    }
+
+    if ($Return) {
+        return $result
     }
 }
 
@@ -715,7 +728,7 @@ function Stream
     )
 
     try {
-        return (Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments $InputObject)
+        return (Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments $InputObject -Return -NoNewClosure)
     }
     catch {
         $Error[0] | Out-Default
@@ -833,9 +846,32 @@ function ConvertFrom-PodeContent
         { $_ -ilike '*/csv' } {
             $Content = ($Content | ConvertFrom-Csv)
         }
+
+        { $_ -ilike '*/x-www-form-urlencoded' } {
+            $Content = (ConvertFrom-NameValueToHashTable -Collection ([System.Web.HttpUtility]::ParseQueryString($Content)))
+        }
     }
 
     return $Content
+}
+
+function ConvertFrom-NameValueToHashTable
+{
+    param (
+        [Parameter()]
+        $Collection
+    )
+
+    if ($null -eq $Collection) {
+        return $null
+    }
+
+    $ht = @{}
+    $Collection.Keys | ForEach-Object {
+        $ht[$_] = $Collection[$_]
+    }
+
+    return $ht
 }
 
 function Get-NewGuid

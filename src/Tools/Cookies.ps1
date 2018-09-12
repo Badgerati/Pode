@@ -82,7 +82,7 @@ function Session
             }
 
             # get the session's data
-            elseif (($data = $PodeSession.Server.Cookies.Session.Store.Get($s.Session.Id)) -ne $null) {
+            elseif ($null -ne ($data = $PodeSession.Server.Cookies.Session.Store.Get($s.Session.Id))) {
                 $s.Session.Data = $data
                 Set-PodeSessionCookieDataHash -Session $s.Session
             }
@@ -104,7 +104,13 @@ function Session
             # assign endware for session to set cookie/storage
             $s.OnEnd += {
                 param($s)
-                $s.Session.Save()
+
+                # if auth is in use, then assign to session store
+                if (!(Test-Empty $s.Auth) -and $s.Auth.Store) {
+                    $s.Session.Data.Auth = $s.Auth
+                }
+
+                Invoke-ScriptBlock -ScriptBlock $s.Session.Save -Arguments @($s.Session, $true) -Splat
             }
         }
         catch {
@@ -176,6 +182,31 @@ function Set-PodeSessionCookie
     $Response.AppendCookie($cookie) | Out-Null
 }
 
+function Remove-PodeSessionCookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Response,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    # remove the cookie from the response, and reset it to expire
+    $cookie = $Response.Cookies[$Session.Name]
+    $cookie.Discard = $true
+    $cookie.Expires = [DateTime]::UtcNow.AddDays(-2)
+    $Response.AppendCookie($cookie) | Out-Null
+
+    # remove session from store
+    Invoke-ScriptBlock -ScriptBlock $Session.Delete -Arguments @($Session) -Splat
+
+    # blank the session
+    $Session.Clear()
+}
+
 function New-PodeSessionCookie
 {
     $sid = @{
@@ -242,31 +273,33 @@ function Set-PodeSessionCookieHelpers
     )
 
     # force save a session's data to the store
-    $Session | Add-Member -MemberType ScriptMethod -Name Save -Value {
-        param($check)
+    $Session | Add-Member -MemberType NoteProperty -Name Save -Value {
+        param($session, $check)
 
         # only save if check and hashes different
-        if ($check -and !(Test-PodeSessionCookieDataHash -Session $this)) {
+        if ($check -and (Test-PodeSessionCookieDataHash -Session $session)) {
             return
         }
 
         # generate the expiry
-        $expiry = (Get-PodeSessionCookieExpiry -Session $this)
+        $expiry = (Get-PodeSessionCookieExpiry -Session $session)
 
         # save session data to store
-        $PodeSession.Server.Cookies.Session.Store.Set($this.Id, $this.Data, $expiry)
+        $PodeSession.Server.Cookies.Session.Store.Set($session.Id, $session.Data, $expiry)
 
         # update session's data hash
-        Set-PodeSessionCookieDataHash -Session $this
+        Set-PodeSessionCookieDataHash -Session $session
     }
 
     # delete the current session
-    $Session | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+    $Session | Add-Member -MemberType NoteProperty -Name Delete -Value {
+        param($session)
+
         # remove data from store
-        $PodeSession.Server.Cookies.Session.Store.Delete($this.Id)
+        $PodeSession.Server.Cookies.Session.Store.Delete($session.Id)
 
         # clear session
-        $this.Clear()
+        $session.Clear()
     }
 }
 

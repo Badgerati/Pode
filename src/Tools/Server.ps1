@@ -128,7 +128,7 @@ function Start-PodeServer
     try
     {
         # run the logic
-        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic
+        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
 
         # start runspace for timers
         Start-TimerRunspace
@@ -164,7 +164,7 @@ function Start-PodeServer
                     }
 
                     Start-Sleep -Seconds $PodeSession.Server.Interval
-                    Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic
+                    Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
                 }
             }
         }
@@ -202,14 +202,17 @@ function Restart-PodeServer
         $PodeSession.Loggers.Clear()
 
         # clear middle/endware
-        $PodeSession.Server.Middleware.Clear()
-        $PodeSession.Server.Endware.Clear()
+        $PodeSession.Server.Middleware = @()
+        $PodeSession.Server.Endware = @()
 
         # clear up view engine
         $PodeSession.Server.ViewEngine.Clear()
 
         # clear up cookie sessions
         $PodeSession.Server.Cookies.Session.Clear()
+
+        # clear up authentication methods
+        $PodeSession.Server.Authentications.Clear()
 
         # clear up shared state
         $PodeSession.Server.State.Clear()

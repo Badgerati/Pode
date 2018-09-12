@@ -21,11 +21,17 @@ function Invoke-PodeMiddleware
     foreach ($midware in @($Middleware))
     {
         try {
-            $continue = Invoke-ScriptBlock -ScriptBlock ($midware.GetNewClosure()) `
-                -Arguments $Session -Scoped -Return
+            # set any custom middleware options
+            $Session.Middleware = @{ 'Options' = $midware.Options }
+
+            # invoke the middleware logic
+            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $Session -Scoped -Return
+
+            # remove any custom middleware options
+            $Session.Middleware.Clear()
         }
         catch {
-            $Error[0] | Out-Default
+            $_.Exception | Out-Default
             $continue = $false
         }
 
@@ -182,7 +188,7 @@ function Get-PodeQueryMiddleware
         try
         {
             # set the query string from the request
-            $s.Query = $s.Request.QueryString
+            $s.Query = (ConvertFrom-NameValueToHashTable -Collection $s.Request.QueryString)
             return $true
         }
         catch [exception]

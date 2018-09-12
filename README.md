@@ -35,6 +35,10 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Order of Running](#order-of-running)
         * [Overriding Inbuilt Logic](#overriding-inbuilt-logic)
         * [Sessions](#sessions)
+    * [Authentication](#authentication)
+        * [Basic](#basic-auth)
+        * [Form](#form-auth)
+        * [Custom](#custom-auth)
     * [SMTP Server](#smtp-server)
     * [Misc](#misc)
         * [Logging](#logging)
@@ -72,6 +76,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 * Support for generating/binding self-signed certificates, and binding signed certificates
 * Support for middleware on web servers
 * Session middleware support on web requests
+* Can use authentication on requests, which can either be sessionless or session persistant
 
 ## Install
 
@@ -568,6 +573,154 @@ Server {
         json @{ 'Views' = $s.Session.Data.Views }
     }
 
+}
+```
+
+### Authentication
+
+Using middleware and sessions, Pode has support for authentication on web requests. This authentication can either be session-persistant (ie, logins on websites), or sessionless (ie, auths on rest api calls). Examples of both types can be seen in the `web-auth-basic.ps1` and `web-auth-forms.ps1` example scripts.
+
+To use authentication in Pode there are two key commands: `auth use` and `auth check`.
+
+* `auth use` is used to setup an auth type (basic/form/custom); this is where you specify a validator script (to check the user exists in your storage), any options, and if using a custom type a parser script (to parse headers/payloads to pass to the validator). An example:
+
+    ```powershell
+    Server {
+        # auth use <type> -v {} [-o @{}]
+
+        auth use basic -v {
+            param($user, $pass)
+            # logic to check user
+            return @{ 'user' = $user }
+        }
+    }
+    ```
+
+    The validator (`-v`) script is used to find a user, checking if they exist and the password is correct. If the validator passes, then a `user` needs to be returned from the script via `@{ 'user' = $user }` - if `$null` or a null user are returned then the validator is assumed to have failed, and a 401 status will be thrown.
+
+    Some auth methods also have options (`-o`) that can be supplied as a hashtable, such as field name or encoding overrides - more below.
+
+* `auth check` is used in `route` calls, to check a specific auth method against the incoming request. If the validator defined in `auth use` returns no user, then the check fails with a 401 status; if a user is found, then it is set against the session (if session middleware is enabled) and the route logic is invoked. An example:
+
+    ```powershell
+    Server {
+        # auth check <type> [-o @{}]
+
+        route get '/users' (auth check basic) {
+            param($session)
+            # route logic
+        }
+    }
+    ```
+
+    This is the most simple call to check authentication, the call also accepts options (`-o`) in a hashtable:
+
+    | Name | Description |
+    | --- | ----------- |
+    | FailureUrl | URL to redirect to should auth fail |
+    | SuccessUrl | URL to redirect to should auth succeed |
+    | Session | When true: check if the session already has a validated user, and store the validated user in the session (def: true) |
+    | Login | When true: check the auth status in session and redirect to SuccessUrl, else proceed to the page with no auth required (def: false) |
+    | Logout | When true: purge the session and redirect to the FailureUrl (def: false) |
+
+If you have defined session-middleware to be used in your script, then when an `auth check` call succeeds the user with be authenticated against that session. When the user makes another call using the same session-cookie, then the `auth check` will detect the already authenticated session and skip the validator script. If you're using sessions and you don't want the `auth check` to check the session, or store the user against the session, then pass `-o @{ 'Session' = $false }` to the `auth check`.
+
+> Not defining session middleware is basically like always having `Session = $false` set on `auth check`
+
+#### Basic Auth
+
+> Example with comments in `examples/web-auth-basic.ps1`
+
+Basic authentication is when you pass a encoded username:password value on the header of your requests: `@{ 'Authorization' = 'Basic <base64 encoded username:password>' }`. To setup basic auth in Pode, you specify `auth use basic` in your server script; the validator script will have the username/password supplied as parameters:
+
+```powershell
+Server {
+    auth use basic -v {
+        param($username, $password)
+    }
+}
+```
+
+##### Options
+
+| Name | Description |
+| ---- | ----------- |
+| Encoding | Defines which encoding to use when decoding the auth header (def: `ISO-8859-1`) |
+| Name | Defines the name part of the header, infront of the encoded sting (def: Basic) |
+
+#### Form Auth
+
+> Example with comments in `examples/web-auth-form.ps1`
+
+Form authentication is for when you're using a `<form>` in HTML, and you submit the form. The type expects a `username` and a `password` to be passed from the form input fields. To setup form auth in Pode, you specify `auth use form` in your server script; the validator script will have the username/password supplied as parameters:
+
+```powershell
+Server {
+    auth use form -v {
+        param($username, $password)
+    }
+}
+```
+
+```html
+<form action="/login" method="post">
+    <div>
+        <label>Username:</label>
+        <input type="text" name="username"/>
+    </div>
+    <div>
+        <label>Password:</label>
+        <input type="password" name="password"/>
+    </div>
+    <div>
+        <input type="submit" value="Login"/>
+    </div>
+</form>
+```
+
+##### Options
+
+| Name | Description |
+| ---- | ----------- |
+| UsernameField | Defines the name of field which the username will be passed in from the form (def: username) |
+| PasswordField | Defines the name of field which the password will be passed in from the form (def: password) |
+
+#### Custom Auth
+
+Custom authentication works much like the above inbuilt types, but allows you to specify your own parsing logic. For example, let's say we wanted something similar to `form` authentication but it requires a third piece of information: ClientName. To setup a custom authentication, you can use any name and specify the `-c` flag; you'll also be required to specify the parsing scriptblock under `-p`:
+
+```powershell
+Server {
+    auth use -c client -p {
+        # the current web-session (same data as supplied to routes), and options supplied
+        param($session, $opts)
+
+        # get client/user/pass field names to get from payload
+        $clientField = (coalesce $opts.ClientField 'client')
+        $userField = (coalesce $opts.UsernameField 'username')
+        $passField = (coalesce $opts.PasswordField 'password')
+
+        # get the client/user/pass from the post data
+        $client = $session.Data.$clientField
+        $username = $session.Data.$userField
+        $password = $session.Data.$passField
+
+        # return the data, to be passed to the validator script
+        return @($client, $username, $password)
+    } `
+    -v {
+        param($client, $username, $password)
+
+        # find the user
+        # if not found, return null - for a 401
+
+        # return the user
+        return  @{ 'user' = $user }
+    }
+
+    route get '/users' (auth check client) {
+        param($session)
+    }
 }
 ```
 
@@ -1125,3 +1278,4 @@ Pode comes with a few helper functions - mostly for writing responses and readin
 * `middleware`
 * `endware`
 * `session`
+* `auth`

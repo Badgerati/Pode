@@ -86,7 +86,7 @@ function Write-ToResponseFromFile
 
         default {
             if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments $Path)
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments $Path -Return)
             }
         }
     }
@@ -149,7 +149,10 @@ function Status
     )
 
     $WebSession.Response.StatusCode = $Code
-    $WebSession.Response.StatusDescription = $Description
+
+    if (!(Test-Empty $Description)) {
+        $WebSession.Response.StatusDescription = $Description
+    }
 }
 
 function Redirect
@@ -372,9 +375,11 @@ function View
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('p')]
         $Path,
 
         [Parameter()]
+        [Alias('d')]
         $Data = @{}
     )
 
