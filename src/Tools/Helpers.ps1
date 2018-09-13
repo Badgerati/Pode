@@ -438,21 +438,46 @@ function Close-PodeRunspaces
     }
 }
 
+function Get-ConsoleKey
+{
+    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+        return $null
+    }
+
+    return [Console]::ReadKey($true)
+}
+
 function Test-TerminationPressed
 {
-    if ($PodeSession.DisableTermination -or [Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+    param (
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeSession.DisableTermination) {
         return $false
     }
 
-    $key = [Console]::ReadKey($true)
-
-    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
-        return $true
+    if ($null -eq $Key) {
+        $Key = Get-ConsoleKey
     }
 
-    return $false
+    return ($null -ne $Key -and $Key.Key -ieq 'c' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
 }
 
+function Test-RestartPressed
+{
+    param (
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($null -eq $Key) {
+        $Key = Get-ConsoleKey
+    }
+
+    return ($null -ne $Key -and $Key.Key -ieq 'r' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
+}
 
 function Start-TerminationListener
 {

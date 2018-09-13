@@ -101,11 +101,14 @@ function Server
 
         # sit here waiting for termination (unless it's one-off script)
         if ($PodeSession.Server.Type -ine 'script') {
-            while (!(Test-TerminationPressed)) {
+            while (!(Test-TerminationPressed -Key $key)) {
                 Start-Sleep -Seconds 1
 
+                # get the next key presses
+                $key = Get-ConsoleKey
+
                 # check for internal restart
-                if ($PodeSession.Tokens.Restart.IsCancellationRequested) {
+                if (($PodeSession.Tokens.Restart.IsCancellationRequested) -or (Test-RestartPressed -Key $key)) {
                     Restart-PodeServer
                 }
             }
