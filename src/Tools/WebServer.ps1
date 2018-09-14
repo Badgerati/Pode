@@ -106,6 +106,8 @@ function Start-WebServer
 
                 # reset session data
                 $WebSession = @{}
+                $WebSession.OnEnd = @()
+                $WebSession.Auth = @{}
                 $WebSession.Response = $response
                 $WebSession.Request = $request
                 $WebSession.Lockable = $PodeSession.Lockable
@@ -116,8 +118,7 @@ function Start-WebServer
                 $logObject = New-PodeLogObject -Request $request -Path $WebSession.Path
 
                 # invoke middleware
-                $_midware = ($PodeSession.Server.Middleware).Logic
-                if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $_midware)) {
+                if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $PodeSession.Server.Middleware)) {
                     # get the route logic
                     $route = Get-PodeRoute -HttpMethod $WebSession.Method -Route $WebSession.Path
                     if ($null -eq $route) {
@@ -126,9 +127,13 @@ function Start-WebServer
 
                     # invoke route and custom middleware
                     if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $route.Middleware)) {
-                        Invoke-ScriptBlock -ScriptBlock (($route.Logic).GetNewClosure()) -Arguments $WebSession -Scoped
+                        Invoke-ScriptBlock -ScriptBlock $route.Logic -Arguments $WebSession -Scoped
                     }
                 }
+
+                # invoke endware specifc to the current websession
+                $_endware = ($WebSession.OnEnd + @(($PodeSession.Server.Endware).Logic))
+                Invoke-PodeEndware -Session $WebSession -Endware $_endware
 
                 # close response stream (check if exists, as closing the writer closes this stream on unix)
                 if ($response.OutputStream) {

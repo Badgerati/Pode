@@ -20,7 +20,7 @@ function ConvertFrom-PodeFile
     }
 
     # invoke the content as a script to generate the dynamic content
-    return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data)
+    return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
 }
 
 function Get-Type
@@ -53,12 +53,18 @@ function Test-Empty
         return $true
     }
 
-    if ($type.Name -ieq 'string') {
-        return [string]::IsNullOrWhiteSpace($Value)
-    }
+    switch ($type.Name) {
+        'string' {
+            return [string]::IsNullOrWhiteSpace($Value)
+        }
 
-    if ($type.Name -ieq 'hashtable') {
-        return $Value.Count -eq 0
+        'hashtable' {
+            return ($Value.Count -eq 0)
+        }
+
+        'scriptblock' {
+            return ($null -eq $Value -or [string]::IsNullOrWhiteSpace($Value.ToString()))
+        }
     }
 
     switch ($type.BaseName) {
@@ -432,21 +438,46 @@ function Close-PodeRunspaces
     }
 }
 
+function Get-ConsoleKey
+{
+    if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+        return $null
+    }
+
+    return [Console]::ReadKey($true)
+}
+
 function Test-TerminationPressed
 {
-    if ($PodeSession.DisableTermination -or [Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
+    param (
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($PodeSession.DisableTermination) {
         return $false
     }
 
-    $key = [Console]::ReadKey($true)
-
-    if ($key.Key -ieq 'c' -and $key.Modifiers -band [ConsoleModifiers]::Control) {
-        return $true
+    if ($null -eq $Key) {
+        $Key = Get-ConsoleKey
     }
 
-    return $false
+    return ($null -ne $Key -and $Key.Key -ieq 'c' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
 }
 
+function Test-RestartPressed
+{
+    param (
+        [Parameter()]
+        $Key = $null
+    )
+
+    if ($null -eq $Key) {
+        $Key = Get-ConsoleKey
+    }
+
+    return ($null -ne $Key -and $Key.Key -ieq 'r' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
+}
 
 function Start-TerminationListener
 {
@@ -539,7 +570,7 @@ function Lock
         $locked = $true
 
         if ($ScriptBlock -ne $null) {
-            Invoke-ScriptBlock -ScriptBlock $ScriptBlock
+            Invoke-ScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure
         }
     }
     catch {
@@ -588,31 +619,44 @@ function Invoke-ScriptBlock
         $ScriptBlock,
 
         [Parameter()]
-        [object]
         $Arguments = $null,
 
         [switch]
         $Scoped,
 
         [switch]
-        $Return
+        $Return,
+
+        [switch]
+        $Splat,
+
+        [switch]
+        $NoNewClosure
     )
 
+    if (!$NoNewClosure) {
+        $ScriptBlock = ($ScriptBlock).GetNewClosure()
+    }
+
     if ($Scoped) {
-        if ($Return) {
-            return (& $ScriptBlock $Arguments)
+        if ($Splat) {
+            $result = (& $ScriptBlock @Arguments)
         }
         else {
-            & $ScriptBlock $Arguments
+            $result = (& $ScriptBlock $Arguments)
         }
     }
     else {
-        if ($Return) {
-            return (. $ScriptBlock $Arguments)
+        if ($Splat) {
+            $result = (. $ScriptBlock @Arguments)
         }
         else {
-            . $ScriptBlock $Arguments
+            $result = (. $ScriptBlock $Arguments)
         }
+    }
+
+    if ($Return) {
+        return $result
     }
 }
 
@@ -638,6 +682,19 @@ function Iftet
     }
 
     return $Value2
+}
+
+function Coalesce
+{
+    param (
+        [Parameter()]
+        $Value1,
+
+        [Parameter()]
+        $Value2
+    )
+
+    return (iftet (Test-Empty $Value1) $Value2 $Value1)
 }
 
 function Get-FileExtension
@@ -696,7 +753,7 @@ function Stream
     )
 
     try {
-        return (Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments $InputObject)
+        return (Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments $InputObject -Return -NoNewClosure)
     }
     catch {
         $Error[0] | Out-Default
@@ -814,7 +871,35 @@ function ConvertFrom-PodeContent
         { $_ -ilike '*/csv' } {
             $Content = ($Content | ConvertFrom-Csv)
         }
+
+        { $_ -ilike '*/x-www-form-urlencoded' } {
+            $Content = (ConvertFrom-NameValueToHashTable -Collection ([System.Web.HttpUtility]::ParseQueryString($Content)))
+        }
     }
 
     return $Content
+}
+
+function ConvertFrom-NameValueToHashTable
+{
+    param (
+        [Parameter()]
+        $Collection
+    )
+
+    if ($null -eq $Collection) {
+        return $null
+    }
+
+    $ht = @{}
+    $Collection.Keys | ForEach-Object {
+        $ht[$_] = $Collection[$_]
+    }
+
+    return $ht
+}
+
+function Get-NewGuid
+{
+    return ([guid]::NewGuid()).ToString()
 }

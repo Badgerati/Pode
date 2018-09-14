@@ -101,11 +101,14 @@ function Server
 
         # sit here waiting for termination (unless it's one-off script)
         if ($PodeSession.Server.Type -ine 'script') {
-            while (!(Test-TerminationPressed)) {
+            while (!(Test-TerminationPressed -Key $key)) {
                 Start-Sleep -Seconds 1
 
+                # get the next key presses
+                $key = Get-ConsoleKey
+
                 # check for internal restart
-                if ($PodeSession.Tokens.Restart.IsCancellationRequested) {
+                if (($PodeSession.Tokens.Restart.IsCancellationRequested) -or (Test-RestartPressed -Key $key)) {
                     Restart-PodeServer
                 }
             }
@@ -128,7 +131,7 @@ function Start-PodeServer
     try
     {
         # run the logic
-        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic
+        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
 
         # start runspace for timers
         Start-TimerRunspace
@@ -164,7 +167,7 @@ function Start-PodeServer
                     }
 
                     Start-Sleep -Seconds $PodeSession.Server.Interval
-                    Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic
+                    Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
                 }
             }
         }
@@ -201,11 +204,18 @@ function Restart-PodeServer
         $PodeSession.Schedules.Clear()
         $PodeSession.Loggers.Clear()
 
-        # clear middleware
-        $PodeSession.Server.Middleware.Clear()
+        # clear middle/endware
+        $PodeSession.Server.Middleware = @()
+        $PodeSession.Server.Endware = @()
 
         # clear up view engine
         $PodeSession.Server.ViewEngine.Clear()
+
+        # clear up cookie sessions
+        $PodeSession.Server.Cookies.Session.Clear()
+
+        # clear up authentication methods
+        $PodeSession.Server.Authentications.Clear()
 
         # clear up shared state
         $PodeSession.Server.State.Clear()

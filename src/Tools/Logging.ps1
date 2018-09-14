@@ -36,7 +36,7 @@ function New-PodeLogObject
         };
         'Response' = @{
             'StatusCode' = '-';
-            'StautsDescription' = '-';
+            'StatusDescription' = '-';
             'Size' = '-';
         };
     }

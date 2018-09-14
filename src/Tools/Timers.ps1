@@ -44,7 +44,7 @@ function Start-TimerRunspace
 
                 if ($run) {
                     try {
-                        Invoke-ScriptBlock -ScriptBlock (($_.Script).GetNewClosure()) -Arguments @{ 'Lockable' = $PodeSession.Lockable } -Scoped
+                        Invoke-ScriptBlock -ScriptBlock $_.Script -Arguments @{ 'Lockable' = $PodeSession.Lockable } -Scoped
                     }
                     catch {
                         $Error[0]

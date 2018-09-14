@@ -1,9 +1,4 @@
-if ((Get-Module -Name Pode | Measure-Object).Count -ne 0)
-{
-    Remove-Module -Name Pode
-}
-
-Import-Module Pode
+Import-Module Pode -Force
 
 # create a server, and start listening on port 8085
 Server -Threads 2 {

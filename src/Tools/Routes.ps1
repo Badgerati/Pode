@@ -117,6 +117,20 @@ function Route
         throw "[$($HttpMethod)] $($Route) is already defined"
     }
 
+    # if we have middleware, convert scriptblocks to hashtables
+    if (!(Test-Empty $Middleware))
+    {
+        $Middleware = @($Middleware)
+        for ($i = 0; $i -lt $Middleware.Length; $i++) {
+            if ((Get-Type $Middleware[$i]).Name -ieq 'scriptblock')
+            {
+                $Middleware[$i] = @{
+                    'Logic' = $Middleware[$i]
+                }
+            }
+        }
+    }
+
     # add the route logic
     $PodeSession.Server.Routes[$HttpMethod][$Route] = @{
         'Logic' = $ScriptBlock;

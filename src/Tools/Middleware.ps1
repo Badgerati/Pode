@@ -20,8 +20,20 @@ function Invoke-PodeMiddleware
     # loop through each of the middleware, invoking the next if it returns true
     foreach ($midware in @($Middleware))
     {
-        $continue = Invoke-ScriptBlock -ScriptBlock ($midware.GetNewClosure()) `
-            -Arguments $Session -Scoped -Return
+        try {
+            # set any custom middleware options
+            $Session.Middleware = @{ 'Options' = $midware.Options }
+
+            # invoke the middleware logic
+            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $Session -Scoped -Return
+
+            # remove any custom middleware options
+            $Session.Middleware.Clear()
+        }
+        catch {
+            $_.Exception | Out-Default
+            $continue = $false
+        }
 
         if (!$continue) {
             break
@@ -176,7 +188,7 @@ function Get-PodeQueryMiddleware
         try
         {
             # set the query string from the request
-            $s.Query = $s.Request.QueryString
+            $s.Query = (ConvertFrom-NameValueToHashTable -Collection $s.Request.QueryString)
             return $true
         }
         catch [exception]
