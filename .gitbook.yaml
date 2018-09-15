@@ -1,0 +1,5 @@
+root: ./docs/
+
+structure:
+  readme: What-is-Pode.md
+  summary: Table-of-Contents.md
