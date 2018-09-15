@@ -7,6 +7,11 @@
 * [Docker](Getting-Started/Docker.md)
 * [Frontend](Getting-Started/Frontend.md)
 
-## Commands
+## Tutorials
 
-* [Server](Commands/Server.md)
+* [Routes](Tutorials/Routes.md)
+
+## Functions
+
+* [Listen](Functions/Listen.md)
+* [Server](Functions/Server.md)
