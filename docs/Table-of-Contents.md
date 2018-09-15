@@ -2,8 +2,9 @@
 
 ## Getting Started
 
-* [Installation](getting-started/installation.md)
+* [Installation](Getting-Started/Installation.md)
+* [Docker](Getting-Started/Docker.md)
 
 ## Commands
 
-* [Server](commands/server.md)
+* [Server](Commands/Server.md)
