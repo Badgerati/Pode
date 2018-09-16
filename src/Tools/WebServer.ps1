@@ -3,10 +3,12 @@ function Engine
     param (
         [Parameter()]
         [ValidateNotNullOrEmpty()]
+        [Alias('t')]
         [string]
         $Engine,
 
         [Parameter()]
+        [Alias('s')]
         [scriptblock]
         $ScriptBlock = $null
     )
