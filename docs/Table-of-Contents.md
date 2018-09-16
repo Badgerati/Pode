@@ -13,7 +13,9 @@
 
 ## Functions
 
+* [Attach](Functions/Attach.md)
 * [Engine](Functions/Engine.md)
 * [Listen](Functions/Listen.md)
 * [Server](Functions/Server.md)
+* [Status](Functions/Status.md)
 * [View](Functions/View.md)

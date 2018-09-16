@@ -52,5 +52,5 @@ Pode uses a View Engine to either render HTML, Pode, or other types. Default is 
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
-| Path | string | true | The path to the view to render, relative to your `/view` directory | null |
+| Path | string | true | The path to the view to render, relative to your `/views` directory | null |
 | data | hashtable | false | A hashtable of dynamic data that will be supplied to `.pode`, and other third-party template engines | `@{}` |
