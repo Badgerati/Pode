@@ -1,4 +1,4 @@
-site_name: Pode Documentation
+site_name: Pode
 nav:
   - Home: index.md
   - Getting Started:

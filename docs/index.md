@@ -1,4 +1,6 @@
-# What is Pode
+# Welcome
+
+Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs, Web Pages and SMTP/TCP servers. It also allows you to render dynamic files using `.pode` files, which is effectively embedded PowerShell, or other Third-Party template engines. Pode also has support for middleware, sessions, and authentication; as well as access and rate limiting features.
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
 [![Build](https://ci.appveyor.com/api/projects/status/nvl1xmh31crp10ea/branch/develop?svg=true)](https://ci.appveyor.com/project/Badgerati/pode/branch/develop)
@@ -7,8 +9,6 @@
 [![Chocolatey](https://img.shields.io/chocolatey/dt/pode.svg?label=Chocolatey&colorB=a1301c)](https://chocolatey.org/packages/pode)
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker)](https://hub.docker.com/r/badgerati/pode/)
-
-Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs, Web Pages and SMTP/TCP servers. It also allows you to render dynamic files using `.pode` files, which is effectively embedded PowerShell, or other Third-Party template engines. Pode also has support for middleware, sessions, and authentication; as well as access and rate limiting features.
 
 ## Features
 
