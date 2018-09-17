@@ -2,21 +2,23 @@
 
 ## Description
 
-The `attach` function allows you to attach file in the `/public` directory onto the web response. This allows the files to be downloaded by the end-user.
+The `attach` function allows you to attach files in the `/public` directory onto the web response. This allows the files to be downloaded by the end-user.
 
 ## Examples
 
-1. The following example attaches the installer found at `/public/downloads/installer.exe` onto the response, when the `http://localhost:8080/app/install` endpoint is hit:
+### Example 1
 
-    ```powershell
-    Server {
-        listen *:8080 http
+The following example attaches the installer found at `/public/downloads/installer.exe` onto the response, when the `http://localhost:8080/app/install` endpoint is hit:
 
-        route get '/app/install' {
-            attach 'downloads/installer.exe'
-        }
+```powershell
+Server {
+    listen *:8080 http
+
+    route get '/app/install' {
+        attach 'downloads/installer.exe'
     }
-    ```
+}
+```
 
 ## Parameters
 

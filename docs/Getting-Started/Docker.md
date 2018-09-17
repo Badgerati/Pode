@@ -8,7 +8,8 @@ The image itself uses PowerShell Core on the Ubuntu Xenial OS.
 
 An example of using the Pode container in your Dockerfile could be as follows:
 
-> The server script used below can be found in the `examples/web-pages-docker.ps1`
+!!! info
+    The server script used below can be found in the `examples/web-pages-docker.ps1`
 
 ```dockerfile
 # pull down the pode image
@@ -33,6 +34,7 @@ docker build -t pode/example
 docker run -p 8085:8085 -d pode/example
 ```
 
-> The Dockerfile above is the same Dockerfile in the `examples/` directory
+!!! info
+    The Dockerfile above is the same Dockerfile in the `examples/` directory
 
 Now try navigating to `localhost:8085` (or calling `curl localhost:8085`) and you should be greeted with a "Hello, world!" page.

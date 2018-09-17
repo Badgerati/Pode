@@ -6,29 +6,33 @@ The `status` function allows you to specify a specific status code, and optional
 
 ## Examples
 
-1. The following example sets the status code of the response to be 404:
+### Example 1
 
-    ```powershell
-    Server {
-        listen *:8080 http
+The following example sets the status code of the response to be 404:
 
-        route get '/missing' {
-            status 404
-        }
+```powershell
+Server {
+    listen *:8080 http
+
+    route get '/missing' {
+        status 404
     }
-    ```
+}
+```
 
-2. The following example sets the status code and description of the response to be 500:
+### Example 2
 
-    ```powershell
-    Server {
-        listen *:8080 http
+The following example sets the status code and description of the response to be 500:
 
-        route get '/error' {
-            status 500 'Oh no! Something went wrong!'
-        }
+```powershell
+Server {
+    listen *:8080 http
+
+    route get '/error' {
+        status 500 'Oh no! Something went wrong!'
     }
-    ```
+}
+```
 
 ## Parameters
 

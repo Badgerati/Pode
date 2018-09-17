@@ -4,28 +4,33 @@
 
 The `engine` function allows you to specify the engine used to render `view` and content templates. You can also specify a third-party engine to use, such as [EPS](https://github.com/straightdave/eps).
 
-> If you don't use the `engine` function, then the defaut of HTML will be used
+!!! info
+    If you don't use the `engine` function, then the defaut of HTML will be used
 
 ## Examples
 
-1. The following example will render views and content using the Pode template engine (such as the `index.pode` view or the `style.css.pode` public content file):
+### Example 1
 
-    ```powershell
-    Server {
-        engine pode
+The following example will render views and content using the Pode template engine (such as the `index.pode` view or the `style.css.pode` public content file):
+
+```powershell
+Server {
+    engine pode
+}
+```
+
+### Example 2
+
+The following example will use the third-party engine `EPS` to render views (such as the `index.eps` view or the `style.css.eps` public content file):
+
+```powershell
+Server {
+    engine eps {
+        param($path, $data)
+        return Invoke-EpsTemplate -Path $path -Binding $data
     }
-    ```
-
-2. The following example will use the third-party engine `EPS` to render views (such as the `index.eps` view or the `style.css.eps` public content file):
-
-    ```powershell
-    Server {
-        engine eps {
-            param($path, $data)
-            return Invoke-EpsTemplate -Path $path -Binding $data
-        }
-    }
-    ```
+}
+```
 
 ## Parameters
 

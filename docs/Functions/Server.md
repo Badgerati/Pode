@@ -2,43 +2,52 @@
 
 ## Description
 
-The `Server` function is the most important function throughout all of Pode, as it's the only function that is mandatory in your scripts. Within scriptblock supplied to the `Server` is where your place all of your main server logic - routes, timers, middleware, etc.
+The `Server` function is the most important function throughout all of Pode, as it's the only function that is mandatory in your scripts. Within the scriptblock supplied to the `Server` is where you place all of your main server logic - routes, timers, middleware, etc.
 
-> You can only have one `Server` declared within your script
+!!! warning
+    You can only have one `Server` declared within your script
 
 ## Examples
 
-1. The following example will run the scriptblock once, printing out `Hello, world!`, and then exit:
+### Example 1
 
-    ```powershell
-    Server {
-        Write-Host 'Hello, world!'
-    }
-    ```
+The following example will run the scriptblock once, printing out `Hello, world!`, and then exit:
 
-2. The following will start a server that repeats the scriptblock every 5 seconds:
+```powershell
+Server {
+    Write-Host 'Hello, world!'
+}
+```
 
-    ```powershell
-    Server -Interval 5 {
-        Write-Host 'Hey!'
-    }
-    ```
+### Example 2
 
-3. The following server will accept web requests, and handle them across 2 threads rather than 1:
+The following will start a server that repeats the scriptblock every 5 seconds:
 
-    ```powershell
-    Server -Thread 2 {
-        # route logic
-    }
-    ```
+```powershell
+Server -Interval 5 {
+    Write-Host 'Hey!'
+}
+```
 
-4. The following server will restart when it detects a file has been changed. Ie, if you start the server and then alter a web page, or change a dot-sourced script, then the server will restart:
+### Example 3
 
-    ```powershell
-    Server -FileMonitor {
-        # route logic
-    }
-    ```
+The following server will accept web requests, and handle them across 2 threads rather than 1:
+
+```powershell
+Server -Thread 2 {
+    # route logic
+}
+```
+
+### Example 4
+
+The following server will restart when it detects a file has been changed. Ie, if you start the server and then alter a web page, or change a dot-sourced script, then the server will restart:
+
+```powershell
+Server -FileMonitor {
+    # route logic
+}
+```
 
 ## Parameters
 

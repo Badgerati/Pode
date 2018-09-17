@@ -8,45 +8,51 @@ Pode uses a View Engine to either render HTML, Pode, or other types. Default is 
 
 ## Examples
 
-1. The following example will render the `index.html` view when you navigate to `http://localhost:8080`:
+### Example 1
 
-    ```powershell
-    Server {
-        listen *:8080 http
+The following example will render the `index.html` view when you navigate to `http://localhost:8080`:
 
-        route get '/' {
-            view 'index'
-        }
+```powershell
+Server {
+    listen *:8080 http
+
+    route get '/' {
+        view 'index'
     }
-    ```
+}
+```
 
-2. The following example will render the `index.pode` view when you navigate to `http://localhost:8080`:
+### Example 2
 
-    ```powershell
-    Server {
-        listen *:8080 http
-        engine pode
+The following example will render the `index.pode` view when you navigate to `http://localhost:8080`:
 
-        route get '/' {
-            view 'index'
-        }
+```powershell
+Server {
+    listen *:8080 http
+    engine pode
+
+    route get '/' {
+        view 'index'
     }
-    ```
+}
+```
 
-3. The following example will render the `index.pode` view when you navigate to `http://localhost:8080`, it will also supply dynamic data - in this case, the current date:
+### Example 3
+
+The following example will render the `index.pode` view when you navigate to `http://localhost:8080`, it will also supply dynamic data - in this case, the current date:
 
     > The dynamic data can be used in your pode view via `$($data.date)`
 
-    ```powershell
-    Server {
-        listen *:8080 http
-        engine pode
+```powershell
+Server {
+    listen *:8080 http
+    engine pode
 
-        route get '/' {
-            view 'index' -d @{ 'date' = [DateTime]::Now }
-        }
+    route get '/' {
+        view 'index' -d @{ 'date' = [DateTime]::Now }
     }
-    ```
+}
+```
 
 ## Parameters
 

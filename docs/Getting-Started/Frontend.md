@@ -24,4 +24,5 @@ yarn add lodash
 
 Once you've added some libraries you can use `pode install` to trigger `yarn`. This will tell `yarn` to install the packages to a `pode_modules` directory.
 
-> Other useful packages could include `gulp`, `jquery`, `moment`, etc.
+!!! info
+    Other useful packages could include `gulp`, `jquery`, `moment`, etc.

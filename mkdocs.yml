@@ -1,0 +1,38 @@
+site_name: Pode Documentation
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: Getting-Started/Installation.md
+    - CLI: Getting-Started/CLI.md
+    - Docker: Getting-Started/Docker.md
+    - Frontend: Getting-Started/Frontend.md
+  - Tutorials:
+    - Routes: Tutorials/Routes.md
+  - Functions:
+    - Attach: Functions/Attach.md
+    - Engine: Functions/Engine.md
+    - Listen: Functions/Listen.md
+    - Server: Functions/Server.md
+    - Status: Functions/Status.md
+    - View: Functions/View.md
+theme:
+  name: material
+  logo: images/icon.png
+  favicon: images/favicon.ico
+  feature:
+    tabs: true
+  palette:
+    primary: cyan
+    accent: cyan
+markdown_extensions:
+  - codehilite
+  - admonition
+  - meta
+repo_name: badgerati/pode
+repo_url: https://github.com/Badgerati/Pode
+extra:
+  social:
+    - type: github
+      link: https://github.com/badgerati
+    - type: twitter
+      link: https://twitter.com/badgerati
