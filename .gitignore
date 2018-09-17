@@ -20,6 +20,7 @@ bld/
 [Oo]bj/
 [Tt]emp/
 [Ll]ogs/
+[Ss]ite/
 
 # Packing Artifacts
 *.zip
