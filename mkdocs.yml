@@ -12,8 +12,13 @@ nav:
     - Attach: Functions/Attach.md
     - Engine: Functions/Engine.md
     - Listen: Functions/Listen.md
+    - Middleware: Functions/Middleware.md
+    - Redirect: Functions/Redirect.md
     - Server: Functions/Server.md
+    - Session: Functions/Session.md
     - Status: Functions/Status.md
+    - Stopwatch: Functions/Stopwatch.md
+    - Timer: Functions/Timer.md
     - View: Functions/View.md
 theme:
   name: material
