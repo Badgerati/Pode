@@ -6,6 +6,7 @@ nav:
     - CLI: Getting-Started/CLI.md
     - Docker: Getting-Started/Docker.md
     - Frontend: Getting-Started/Frontend.md
+    - Cron Expressions: Getting-Started/CronExpressions.md
   - Tutorials:
     - Routes: Tutorials/Routes.md
   - Functions:
@@ -14,6 +15,7 @@ nav:
     - Listen: Functions/Listen.md
     - Middleware: Functions/Middleware.md
     - Redirect: Functions/Redirect.md
+    - Schedule: Functions/Schedule.md
     - Server: Functions/Server.md
     - Session: Functions/Session.md
     - Status: Functions/Status.md

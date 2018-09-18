@@ -93,6 +93,8 @@ Server {
 
 ## Notes
 
+### Stores
+
 A store should be a `psobject` that requires the following functions:
 
 ```powershell
