@@ -783,7 +783,7 @@
 <p>The <code>timer</code> function allows you to setup short-running async tasks, that run periodically along side your main server logic; they have unique names, and iterate on a defined number of seconds.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic is not long-running (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, try using <a href="/Functions/Schedule"><code>schedule</code></a> instead</p>
+<p>All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic is not long-running (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, try using <a href="/Functions/Schedule/"><code>schedule</code></a> instead</p>
 </div>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
