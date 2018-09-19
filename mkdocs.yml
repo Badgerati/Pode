@@ -11,10 +11,14 @@ nav:
     - Routes: Tutorials/Routes.md
   - Functions:
     - Attach: Functions/Attach.md
+    - Csv: Functions/Csv.md
     - Engine: Functions/Engine.md
+    - Html: Functions/Html.md
+    - Json: Functions/Json.md
     - Listen: Functions/Listen.md
     - Middleware: Functions/Middleware.md
     - Redirect: Functions/Redirect.md
+    - Route: Functions/Route.md
     - Schedule: Functions/Schedule.md
     - Server: Functions/Server.md
     - Session: Functions/Session.md
@@ -22,6 +26,7 @@ nav:
     - Stopwatch: Functions/Stopwatch.md
     - Timer: Functions/Timer.md
     - View: Functions/View.md
+    - Xml: Functions/Xml.md
 theme:
   name: material
   logo: images/icon.png

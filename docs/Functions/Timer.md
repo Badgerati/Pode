@@ -5,7 +5,7 @@
 The `timer` function allows you to setup short-running async tasks, that run periodically along side your main server logic; they have unique names, and iterate on a defined number of seconds.
 
 !!! info
-    All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic is not long-running (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, try using [`schedule`](/Functions/Schedule) instead
+    All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic is not long-running (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, try using [`schedule`](../Schedule/) instead
 
 ## Examples
 

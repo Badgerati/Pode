@@ -221,10 +221,10 @@ function Json
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Encoding utf8
+            $Value = Get-Content -Path $Value -Raw -Encoding utf8
         }
     }
-    elseif (Test-Empty $value) {
+    elseif (Test-Empty $Value) {
         $Value = '{}'
     }
     elseif ((Get-Type $Value).Name -ine 'string') {
@@ -246,16 +246,28 @@ function Csv
     )
 
     if ($File) {
-        if (!(Test-Path $Value)) {
+        if ($null -eq $Value -or !(Test-Path $Value)) {
             status 404
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Encoding utf8
+            $Value = Get-Content -Path $Value -Raw -Encoding utf8
         }
     }
+    elseif (Test-Empty $Value) {
+        $Value = [string]::Empty
+    }
     elseif ((Get-Type $Value).Name -ine 'string') {
-        $Value = ($Value | ConvertTo-Csv -Delimiter ',')
+        $Value = ($Value | ForEach-Object {
+            New-Object psobject -Property $_
+        })
+
+        if (Test-IsPSCore) {
+            $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
+        }
+        else {
+            $Value = ($Value | ConvertTo-Csv -Delimiter ',' -NoTypeInformation)
+        }
     }
 
     Write-ToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
@@ -273,16 +285,23 @@ function Xml
     )
 
     if ($File) {
-        if (!(Test-Path $Value)) {
+        if ($null -eq $Value -or !(Test-Path $Value)) {
             status 404
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Encoding utf8
+            $Value = Get-Content -Path $Value -Raw -Encoding utf8
         }
     }
+    elseif (Test-Empty $value) {
+        $Value = [string]::Empty
+    }
     elseif ((Get-Type $Value).Name -ine 'string') {
-        $Value = ($Value | ConvertTo-Xml -Depth 10)
+        $Value = ($value | ForEach-Object {
+            New-Object psobject -Property $_
+        })
+
+        $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
     }
 
     Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
@@ -300,13 +319,16 @@ function Html
     )
 
     if ($File) {
-        if (!(Test-Path $Value)) {
+        if ($Value -eq $Value -or !(Test-Path $Value)) {
             status 404
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Encoding utf8
+            $Value = Get-Content -Path $Value -Raw -Encoding utf8
         }
+    }
+    elseif (Test-Empty $value) {
+        $Value = [string]::Empty
     }
     elseif ((Get-Type $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Html)
