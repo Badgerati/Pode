@@ -2,7 +2,7 @@
 
 ## Description
 
-The `middleware` function allows you to add Middleware scripts, that run prior to `route` logic. They allow you to do things like rate-limiting, access restriction, sessions, etc.
+The `middleware` function allows you to add middleware scripts, that run prior to `route` logic. They allow you to do things like rate-limiting, access restriction, sessions, etc.
 
 Middleware in Pode allows you to observe and edit the request/response objects for a current web request - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the `route` logic.
 

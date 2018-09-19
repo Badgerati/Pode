@@ -12,6 +12,7 @@ nav:
   - Functions:
     - Attach: Functions/Attach.md
     - Csv: Functions/Csv.md
+    - Endware: Functions/Endware.md
     - Engine: Functions/Engine.md
     - Html: Functions/Html.md
     - Json: Functions/Json.md
