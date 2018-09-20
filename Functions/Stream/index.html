@@ -36,7 +36,7 @@
     
     
       
-        <title>Session - Pode</title>
+        <title>Stream - Pode</title>
       
     
     
@@ -98,7 +98,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="../../#session" tabindex="1" class="md-skip">
+      <a href="../../#stream" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -124,7 +124,7 @@
                 Pode
               </span>
               <span class="md-header-nav__topic">
-                Session
+                Stream
               </span>
             
           
@@ -621,6 +621,30 @@
           
           
 
+
+  <li class="md-nav__item">
+    <a href="../Session/" title="Session" class="md-nav__link">
+      Session
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Status/" title="Status" class="md-nav__link">
+      Status
+    </a>
+  </li>
+
+        
+          
+          
+          
+
   
 
 
@@ -632,11 +656,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Session
+        Stream
       </label>
     
-    <a href="./" title="Session" class="md-nav__link md-nav__link--active">
-      Session
+    <a href="./" title="Stream" class="md-nav__link md-nav__link--active">
+      Stream
     </a>
     
       
@@ -671,27 +695,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#example-2" title="Example 2" class="md-nav__link">
-    Example 2
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-3" title="Example 3" class="md-nav__link">
-    Example 3
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-4" title="Example 4" class="md-nav__link">
-    Example 4
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -704,26 +707,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#notes" title="Notes" class="md-nav__link">
-    Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#stores" title="Stores" class="md-nav__link">
-    Stores
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
       
       
       
@@ -732,30 +715,6 @@
   
 </nav>
     
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Status/" title="Status" class="md-nav__link">
-      Status
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Stream/" title="Stream" class="md-nav__link">
-      Stream
-    </a>
   </li>
 
         
@@ -854,27 +813,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#example-2" title="Example 2" class="md-nav__link">
-    Example 2
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-3" title="Example 3" class="md-nav__link">
-    Example 3
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-4" title="Example 4" class="md-nav__link">
-    Example 4
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -884,26 +822,6 @@
   <a href="#parameters" title="Parameters" class="md-nav__link">
     Parameters
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#notes" title="Notes" class="md-nav__link">
-    Notes
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#stores" title="Stores" class="md-nav__link">
-    Stores
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -923,77 +841,24 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Functions/Session.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Functions/Stream.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="session">Session</h1>
+                <h1 id="stream">Stream</h1>
 <h2 id="description">Description</h2>
-<p>The <code>session</code> function creates and returns a middleware that enables session cookies.</p>
-<p>Session middleware attaches onto web requests/responses, and uses signed-cookies and server-side data storage. When configured, the middleware will check for a session-cookie on the request; if a cookie is not found on the request, or the session is not in the store, then a new session is created and attached to the response. If there is a session, then the appropriate data is loaded from the store.</p>
-<p>The age of the session-cookie can be specified (and whether to extend the duration each time), as well as a secret-key to sign cookies, and the ability to specify custom data stores - the default is in-memory, so custom stores could be anything like redis/mongo.</p>
+<p>The <code>stream</code> function allows you to use streams, utilise them, and then automatically dispose of the stream object for you.</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
-<p>The following example sets up basic <code>session</code> middleware, using a secret key and a 5min fixed duration:</p>
+<p>The following example opens a <code>StreamReader</code>, reads in the content of the stream, and then automatically disposes of the stream for you. The content is then placed into the <code>$data</code> variable:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">middleware</span> <span class="p">(</span><span class="n">session</span> <span class="p">@{</span>
-        <span class="s1">&#39;Secret&#39;</span> <span class="p">=</span> <span class="s1">&#39;schwifty&#39;</span><span class="p">;</span>
-        <span class="s1">&#39;Duration&#39;</span> <span class="p">=</span> <span class="n">300</span><span class="p">;</span>
-    <span class="p">})</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h3 id="example-2">Example 2</h3>
-<p>The following example sets up <code>session</code> middleware with a non-default cookie name, and a sliding 5min duration:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">middleware</span> <span class="p">(</span><span class="n">session</span> <span class="p">@{</span>
-        <span class="s1">&#39;Secret&#39;</span> <span class="p">=</span> <span class="s1">&#39;schwifty&#39;</span><span class="p">;</span>
-        <span class="s1">&#39;Duration&#39;</span> <span class="p">=</span> <span class="n">300</span><span class="p">;</span>
-        <span class="s1">&#39;Extend&#39;</span> <span class="p">=</span> <span class="nv">$true</span><span class="p">;</span>
-        <span class="s1">&#39;Name&#39;</span> <span class="p">=</span> <span class="s1">&#39;session.id&#39;</span><span class="p">;</span>
-    <span class="p">})</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h3 id="example-3">Example 3</h3>
-<p>The following example sets up <code>session</code> middleware with a custom SessionId script generator; to use a random filename instead of a guid:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">middleware</span> <span class="p">(</span><span class="n">session</span> <span class="p">@{</span>
-        <span class="s1">&#39;Secret&#39;</span> <span class="p">=</span> <span class="s1">&#39;schwifty&#39;</span><span class="p">;</span>
-        <span class="s1">&#39;Duration&#39;</span> <span class="p">=</span> <span class="n">300</span><span class="p">;</span>
-        <span class="s1">&#39;GenerateId&#39;</span> <span class="p">=</span> <span class="p">{</span>
-            <span class="k">return</span> <span class="no">[System.IO.Path]</span><span class="p">::</span><span class="n">GetRandomFileName</span><span class="p">()</span>
-        <span class="p">}</span>
-    <span class="p">})</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h3 id="example-4">Example 4</h3>
-<p>The following example sets up basic <code>session</code> middleware, and defines a <code>route</code> that adds data to the session. Each subsequent call to the route will increment the <code>views</code> counter:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
-
-    <span class="n">middleware</span> <span class="p">(</span><span class="n">session</span> <span class="p">@{</span>
-        <span class="s1">&#39;Secret&#39;</span> <span class="p">=</span> <span class="s1">&#39;schwifty&#39;</span><span class="p">;</span>
-        <span class="s1">&#39;Duration&#39;</span> <span class="p">=</span> <span class="n">300</span><span class="p">;</span>
-    <span class="p">})</span>
-
-    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
-        <span class="nv">$param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
-        <span class="nv">$s</span><span class="p">.</span><span class="n">Session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Views</span><span class="p">++</span>
-        <span class="n">json</span> <span class="p">@{</span> <span class="s1">&#39;Views&#39;</span> <span class="p">=</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Views</span> <span class="p">}</span>
+    <span class="nv">$data</span> <span class="p">=</span> <span class="n">stream</span> <span class="p">(</span><span class="no">[System.IO.StreamReader]</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="nv">$stream</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$args</span><span class="p">[</span><span class="n">0</span><span class="p">].</span><span class="n">ReadToEnd</span><span class="p">()</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <h2 id="parameters">Parameters</h2>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The <code>session</code> function takes a single <code>hashtable</code> as its parameter. The below parameters are the expected keys that should be present within the supplied parameter</p>
-</div>
 <table>
 <thead>
 <tr>
@@ -1006,70 +871,21 @@
 </thead>
 <tbody>
 <tr>
-<td>Secret</td>
-<td>string</td>
+<td>InputObject</td>
+<td>IDisposable</td>
 <td>true</td>
-<td>The secret key used to sign the cookies</td>
-<td>empty</td>
+<td>A disposable object that will be used, and then disposed. This works much the same as <code>using</code> in C# .NET</td>
+<td>null</td>
 </tr>
 <tr>
-<td>Name</td>
-<td>string</td>
-<td>false</td>
-<td>The name of the session cookie</td>
-<td>pode.sid</td>
-</tr>
-<tr>
-<td>Duration</td>
-<td>int</td>
-<td>false</td>
-<td>The duration of which the cookie lasts, in seconds (&gt;=0)</td>
-<td>0</td>
-</tr>
-<tr>
-<td>Extend</td>
-<td>bool</td>
-<td>false</td>
-<td>If true, the duration of the cookie will be extended each time a request is made using the session</td>
-<td>false</td>
-</tr>
-<tr>
-<td>Discard</td>
-<td>bool</td>
-<td>false</td>
-<td>If true, informs the enduser's browser to discard the cookie on expiry</td>
-<td>false</td>
-</tr>
-<tr>
-<td>Secure</td>
-<td>bool</td>
-<td>false</td>
-<td>If true, informs the enduser's browser to only send the cookie on secure connections</td>
-<td>false</td>
-</tr>
-<tr>
-<td>GenerateId</td>
+<td>ScriptBlock</td>
 <td>scriptblock</td>
-<td>false</td>
-<td>A script that should return a valid string. The string itself should be a random unique value, that can be used as a session identifier</td>
-<td>guid</td>
-</tr>
-<tr>
-<td>Store</td>
-<td>psobject</td>
-<td>false</td>
-<td>An object that defines specific functions to communicate with a custom data store</td>
+<td>true</td>
+<td>The logic that will utilise the disposable stream object, of which the stream itself is passed as an argument to the scriptblock</td>
 <td>null</td>
 </tr>
 </tbody>
 </table>
-<h2 id="notes">Notes</h2>
-<h3 id="stores">Stores</h3>
-<p>A store should be a <code>psobject</code> that requires the following functions:</p>
-<div class="codehilite"><pre><span></span><span class="no">[hashtable]</span> <span class="n">Get</span><span class="p">(</span><span class="no">[string]</span> <span class="nv">$sessionId</span><span class="p">)</span>
-<span class="no">[void]</span>      <span class="n">Set</span><span class="p">(</span><span class="no">[string]</span> <span class="nv">$sessionId</span><span class="p">,</span> <span class="no">[hashtable]</span> <span class="nv">$data</span><span class="p">,</span> <span class="no">[datetime]</span> <span class="nv">$expiry</span><span class="p">)</span>
-<span class="no">[void]</span>      <span class="n">Delete</span><span class="p">(</span><span class="no">[string]</span> <span class="nv">$sessionId</span><span class="p">)</span>
-</pre></div>
                 
                   
                 
@@ -1090,7 +906,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../Server/" title="Server" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../Status/" title="Status" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1099,19 +915,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Server
+                Status
               </span>
             </div>
           </a>
         
         
-          <a href="../Status/" title="Status" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../Stopwatch/" title="Stopwatch" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Status
+                Stopwatch
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
