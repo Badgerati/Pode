@@ -41,7 +41,7 @@ Server {
 
 The following example will render the `index.pode` view when you navigate to `http://localhost:8080`, it will also supply dynamic data - in this case, the current date:
 
-    > The dynamic data can be used in your pode view via `$($data.date)`
+> The dynamic data can be used in your pode view via `$($data.date)`
 
 ```powershell
 Server {
@@ -59,4 +59,4 @@ Server {
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
 | Path | string | true | The path to the view to render, relative to your `/views` directory | null |
-| data | hashtable | false | A hashtable of dynamic data that will be supplied to `.pode`, and other third-party template engines | `@{}` |
+| data | hashtable | false | A hashtable of dynamic data that will be supplied to `.pode`, and other third-party template engine, view files | `@{}` |

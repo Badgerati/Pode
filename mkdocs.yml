@@ -16,6 +16,7 @@ nav:
     - Endware: Functions/Endware.md
     - Engine: Functions/Engine.md
     - Html: Functions/Html.md
+    - Include: Functions/Include.md
     - Json: Functions/Json.md
     - Listen: Functions/Listen.md
     - Lock: Functions/Lock.md

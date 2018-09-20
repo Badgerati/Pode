@@ -343,12 +343,19 @@ function Include
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
+        [Alias('p')]
         [string]
         $Path,
 
         [Parameter()]
+        [Alias('d')]
         $Data = @{}
     )
+
+    # default data if null
+    if ($null -eq $Data) {
+        $Data = @{}
+    }
 
     # add view engine extension
     $ext = Get-FileExtension -Path $Path
