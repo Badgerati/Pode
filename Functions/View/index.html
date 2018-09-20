@@ -527,6 +527,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Include/" title="Include" class="md-nav__link">
+      Include
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Json/" title="Json" class="md-nav__link">
       Json
     </a>
@@ -904,10 +916,9 @@
 
 <h3 id="example-3">Example 3</h3>
 <p>The following example will render the <code>index.pode</code> view when you navigate to <code>http://localhost:8080</code>, it will also supply dynamic data - in this case, the current date:</p>
-<div class="codehilite"><pre><span></span>&gt; The dynamic data can be used in your pode view via `$($data.date)`
-</pre></div>
-
-
+<blockquote>
+<p>The dynamic data can be used in your pode view via <code>$($data.date)</code></p>
+</blockquote>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
     <span class="n">engine</span> <span class="n">pode</span>
@@ -942,7 +953,7 @@
 <td>data</td>
 <td>hashtable</td>
 <td>false</td>
-<td>A hashtable of dynamic data that will be supplied to <code>.pode</code>, and other third-party template engines</td>
+<td>A hashtable of dynamic data that will be supplied to <code>.pode</code>, and other third-party template engine, view files</td>
 <td><code>@{}</code></td>
 </tr>
 </tbody>
