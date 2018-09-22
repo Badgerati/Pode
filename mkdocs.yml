@@ -8,10 +8,15 @@ nav:
     - CLI: Getting-Started/CLI.md
     - Docker: Getting-Started/Docker.md
     - Frontend: Getting-Started/Frontend.md
-    - Cron Expressions: Getting-Started/CronExpressions.md
 
   - Tutorials:
-    - Routes: Tutorials/Routes.md
+    - Basics: Tutorials/Basics.md
+    - Threading: Tutorials/Threading.md
+    - File Monitor: Tutorials/FileMonitor.md
+    - Cron Expressions: Tutorials/CronExpressions.md
+    - View Engines:
+      - Pode Files: Tutorials/PodeFiles.md
+      - Third Party: Tutorials/ThirdParty.md
 
   - Functions:
     - Core:
