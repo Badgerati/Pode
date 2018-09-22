@@ -470,14 +470,17 @@ function Tcp
     param (
         [Parameter(Mandatory=$true)]
         [ValidateSet('write', 'read')]
+        [Alias('a')]
         [string]
         $Action,
 
         [Parameter()]
+        [Alias('m')]
         [string]
         $Message,
 
         [Parameter()]
+        [Alias('c')]
         $Client
     )
 

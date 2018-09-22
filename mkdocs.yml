@@ -1,37 +1,63 @@
 site_name: Pode
+
 nav:
   - Home: index.md
+
   - Getting Started:
     - Installation: Getting-Started/Installation.md
     - CLI: Getting-Started/CLI.md
     - Docker: Getting-Started/Docker.md
     - Frontend: Getting-Started/Frontend.md
     - Cron Expressions: Getting-Started/CronExpressions.md
+
   - Tutorials:
     - Routes: Tutorials/Routes.md
+
   - Functions:
-    - Attach: Functions/Attach.md
-    - Csv: Functions/Csv.md
-    - Dispose: Functions/Dispose.md
-    - Endware: Functions/Endware.md
-    - Engine: Functions/Engine.md
-    - Html: Functions/Html.md
-    - Include: Functions/Include.md
-    - Json: Functions/Json.md
-    - Listen: Functions/Listen.md
-    - Lock: Functions/Lock.md
-    - Middleware: Functions/Middleware.md
-    - Redirect: Functions/Redirect.md
-    - Route: Functions/Route.md
-    - Schedule: Functions/Schedule.md
-    - Server: Functions/Server.md
-    - Session: Functions/Session.md
-    - Status: Functions/Status.md
-    - Stream: Functions/Stream.md
-    - Stopwatch: Functions/Stopwatch.md
-    - Timer: Functions/Timer.md
-    - View: Functions/View.md
-    - Xml: Functions/Xml.md
+    - Core:
+      - Access: Functions/Access.md
+      - Endware: Functions/Endware.md
+      - Engine: Functions/Engine.md
+      - Handler: Functions/Handler.md
+      - Import: Functions/Import.md
+      - Limit: Functions/Limit.md
+      - Listen: Functions/Listen.md
+      - Logger: Functions/Logger.md
+      - Route: Functions/Route.md
+      - Schedule: Functions/Schedule.md
+      - Server: Functions/Server.md
+      - Timer: Functions/Timer.md
+
+    - Middleware:
+      - Auth: Functions/Auth.md
+      - Middleware: Functions/Middleware.md
+      - Session: Functions/Session.md
+
+    - Response:
+      - Attach: Functions/Attach.md
+      - Csv: Functions/Csv.md
+      - Html: Functions/Html.md
+      - Json: Functions/Json.md
+      - Redirect: Functions/Redirect.md
+      - Status: Functions/Status.md
+      - View: Functions/View.md
+      - Xml: Functions/Xml.md
+
+    - Utility:
+      - Dispose: Functions/Dispose.md
+      - Include: Functions/Include.md
+      - Lock: Functions/Lock.md
+      - State: Functions/State.md
+      - Stream: Functions/Stream.md
+      - Stopwatch: Functions/Stopwatch.md
+      - Tcp: Functions/Tcp.md
+
+    - Helpers:
+      - Invoke-ScriptBlock: Functions/Invoke-ScriptBlock.md
+      - Test-IsPSCore: Functions/Test-IsPSCore.md
+      - Test-IsUnix: Functions/Test-IsUnix.md
+      - Test-IsWindows: Functions/Test-IsWindows.md
+
 theme:
   name: material
   logo: images/icon.png
@@ -41,12 +67,16 @@ theme:
   palette:
     primary: cyan
     accent: cyan
+
 markdown_extensions:
   - codehilite
   - admonition
   - meta
+
 repo_name: badgerati/pode
+
 repo_url: https://github.com/Badgerati/Pode
+
 extra:
   social:
     - type: github

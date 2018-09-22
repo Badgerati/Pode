@@ -212,15 +212,18 @@ function State
     param (
         [Parameter(Mandatory=$true)]
         [ValidateSet('set', 'get', 'remove')]
+        [Alias('a')]
         [string]
         $Action,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
+        [Alias('n')]
         [string]
         $Name,
 
         [Parameter()]
+        [Alias('o')]
         [object]
         $Object
     )
@@ -259,16 +262,18 @@ function Listen
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
+        [Alias('ipp')]
         [string]
         $IPPort,
         
         [Parameter()]
         [ValidateSet('HTTP', 'HTTPS', 'SMTP', 'TCP')]
+        [Alias('t')]
         [string]
         $Type,
 
         [Parameter()]
-        [Alias('Cert')]
+        [Alias('cert')]
         [string]
         $Certificate = $null
     )
@@ -328,6 +333,19 @@ function Script
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    Import -Path $Path
+}
+
+function Import
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [Alias('p')]
         [string]
         $Path
     )
