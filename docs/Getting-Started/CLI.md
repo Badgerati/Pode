@@ -14,7 +14,7 @@ All of these commands are centered around the `package.json` format - similar to
 The `build` command will run the script found in the `package.json` file, at the `scripts/build` value:
 
 ```powershell
-pode builid
+pode build
 ```
 
 ### Init

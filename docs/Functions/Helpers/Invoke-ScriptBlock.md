@@ -33,7 +33,7 @@ Server {
         'Age' = 32;
     }
 
-    $value = (Invoke-ScriptBlock -Arguments $ht {
+    $value = (Invoke-ScriptBlock -Arguments $ht -Return {
         param($opts)
         return "Hello, $($opts.Name)! You're $($opts.Age) years old."
     })

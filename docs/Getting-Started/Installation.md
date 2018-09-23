@@ -27,7 +27,7 @@ Install-Module -Name Pode
 [![Docker](https://img.shields.io/docker/stars/badgerati/pode.svg?label=Stars)](https://hub.docker.com/r/badgerati/pode/)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Pulls)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode can run on Unix environments, therefore it only makes sense for there to be a Docker container for you to use! The container uses PowerShell Core on an Ubuntu Xenial container. To pull down the Pode container you can do:
+Pode can run on *nix environments, therefore it only makes sense for there to be a Docker container for you to use! The container uses PowerShell Core on an Ubuntu Xenial container. To pull down the Pode container you can do:
 
 ```powershell
 docker pull badgerati/pode

@@ -60,7 +60,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 
 ## Features
 
-* Can run on Unix environments using PowerShell Core
+* Can run on *nix environments using PowerShell Core
 * Host REST APIs and Web Pages
 * Host TCP and SMTP server - great for tests and mocking
 * Multiple threads can be used to response to incoming requests
@@ -888,7 +888,7 @@ Server {
 
 #### File Monitor
 
-> Note: For docker you'll need to use any of the tags labeled "-ps.6.1.0-preview", and on Unix you will need dotnet-core 2.1 installed
+> Note: For docker you'll need to use any of the tags labeled "-ps.6.1.0-preview"
 
 Pode has inbuilt file monitoring that can be enabled, whereby Pode will trigger an internal server restart if it detects file changes within the same directory as your Pode script. To enable the monitoring supply the `-FileMonitor` switch to your `Server`:
 

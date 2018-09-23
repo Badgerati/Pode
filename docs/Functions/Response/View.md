@@ -4,7 +4,7 @@
 
 The `view` function allows you to render any of the view files that you place within the `/views` directory. When you call `view`, Pode will automatically look within this directory.
 
-Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it to Pode by using the [`engine`](Engine.md) function.
+Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it to Pode by using the [`engine`](../../Core/Engine) function.
 
 ## Examples
 

@@ -1,5 +1,0 @@
-root: ./docs/
-
-structure:
-  readme: Index.md
-  summary: Navigation.md

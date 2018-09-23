@@ -12,7 +12,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
 
 ## Features
 
-* Can run on Unix environments using PowerShell Core
+* Can run on *nix environments using PowerShell Core
 * Host REST APIs and Web Pages
 * Host TCP and SMTP server - great for tests and mocking
 * Multiple threads can be used to response to incoming requests

@@ -6,7 +6,7 @@ Pode at its heart is a PowerShell module, in order to use Pode you'll need to st
 Import-Module Pode
 ```
 
-After that, all of your main server logic must be wrapped in a [`Server`](../../Functions/Server) block:
+After that, all of your main server logic must be wrapped in a [`Server`](../../Functions/Core/Server) block:
 
 ```powershell
 Import-Module Pode

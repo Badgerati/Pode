@@ -13,55 +13,63 @@ nav:
     - Basics: Tutorials/Basics.md
     - Threading: Tutorials/Threading.md
     - File Monitor: Tutorials/FileMonitor.md
+    - Timers: Tutorials/Timers.md
+    - Authentication:
+      - Overview: Tutorials/Authentication/Overview.md
+      - Basic: Tutorials/Authentication/Basic.md
+      - Form: Tutorials/Authentication/Form.md
+      - Custom: Tutorials/Authentication/Custom.md
     - Cron Expressions: Tutorials/CronExpressions.md
     - View Engines:
-      - Pode Files: Tutorials/PodeFiles.md
-      - Third Party: Tutorials/ThirdParty.md
+      - Pode: Tutorials/ViewEngines/Pode.md
+      - Third Party: Tutorials/ViewEngines/ThirdParty.md
 
   - Functions:
     - Core:
-      - Access: Functions/Access.md
-      - Endware: Functions/Endware.md
-      - Engine: Functions/Engine.md
-      - Handler: Functions/Handler.md
-      - Import: Functions/Import.md
-      - Limit: Functions/Limit.md
-      - Listen: Functions/Listen.md
-      - Logger: Functions/Logger.md
-      - Route: Functions/Route.md
-      - Schedule: Functions/Schedule.md
-      - Server: Functions/Server.md
-      - Timer: Functions/Timer.md
+      - Access: Functions/Core/Access.md
+      - Endware: Functions/Core/Endware.md
+      - Engine: Functions/Core/Engine.md
+      - Handler: Functions/Core/Handler.md
+      - Import: Functions/Core/Import.md
+      - Limit: Functions/Core/Limit.md
+      - Listen: Functions/Core/Listen.md
+      - Logger: Functions/Core/Logger.md
+      - Middleware: Functions/Core/Middleware.md
+      - Route: Functions/Core/Route.md
+      - Schedule: Functions/Core/Schedule.md
+      - Server: Functions/Core/Server.md
+      - Timer: Functions/Core/Timer.md
 
     - Middleware:
-      - Auth: Functions/Auth.md
-      - Middleware: Functions/Middleware.md
-      - Session: Functions/Session.md
+      - Auth: Functions/Middleware/Auth.md
+      - Session: Functions/Middleware/Session.md
 
     - Response:
-      - Attach: Functions/Attach.md
-      - Csv: Functions/Csv.md
-      - Html: Functions/Html.md
-      - Json: Functions/Json.md
-      - Redirect: Functions/Redirect.md
-      - Status: Functions/Status.md
-      - View: Functions/View.md
-      - Xml: Functions/Xml.md
+      - Attach: Functions/Response/Attach.md
+      - Csv: Functions/Response/Csv.md
+      - Html: Functions/Response/Html.md
+      - Json: Functions/Response/Json.md
+      - Redirect: Functions/Response/Redirect.md
+      - Status: Functions/Response/Status.md
+      - View: Functions/Response/View.md
+      - Xml: Functions/Response/Xml.md
 
     - Utility:
-      - Dispose: Functions/Dispose.md
-      - Include: Functions/Include.md
-      - Lock: Functions/Lock.md
-      - State: Functions/State.md
-      - Stream: Functions/Stream.md
-      - Stopwatch: Functions/Stopwatch.md
-      - Tcp: Functions/Tcp.md
+      - Dispose: Functions/Utility/Dispose.md
+      - Include: Functions/Utility/Include.md
+      - Lock: Functions/Utility/Lock.md
+      - State: Functions/Utility/State.md
+      - Stopwatch: Functions/Utility/Stopwatch.md
+      - Stream: Functions/Utility/Stream.md
+      - Tcp: Functions/Utility/Tcp.md
 
     - Helpers:
-      - Invoke-ScriptBlock: Functions/Invoke-ScriptBlock.md
-      - Test-IsPSCore: Functions/Test-IsPSCore.md
-      - Test-IsUnix: Functions/Test-IsUnix.md
-      - Test-IsWindows: Functions/Test-IsWindows.md
+      - Coalesce: Functions/Helpers/Coalesce.md
+      - Invoke-ScriptBlock: Functions/Helpers/Invoke-ScriptBlock.md
+      - Test-Empty: Functions/Helpers/Test-Empty.md
+      - Test-IsPSCore: Functions/Helpers/Test-IsPSCore.md
+      - Test-IsUnix: Functions/Helpers/Test-IsUnix.md
+      - Test-IsWindows: Functions/Helpers/Test-IsWindows.md
 
 theme:
   name: material
