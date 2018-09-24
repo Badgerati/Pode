@@ -4,7 +4,7 @@
 
 The `schedule` function lets you create long-running async tasks. Unlike a `timer` however, when a schedule is triggered it's logic is run in its own runspace - so they don't affect each other if they take a while to process.
 
-Schedule triggers are defined using [`cron expressions`](../../Getting-Started/CronExpressions/), basic syntax is supported as well as some predefined expressions. They can start immediately, have a delayed start time, and also have a a defined end time.
+Schedule triggers are defined using [`cron expressions`](../../Tutorials/CronExpressions), basic syntax is supported as well as some predefined expressions. They can start immediately, have a delayed start time, and also have a a defined end time.
 
 ## Examples
 

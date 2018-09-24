@@ -14,6 +14,12 @@ nav:
     - Threading: Tutorials/Threading.md
     - File Monitor: Tutorials/FileMonitor.md
     - Timers: Tutorials/Timers.md
+    - Schedules: Tutorials/Schedules.md
+    - Logging:
+      - Overview: Tutorials/Logging/Overview.md
+      - Terminal: Tutorials/Logging/Terminal.md
+      - File: Tutorials/Logging/File.md
+      - Custom: Tutorials/Logging/Custom.md
     - Authentication:
       - Overview: Tutorials/Authentication/Overview.md
       - Basic: Tutorials/Authentication/Basic.md

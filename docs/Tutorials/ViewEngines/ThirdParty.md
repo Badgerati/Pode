@@ -1,4 +1,4 @@
-# Third Party
+# Third Party Engines
 
 Pode also supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) template engine. To do this, you'll need to supply a custom scriptblock to the [`engine`](../../../Functions/Core/Engine) function which tells Pode how use the third-party engine. The scriptblock will be supplied with two arguments:
 

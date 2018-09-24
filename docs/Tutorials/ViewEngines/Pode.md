@@ -1,4 +1,4 @@
-# Pode
+# Pode Files
 
 Pode has an inbuilt dynamic file type of `.pode`, which allow you to write normal file but use PowerShell within them.
 
