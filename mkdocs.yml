@@ -15,6 +15,7 @@ nav:
     - File Monitor: Tutorials/FileMonitor.md
     - Timers: Tutorials/Timers.md
     - Schedules: Tutorials/Schedules.md
+    - Shared State: Tutorials/SharedState.md
     - Logging:
       - Overview: Tutorials/Logging/Overview.md
       - Terminal: Tutorials/Logging/Terminal.md

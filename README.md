@@ -16,35 +16,36 @@
 
 Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers. It also allows you to render dynamic files using [Pode](#pode-files) files, which is effectively embedded PowerShell, or other [Third-Party](#third-party-view-engines) template engines.
 
+## Documentation
+
+All documentation and tutorials for Pode can be [found here](https://badgerati.github.io/Pode). This documentation will be for the latest release, to see the docs for other releases, branches or tags, you can clone the repo and use `mkdocs`.
+
+To build the documentation locally, the following should work (from the root of the repo):
+
+```powershell
+choco install mkdocs -y
+pip install mkdocs-material
+mkdocs serve
+```
+
+Then navigate to `http://127.0.0.1:8000` in your browser.
+
 ## Contents
 
 * [Install](#install)
 * [Documentation](#documentation)
     * [Setup](#setup)
     * [Docker](#docker)
-    * [Frontend](#frontend)
     * [Basics](#basics)
         * [Specific IP](#specific-ip-address)
-        * [Threading](#threading)
-    * [Timers](#timers)
-    * [Schedules](#schedules)
-        * [Cron Expressions](#cron-expressions)
-        * [Advanced Cron](#advanced-cron)
     * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [Middleware](#middleware)
         * [Order of Running](#order-of-running)
         * [Overriding Inbuilt Logic](#overriding-inbuilt-logic)
         * [Sessions](#sessions)
-    * [Authentication](#authentication)
-        * [Basic](#basic-auth)
-        * [Form](#form-auth)
-        * [Custom](#custom-auth)
     * [SMTP Server](#smtp-server)
     * [Misc](#misc)
-        * [Logging](#logging)
-        * [Shared State](#shared-state)
-        * [File Monitor](#file-monitor)
         * [Access Rules](#access-rules)
         * [Rate Limiting](#rate-limiting)
         * [External Scripts](#external-scripts)
@@ -53,9 +54,6 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
         * [Attach File](#attach-file)
         * [Status Code](#status-code)
         * [Redirect](#redirect)
-* [Pode Files](#pode-files)
-    * [Non-View Pode Files](#non-view-pode-files)
-    * [Third-Party Engines](#third-party-view-engines)
 * [FAQ](#faq)
 
 ## Features
@@ -163,18 +161,6 @@ docker run -p 8085:8085 -d pode/example
 
 Now try navigating to `localhost:8085` (or calling `curl localhost:8085`) and you should be greeted with a "Hello, world!" page.
 
-### Frontend
-
-You can host web-pages using Pode, and to help you can also use package managers like `yarn` to help install frontend libraries (like bootstrap).
-
-```powershell
-choco install yarn -y
-yarn init
-yarn add bootstrap
-```
-
-When run, Pode will tell `yarn` to install the packages to a `pode_modules` directory. Other useful packages could include `gulp`, `lodash`, `moment`, etc.
-
 ### Basics
 
 Pode, at its heart, is a PowerShell module. In order to use Pode, you'll need to start off your script by importing it:
@@ -227,100 +213,6 @@ Server {
     listen 10.10.1.4:8443 https -cert self
 }
 ```
-
-#### Threading
-
-Pode deals with incoming request synchronously, by default, in a single thread. You can increase the number of threads/processes that Pode uses to handle requests by using the `-Threads` parameter on your `Server`.
-
-```powershell
-Server -Threads 2 {
-    # logic
-}
-```
-
-The number of threads supplied only applies to Web, SMTP, and TCP servers. If `-Threads` is not supplied, or is <=0 then the number of threads is forced to the default of 1.
-
-### Timers
-
-Timers are supported in all `Server` types, they are async processes that run in a separate runspace along side your main server logic. The following are a few examples of using timers, more can be found in `examples/timers.ps1`:
-
-```powershell
-Server {
-
-    listen *:8080 http
-
-    # runs forever, looping every 5secs
-    timer 'forever' 5 {
-        # logic
-    }
-
-    # run once after 2mins
-    timer 'run-once' 120 {
-        # logic
-    } -skip 1 -limit 1
-
-    # create a new timer via a route
-    route 'get' '/api/timer' {
-        param($session)
-        $query = $session.Query
-
-        timer $query['Name'] $query['Seconds'] {
-            # logic
-        }
-    }
-}
-```
-
-> All timers are created and run within the same runspace, one after another when their trigger time occurs. You should ensure that a timer's defined logic does not take a long time to process (things like heavy database tasks or reporting), as this will delay other timers from being run. For timers that might take a much longer time to run, try using `schedule` instead
-
-### Schedules
-
-Schedules are supports in all `Server` types, like `timers` they are async processes that run in separate runspaces. Unlike timer however, when a `schedule` is triggered it's logic is run in its own runspace - so they don't affect each other if they take a while to process.
-
-Schedule triggers are defined using cron expressions, basic syntax is supported as well as some predefined expressions. They can start immediately, have a delayed start time, and also have a a defined end time.
-
-A couple examples are below, more can seen in the examples directory:
-
-```powershell
-Server {
-     # schedule to run every tuesday at midnight
-    schedule 'tuesdays' '0 0 * * TUE' {
-        # logic
-    }
-
-    # schedule to run every 5 past the hour, starting in 2hrs
-    schedule 'hourly-start' '5 * * * *' {
-        # logic
-    } -StartTime ([DateTime]::Now.AddHours(2))
-}
-```
-
-#### Cron Expressions
-
-Pode supports basic cron expressions in the format: `<min> <hour> <day-of-month> <month> <day-of-week>`. For example, running every Tuesday at midnight: `0 0 * * TUE`.
-
-Pode also supports some common predefined expressions:
-
-| Predefined | Expression |
-| ---------- | ---------- |
-| @minutely | * * * * *' |
-| @hourly | 0 * * * *' |
-| @daily | 0 0 * * *' |
-| @weekly | 0 0 * * 0' |
-| @monthly | 0 0 1 * *' |
-| @quaterly | 0 0 1 1,4,8,7,10' |
-| @yearly | 0 0 1 1 *' |
-| @annually | 0 0 1 1 *' |
-| @twice-hourly | 0,30 * * * *' |
-| @twice-daily | 0,12 0 * * *' |
-| @twice-weekly | 0 0 * * 0,4' |
-| @twice-monthly | 0 0 1,15 * *' |
-| @twice-yearly | 0 0 1 1,6 *' |
-| @twice-annually | 0 0 1 1,6 *' |
-
-#### Advanced Cron
-
-* `R`: using this on an atom will use a random value between that atom's constraints. When the expression is triggered the atom is re-randomised. You can force an intial trigger using `/R`. For example, `30/R * * * *` will trigger on 30mins, then random afterwards.
 
 ### REST API
 
@@ -577,154 +469,6 @@ Server {
 }
 ```
 
-### Authentication
-
-Using middleware and sessions, Pode has support for authentication on web requests. This authentication can either be session-persistant (ie, logins on websites), or sessionless (ie, auths on rest api calls). Examples of both types can be seen in the `web-auth-basic.ps1` and `web-auth-forms.ps1` example scripts.
-
-To use authentication in Pode there are two key commands: `auth use` and `auth check`.
-
-* `auth use` is used to setup an auth type (basic/form/custom); this is where you specify a validator script (to check the user exists in your storage), any options, and if using a custom type a parser script (to parse headers/payloads to pass to the validator). An example:
-
-    ```powershell
-    Server {
-        # auth use <type> -v {} [-o @{}]
-
-        auth use basic -v {
-            param($user, $pass)
-            # logic to check user
-            return @{ 'user' = $user }
-        }
-    }
-    ```
-
-    The validator (`-v`) script is used to find a user, checking if they exist and the password is correct. If the validator passes, then a `user` needs to be returned from the script via `@{ 'user' = $user }` - if `$null` or a null user are returned then the validator is assumed to have failed, and a 401 status will be thrown.
-
-    Some auth methods also have options (`-o`) that can be supplied as a hashtable, such as field name or encoding overrides - more below.
-
-* `auth check` is used in `route` calls, to check a specific auth method against the incoming request. If the validator defined in `auth use` returns no user, then the check fails with a 401 status; if a user is found, then it is set against the session (if session middleware is enabled) and the route logic is invoked. An example:
-
-    ```powershell
-    Server {
-        # auth check <type> [-o @{}]
-
-        route get '/users' (auth check basic) {
-            param($session)
-            # route logic
-        }
-    }
-    ```
-
-    This is the most simple call to check authentication, the call also accepts options (`-o`) in a hashtable:
-
-    | Name | Description |
-    | --- | ----------- |
-    | FailureUrl | URL to redirect to should auth fail |
-    | SuccessUrl | URL to redirect to should auth succeed |
-    | Session | When true: check if the session already has a validated user, and store the validated user in the session (def: true) |
-    | Login | When true: check the auth status in session and redirect to SuccessUrl, else proceed to the page with no auth required (def: false) |
-    | Logout | When true: purge the session and redirect to the FailureUrl (def: false) |
-
-If you have defined session-middleware to be used in your script, then when an `auth check` call succeeds the user with be authenticated against that session. When the user makes another call using the same session-cookie, then the `auth check` will detect the already authenticated session and skip the validator script. If you're using sessions and you don't want the `auth check` to check the session, or store the user against the session, then pass `-o @{ 'Session' = $false }` to the `auth check`.
-
-> Not defining session middleware is basically like always having `Session = $false` set on `auth check`
-
-#### Basic Auth
-
-> Example with comments in `examples/web-auth-basic.ps1`
-
-Basic authentication is when you pass a encoded username:password value on the header of your requests: `@{ 'Authorization' = 'Basic <base64 encoded username:password>' }`. To setup basic auth in Pode, you specify `auth use basic` in your server script; the validator script will have the username/password supplied as parameters:
-
-```powershell
-Server {
-    auth use basic -v {
-        param($username, $password)
-    }
-}
-```
-
-##### Options
-
-| Name | Description |
-| ---- | ----------- |
-| Encoding | Defines which encoding to use when decoding the auth header (def: `ISO-8859-1`) |
-| Name | Defines the name part of the header, infront of the encoded sting (def: Basic) |
-
-#### Form Auth
-
-> Example with comments in `examples/web-auth-form.ps1`
-
-Form authentication is for when you're using a `<form>` in HTML, and you submit the form. The type expects a `username` and a `password` to be passed from the form input fields. To setup form auth in Pode, you specify `auth use form` in your server script; the validator script will have the username/password supplied as parameters:
-
-```powershell
-Server {
-    auth use form -v {
-        param($username, $password)
-    }
-}
-```
-
-```html
-<form action="/login" method="post">
-    <div>
-        <label>Username:</label>
-        <input type="text" name="username"/>
-    </div>
-    <div>
-        <label>Password:</label>
-        <input type="password" name="password"/>
-    </div>
-    <div>
-        <input type="submit" value="Login"/>
-    </div>
-</form>
-```
-
-##### Options
-
-| Name | Description |
-| ---- | ----------- |
-| UsernameField | Defines the name of field which the username will be passed in from the form (def: username) |
-| PasswordField | Defines the name of field which the password will be passed in from the form (def: password) |
-
-#### Custom Auth
-
-Custom authentication works much like the above inbuilt types, but allows you to specify your own parsing logic. For example, let's say we wanted something similar to `form` authentication but it requires a third piece of information: ClientName. To setup a custom authentication, you can use any name and specify the `-c` flag; you'll also be required to specify the parsing scriptblock under `-p`:
-
-```powershell
-Server {
-    auth use -c client -p {
-        # the current web-session (same data as supplied to routes), and options supplied
-        param($session, $opts)
-
-        # get client/user/pass field names to get from payload
-        $clientField = (coalesce $opts.ClientField 'client')
-        $userField = (coalesce $opts.UsernameField 'username')
-        $passField = (coalesce $opts.PasswordField 'password')
-
-        # get the client/user/pass from the post data
-        $client = $session.Data.$clientField
-        $username = $session.Data.$userField
-        $password = $session.Data.$passField
-
-        # return the data, to be passed to the validator script
-        return @($client, $username, $password)
-    } `
-    -v {
-        param($client, $username, $password)
-
-        # find the user
-        # if not found, return null - for a 401
-
-        # return the user
-        return  @{ 'user' = $user }
-    }
-
-    route get '/users' (auth check client) {
-        param($session)
-    }
-}
-```
-
 ### SMTP Server
 
 Pode can also run as an SMTP server - useful for mocking tests. There are two options, you can either use Pode's inbuilt simple SMTP logic, or write your own using Pode as a TCP server instead.
@@ -768,145 +512,6 @@ To help with writing and reading from the client stream, Pode has a helper funct
 * `$msg = (tcp read)`
 
 ### Misc
-
-#### Logging
-
-Allows you to define `Logger`s within a Server that will send [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined) rows to either the terminal, a file, or a custom scriptblock that allows you to log to a variety of services - e.g. Splunk/FluentD/LogStash
-
-An example of logging to the terminal, and to a file with removal of old log files after 7 days:
-
-```powershell
-Server {
-    listen *:8085 http
-
-    logger 'terminal'
-    logger 'file' @{
-        'Path' = '<path_to_put_logs>';
-        'MaxDays' = 7;
-    }
-
-    # GET "localhost:8085/"
-    route 'get' '/' {
-        param($session)
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
-    }
-}
-```
-
-The hashtable supplied to `logger 'file'` is completely optional. If no Path is supplied then a `logs` directory will be created at the server script root path, and if `MaxDays is <= 0` then log files will be kept forever.
-
-* If `Path` is supplied, then the logs will be placed at that location (and any directories along that path are created).
-* If `MaxDays` is supplied, then once a day Pode will clean-up log files older than that many days.
-
-Custom loggers must have a name like `custom_*` and have a supplied scriptblock. When the scriptblock is invoked, the log request object will be passed to it:
-
-```powershell
-logger 'custom_output' {
-    param($session)
-    $session.Log.Request.Resource | Out-Default
-}
-```
-
-The `$session` object passed contains a `Log` which will have the following structure:
-
-```powershell
-@{
-    'Host' = '10.10.0.3';
-    'RfcUserIdentity' = '-';
-    'User' = '-';
-    'Date' = '14/Jun/2018:20:23:52 +01:00';
-    'Request' = @{
-        'Method' = 'GET';
-        'Resource' = '/api/users';
-        'Protocol' = "HTTP/1.1";
-        'Referrer' = '-';
-        'Agent' = '<user-agent>';
-    };
-    'Response' = @{
-        'StatusCode' = '200';
-        'StautsDescription' = 'OK'
-        'Size' = '9001';
-    };
-}
-```
-
-#### Shared State
-
-Routes, timers, and loggers in Pode all run within separate runspaces; this means normally you can't create a variable in a timer and then access that variable in a route.
-
-Pode overcomes this by allowing you to set/get/remove custom variables on the session state shared between runspaces. This means you can create a variable in a timer and set it against the shared state; then you can retrieve that variable from the state in a route.
-
-To do this, you use the `state` function with an action of `set`, `get` or `remove`, in combination with the `lock` function to ensure thread safety. Each  state action requires you to supply a name, and `set` takes the variable itself.
-
-The following example is a simple `timer` to create and update a `hashtable`, and then retrieve that variable in a `route` (this can also be seen in `examples/shared-state.ps1`):
-
-> If you omit the use of `lock`, you will run into errors due to multi-threading. Only omit if you are absolutely confident you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable). Routes, timers, and custom loggers are all supplied a `Lockable` resource you can use with `lock`.
-
-```powershell
-Server {
-    listen *:8085 http
-
-    # create timer to update a hashtable and make it globally accessible
-    timer 'forever' 2 {
-        param($session)
-        $hash = $null
-
-        # create a lock on a pode lockable resource for safety
-        lock $session.Lockable {
-
-            # first, attempt to get the hashtable from the state
-            $hash = (state get 'hash')
-
-            # if it doesn't exist yet, set it against the state
-            if ($hash -eq $null) {
-                $hash = (state set 'hash' @{})
-                $hash['values'] = @()
-            }
-
-            # every 2secs, add a random number
-            $hash['values'] += (Get-Random -Minimum 0 -Maximum 10)
-        }
-    }
-
-    # route to retrieve and return the value of the hashtable from global state
-    route get '/get-array' {
-        param($session)
-
-        # create another lock on the same lockable resource
-        lock $session.Lockable {
-
-            # get the hashtable defined in the timer above, and return it as json
-            $hash = (state get 'hash')
-            json $hash
-        }
-    }
-
-}
-```
-
-> You can put any type of variable into the global state, including `scriptblock`s
-
-#### File Monitor
-
-> Note: For docker you'll need to use any of the tags labeled "-ps.6.1.0-preview"
-
-Pode has inbuilt file monitoring that can be enabled, whereby Pode will trigger an internal server restart if it detects file changes within the same directory as your Pode script. To enable the monitoring supply the `-FileMonitor` switch to your `Server`:
-
-```powershell
-Server {
-    # logic
-} -FileMonitor
-```
-
-Once enabled, Pode will actively monitor all file changes within the directory of your script - if your script was at `C:/Apps/Pode/server.ps1`, then Pode will monitor the `C:/Apps/Pode` directory and sub-directories. When a change is detected, Pode will wait a couple of seconds before triggering the restart; this is so multiple rapid changes don't trigger multiple restarts.
-
-Changes being monitored are:
-
-* Updates
-* Creation
-* Deletion
-
-Please note that if you change the main server script itself, those changes will not be picked up. It's best to import/dot-source other modules/scripts into your `Server` scriptblock, as the internal restart re-executes this scriptblock. If you do make changes to the main server script, you'll need to terminate and restart the server.
 
 #### Access Rules
 
@@ -1069,178 +674,6 @@ Server {
 
 Supplying `-url` will redirect literally to that URL, or you can supply a relative path to the current host. `-port` and `-protocol` can be used separately or together, but not with `-url`. Using `-port`/`-protocol` will use the URI object in the current Request to generate the redirect URL.
 
-## Pode Files
-
-Using Pode to write dynamic HTML files are mostly just an HTML file - in fact, you can write pure HTML and still be able to use it. The difference is that you're able to embed PowerShell logic into the file, which allows you to dynamically generate HTML.
-
-To use Pode files, you will need to place them within the `/views/` folder. Then you'll need to set the View Engine to be Pode; once set, you can just write view responses as per normal:
-
-> Any PowerShell in a Pode files will need to use semi-colons to end each line
-
-```powershell
-Server {
-    listen *:8080 http
-
-    # set the engine to use and render Pode files
-    engine pode
-
-    # render the index.pode view
-    route 'get' '/' {
-        param($session)
-        view 'index'
-    }
-}
-```
-
-Below is a basic example of a Pode file which just writes the current date to the browser:
-
-```html
-<!-- /views/index.pode -->
-<html>
-    <head>
-        <title>Current Date</title>
-    </head>
-    <body>
-        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
-    </body>
-</html>
-```
-
-> When you need to use PowerShell, ensure you wrap the commands within `$(...)`, and end each line with a semi-colon (as you would in C#/Java)
-
-You can also supply data to the `view` function when rendering Pode files. This allows you to make them far more dynamic. The data supplied to `view` must be a `hashtable`, and can be referenced within the file by using the `$data` argument.
-
-For example, say you need to render a search page which is a list of accounts, then you're basic Pode script would look like:
-
-```powershell
-Server {
-    listen *:8080 http
-
-    # set the engine to use and render Pode files
-    engine pode
-
-    # render the search.pode view
-    route 'get' '/' {
-        param($session)
-
-        # some logic to get accounts
-        $query = $session.Query['query']
-        $accounts = Find-Account -Query $query
-
-        # render the file
-        view 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
-    }
-}
-```
-
-You can see that we're supplying the found accounts to the `view` function as a `hashtable`. Next, we see the `search.pode` file which generates the HTML:
-
-```html
-<!-- /views/search.pode -->
-<html>
-    <head>
-        <title>Search</title>
-    </head>
-    <body>
-        <h1>Search</h1>
-        Query: $($data.query;)
-
-        <div>
-            $(foreach ($account in $data.accounts) {
-                "<div>Name: $($account.Name)</div><hr/>";
-            })
-        </div>
-    </body>
-</html>
-```
-
-> Remember, you can access supplied data by using `$data`
-
-This next quick example allows you to include content from another view:
-
-```html
-<!-- /views/index.pode -->
-<html>
-    $(include shared/head)
-
-    <body>
-        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
-    </body>
-</html>
-
-<!-- /views/shared/head.pode -->
-<head>
-    <title>Include Example</title>
-</head>
-```
-
-### Non-View Pode Files
-
-The rules for using Pode files for other types, like public css/js, work exactly like the above view files but they're placed within the `/public/` directory instead of the `/views/` directory. You also need to specify the actual file type in the extension, for example:
-
-```plain
-/public/styles/main.css.pode
-/public/scripts/main.js.pode
-```
-
-Here you'll see the main extension is `pode`, but you need to specify a sub-extension of the main file type - this helps Pode work out the main content type.
-
-Below is a `.css.pode` file that will render the page in purple on even seconds, or red on odd seconds:
-
-```css
-/* /public/styles/main.css.pode */
-body {
-    $(
-        $date = [DateTime]::UtcNow;
-
-        if ($date.Second % 2 -eq 0) {
-            "background-color: rebeccapurple;";
-        } else {
-            "background-color: red;";
-        }
-    )
-}
-```
-
-To load the above `.css.pode` file:
-
-```html
-<!-- /views/index.pode -->
-<html>
-   <head>
-      <link rel="stylesheet" href="styles/main.css.pode">
-   </head>
-   <body>
-        <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
-    </body>
-</html>
-```
-
-## Third-Party View Engines
-
-Pode also supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) template engine. To do this, you'll need to supply a custom scriptblock to `Engine` which tells Pode how use the third-party engine.
-
-If you did use `EPS`, then the following example would work:
-
-```powershell
-Server {
-    listen *:8080 http
-
-    # set the engine to use and render EPS files (could be index.eps, or for content scripts.css.eps)
-    # the scriptblock requires the "param($path, $data)"
-    engine eps {
-        param($path, $data)
-        return Invoke-EpsTemplate -Path $path -Binding $data
-    }
-
-    # render the index.eps view
-    route 'get' '/' {
-        param($session)
-        view 'index'
-    }
-}
-```
-
 ## FAQ
 
 * Running `pode start` throws an `ImportPSModule` error.
@@ -1248,36 +681,3 @@ Server {
   > * Uninstall the Pode module from PowerShell, and re-`Import-Module` the source code version
   > * Manually call the `start` script
   > * Remove calls to `Remove-Module -Name Pode` within your scripts
-
-## Inbuilt Functions
-
-Pode comes with a few helper functions - mostly for writing responses and reading streams:
-
-* `route`
-* `handler`
-* `engine`
-* `timer`
-* `logger`
-* `html`
-* `xml`
-* `json`
-* `csv`
-* `view`
-* `tcp`
-* `status`
-* `redirect`
-* `include`
-* `lock`
-* `state`
-* `listen`
-* `access`
-* `limit`
-* `stopwatch`
-* `dispose`
-* `stream`
-* `schedule`
-* `middleware`
-* `endware`
-* `session`
-* `auth`
-* `attach`
