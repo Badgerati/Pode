@@ -36,7 +36,7 @@
     
     
       
-        <title>File Monitor - Pode</title>
+        <title>Shared State - Pode</title>
       
     
     
@@ -98,7 +98,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="../../#file-monitor" tabindex="1" class="md-skip">
+      <a href="../../#shared-state" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -124,7 +124,7 @@
                 Pode
               </span>
               <span class="md-header-nav__topic">
-                File Monitor
+                Shared State
               </span>
             
           
@@ -435,20 +435,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-    <a href="./" title="File Monitor" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../FileMonitor/" title="File Monitor" class="md-nav__link">
       File Monitor
     </a>
-    
   </li>
 
         
@@ -480,11 +471,83 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../SharedState/" title="Shared State" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Shared State
+      </label>
+    
+    <a href="./" title="Shared State" class="md-nav__link md-nav__link--active">
       Shared State
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#actions" title="Actions" class="md-nav__link">
+    Actions
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#set" title="Set" class="md-nav__link">
+    Set
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get" title="Get" class="md-nav__link">
+    Get
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove" title="Remove" class="md-nav__link">
+    Remove
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-example" title="Full Example" class="md-nav__link">
+    Full Example
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -1290,6 +1353,56 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#actions" title="Actions" class="md-nav__link">
+    Actions
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#set" title="Set" class="md-nav__link">
+    Set
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get" title="Get" class="md-nav__link">
+    Get
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove" title="Remove" class="md-nav__link">
+    Remove
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-example" title="Full Example" class="md-nav__link">
+    Full Example
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1300,32 +1413,154 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Tutorials/FileMonitor.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Tutorials/SharedState.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="file-monitor">File Monitor</h1>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>For docker you'll need to use any of the Pode tags labeled "-ps.6.1.0-preview".</p>
+                <h1 id="shared-state">Shared State</h1>
+<p>Most things in Pode all run in isolated runspaces, which means you can't create a variable in a timer and then access that variable in a route. To overcome this limitation you can use the <a href="../../Functions/Utility/State"><code>state</code></a> function, which allows you to set/get variables on a state shared between all runspaces. This means you can create a variable in a timer and set it against the shared state; then you can retrieve that variable from the state in a route.</p>
+<p>To do this, you use the <a href="../../Functions/Utility/State"><code>state</code></a> function with an action of <code>set</code>, <code>get</code> or <code>remove</code>, in combination with the <a href="../../Functions/Utility/Lock"><code>lock</code></a> function to ensure thread safety</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>It's wise to use the <code>state</code> function in conjunction with the <code>lock</code> function, so as to ensure thread safety between runspaces. The session object supplied to a <code>route</code>, <code>timer</code>, <code>schedule</code> and <code>logger</code> each contain a <code>.Lockable</code> resource that can be supplied to the <code>lock</code> function.</p>
 </div>
-<p>Pode has inbuilt file monitoring which can trigger an internal server restart if it detects file changes within the same directory as your Pode script. To enable the monitoring supply the <code>-FileMonitor</code> switch to your <a href="../../Functions/Core/Server"><code>Server</code></a>:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="c"># logic</span>
-<span class="p">}</span> <span class="n">-FileMonitor</span>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you omit the use of <code>lock</code>, you will run into errors due to multi-threading. Only omit if you are <em>absolutely confident</em> you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).</p>
+</div>
+<h2 id="actions">Actions</h2>
+<h3 id="set">Set</h3>
+<p>The <code>state set</code> action will create/update a variable on the shared state. You need to supply a name and an object to set on the state. The <code>set</code> action will also return the object you're settting.</p>
+<p>The make-up of the <code>set</code> action is:</p>
+<div class="codehilite"><pre><span></span><span class="n">state</span> <span class="n">set</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">object</span><span class="p">&gt;</span>
 </pre></div>
 
 
-<p>Once enabled, Pode will actively monitor all file changes within the directory of your script. Ie, if your script was at <code>C:/Apps/Pode/server.ps1</code>, then Pode will monitor the <code>C:/Apps/Pode</code> directory and sub-directories for changes. When a change is detected, Pode will wait a couple of seconds before triggering the restart; this is so multiple rapid changes don't trigger multiple restarts.</p>
-<p>The changes that are being monitored by Pode are:</p>
-<ul>
-<li>Updates</li>
-<li>Creation</li>
-<li>Deletion</li>
-</ul>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>If you change the main server script itself, those changes will not be picked up. It's best to import/dot-source other modules/scripts into your <code>Server</code> scriptblock, as the internal restart re-executes this scriptblock. If you do make changes to the main server script, you'll need to terminate and restart the server.</p>
-</div>
+<p>An example of using the <code>set</code> action to create a shared hashtable variable is as follows:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">state</span> <span class="n">set</span> <span class="s1">&#39;data&#39;</span> <span class="p">@{</span> <span class="s1">&#39;Name&#39;</span> <span class="p">=</span> <span class="s1">&#39;Rick Sanchez&#39;</span> <span class="p">}</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will set a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+
+        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+            <span class="n">state</span> <span class="n">set</span> <span class="s1">&#39;data&#39;</span> <span class="p">@{</span> <span class="s1">&#39;Name&#39;</span> <span class="p">=</span> <span class="s1">&#39;Rick Sanchez&#39;</span> <span class="p">}</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="get">Get</h3>
+<p>The <code>state get</code> action will return the value currently stored on the shared state for a variable. You only need to supply the variable's name to get on the value from the state. If the variable doesn't exist then <code>$null</code> is returned.</p>
+<p>The make-up of the <code>get</code> action is:</p>
+<div class="codehilite"><pre><span></span><span class="n">state</span> <span class="n">get</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span>
+</pre></div>
+
+
+<p>An example of using the <code>get</code> action to retrieve the value from the shared state is as follows:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="nv">$value</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will get a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+        <span class="nv">$value</span> <span class="p">=</span> <span class="nv">$null</span>
+
+        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+            <span class="nv">$value</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="c"># do something with $value</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="remove">Remove</h3>
+<p>The <code>state remove</code> action will remove a variable from the shared state. You only need to supply the variable's name from it to be removed from the state. The action will also return the value stored in the state before removing the variable.</p>
+<p>The make-up of the <code>remove</code> action is:</p>
+<div class="codehilite"><pre><span></span><span class="n">state</span> <span class="n">remove</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span>
+</pre></div>
+
+
+<p>An example of using the <code>remove</code> action to remove a variable from the shared state is as follows:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">state</span> <span class="n">remove</span> <span class="s1">&#39;data&#39;</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will remove a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+
+        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+            <span class="n">state</span> <span class="n">remove</span> <span class="s1">&#39;data&#39;</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="full-example">Full Example</h2>
+<p>The following is a full example of using the <code>state</code> function. It is a simple <code>timer</code> that creates and updates a <code>hashtable</code> variable, and then a <code>route</code> is used to retrieve that variable. There is also another route that will remove the variable from the state:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+
+    <span class="c"># create the shared variable</span>
+    <span class="n">state</span> <span class="n">set</span> <span class="s1">&#39;hash&#39;</span> <span class="p">@{</span> <span class="s1">&#39;values&#39;</span> <span class="p">=</span> <span class="p">@();</span> <span class="p">}</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+
+    <span class="c"># timer to add a random number to the shared state</span>
+    <span class="n">timer</span> <span class="s1">&#39;forever&#39;</span> <span class="n">2</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+
+        <span class="c"># ensure we&#39;re thread safe</span>
+        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+
+            <span class="c"># attempt to get the hashtable from the state</span>
+            <span class="nv">$hash</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>
+
+            <span class="c"># add a random number</span>
+            <span class="nv">$hash</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">]</span> <span class="p">+=</span> <span class="p">(</span><span class="nb">Get-Random</span> <span class="n">-Minimum</span> <span class="n">0</span> <span class="n">-Maximum</span> <span class="n">10</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c"># route to return the value of the hashtable from shared state</span>
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+
+        <span class="c"># again, ensure we&#39;re thread safe</span>
+        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+
+            <span class="c"># get the hashtable from the state and return it</span>
+            <span class="nv">$hash</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>
+            <span class="n">json</span> <span class="nv">$hash</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c"># route to remove the hashable from shared state</span>
+    <span class="n">route</span> <span class="n">delete</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+
+        <span class="c"># ensure we&#39;re thread safe</span>
+        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+
+            <span class="c"># remove the hashtable from the state</span>
+            <span class="n">state</span> <span class="n">remove</span> <span class="s1">&#39;hash&#39;</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
                 
                   
                 
@@ -1346,7 +1581,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../Threading/" title="Threading" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../Schedules/" title="Schedules" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1355,19 +1590,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Threading
+                Schedules
               </span>
             </div>
           </a>
         
         
-          <a href="../Timers/" title="Timers" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../Logging/Overview/" title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Timers
+                Overview
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
