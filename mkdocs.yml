@@ -16,6 +16,11 @@ nav:
     - Timers: Tutorials/Timers.md
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
+    - Middleware:
+      - Overview: Tutorials/Middleware/Overview.md
+      - Access Rules: Tutorials/Middleware/AccessRules.md
+      - Rate Limiting: Tutorials/Middleware/RateLimiting.md
+      - Sessions: Tutorials/Middleware/Sessions.md
     - Logging:
       - Overview: Tutorials/Logging/Overview.md
       - Terminal: Tutorials/Logging/Terminal.md
@@ -33,12 +38,10 @@ nav:
 
   - Functions:
     - Core:
-      - Access: Functions/Core/Access.md
       - Endware: Functions/Core/Endware.md
       - Engine: Functions/Core/Engine.md
       - Handler: Functions/Core/Handler.md
       - Import: Functions/Core/Import.md
-      - Limit: Functions/Core/Limit.md
       - Listen: Functions/Core/Listen.md
       - Logger: Functions/Core/Logger.md
       - Middleware: Functions/Core/Middleware.md
@@ -48,7 +51,9 @@ nav:
       - Timer: Functions/Core/Timer.md
 
     - Middleware:
+      - Access: Functions/Middleware/Access.md
       - Auth: Functions/Middleware/Auth.md
+      - Limit: Functions/Middleware/Limit.md
       - Session: Functions/Middleware/Session.md
 
     - Response:
