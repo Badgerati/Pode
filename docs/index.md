@@ -26,7 +26,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
-* Support for generating/binding self-signed certificates, and binding signed certificates
+* Support for generating/binding self-signed certificates, and signed certificates on Windows
 * Support for middleware on web servers
 * Session middleware support on web requests
 * Can use authentication on requests, which can either be sessionless or session persistant

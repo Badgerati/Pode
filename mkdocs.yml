@@ -12,10 +12,12 @@ nav:
   - Tutorials:
     - Basics: Tutorials/Basics.md
     - Threading: Tutorials/Threading.md
+    - Certificates: Tutorials/Certificates.md
     - File Monitor: Tutorials/FileMonitor.md
     - Timers: Tutorials/Timers.md
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
+    - External Modules: Tutorials/ExternalModules.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md
       - Access Rules: Tutorials/Middleware/AccessRules.md
