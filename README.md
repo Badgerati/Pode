@@ -34,12 +34,8 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 
 * [Install](#install)
 * [Documentation](#documentation)
-    * [REST API](#rest-api)
     * [Web Pages](#web-pages)
     * [SMTP Server](#smtp-server)
-    * [Helpers](#helpers)
-        * [Status Code](#status-code)
-        * [Redirect](#redirect)
 
 ## Features
 
@@ -78,66 +74,6 @@ docker pull badgerati/pode
 ```
 
 ## Documentation
-
-This documentation will cover the basics on how to use Pode to create a simple REST API, Web Page, and SMTP Server. Further examples can be found in the examples folder.
-
-### REST API
-
-When creating an API in Pode, you specify logic for certain routes for specific HTTP methods. Methods supported are: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
-
-> There is a special `*` method you can use, which means a route applies to every HTTP method
-
-The method to create new routes is `route`, this will take your HTTP method, route, and logic. For example, let's say you want a basic GET `ping` endpoint to just return `pong`:
-
-```powershell
-Server {
-    listen *:8080 http
-
-    route 'get' '/api/ping' {
-        param($session)
-        json @{ 'value' = 'pong'; }
-    }
-}
-```
-
-The scriptblock requires a `param` section for just one argument: `$session`. This argument will contain the `Request` and `Response` objects; `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
-
-The last line is to write the JSON response. Anyone hitting `http://localhost:8080/api/ping` will be greeted back with `{ "value": "pong" }`.
-
-If you wanted a POST endpoint that created a user, and a GET endpoint to get details of a user (returning a 404 if the user isn't found), then it would roughly look as follows:
-
-```powershell
-Server {
-    listen *:8080 http
-
-    route 'post' '/api/users' {
-        param($session)
-
-        # create the user
-        $userId = New-DummyUser $session.Data.Email $session.Data.Name $session.Data.Password
-
-        # return with userId
-        json @{ 'userId' = $userId; }
-    }
-
-    route 'get' '/api/users/:userId'{
-        param($session)
-
-        # get the user
-        $user = Get-DummyUser -UserId $session.Parameters['userId']
-
-        # return the user
-        if ($user -eq $null) {
-            status 404
-        }
-        else {
-            json @{ 'user' = $user; }
-        }
-    }
-}
-```
-
-> More can be seen in the examples under `rest-api.ps1`, and `nunit-rest-api.ps1`
 
 ### Web Pages
 
@@ -210,62 +146,3 @@ To help with writing and reading from the client stream, Pode has a helper funct
 
 * `tcp write $msg`
 * `$msg = (tcp read)`
-
-### Helpers
-
-#### Status Code
-
-`Status` is a helper function to aid setting the status code and description on the response. When called you must specify a status code, and the description is optional.
-
-```powershell
-Server {
-    listen *:8080 http
-
-    # returns a 404 code
-    route get '/not-here' {
-        status 404
-    }
-
-    # returns a 500 code, with description
-    route get '/eek' {
-        status 500 'oh no! something went wrong!'
-    }
-}
-```
-
-#### Redirect
-
-`Redirect` is a helper function to aid URL redirection from the server. You can either redirect via a 301 or 302 code - the default is a 302 redirect.
-
-```powershell
-Server {
-    listen *:8080 http
-
-    # redirects to google
-    route get '/redirect' {
-        redirect -url 'https://google.com'
-    }
-
-    # moves to google
-    route get '/moved' {
-        redirect -moved -url 'https://google.com'
-    }
-
-    # redirect to different port - same host, path and query
-    route get '/redirect-port' {
-        redirect -port 8086
-    }
-
-    # redirect to same host, etc; but this time to https
-    route get '/redirect-https' {
-        redirect -protocol https
-    }
-
-    # redirect every method and route to https
-    route * * {
-        redirect -protocol https
-    }
-}
-```
-
-Supplying `-url` will redirect literally to that URL, or you can supply a relative path to the current host. `-port` and `-protocol` can be used separately or together, but not with `-url`. Using `-port`/`-protocol` will use the URI object in the current Request to generate the redirect URL.

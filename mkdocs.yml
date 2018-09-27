@@ -18,6 +18,12 @@ nav:
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
     - External Modules: Tutorials/ExternalModules.md
+    - Routes:
+      - Overview: Tutorials/Routes/Overview.md
+      - Status Codes: Tutorials/Routes/StatusCodes.md
+      - Redirecting: Tutorials/Routes/Redirecting.md
+      - Web Pages: Tutorials/Routes/WebPages.md
+      - Website Flow: Tutorials/Routes/WebsiteFlow.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md
       - Access Rules: Tutorials/Middleware/AccessRules.md

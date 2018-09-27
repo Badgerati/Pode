@@ -100,6 +100,8 @@ function Attach
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('p')]
+        [string]
         $Path
     )
 
@@ -140,10 +142,12 @@ function Status
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('c')]
         [int]
         $Code,
 
         [Parameter()]
+        [Alias('d')]
         [string]
         $Description
     )
@@ -159,19 +163,23 @@ function Redirect
 {
     param (
         [Parameter()]
+        [Alias('u')]
         [string]
         $Url,
 
         [Parameter()]
+        [Alias('p')]
         [int]
         $Port = 0,
 
         [Parameter()]
         [ValidateSet('', 'HTTP', 'HTTPS')]
+        [Alias('pr')]
         [string]
         $Protocol,
 
         [switch]
+        [Alias('m')]
         $Moved
     )
 
