@@ -23,7 +23,7 @@ nav:
       - Status Codes: Tutorials/Routes/StatusCodes.md
       - Redirecting: Tutorials/Routes/Redirecting.md
       - Web Pages: Tutorials/Routes/WebPages.md
-      - Website Flow: Tutorials/Routes/WebsiteFlow.md
+      - Login Page: Tutorials/Routes/LoginPage.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md
       - Access Rules: Tutorials/Middleware/AccessRules.md
@@ -43,6 +43,7 @@ nav:
     - View Engines:
       - Pode: Tutorials/ViewEngines/Pode.md
       - Third Party: Tutorials/ViewEngines/ThirdParty.md
+    - SMTP Server: Tutorials/SmtpServer.md
 
   - Functions:
     - Core:

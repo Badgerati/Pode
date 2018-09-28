@@ -30,13 +30,6 @@ mkdocs serve
 
 Then navigate to `http://127.0.0.1:8000` in your browser.
 
-## Contents
-
-* [Install](#install)
-* [Documentation](#documentation)
-    * [Web Pages](#web-pages)
-    * [SMTP Server](#smtp-server)
-
 ## Features
 
 * Can run on *nix environments using PowerShell Core
@@ -72,77 +65,3 @@ Install-Module -Name Pode
 # docker
 docker pull badgerati/pode
 ```
-
-## Documentation
-
-### Web Pages
-
-It's actually possible for Pode to serve up webpages - css, fonts, and javascript included. They pretty much work exactly like the above REST APIs, except Pode has inbuilt logic to handle css/javascript and other files.
-
-Pode also has its own format for writing dynamic HTML pages. There are examples in the example directory, but in general they allow you to dynamically generate HTML, CSS or any file type using embedded PowerShell.
-
-All static and dynamic HTML content *must* be placed within a `/views/` directory, which is in the same location as your Pode script. In here you can place your view files, so when you call the `view` function in Pode, it will automatically look in the `/views/` directory. For example, if you call `view 'simple'` then Pode will look for `/views/simple.html`. Likewise for `/views/main/simple.html` if you pass `'main/simple'` instead.
-
-> Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it to Pode by calling `engine pode` at the top of your Server scriptblock
-
-Any other file types, from css to javascript, fonts and images, must all be placed within a `/public/` directory - again, in the same location as your Pode script. Here, when Pode sees a request for a path with a file extension, it will automatically look for that path in the `/public/` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
-
-A quick example of a single page site on port 8085:
-
-```powershell
-Server {
-    listen *:8085 http
-
-    # default view engine is already HTML, so following can left out
-    engine html
-
-    route 'get' '/' {
-        param($session)
-        view 'simple'
-    }
-}
-```
-
-> This can be seen in the examples under `web-pages.ps1`
-
-### SMTP Server
-
-Pode can also run as an SMTP server - useful for mocking tests. There are two options, you can either use Pode's inbuilt simple SMTP logic, or write your own using Pode as a TCP server instead.
-
-If you're using Pode's unbuilt SMTP logic, then you need to state so when creating the server: `Server -Smtp`. This will automatically create a TCP listener on port 25 (unless you pass a different port number).
-
-Unlike with HTTP Routes, TCP and SMTP can only have one handler. To create a handler for the inbuilt logic:
-
-```powershell
-Server -Smtp {
-    handler 'smtp' {
-        param($session)
-        Write-Host $session.From
-        Write-Host $session.To
-        Write-Host $session.Data
-    }
-}
-```
-
-The SMTP Handler will be passed a session already populated with the `From` address, the single or multiple `To` addresses, and the raw `Data` of the mail body.
-
-> This can be seen in the examples under `mail-server.ps1`
-
-If you want to create you own SMTP server, then you'll need to set Pode up as a TCP listener and manually read the SMTP stream yourself:
-
-```powershell
-Server {
-    listen *:25 tcp
-
-    handler 'tcp' {
-        param($session)
-        $client = $session.Client
-        # your stream writing/reading here
-    }
-}
-```
-
-To help with writing and reading from the client stream, Pode has a helper function with two actions for `read` and `write`:
-
-* `tcp write $msg`
-* `$msg = (tcp read)`
