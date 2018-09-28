@@ -20,7 +20,6 @@ matrix:
 
 install:
   - pwsh -c "Install-Module -Name Pester -Scope CurrentUser -Force | Out-Null"
-  - pwsh -c "Import-Module ./build/travis.psm1"
 
 script:
-  - pwsh -c "Invoke-TravisTest"
+  - pwsh -c "Import-Module ./build/travis.psm1; Invoke-TravisTest"
