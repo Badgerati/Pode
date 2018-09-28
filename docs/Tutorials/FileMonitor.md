@@ -1,8 +1,5 @@
 # File Monitor
 
-!!! note
-    For docker you'll need to use any of the Pode tags labeled "-ps.6.1.0-preview".
-
 Pode has inbuilt file monitoring which can trigger an internal server restart if it detects file changes within the same directory as your Pode script. To enable the monitoring supply the `-FileMonitor` switch to your [`Server`](../../Functions/Core/Server):
 
 ```powershell
