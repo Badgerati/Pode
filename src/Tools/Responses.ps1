@@ -100,6 +100,8 @@ function Attach
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('p')]
+        [string]
         $Path
     )
 
@@ -140,10 +142,12 @@ function Status
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('c')]
         [int]
         $Code,
 
         [Parameter()]
+        [Alias('d')]
         [string]
         $Description
     )
@@ -159,19 +163,23 @@ function Redirect
 {
     param (
         [Parameter()]
+        [Alias('u')]
         [string]
         $Url,
 
         [Parameter()]
+        [Alias('p')]
         [int]
         $Port = 0,
 
         [Parameter()]
         [ValidateSet('', 'HTTP', 'HTTPS')]
+        [Alias('pr')]
         [string]
         $Protocol,
 
         [switch]
+        [Alias('m')]
         $Moved
     )
 
@@ -221,10 +229,10 @@ function Json
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Encoding utf8
+            $Value = Get-Content -Path $Value -Raw -Encoding utf8
         }
     }
-    elseif (Test-Empty $value) {
+    elseif (Test-Empty $Value) {
         $Value = '{}'
     }
     elseif ((Get-Type $Value).Name -ine 'string') {
@@ -246,16 +254,28 @@ function Csv
     )
 
     if ($File) {
-        if (!(Test-Path $Value)) {
+        if ($null -eq $Value -or !(Test-Path $Value)) {
             status 404
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Encoding utf8
+            $Value = Get-Content -Path $Value -Raw -Encoding utf8
         }
     }
+    elseif (Test-Empty $Value) {
+        $Value = [string]::Empty
+    }
     elseif ((Get-Type $Value).Name -ine 'string') {
-        $Value = ($Value | ConvertTo-Csv -Delimiter ',')
+        $Value = ($Value | ForEach-Object {
+            New-Object psobject -Property $_
+        })
+
+        if (Test-IsPSCore) {
+            $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
+        }
+        else {
+            $Value = ($Value | ConvertTo-Csv -Delimiter ',' -NoTypeInformation)
+        }
     }
 
     Write-ToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
@@ -273,16 +293,23 @@ function Xml
     )
 
     if ($File) {
-        if (!(Test-Path $Value)) {
+        if ($null -eq $Value -or !(Test-Path $Value)) {
             status 404
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Encoding utf8
+            $Value = Get-Content -Path $Value -Raw -Encoding utf8
         }
     }
+    elseif (Test-Empty $value) {
+        $Value = [string]::Empty
+    }
     elseif ((Get-Type $Value).Name -ine 'string') {
-        $Value = ($Value | ConvertTo-Xml -Depth 10)
+        $Value = ($value | ForEach-Object {
+            New-Object psobject -Property $_
+        })
+
+        $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
     }
 
     Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
@@ -300,13 +327,16 @@ function Html
     )
 
     if ($File) {
-        if (!(Test-Path $Value)) {
+        if ($Value -eq $Value -or !(Test-Path $Value)) {
             status 404
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Encoding utf8
+            $Value = Get-Content -Path $Value -Raw -Encoding utf8
         }
+    }
+    elseif (Test-Empty $value) {
+        $Value = [string]::Empty
     }
     elseif ((Get-Type $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Html)
@@ -321,12 +351,19 @@ function Include
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
+        [Alias('p')]
         [string]
         $Path,
 
         [Parameter()]
+        [Alias('d')]
         $Data = @{}
     )
+
+    # default data if null
+    if ($null -eq $Data) {
+        $Data = @{}
+    }
 
     # add view engine extension
     $ext = Get-FileExtension -Path $Path
@@ -441,14 +478,17 @@ function Tcp
     param (
         [Parameter(Mandatory=$true)]
         [ValidateSet('write', 'read')]
+        [Alias('a')]
         [string]
         $Action,
 
         [Parameter()]
+        [Alias('m')]
         [string]
         $Message,
 
         [Parameter()]
+        [Alias('c')]
         $Client
     )
 

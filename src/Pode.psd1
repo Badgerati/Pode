@@ -52,6 +52,7 @@
         'Logger',
         'Csv',
         'Test-IsUnix',
+        'Test-IsWindows',
         'Test-IsPSCore',
         'Status',
         'Redirect',
@@ -69,7 +70,11 @@
         'Endware',
         'Session',
         'Invoke-ScriptBlock',
-        'Auth'
+        'Auth',
+        'Attach',
+        'Script',
+        'Import',
+        'Coalesce'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

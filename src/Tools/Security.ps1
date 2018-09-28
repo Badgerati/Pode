@@ -139,19 +139,23 @@ function Limit
     param (
         [Parameter(Mandatory=$true)]
         [ValidateSet('IP')]
+        [Alias('t')]
         [string]
         $Type,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('v')]
         [object]
         $Value,
 
         [Parameter(Mandatory=$true)]
+        [Alias('l')]
         [int]
         $Limit,
 
         [Parameter(Mandatory=$true)]
+        [Alias('s')]
         [int]
         $Seconds,
 
@@ -261,16 +265,19 @@ function Access
     param (
         [Parameter(Mandatory=$true)]
         [ValidateSet('Allow', 'Deny')]
+        [Alias('p')]
         [string]
         $Permission,
 
         [Parameter(Mandatory=$true)]
         [ValidateSet('IP')]
+        [Alias('t')]
         [string]
         $Type,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('v')]
         [object]
         $Value
     )

@@ -3,10 +3,12 @@ function Engine
     param (
         [Parameter()]
         [ValidateNotNullOrEmpty()]
+        [Alias('t')]
         [string]
         $Engine,
 
         [Parameter()]
+        [Alias('s')]
         [scriptblock]
         $ScriptBlock = $null
     )
@@ -132,7 +134,7 @@ function Start-WebServer
                 }
 
                 # invoke endware specifc to the current websession
-                $_endware = ($WebSession.OnEnd + @(($PodeSession.Server.Endware).Logic))
+                $_endware = ($WebSession.OnEnd + @($PodeSession.Server.Endware))
                 Invoke-PodeEndware -Session $WebSession -Endware $_endware
 
                 # close response stream (check if exists, as closing the writer closes this stream on unix)

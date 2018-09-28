@@ -19,12 +19,10 @@ Install-ChocolateyZipPackage @packageArgs
 
 # Install Module
 # Determine which Program Files path to use
-if (![string]::IsNullOrWhiteSpace($env:ProgramFiles))
-{
+if (![string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
     $modulePath = Join-Path $env:ProgramFiles (Join-Path 'WindowsPowerShell' 'Modules')
 }
-else
-{
+else {
     $modulePath = Join-Path ${env:ProgramFiles(x86)} (Join-Path 'WindowsPowerShell' 'Modules')
 }
 
@@ -33,8 +31,7 @@ if (!(Test-Path $modulePath))
 {
     Write-Host "Creating path: $modulePath"
     New-Item -ItemType Directory -Path $modulePath -Force | Out-Null
-    if (!$?)
-    {
+    if (!$?) {
         throw "Failed to create: $modulePath"
     }
 }
@@ -55,8 +52,7 @@ if (!(Test-Path $podeModulePath))
 {
     Write-Host 'Creating Pode module directory'
     New-Item -ItemType Directory -Path $podeModulePath -Force | Out-Null
-    if (!$?)
-    {
+    if (!$?) {
         throw "Failed to create: $podeModulePath"
     }
 }

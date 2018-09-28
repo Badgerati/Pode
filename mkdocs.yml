@@ -1,0 +1,119 @@
+site_name: Pode
+
+nav:
+  - Home: index.md
+
+  - Getting Started:
+    - Installation: Getting-Started/Installation.md
+    - CLI: Getting-Started/CLI.md
+    - Docker: Getting-Started/Docker.md
+    - Frontend: Getting-Started/Frontend.md
+
+  - Tutorials:
+    - Basics: Tutorials/Basics.md
+    - Threading: Tutorials/Threading.md
+    - Certificates: Tutorials/Certificates.md
+    - File Monitor: Tutorials/FileMonitor.md
+    - Timers: Tutorials/Timers.md
+    - Schedules: Tutorials/Schedules.md
+    - Shared State: Tutorials/SharedState.md
+    - External Modules: Tutorials/ExternalModules.md
+    - Routes:
+      - Overview: Tutorials/Routes/Overview.md
+      - Status Codes: Tutorials/Routes/StatusCodes.md
+      - Redirecting: Tutorials/Routes/Redirecting.md
+      - Web Pages: Tutorials/Routes/WebPages.md
+      - Login Page: Tutorials/Routes/LoginPage.md
+    - Middleware:
+      - Overview: Tutorials/Middleware/Overview.md
+      - Access Rules: Tutorials/Middleware/AccessRules.md
+      - Rate Limiting: Tutorials/Middleware/RateLimiting.md
+      - Sessions: Tutorials/Middleware/Sessions.md
+    - Logging:
+      - Overview: Tutorials/Logging/Overview.md
+      - Terminal: Tutorials/Logging/Terminal.md
+      - File: Tutorials/Logging/File.md
+      - Custom: Tutorials/Logging/Custom.md
+    - Authentication:
+      - Overview: Tutorials/Authentication/Overview.md
+      - Basic: Tutorials/Authentication/Basic.md
+      - Form: Tutorials/Authentication/Form.md
+      - Custom: Tutorials/Authentication/Custom.md
+    - Cron Expressions: Tutorials/CronExpressions.md
+    - View Engines:
+      - Pode: Tutorials/ViewEngines/Pode.md
+      - Third Party: Tutorials/ViewEngines/ThirdParty.md
+    - SMTP Server: Tutorials/SmtpServer.md
+
+  - Functions:
+    - Core:
+      - Endware: Functions/Core/Endware.md
+      - Engine: Functions/Core/Engine.md
+      - Handler: Functions/Core/Handler.md
+      - Import: Functions/Core/Import.md
+      - Listen: Functions/Core/Listen.md
+      - Logger: Functions/Core/Logger.md
+      - Middleware: Functions/Core/Middleware.md
+      - Route: Functions/Core/Route.md
+      - Schedule: Functions/Core/Schedule.md
+      - Server: Functions/Core/Server.md
+      - Timer: Functions/Core/Timer.md
+
+    - Middleware:
+      - Access: Functions/Middleware/Access.md
+      - Auth: Functions/Middleware/Auth.md
+      - Limit: Functions/Middleware/Limit.md
+      - Session: Functions/Middleware/Session.md
+
+    - Response:
+      - Attach: Functions/Response/Attach.md
+      - Csv: Functions/Response/Csv.md
+      - Html: Functions/Response/Html.md
+      - Json: Functions/Response/Json.md
+      - Redirect: Functions/Response/Redirect.md
+      - Status: Functions/Response/Status.md
+      - View: Functions/Response/View.md
+      - Xml: Functions/Response/Xml.md
+
+    - Utility:
+      - Dispose: Functions/Utility/Dispose.md
+      - Include: Functions/Utility/Include.md
+      - Lock: Functions/Utility/Lock.md
+      - State: Functions/Utility/State.md
+      - Stopwatch: Functions/Utility/Stopwatch.md
+      - Stream: Functions/Utility/Stream.md
+      - Tcp: Functions/Utility/Tcp.md
+
+    - Helpers:
+      - Coalesce: Functions/Helpers/Coalesce.md
+      - Invoke-ScriptBlock: Functions/Helpers/Invoke-ScriptBlock.md
+      - Test-Empty: Functions/Helpers/Test-Empty.md
+      - Test-IsPSCore: Functions/Helpers/Test-IsPSCore.md
+      - Test-IsUnix: Functions/Helpers/Test-IsUnix.md
+      - Test-IsWindows: Functions/Helpers/Test-IsWindows.md
+
+theme:
+  name: material
+  logo: images/icon.png
+  favicon: images/favicon.ico
+  feature:
+    tabs: true
+  palette:
+    primary: cyan
+    accent: cyan
+
+markdown_extensions:
+  - codehilite
+  - admonition
+  - meta
+
+repo_name: badgerati/pode
+
+repo_url: https://github.com/Badgerati/Pode
+
+extra:
+  social:
+    - type: github
+      link: https://github.com/badgerati
+    - type: twitter
+      link: https://twitter.com/badgerati

@@ -615,10 +615,12 @@ function Invoke-ScriptBlock
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('s')]
         [scriptblock]
         $ScriptBlock,
 
         [Parameter()]
+        [Alias('a')]
         $Arguments = $null,
 
         [switch]
