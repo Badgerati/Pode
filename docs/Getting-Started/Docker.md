@@ -30,7 +30,7 @@ CMD [ "pwsh", "-c", "cd /usr/src/app; ./web-pages-docker.ps1" ]
 To build and run the above Dockerfile, you can use the following commands:
 
 ```bash
-docker build -t pode/example
+docker build -t pode/example .
 docker run -p 8085:8085 -d pode/example
 ```
 
