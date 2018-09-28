@@ -8,7 +8,7 @@ matrix:
   include:
     - os: linux
       dist: trusty
-      sudo: false
+      sudo: true
       addons:
         apt:
           sources:
