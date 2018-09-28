@@ -19,7 +19,7 @@ matrix:
   fast_finish: true
 
 install:
-  - pwsh -c "Install-Module -Name Pester -Force -Confirm:$false | Out-Null"
+  - pwsh -c "Install-Module -Name Pester -Force | Out-Null"
   - pwsh -c "Import-Module ${env:TRAVIS_BUILD_DIR}/build/travis.psm1"
 
 script:
