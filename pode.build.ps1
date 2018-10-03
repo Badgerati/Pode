@@ -26,7 +26,7 @@ task PrintChecksum {
 
 # Synopsis: Install dependencies for running tests
 task TestDeps {
-    Install-Module -Name Pester -Scope CurrentUser -RequiredVersion '4.4.2' -Force -Confirm:$false
+    Install-Module -Name Pester -Scope CurrentUser -RequiredVersion '4.4.2' -Force
 }
 
 
