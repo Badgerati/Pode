@@ -48,10 +48,10 @@ $zipName = "$($build_version)-Binaries.zip"
 try
 {
     .\7z.exe -tzip a "$($workspace)\$($zipName)" "$($workspace)\Package\*"
-	if (!$?)
-	{
-		throw 'failed to make archive'
-	}
+    if (!$?)
+    {
+        throw 'failed to make archive'
+    }
 
     Write-Host "Package zipped successfully"
 }
@@ -67,8 +67,7 @@ Push-Location "$workspace"
 
 try
 {
-    $checksum = (checksum -t sha256 -f $zipName)
-    Write-Host "Checksum: $checksum"
+    Write-Host "Checksum: $((checksum -t sha256 -f $zipName))"
 }
 finally
 {
@@ -81,11 +80,7 @@ Push-Location "./packers/choco"
 try
 {
     (Get-Content 'pode.nuspec') | ForEach-Object { $_ -replace '\$version\$', $build_version } | Set-Content 'pode.nuspec'
-    Set-Location tools
-    (Get-Content 'ChocolateyInstall.ps1') | ForEach-Object { $_ -replace '\$version\$', $build_version } | Set-Content 'ChocolateyInstall.ps1'
-    (Get-Content 'ChocolateyInstall.ps1') | ForEach-Object { $_ -replace '\$checksum\$', $checksum } | Set-Content 'Chocolateyinstall.ps1'
-    Set-Location ..
-	choco pack
+    choco pack
 }
 finally
 {
