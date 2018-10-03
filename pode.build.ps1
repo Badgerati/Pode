@@ -54,7 +54,7 @@ task Pack 7Zip, ChocoPack
 
 # Synopsis: Run the tests
 task Test TestDeps, {
-    $Script:TestResultFile = './TestResults.xml'
+    $Script:TestResultFile = 'TestResults.xml'
     $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -PassThru
 }, PushAppVeyorTests, CheckFailedTests
 
