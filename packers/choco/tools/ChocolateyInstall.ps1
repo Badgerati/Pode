@@ -1,22 +1,5 @@
 $ErrorActionPreference = 'Stop'
 
-$packageName    = 'Pode'
-$toolsDir       = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
-$url            = 'https://github.com/Badgerati/Pode/releases/download/v$version$/$version$-Binaries.zip'
-$checksum       = '$checksum$'
-$checksumType   = 'sha256'
-
-$packageArgs = @{
-  PackageName   = $packageName
-  UnzipLocation = $toolsDir
-  Url           = $url
-  Checksum      = $checksum
-  ChecksumType  = $checksumType
-}
-
-# Download
-Install-ChocolateyZipPackage @packageArgs
-
 # Install Module
 # Determine which Program Files path to use
 if (![string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
@@ -62,7 +45,7 @@ Write-Host 'Copying Pode to module path'
 
 try
 {
-    Push-Location (Join-Path $env:ChocolateyPackageFolder 'tools/src')
+    Push-Location (Join-Path $env:ChocolateyPackageFolder 'src')
 
     New-Item -ItemType Directory -Path (Join-Path $podeModulePath 'Tools') -Force | Out-Null
     Copy-Item -Path ./Tools/* -Destination (Join-Path $podeModulePath 'Tools') -Force | Out-Null
