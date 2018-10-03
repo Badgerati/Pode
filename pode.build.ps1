@@ -67,8 +67,12 @@ task CheckFailedTests {
 
 # Synopsis: If AppVeyor, push result artifacts
 task PushAppVeyorTests -If (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID)) {
-    Write-Host "JobId: $($env:APPVEYOR_JOB_ID)"
-    (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $TestResultFile)
+    $url = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
+
+    write-host "URL: $($url)"
+    write-host "File: $($TestResultFile)"
+
+    (New-Object 'System.Net.WebClient').UploadFile($url, $TestResultFile)
     Push-AppveyorArtifact $TestResultFile
 }
 
