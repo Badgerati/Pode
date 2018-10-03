@@ -43,6 +43,7 @@ tests/nodes
 #NUNIT
 *.VisualState.xml
 TestResult.xml
+TestResults.xml
 
 # Build Results of an ATL Project
 [Dd]ebugPS/
