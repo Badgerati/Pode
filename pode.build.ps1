@@ -4,7 +4,37 @@ param (
 )
 
 <#
-# Helpers
+# Helper Functions
+#>
+
+function Test-IsUnix
+{
+    return $PSVersionTable.Platform -ieq 'unix'
+}
+
+function Test-IsWindows
+{
+    $v = $PSVersionTable
+    return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
+}
+
+function Test-Command($cmd)
+{
+    $path = $null
+
+    if (Test-IsWindows) {
+        $path = (Get-Command $cmd -ErrorAction Ignore)
+    }
+    else {
+        $path = (which $cmd)
+    }
+
+    return (![string]::IsNullOrWhiteSpace($path))
+}
+
+
+<#
+# Helper Tasks
 #>
 
 # Synopsis: Stamps the version onto the Module
@@ -15,7 +45,13 @@ task StampVersion {
 
 # Synopsis: Generating a Checksum of the Zip
 task PrintChecksum {
-    $Script:Checksum = (checksum -t sha256 $Version-Binaries.zip)
+    if (Test-IsWindows) {
+        $Script:Checksum = (checksum -t sha256 $Version-Binaries.zip)
+    }
+    else {
+        $Script:Checksum = (shasum -a 256 ./$Version-Binaries.zip | awk '{ print $1 }').ToUpper()
+    }
+
     Write-Host "Checksum: $($Checksum)"
 }
 
@@ -24,9 +60,47 @@ task PrintChecksum {
 # Dependencies
 #>
 
+task ChocoDeps -If (Test-IsWindows) {
+    if (!(Test-Command 'choco')) {
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+    }
+}
+
+task PackDeps ChocoDeps, {
+    if (Test-IsWindows) {
+        if (!(Test-Command 'checksum')) {
+            choco install checksum --version '0.2.0' -y
+        }
+
+        if (!(Test-Command '7z')) {
+            choco install 7zip.install --version '18.5.0.20180730' -y
+        }
+    }
+    else {
+        # TODO: Install 7zip on nix
+    }
+}
+
 # Synopsis: Install dependencies for running tests
 task TestDeps {
     Install-Module -Name Pester -Scope CurrentUser -RequiredVersion '4.4.2' -Force -SkipPublisherCheck
+}
+
+#
+task DocsDeps ChocoDeps, {
+    if (Test-IsWindows) {
+        if (!(Test-Command 'mkdocs')) {
+            choco install mkdocs --version '1.0.4' -y
+        }
+    }
+    else {
+        # TODO:
+    }
+
+    if ((pip list --format json | ConvertFrom-Json).name -inotcontains 'mkdocs-material') {
+        pip install mkdocs-material
+    }
 }
 
 
@@ -35,12 +109,12 @@ task TestDeps {
 #>
 
 # Synopsis: Creates a Zip of the Module
-task 7Zip StampVersion, {
+task 7Zip PackDeps, StampVersion, {
     exec { & 7z -tzip a $Version-Binaries.zip ./src/* }
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
-task ChocoPack StampVersion, {
+task ChocoPack -If (Test-IsWindows) PackDeps, StampVersion, {
     exec { choco pack ./packers/choco/pode.nuspec }
 }
 
@@ -72,6 +146,17 @@ task PushAppVeyorTests -If (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID))
     Push-AppveyorArtifact $TestResultFile
 }
 
+
 <#
 # Docs
 #>
+
+#
+task Docs DocsDeps, {
+    mkdocs serve
+}
+
+#
+task DocsBuild DocsDeps, {
+    mkdocs build
+}
