@@ -19,14 +19,12 @@ Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs
 
 ## Documentation
 
-All documentation and tutorials for Pode can be [found here](https://badgerati.github.io/Pode). This documentation will be for the latest release, to see the docs for other releases, branches or tags, you can clone the repo and use `mkdocs`.
+All documentation and tutorials for Pode can be [found here](https://badgerati.github.io/Pode) - this documentation will be for the latest release.
 
-To build the documentation locally, the following should work (from the root of the repo):
+To see the docs for other releases, branches or tags, you can host the documentation locally. To do so you'll need to have the [`Invoke-Build`](https://github.com/nightroman/Invoke-Build) module installed; then:
 
 ```powershell
-choco install mkdocs -y
-pip install mkdocs-material
-mkdocs serve
+Invoke-Build Docs
 ```
 
 Then navigate to `http://127.0.0.1:8000` in your browser.

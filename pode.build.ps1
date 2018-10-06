@@ -7,11 +7,6 @@ param (
 # Helper Functions
 #>
 
-function Test-IsUnix
-{
-    return $PSVersionTable.Platform -ieq 'unix'
-}
-
 function Test-IsWindows
 {
     $v = $PSVersionTable
@@ -30,6 +25,26 @@ function Test-Command($cmd)
     }
 
     return (![string]::IsNullOrWhiteSpace($path))
+}
+
+function Invoke-Install($name, $version)
+{
+    if (Test-IsWindows) {
+        if (Test-Command 'choco') {
+            choco install $name --version $version -y
+        }
+    }
+    else {
+        if (Test-Command 'brew') {
+            brew install $name
+        }
+        elseif (Test-Command 'apt-get') {
+            sudo apt-get install $name -y
+        }
+        elseif (Test-Command 'yum') {
+            sudo yum install $name -y
+        }
+    }
 }
 
 
@@ -60,6 +75,7 @@ task PrintChecksum {
 # Dependencies
 #>
 
+# Synopsis: Installs Chocolatey
 task ChocoDeps -If (Test-IsWindows) {
     if (!(Test-Command 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -67,39 +83,33 @@ task ChocoDeps -If (Test-IsWindows) {
     }
 }
 
-task PackDeps ChocoDeps, {
-    if (Test-IsWindows) {
-        if (!(Test-Command 'checksum')) {
-            choco install checksum --version '0.2.0' -y
-        }
-
-        if (!(Test-Command '7z')) {
-            choco install 7zip.install --version '18.5.0.20180730' -y
-        }
+# Synopsis: Install dependencies for packaging
+task PackDeps -If (Test-IsWindows) ChocoDeps, {
+    if (!(Test-Command 'checksum')) {
+        Invoke-Install 'checksum' '0.2.0'
     }
-    else {
-        # TODO: Install 7zip on nix
+
+    if (!(Test-Command '7z')) {
+        Invoke-Install '7zip' '18.5.0.20180730'
     }
 }
 
 # Synopsis: Install dependencies for running tests
 task TestDeps {
-    Install-Module -Name Pester -Scope CurrentUser -RequiredVersion '4.4.2' -Force -SkipPublisherCheck
+    if (((Get-Module -ListAvailable Pester) | Where-Object { $_.Version -ieq '4.4.2' }) -eq $null) {
+        Write-Host 'Installing Pester'
+        Install-Module -Name Pester -Scope CurrentUser -RequiredVersion '4.4.2' -Force -SkipPublisherCheck
+    }
 }
 
-#
+# Synopsis: Install dependencies for documentation
 task DocsDeps ChocoDeps, {
-    if (Test-IsWindows) {
-        if (!(Test-Command 'mkdocs')) {
-            choco install mkdocs --version '1.0.4' -y
-        }
-    }
-    else {
-        # TODO:
+    if (!(Test-Command 'mkdocs')) {
+        Invoke-Install 'mkdocs' '1.0.4'
     }
 
-    if ((pip list --format json | ConvertFrom-Json).name -inotcontains 'mkdocs-material') {
-        pip install mkdocs-material
+    if ((pip list --format json --disable-pip-version-check | ConvertFrom-Json).name -inotcontains 'mkdocs-material') {
+        pip install mkdocs-material --disable-pip-version-check
     }
 }
 
@@ -109,7 +119,7 @@ task DocsDeps ChocoDeps, {
 #>
 
 # Synopsis: Creates a Zip of the Module
-task 7Zip PackDeps, StampVersion, {
+task 7Zip -If (Test-IsWindows) PackDeps, StampVersion, {
     exec { & 7z -tzip a $Version-Binaries.zip ./src/* }
 }, PrintChecksum
 
@@ -119,7 +129,7 @@ task ChocoPack -If (Test-IsWindows) PackDeps, StampVersion, {
 }
 
 # Synopsis: Package up the Module
-task Pack 7Zip, ChocoPack
+task Pack -If (Test-IsWindows) 7Zip, ChocoPack
 
 
 <#
@@ -128,6 +138,7 @@ task Pack 7Zip, ChocoPack
 
 # Synopsis: Run the tests
 task Test TestDeps, {
+    Import-Module Pester -Force -RequiredVersion '4.4.2'
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
     $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -PassThru
 }, PushAppVeyorTests, CheckFailedTests
@@ -151,12 +162,12 @@ task PushAppVeyorTests -If (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID))
 # Docs
 #>
 
-#
+# Synopsis: Run the documentation
 task Docs DocsDeps, {
     mkdocs serve
 }
 
-#
+# Synopsis: Build the documentation
 task DocsBuild DocsDeps, {
     mkdocs build
 }
