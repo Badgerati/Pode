@@ -19,7 +19,7 @@ matrix:
   fast_finish: true
 
 install:
-  - pwsh -c "Install-Module -Name Pester -Scope CurrentUser -Force | Out-Null"
+  - pwsh -c "Install-Module -Name InvokeBuild -RequiredVersion '5.4.1' -Scope CurrentUser -Force"
 
 script:
-  - pwsh -c "Import-Module ./build/travis.psm1; Invoke-TravisTest"
+  - pwsh -c "Invoke-Build Test"
