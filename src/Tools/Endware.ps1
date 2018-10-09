@@ -11,25 +11,17 @@ function Invoke-PodeEndware
 
     # if there's no endware, do nothing
     if (Test-Empty $Endware) {
-        return $true
+        return
     }
-
-    # continue or halt?
-    $continue = $true
 
     # loop through each of the endware, invoking the next if it returns true
     foreach ($eware in @($Endware))
     {
         try {
-            $continue = Invoke-ScriptBlock -ScriptBlock $eware -Arguments $Session -Scoped -Return
+            Invoke-ScriptBlock -ScriptBlock $eware -Arguments $Session -Scoped | Out-Null
         }
         catch {
             $Error[0] | Out-Default
-            $continue = $false
-        }
-
-        if (!$continue) {
-            break
         }
     }
 }

@@ -1,6 +1,6 @@
 $path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '\\tests\\unit\\', '\src\'
-Get-ChildItem "$($src)\*.ps1" | Resolve-Path | ForEach-Object { . $_ }
+$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit[\\/]', '/src/'
+Get-ChildItem "$($src)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
 $now = [datetime]::UtcNow
 
@@ -93,14 +93,24 @@ Describe 'Set-PodeSessionCookieDataHash' {
             $Session = @{}
             Set-PodeSessionCookieDataHash -Session $Session
             $Session.Data | Should Not Be $null
-            $Session.DataHash | Should Be 'xvgoFiDCuHz2qU9SMxHq6XfkIO+abNqGZ/Yb6QbOypA='
+
+            $crypto = [System.Security.Cryptography.SHA256]::Create()
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json)))
+            $hash = [System.Convert]::ToBase64String($hash)
+
+            $Session.DataHash | Should Be $hash
         }
 
         It 'Sets a hash for data' {
             $Session = @{ 'Data' = @{ 'Counter' = 2; } }
             Set-PodeSessionCookieDataHash -Session $Session
             $Session.Data | Should Not Be $null
-            $Session.DataHash | Should Be 'gG2dPsmPKL6v/ZpMBpPu+lh0lu0dfC8nsa48oJAndMo='
+
+            $crypto = [System.Security.Cryptography.SHA256]::Create()
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json)))
+            $hash = [System.Convert]::ToBase64String($hash)
+
+            $Session.DataHash | Should Be $hash
         }
     }
 }
@@ -125,7 +135,12 @@ Describe 'New-PodeSessionCookie' {
         $session.Name | Should Be 'pode.sid'
         $session.Data.Count | Should Be 0
         $session.Cookie.Duration | Should Be 60
-        $session.DataHash | Should Be 'xvgoFiDCuHz2qU9SMxHq6XfkIO+abNqGZ/Yb6QbOypA='
+
+        $crypto = [System.Security.Cryptography.SHA256]::Create()
+        $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($session.Data| ConvertTo-Json)))
+        $hash = [System.Convert]::ToBase64String($hash)
+
+        $session.DataHash | Should Be $hash
     }
 }
 
@@ -150,9 +165,13 @@ Describe 'Test-PodeSessionCookieDataHash' {
         It 'Returns true for a valid hash' {
             $Session = @{
                 'Data' = @{ 'Counter' = 2; };
-                'DataHash' = 'gG2dPsmPKL6v/ZpMBpPu+lh0lu0dfC8nsa48oJAndMo=';
             }
-            
+
+            $crypto = [System.Security.Cryptography.SHA256]::Create()
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json)))
+            $hash = [System.Convert]::ToBase64String($hash)
+            $Session.DataHash = $hash
+
             Test-PodeSessionCookieDataHash -Session $Session | Should Be $true
         }
     }

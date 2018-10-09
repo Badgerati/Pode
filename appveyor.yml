@@ -10,11 +10,9 @@ skip_tags: true
 configuration: Release
 
 install:
-  - cinst -y pester --version 4.1.0
-  - cinst -y psake --version 4.7.0
-  - ps: Import-Module "$($pwd)\build\appveyor.psm1"
+  - ps: Install-Module -Name InvokeBuild -RequiredVersion '5.4.1' -Force
 
 build: off
 
 test_script:
-  - ps: Invoke-AppVeyorTest
+  - ps: Invoke-Build Test

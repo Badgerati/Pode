@@ -20,6 +20,7 @@ bld/
 [Oo]bj/
 [Tt]emp/
 [Ll]ogs/
+[Ss]ite/
 
 # Packing Artifacts
 *.zip
@@ -42,6 +43,7 @@ tests/nodes
 #NUNIT
 *.VisualState.xml
 TestResult.xml
+TestResults.xml
 
 # Build Results of an ATL Project
 [Dd]ebugPS/
