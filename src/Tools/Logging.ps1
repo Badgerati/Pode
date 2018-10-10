@@ -10,6 +10,21 @@ function Get-PodeLogger
     return $PodeSession.Loggers[$Name]
 }
 
+function Add-PodeLogEndware
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    $Session.OnEnd += {
+        param($s)
+        $obj = New-PodeLogObject -Request $s.Request -Path $s.Path
+        Add-PodeLogObject -LogObject $obj -Response $s.Response
+    }
+}
+
 function New-PodeLogObject
 {
     param (

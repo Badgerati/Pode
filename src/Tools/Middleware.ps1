@@ -112,8 +112,7 @@ function Get-PodePublicMiddleware
 
         # check to see if the path is a file, so we can check the public folder
         if ((Split-Path -Leaf -Path $s.Path).IndexOf('.') -ne -1) {
-            $s.Path = Join-ServerRoot 'public' $s.Path
-            Write-ToResponseFromFile -Path $s.Path
+            Write-ToResponseFromFile -Path (Join-ServerRoot 'public' $s.Path)
             return $false
         }
 

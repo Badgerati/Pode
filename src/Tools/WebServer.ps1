@@ -116,8 +116,8 @@ function Start-WebServer
                 $WebSession.Path = ($request.RawUrl -isplit "\?")[0]
                 $WebSession.Method = $request.HttpMethod.ToLowerInvariant()
 
-                # setup the base request to log later
-                $logObject = New-PodeLogObject -Request $request -Path $WebSession.Path
+                # add logging endware for post-request
+                Add-PodeLogEndware -Session $WebSession
 
                 # invoke middleware
                 if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $PodeSession.Server.Middleware)) {
@@ -141,9 +141,6 @@ function Start-WebServer
                 if ($response.OutputStream) {
                     dispose $response.OutputStream -Close -CheckNetwork
                 }
-
-                # add the log object to the list
-                Add-PodeLogObject -LogObject $logObject -Response $response
             }
         }
         catch [System.OperationCanceledException] {}
