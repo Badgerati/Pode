@@ -138,7 +138,11 @@ task Pack -If (Test-IsWindows) 7Zip, ChocoPack
 
 # Synopsis: Run the tests
 task Test TestDeps, {
-    Import-Module Pester -Force -RequiredVersion '4.4.2'
+    $p = (Get-Command Invoke-Pester)
+    if ($null -eq $p -or $p.Version -ine '4.4.2') {
+        Import-Module Pester -Force -RequiredVersion '4.4.2'
+    }
+
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
     $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -PassThru
 }, PushAppVeyorTests, CheckFailedTests
