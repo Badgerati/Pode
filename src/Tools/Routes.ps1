@@ -94,7 +94,7 @@ function Route
         $Route,
 
         [Parameter(Position=2, ParameterSetName='Normal')]
-        [scriptblock[]]
+        [object[]]
         $Middleware,
 
         [Parameter(Position=2, ParameterSetName='Static', Mandatory=$true)]
@@ -127,7 +127,7 @@ function Add-PodeRoute
         $Route,
 
         [Parameter()]
-        [scriptblock[]]
+        [object[]]
         $Middleware,
 
         [Parameter()]
@@ -140,15 +140,42 @@ function Add-PodeRoute
         throw "[$($HttpMethod)] $($Route) has no logic defined"
     }
 
+    # ensure middleware is either a scriptblock, or a valid hashtable
+    if (!(Test-Empty $Middleware)) {
+        @($Middleware) | ForEach-Object {
+            $_type = (Get-Type $_).Name
+
+            # is the type valid
+            if ($_type -ine 'scriptblock' -and $_type -ine 'hashtable') {
+                throw "A middleware supplied for the '[$($HttpMethod)] $($Route)' route is of an invalid type. Expected either ScriptBlock or Hashtable, but got: $($_type)"
+            }
+
+            # is the hashtable valid
+            if ($_type -ieq 'hashtable') {
+                if ($null -eq $_.Logic) {
+                    throw "A Hashtable middleware supplied for the '[$($HttpMethod)] $($Route)' route has no Logic defined"
+                }
+
+                $_ltype = (Get-Type $_.Logic).Name
+                if ($_ltype -ine 'scriptblock') {
+                    throw "A Hashtable middleware supplied for the '[$($HttpMethod)] $($Route)' route has has an invalid Logic type. Expected ScriptBlock, but got: $($_ltype)"
+                }
+            }
+        }
+    }
+
     # if middleware set, but not scriptblock, set middle and script
-    if (!(Test-Empty $Middleware) -and (Test-Empty $ScriptBlock)) {
+    if (!(Test-Empty $Middleware) -and ($null -eq $ScriptBlock)) {
         # if multiple middleware, error
         if ((Get-Type $Middleware).BaseName -ieq 'array' -and (Get-Count $Middleware) -ne 1) {
             throw "[$($HttpMethod)] $($Route) has no logic defined"
         }
 
-        $ScriptBlock = $Middleware[0]
-        $Middleware = $null
+        $ScriptBlock = {}
+        if ((Get-Type $Middleware[0]).Name -ieq 'scriptblock') {
+            $ScriptBlock = $Middleware[0]
+            $Middleware = $null
+        }
     }
 
     # lower the method
@@ -181,7 +208,6 @@ function Add-PodeRoute
     }
 
     # if we have middleware, convert scriptblocks to hashtables
-    $_middleware = @()
     if (!(Test-Empty $Middleware))
     {
         $Middleware = @($Middleware)
@@ -189,7 +215,7 @@ function Add-PodeRoute
         for ($i = 0; $i -lt $Middleware.Length; $i++) {
             if ((Get-Type $Middleware[$i]).Name -ieq 'scriptblock')
             {
-                $_middleware += @{
+                $Middleware[$i] = @{
                     'Logic' = $Middleware[$i]
                 }
             }
@@ -199,7 +225,7 @@ function Add-PodeRoute
     # add the route logic
     $PodeSession.Server.Routes[$HttpMethod][$Route] = @{
         'Logic' = $ScriptBlock;
-        'Middleware' = $_middleware;
+        'Middleware' = $Middleware;
     }
 }
 

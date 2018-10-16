@@ -134,9 +134,9 @@ Describe 'Route' {
             { Route -HttpMethod GET -Route '/assets' -Path './assets' } | Should Throw 'no logic defined'
         }
 
-        It 'Adds route with middleware supplied and no logic' {
+        It 'Adds route with middleware supplied as scriptblock and no logic' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -HttpMethod GET -Route '/users' { Write-Host 'middle' } -ScriptBlock $null
+            Route -HttpMethod GET -Route '/users' ({ Write-Host 'middle' }) -ScriptBlock $null
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null
@@ -146,6 +146,55 @@ Describe 'Route' {
 
             $route.Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
             $route.Middleware | Should Be $null
+        }
+
+        It 'Adds route with middleware supplied as hashtable with null logic' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' (@{ 'Logic' = $null }) -ScriptBlock {} } | Should Throw 'no logic defined'
+        }
+
+        It 'Adds route with middleware supplied as hashtable with invalid type logic' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' (@{ 'Logic' = 74 }) -ScriptBlock {} } | Should Throw 'invalid logic type'
+        }
+
+        It 'Adds route with invalid middleware type' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' 74 -ScriptBlock {} } | Should Throw 'invalid type'
+        }
+
+        It 'Adds route with middleware supplied as hashtable and empty logic' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock {}
+
+            $route = $PodeSession.Server.Routes['get']
+            $route | Should Not be $null
+
+            $route = $route['/users']
+            $route | Should Not Be $null
+
+            $route.Logic.ToString() | Should Be ({}).ToString()
+
+            $route.Middleware.Length | Should Be 1
+            $route.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+            $route.Middleware[0].Options | Should Be 'test'
+        }
+
+        It 'Adds route with middleware supplied as hashtable and no logic' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock $null
+
+            $route = $PodeSession.Server.Routes['get']
+            $route | Should Not be $null
+
+            $route = $route['/users']
+            $route | Should Not Be $null
+
+            $route.Logic.ToString() | Should Be ({}).ToString()
+
+            $route.Middleware.Length | Should Be 1
+            $route.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+            $route.Middleware[0].Options | Should Be 'test'
         }
 
         It 'Adds route with middleware and logic supplied' {
