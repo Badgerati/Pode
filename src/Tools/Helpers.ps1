@@ -73,11 +73,11 @@ function Test-Empty
         }
 
         'array' {
-            return (($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
+            return ((Get-Count $Value) -eq 0 -or $Value.Count -eq 0)
         }
     }
 
-    return ([string]::IsNullOrWhiteSpace($Value) -or ($Value | Measure-Object).Count -eq 0 -or $Value.Count -eq 0)
+    return ([string]::IsNullOrWhiteSpace($Value) -or (Get-Count $Value) -eq 0 -or $Value.Count -eq 0)
 }
 
 function Get-PSVersionTable
@@ -589,12 +589,11 @@ function Join-ServerRoot
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Public', 'Views', 'Logs')]
-        [string]
-        $Type,
-
-        [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
+        [string]
+        $Folder,
+
+        [Parameter()]
         [string]
         $FilePath,
 
@@ -603,11 +602,18 @@ function Join-ServerRoot
         $Root
     )
 
+    # use the root path of the server
     if (Test-Empty $Root) {
         $Root = $PodeSession.Server.Root
     }
 
-    return (Join-Path $Root (Join-Path $Type.ToLowerInvariant() $FilePath))
+    # join the folder/file to the root path
+    if ([string]::IsNullOrWhiteSpace($FilePath)) {
+        return (Join-Path $Root $Folder)
+    }
+    else {
+        return (Join-Path $Root (Join-Path $Folder $FilePath))
+    }
 }
 
 function Invoke-ScriptBlock
@@ -904,4 +910,14 @@ function ConvertFrom-NameValueToHashTable
 function Get-NewGuid
 {
     return ([guid]::NewGuid()).ToString()
+}
+
+function Get-Count
+{
+    param (
+        [Parameter()]
+        $Object
+    )
+
+    return ($Object | Measure-Object).Count
 }

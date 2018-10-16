@@ -2,7 +2,7 @@ function Get-PodeRoute
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', '*')]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
         [string]
         $HttpMethod,
 
@@ -12,6 +12,9 @@ function Get-PodeRoute
         $Route
     )
 
+    # is this a static route?
+    $isStatic = ($HttpMethod -ieq 'static')
+
     # first ensure we have the method
     $method = $PodeSession.Server.Routes[$HttpMethod]
     if ($null -eq $method) {
@@ -20,7 +23,7 @@ function Get-PodeRoute
 
     # if we have a perfect match for the route, return it
     $found = $method[$Route]
-    if ($null -ne $found) {
+    if (!$isStatic -and $null -ne $found) {
         return @{
             'Logic' = $found.Logic;
             'Middleware' = $found.Middleware;
@@ -40,15 +43,78 @@ function Get-PodeRoute
 
         $found = $method[$valid]
         $Route -imatch "$($valid)$" | Out-Null
-        return @{
-            'Logic' = $found.Logic;
-            'Middleware' = $found.Middleware;
-            'Parameters' = $Matches;
+
+        if ($isStatic) {
+            return @{
+                'Folder' = $found;
+                'File' = $Matches['file'];
+            }
+        }
+        else {
+            return @{
+                'Logic' = $found.Logic;
+                'Middleware' = $found.Middleware;
+                'Parameters' = $Matches;
+            }
         }
     }
 }
 
+function Get-PodeStaticRoutePath
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    # attempt to get a static route
+    $route = Get-PodeRoute -HttpMethod 'static' -Route $Path
+
+    # if we have a defined static route, use that
+    if ($null -ne $route) {
+        return (Join-ServerRoot $route.Folder $route.File)
+    }
+
+    # else, use the public static directory
+    return (Join-ServerRoot 'public' $Path)
+}
+
 function Route
+{
+    param (
+        [Parameter(Position=0,  Mandatory=$true)]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
+        [string]
+        $HttpMethod,
+
+        [Parameter(Position=1, Mandatory=$true)]
+        [string]
+        $Route,
+
+        [Parameter(Position=2, ParameterSetName='Normal')]
+        [scriptblock[]]
+        $Middleware,
+
+        [Parameter(Position=2, ParameterSetName='Static', Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter(Position=3, ParameterSetName='Normal')]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    if ($HttpMethod -ieq 'static') {
+        Add-PodeStaticRoute -Route $Route -Path $Path
+    }
+    else {
+        Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock
+    }
+}
+
+function Add-PodeRoute
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -61,6 +127,7 @@ function Route
         $Route,
 
         [Parameter()]
+        [scriptblock[]]
         $Middleware,
 
         [Parameter()]
@@ -69,17 +136,18 @@ function Route
     )
 
     # if middleware and scriptblock are null, error
-    if ($null -eq $Middleware -and $null -eq $ScriptBlock) {
+    if ((Test-Empty $Middleware) -and (Test-Empty $ScriptBlock)) {
         throw "[$($HttpMethod)] $($Route) has no logic defined"
     }
 
     # if middleware set, but not scriptblock, set middle and script
-    if (!(Test-Empty $Middleware) -and $null -eq $ScriptBlock) {
-        if ((Get-Type $Middleware).BaseName -ieq 'array') {
+    if (!(Test-Empty $Middleware) -and (Test-Empty $ScriptBlock)) {
+        # if multiple middleware, error
+        if ((Get-Type $Middleware).BaseName -ieq 'array' -and (Get-Count $Middleware) -ne 1) {
             throw "[$($HttpMethod)] $($Route) has no logic defined"
         }
 
-        $ScriptBlock = $Middleware
+        $ScriptBlock = $Middleware[0]
         $Middleware = $null
     }
 
@@ -87,17 +155,15 @@ function Route
     $HttpMethod = $HttpMethod.ToLowerInvariant()
 
     # split route on '?' for query
-    $Route = ($Route -isplit "\?")[0]
+    $Route = Split-PodeRouteQuery -Route $Route
 
     # ensure route isn't empty
-    if ([string]::IsNullOrWhiteSpace($Route)) {
-        throw "No route supplied for $($HttpMethod) request"
+    if (Test-Empty $Route) {
+        throw "No route supplied for $($HttpMethod) definition"
     }
 
-    # ensure route starts with a '/'
-    if (!$Route.StartsWith('/')) {
-        $Route = "/$($Route)"
-    }
+    # ensure the route has appropriate slashes
+    $Route = Update-PodeRouteSlashes -Route $Route
 
     # replace placeholder parameters with regex
     $placeholder = '\:(?<tag>[\w]+)'
@@ -109,22 +175,21 @@ function Route
         $Route = ($Route -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
     }
 
-    # replace * with .*
-    $Route = ($Route -ireplace '\*', '.*')
-
     # ensure route doesn't already exist
     if ($PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
         throw "[$($HttpMethod)] $($Route) is already defined"
     }
 
     # if we have middleware, convert scriptblocks to hashtables
+    $_middleware = @()
     if (!(Test-Empty $Middleware))
     {
         $Middleware = @($Middleware)
+
         for ($i = 0; $i -lt $Middleware.Length; $i++) {
             if ((Get-Type $Middleware[$i]).Name -ieq 'scriptblock')
             {
-                $Middleware[$i] = @{
+                $_middleware += @{
                     'Logic' = $Middleware[$i]
                 }
             }
@@ -134,6 +199,90 @@ function Route
     # add the route logic
     $PodeSession.Server.Routes[$HttpMethod][$Route] = @{
         'Logic' = $ScriptBlock;
-        'Middleware' = $Middleware;
+        'Middleware' = $_middleware;
     }
+}
+
+function Add-PodeStaticRoute
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Route,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+
+    # store the route method
+    $HttpMethod = 'static'
+
+    # split route on '?' for query
+    $Route = Split-PodeRouteQuery -Route $Route
+
+    # ensure route isn't empty
+    if (Test-Empty $Route) {
+        throw "No route supplied for $($HttpMethod) definition"
+    }
+
+    # if static, ensure the path exists
+    if (!(Test-Path (Join-ServerRoot $Path))) {
+        throw "Folder supplied for $($HttpMethod) route does not exist: $($Path)"
+    }
+
+    # ensure the route has appropriate slashes
+    $Route = Update-PodeRouteSlashes -Route $Route -Static
+
+    # ensure route doesn't already exist
+    if ($PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
+        throw "[$($HttpMethod)] $($Route) is already defined"
+    }
+
+    # add the route path
+    $PodeSession.Server.Routes[$HttpMethod][$Route] = $Path
+}
+
+function Update-PodeRouteSlashes
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Route,
+
+        [switch]
+        $Static
+    )
+
+    # ensure route starts with a '/'
+    if (!$Route.StartsWith('/')) {
+        $Route = "/$($Route)"
+    }
+
+    if ($Static)
+    {
+        # ensure the route ends with a '/*'
+        $Route = $Route.TrimEnd('*')
+
+        if (!$Route.EndsWith('/')) {
+            $Route = "$($Route)/"
+        }
+
+        $Route = "$($Route)(?<file>*)"
+    }
+
+    # replace * with .*
+    $Route = ($Route -ireplace '\*', '.*')
+    return $Route
+}
+
+function Split-PodeRouteQuery
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Route
+    )
+
+    return ($Route -isplit "\?")[0]
 }

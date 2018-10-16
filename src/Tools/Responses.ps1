@@ -99,14 +99,14 @@ function Attach
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
         [Alias('p')]
         [string]
         $Path
     )
 
-    # only download files from the public/ dir
-    $Path = Join-ServerRoot 'public' $Path
+    # only download files from public/static-route directories
+    $Path = Get-PodeStaticRoutePath -Path $Path
 
     # if the file doesnt exist then just fail on 404
     if (!(Test-Path $Path)) {

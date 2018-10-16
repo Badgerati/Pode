@@ -2,19 +2,22 @@
 
 Routes in Pode allow you to bind logic that should be invoked when a user calls a certain path on a URL, and a specific HTTP method, against your server. Routes allow you to host REST APIs and Web Pages, as well as using custom middleware for things like authentication.
 
+You can also specify static routes, that redirect requests to static files to directories.
+
 !!! info
     The following HTTP methods are supported by routes in Pode:
-    DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
+    DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for static file routing).
 
 ## Usage
 
-To setup an use routes in Pode you should use the [`route`](../../../Function/Core/Route) function. The general make-up of the `route` function is as follows:
+To setup and use routes in Pode you should use the [`route`](../../../Function/Core/Route) function. The general make-up of the `route` function is as follows - the former is for HTTP requests, where as the latter is for static content:
 
 ```powershell
-route <method> <path> [<middleware>] <scriptblock>
+route <method> <route> [<middleware>] <scriptblock>
+route static <route> <path>
 ```
 
-For example, let's say you want a basic `GET ping` endpoint to just return `pong` in JSON:
+For example, let's say you want a basic `GET ping` endpoint to just return `pong` as a JSON response:
 
 ```powershell
 Server {
@@ -124,4 +127,21 @@ The following request will invoke the above route:
 
 ```powershell
 Invoke-WebRequest -Uri 'http://localhost:8080/users/12345' -Method Get
+```
+
+## Static Content
+
+The following is an example of using the `route` function to define static routes, that allow you to specify where to get static files from for certain routes. This example will define a static route for `/assets`, and will point to the directory `./content/assets`:
+
+```powershell
+Server {
+    listen *:8080 http
+    route static '/assets' './content/assets'
+}
+```
+
+The following request will retrieve an image from the `./content/assets/images` directory:
+
+```powershell
+Invoke-WebRequest -Uri 'http://localhost:8080/assets/images/icon.png' -Method Get
 ```
