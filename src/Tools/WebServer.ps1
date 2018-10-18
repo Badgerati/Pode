@@ -10,10 +10,20 @@ function Engine
         [Parameter()]
         [Alias('s')]
         [scriptblock]
-        $ScriptBlock = $null
+        $ScriptBlock = $null,
+
+        [Parameter()]
+        [Alias('ext')]
+        [string]
+        $Extension
     )
 
-    $PodeSession.Server.ViewEngine.Extension = $Engine.ToLowerInvariant()
+    if ([string]::IsNullOrWhiteSpace($Extension)) {
+        $Extension = $Engine.ToLowerInvariant()
+    }
+
+    $PodeSession.Server.ViewEngine.Engine = $Engine.ToLowerInvariant()
+    $PodeSession.Server.ViewEngine.Extension = $Extension
     $PodeSession.Server.ViewEngine.Script = $ScriptBlock
 }
 
