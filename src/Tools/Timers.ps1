@@ -12,7 +12,7 @@ function Get-PodeTimer
 
 function Start-TimerRunspace
 {
-    if (($PodeSession.Timers | Measure-Object).Count -eq 0) {
+    if ((Get-Count $PodeSession.Timers) -eq 0) {
         return
     }
 

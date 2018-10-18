@@ -110,14 +110,18 @@ function Get-PodePublicMiddleware
     return (Get-PodeInbuiltMiddleware -Name '@public' -ScriptBlock {
         param($s)
 
-        # check to see if the path is a file, so we can check the public folder
-        if ((Split-Path -Leaf -Path $s.Path).IndexOf('.') -ne -1) {
-            Write-ToResponseFromFile -Path (Join-ServerRoot 'public' $s.Path)
-            return $false
+        # if path is not a public static file, return
+        if ((Split-Path -Leaf -Path $s.Path).IndexOf('.') -eq -1) {
+            return $true
         }
 
-        # url is not for a public content path
-        return $true
+        # get the static file path
+        $path = Get-PodeStaticRoutePath -Path $s.Path
+
+        # write the file to the response
+        Write-ToResponseFromFile -Path $path
+
+        return $false
     })
 }
 

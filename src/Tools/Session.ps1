@@ -96,6 +96,7 @@ function New-PodeSession
         'post' = @{};
         'put' = @{};
         'trace' = @{};
+        'static' = @{};
         '*' = @{};
     }
 

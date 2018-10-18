@@ -12,7 +12,7 @@ function Get-PodeSchedule
 
 function Start-ScheduleRunspace
 {
-    if (($PodeSession.Schedules | Measure-Object).Count -eq 0) {
+    if ((Get-Count $PodeSession.Schedules) -eq 0) {
         return
     }
 
