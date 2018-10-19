@@ -3,8 +3,8 @@ param($data)
 return html {
     head {
         title 'Pode Page'
-        link -href 'styles/simple.css' -rel 'stylesheet' -type 'text/css'
-        script 'scripts/simple.js'
+        link -href 'styles/simple.css.ps1' -rel 'stylesheet' -type 'text/css'
+        script 'scripts/simple.js.ps1'
     }
 
     body {

@@ -19,7 +19,7 @@ Server -Threads 2 {
     # set view engine to PSHTML renderer
     engine ps1 {
         param($path, $data)
-        return (. $path $data) -join "`r`n"
+        return [string](. $path $data)
     }
 
     # GET request for web page on "localhost:8085/"
