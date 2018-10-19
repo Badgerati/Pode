@@ -81,6 +81,7 @@ function New-PodeSession
 
     # session engine for rendering views
     $session.Server.ViewEngine = @{
+        'Engine' = 'html';
         'Extension' = 'html';
         'Script' = $null;
     }
@@ -351,9 +352,19 @@ function Import
         $Path
     )
 
-    $Path = Resolve-Path -Path $Path
+    # ensure the path exists, or it exists as a module
+    $_path = Resolve-Path -Path $Path -ErrorAction Ignore
+    if ([string]::IsNullOrWhiteSpace($_path)) {
+        $_path = (Get-Module -Name $Path -ListAvailable | Select-Object -First 1).Path
+    }
 
+    # if it's still empty, error
+    if ([string]::IsNullOrWhiteSpace($_path)) {
+        throw "Failed to import module '$($Path)'"
+    }
+
+    # import the module into each runspace
     $PodeSession.RunspacePools.Values | ForEach-Object {
-        $_.InitialSessionState.ImportPSModule($Path)
+        $_.InitialSessionState.ImportPSModule($_path)
     }
 }
