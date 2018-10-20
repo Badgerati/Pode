@@ -2,6 +2,7 @@ site_name: Pode
 
 nav:
   - Home: index.md
+  - Release Notes: release-notes.md
 
   - Getting Started:
     - Installation: Getting-Started/Installation.md
