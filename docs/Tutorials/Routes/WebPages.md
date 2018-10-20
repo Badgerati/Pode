@@ -4,7 +4,7 @@ Serving up web pages via Pode is simple, you can either write your pages in HTML
 
 ## Basics
 
-To serve up a web page you use the [`views`](../../../Functions/Response/View) function, and if you're using a dynamic template (like [`.pode`](../../ViewEngines/Pode) files) to render you views you use the [`engine`](../../../Functions/Core/Engine) function.
+To serve up a web page you use the [`view`](../../../Functions/Response/View) function, and if you're using a dynamic template (like [`.pode`](../../ViewEngines/Pode) files) to render you views you use the [`engine`](../../../Functions/Core/Engine) function.
 
 When you use the `view` function to serve a web page, the path to the view must be relative to the `/views` directory. For example, the following will display the `/views/index.html` page:
 
@@ -19,11 +19,11 @@ Server {
 ```
 
 !!! info
-    If your web page references any CSS, JavaScript, etc. files, then Pode will automatically find them within the `/public` directory. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
+    If your web page references any CSS, JavaScript, etc. files, then Pode will automatically find them within the `/public` directory - or any relative `static` routes you may have defined. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
 ## Full Example
 
-Here we'll have two simple HTML pages, with CSS file and a simple server script. The directory structure is as follows:
+Here we'll have two simple HTML pages, with a CSS file and a simple server script. The directory structure is as follows:
 
 ```plain
 server.ps1

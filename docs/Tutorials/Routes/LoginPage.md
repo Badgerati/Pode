@@ -1,6 +1,6 @@
 # Creating a Login Page
 
-This is mostly a pure example of have a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using Form authentication with sessions.
+This is mostly a pure example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using Form authentication with sessions.
 
 !!! info
     This full example can be seen on GitHub in `examples/web-auth-form.ps1`.
@@ -20,7 +20,7 @@ server.ps1
 
 ## Server
 
-To start of this script, you'll need to have the main [`server`](../../../Functions/Core/Server) wrapper; here we'll use 2 threads to handle requests:
+To start off this script, you'll need to have the main [`server`](../../../Functions/Core/Server) wrapper; here we'll use 2 threads to handle requests:
 
 ```powershell
 Import-Module Pode
@@ -48,7 +48,7 @@ middleware (session @{
 })
 ```
 
-Once we have the sessions in, we need to configure the Form [`authentication`](../../../Functions/Middleware/Auth) - the username/password here are fixed, but normally you would validate against a database:
+Once we have the sessions in, we need to configure the Form [`authentication`](../../../Functions/Middleware/Auth) - the username/password here are hardcoded, but normally you would validate against a database:
 
 ```powershell
 auth use form -v {
@@ -56,13 +56,13 @@ auth use form -v {
 
     if ($username -eq 'morty' -and $password -eq 'pickle') {
         return @{ 'user' = @{
-            'ID' ='M0R7Y302'
+            'ID' ='M0R7Y302';
             'Name' = 'Morty';
             'Type' = 'Human';
         } }
     }
 
-    # oh noes! no user was found
+    # aww geez! no user was found
     return $null
 }
 ```
@@ -82,11 +82,11 @@ route get '/' (auth check form -o @{ 'failureUrl' = '/login' }) {
 }
 ```
 
-Here we have the login `route`, which is actually two routes. The `GET /login` is the page itself, whereas the `POST /login` is the authentication itself (the endpoint the `<form>` elmeent will hit).
+Next we have the login `route`, which is actually two routes. The `GET /login` is the page itself, whereas the `POST /login` is the authentication part (the endpoint the `<form>` element will hit).
 
-For the `POST` route, if authentication passes the user is redirected to the home page, but if it failed they're taken back to the login page.
+For the `POST` route, if authentication passes the user is logged in and redirected to the home page, but if it failed they're taken back to the login page.
 
-For the `GET` route we have `<"login" = $true>` options; This means if the user goes onto the login page with an already validated session they're automatically taken back to the home page. However, if they have no session/authentication fails then a `403` is displayed, but the login page instead.
+For the `GET` route we have a `<"login" = $true>` option; this basically means if the user navigates to the login page with an already validated session they're automatically taken back to the home page (the `successUrl`). However if they have no session or authentication fails then instead of a `403` being displayed, the login page is displayed instead.
 
 ```powershell
 route get '/login' (auth check form -o @{ 'login' = $true; 'successUrl' = '/' }) {
@@ -100,7 +100,7 @@ route post '/login' (auth check form -o @{
 }) {}
 ```
 
-Finally, we have the logout `route`. Here we have another options of `<"logout" = $true>`, which basically just means to kill the session and redirect to the login page:
+Finally, we have the logout `route`. Here we have another option of `<"logout" = $true>`, which basically just means to kill the session and redirect to the login page:
 
 ```powershell
 route 'post' '/logout' (auth check form -o @{
@@ -109,9 +109,77 @@ route 'post' '/logout' (auth check form -o @{
 }) {}
 ```
 
+## Full Server
+
+This is the full code for the server above:
+
+```powershell
+Import-Module Pode
+
+Server -Thread 2 {
+    listen *:8080 http
+
+    # use pode template engine
+    engine pode
+
+    # setup session middleware
+    middleware (session @{
+        'secret' = 'schwify';
+        'duration' = 120;
+        'extend' = $true;
+    })
+
+    # setup form authentication
+    auth use form -v {
+        param($username, $password)
+
+        if ($username -eq 'morty' -and $password -eq 'pickle') {
+            return @{ 'user' = @{
+                'ID' ='M0R7Y302';
+                'Name' = 'Morty';
+                'Type' = 'Human';
+            } }
+        }
+
+        # aww geez! no user was found
+        return $null
+    }
+
+    # the "GET /" endpoint for the homepage
+    route get '/' (auth check form -o @{ 'failureUrl' = '/login' }) {
+        param($s)
+
+        $s.Session.Data.Views++
+
+        view 'index' -data @{
+            'Username' = $s.Auth.User.Name;
+            'Views' = $s.Session.Data.Views;
+        }
+    }
+
+    # the "GET /login" endpoint for the login page
+    route get '/login' (auth check form -o @{ 'login' = $true; 'successUrl' = '/' }) {
+        param($s)
+        view 'login'
+    }
+
+    # the "POST /login" endpoint for user authentication
+    route post '/login' (auth check form -o @{
+        'failureUrl' = '/login';
+        'successUrl' = '/';
+    }) {}
+
+    # the "POST /logout" endpoint for ending the session
+    route 'post' '/logout' (auth check form -o @{
+        'logout' = $true;
+        'failureUrl' = '/login';
+    }) {}
+}
+```
+
 ## Pages
 
-The following are the web pages used above, as well as the CSS style. The web pages have been created using [`.pode`](../../ViewEngines/Pode) files, which allows you to embed PowerShell into the HTML.
+The following are the web pages used above, as well as the CSS style. The web pages have been created using [`.pode`](../../ViewEngines/Pode) files, which allows you to embed PowerShell into the files.
 
 *index.pode*
 ```html
