@@ -2,9 +2,11 @@ site_name: Pode
 
 nav:
   - Home: index.md
+  - Release Notes: release-notes.md
 
   - Getting Started:
     - Installation: Getting-Started/Installation.md
+    - Build Your First App: Getting-Started/FirstApp.md
     - CLI: Getting-Started/CLI.md
     - Docker: Getting-Started/Docker.md
     - Frontend: Getting-Started/Frontend.md

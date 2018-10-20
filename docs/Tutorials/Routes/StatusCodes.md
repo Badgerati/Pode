@@ -9,10 +9,10 @@ The [`status`](../../../Functions/Response/Status) function allows you to set yo
 The make-up of the `status` function is as follows:
 
 ```powershell
-status <number> [-description <string>]
+status <int> [-description <string>]
 
 # or shorthand
-status <number> [-d <string>]
+status <int> [-d <string>]
 ```
 
 The following example will set the status code of the response to be `418`:

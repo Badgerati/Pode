@@ -12,7 +12,7 @@ function Get-PodeTimer
 
 function Start-TimerRunspace
 {
-    if (($PodeSession.Timers | Measure-Object).Count -eq 0) {
+    if ((Get-Count $PodeSession.Timers) -eq 0) {
         return
     }
 
@@ -20,7 +20,7 @@ function Start-TimerRunspace
         while ($true)
         {
             $_remove = @()
-            $_now = [DateTime]::UtcNow
+            $_now = [DateTime]::Now
 
             $PodeSession.Timers.Values | Where-Object { $_.NextTick -le $_now } | ForEach-Object {
                 $run = $true
@@ -54,6 +54,7 @@ function Start-TimerRunspace
                 }
             }
 
+            # remove any timers
             $_remove | ForEach-Object {
                 $PodeSession.Timers.Remove($_)
             }
@@ -135,7 +136,7 @@ function Timer
         'Count' = 0;
         'Skip' = $Skip;
         'Countable' = ($Skip -gt 0 -or $Limit -gt 0);
-        'NextTick' = [DateTime]::UtcNow.AddSeconds($Interval);
+        'NextTick' = [DateTime]::Now.AddSeconds($Interval);
         'Script' = $ScriptBlock;
     }
 }

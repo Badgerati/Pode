@@ -27,23 +27,19 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 ## Features
 
 * Can run on *nix environments using PowerShell Core
-* Host REST APIs and Web Pages
-* Host TCP and SMTP server - great for tests and mocking
+* Host REST APIs, Web Pages, TCP and SMTP server
 * Multiple threads can be used to response to incoming requests
-* Use the full power of PowerShell, want a REST API for NUnit? Go for it!
-* Ability to write dynamic files in PowerShell using Pode, or other third-party template engines
-* Can use yarn package manager to install bootstrap, or other frontend libraries
+* Inbuilt template engine, with support for third-parties
 * Setup async timers to be used as one off tasks, or for housekeeping services
 * Ability to schedule async tasks using cron expressions
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
-* Cross-state runspace variable access for timers, routes and loggers
+* Cross-state variable access across multiple runspaces
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
-* Support for generating/binding self-signed certificates, and binding signed certificates
-* Support for middleware on web servers
-* Session middleware support on web requests
-* Can use authentication on requests, which can either be sessionless or session persistant
+* Support for generating/binding self-signed certificates, and signed certificates on Windows
+* Support for middleware and sessions on web servers
+* Can use authentication on requests, which can either be sessionless or session persistent
 
 ## Install
 
@@ -59,3 +55,7 @@ Install-Module -Name Pode
 # docker
 docker pull badgerati/pode
 ```
+
+## Build Your First App
+
+See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app!

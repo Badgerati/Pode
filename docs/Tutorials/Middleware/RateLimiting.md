@@ -9,10 +9,10 @@ To setup rate limiting in Pode you use the [`limit`](../../../Functions/Middlewa
 The make-up of the `limit` function is as follows:
 
 ```powershell
-limit ip <address|subnet> -limit <number> -seconds <number> [-group]
+limit ip <address|subnet> -limit <int> -seconds <int> [-group]
 
 # or shorthand
-limit ip <address|subnet> -l <number> -s <number> [-g]
+limit ip <address|subnet> -l <int> -s <int> [-g]
 ```
 
 You can either rate limit a specific IP address, a subnet mask, or for every address (using `all`). You can also supply an array of addresses/subnets as well, rather than one at a time.

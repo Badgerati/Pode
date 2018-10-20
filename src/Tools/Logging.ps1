@@ -10,6 +10,21 @@ function Get-PodeLogger
     return $PodeSession.Loggers[$Name]
 }
 
+function Add-PodeLogEndware
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    $Session.OnEnd += {
+        param($s)
+        $obj = New-PodeLogObject -Request $s.Request -Path $s.Path
+        Add-PodeLogObject -LogObject $obj -Response $s.Response
+    }
+}
+
 function New-PodeLogObject
 {
     param (
@@ -54,7 +69,7 @@ function Add-PodeLogObject
         $Response
     )
 
-    if ($PodeSession.DisableLogging -or ($PodeSession.Loggers | Measure-Object).Count -eq 0) {
+    if ($PodeSession.DisableLogging -or (Get-Count $PodeSession.Loggers) -eq 0) {
         return
     }
 
@@ -70,7 +85,7 @@ function Add-PodeLogObject
 
 function Start-LoggerRunspace
 {
-    if (($PodeSession.Loggers | Measure-Object).Count -eq 0) {
+    if ((Get-Count $PodeSession.Loggers) -eq 0) {
         return
     }
 
@@ -97,7 +112,7 @@ function Start-LoggerRunspace
         while ($true)
         {
             # if there are no requests to log, just sleep
-            if (($PodeSession.RequestsToLog | Measure-Object).Count -eq 0) {
+            if ((Get-Count $PodeSession.RequestsToLog) -eq 0) {
                 Start-Sleep -Seconds 1
                 continue
             }

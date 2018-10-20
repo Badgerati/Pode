@@ -92,17 +92,17 @@ Describe 'Route' {
 
     Context 'Valid route parameters' {
         It 'Throws error because only querystring has been given' {
-            { Route -HttpMethod GET -Route "?k=v" -ScriptBlock {} } | Should Throw "No route supplied"
+            { Route -HttpMethod GET -Route "?k=v" {} } | Should Throw "No route supplied"
         }
 
         It 'Throws error because route already exists' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = $null; }; }; }
-            { Route -HttpMethod GET -Route '/' -ScriptBlock {} } | Should Throw 'already defined'
+            { Route -HttpMethod GET -Route '/' {} } | Should Throw 'already defined'
         }
 
         It 'Adds route with simple url' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -HttpMethod GET -Route '/users' -ScriptBlock { Write-Host 'hello' }
+            Route -HttpMethod GET -Route '/users' { Write-Host 'hello' }
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null
@@ -112,9 +112,31 @@ Describe 'Route' {
             $route['/users'].Middleware | Should Be $null
         }
 
-        It 'Adds route with middleware supplied and no logic' {
+        It 'Adds basic static route' {
+            Mock Test-Path { return $true }
+            $PodeSession.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
+            Route -HttpMethod STATIC -Route '/assets' -Path './assets'
+
+            $route = $PodeSession.Server.Routes['static']
+            $route | Should Not Be $null
+            $route.ContainsKey('/assets/(?<file>.*)') | Should Be $true
+            $route['/assets/(?<file>.*)'] | Should Be './assets'
+        }
+
+        It 'Throws error when adding static route for non-existing folder' {
+            Mock Test-Path { return $false }
+            $PodeSession.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
+            { Route -HttpMethod STATIC -Route '/assets' -Path './assets' } | Should Throw 'does not exist'
+        }
+
+        It 'Throws error when adding static route under get method' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'Root' = $pwd }
+            { Route -HttpMethod GET -Route '/assets' -Path './assets' } | Should Throw 'no logic defined'
+        }
+
+        It 'Adds route with middleware supplied as scriptblock and no logic' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -HttpMethod GET -Route '/users' -Middleware { Write-Host 'middle' } -ScriptBlock $null
+            Route -HttpMethod GET -Route '/users' ({ Write-Host 'middle' }) -ScriptBlock $null
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null
@@ -126,9 +148,58 @@ Describe 'Route' {
             $route.Middleware | Should Be $null
         }
 
+        It 'Adds route with middleware supplied as hashtable with null logic' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' (@{ 'Logic' = $null }) -ScriptBlock {} } | Should Throw 'no logic defined'
+        }
+
+        It 'Adds route with middleware supplied as hashtable with invalid type logic' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' (@{ 'Logic' = 74 }) -ScriptBlock {} } | Should Throw 'invalid logic type'
+        }
+
+        It 'Adds route with invalid middleware type' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' 74 -ScriptBlock {} } | Should Throw 'invalid type'
+        }
+
+        It 'Adds route with middleware supplied as hashtable and empty logic' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock {}
+
+            $route = $PodeSession.Server.Routes['get']
+            $route | Should Not be $null
+
+            $route = $route['/users']
+            $route | Should Not Be $null
+
+            $route.Logic.ToString() | Should Be ({}).ToString()
+
+            $route.Middleware.Length | Should Be 1
+            $route.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+            $route.Middleware[0].Options | Should Be 'test'
+        }
+
+        It 'Adds route with middleware supplied as hashtable and no logic' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock $null
+
+            $route = $PodeSession.Server.Routes['get']
+            $route | Should Not be $null
+
+            $route = $route['/users']
+            $route | Should Not Be $null
+
+            $route.Logic.ToString() | Should Be ({}).ToString()
+
+            $route.Middleware.Length | Should Be 1
+            $route.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+            $route.Middleware[0].Options | Should Be 'test'
+        }
+
         It 'Adds route with middleware and logic supplied' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -HttpMethod GET -Route '/users' -Middleware { Write-Host 'middle' } -ScriptBlock { Write-Host 'logic' }
+            Route -HttpMethod GET -Route '/users' { Write-Host 'middle' } -ScriptBlock { Write-Host 'logic' }
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null
@@ -145,10 +216,10 @@ Describe 'Route' {
         It 'Throws error for route with array of middleware and no logic supplied' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
 
-            { Route -HttpMethod GET -Route '/users' -Middleware @(
+            { Route -HttpMethod GET -Route '/users' @(
                 { Write-Host 'middle1' },
                 { Write-Host 'middle2' }
-             ) -ScriptBlock $null } | Should Throw 'no logic defined'
+             ) $null } | Should Throw 'no logic defined'
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null
@@ -159,10 +230,10 @@ Describe 'Route' {
 
         It 'Adds route with array of middleware and logic supplied' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -HttpMethod GET -Route '/users' -Middleware @(
+            Route -HttpMethod GET -Route '/users' @(
                 { Write-Host 'middle1' },
                 { Write-Host 'middle2' }
-             ) -ScriptBlock { Write-Host 'logic' }
+             ) { Write-Host 'logic' }
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null
@@ -178,7 +249,7 @@ Describe 'Route' {
 
         It 'Adds route with simple url and querystring' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -HttpMethod GET -Route '/users?k=v' -ScriptBlock { Write-Host 'hello' }
+            Route -HttpMethod GET -Route '/users?k=v' { Write-Host 'hello' }
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null
@@ -190,7 +261,7 @@ Describe 'Route' {
 
         It 'Adds route with url parameters' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -HttpMethod GET -Route '/users/:userId' -ScriptBlock { Write-Host 'hello' }
+            Route -HttpMethod GET -Route '/users/:userId' { Write-Host 'hello' }
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null
@@ -202,7 +273,7 @@ Describe 'Route' {
 
         It 'Adds route with url parameters and querystring' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -HttpMethod GET -Route '/users/:userId?k=v' -ScriptBlock { Write-Host 'hello' }
+            Route -HttpMethod GET -Route '/users/:userId?k=v' { Write-Host 'hello' }
 
             $route = $PodeSession.Server.Routes['get']
             $route | Should Not be $null

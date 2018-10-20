@@ -8,10 +8,10 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Server {
 
     # listen on localhost:8085
-    listen *:$Port http
+    listen *:8085 http
 
     # schedule minutely using predefined cron
-    schedule 'predefined' '@minutely' {
+    schedule 'predefined' '@minutely' -Limit 2 {
         # logic
     }
 

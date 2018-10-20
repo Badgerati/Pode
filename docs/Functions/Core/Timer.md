@@ -69,5 +69,5 @@ Server {
 | Name | string | true | The unique name of the timer | empty |
 | Interval | int | true | The number of seconds between each iteration | 0 |
 | ScriptBlock | scriptblock | true | The main logic that will be invoked on each timer iteration | null |
-| Limit | int | false | The number of iterations that should be invoked before the timer is removed | 0 |
+| Limit | int | false | The number of iterations that should be invoked before the timer is removed; 0 is unlimited | 0 |
 | Skip | int | false | The number of iterations to skip before invoking timer logic | 0 |

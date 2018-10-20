@@ -33,6 +33,8 @@ Pode can run on *nix environments, therefore it only makes sense for there to be
 docker pull badgerati/pode
 ```
 
+Once pulled, you can [view here](../Docker) on how to use the image.
+
 ## Using the Module
 
 After you have installed the module, you can then import it into your server scripts:

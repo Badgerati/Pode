@@ -77,7 +77,7 @@ function Write-ToResponseFromFile
     # generate dynamic content
     $content = [string]::Empty
 
-    switch ($ext.ToLowerInvariant())
+    switch ($PodeSession.Server.ViewEngine.Engine)
     {
         'pode' {
             $content = Get-Content -Path $Path -Raw -Encoding utf8
@@ -99,14 +99,14 @@ function Attach
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
         [Alias('p')]
         [string]
         $Path
     )
 
-    # only download files from the public/ dir
-    $Path = Join-ServerRoot 'public' $Path
+    # only download files from public/static-route directories
+    $Path = Get-PodeStaticRoutePath -Path $Path
 
     # if the file doesnt exist then just fail on 404
     if (!(Test-Path $Path)) {
@@ -379,7 +379,7 @@ function Include
     }
 
     # run any engine logic
-    $engine = $PodeSession.Server.ViewEngine.Extension
+    $engine = $PodeSession.Server.ViewEngine.Engine
     if ($hasExt) {
         $engine = $ext.Trim('.')
     }
@@ -399,7 +399,7 @@ function Include
 
         default {
             if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (. $PodeSession.Server.ViewEngine.Script $Path, $Data)
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
             }
         }
     }
@@ -445,7 +445,7 @@ function View
     }
 
     # run any engine logic
-    $engine = $PodeSession.Server.ViewEngine.Extension
+    $engine = $PodeSession.Server.ViewEngine.Engine
     if ($hasExt) {
         $engine = $ext.Trim('.')
     }
@@ -465,7 +465,7 @@ function View
 
         default {
             if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (. $PodeSession.Server.ViewEngine.Script $Path, $Data)
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
             }
         }
     }

@@ -12,7 +12,7 @@ function Get-PodeSchedule
 
 function Start-ScheduleRunspace
 {
-    if (($PodeSession.Schedules | Measure-Object).Count -eq 0) {
+    if ((Get-Count $PodeSession.Schedules) -eq 0) {
         return
     }
 
@@ -22,8 +22,10 @@ function Start-ScheduleRunspace
 
         while ($true)
         {
+            $_remove = @()
             $_now = [DateTime]::Now
 
+            # select the schedules that need triggering
             $PodeSession.Schedules.Values |
                 Where-Object {
                     ($null -eq $_.StartTime -or $_.StartTime -le $_now) -and
@@ -31,16 +33,38 @@ function Start-ScheduleRunspace
                     (Test-CronExpression -Expression $_.Cron -DateTime $_now)
                 } | ForEach-Object {
 
+                # increment total number of triggers for the schedule
+                if ($_.Countable) {
+                    $_.Count++
+                    $_.Countable = ($_.Count -lt $_.Limit)
+                }
+
+                # check if we have hit the limit, and remove
+                if ($_.Limit -ne 0 -and $_.Count -ge $_.Limit) {
+                    $_remove += $_.Name
+                }
+
                 try {
                     # trigger the schedules logic
                     Add-PodeRunspace -Type 'Schedules' -ScriptBlock (($_.Script).GetNewClosure()) `
                         -Parameters @{ 'Lockable' = $PodeSession.Lockable } -Forget
-
-                    # reset the cron if it's random
-                    $_.Cron = Reset-RandomCronExpression -Expression $_.Cron
                 }
                 catch {
                     $Error[0]
+                }
+
+                # reset the cron if it's random
+                $_.Cron = Reset-RandomCronExpression -Expression $_.Cron
+            }
+
+            # add any schedules to remove that have exceeded their end time
+            $_remove += @($PodeSession.Schedules.Values |
+                Where-Object { ($null -ne $_.EndTime -and $_.EndTime -lt $_now) }).Name
+
+            # remove any schedules
+            $_remove | ForEach-Object {
+                if ($PodeSession.Schedules.ContainsKey($_)) {
+                    $PodeSession.Schedules.Remove($_)
                 }
             }
 
@@ -71,6 +95,11 @@ function Schedule
         $ScriptBlock,
 
         [Parameter()]
+        [Alias('l')]
+        [int]
+        $Limit = 0,
+
+        [Parameter()]
         [Alias('Start')]
         $StartTime = $null,
 
@@ -85,6 +114,11 @@ function Schedule
     # ensure the schedule doesn't already exist
     if ($PodeSession.Schedules.ContainsKey($Name)) {
         throw "Schedule called $($Name) already exists"
+    }
+
+    # ensure the limit is valid
+    if ($Limit -lt 0) {
+        throw "Schedule $($Name) cannot have a negative limit"
     }
 
     # ensure the start/end dates are valid
@@ -105,6 +139,9 @@ function Schedule
         'StartTime' = $StartTime;
         'EndTime' = $EndTime;
         'Cron' = $exp;
-        'Script' = $ScriptBlock
+        'Limit' = $Limit;
+        'Count' = 0;
+        'Countable' = ($Limit -gt 0);
+        'Script' = $ScriptBlock;
     }
 }

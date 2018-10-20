@@ -2,10 +2,12 @@
 
 ## Description
 
-The `route` function allows you to bind specific logic to be invoked against a URL path and HTTP method. The function also accepts custom middleware to be executed, before running the main route logic - such as authentication.
+The `route` function allows you to bind logic to be invoked against a URL path and HTTP method. The function also accepts custom middleware to be invoked, before running the main route logic - such as authentication.
+
+You can also use the `route` function to specify routes to static content paths. Normally if you request a static file Pode will check the `/public` directory, but you can specify other paths using `route static` (example below).
 
 !!! info
-    The scriptblock for the main route logic is invoked with a single parameter. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
+    The scriptblock supplied for the main route logic is invoked with a single parameter. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
 ## Examples
 
@@ -45,6 +47,22 @@ Server {
 
 ### Example 3
 
+The following example sets up a static route of `/assets` using the directory `./content/assets`. In the `index.html` view if you reference the image `<img src="/assets/images/icon.png" />`, then Pode will get the image from `./content/assets/images/icon.png`:
+
+```powershell
+Server {
+    listen *:8080 http
+
+    route static '/assets' './content/assets'
+
+    route get '/' {
+        view 'index'
+    }
+}
+```
+
+### Example 4
+
 The following example sets up a `GET /users/:userId` route, that returns a user based on the route parameter `userId`:
 
 ```powershell
@@ -68,7 +86,7 @@ Server {
 }
 ```
 
-### Example 4
+### Example 5
 
 The following example sets up a `GET /` route, that has custom middleware to check the user agent first. If the user agent is from PowerShell deny the call, and don't invoke the route's logic:
 
@@ -102,9 +120,10 @@ Server {
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
-| HttpMethod | string | true | The HTTP method to bind the route onto (Values: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE) | null |
+| HttpMethod | string | true | The HTTP method to bind the route onto (Values: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, STATIC) | null |
 | Route | string | true | The route path to listen on, the root path is `/`. The path can also contain parmeters such as `/:userId` | empty |
-| Middleware | scriptblock[] | false | Custom middleware for the `route` that will be invoked before the main logic is invoked - such as authentication | null |
+| Middleware | scriptblock[] | false | Custom middleware for the `route` that will be invoked before the main logic is invoked - such as authentication. | null |
+| Path | string | false | For `static` routes this is the path to the static content directory | empty |
 | ScriptBlock | scriptblock | true | The main route logic that will be invoked when the route endpoint is hit | null |
 
 !!! tip

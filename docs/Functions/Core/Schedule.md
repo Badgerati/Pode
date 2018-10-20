@@ -10,11 +10,11 @@ Schedule triggers are defined using [`cron expressions`](../../Tutorials/CronExp
 
 ### Example 1
 
-The following example will create a `schedule` that triggers every Tuesday at midnight:
+The following example will create a `schedule` that triggers every Tuesday at midnight, but will only trigger 4 times:
 
 ```powershell
 Server {
-    schedule 'tuesdays' '0 0 * * TUE' {
+    schedule 'tuesdays' '0 0 * * TUE' -limit 4 {
         # logic
     }
 }
@@ -53,3 +53,4 @@ Server {
 | ScriptBlock | scriptblock | true | The main logic that will be invoked on each trigger | null |
 | StartTime | datetime | false | Defines when the schedule should start | now |
 | EndTime | datetime | false | Defines when the schedule should end | never |
+| Limit | int | false | The number of times the schedule should trigger before it is removed; 0 is unlimited | 0 |
