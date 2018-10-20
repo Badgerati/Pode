@@ -18,9 +18,9 @@ function Pode
         'name' = $name;
         'version' = '1.0.0';
         'description' = '';
-        'main' = './index.ps1';
+        'main' = './server.ps1';
         'scripts' = @{
-            'start' = './index.ps1';
+            'start' = './server.ps1';
             'install' = 'yarn install --force --ignore-scripts --modules-folder pode_modules';
             "build" = 'psake';
             'test' = 'invoke-pester ./tests/*.ps1'
