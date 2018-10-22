@@ -921,3 +921,69 @@ function Get-Count
 
     return ($Object | Measure-Object).Count
 }
+
+function Get-ContentAsBytes
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    if (Test-IsPSCore) {
+        return (Get-Content -Path $Path -Raw -AsByteStream)
+    }
+
+    return (Get-Content -Path $Path -Raw -Encoding byte)
+}
+
+function Test-PathAccess
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    try {
+        Get-Item $Path | Out-Null
+    }
+    catch [System.UnauthorizedAccessException] {
+        return $false
+    }
+
+    return $true
+}
+
+function Test-PodePath
+{
+    param (
+        [Parameter()]
+        $Path,
+
+        [switch]
+        $NoStatus
+    )
+
+    # if the file doesnt exist then fail on 404
+    if ((Test-Empty $Path) -or !(Test-Path $Path)) {
+        if (!$NoStatus) {
+            status 404
+        }
+
+        return $false
+    }
+
+    # if the file isn't accessible then fail 401
+    if (!(Test-PathAccess $Path)) {
+        if (!$NoStatus) {
+            status 401
+        }
+
+        return $false
+    }
+
+    return $true
+}

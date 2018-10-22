@@ -53,9 +53,8 @@ function Write-ToResponseFromFile
         $Path
     )
 
-    # if the file doesnt exist then just fail on 404
-    if (!(Test-Path $Path)) {
-        status 404
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path)) {
         return
     }
 
@@ -63,13 +62,7 @@ function Write-ToResponseFromFile
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
     if ((Test-Empty $ext) -or $ext -ine $PodeSession.Server.ViewEngine.Extension) {
-        if (Test-IsPSCore) {
-            $content = Get-Content -Path $Path -Raw -AsByteStream
-        }
-        else {
-            $content = Get-Content -Path $Path -Raw -Encoding byte
-        }
-
+        $content = Get-ContentAsBytes -Path $Path
         Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
         return
     }
@@ -108,9 +101,9 @@ function Attach
     # only download files from public/static-route directories
     $Path = Get-PodeStaticRoutePath -Path $Path
 
-    # if the file doesnt exist then just fail on 404
-    if (!(Test-Path $Path)) {
-        status 404
+
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path)) {
         return
     }
 
@@ -224,8 +217,8 @@ function Json
     )
 
     if ($File) {
-        if ($null -eq $Value -or !(Test-Path $Value)) {
-            status 404
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
             return
         }
         else {
@@ -254,8 +247,8 @@ function Csv
     )
 
     if ($File) {
-        if ($null -eq $Value -or !(Test-Path $Value)) {
-            status 404
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
             return
         }
         else {
@@ -293,8 +286,8 @@ function Xml
     )
 
     if ($File) {
-        if ($null -eq $Value -or !(Test-Path $Value)) {
-            status 404
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
             return
         }
         else {
@@ -327,8 +320,8 @@ function Html
     )
 
     if ($File) {
-        if ($Value -eq $Value -or !(Test-Path $Value)) {
-            status 404
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
             return
         }
         else {
@@ -374,7 +367,9 @@ function Include
 
     # only look in the view directory
     $Path = Join-ServerRoot 'views' $Path
-    if (!(Test-Path $Path)) {
+
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path -NoStatus)) {
         throw "File not found at path: $($Path)"
     }
 
@@ -439,8 +434,9 @@ function View
 
     # only look in the view directory
     $Path = Join-ServerRoot 'views' $Path
-    if (!(Test-Path $Path)) {
-        status 404
+
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path)) {
         return
     }
 
