@@ -31,8 +31,9 @@ function Invoke-PodeMiddleware
             $Session.Middleware.Clear()
         }
         catch {
-            $_.Exception | Out-Default
+            status 500
             $continue = $false
+            $_.Exception | Out-Default
         }
 
         if (!$continue) {

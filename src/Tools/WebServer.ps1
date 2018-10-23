@@ -112,35 +112,42 @@ function Start-WebServer
                 $task = $Listener.GetContextAsync()
                 $task.Wait($PodeSession.Tokens.Cancellation.Token)
 
-                $context = $task.Result
-                $request = $context.Request
-                $response = $context.Response
+                try
+                {
+                    $context = $task.Result
+                    $request = $context.Request
+                    $response = $context.Response
 
-                # reset session data
-                $WebSession = @{}
-                $WebSession.OnEnd = @()
-                $WebSession.Auth = @{}
-                $WebSession.Response = $response
-                $WebSession.Request = $request
-                $WebSession.Lockable = $PodeSession.Lockable
-                $WebSession.Path = ($request.RawUrl -isplit "\?")[0]
-                $WebSession.Method = $request.HttpMethod.ToLowerInvariant()
+                    # reset session data
+                    $WebSession = @{}
+                    $WebSession.OnEnd = @()
+                    $WebSession.Auth = @{}
+                    $WebSession.Response = $response
+                    $WebSession.Request = $request
+                    $WebSession.Lockable = $PodeSession.Lockable
+                    $WebSession.Path = ($request.RawUrl -isplit "\?")[0]
+                    $WebSession.Method = $request.HttpMethod.ToLowerInvariant()
 
-                # add logging endware for post-request
-                Add-PodeLogEndware -Session $WebSession
+                    # add logging endware for post-request
+                    Add-PodeLogEndware -Session $WebSession
 
-                # invoke middleware
-                if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $PodeSession.Server.Middleware)) {
-                    # get the route logic
-                    $route = Get-PodeRoute -HttpMethod $WebSession.Method -Route $WebSession.Path
-                    if ($null -eq $route) {
-                        $route = Get-PodeRoute -HttpMethod '*' -Route $WebSession.Path
+                    # invoke middleware
+                    if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $PodeSession.Server.Middleware)) {
+                        # get the route logic
+                        $route = Get-PodeRoute -HttpMethod $WebSession.Method -Route $WebSession.Path
+                        if ($null -eq $route) {
+                            $route = Get-PodeRoute -HttpMethod '*' -Route $WebSession.Path
+                        }
+
+                        # invoke route and custom middleware
+                        if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $route.Middleware)) {
+                            Invoke-ScriptBlock -ScriptBlock $route.Logic -Arguments $WebSession -Scoped
+                        }
                     }
-
-                    # invoke route and custom middleware
-                    if ((Invoke-PodeMiddleware -Session $WebSession -Middleware $route.Middleware)) {
-                        Invoke-ScriptBlock -ScriptBlock $route.Logic -Arguments $WebSession -Scoped
-                    }
+                }
+                catch {
+                    status 500
+                    $Error[0] | Out-Default
                 }
 
                 # invoke endware specifc to the current websession
