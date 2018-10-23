@@ -1,6 +1,6 @@
 function Start-TcpServer
 {
-    # ensure we have tcp handlers
+    # ensure we have tcp handler
     if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {
         throw 'No TCP handler has been passed'
     }

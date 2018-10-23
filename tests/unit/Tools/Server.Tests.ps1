@@ -7,6 +7,7 @@ $PodeSession = @{ 'Server' = $null; }
 Describe 'Start-PodeServer' {
     Mock Invoke-ScriptBlock { }
     Mock Start-TimerRunspace { }
+    Mock Start-ScheduleRunspace { }
     Mock Start-Sleep { }
     Mock Start-SmtpServer { }
     Mock Start-TcpServer { }
@@ -17,7 +18,8 @@ Describe 'Start-PodeServer' {
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
-        Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-TimerRunspace -Times 0 -Scope It
+        Assert-MockCalled Start-ScheduleRunspace -Times 0 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
         Assert-MockCalled Start-TcpServer -Times 0 -Scope It
         Assert-MockCalled Start-WebServer -Times 0 -Scope It
@@ -29,6 +31,7 @@ Describe 'Start-PodeServer' {
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 1 -Scope It
         Assert-MockCalled Start-TcpServer -Times 0 -Scope It
         Assert-MockCalled Start-WebServer -Times 0 -Scope It
@@ -40,6 +43,7 @@ Describe 'Start-PodeServer' {
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
         Assert-MockCalled Start-TcpServer -Times 1 -Scope It
         Assert-MockCalled Start-WebServer -Times 0 -Scope It
@@ -51,6 +55,7 @@ Describe 'Start-PodeServer' {
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
         Assert-MockCalled Start-TcpServer -Times 0 -Scope It
         Assert-MockCalled Start-WebServer -Times 1 -Scope It
@@ -62,6 +67,7 @@ Describe 'Start-PodeServer' {
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
         Assert-MockCalled Start-TcpServer -Times 0 -Scope It
         Assert-MockCalled Start-WebServer -Times 1 -Scope It

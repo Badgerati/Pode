@@ -105,6 +105,7 @@ function New-PodeSession
     $session.Server.Handlers = @{
         'tcp' = $null;
         'smtp' = $null;
+        'service' = $null;
     }
 
     # setup basic access placeholders

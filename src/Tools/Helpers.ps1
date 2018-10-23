@@ -533,7 +533,7 @@ function Close-Pode
         $Error[0] | Out-Default
     }
 
-    if ($Exit) {
+    if ($Exit -and $PodeSession.Server.Type -ine 'script') {
         Write-Host " Done" -ForegroundColor Green
     }
 }
