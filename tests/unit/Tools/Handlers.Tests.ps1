@@ -61,5 +61,14 @@ Describe 'Handler' {
             $handler | Should Not be $null
             $handler.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
         }
+
+        It 'Adds service handler' {
+            $PodeSession.Server = @{ 'Handlers' = @{}; }
+            Handler -Type Service -ScriptBlock { Write-Host 'hello' }
+
+            $handler = $PodeSession.Server.Handlers['service']
+            $handler | Should Not be $null
+            $handler.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        }
     }
 }

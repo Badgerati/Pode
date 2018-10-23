@@ -2,7 +2,7 @@ function Get-PodeTcpHandler
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('SMTP', 'TCP')]
+        [ValidateSet('SMTP', 'TCP', 'Service')]
         [string]
         $Type
     )
@@ -14,7 +14,7 @@ function Handler
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('SMTP', 'TCP')]
+        [ValidateSet('SMTP', 'TCP', 'Service')]
         [string]
         $Type,
 
