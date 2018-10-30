@@ -16,7 +16,7 @@ Server -Threads 2 {
     listen *:$Port http
 
     # log requests to the terminal
-    #logger terminal
+    logger terminal
 
     # set view engine to pode renderer
     engine pode
