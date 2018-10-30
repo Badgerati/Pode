@@ -163,3 +163,20 @@ These pages are checked in order, and if one is found then its content is return
 Invoke-WebRequest -Uri 'http://localhost:8080/assets/images/home' -Method Get
 ```
 
+The default pages can be configured in two ways; either by using the `-Defaults` parameter on the `route`, or by setting the list in the `pode.json` [configuration file](../../Configuration). To set the defaults to be only a `home.html` page, both ways would work as follows:
+
+*Defaults Parameter*
+```powershell
+route static '/assets' './content/assets' -d @('home.html')
+```
+
+*Configuration File*
+```json
+{
+    "web": {
+        "static": {
+            "defaults": [ "home.html" ]
+        }
+    }
+}
+```

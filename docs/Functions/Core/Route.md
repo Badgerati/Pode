@@ -62,7 +62,7 @@ Server {
 ```
 
 !!! tip
-    Furthermore, if you attempt to navigate to `http://localhost:8080/assets`, then Pode will attempt to display a default page such as `index.html`.
+    Furthermore, if you attempt to navigate to `http://localhost:8080/assets`, then Pode will attempt to display a default page such as `index.html` - [see here](../../../Tutorials/Routes/Overview#default-pages).
 
 ### Example 4
 
