@@ -133,11 +133,10 @@ function Start-PodeServer
 {
     try
     {
-        $_type = $PodeSession.Server.Type.ToUpperInvariant()
-
         # run the logic
         Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
 
+        $_type = $PodeSession.Server.Type.ToUpperInvariant()
         if ($_type -ine 'script')
         {
             # start runspace for timers

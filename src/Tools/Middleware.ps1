@@ -111,17 +111,16 @@ function Get-PodePublicMiddleware
     return (Get-PodeInbuiltMiddleware -Name '@public' -ScriptBlock {
         param($s)
 
-        # if path is not a public static file, return
-        if ((Split-Path -Leaf -Path $s.Path).IndexOf('.') -eq -1) {
-            return $true
-        }
-
         # get the static file path
         $path = Get-PodeStaticRoutePath -Path $s.Path
+        if ($null -eq $path) {
+            return $true
+        }
 
         # write the file to the response
         Write-ToResponseFromFile -Path $path
 
+        # static content found, stop
         return $false
     })
 }

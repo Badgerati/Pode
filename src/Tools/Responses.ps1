@@ -54,7 +54,7 @@ function Write-ToResponseFromFile
     )
 
     # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path)) {
+    if (!(Test-PodePath $Path -FailOnDirectory)) {
         return
     }
 

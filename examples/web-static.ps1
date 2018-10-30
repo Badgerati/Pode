@@ -16,13 +16,13 @@ Server -Threads 2 {
     listen *:$Port http
 
     # log requests to the terminal
-    logger terminal
+    #logger terminal
 
     # set view engine to pode renderer
     engine pode
 
     # STATIC asset folder route
-    route static '/assets' './assets'
+    route static '/assets' './assets' -d @('index.html')
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
