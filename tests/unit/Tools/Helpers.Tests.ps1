@@ -567,3 +567,53 @@ Describe 'ConvertFrom-PodeContent' {
         }
     }
 }
+
+Describe 'Get-NewGuid' {
+    It 'Returns a valid guid' {
+        (Get-NewGuid) | Should Not Be $null
+    }
+}
+
+Describe 'Test-PathIsFile' {
+    Context 'Null values' {
+        It 'Throws error for empty' {
+            { Test-PathIsFile -Path ([string]::Empty) } | Should Throw 'argument is null or empty'
+        }
+
+        It 'Throws error for null' {
+            { Test-PathIsFile -Path $null } | Should Throw 'argument is null or empty'
+        }
+    }
+
+    Context 'Valid values' {
+        It 'Returns true for a file' {
+            Test-PathIsFile -Path './some/path/file.txt' | Should Be $true
+        }
+
+        It 'Returns false for a directory' {
+            Test-PathIsFile -Path './some/path/folder' | Should Be $false
+        }
+    }
+}
+
+Describe 'Test-PathIsDirectory' {
+    Context 'Null values' {
+        It 'Throws error for empty' {
+            { Test-PathIsDirectory -Path ([string]::Empty) } | Should Throw 'argument is null or empty'
+        }
+
+        It 'Throws error for null' {
+            { Test-PathIsDirectory -Path $null } | Should Throw 'argument is null or empty'
+        }
+    }
+
+    Context 'Valid values' {
+        It 'Returns true for a directory' {
+            Test-PathIsDirectory -Path './some/path/folder' | Should Be $true
+        }
+
+        It 'Returns false for a file' {
+            Test-PathIsDirectory -Path './some/path/file.txt' | Should Be $false
+        }
+    }
+}

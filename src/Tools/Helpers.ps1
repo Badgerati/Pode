@@ -964,7 +964,10 @@ function Test-PodePath
         $Path,
 
         [switch]
-        $NoStatus
+        $NoStatus,
+
+        [switch]
+        $FailOnDirectory
     )
 
     # if the file doesnt exist then fail on 404
@@ -985,5 +988,38 @@ function Test-PodePath
         return $false
     }
 
+    # if we're failing on a directory then fail on 404
+    if ($FailOnDirectory -and (Test-PathIsDirectory $Path)) {
+        if (!$NoStatus) {
+            status 404
+        }
+
+        return $false
+    }
+
     return $true
+}
+
+function Test-PathIsFile
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
+}
+
+function Test-PathIsDirectory
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }

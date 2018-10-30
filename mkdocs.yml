@@ -20,6 +20,7 @@ nav:
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
     - External Modules: Tutorials/ExternalModules.md
+    - Configuration: Tutorials/Configuration.md
     - Routes:
       - Overview: Tutorials/Routes/Overview.md
       - Status Codes: Tutorials/Routes/StatusCodes.md

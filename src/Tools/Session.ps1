@@ -65,6 +65,14 @@ function New-PodeSession
     $session.Server.Interval = $Interval
     $session.Server.FileMonitor = $FileMonitor
 
+    # check if there is any global configuration
+    $session.Server.Configuration = @{}
+
+    $configPath = (Join-ServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
+    if (Test-PodePath -Path $configPath  -NoStatus) {
+        $session.Server.Configuration = (Get-Content $configPath -Raw | ConvertFrom-Json)
+    }
+
     # set the IP address details
     $session.Server.IP = @{
         'Address' = $null;

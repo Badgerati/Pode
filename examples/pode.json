@@ -1,0 +1,10 @@
+{
+    "web": {
+        "static": {
+            "defaults": [
+                "index.html",
+                "default.html"
+            ]
+        }
+    }
+}

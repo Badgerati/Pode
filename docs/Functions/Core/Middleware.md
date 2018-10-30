@@ -61,7 +61,7 @@ Middleware in Pode is executed in a specific order due to having inbuilt middlew
 
 * Access control - allowing/denying IP addresses (if `access` logic is defined)
 * Rate limiting - limiting access to IP addresses (if `limit` logic is defined)
-* Public content - content such as images/css/js in the public directory
+* Public content - static content such as images/css/js/html in the `/public` directory (or other defined static paths)
 * Body parsing - parsing request payload a JSON or XML
 * Querystring - getting any query string parameters currently on the request URL
 * Custom middleware - runs any defined middleware in the order it was created

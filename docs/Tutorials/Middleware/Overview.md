@@ -99,7 +99,7 @@ Although you can define your own custom middleware, Pode does have some legacy m
 
 * Access Rules      - allowing/denying IP addresses (if [`access`](../../../Functions/Core/Access) logic is defined)
 * Rate limiting     - limiting access to IP addresses (if [`limit`](../../../Functions/Core/Limit) logic is defined)
-* Public content    - content such as images/css/js in the `public` directory
+* Public content    - static content such as images/css/js/html in the `/public` directory (or other defined static paths)
 * Body parsing      - parsing request payload a JSON or XML
 * Querystring       - getting any query string parameters currently on the request URL
 * Custom middleware - runs any defined `middleware` in the order it was created
