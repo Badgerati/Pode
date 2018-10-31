@@ -37,7 +37,7 @@ Here, anyone who calls `http://localhost:8080/ping` will receive the following r
 }
 ```
 
-The scriptblock for the route will be supplied with a single argument that contains information about the current web request. This argument will contain the `Request` and `Response` objects, `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
+The scriptblock for the route will be supplied with a single argument that contains information about the current web event. This argument will contain the `Request` and `Response` objects, `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
 ## Payloads
 

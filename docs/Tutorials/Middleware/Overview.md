@@ -1,6 +1,6 @@
 # Middleware Overview
 
-When working with web servers in Pode - rest apis, routes, web-pages, etc. - they have support for using [`middleware`](../../../Functions/Core/Middleware). Middleware in Pode allows you to observe and edit the request/response objects for a current web request - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the `route` logic.
+When working with web servers in Pode - rest apis, routes, web-pages, etc. - they have support for using [`middleware`](../../../Functions/Core/Middleware). Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the `route` logic.
 
 Middleware is supported as a general [`middleware`](../../../Functions/Core/Middleware) function, as well as on the [`route`](../../../Functions/Core/Route) function for custom middleware - like authentication
 
@@ -16,7 +16,7 @@ The make-up of the `middleware` function is as follows:
 middleware <scriptblock> [-name <string>]
 ```
 
-The `middleware` function takes a scriptblock, of which itself accepts a single parameter for the current web session (similar to a `route`). The session object passed contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the session is just a `hashtable`. The `-Name` parameter is defined later, but it solely used for allowing you to override the inbuilt middleware of Pode.
+The `middleware` function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a `route`). The event object passed contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`. The `-Name` parameter is defined later, but it solely used for allowing you to override the inbuilt middleware of Pode.
 
 If you want to keep processing and proceed to the next middleware/route then `return $true` from the scriptblock, otherwise `return $false` and the response will be closed immediately.
 
@@ -25,11 +25,11 @@ The following example is middleware that observes the user agent of the request.
 ```powershell
 Server {
     middleware {
-        # session which contains the Request/Response, and other keys
-        param($session)
+        # event which contains the Request/Response, and other keys
+        param($event)
 
         # if the user agent is powershell, deny access
-        if ($session.Request.UserAgent -ilike '*powershell*') {
+        if ($event.Request.UserAgent -ilike '*powershell*') {
             # forbidden
             status 403
 
@@ -37,8 +37,8 @@ Server {
             return $false
         }
 
-        # create a new key on the session for the next middleware/route
-        $session.Agent = $session.Request.UserAgent
+        # create a new key on the event for the next middleware/route
+        $event.Agent = $event.Request.UserAgent
 
         # continue processing other middleware
         return $true
@@ -68,11 +68,11 @@ The following example defines a `scriptblock` to reject calls that come from a s
 Server {
     # custom middleware to reject access to a specific IP address
     $reject_ip = {
-        # same session object as supplied to global middleware/routes
-        param($session)
+        # same event object as supplied to global middleware/routes
+        param($event)
 
         # forbid access to the stated IP address
-        if ($session.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
+        if ($event.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
             status 403
             return $false
         }

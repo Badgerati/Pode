@@ -7,7 +7,7 @@ The `route` function allows you to bind logic to be invoked against a URL path a
 You can also use the `route` function to specify routes to static content paths. Normally if you request a static file Pode will check the `/public` directory, but you can specify other paths using `route static` (example below).
 
 !!! info
-    The scriptblock supplied for the main route logic is invoked with a single parameter. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
+    The scriptblock supplied for the main route logic is invoked with a single parameter for the current web event. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
 ## Examples
 
@@ -34,10 +34,10 @@ Server {
     listen *:8080 http
 
     route post '/users' {
-        param($session)
+        param($event)
 
         # create the user using POST data
-        $userId = New-DummyUser $session.Data.Email $session.Data.Name $session.Data.Password
+        $userId = New-DummyUser $event.Data.Email $event.Data.Name $event.Data.Password
 
         # return with userId
         json @{ 'userId' = $userId; }
@@ -73,10 +73,10 @@ Server {
     listen *:8080 http
 
     route get '/users/:userId'{
-        param($session)
+        param($event)
 
         # get the user, using the parameter userId
-        $user = Get-DummyUser -UserId $session.Parameters['userId']
+        $user = Get-DummyUser -UserId $event.Parameters['userId']
 
         # if no user, return 404
         if ($user -eq $null) {
@@ -98,16 +98,16 @@ Server {
     listen *:8080 http
 
     $agent_mid = {
-        param($session)
+        param($event)
 
-        if ($session.Request.UserAgent -ilike '*powershell*') {
+        if ($event.Request.UserAgent -ilike '*powershell*') {
             status 403
 
             # stop running
             return $false
         }
 
-        $session.Agent = $session.Request.UserAgent
+        $event.Agent = $event.Request.UserAgent
 
         # run the route logic
         return $true

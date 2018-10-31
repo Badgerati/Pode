@@ -14,7 +14,7 @@ function Write-ToResponse
         return
     }
 
-    $res = $WebSession.Response
+    $res = $WebEvent.Response
     if ($null -eq $res -or $null -eq $res.OutputStream -or !$res.OutputStream.CanWrite) {
         return
     }
@@ -114,17 +114,17 @@ function Attach
     $fs = [System.IO.File]::OpenRead($Path)
 
     # setup the response details and headers
-    $WebSession.Response.ContentLength64 = $fs.Length
-    $WebSession.Response.SendChunked = $false
-    $WebSession.Response.ContentType = (Get-PodeContentType -Extension $ext)
-    $WebSession.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
+    $WebEvent.Response.ContentLength64 = $fs.Length
+    $WebEvent.Response.SendChunked = $false
+    $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
+    $WebEvent.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
 
     # set file as an attachment on the response
     $buffer = [byte[]]::new(64 * 1024)
     $read = 0
 
     while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-        $WebSession.Response.OutputStream.Write($buffer, 0, $read)
+        $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
     }
 
     dispose $fs
@@ -145,10 +145,10 @@ function Status
         $Description
     )
 
-    $WebSession.Response.StatusCode = $Code
+    $WebEvent.Response.StatusCode = $Code
 
     if (!(Test-Empty $Description)) {
-        $WebSession.Response.StatusDescription = $Description
+        $WebEvent.Response.StatusDescription = $Description
     }
 }
 
@@ -177,7 +177,7 @@ function Redirect
     )
 
     if (Test-Empty $Url) {
-        $uri = $WebSession.Request.Url
+        $uri = $WebEvent.Request.Url
 
         $Protocol = $Protocol.ToLowerInvariant()
         if (Test-Empty $Protocol) {
@@ -196,7 +196,7 @@ function Redirect
         $Url = "$($Protocol)://$($uri.Host)$($PortStr)$($uri.PathAndQuery)"
     }
 
-    $WebSession.Response.RedirectLocation = $Url
+    $WebEvent.Response.RedirectLocation = $Url
 
     if ($Moved) {
         status 301 'Moved'
@@ -489,7 +489,7 @@ function Tcp
     )
 
     if ($null -eq $Client) {
-        $Client = $TcpSession.Client
+        $Client = $TcpEvent.Client
     }
 
     switch ($Action.ToLowerInvariant())

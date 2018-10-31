@@ -48,7 +48,7 @@ function Start-SmtpServer
         # scriptblock for the core smtp message processing logic
         $process = {
             # if there's no client, just return
-            if ($null -eq $TcpSession.Client) {
+            if ($null -eq $TcpEvent.Client) {
                 return
             }
 
@@ -72,8 +72,8 @@ function Start-SmtpServer
                         if ($msg.StartsWith('QUIT')) {
                             tcp write '221 Bye'
 
-                            if ($null -ne $TcpSession.Client -and $TcpSession.Client.Connected) {
-                                dispose $TcpSession.Client -Close
+                            if ($null -ne $TcpEvent.Client -and $TcpEvent.Client.Connected) {
+                                dispose $TcpEvent.Client -Close
                             }
 
                             break
@@ -99,14 +99,14 @@ function Start-SmtpServer
                             $data = (tcp read)
                             tcp write '250 OK'
 
-                            # set session data
-                            $SmtpSession.From = $mail_from
-                            $SmtpSession.To = $rcpt_tos
-                            $SmtpSession.Data = $data
-                            $SmtpSession.Lockable = $PodeSession.Lockable
+                            # set event data
+                            $SmtpEvent.From = $mail_from
+                            $SmtpEvent.To = $rcpt_tos
+                            $SmtpEvent.Data = $data
+                            $SmtpEvent.Lockable = $PodeSession.Lockable
 
                             # call user handlers for processing smtp data
-                            Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpSession -Scoped
+                            Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
 
                             # reset the to list
                             $rcpt_tos = @()
@@ -138,8 +138,8 @@ function Start-SmtpServer
 
                 # deal with smtp call
                 else {
-                    $SmtpSession = @{}
-                    $TcpSession = @{
+                    $SmtpEvent = @{}
+                    $TcpEvent = @{
                         'Client' = $client;
                         'Lockable' = $PodeSession.Lockable
                     }

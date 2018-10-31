@@ -14,10 +14,10 @@ Server {
     listen *:8080 http
 
     logger custom_terminal {
-        param($obj)
+        param($event)
 
-        $method = $obj.Log.Request.Method
-        $resource = $obj.Log.Request.Resource
+        $method = $event.Log.Request.Method
+        $resource = $event.Log.Request.Resource
 
         "[$($method)] $($resource)" | Out-Default
     }
