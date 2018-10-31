@@ -8,14 +8,14 @@ To setup and start using Custom authentication in Pode you can set `auth use -c 
 
 Let's say we wanted something similar to [`Form`](../Form) authentication but it requires a third piece of information: `ClientName`. To setup Custom authentication for this method, you'll need to specify the parsing scriptblock under `-p`, as well as the validator script too.
 
-The parsing script will be passed the current request session (containing the Request/Response objects, much like a `route`). In this script you can parse the request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either a `hashtable` or an `array`; this data will then `splatted` onto the validator scriptblock ([info](../../../Functions/Helpers/Invoke-ScriptBlock)):
+The parsing script will be passed the current web event (containing the `Request`/`Response` objects, much like a `route`). In this script you can parse the request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either a `hashtable` or an `array`; this data will then `splatted` onto the validator scriptblock ([info](../../../Functions/Helpers/Invoke-ScriptBlock)):
 
 ```powershell
 Server {
     # here we're calling the custom method "client"
     auth use -c client -p {
-        # the current request session, and auth method options supplied
-        param($session, $opts)
+        # the current web event, and auth method options supplied
+        param($event, $opts)
 
         # get client/user/pass field names to get from payload
         $clientField = (coalesce $opts.ClientField 'client')
@@ -23,9 +23,9 @@ Server {
         $passField = (coalesce $opts.PasswordField 'password')
 
         # get the client/user/pass from the post data
-        $client = $session.Data.$clientField
-        $username = $session.Data.$userField
-        $password = $session.Data.$passField
+        $client = $event.Data.$clientField
+        $username = $event.Data.$userField
+        $password = $event.Data.$passField
 
         # return the data, to be passed to the validator script
         return @($client, $username, $password)
@@ -72,8 +72,8 @@ Server {
 
     # here we're calling the custom method "client"
     auth use -c client -p {
-        # the current request session, and auth method options supplied
-        param($session, $opts)
+        # the current web event, and auth method options supplied
+        param($event, $opts)
 
         # get client/user/pass field names to get from payload
         $clientField = (coalesce $opts.ClientField 'client')
@@ -81,9 +81,9 @@ Server {
         $passField = (coalesce $opts.PasswordField 'password')
 
         # get the client/user/pass from the post data
-        $client = $session.Data.$clientField
-        $username = $session.Data.$userField
-        $password = $session.Data.$passField
+        $client = $event.Data.$clientField
+        $username = $event.Data.$userField
+        $password = $event.Data.$passField
 
         # return the data, to be passed to the validator script
         return @($client, $username, $password)

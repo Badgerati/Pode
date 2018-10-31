@@ -54,10 +54,10 @@ Server {
 
     # render the search.pode view
     route get '/' {
-        param($session)
+        param($event)
 
         # some logic to get accounts
-        $query = $session.Query['query']
+        $query = $event.Query['query']
         $accounts = Find-Account -Query $query
 
         # render the file

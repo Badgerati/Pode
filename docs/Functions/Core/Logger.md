@@ -10,7 +10,7 @@ When logging to a file, you can specify a custom path to create the log files, a
 
 ### Example 1
 
-The following example will log web requests to the terminal:
+The following example will log web events to the terminal:
 
 ```powershell
 Server {
@@ -20,7 +20,7 @@ Server {
 
 ### Example 2
 
-The following example will log web requests to a file. The log files will be placed at `c:\logs` (default is `/logs` at the root), and will be split down by day; they will also only be kept for 7 days (default is forever) - any log file older than 7 days will automatically be deleted:
+The following example will log web events to a file. The log files will be placed at `c:\logs` (default is `/logs` at the root), and will be split down by day; they will also only be kept for 7 days (default is forever) - any log file older than 7 days will automatically be deleted:
 
 ```powershell
 Server {

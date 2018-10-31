@@ -36,8 +36,8 @@ Server {
 
     # create a new timer via a route
     route 'get' '/api/timer' {
-        param($session)
-        $query = $session.Query
+        param($event)
+        $query = $event.Query
 
         timer $query['Name'] $query['Seconds'] {
             # logic

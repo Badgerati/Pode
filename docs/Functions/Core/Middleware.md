@@ -4,25 +4,25 @@
 
 The `middleware` function allows you to add middleware scripts, that run prior to `route` logic. They allow you to do things like rate-limiting, access restriction, sessions, etc.
 
-Middleware in Pode allows you to observe and edit the request/response objects for a current web request - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the `route` logic.
+Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the `route` logic.
 
 ## Examples
 
 ### Example 1
 
-The following example is `middleware` that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new Agent key on the session for later `middleware`/`route`:
+The following example is `middleware` that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new Agent key on the event for later `middleware`/`route`:
 
 ```powershell
 Server {
     middleware {
-        param($session)
+        param($event)
 
-        if ($session.Request.UserAgent -ilike '*powershell*') {
+        if ($event.Request.UserAgent -ilike '*powershell*') {
             status 403
             return $false
         }
 
-        $session.Agent = $session.Request.UserAgent
+        $event.Agent = $event.Request.UserAgent
         return $true
     }
 }

@@ -3,7 +3,7 @@ function Invoke-PodeMiddleware
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Session,
+        $WebEvent,
 
         [Parameter()]
         $Middleware
@@ -22,13 +22,13 @@ function Invoke-PodeMiddleware
     {
         try {
             # set any custom middleware options
-            $Session.Middleware = @{ 'Options' = $midware.Options }
+            $WebEvent.Middleware = @{ 'Options' = $midware.Options }
 
             # invoke the middleware logic
-            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $Session -Scoped -Return
+            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $WebEvent -Scoped -Return
 
             # remove any custom middleware options
-            $Session.Middleware.Clear()
+            $WebEvent.Middleware.Clear()
         }
         catch {
             status 500
@@ -145,7 +145,7 @@ function Get-PodeRouteValidateMiddleware
             }
 
             # set the route parameters
-            $WebSession.Parameters = $route.Parameters
+            $WebEvent.Parameters = $route.Parameters
 
             # route exists
             return $true

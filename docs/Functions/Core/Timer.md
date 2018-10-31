@@ -52,8 +52,8 @@ The following example will create a new `timer` every time the `route` is called
 ```powershell
 Server {
     route 'get' '/api/timer' {
-        param($session)
-        $query = $session.Query
+        param($event)
+        $query = $event.Query
 
         timer $query['Name'] $query['Seconds'] {
             # logic

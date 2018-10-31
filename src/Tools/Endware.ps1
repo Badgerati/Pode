@@ -3,7 +3,7 @@ function Invoke-PodeEndware
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Session,
+        $WebEvent,
 
         [Parameter()]
         $Endware
@@ -18,7 +18,7 @@ function Invoke-PodeEndware
     foreach ($eware in @($Endware))
     {
         try {
-            Invoke-ScriptBlock -ScriptBlock $eware -Arguments $Session -Scoped | Out-Null
+            Invoke-ScriptBlock -ScriptBlock $eware -Arguments $WebEvent -Scoped | Out-Null
         }
         catch {
             $Error[0] | Out-Default
