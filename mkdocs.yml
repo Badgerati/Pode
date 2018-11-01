@@ -10,6 +10,7 @@ nav:
     - CLI: Getting-Started/CLI.md
     - Docker: Getting-Started/Docker.md
     - Frontend: Getting-Started/Frontend.md
+    - Run as a Service: Getting-Started/RunAsService.md
 
   - Tutorials:
     - Basics: Tutorials/Basics.md
