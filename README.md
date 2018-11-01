@@ -10,7 +10,7 @@
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs](#rest-api), [Web Pages](#web-pages) and [SMTP/TCP](#smtp-server) servers. It also allows you to render dynamic files using [Pode](#pode-files) files, which is effectively embedded PowerShell, or other [Third-Party](#third-party-view-engines) template engines.
+Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/) and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) servers. It also allows you to render dynamic files using [Pode](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which is effectively embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines.
 
 ## Documentation
 
@@ -24,10 +24,26 @@ Invoke-Build Docs
 
 Then navigate to `http://127.0.0.1:8000` in your browser.
 
+## Build Your First App
+
+Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will listen on a port, create the route, and respond with JSON when `http://localhost:8080/ping` is hit:
+
+```powershell
+Server {
+    listen *:8080 http
+
+    route get '/ping' {
+        json @{ 'value' = 'pong' }
+    }
+}
+```
+
+See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app!
+
 ## Features
 
 * Can run on *nix environments using PowerShell Core
-* Host REST APIs, Web Pages, TCP and SMTP server
+* Host REST APIs, Web Pages, Static Content, TCP and SMTP server
 * Multiple threads can be used to response to incoming requests
 * Inbuilt template engine, with support for third-parties
 * Setup async timers to be used as one off tasks, or for housekeeping services
@@ -55,7 +71,3 @@ Install-Module -Name Pode
 # docker
 docker pull badgerati/pode
 ```
-
-## Build Your First App
-
-See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app!
