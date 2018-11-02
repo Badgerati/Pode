@@ -407,6 +407,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
+      Run as a Service
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -532,15 +544,27 @@
           
 
 
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-9" type="checkbox" id="nav-4-9">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
-    <label class="md-nav__link" for="nav-4-9">
+    <label class="md-nav__link" for="nav-4-10">
       Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-9">
+      <label class="md-nav__title" for="nav-4-10">
         Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -618,13 +642,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
     
-    <label class="md-nav__link" for="nav-4-10">
+    <label class="md-nav__link" for="nav-4-11">
       Middleware
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-10">
+      <label class="md-nav__title" for="nav-4-11">
         Middleware
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -690,13 +714,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
     
-    <label class="md-nav__link" for="nav-4-11">
+    <label class="md-nav__link" for="nav-4-12">
       Logging
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-11">
+      <label class="md-nav__title" for="nav-4-12">
         Logging
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -762,13 +786,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13" type="checkbox" id="nav-4-13">
     
-    <label class="md-nav__link" for="nav-4-12">
+    <label class="md-nav__link" for="nav-4-13">
       Authentication
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-12">
+      <label class="md-nav__title" for="nav-4-13">
         Authentication
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -846,13 +870,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
     
-    <label class="md-nav__link" for="nav-4-14">
+    <label class="md-nav__link" for="nav-4-15">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-14">
+      <label class="md-nav__title" for="nav-4-15">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1628,7 +1652,7 @@
 <p>The <code>state</code> function overcomes this by letting you create a variable in a <code>timer</code> and set it against the shared state, then you can retrieve that variable from the state in a <code>route</code>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>It's wise to use the <code>state</code> function in conjunction with the <code>lock</code> function, so as to ensure thread safety between runspaces. The session object supplied to a <code>route</code>, <code>timer</code>, <code>schedule</code> and <code>logger</code> each contain a <code>.Lockable</code> resource that can be supplied to the <code>lock</code> function.</p>
+<p>It's wise to use the <code>state</code> function in conjunction with the <code>lock</code> function, so as to ensure thread safety between runspaces. The <code>event</code> object supplied to a <code>route</code>, <code>timer</code>, <code>schedule</code> and <code>logger</code> each contain a <code>.Lockable</code> resource that can be supplied to the <code>lock</code> function.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -1641,11 +1665,11 @@
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">timer</span> <span class="s1">&#39;forever&#39;</span> <span class="n">2</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
         <span class="nv">$hash</span> <span class="p">=</span> <span class="nv">$null</span>
 
         <span class="c"># create a lock on a pode lockable resource for safety</span>
-        <span class="n">lock</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
 
             <span class="c"># first, attempt to get the hashtable from the state</span>
             <span class="nv">$hash</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>
@@ -1662,10 +1686,10 @@
     <span class="p">}</span>
 
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/state&#39;</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
 
         <span class="c"># create another lock on the same lockable resource</span>
-        <span class="n">lock</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
 
             <span class="c"># get the hashtable defined in the timer above, and return it as json</span>
             <span class="nv">$hash</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>

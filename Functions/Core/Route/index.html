@@ -407,6 +407,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
+      Run as a Service
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -532,15 +544,27 @@
           
 
 
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-9" type="checkbox" id="nav-4-9">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
-    <label class="md-nav__link" for="nav-4-9">
+    <label class="md-nav__link" for="nav-4-10">
       Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-9">
+      <label class="md-nav__title" for="nav-4-10">
         Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -618,13 +642,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
     
-    <label class="md-nav__link" for="nav-4-10">
+    <label class="md-nav__link" for="nav-4-11">
       Middleware
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-10">
+      <label class="md-nav__title" for="nav-4-11">
         Middleware
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -690,13 +714,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
     
-    <label class="md-nav__link" for="nav-4-11">
+    <label class="md-nav__link" for="nav-4-12">
       Logging
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-11">
+      <label class="md-nav__title" for="nav-4-12">
         Logging
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -762,13 +786,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13" type="checkbox" id="nav-4-13">
     
-    <label class="md-nav__link" for="nav-4-12">
+    <label class="md-nav__link" for="nav-4-13">
       Authentication
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-12">
+      <label class="md-nav__title" for="nav-4-13">
         Authentication
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -846,13 +870,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
     
-    <label class="md-nav__link" for="nav-4-14">
+    <label class="md-nav__link" for="nav-4-15">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-14">
+      <label class="md-nav__title" for="nav-4-15">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1684,7 +1708,7 @@
 <p>You can also use the <code>route</code> function to specify routes to static content paths. Normally if you request a static file Pode will check the <code>/public</code> directory, but you can specify other paths using <code>route static</code> (example below).</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>The scriptblock supplied for the main route logic is invoked with a single parameter. This parameter will contain the <code>Request</code> and <code>Response</code> objects; <code>Data</code> (from POST requests), and the <code>Query</code> (from the query string of the URL), as well as any <code>Parameters</code> from the route itself (eg: <code>/:accountId</code>).</p>
+<p>The scriptblock supplied for the main route logic is invoked with a single parameter for the current web event. This parameter will contain the <code>Request</code> and <code>Response</code> objects; <code>Data</code> (from POST requests), and the <code>Query</code> (from the query string of the URL), as well as any <code>Parameters</code> from the route itself (eg: <code>/:accountId</code>).</p>
 </div>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
@@ -1705,10 +1729,10 @@
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">route</span> <span class="n">post</span> <span class="s1">&#39;/users&#39;</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
 
         <span class="c"># create the user using POST data</span>
-        <span class="nv">$userId</span> <span class="p">=</span> <span class="nb">New-DummyUser</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Email</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Name</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Password</span>
+        <span class="nv">$userId</span> <span class="p">=</span> <span class="nb">New-DummyUser</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Email</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Name</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Password</span>
 
         <span class="c"># return with userId</span>
         <span class="n">json</span> <span class="p">@{</span> <span class="s1">&#39;userId&#39;</span> <span class="p">=</span> <span class="nv">$userId</span><span class="p">;</span> <span class="p">}</span>
@@ -1718,29 +1742,33 @@
 
 
 <h3 id="example-3">Example 3</h3>
-<p>The following example sets up a static route of <code>/assets</code> using the directory <code>./content/assets</code>. In the <code>index.html</code> view if you reference the image <code>&lt;img src="/assets/images/icon.png" /&gt;</code>, then Pode will get the image from <code>./content/assets/images/icon.png</code>:</p>
+<p>The following example sets up a static route of <code>/assets</code> using the directory <code>./content/assets</code>. In the <code>home.html</code> view if you reference the image <code>&lt;img src="/assets/images/icon.png" /&gt;</code>, then Pode will get the image from <code>./content/assets/images/icon.png</code>.</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">route</span> <span class="n">static</span> <span class="s1">&#39;/assets&#39;</span> <span class="s1">&#39;./content/assets&#39;</span>
 
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
-        <span class="n">view</span> <span class="s1">&#39;index&#39;</span>
+        <span class="n">view</span> <span class="s1">&#39;home&#39;</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Furthermore, if you attempt to navigate to <code>http://localhost:8080/assets</code>, then Pode will attempt to display a default page such as <code>index.html</code> - <a href="../../../Tutorials/Routes/Overview#default-pages">see here</a>.</p>
+</div>
 <h3 id="example-4">Example 4</h3>
 <p>The following example sets up a <code>GET /users/:userId</code> route, that returns a user based on the route parameter <code>userId</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/users/:userId&#39;</span><span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
 
         <span class="c"># get the user, using the parameter userId</span>
-        <span class="nv">$user</span> <span class="p">=</span> <span class="nb">Get-DummyUser</span> <span class="n">-UserId</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Parameters</span><span class="p">[</span><span class="s1">&#39;userId&#39;</span><span class="p">]</span>
+        <span class="nv">$user</span> <span class="p">=</span> <span class="nb">Get-DummyUser</span> <span class="n">-UserId</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Parameters</span><span class="p">[</span><span class="s1">&#39;userId&#39;</span><span class="p">]</span>
 
         <span class="c"># if no user, return 404</span>
         <span class="k">if</span> <span class="p">(</span><span class="nv">$user</span> <span class="o">-eq</span> <span class="nv">$null</span><span class="p">)</span> <span class="p">{</span>
@@ -1760,16 +1788,16 @@
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="nv">$agent_mid</span> <span class="p">=</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nv">$session</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span> <span class="o">-ilike</span> <span class="s1">&#39;*powershell*&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$event</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span> <span class="o">-ilike</span> <span class="s1">&#39;*powershell*&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="n">status</span> <span class="n">403</span>
 
             <span class="c"># stop running</span>
             <span class="k">return</span> <span class="nv">$false</span>
         <span class="p">}</span>
 
-        <span class="nv">$session</span><span class="p">.</span><span class="n">Agent</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span>
+        <span class="nv">$event</span><span class="p">.</span><span class="n">Agent</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span>
 
         <span class="c"># run the route logic</span>
         <span class="k">return</span> <span class="nv">$true</span>
@@ -1805,22 +1833,15 @@
 <td>Route</td>
 <td>string</td>
 <td>true</td>
-<td>The route path to listen on, the root path is <code>/</code>. The path can also contain parmeters such as <code>/:userId</code></td>
+<td>The route path to listen on, the root path is <code>/</code>. The path can also contain parameters such as <code>/:userId</code></td>
 <td>empty</td>
 </tr>
 <tr>
 <td>Middleware</td>
-<td>scriptblock[]</td>
+<td>object[]</td>
 <td>false</td>
-<td>Custom middleware for the <code>route</code> that will be invoked before the main logic is invoked - such as authentication.</td>
+<td>Custom middleware for the <code>route</code> that will be invoked before the main logic is invoked - such as authentication. For non-static routes this is an array of <code>scriptblocks</code>, but for a static route this is the path to the static content directory</td>
 <td>null</td>
-</tr>
-<tr>
-<td>Path</td>
-<td>string</td>
-<td>false</td>
-<td>For <code>static</code> routes this is the path to the static content directory</td>
-<td>empty</td>
 </tr>
 <tr>
 <td>ScriptBlock</td>
@@ -1828,6 +1849,13 @@
 <td>true</td>
 <td>The main route logic that will be invoked when the route endpoint is hit</td>
 <td>null</td>
+</tr>
+<tr>
+<td>Defaults</td>
+<td>string[]</td>
+<td>false</td>
+<td>For static routes only, this is an array of default pages that could be displayed when the static directory is called</td>
+<td>['index.html', 'index.htm', 'default.html', 'default.htm']</td>
 </tr>
 </tbody>
 </table>

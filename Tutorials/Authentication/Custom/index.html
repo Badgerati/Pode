@@ -407,6 +407,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
+      Run as a Service
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -534,15 +546,27 @@
           
 
 
+  <li class="md-nav__item">
+    <a href="../../Configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-9" type="checkbox" id="nav-4-9">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
-    <label class="md-nav__link" for="nav-4-9">
+    <label class="md-nav__link" for="nav-4-10">
       Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-9">
+      <label class="md-nav__title" for="nav-4-10">
         Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -620,13 +644,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
     
-    <label class="md-nav__link" for="nav-4-10">
+    <label class="md-nav__link" for="nav-4-11">
       Middleware
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-10">
+      <label class="md-nav__title" for="nav-4-11">
         Middleware
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -692,13 +716,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
     
-    <label class="md-nav__link" for="nav-4-11">
+    <label class="md-nav__link" for="nav-4-12">
       Logging
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-11">
+      <label class="md-nav__title" for="nav-4-12">
         Logging
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -766,13 +790,13 @@
 
   <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13" type="checkbox" id="nav-4-13" checked>
     
-    <label class="md-nav__link" for="nav-4-12">
+    <label class="md-nav__link" for="nav-4-13">
       Authentication
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-12">
+      <label class="md-nav__title" for="nav-4-13">
         Authentication
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -909,13 +933,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
     
-    <label class="md-nav__link" for="nav-4-14">
+    <label class="md-nav__link" for="nav-4-15">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-14">
+      <label class="md-nav__title" for="nav-4-15">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1615,12 +1639,12 @@
 <h2 id="setup-and-parsing">Setup and Parsing</h2>
 <p>To setup and start using Custom authentication in Pode you can set <code>auth use -c &lt;name&gt;</code> in you server script. The <code>&lt;name&gt;</code> can be anything you want, even the name of an inbuilt method (it will still use your custom logic!).</p>
 <p>Let's say we wanted something similar to <a href="../Form"><code>Form</code></a> authentication but it requires a third piece of information: <code>ClientName</code>. To setup Custom authentication for this method, you'll need to specify the parsing scriptblock under <code>-p</code>, as well as the validator script too.</p>
-<p>The parsing script will be passed the current request session (containing the Request/Response objects, much like a <code>route</code>). In this script you can parse the request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either a <code>hashtable</code> or an <code>array</code>; this data will then <code>splatted</code> onto the validator scriptblock (<a href="../../../Functions/Helpers/Invoke-ScriptBlock">info</a>):</p>
+<p>The parsing script will be passed the current web event (containing the <code>Request</code>/<code>Response</code> objects, much like a <code>route</code>). In this script you can parse the request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either a <code>hashtable</code> or an <code>array</code>; this data will then <code>splatted</code> onto the validator scriptblock (<a href="../../../Functions/Helpers/Invoke-ScriptBlock">info</a>):</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="c"># here we&#39;re calling the custom method &quot;client&quot;</span>
     <span class="n">auth</span> <span class="n">use</span> <span class="n">-c</span> <span class="n">client</span> <span class="n">-p</span> <span class="p">{</span>
-        <span class="c"># the current request session, and auth method options supplied</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">)</span>
+        <span class="c"># the current web event, and auth method options supplied</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">)</span>
 
         <span class="c"># get client/user/pass field names to get from payload</span>
         <span class="nv">$clientField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">ClientField</span> <span class="s1">&#39;client&#39;</span><span class="p">)</span>
@@ -1628,9 +1652,9 @@
         <span class="nv">$passField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">PasswordField</span> <span class="s1">&#39;password&#39;</span><span class="p">)</span>
 
         <span class="c"># get the client/user/pass from the post data</span>
-        <span class="nv">$client</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$clientField</span>
-        <span class="nv">$username</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$userField</span>
-        <span class="nv">$password</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$passField</span>
+        <span class="nv">$client</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$clientField</span>
+        <span class="nv">$username</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$userField</span>
+        <span class="nv">$password</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$passField</span>
 
         <span class="c"># return the data, to be passed to the validator script</span>
         <span class="k">return</span> <span class="p">@(</span><span class="nv">$client</span><span class="p">,</span> <span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
@@ -1671,8 +1695,8 @@
 
     <span class="c"># here we&#39;re calling the custom method &quot;client&quot;</span>
     <span class="n">auth</span> <span class="n">use</span> <span class="n">-c</span> <span class="n">client</span> <span class="n">-p</span> <span class="p">{</span>
-        <span class="c"># the current request session, and auth method options supplied</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">)</span>
+        <span class="c"># the current web event, and auth method options supplied</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">)</span>
 
         <span class="c"># get client/user/pass field names to get from payload</span>
         <span class="nv">$clientField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">ClientField</span> <span class="s1">&#39;client&#39;</span><span class="p">)</span>
@@ -1680,9 +1704,9 @@
         <span class="nv">$passField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">PasswordField</span> <span class="s1">&#39;password&#39;</span><span class="p">)</span>
 
         <span class="c"># get the client/user/pass from the post data</span>
-        <span class="nv">$client</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$clientField</span>
-        <span class="nv">$username</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$userField</span>
-        <span class="nv">$password</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$passField</span>
+        <span class="nv">$client</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$clientField</span>
+        <span class="nv">$username</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$userField</span>
+        <span class="nv">$password</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$passField</span>
 
         <span class="c"># return the data, to be passed to the validator script</span>
         <span class="k">return</span> <span class="p">@(</span><span class="nv">$client</span><span class="p">,</span> <span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>

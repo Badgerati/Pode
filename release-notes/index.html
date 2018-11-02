@@ -347,6 +347,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0210" title="v0.21.0" class="md-nav__link">
+    v0.21.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0200" title="v0.20.0" class="md-nav__link">
     v0.20.0
   </a>
@@ -534,6 +541,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
+      Run as a Service
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -659,15 +678,27 @@
           
 
 
+  <li class="md-nav__item">
+    <a href="../Tutorials/Configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-9" type="checkbox" id="nav-4-9">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
-    <label class="md-nav__link" for="nav-4-9">
+    <label class="md-nav__link" for="nav-4-10">
       Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-9">
+      <label class="md-nav__title" for="nav-4-10">
         Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -745,13 +776,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
     
-    <label class="md-nav__link" for="nav-4-10">
+    <label class="md-nav__link" for="nav-4-11">
       Middleware
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-10">
+      <label class="md-nav__title" for="nav-4-11">
         Middleware
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -817,13 +848,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
     
-    <label class="md-nav__link" for="nav-4-11">
+    <label class="md-nav__link" for="nav-4-12">
       Logging
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-11">
+      <label class="md-nav__title" for="nav-4-12">
         Logging
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -889,13 +920,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13" type="checkbox" id="nav-4-13">
     
-    <label class="md-nav__link" for="nav-4-12">
+    <label class="md-nav__link" for="nav-4-13">
       Authentication
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-12">
+      <label class="md-nav__title" for="nav-4-13">
         Authentication
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -973,13 +1004,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
     
-    <label class="md-nav__link" for="nav-4-14">
+    <label class="md-nav__link" for="nav-4-15">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-14">
+      <label class="md-nav__title" for="nav-4-15">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1628,6 +1659,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0210" title="v0.21.0" class="md-nav__link">
+    v0.21.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0200" title="v0.20.0" class="md-nav__link">
     v0.20.0
   </a>
@@ -1745,6 +1783,23 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v0210">v0.21.0</h2>
+<div class="codehilite"><pre><span></span>### Enhancements
+* #110: Return a 401 for inaccessible files
+* #116: Support on custom static content, for returning `index.html` or `default.html` (plus others), if a directory is requested
+
+### Bugs
+* #111: Separate out the `service` server type into own runspace
+* #112: Server should return a 500 if middleware/route fails unexpectedly, rather than a 200
+
+### Documentation
+* #120: Added examples of running scripts as Windows or Linux services [here](https://badgerati.github.io/Pode/Getting-Started/RunAsService/)
+
+### Clean-Up
+* #118: Rename `$WebSession` to `$WebEvent` - internal references only
+</pre></div>
+
+
 <h2 id="v0200">v0.20.0</h2>
 <div class="codehilite"><pre><span></span>### Documentation
 * Extended documentation for third-party template engines

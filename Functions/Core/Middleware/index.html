@@ -407,6 +407,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
+      Run as a Service
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -532,15 +544,27 @@
           
 
 
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-9" type="checkbox" id="nav-4-9">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
-    <label class="md-nav__link" for="nav-4-9">
+    <label class="md-nav__link" for="nav-4-10">
       Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-9">
+      <label class="md-nav__title" for="nav-4-10">
         Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -618,13 +642,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
     
-    <label class="md-nav__link" for="nav-4-10">
+    <label class="md-nav__link" for="nav-4-11">
       Middleware
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-10">
+      <label class="md-nav__title" for="nav-4-11">
         Middleware
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -690,13 +714,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
     
-    <label class="md-nav__link" for="nav-4-11">
+    <label class="md-nav__link" for="nav-4-12">
       Logging
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-11">
+      <label class="md-nav__title" for="nav-4-12">
         Logging
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -762,13 +786,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13" type="checkbox" id="nav-4-13">
     
-    <label class="md-nav__link" for="nav-4-12">
+    <label class="md-nav__link" for="nav-4-13">
       Authentication
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-12">
+      <label class="md-nav__title" for="nav-4-13">
         Authentication
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -846,13 +870,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
     
-    <label class="md-nav__link" for="nav-4-14">
+    <label class="md-nav__link" for="nav-4-15">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-14">
+      <label class="md-nav__title" for="nav-4-15">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1653,20 +1677,20 @@
                 <h1 id="middleware">Middleware</h1>
 <h2 id="description">Description</h2>
 <p>The <code>middleware</code> function allows you to add middleware scripts, that run prior to <code>route</code> logic. They allow you to do things like rate-limiting, access restriction, sessions, etc.</p>
-<p>Middleware in Pode allows you to observe and edit the request/response objects for a current web request - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the <code>route</code> logic.</p>
+<p>Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the <code>route</code> logic.</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
-<p>The following example is <code>middleware</code> that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new Agent key on the session for later <code>middleware</code>/<code>route</code>:</p>
+<p>The following example is <code>middleware</code> that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new Agent key on the event for later <code>middleware</code>/<code>route</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">middleware</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nv">$session</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span> <span class="o">-ilike</span> <span class="s1">&#39;*powershell*&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$event</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span> <span class="o">-ilike</span> <span class="s1">&#39;*powershell*&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="n">status</span> <span class="n">403</span>
             <span class="k">return</span> <span class="nv">$false</span>
         <span class="p">}</span>
 
-        <span class="nv">$session</span><span class="p">.</span><span class="n">Agent</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span>
+        <span class="nv">$event</span><span class="p">.</span><span class="n">Agent</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span>
         <span class="k">return</span> <span class="nv">$true</span>
     <span class="p">}</span>
 <span class="p">}</span>
@@ -1724,7 +1748,7 @@
 <ul>
 <li>Access control - allowing/denying IP addresses (if <code>access</code> logic is defined)</li>
 <li>Rate limiting - limiting access to IP addresses (if <code>limit</code> logic is defined)</li>
-<li>Public content - content such as images/css/js in the public directory</li>
+<li>Public content - static content such as images/css/js/html in the <code>/public</code> directory (or other defined static paths)</li>
 <li>Body parsing - parsing request payload a JSON or XML</li>
 <li>Querystring - getting any query string parameters currently on the request URL</li>
 <li>Custom middleware - runs any defined middleware in the order it was created</li>

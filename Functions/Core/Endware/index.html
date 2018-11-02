@@ -407,6 +407,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
+      Run as a Service
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -532,15 +544,27 @@
           
 
 
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-9" type="checkbox" id="nav-4-9">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
-    <label class="md-nav__link" for="nav-4-9">
+    <label class="md-nav__link" for="nav-4-10">
       Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-9">
+      <label class="md-nav__title" for="nav-4-10">
         Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -618,13 +642,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
     
-    <label class="md-nav__link" for="nav-4-10">
+    <label class="md-nav__link" for="nav-4-11">
       Middleware
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-10">
+      <label class="md-nav__title" for="nav-4-11">
         Middleware
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -690,13 +714,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
     
-    <label class="md-nav__link" for="nav-4-11">
+    <label class="md-nav__link" for="nav-4-12">
       Logging
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-11">
+      <label class="md-nav__title" for="nav-4-12">
         Logging
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -762,13 +786,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-12" type="checkbox" id="nav-4-12">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13" type="checkbox" id="nav-4-13">
     
-    <label class="md-nav__link" for="nav-4-12">
+    <label class="md-nav__link" for="nav-4-13">
       Authentication
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-12">
+      <label class="md-nav__title" for="nav-4-13">
         Authentication
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -846,13 +870,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
     
-    <label class="md-nav__link" for="nav-4-14">
+    <label class="md-nav__link" for="nav-4-15">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-14">
+      <label class="md-nav__title" for="nav-4-15">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1625,7 +1649,7 @@
                 <h1 id="endware">Endware</h1>
 <h2 id="description">Description</h2>
 <p>The <code>endware</code> function allows you to add endware scripts, that run after all <code>middleware</code> and <code>route</code> logic - even if a <code>middleware</code> has ended the pipeline early. They allow you to do things like logging, further data storage, etc.</p>
-<p>Endware in Pode allows you to observe the request/response objects at the very end of the middleware/route pipeline for a current web request. This way you will have the most up-to-date information on the objects for any logging you may wish to perform.</p>
+<p>Endware in Pode allows you to observe the request/response objects at the very end of the middleware/route pipeline for a current web event. This way you will have the most up-to-date information on the objects for any logging you may wish to perform.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>Unlike <code>middleware</code> which has a return value to halt execution, each endware will run in turn without the need for returning anything. So if there are 4 endware configured and 1 fails in the middle, the other later ones will still run.</p>
@@ -1635,10 +1659,10 @@
 <p>The following example is <code>endware</code> that observes the content length of the response, as well as the status code, and records them in some custom data storage for later analysis:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">endware</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$session</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
 
-        <span class="nv">$status</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Response</span><span class="p">.</span><span class="n">StatusCode</span>
-        <span class="nv">$length</span> <span class="p">=</span> <span class="nv">$session</span><span class="p">.</span><span class="n">Response</span><span class="p">.</span><span class="n">ContentLength64</span>
+        <span class="nv">$status</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Response</span><span class="p">.</span><span class="n">StatusCode</span>
+        <span class="nv">$length</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Response</span><span class="p">.</span><span class="n">ContentLength64</span>
 
         <span class="n">Save-ContentStatus</span> <span class="n">-ContentLength</span> <span class="nv">$length</span> <span class="n">-Status</span> <span class="nv">$status</span>
     <span class="p">}</span>
@@ -1662,7 +1686,7 @@
 <td>ScriptBlock</td>
 <td>scriptblock</td>
 <td>true</td>
-<td>The main logic for the endware; this scriptblock will be supplied a single parameter which contains the <code>Request</code> and <code>Response</code> objects</td>
+<td>The main logic for the endware; this scriptblock will be supplied a single parameter for the current event which contains the <code>Request</code> and <code>Response</code> objects</td>
 <td>null</td>
 </tr>
 </tbody>
