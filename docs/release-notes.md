@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.21.0
+
+```plain
+### Enhancements
+* #110: Return a 401 for inaccessible files
+* #116: Support on custom static content, for returning `index.html` or `default.html` (plus others), if a directory is requested
+
+### Bugs
+* #111: Separate out the `service` server type into own runspace
+* #112: Server should return a 500 if middleware/route fails unexpectedly, rather than a 200
+
+### Documentation
+* #120: Added examples of running scripts as Windows or Linux services [here](https://badgerati.github.io/Pode/Getting-Started/RunAsService/)
+
+### Clean-Up
+* #118: Rename `$WebSession` to `$WebEvent` - internal references only
+```
+
 ## v0.20.0
 
 ```plain
