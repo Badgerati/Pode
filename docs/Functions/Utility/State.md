@@ -7,7 +7,7 @@ The `state` function allows you to set/get objects on a shared state that exists
 The `state` function overcomes this by letting you create a variable in a `timer` and set it against the shared state, then you can retrieve that variable from the state in a `route`.
 
 !!! tip
-    It's wise to use the `state` function in conjunction with the `lock` function, so as to ensure thread safety between runspaces. The session object supplied to a `route`, `timer`, `schedule` and `logger` each contain a `.Lockable` resource that can be supplied to the `lock` function.
+    It's wise to use the `state` function in conjunction with the `lock` function, so as to ensure thread safety between runspaces. The `event` object supplied to a `route`, `timer`, `schedule` and `logger` each contain a `.Lockable` resource that can be supplied to the `lock` function.
 
 !!! warning
     If you omit the use of `lock`, you will run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
@@ -23,11 +23,11 @@ Server {
     listen *:8080 http
 
     timer 'forever' 2 {
-        param($session)
+        param($event)
         $hash = $null
 
         # create a lock on a pode lockable resource for safety
-        lock $session.Lockable {
+        lock $event.Lockable {
 
             # first, attempt to get the hashtable from the state
             $hash = (state get 'hash')
@@ -44,10 +44,10 @@ Server {
     }
 
     route get '/state' {
-        param($session)
+        param($event)
 
         # create another lock on the same lockable resource
-        lock $session.Lockable {
+        lock $event.Lockable {
 
             # get the hashtable defined in the timer above, and return it as json
             $hash = (state get 'hash')

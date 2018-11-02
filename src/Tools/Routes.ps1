@@ -34,7 +34,7 @@ function Get-PodeRoute
     # otherwise, attempt to match on regex parameters
     else {
         $valid = ($method.Keys | Where-Object {
-            $Route -imatch "$($_)$"
+            $Route -imatch "^$($_)$"
         } | Select-Object -First 1)
 
         if ($null -eq $valid) {
@@ -46,7 +46,8 @@ function Get-PodeRoute
 
         if ($isStatic) {
             return @{
-                'Folder' = $found;
+                'Folder' = $found.Path;
+                'Defaults' = $found.Defaults;
                 'File' = $Matches['file'];
             }
         }
@@ -74,42 +75,72 @@ function Get-PodeStaticRoutePath
 
     # if we have a defined static route, use that
     if ($null -ne $route) {
+        # if there's no file, we need to check defaults
+        if ([string]::IsNullOrWhiteSpace($route.File) -and (Get-Count @($route.Defaults)) -gt 0)
+        {
+            if ((Get-Count @($route.Defaults)) -eq 1) {
+                $route.File = @($route.Defaults)[0]
+            }
+            else {
+                foreach ($def in $route.Defaults) {
+                    if (Test-PodePath (Join-ServerRoot $route.Folder $def) -NoStatus) {
+                        $route.File = $def
+                        break
+                    }
+                }
+            }
+        }
+
         return (Join-ServerRoot $route.Folder $route.File)
     }
 
-    # else, use the public static directory
-    return (Join-ServerRoot 'public' $Path)
+    # else, use the public static directory (but only if path is a file)
+    if (Test-PathIsFile $Path) {
+        return (Join-ServerRoot 'public' $Path)
+    }
+
+    # otherwise, just return null
+    return $null
 }
 
 function Route
 {
     param (
-        [Parameter(Position=0,  Mandatory=$true)]
+        [Parameter(Mandatory=$true)]
         [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
+        [Alias('hm')]
         [string]
         $HttpMethod,
 
-        [Parameter(Position=1, Mandatory=$true)]
+        [Parameter(Mandatory=$true)]
+        [Alias('r')]
         [string]
         $Route,
 
-        [Parameter(Position=2, ParameterSetName='Normal')]
+        [Parameter()]
+        [Alias('m')]
         [object[]]
         $Middleware,
 
-        [Parameter(Position=2, ParameterSetName='Static', Mandatory=$true)]
-        [string]
-        $Path,
-
-        [Parameter(Position=3, ParameterSetName='Normal')]
+        [Parameter()]
+        [Alias('s')]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [Parameter()]
+        [Alias('d')]
+        [string[]]
+        $Defaults
     )
 
     if ($HttpMethod -ieq 'static') {
-        Add-PodeStaticRoute -Route $Route -Path $Path
+        Add-PodeStaticRoute -Route $Route -Path ([string](@($Middleware))[0]) -Defaults $Defaults
     }
     else {
+        if ((Get-Count $Defaults) -gt 0) {
+            throw "[$($HttpMethod)] $($Route) has default static files defined, which is only for [STATIC] routes"
+        }
+
         Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock
     }
 }
@@ -238,7 +269,11 @@ function Add-PodeStaticRoute
 
         [Parameter(Mandatory=$true)]
         [string]
-        $Path
+        $Path,
+
+        [Parameter()]
+        [string[]]
+        $Defaults
     )
 
     # store the route method
@@ -253,6 +288,10 @@ function Add-PodeStaticRoute
     }
 
     # if static, ensure the path exists
+    if (Test-Empty $Path) {
+        throw "No path supplied for $($HttpMethod) definition"
+    }
+
     if (!(Test-Path (Join-ServerRoot $Path))) {
         throw "Folder supplied for $($HttpMethod) route does not exist: $($Path)"
     }
@@ -265,8 +304,16 @@ function Add-PodeStaticRoute
         throw "[$($HttpMethod)] $($Route) is already defined"
     }
 
+    # setup default static files
+    if ($null -eq $Defaults) {
+        $Defaults = Get-PodeStaticRouteDefaults
+    }
+
     # add the route path
-    $PodeSession.Server.Routes[$HttpMethod][$Route] = $Path
+    $PodeSession.Server.Routes[$HttpMethod][$Route] = @{
+        'Path' = $Path;
+        'Defaults' = $Defaults;
+    }
 }
 
 function Update-PodeRouteSlashes
@@ -311,4 +358,19 @@ function Split-PodeRouteQuery
     )
 
     return ($Route -isplit "\?")[0]
+}
+
+function Get-PodeStaticRouteDefaults
+{
+    $config = $PodeSession.Server.Configuration
+    if (!(Test-Empty $config) -and $null -ne $config.web.static.defaults) {
+        return @($config.web.static.defaults)
+    }
+
+    return @(
+        'index.html',
+        'index.htm',
+        'default.html',
+        'default.htm'
+    )
 }

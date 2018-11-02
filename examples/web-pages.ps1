@@ -34,13 +34,13 @@ Server -Threads 2 {
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        param($session)
+        param($event)
         view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     route 'get' '/error' {
-        param($session)
+        param($event)
         status 500
     }
 
@@ -51,8 +51,8 @@ Server -Threads 2 {
 
     # GET request that redirects to same host, just different port
     route 'get' '/redirect-port' {
-        param($session)
-        if ($session.Request.Url.Port -ne 8086) {
+        param($event)
+        if ($event.Request.Url.Port -ne 8086) {
             redirect -port 8086
         }
         else {
@@ -62,14 +62,14 @@ Server -Threads 2 {
 
     # GET request to download a file
     route 'get' '/download' {
-        param($session)
+        param($event)
         attach 'Anger.jpg'
     }
 
     # GET request with parameters
     route 'get' '/:userId/details' {
-        param($session)
-        json @{ 'userId' = $session.Parameters['userId'] }
+        param($event)
+        json @{ 'userId' = $event.Parameters['userId'] }
     }
 
     # ALL request, that supports every method and it a default drop route

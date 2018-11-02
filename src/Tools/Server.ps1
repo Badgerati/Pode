@@ -99,23 +99,26 @@ function Server
         # start the server
         Start-PodeServer
 
-        # sit here waiting for termination (unless it's one-off script)
-        if ($PodeSession.Server.Type -ine 'script') {
-            while (!(Test-TerminationPressed -Key $key)) {
-                Start-Sleep -Seconds 1
-
-                # get the next key presses
-                $key = Get-ConsoleKey
-
-                # check for internal restart
-                if (($PodeSession.Tokens.Restart.IsCancellationRequested) -or (Test-RestartPressed -Key $key)) {
-                    Restart-PodeServer
-                }
-            }
-
-            Write-Host 'Terminating...' -NoNewline -ForegroundColor Yellow
-            $PodeSession.Tokens.Cancellation.Cancel()
+        # at this point, if it's just a one-one off script, return
+        if ($PodeSession.Server.Type -ieq 'script') {
+            return
         }
+
+        # sit here waiting for termination
+        while (!(Test-TerminationPressed -Key $key)) {
+            Start-Sleep -Seconds 1
+
+            # get the next key presses
+            $key = Get-ConsoleKey
+
+            # check for internal restart
+            if (($PodeSession.Tokens.Restart.IsCancellationRequested) -or (Test-RestartPressed -Key $key)) {
+                Restart-PodeServer
+            }
+        }
+
+        Write-Host 'Terminating...' -NoNewline -ForegroundColor Yellow
+        $PodeSession.Tokens.Cancellation.Cancel()
     }
     finally {
         # clean the runspaces and tokens
@@ -133,14 +136,18 @@ function Start-PodeServer
         # run the logic
         Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
 
-        # start runspace for timers
-        Start-TimerRunspace
+        $_type = $PodeSession.Server.Type.ToUpperInvariant()
+        if ($_type -ine 'script')
+        {
+            # start runspace for timers
+            Start-TimerRunspace
 
-        # start runspace for schedules
-        Start-ScheduleRunspace
+            # start runspace for schedules
+            Start-ScheduleRunspace
+        }
 
         # start the appropriate server
-        switch ($PodeSession.Server.Type.ToUpperInvariant())
+        switch ($_type)
         {
             'SMTP' {
                 Start-SmtpServer
@@ -159,16 +166,7 @@ function Start-PodeServer
             }
 
             'SERVICE' {
-                Write-Host "Looping logic every $($PodeSession.Server.Interval)secs" -ForegroundColor Yellow
-
-                while ($true) {
-                    if ($PodeSession.Tokens.Cancellation.IsCancellationRequested) {
-                        Close-Pode -Exit
-                    }
-
-                    Start-Sleep -Seconds $PodeSession.Server.Interval
-                    Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
-                }
+                Start-ServiceServer
             }
         }
     }

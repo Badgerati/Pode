@@ -4,8 +4,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
-# create a server, and start looping
-Server -Interval 3 {
+# runs the logic once, then exits
+Server {
 
     Write-Host 'hello, world!'
 

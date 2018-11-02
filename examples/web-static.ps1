@@ -22,7 +22,7 @@ Server -Threads 2 {
     engine pode
 
     # STATIC asset folder route
-    route static '/assets' './assets'
+    route static '/assets' './assets' -d @('index.html')
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {

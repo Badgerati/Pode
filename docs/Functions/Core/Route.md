@@ -7,7 +7,7 @@ The `route` function allows you to bind logic to be invoked against a URL path a
 You can also use the `route` function to specify routes to static content paths. Normally if you request a static file Pode will check the `/public` directory, but you can specify other paths using `route static` (example below).
 
 !!! info
-    The scriptblock supplied for the main route logic is invoked with a single parameter. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
+    The scriptblock supplied for the main route logic is invoked with a single parameter for the current web event. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
 ## Examples
 
@@ -34,10 +34,10 @@ Server {
     listen *:8080 http
 
     route post '/users' {
-        param($session)
+        param($event)
 
         # create the user using POST data
-        $userId = New-DummyUser $session.Data.Email $session.Data.Name $session.Data.Password
+        $userId = New-DummyUser $event.Data.Email $event.Data.Name $event.Data.Password
 
         # return with userId
         json @{ 'userId' = $userId; }
@@ -47,7 +47,7 @@ Server {
 
 ### Example 3
 
-The following example sets up a static route of `/assets` using the directory `./content/assets`. In the `index.html` view if you reference the image `<img src="/assets/images/icon.png" />`, then Pode will get the image from `./content/assets/images/icon.png`:
+The following example sets up a static route of `/assets` using the directory `./content/assets`. In the `home.html` view if you reference the image `<img src="/assets/images/icon.png" />`, then Pode will get the image from `./content/assets/images/icon.png`.
 
 ```powershell
 Server {
@@ -56,10 +56,13 @@ Server {
     route static '/assets' './content/assets'
 
     route get '/' {
-        view 'index'
+        view 'home'
     }
 }
 ```
+
+!!! tip
+    Furthermore, if you attempt to navigate to `http://localhost:8080/assets`, then Pode will attempt to display a default page such as `index.html` - [see here](../../../Tutorials/Routes/Overview#default-pages).
 
 ### Example 4
 
@@ -70,10 +73,10 @@ Server {
     listen *:8080 http
 
     route get '/users/:userId'{
-        param($session)
+        param($event)
 
         # get the user, using the parameter userId
-        $user = Get-DummyUser -UserId $session.Parameters['userId']
+        $user = Get-DummyUser -UserId $event.Parameters['userId']
 
         # if no user, return 404
         if ($user -eq $null) {
@@ -95,16 +98,16 @@ Server {
     listen *:8080 http
 
     $agent_mid = {
-        param($session)
+        param($event)
 
-        if ($session.Request.UserAgent -ilike '*powershell*') {
+        if ($event.Request.UserAgent -ilike '*powershell*') {
             status 403
 
             # stop running
             return $false
         }
 
-        $session.Agent = $session.Request.UserAgent
+        $event.Agent = $event.Request.UserAgent
 
         # run the route logic
         return $true
@@ -121,10 +124,10 @@ Server {
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
 | HttpMethod | string | true | The HTTP method to bind the route onto (Values: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, STATIC) | null |
-| Route | string | true | The route path to listen on, the root path is `/`. The path can also contain parmeters such as `/:userId` | empty |
-| Middleware | scriptblock[] | false | Custom middleware for the `route` that will be invoked before the main logic is invoked - such as authentication. | null |
-| Path | string | false | For `static` routes this is the path to the static content directory | empty |
+| Route | string | true | The route path to listen on, the root path is `/`. The path can also contain parameters such as `/:userId` | empty |
+| Middleware | object[] | false | Custom middleware for the `route` that will be invoked before the main logic is invoked - such as authentication. For non-static routes this is an array of `scriptblocks`, but for a static route this is the path to the static content directory | null |
 | ScriptBlock | scriptblock | true | The main route logic that will be invoked when the route endpoint is hit | null |
+| Defaults | string[] | false | For static routes only, this is an array of default pages that could be displayed when the static directory is called | ['index.html', 'index.htm', 'default.html', 'default.htm'] |
 
 !!! tip
     There is a special `*` method you can use, which means a route that applies to every HTTP method

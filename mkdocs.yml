@@ -10,6 +10,7 @@ nav:
     - CLI: Getting-Started/CLI.md
     - Docker: Getting-Started/Docker.md
     - Frontend: Getting-Started/Frontend.md
+    - Run as a Service: Getting-Started/RunAsService.md
 
   - Tutorials:
     - Basics: Tutorials/Basics.md
@@ -20,6 +21,7 @@ nav:
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
     - External Modules: Tutorials/ExternalModules.md
+    - Configuration: Tutorials/Configuration.md
     - Routes:
       - Overview: Tutorials/Routes/Overview.md
       - Status Codes: Tutorials/Routes/StatusCodes.md

@@ -115,23 +115,23 @@ Describe 'Route' {
         It 'Adds basic static route' {
             Mock Test-Path { return $true }
             $PodeSession.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
-            Route -HttpMethod STATIC -Route '/assets' -Path './assets'
+            Route -HttpMethod STATIC -Route '/assets' -Middleware './assets'
 
             $route = $PodeSession.Server.Routes['static']
             $route | Should Not Be $null
             $route.ContainsKey('/assets/(?<file>.*)') | Should Be $true
-            $route['/assets/(?<file>.*)'] | Should Be './assets'
+            $route['/assets/(?<file>.*)'].Path | Should Be './assets'
         }
 
         It 'Throws error when adding static route for non-existing folder' {
             Mock Test-Path { return $false }
             $PodeSession.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
-            { Route -HttpMethod STATIC -Route '/assets' -Path './assets' } | Should Throw 'does not exist'
+            { Route -HttpMethod STATIC -Route '/assets' -Middleware './assets' } | Should Throw 'does not exist'
         }
 
         It 'Throws error when adding static route under get method' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'Root' = $pwd }
-            { Route -HttpMethod GET -Route '/assets' -Path './assets' } | Should Throw 'no logic defined'
+            { Route -HttpMethod GET -Route '/assets' -Middleware './assets' } | Should Throw 'invalid type'
         }
 
         It 'Adds route with middleware supplied as scriptblock and no logic' {

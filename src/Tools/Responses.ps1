@@ -14,7 +14,7 @@ function Write-ToResponse
         return
     }
 
-    $res = $WebSession.Response
+    $res = $WebEvent.Response
     if ($null -eq $res -or $null -eq $res.OutputStream -or !$res.OutputStream.CanWrite) {
         return
     }
@@ -53,9 +53,8 @@ function Write-ToResponseFromFile
         $Path
     )
 
-    # if the file doesnt exist then just fail on 404
-    if (!(Test-Path $Path)) {
-        status 404
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path -FailOnDirectory)) {
         return
     }
 
@@ -63,13 +62,7 @@ function Write-ToResponseFromFile
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
     if ((Test-Empty $ext) -or $ext -ine $PodeSession.Server.ViewEngine.Extension) {
-        if (Test-IsPSCore) {
-            $content = Get-Content -Path $Path -Raw -AsByteStream
-        }
-        else {
-            $content = Get-Content -Path $Path -Raw -Encoding byte
-        }
-
+        $content = Get-ContentAsBytes -Path $Path
         Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
         return
     }
@@ -108,9 +101,9 @@ function Attach
     # only download files from public/static-route directories
     $Path = Get-PodeStaticRoutePath -Path $Path
 
-    # if the file doesnt exist then just fail on 404
-    if (!(Test-Path $Path)) {
-        status 404
+
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path)) {
         return
     }
 
@@ -121,17 +114,17 @@ function Attach
     $fs = [System.IO.File]::OpenRead($Path)
 
     # setup the response details and headers
-    $WebSession.Response.ContentLength64 = $fs.Length
-    $WebSession.Response.SendChunked = $false
-    $WebSession.Response.ContentType = (Get-PodeContentType -Extension $ext)
-    $WebSession.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
+    $WebEvent.Response.ContentLength64 = $fs.Length
+    $WebEvent.Response.SendChunked = $false
+    $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
+    $WebEvent.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
 
     # set file as an attachment on the response
     $buffer = [byte[]]::new(64 * 1024)
     $read = 0
 
     while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-        $WebSession.Response.OutputStream.Write($buffer, 0, $read)
+        $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
     }
 
     dispose $fs
@@ -152,10 +145,10 @@ function Status
         $Description
     )
 
-    $WebSession.Response.StatusCode = $Code
+    $WebEvent.Response.StatusCode = $Code
 
     if (!(Test-Empty $Description)) {
-        $WebSession.Response.StatusDescription = $Description
+        $WebEvent.Response.StatusDescription = $Description
     }
 }
 
@@ -184,7 +177,7 @@ function Redirect
     )
 
     if (Test-Empty $Url) {
-        $uri = $WebSession.Request.Url
+        $uri = $WebEvent.Request.Url
 
         $Protocol = $Protocol.ToLowerInvariant()
         if (Test-Empty $Protocol) {
@@ -203,7 +196,7 @@ function Redirect
         $Url = "$($Protocol)://$($uri.Host)$($PortStr)$($uri.PathAndQuery)"
     }
 
-    $WebSession.Response.RedirectLocation = $Url
+    $WebEvent.Response.RedirectLocation = $Url
 
     if ($Moved) {
         status 301 'Moved'
@@ -224,8 +217,8 @@ function Json
     )
 
     if ($File) {
-        if ($null -eq $Value -or !(Test-Path $Value)) {
-            status 404
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
             return
         }
         else {
@@ -254,8 +247,8 @@ function Csv
     )
 
     if ($File) {
-        if ($null -eq $Value -or !(Test-Path $Value)) {
-            status 404
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
             return
         }
         else {
@@ -293,8 +286,8 @@ function Xml
     )
 
     if ($File) {
-        if ($null -eq $Value -or !(Test-Path $Value)) {
-            status 404
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
             return
         }
         else {
@@ -327,8 +320,8 @@ function Html
     )
 
     if ($File) {
-        if ($Value -eq $Value -or !(Test-Path $Value)) {
-            status 404
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
             return
         }
         else {
@@ -374,7 +367,9 @@ function Include
 
     # only look in the view directory
     $Path = Join-ServerRoot 'views' $Path
-    if (!(Test-Path $Path)) {
+
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path -NoStatus)) {
         throw "File not found at path: $($Path)"
     }
 
@@ -439,8 +434,9 @@ function View
 
     # only look in the view directory
     $Path = Join-ServerRoot 'views' $Path
-    if (!(Test-Path $Path)) {
-        status 404
+
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path)) {
         return
     }
 
@@ -493,7 +489,7 @@ function Tcp
     )
 
     if ($null -eq $Client) {
-        $Client = $TcpSession.Client
+        $Client = $TcpEvent.Client
     }
 
     switch ($Action.ToLowerInvariant())

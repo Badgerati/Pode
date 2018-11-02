@@ -1,6 +1,6 @@
 function Start-TcpServer
 {
-    # ensure we have tcp handlers
+    # ensure we have tcp handler
     if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {
         throw 'No TCP handler has been passed'
     }
@@ -58,12 +58,12 @@ function Start-TcpServer
 
                 # ensure the request ip is allowed and deal with the tcp call
                 if ((Test-IPAccess -IP $ip) -and (Test-IPLimit -IP $ip)) {
-                    $TcpSession = @{
+                    $TcpEvent = @{
                         'Client' = $client;
                         'Lockalble' = $PodeSession.Lockable
                     }
 
-                    Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $TcpSession -Scoped
+                    Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $TcpEvent -Scoped
                 }
 
                 # close the connection

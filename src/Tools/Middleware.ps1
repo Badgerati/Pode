@@ -3,7 +3,7 @@ function Invoke-PodeMiddleware
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Session,
+        $WebEvent,
 
         [Parameter()]
         $Middleware
@@ -22,17 +22,18 @@ function Invoke-PodeMiddleware
     {
         try {
             # set any custom middleware options
-            $Session.Middleware = @{ 'Options' = $midware.Options }
+            $WebEvent.Middleware = @{ 'Options' = $midware.Options }
 
             # invoke the middleware logic
-            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $Session -Scoped -Return
+            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $WebEvent -Scoped -Return
 
             # remove any custom middleware options
-            $Session.Middleware.Clear()
+            $WebEvent.Middleware.Clear()
         }
         catch {
-            $_.Exception | Out-Default
+            status 500
             $continue = $false
+            $_.Exception | Out-Default
         }
 
         if (!$continue) {
@@ -110,17 +111,16 @@ function Get-PodePublicMiddleware
     return (Get-PodeInbuiltMiddleware -Name '@public' -ScriptBlock {
         param($s)
 
-        # if path is not a public static file, return
-        if ((Split-Path -Leaf -Path $s.Path).IndexOf('.') -eq -1) {
-            return $true
-        }
-
         # get the static file path
         $path = Get-PodeStaticRoutePath -Path $s.Path
+        if ($null -eq $path) {
+            return $true
+        }
 
         # write the file to the response
         Write-ToResponseFromFile -Path $path
 
+        # static content found, stop
         return $false
     })
 }
@@ -145,7 +145,7 @@ function Get-PodeRouteValidateMiddleware
             }
 
             # set the route parameters
-            $WebSession.Parameters = $route.Parameters
+            $WebEvent.Parameters = $route.Parameters
 
             # route exists
             return $true

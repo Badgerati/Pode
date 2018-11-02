@@ -15,10 +15,10 @@ function Add-PodeLogEndware
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Session
+        $WebEvent
     )
 
-    $Session.OnEnd += {
+    $WebEvent.OnEnd += {
         param($s)
         $obj = New-PodeLogObject -Request $s.Request -Path $s.Path
         Add-PodeLogObject -LogObject $obj -Response $s.Response

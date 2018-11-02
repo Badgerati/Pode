@@ -49,13 +49,13 @@ Server -Threads 2 {
     # home page:
     # redirects to login page if not authenticated
     route 'get' '/' (auth check form -o @{ 'failureUrl' = '/login' }) {
-        param($s)
+        param($e)
 
-        $s.Session.Data.Views++
+        $e.Session.Data.Views++
 
         view 'auth-home' -data @{
-            'Username' = $s.Auth.User.Name;
-            'Views' = $s.Session.Data.Views;
+            'Username' = $e.Auth.User.Name;
+            'Views' = $e.Session.Data.Views;
         }
     }
 
@@ -64,7 +64,7 @@ Server -Threads 2 {
     # the user is redirected to the home page. If there is no session then the login page will load without
     # checking user authetication (to prevent a 401 status)
     route 'get' '/login' (auth check form -o @{ 'login' = $true; 'successUrl' = '/' }) {
-        param($s)
+        param($e)
         view 'auth-login'
     }
 
