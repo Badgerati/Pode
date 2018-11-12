@@ -860,32 +860,130 @@ function ConvertFrom-PodeContent
         $ContentType,
 
         [Parameter()]
-        $Content
+        $Content,
+
+        [Parameter()]
+        $Encoding
     )
 
-    if (Test-Empty $Content) {
-        return $Content
+    $Result = @{
+        'Data' = @{};
+        'Files' = @{};
     }
 
-    switch ($ContentType) {
+    if ((Test-Empty $Content) -or (Test-Empty $ContentType)) {
+        return $Result
+    }
+
+    $TypeSplit = Split-ContentTypeAndBoundary -ContentType $ContentType
+
+    switch ($TypeSplit.ContentType) {
         { $_ -ilike '*/json' } {
-            $Content = ($Content | ConvertFrom-Json)
+            $Result.Data = ($Content | ConvertFrom-Json)
         }
 
         { $_ -ilike '*/xml' } {
-            $Content = [xml]($Content)
+            $Result.Data = [xml]($Content)
         }
 
         { $_ -ilike '*/csv' } {
-            $Content = ($Content | ConvertFrom-Csv)
+            $Result.Data = ($Content | ConvertFrom-Csv)
         }
 
         { $_ -ilike '*/x-www-form-urlencoded' } {
-            $Content = (ConvertFrom-NameValueToHashTable -Collection ([System.Web.HttpUtility]::ParseQueryString($Content)))
+            $Result.Data = (ConvertFrom-NameValueToHashTable -Collection ([System.Web.HttpUtility]::ParseQueryString($Content)))
+        }
+
+        { $_ -ieq 'multipart/form-data' } {
+
+            Write-Host $Content
+
+            #-------------------
+            # split out using the boundary
+            $split = @($Content -isplit $TypeSplit.Boundary) 
+
+            foreach ($item in $split) {
+                $item = $item.Trim()
+
+                # just move along if empty
+                if ((Test-Empty $item) -or $item -ieq '--') {
+                    continue
+                }
+
+                # split out on each new line
+                $items = $item -isplit "`r`n"
+
+                # work out each field/file names
+                $fields = @{}
+                @($items[0] -isplit ';') | ForEach-Object {
+                    $atoms = @($_ -isplit '=')
+                    if ($atoms.Length -eq 2) {
+                        $fields.Add($atoms[0].Trim(), $atoms[1].Trim(' "'))
+                    }
+                }
+
+                # work out field values (3rd line of $items)
+                if (!$fields.ContainsKey('filename')) {
+                    $Result.Data.Add($fields.name, $items[2].Trim())
+                }
+
+                # work out files and content type (2nd line, and 4th+ lines)
+                if ($fields.ContainsKey('filename')) {
+                    $Result.Data.Add($fields.name, $fields.filename)
+
+                    if (!(Test-Empty $fields.filename)) {
+                        $Result.Files.Add($fields.filename, @{
+                            'ContentType' = (@($items[1] -isplit ':')[1].Trim());
+                            'Bytes' = $null;
+                        })
+
+                        #$str = [System.Text.StringBuilder]::new()
+                        #$items[3..($items.Length - 1)] | % {
+                        #    $str.AppendLine($_.Trim())
+                        #}
+
+
+                        $bytes = ($items[3..($items.Length - 1)] -join "`r`n")
+                        Write-Host "`n`n"
+                        Write-Host "= = = == = = =  = ="
+                        Write-Host $bytes
+                        Write-Host "= = = == = = =  = ="
+
+                        #$Result.Files[$fields.filename].Bytes = $Encoding.GetBytes($str.ToString())
+                        #$Result.Files[$fields.filename].Bytes = $Encoding.GetBytes($bytes)
+                        $Result.Files[$fields.filename].Bytes = $bytes
+                        #$Result.Files[$fields.filename].Bytes = [System.Text.Encoding]::ASCII.GetBytes($bytes)
+                    }
+                }
+            }
+            #-------------------
         }
     }
 
-    return $Content
+    return $Result
+}
+
+function Split-ContentTypeAndBoundary
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ContentType
+    )
+
+    $obj = @{
+        'ContentType' = '';
+        'Boundary' = '';
+    }
+
+    $split = @($ContentType -isplit ';')
+    $obj.ContentType = $split[0].Trim()
+
+    if ($split.Length -gt 1) {
+        $obj.Boundary = "--$(($split[1] -isplit '=')[1].Trim())"
+    }
+
+    return $obj
 }
 
 function ConvertFrom-NameValueToHashTable
