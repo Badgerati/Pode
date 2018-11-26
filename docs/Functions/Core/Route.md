@@ -27,6 +27,22 @@ Server {
 
 ### Example 2
 
+The following example sets up a `GET /ping` route, and then removes it:
+
+```powershell
+Server {
+    listen *:8080 http
+
+    route get '/ping' {
+        json @{ 'value' = 'ping' }
+    }
+
+    route -remove get '/ping'
+}
+```
+
+### Example 3
+
 The following example sets up a `POST /users` route, that creates a new user using post data:
 
 ```powershell
@@ -45,7 +61,7 @@ Server {
 }
 ```
 
-### Example 3
+### Example 4
 
 The following example sets up a static route of `/assets` using the directory `./content/assets`. In the `home.html` view if you reference the image `<img src="/assets/images/icon.png" />`, then Pode will get the image from `./content/assets/images/icon.png`.
 
@@ -64,7 +80,7 @@ Server {
 !!! tip
     Furthermore, if you attempt to navigate to `http://localhost:8080/assets`, then Pode will attempt to display a default page such as `index.html` - [see here](../../../Tutorials/Routes/Overview#default-pages).
 
-### Example 4
+### Example 5
 
 The following example sets up a `GET /users/:userId` route, that returns a user based on the route parameter `userId`:
 
@@ -89,7 +105,7 @@ Server {
 }
 ```
 
-### Example 5
+### Example 6
 
 The following example sets up a `GET /` route, that has custom middleware to check the user agent first. If the user agent is from PowerShell deny the call, and don't invoke the route's logic:
 
@@ -128,6 +144,7 @@ Server {
 | Middleware | object[] | false | Custom middleware for the `route` that will be invoked before the main logic is invoked - such as authentication. For non-static routes this is an array of `scriptblocks`, but for a static route this is the path to the static content directory | null |
 | ScriptBlock | scriptblock | true | The main route logic that will be invoked when the route endpoint is hit | null |
 | Defaults | string[] | false | For static routes only, this is an array of default pages that could be displayed when the static directory is called | ['index.html', 'index.htm', 'default.html', 'default.htm'] |
+| Remove | switch | false | When passed, will remove a defined route | false |
 
 !!! tip
     There is a special `*` method you can use, which means a route that applies to every HTTP method

@@ -130,8 +130,17 @@ function Route
         [Parameter()]
         [Alias('d')]
         [string[]]
-        $Defaults
+        $Defaults,
+
+        [switch]
+        [Alias('rm')]
+        $Remove
     )
+
+    if ($Remove) {
+        Remove-PodeRoute -HttpMethod $HttpMethod -Route $Route
+        return
+    }
 
     if ($HttpMethod -ieq 'static') {
         Add-PodeStaticRoute -Route $Route -Path ([string](@($Middleware))[0]) -Defaults $Defaults
@@ -143,6 +152,43 @@ function Route
 
         Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock
     }
+}
+
+function Remove-PodeRoute
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
+        [string]
+        $HttpMethod,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Route
+    )
+
+    # lower the method
+    $HttpMethod = $HttpMethod.ToLowerInvariant()
+
+    # split route on '?' for query
+    $Route = Split-PodeRouteQuery -Route $Route
+
+    # ensure route isn't empty
+    if (Test-Empty $Route) {
+        throw "No route supplied for removing $($HttpMethod) definition"
+    }
+
+    # ensure the route has appropriate slashes and replace parameters
+    $Route = Update-PodeRouteSlashes -Route $Route
+    $Route = Update-PodeRoutePlaceholders -Route $Route
+
+    # ensure route does exist
+    if (!$PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
+        return
+    }
+
+    # remove the route logic
+    $PodeSession.Server.Routes[$HttpMethod].Remove($Route) | Out-Null
 }
 
 function Add-PodeRoute
@@ -163,7 +209,10 @@ function Add-PodeRoute
 
         [Parameter()]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [switch]
+        $Remove
     )
 
     # if middleware and scriptblock are null, error
@@ -222,16 +271,7 @@ function Add-PodeRoute
 
     # ensure the route has appropriate slashes
     $Route = Update-PodeRouteSlashes -Route $Route
-
-    # replace placeholder parameters with regex
-    $placeholder = '\:(?<tag>[\w]+)'
-    if ($Route -imatch $placeholder) {
-        $Route = [regex]::Escape($Route)
-    }
-
-    while ($Route -imatch $placeholder) {
-        $Route = ($Route -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
-    }
+    $Route = Update-PodeRoutePlaceholders -Route $Route
 
     # ensure route doesn't already exist
     if ($PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
@@ -273,7 +313,10 @@ function Add-PodeStaticRoute
 
         [Parameter()]
         [string[]]
-        $Defaults
+        $Defaults,
+
+        [switch]
+        $Remove
     )
 
     # store the route method
@@ -314,6 +357,27 @@ function Add-PodeStaticRoute
         'Path' = $Path;
         'Defaults' = $Defaults;
     }
+}
+
+function Update-PodeRoutePlaceholders
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Route
+    )
+
+    # replace placeholder parameters with regex
+    $placeholder = '\:(?<tag>[\w]+)'
+    if ($Route -imatch $placeholder) {
+        $Route = [regex]::Escape($Route)
+    }
+
+    while ($Route -imatch $placeholder) {
+        $Route = ($Route -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
+    }
+
+    return $Route
 }
 
 function Update-PodeRouteSlashes

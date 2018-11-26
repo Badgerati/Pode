@@ -13,8 +13,8 @@ You can also specify static routes, that redirect requests to static content to 
 To setup and use routes in Pode you should use the [`route`](../../../Function/Core/Route) function. The general make-up of the `route` function is as follows - the former is for HTTP requests, where as the latter is for static content:
 
 ```powershell
-route <method> <route> [<middleware>] <scriptblock>
-route static <route> <path> [<defaults>]
+route <method> <route> [<middleware>] <scriptblock> [-remove]
+route static <route> <path> [<defaults>] [-remove]
 ```
 
 For example, let's say you want a basic `GET ping` endpoint to just return `pong` as a JSON response:

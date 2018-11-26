@@ -112,6 +112,21 @@ Describe 'Route' {
             $route['/users'].Middleware | Should Be $null
         }
 
+        It 'Adds route with simple url, and then removes it' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' { Write-Host 'hello' }
+
+            $route = $PodeSession.Server.Routes['get']
+            $route | Should Not be $null
+            $route.ContainsKey('/users') | Should Be $true
+
+            Route -Remove -HttpMethod GET -Route '/users'
+
+            $route = $PodeSession.Server.Routes['get']
+            $route | Should Not be $null
+            $route.ContainsKey('/users') | Should Be $false
+        }
+
         It 'Adds basic static route' {
             Mock Test-Path { return $true }
             $PodeSession.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
