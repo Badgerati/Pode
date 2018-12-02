@@ -84,6 +84,10 @@ function New-PodeSession
         };
     }
 
+    # shared temp drives
+    $session.Server.Drives = @{}
+    $session.Server.InbuiltDrives = @{}
+
     # shared state between runspaces
     $session.Server.State = @{}
 
