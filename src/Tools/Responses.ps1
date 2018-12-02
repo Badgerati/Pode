@@ -101,7 +101,6 @@ function Attach
     # only download files from public/static-route directories
     $Path = Get-PodeStaticRoutePath -Route $Path
 
-
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
         return
@@ -111,7 +110,7 @@ function Attach
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
     # open up the file as a stream
-    $fs = [System.IO.File]::OpenRead($Path)
+    $fs = (Get-Item $Path).OpenRead()
 
     # setup the response details and headers
     $WebEvent.Response.ContentLength64 = $fs.Length

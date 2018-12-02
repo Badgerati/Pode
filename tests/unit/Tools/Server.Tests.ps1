@@ -5,6 +5,7 @@ Get-ChildItem "$($src)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 $PodeSession = @{ 'Server' = $null; }
 
 Describe 'Start-PodeServer' {
+    Mock Add-PodePSInbuiltDrives { }
     Mock Invoke-ScriptBlock { }
     Mock Start-TimerRunspace { }
     Mock Start-ScheduleRunspace { }

@@ -15,9 +15,6 @@ Server -Threads 2 {
     # listen on localhost:8085
     listen *:$Port http
 
-    # log requests to the terminal
-    #logger terminal
-
     # set view engine to pode renderer
     engine pode
 

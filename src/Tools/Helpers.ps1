@@ -538,7 +538,7 @@ function Close-Pode
         $Error[0] | Out-Default
     }
 
-    # remove all of the pode directories
+    # remove all of the pode temp drives
     Remove-PodePSDrives
 
     if ($Exit -and $PodeSession.Server.Type -ine 'script') {
