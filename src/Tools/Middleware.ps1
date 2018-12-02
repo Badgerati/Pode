@@ -112,7 +112,7 @@ function Get-PodePublicMiddleware
         param($s)
 
         # get the static file path
-        $path = Get-PodeStaticRoutePath -Path $s.Path
+        $path = Get-PodeStaticRoutePath -Route $s.Path
         if ($null -eq $path) {
             return $true
         }

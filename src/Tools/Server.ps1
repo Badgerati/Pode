@@ -82,6 +82,9 @@ function Server
             -DisableLogging:$DisableLogging `
             -FileMonitor:$FileMonitor
 
+        # setup temp drives for internal dirs
+        Add-PodePSInbuiltDrives
+
         # set a default port for the server type
         Set-PodePortForServerType
 

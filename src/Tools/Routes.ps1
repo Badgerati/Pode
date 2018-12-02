@@ -46,7 +46,7 @@ function Get-PodeRoute
 
         if ($isStatic) {
             return @{
-                'Folder' = $found.Path;
+                'Path' = $found.Path;
                 'Defaults' = $found.Defaults;
                 'File' = $Matches['file'];
             }
@@ -67,36 +67,36 @@ function Get-PodeStaticRoutePath
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Path
+        $Route
     )
 
-    # attempt to get a static route
-    $route = Get-PodeRoute -HttpMethod 'static' -Route $Path
+    # attempt to get a static route for the path
+    $found = Get-PodeRoute -HttpMethod 'static' -Route $Route
 
     # if we have a defined static route, use that
-    if ($null -ne $route) {
+    if ($null -ne $found) {
         # if there's no file, we need to check defaults
-        if ([string]::IsNullOrWhiteSpace($route.File) -and (Get-Count @($route.Defaults)) -gt 0)
+        if ([string]::IsNullOrWhiteSpace($found.File) -and (Get-Count @($found.Defaults)) -gt 0)
         {
-            if ((Get-Count @($route.Defaults)) -eq 1) {
-                $route.File = @($route.Defaults)[0]
+            if ((Get-Count @($found.Defaults)) -eq 1) {
+                $found.File = @($found.Defaults)[0]
             }
             else {
-                foreach ($def in $route.Defaults) {
-                    if (Test-PodePath (Join-ServerRoot $route.Folder $def) -NoStatus) {
-                        $route.File = $def
+                foreach ($def in $found.Defaults) {
+                    if (Test-PodePath (Join-Path $found.Path $def) -NoStatus) {
+                        $found.File = $def
                         break
                     }
                 }
             }
         }
 
-        return (Join-ServerRoot $route.Folder $route.File)
+        return (Join-Path $found.Path $found.File)
     }
 
     # else, use the public static directory (but only if path is a file)
-    if (Test-PathIsFile $Path) {
-        return (Join-ServerRoot 'public' $Path)
+    if (Test-PathIsFile $Route) {
+        return (Join-Path $PodeSession.Server.InbuiltDrives['public'] $Route)
     }
 
     # otherwise, just return null
@@ -330,14 +330,18 @@ function Add-PodeStaticRoute
         throw "No route supplied for $($HttpMethod) definition"
     }
 
-    # if static, ensure the path exists
+    # if static, ensure the path exists at server root
     if (Test-Empty $Path) {
         throw "No path supplied for $($HttpMethod) definition"
     }
 
-    if (!(Test-Path (Join-ServerRoot $Path))) {
+    $Path = (Join-ServerRoot $Path)
+    if (!(Test-Path $Path)) {
         throw "Folder supplied for $($HttpMethod) route does not exist: $($Path)"
     }
+
+    # setup a temp drive for the path
+    $Path = New-PodePSDrive -Path $Path
 
     # ensure the route has appropriate slashes
     $Route = Update-PodeRouteSlashes -Route $Route -Static
