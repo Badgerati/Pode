@@ -129,6 +129,8 @@ Describe 'Route' {
 
         It 'Adds basic static route' {
             Mock Test-Path { return $true }
+            Mock New-PodePSDrive { return './assets' }
+
             $PodeSession.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
             Route -HttpMethod STATIC -Route '/assets' -Middleware './assets'
 
