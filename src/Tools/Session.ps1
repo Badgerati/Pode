@@ -293,12 +293,12 @@ function Listen
         $Certificate = $null
     )
 
-    $hostRgx = '(?<host>(\[[a-z0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all))'
-    $portRgx = '(?<port>\d+)'
+    $hostRgx = Get-HostIPRegex -Type Both
+    $portRgx = Get-PortRegex
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip:port address
-    if (!($IPPort -imatch "^$($cmbdRgx)$" -or $IPPort -imatch "^$($hostRgx)[\:]{0,1}" -or $IPPort -imatch "[\:]{0,1}$($portRgx)$")) {
+    if (!(($IPPort -imatch "^$($cmbdRgx)$") -or ($IPPort -imatch "^$($hostRgx)[\:]{0,1}") -or ($IPPort -imatch "[\:]{0,1}$($portRgx)$"))) {
         throw "Failed to parse '$($IPPort)' as a valid IP:Port address"
     }
 

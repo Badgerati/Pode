@@ -67,7 +67,39 @@ Describe 'Listen' {
 
     Context 'Valid parameters supplied' {
         Mock Test-IPAddress { return $true }
-        Mock Test-IPAddressLocal { return $true }
+
+        It 'Set just a Hostname address' {
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            Listen -IP 'foo.com' -Type 'HTTP'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Name | Should Be 'foo.com'
+            $PodeSession.Server.IP.Address.ToString() | Should Be 'foo.com'
+        }
+
+        It 'Set just a Hostname address with colon' {
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            Listen -IP 'foo.com:' -Type 'HTTP'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 0
+            $PodeSession.Server.IP.Name | Should Be 'foo.com'
+            $PodeSession.Server.IP.Address.ToString() | Should Be 'foo.com'
+        }
+
+        It 'Set both the Hostname address and port' {
+            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            Listen -IP 'foo.com:80' -Type 'HTTP'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.IP | Should Not Be $null
+            $PodeSession.Server.IP.Port | Should Be 80
+            $PodeSession.Server.IP.Name | Should Be 'foo.com'
+            $PodeSession.Server.IP.Address.ToString() | Should Be 'foo.com'
+        }
 
         It 'Set just an IPv4 address' {
             $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
