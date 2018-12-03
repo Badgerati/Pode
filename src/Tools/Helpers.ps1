@@ -197,7 +197,7 @@ function Get-HostIPRegex
     )
 
     $ip_rgx = '\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all'
-    $host_rgx = '[a-z](([a-z0-9\*]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
+    $host_rgx = '([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
 
     switch ($Type.ToLowerInvariant())
     {

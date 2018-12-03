@@ -48,7 +48,17 @@ The following example will listen on a specific host name over port 8080 for HTT
 
 ```powershell
 Server {
-    listen foo.com:8080 http
+    listen pode.foo.com:8080 http
+}
+```
+
+### Example 5
+
+The following example will listen on a wildcard host name over port 8080 for HTTP requests:
+
+```powershell
+Server {
+    listen *.foo.com:8080 http
 }
 ```
 

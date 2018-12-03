@@ -175,7 +175,7 @@ Describe 'Test-IsPSCore' {
 
 Describe 'Get-HostIPRegex' {
     It 'Returns valid Hostname regex' {
-        Get-HostIPRegex -Type Hostname | Should Be '(?<host>([a-z](([a-z0-9\*]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+        Get-HostIPRegex -Type Hostname | Should Be '(?<host>(([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
     }
 
     It 'Returns valid IP regex' {
@@ -183,7 +183,7 @@ Describe 'Get-HostIPRegex' {
     }
 
     It 'Returns valid IP and Hostname regex' {
-        Get-HostIPRegex -Type Both | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all|[a-z](([a-z0-9\*]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+        Get-HostIPRegex -Type Both | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all|([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
     }
 }
 
