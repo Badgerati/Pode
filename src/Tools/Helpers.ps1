@@ -187,6 +187,39 @@ function New-PodeSelfSignedCertificate
     Write-Host " Done" -ForegroundColor Green
 }
 
+function Get-HostIPRegex
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Both', 'Hostname', 'IP')]
+        [string]
+        $Type
+    )
+
+    $ip_rgx = '\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all'
+    $host_rgx = '[a-z](([a-z0-9\*]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
+
+    switch ($Type.ToLowerInvariant())
+    {
+        'both' {
+            return "(?<host>($($ip_rgx)|$($host_rgx)))"
+        }
+
+        'hostname' {
+            return "(?<host>($($host_rgx)))"
+        }
+
+        'ip' {
+            return "(?<host>($($ip_rgx)))"
+        }
+    }
+}
+
+function Get-PortRegex
+{
+    return '(?<port>\d+)'
+}
+
 function Test-IPAddress
 {
     param (
@@ -195,7 +228,7 @@ function Test-IPAddress
         $IP
     )
 
-    if ((Test-Empty $IP) -or $IP -ieq '*' -or $IP -ieq 'all') {
+    if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all') -or ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$")) {
         return $true
     }
 
@@ -249,8 +282,12 @@ function Get-IPAddress
         $IP
     )
 
-    if ((Test-Empty $IP) -or $IP -ieq '*' -or $IP -ieq 'all') {
+    if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
         return [System.Net.IPAddress]::Any
+    }
+
+    if ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$") {
+        return $IP
     }
 
     return [System.Net.IPAddress]::Parse($IP)
