@@ -18,6 +18,20 @@ Server {
         return $true
     }
 
+    # middleware that runs on specific routes
+    middleware '/users' {
+        'Middleware for routes!' | Out-Default
+        return $true
+    }
+
+    # middleware from a hashtable - useful for inbuilt types, like "auth check"
+    middleware @{
+        'Logic' = {
+            'Middleware from hashtables!' | Out-Default
+            return $true
+        };
+    }
+
     # block requests that come from powershell
     middleware {
         # session parameter which contains the Request/Response, and any other
