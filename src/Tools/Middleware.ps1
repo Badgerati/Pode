@@ -234,9 +234,9 @@ function Middleware
 
         [Parameter(Mandatory=$true, Position=0, ParameterSetName='Hash')]
         [Parameter(Mandatory=$true, Position=1, ParameterSetName='HashRoute')]
-        [Alias('m')]
+        [Alias('h')]
         [hashtable]
-        $Middleware,
+        $HashTable,
 
         [Parameter()]
         [Alias('n')]
@@ -262,9 +262,9 @@ function Middleware
     $Route = Update-PodeRoutePlaceholders -Route $Route
 
     # create the middleware hash, or re-use a passed one
-    if (Test-Empty $Middleware)
+    if (Test-Empty $HashTable)
     {
-        $Middleware = @{
+        $HashTable = @{
             'Name' = $Name;
             'Route' = $Route;
             'Logic' = $ScriptBlock;
@@ -272,24 +272,24 @@ function Middleware
     }
     else
     {
-        if (Test-Empty $Middleware.Logic) {
+        if (Test-Empty $HashTable.Logic) {
             throw 'Middleware supplied has no Logic'
         }
 
-        if (Test-Empty $Middleware.Route) {
-            $Middleware.Route = $Route
+        if (Test-Empty $HashTable.Route) {
+            $HashTable.Route = $Route
         }
 
-        if (Test-Empty $Middleware.Name) {
-            $Middleware.Name = $Name
+        if (Test-Empty $HashTable.Name) {
+            $HashTable.Name = $Name
         }
     }
 
     # add the scriptblock to array of middleware that needs to be run
     if ($Return) {
-        return $Middleware
+        return $HashTable
     }
     else {
-        $PodeSession.Server.Middleware += $Middleware
+        $PodeSession.Server.Middleware += $HashTable
     }
 }
