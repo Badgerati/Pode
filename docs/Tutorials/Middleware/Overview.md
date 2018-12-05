@@ -13,10 +13,10 @@ To setup and use middleware in Pode you use the [`middleware`](../../../Function
 The make-up of the `middleware` function is as follows:
 
 ```powershell
-middleware <scriptblock> [-name <string>]
+middleware [<route>] <scriptblock> [-name <string>]
 ```
 
-The `middleware` function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a `route`). The event object passed contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`. The `-Name` parameter is defined later, but it solely used for allowing you to override the inbuilt middleware of Pode.
+The `middleware` function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a `route`). The event object passed contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`. The `-Name` parameter is defined later, but it solely used for allowing you to override the inbuilt middleware of Pode. The `route` value allows you to specify which routes to run the middleware against.
 
 If you want to keep processing and proceed to the next middleware/route then `return $true` from the scriptblock, otherwise `return $false` and the response will be closed immediately.
 
@@ -43,6 +43,14 @@ Server {
         # continue processing other middleware
         return $true
     }
+}
+```
+
+Where as the following example is middleware that will only be run on requests against the `/api` route. Here, it will run Basic authentication on every API request:
+
+```powershell
+Server {
+    middleware '/api' (auth check basic)
 }
 ```
 
