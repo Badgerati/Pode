@@ -16,10 +16,10 @@ The `auth use` action allows you to specify and configure which authentication m
 The make-up of the `use` action is:
 
 ```powershell
-auth use <name> -validator {} [-options @{}] [-parser {}] [-custom]
+auth use <name> -validator {} [-options @{}] [-parser {}] [-type <string>] [-custom]
 
 # or shorthand:
-auth use <name> -v {} [-o @{}] [-p {}] [-c]
+auth use <name> -v {} [-o @{}] [-p {}] [-t <string>] [-c]
 ```
 
 A quick example of using the `use` action for Basic authentication is as follows:
@@ -34,7 +34,19 @@ Server {
 }
 ```
 
-The `<name>` of the authentication method specified should be a valid inbuilt method (such as Basic or Form), unless you have stated that the method is custom (`-c`).
+or, if you want to use a custom name:
+
+```powershell
+Server {
+    auth use login -t basic -v {
+        param($username, $pass)
+        # logic to check user
+        return @{ 'user' = $user }
+    }
+}
+```
+
+The `<name>` of the authentication method can be anything, so long as you specify the `<type>` as well. The `<type>` of the authentication method specified should be a valid inbuilt method (such as Basic or Form), unless you have stated that the method is custom (`-c`). If you do not specify a `<type>` then the `<name>` is used instead - in which case this needs to follow the same rules as `<type>`.
 
 The validator (`-v`) script is used to find a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the validator passes, then a `user` needs to be returned from the script via `@{ 'user' = $user }` - if `$null` or a null user is returned then the validator script is assumed to have failed.
 
