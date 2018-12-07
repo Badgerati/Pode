@@ -1641,11 +1641,11 @@
 <h2 id="global-middleware">Global Middleware</h2>
 <p>To setup and use middleware in Pode you use the <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> function. This will setup global middleware that will run, in the order created, on every request prior to <code>route</code> logic being invoked.</p>
 <p>The make-up of the <code>middleware</code> function is as follows:</p>
-<div class="codehilite"><pre><span></span><span class="n">middleware</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-name</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span>
+<div class="codehilite"><pre><span></span><span class="n">middleware</span> <span class="p">[&lt;</span><span class="n">route</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-name</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span>
 </pre></div>
 
 
-<p>The <code>middleware</code> function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a <code>route</code>). The event object passed contains the current <code>Request</code> and <code>Response</code> objects - you can also add more custom objects to it, as the event is just a <code>hashtable</code>. The <code>-Name</code> parameter is defined later, but it solely used for allowing you to override the inbuilt middleware of Pode.</p>
+<p>The <code>middleware</code> function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a <code>route</code>). The event object passed contains the current <code>Request</code> and <code>Response</code> objects - you can also add more custom objects to it, as the event is just a <code>hashtable</code>. The <code>-Name</code> parameter is defined later, but it solely used for allowing you to override the inbuilt middleware of Pode. The <code>route</code> value allows you to specify which routes to run the middleware against.</p>
 <p>If you want to keep processing and proceed to the next middleware/route then <code>return $true</code> from the scriptblock, otherwise <code>return $false</code> and the response will be closed immediately.</p>
 <p>The following example is middleware that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new <code>Agent</code> key on the session for later <code>middleware</code>/<code>route</code> logic:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
@@ -1668,6 +1668,13 @@
         <span class="c"># continue processing other middleware</span>
         <span class="k">return</span> <span class="nv">$true</span>
     <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Where as the following example is middleware that will only be run on requests against the <code>/api</code> route. Here, it will run Basic authentication on every API request:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">middleware</span> <span class="s1">&#39;/api&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">basic</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
 

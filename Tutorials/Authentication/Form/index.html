@@ -1637,9 +1637,9 @@
                 <h1 id="form-authentication">Form Authentication</h1>
 <p>Form authentication is for when you're using a <code>&lt;form&gt;</code> in HTML, and you submit the form. The method expects a <code>username</code> and <code>password</code> to be passed from the form input fields.</p>
 <h2 id="setup">Setup</h2>
-<p>To setup and start using Form authentication in Pode you specify <code>auth use form</code> in your server script, the validator script you need to supply will have the username/password supplied as arguments to the scriptblock:</p>
+<p>To setup and start using Form authentication in Pode you specify <code>auth use &lt;name&gt; -t form</code> in your server script, the validator script you need to supply will have the username/password supplied as arguments to the scriptblock:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">auth</span> <span class="n">use</span> <span class="n">form</span> <span class="n">-v</span> <span class="p">{</span>
+    <span class="n">auth</span> <span class="n">use</span> <span class="n">login</span> <span class="n">-t</span> <span class="n">form</span> <span class="n">-v</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
 
         <span class="c"># check if the user is valid</span>
@@ -1653,7 +1653,7 @@
 <p>By default, Pode will check if the request's payload (from POST) contains a <code>username</code> and <code>password</code> field. The <code>auth use</code> action can be supplied options via <code>-o</code> to override the names of these fields for anything custom.</p>
 <p>For example, to look for the field <code>email</code> rather than rather than the default <code>username</code> you could do:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">auth</span> <span class="n">use</span> <span class="n">form</span> <span class="n">-v</span> <span class="p">{</span>
+    <span class="n">auth</span> <span class="n">use</span> <span class="n">login</span> <span class="n">-t</span> <span class="n">form</span> <span class="n">-v</span> <span class="p">{</span>
         <span class="c"># check</span>
     <span class="p">}</span> <span class="n">-o</span> <span class="p">@{</span> <span class="s1">&#39;UsernameField&#39;</span> <span class="p">=</span> <span class="s1">&#39;email&#39;</span> <span class="p">}</span>
 <span class="p">}</span>
@@ -1665,14 +1665,14 @@
 <p>Once configured you can start using Form authentication to validate incoming requests. You can either configure the validation to happen on every <code>route</code> as global <code>middleware</code>, or as custom <code>route</code> middleware.</p>
 <p>The following will use Form authentication to validate every request on every <code>route</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">middleware</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">form</span><span class="p">)</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">login</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <p>Whereas the following example will use Form authentication to only validate requests on specific a <code>route</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/info&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">form</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/info&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">login</span><span class="p">)</span> <span class="p">{</span>
         <span class="c"># logic</span>
     <span class="p">}</span>
 <span class="p">}</span>
@@ -1685,7 +1685,7 @@
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="c"># setup form authentication to validate a user</span>
-    <span class="n">auth</span> <span class="n">use</span> <span class="n">form</span> <span class="n">-v</span> <span class="p">{</span>
+    <span class="n">auth</span> <span class="n">use</span> <span class="n">login</span> <span class="n">-t</span> <span class="n">form</span> <span class="n">-v</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
 
         <span class="c"># here you&#39;d check a real user storage, this is just for example</span>
@@ -1701,7 +1701,7 @@
     <span class="p">}</span>
 
     <span class="c"># check the request on this route against the authentication</span>
-    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/cpu&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">form</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/cpu&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">login</span><span class="p">)</span> <span class="p">{</span>
         <span class="n">json</span> <span class="p">@{</span> <span class="s1">&#39;cpu&#39;</span> <span class="p">=</span> <span class="n">82</span> <span class="p">}</span>
     <span class="p">}</span>
 

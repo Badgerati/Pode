@@ -1610,20 +1610,22 @@
 <a href="#quick-look"><img alt="QuickLook" src="https://img.shields.io/badge/-Quick%20Look!-blue.svg?longCache=true&amp;style=for-the-badge" /></a></p>
 <h2 id="features">Features</h2>
 <ul>
-<li>Can run on *nix environments using PowerShell Core</li>
-<li>Host REST APIs, Web Pages, Static Content, TCP and SMTP server</li>
-<li>Multiple threads can be used to response to incoming requests</li>
+<li>Cross-platform via PowerShell Core (with support for PS4.0+)</li>
+<li>Listen on IP address or host name</li>
+<li>Support for HTTP, HTTPS, TCP and SMTP</li>
+<li>Host REST APIs, Web Pages, and Static Content</li>
+<li>Multiple thread support for incoming requests</li>
 <li>Inbuilt template engine, with support for third-parties</li>
-<li>Setup async timers to be used as one off tasks, or for housekeeping services</li>
-<li>Ability to schedule async tasks using cron expressions</li>
+<li>Async timers for lightweight repeatable processes</li>
+<li>Async scheduled tasks using cron expressions for larger processes</li>
 <li>Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.</li>
 <li>Cross-state variable access across multiple runspaces</li>
 <li>Optional file monitoring to trigger internal server restart on file changes</li>
 <li>Ability to allow/deny requests from certain IP addresses and subnets</li>
 <li>Basic rate limiting for IP addresses and subnets</li>
-<li>Support for generating/binding self-signed certificates, and signed certificates on Windows</li>
-<li>Support for middleware and sessions on web servers</li>
-<li>Can use authentication on requests, which can either be sessionless or session persistent</li>
+<li>Generate/bind self-signed certificates, and signed certificates on Windows</li>
+<li>Middleware and sessions on web servers</li>
+<li>Authentication on requests, which can either be sessionless or session persistent</li>
 </ul>
 <h2 id="quick-look">Quick Look!</h2>
 <p>Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will <a href="./Functions/Core/Listen"><code>listen</code></a> on a port, create the <a href="./Functions/Core/Route"><code>route</code></a>, and respond with <a href="./Functions/Response/Json"><code>JSON</code></a> when <code>http://localhost:8080/ping</code> is hit:</p>

@@ -1637,9 +1637,9 @@
                 <h1 id="basic-authentication">Basic Authentication</h1>
 <p>Basic authentication is when you pass an encoded <code>username:password</code> value on the header of your requests: <code>@{ 'Authorization' = 'Basic &lt;base64 encoded username:password&gt;' }</code>.</p>
 <h2 id="setup">Setup</h2>
-<p>To setup and start using Basic authentication in Pode you can set <code>auth use basic</code> in your server script, the validator script you need to supply will have the username/password passed as arguments to the scriptblock:</p>
+<p>To setup and start using Basic authentication in Pode you can call <code>auth use &lt;name&gt; -t basic</code> in your server script, the validator script you need to supply will have the username/password passed as arguments to the scriptblock:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">auth</span> <span class="n">use</span> <span class="n">basic</span> <span class="n">-v</span> <span class="p">{</span>
+    <span class="n">auth</span> <span class="n">use</span> <span class="n">login</span> <span class="n">-t</span> <span class="n">basic</span> <span class="n">-v</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
 
         <span class="c"># check if the user is valid</span>
@@ -1653,7 +1653,7 @@
 <p>By default, Pode will check if the request's header contains an <code>Authorization</code> key, and whether the value of that key starts with <code>Basic</code>. The <code>auth use</code> action can be supplied options via <code>-o</code> to override the start name of the value, as well as the encoding that Pode uses.</p>
 <p>For example, to use <code>ASCII</code> encoding rather than the default <code>ISO-8859-1</code> you could do:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">auth</span> <span class="n">use</span> <span class="n">basic</span> <span class="n">-v</span> <span class="p">{</span>
+    <span class="n">auth</span> <span class="n">use</span> <span class="n">login</span> <span class="n">-t</span> <span class="n">basic</span> <span class="n">-v</span> <span class="p">{</span>
         <span class="c"># check</span>
     <span class="p">}</span> <span class="n">-o</span> <span class="p">@{</span> <span class="s1">&#39;Encoding&#39;</span> <span class="p">=</span> <span class="s1">&#39;ASCII&#39;</span> <span class="p">}</span>
 <span class="p">}</span>
@@ -1665,14 +1665,14 @@
 <p>Once configured you can start using Basic authentication to validate incoming requests. You can either configure the validation to happen on every <code>route</code> as global <code>middleware</code>, or as custom <code>route</code> middleware.</p>
 <p>The following will use Basic authentication to validate every request on every <code>route</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">middleware</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">basic</span><span class="p">)</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">login</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <p>Whereas the following example will use Basic authentication to only validate requests on specific a <code>route</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/info&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">basic</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/info&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">login</span><span class="p">)</span> <span class="p">{</span>
         <span class="c"># logic</span>
     <span class="p">}</span>
 <span class="p">}</span>
@@ -1685,7 +1685,7 @@
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="c"># setup basic authentication to validate a user</span>
-    <span class="n">auth</span> <span class="n">use</span> <span class="n">basic</span> <span class="n">-v</span> <span class="p">{</span>
+    <span class="n">auth</span> <span class="n">use</span> <span class="n">login</span> <span class="n">-t</span> <span class="n">basic</span> <span class="n">-v</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
 
         <span class="c"># here you&#39;d check a real user storage, this is just for example</span>
@@ -1701,7 +1701,7 @@
     <span class="p">}</span>
 
     <span class="c"># check the request on this route against the authentication</span>
-    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/cpu&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">basic</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/cpu&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">login</span><span class="p">)</span> <span class="p">{</span>
         <span class="n">json</span> <span class="p">@{</span> <span class="s1">&#39;cpu&#39;</span> <span class="p">=</span> <span class="n">82</span> <span class="p">}</span>
     <span class="p">}</span>
 

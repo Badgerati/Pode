@@ -347,6 +347,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0220" title="v0.22.0" class="md-nav__link">
+    v0.22.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0210" title="v0.21.0" class="md-nav__link">
     v0.21.0
   </a>
@@ -1659,6 +1666,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0220" title="v0.22.0" class="md-nav__link">
+    v0.22.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0210" title="v0.21.0" class="md-nav__link">
     v0.21.0
   </a>
@@ -1783,6 +1797,16 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v0220">v0.22.0</h2>
+<div class="codehilite"><pre><span></span>### Enhancements
+* #123: Ability to remove a `route`
+* #124: Views, Public and custom static routes now use `New-PSDrive` to prevent directory tranversing
+* #128: Ability to `listen` using a host name
+* #130: `auth` now allows re-using inbuilt/custom parsers. Rather than `name` the type, the name is now any custom name you want to use and yuo specify the `-type` (like basic, etc). If no `-type` supplied, `name` is used as the type instead
+* #131: There&#39;s now a route parameter on `middleware`, so you can define global middleware that only run on requests for specific routes.
+</pre></div>
+
+
 <h2 id="v0210">v0.21.0</h2>
 <div class="codehilite"><pre><span></span>### Enhancements
 * #110: Return a 401 for inaccessible files

@@ -1730,12 +1730,28 @@
                 
                 <h1 id="auth">Auth</h1>
 <h2 id="description">Description</h2>
-<p>The <code>auth</code> function allows you to setup/use and validate/check against defined authentication methods on web requests; this could be Basic or Form authentication, to custom defined authentication. Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session signed-cookie).</p>
+<p>The <code>auth</code> function allows you to <code>use</code> and <code>check</code> against defined authentication methods on web requests; this could be Basic/Form authentication, or custom defined authentication. Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session signed-cookie).</p>
 <h2 id="actions">Actions</h2>
 <h3 id="use">Use</h3>
+<div class="codehilite"><pre><span></span><span class="c"># inbuilt</span>
+<span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-validator</span> <span class="p">{}</span> <span class="p">[</span><span class="n">-type</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-options</span> <span class="p">@{}]</span>
+
+<span class="c"># custom</span>
+<span class="n">auth</span> <span class="n">use</span> <span class="n">-custom</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-parser</span> <span class="p">{}</span> <span class="n">-validator</span> <span class="p">{}</span> <span class="p">[</span><span class="n">-type</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-options</span> <span class="p">@{}]</span>
+</pre></div>
+
+
 <p>The <code>auth use</code> action allows you to specify and configure which authentication methods your server will use; you can have many of them, defining which one to validate against on the <code>auth check</code> action.</p>
-<p>The name of the method specified should be a valid inbuilt method, unless you have stated that the method is custom. If custom, you <em>must</em> supply a parser script which will parse payloads/headers for credentials and then return this data as an array - which will then be supplied to the validator script.</p>
+<p>The <code>name</code> of the method can be anything, so long as you specify the <code>type</code> as well. The <code>type</code> should be a valid inbuilt method, unless you have stated that the method is custom. If custom, you <em>must</em> supply a parser script which will parse payloads/headers for credentials and then return this data as an array - which will then be supplied to the validator script.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>If you don't supply a <code>type</code> then the <code>name</code> will be used instead.</p>
+</div>
 <h3 id="check">Check</h3>
+<div class="codehilite"><pre><span></span><span class="n">auth</span> <span class="n">check</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-options</span> <span class="p">@{}]</span>
+</pre></div>
+
+
 <p>The <code>auth check</code> action allows you to define which authentication method to validate a request against. The action returns a valid middleware script, meaning you can either use this action on specific <code>route</code> definitions, or globally for all routes as <code>middleware</code>. If this action fails, then a 401 response is returned.</p>
 <p>On success, this action will then allow the <code>route</code> logic to be invoked. If <code>session</code> <code>middleware</code> has been configured then an authenticated session is also created for future requests.</p>
 <p>When the user makes another call using the same authenticated session, then the <code>auth check</code> action will detect the already authenticated session and skip the validator script. If you're using sessions and you don't want the <code>auth check</code> to check the session, or store the user against the session, then pass <code>-o @{ 'Session' = $false }</code> to the <code>auth check</code>.</p>
@@ -1782,7 +1798,7 @@
 </div>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
-<p>The following example will setup sessionless <code>Basic</code> authentication, and then use it as <code>route</code> middleware. This will require authentication on every request. The basic authentication will check for an <code>{ "Authorization": "Basic user:pass" }</code> header on the request:</p>
+<p>The following example will setup sessionless <code>Basic</code> authentication, and then use it as <code>route</code> middleware. This will require authentication on every request. The basic authentication will check for an <code>{ "Authorization": "Basic &lt;user:pass&gt;" }</code> header on the request:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
@@ -1873,7 +1889,14 @@
 <td>Name</td>
 <td>string</td>
 <td>true</td>
-<td>The name of the authentication middleware; if <code>-Custom</code> is not specified, then this will be the name of an inbuilt authentication method</td>
+<td>The name of the authentication middleware that will be used to reference and validate against in the <code>check</code> call</td>
+<td>empty</td>
+</tr>
+<tr>
+<td>Type</td>
+<td>string</td>
+<td>false</td>
+<td>The type of the authentication middleware; if <code>-Custom</code> is not specified, then this will be the name of an inbuilt authentication method</td>
 <td>empty</td>
 </tr>
 <tr>

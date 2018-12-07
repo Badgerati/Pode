@@ -1684,8 +1684,8 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 </div>
 <h2 id="usage">Usage</h2>
 <p>To setup and use routes in Pode you should use the <a href="../../../Function/Core/Route"><code>route</code></a> function. The general make-up of the <code>route</code> function is as follows - the former is for HTTP requests, where as the latter is for static content:</p>
-<div class="codehilite"><pre><span></span><span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span>
-<span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span>
+<div class="codehilite"><pre><span></span><span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
+<span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
 </pre></div>
 
 

@@ -1657,10 +1657,10 @@
 <h3 id="use">Use</h3>
 <p>The <code>auth use</code> action allows you to specify and configure which authentication methods your server will use; you can have many methods configured, defining which one to validate against on the <code>auth check</code> action.</p>
 <p>The make-up of the <code>use</code> action is:</p>
-<div class="codehilite"><pre><span></span><span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-validator</span> <span class="p">{}</span> <span class="p">[</span><span class="n">-options</span> <span class="p">@{}]</span> <span class="p">[</span><span class="n">-parser</span> <span class="p">{}]</span> <span class="p">[</span><span class="n">-custom</span><span class="p">]</span>
+<div class="codehilite"><pre><span></span><span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-validator</span> <span class="p">{}</span> <span class="p">[</span><span class="n">-options</span> <span class="p">@{}]</span> <span class="p">[</span><span class="n">-parser</span> <span class="p">{}]</span> <span class="p">[</span><span class="n">-type</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-custom</span><span class="p">]</span>
 
 <span class="c"># or shorthand:</span>
-<span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-v</span> <span class="p">{}</span> <span class="p">[</span><span class="n">-o</span> <span class="p">@{}]</span> <span class="p">[</span><span class="n">-p</span> <span class="p">{}]</span> <span class="p">[</span><span class="n">-c</span><span class="p">]</span>
+<span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-v</span> <span class="p">{}</span> <span class="p">[</span><span class="n">-o</span> <span class="p">@{}]</span> <span class="p">[</span><span class="n">-p</span> <span class="p">{}]</span> <span class="p">[</span><span class="n">-t</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-c</span><span class="p">]</span>
 </pre></div>
 
 
@@ -1675,7 +1675,18 @@
 </pre></div>
 
 
-<p>The <code>&lt;name&gt;</code> of the authentication method specified should be a valid inbuilt method (such as Basic or Form), unless you have stated that the method is custom (<code>-c</code>).</p>
+<p>or, if you want to use a custom name:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">auth</span> <span class="n">use</span> <span class="n">login</span> <span class="n">-t</span> <span class="n">basic</span> <span class="n">-v</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$username</span><span class="p">,</span> <span class="nv">$pass</span><span class="p">)</span>
+        <span class="c"># logic to check user</span>
+        <span class="k">return</span> <span class="p">@{</span> <span class="s1">&#39;user&#39;</span> <span class="p">=</span> <span class="nv">$user</span> <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>The <code>&lt;name&gt;</code> of the authentication method can be anything, so long as you specify the <code>&lt;type&gt;</code> as well. The <code>&lt;type&gt;</code> of the authentication method specified should be a valid inbuilt method (such as Basic or Form), unless you have stated that the method is custom (<code>-c</code>). If you do not specify a <code>&lt;type&gt;</code> then the <code>&lt;name&gt;</code> is used instead - in which case this needs to follow the same rules as <code>&lt;type&gt;</code>.</p>
 <p>The validator (<code>-v</code>) script is used to find a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the validator passes, then a <code>user</code> needs to be returned from the script via <code>@{ 'user' = $user }</code> - if <code>$null</code> or a null user is returned then the validator script is assumed to have failed.</p>
 <p>Some auth methods also have options (<code>-o</code>) that can be supplied as a hashtable, such as field name or encoding overrides. Available options will vary between authentication methods, and can be seen on their tutorial pages, such as <a href="../Basic"><code>Basic</code></a>.</p>
 <p>If a custom (<code>-c</code>) authentication method is used, you <em>must</em> supply a parser (<code>-p</code>) script which will parse payloads/headers for credentials and then return this data as an array - which will then be supplied to the validator (<code>-v</code>) script.</p>

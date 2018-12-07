@@ -1136,6 +1136,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-6" title="Example 6" class="md-nav__link">
+    Example 6
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1671,6 +1678,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-6" title="Example 6" class="md-nav__link">
+    Example 6
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1724,6 +1738,20 @@
 
 
 <h3 id="example-2">Example 2</h3>
+<p>The following example sets up a <code>GET /ping</code> route, and then removes it:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/ping&#39;</span> <span class="p">{</span>
+        <span class="n">json</span> <span class="p">@{</span> <span class="s1">&#39;value&#39;</span> <span class="p">=</span> <span class="s1">&#39;ping&#39;</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="n">route</span> <span class="n">-remove</span> <span class="n">get</span> <span class="s1">&#39;/ping&#39;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="example-3">Example 3</h3>
 <p>The following example sets up a <code>POST /users</code> route, that creates a new user using post data:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
@@ -1741,7 +1769,7 @@
 </pre></div>
 
 
-<h3 id="example-3">Example 3</h3>
+<h3 id="example-4">Example 4</h3>
 <p>The following example sets up a static route of <code>/assets</code> using the directory <code>./content/assets</code>. In the <code>home.html</code> view if you reference the image <code>&lt;img src="/assets/images/icon.png" /&gt;</code>, then Pode will get the image from <code>./content/assets/images/icon.png</code>.</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
@@ -1759,7 +1787,7 @@
 <p class="admonition-title">Tip</p>
 <p>Furthermore, if you attempt to navigate to <code>http://localhost:8080/assets</code>, then Pode will attempt to display a default page such as <code>index.html</code> - <a href="../../../Tutorials/Routes/Overview#default-pages">see here</a>.</p>
 </div>
-<h3 id="example-4">Example 4</h3>
+<h3 id="example-5">Example 5</h3>
 <p>The following example sets up a <code>GET /users/:userId</code> route, that returns a user based on the route parameter <code>userId</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
@@ -1782,7 +1810,7 @@
 </pre></div>
 
 
-<h3 id="example-5">Example 5</h3>
+<h3 id="example-6">Example 6</h3>
 <p>The following example sets up a <code>GET /</code> route, that has custom middleware to check the user agent first. If the user agent is from PowerShell deny the call, and don't invoke the route's logic:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
@@ -1856,6 +1884,13 @@
 <td>false</td>
 <td>For static routes only, this is an array of default pages that could be displayed when the static directory is called</td>
 <td>['index.html', 'index.htm', 'default.html', 'default.htm']</td>
+</tr>
+<tr>
+<td>Remove</td>
+<td>switch</td>
+<td>false</td>
+<td>When passed, will remove a defined route</td>
+<td>false</td>
 </tr>
 </tbody>
 </table>

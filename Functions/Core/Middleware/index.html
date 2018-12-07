@@ -1103,6 +1103,20 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-3" title="Example 3" class="md-nav__link">
+    Example 3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-4" title="Example 4" class="md-nav__link">
+    Example 4
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1636,6 +1650,20 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-3" title="Example 3" class="md-nav__link">
+    Example 3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-4" title="Example 4" class="md-nav__link">
+    Example 4
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1676,7 +1704,7 @@
                 
                 <h1 id="middleware">Middleware</h1>
 <h2 id="description">Description</h2>
-<p>The <code>middleware</code> function allows you to add middleware scripts, that run prior to <code>route</code> logic. They allow you to do things like rate-limiting, access restriction, sessions, etc.</p>
+<p>The <code>middleware</code> function allows you to add middleware scripts, that run prior to <code>route</code> logic. They allow you to do things like rate-limiting, access restriction, authentication, sessions, etc.</p>
 <p>Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the <code>route</code> logic.</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
@@ -1715,6 +1743,32 @@
 </pre></div>
 
 
+<h3 id="example-3">Example 3</h3>
+<p>The following example is <code>middleware</code> that only runs on <code>/api</code> routes. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new Agent key on the event for later <code>middleware</code>/<code>route</code>:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">middleware</span> <span class="s1">&#39;/api&#39;</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$event</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span> <span class="o">-ilike</span> <span class="s1">&#39;*powershell*&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">status</span> <span class="n">403</span>
+            <span class="k">return</span> <span class="nv">$false</span>
+        <span class="p">}</span>
+
+        <span class="nv">$event</span><span class="p">.</span><span class="n">Agent</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">UserAgent</span>
+        <span class="k">return</span> <span class="nv">$true</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="example-4">Example 4</h3>
+<p>The following example is <code>middleware</code> that will run Basic authenticaion validation on every <code>/api</code> request (assumes authentication has been set-up):</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">middleware</span> <span class="s1">&#39;/api&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">basic</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+
+
 <h2 id="parameters">Parameters</h2>
 <table>
 <thead>
@@ -1730,9 +1784,23 @@
 <tr>
 <td>ScriptBlock</td>
 <td>scriptblock</td>
-<td>true</td>
-<td>The main logic for the middleware; this scriptblock will be supplied a single parameter which contains the <code>Request</code> and <code>Response</code> objects</td>
+<td>true if no hashtable</td>
+<td>Main logic for the middleware; the scriptblock will be supplied a single parameter which contains the <code>Request</code> and <code>Response</code> objects</td>
 <td>null</td>
+</tr>
+<tr>
+<td>HashTable</td>
+<td>hashtable</td>
+<td>true if no scriptblock</td>
+<td>Main logic for the middleware; the hashtable requires a 'Logic' key with a scriptblock value (with the same rules as above)</td>
+<td>null</td>
+</tr>
+<tr>
+<td>Route</td>
+<td>string</td>
+<td>false</td>
+<td>Specifies which routes the middleware should be invoked on</td>
+<td>/</td>
 </tr>
 <tr>
 <td>Name</td>
@@ -1740,6 +1808,13 @@
 <td>false</td>
 <td>Only use this parameter if you plan to override any of the inbuilt middleware. Names for the inbuilt middleware can be found below</td>
 <td>empty</td>
+</tr>
+<tr>
+<td>Return</td>
+<td>switch</td>
+<td>false</td>
+<td>If supplied, the middleware won't be added but will instead be returned - for use on specific routes</td>
+<td>false</td>
 </tr>
 </tbody>
 </table>
