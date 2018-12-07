@@ -24,6 +24,25 @@ Invoke-Build Docs
 
 Then navigate to `http://127.0.0.1:8000` in your browser.
 
+## Features
+
+* Cross-platform via PowerShell Core
+* Listen on IP address or host name
+* Support for HTTP, HTTPS, TCP and SMTP
+* Host REST APIs, Web Pages, and Static Content
+* Multiple thread support for incoming requests
+* Inbuilt template engine, with support for third-parties
+* Async timers for lightweight repeatable processes
+* Async scheduled tasks using cron expressions for larger processes
+* Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
+* Cross-state variable access across multiple runspaces
+* Optional file monitoring to trigger internal server restart on file changes
+* Ability to allow/deny requests from certain IP addresses and subnets
+* Basic rate limiting for IP addresses and subnets
+* Generate/bind self-signed certificates, and signed certificates on Windows
+* Middleware and sessions on web servers
+* Authentication on requests, which can either be sessionless or session persistent
+
 ## Build Your First App
 
 Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will listen on a port, create the route, and respond with JSON when `http://localhost:8080/ping` is hit:
@@ -39,23 +58,6 @@ Server {
 ```
 
 See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app!
-
-## Features
-
-* Can run on *nix environments using PowerShell Core
-* Host REST APIs, Web Pages, Static Content, TCP and SMTP server
-* Multiple threads can be used to response to incoming requests
-* Inbuilt template engine, with support for third-parties
-* Setup async timers to be used as one off tasks, or for housekeeping services
-* Ability to schedule async tasks using cron expressions
-* Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
-* Cross-state variable access across multiple runspaces
-* Optional file monitoring to trigger internal server restart on file changes
-* Ability to allow/deny requests from certain IP addresses and subnets
-* Basic rate limiting for IP addresses and subnets
-* Support for generating/binding self-signed certificates, and signed certificates on Windows
-* Support for middleware and sessions on web servers
-* Can use authentication on requests, which can either be sessionless or session persistent
 
 ## Install
 
