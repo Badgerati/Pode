@@ -12,20 +12,22 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
 
 ## Features
 
-* Can run on *nix environments using PowerShell Core
-* Host REST APIs, Web Pages, Static Content, TCP and SMTP server
-* Multiple threads can be used to response to incoming requests
+* Cross-platform via PowerShell Core (with support for PS4.0+)
+* Listen on IP address or host name
+* Support for HTTP, HTTPS, TCP and SMTP
+* Host REST APIs, Web Pages, and Static Content
+* Multiple thread support for incoming requests
 * Inbuilt template engine, with support for third-parties
-* Setup async timers to be used as one off tasks, or for housekeeping services
-* Ability to schedule async tasks using cron expressions
+* Async timers for lightweight repeatable processes
+* Async scheduled tasks using cron expressions for larger processes
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 * Cross-state variable access across multiple runspaces
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
-* Support for generating/binding self-signed certificates, and signed certificates on Windows
-* Support for middleware and sessions on web servers
-* Can use authentication on requests, which can either be sessionless or session persistent
+* Generate/bind self-signed certificates, and signed certificates on Windows
+* Middleware and sessions on web servers
+* Authentication on requests, which can either be sessionless or session persistent
 
 ## Quick Look!
 

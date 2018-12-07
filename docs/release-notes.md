@@ -1,5 +1,16 @@
 # Release Notes
 
+## v0.22.0
+
+```plain
+### Enhancements
+* #123: Ability to remove a `route`
+* #124: Views, Public and custom static routes now use `New-PSDrive` to prevent directory tranversing
+* #128: Ability to `listen` using a host name
+* #130: `auth` now allows re-using inbuilt/custom parsers. Rather than `name` the type, the name is now any custom name you want to use and yuo specify the `-type` (like basic, etc). If no `-type` supplied, `name` is used as the type instead
+* #131: There's now a route parameter on `middleware`, so you can define global middleware that only run on requests for specific routes.
+```
+
 ## v0.21.0
 
 ```plain

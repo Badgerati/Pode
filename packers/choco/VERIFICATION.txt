@@ -1,0 +1,11 @@
+VERIFICATION
+Verification is intended to assist the Chocolatey moderators and community
+in verifying that this package's contents are trustworthy.
+
+This embedded PowerShell module is packaged and distributed by the author.
+
+The contents of which can be found on the releases pages at <https://github.com/Badgerati/Pode/releases>.
+
+To verify contents, either:
+1. Compare the Checksum on the release notes against the Module's source.
+2. Download the zip from the release, run 'checksum -t sha256' on it, and compare.
