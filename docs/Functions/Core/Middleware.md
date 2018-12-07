@@ -2,7 +2,7 @@
 
 ## Description
 
-The `middleware` function allows you to add middleware scripts, that run prior to `route` logic. They allow you to do things like rate-limiting, access restriction, sessions, etc.
+The `middleware` function allows you to add middleware scripts, that run prior to `route` logic. They allow you to do things like rate-limiting, access restriction, authentication, sessions, etc.
 
 Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the `route` logic.
 
@@ -48,12 +48,45 @@ Server {
 }
 ```
 
+### Example 3
+
+The following example is `middleware` that only runs on `/api` routes. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new Agent key on the event for later `middleware`/`route`:
+
+```powershell
+Server {
+    middleware '/api' {
+        param($event)
+
+        if ($event.Request.UserAgent -ilike '*powershell*') {
+            status 403
+            return $false
+        }
+
+        $event.Agent = $event.Request.UserAgent
+        return $true
+    }
+}
+```
+
+### Example 4
+
+The following example is `middleware` that will run Basic authenticaion validation on every `/api` request (assumes authentication has been set-up):
+
+```powershell
+Server {
+    middleware '/api' (auth check basic)
+}
+```
+
 ## Parameters
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
-| ScriptBlock | scriptblock | true | The main logic for the middleware; this scriptblock will be supplied a single parameter which contains the `Request` and `Response` objects | null |
+| ScriptBlock | scriptblock | true if no hashtable | Main logic for the middleware; the scriptblock will be supplied a single parameter which contains the `Request` and `Response` objects | null |
+| HashTable | hashtable | true if no scriptblock | Main logic for the middleware; the hashtable requires a 'Logic' key with a scriptblock value (with the same rules as above) | null |
+| Route | string | false | Specifies which routes the middleware should be invoked on | / |
 | Name | string | false | Only use this parameter if you plan to override any of the inbuilt middleware. Names for the inbuilt middleware can be found below | empty |
+| Return | switch | false | If supplied, the middleware won't be added but will instead be returned - for use on specific routes | false |
 
 ## Notes
 

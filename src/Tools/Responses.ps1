@@ -99,8 +99,7 @@ function Attach
     )
 
     # only download files from public/static-route directories
-    $Path = Get-PodeStaticRoutePath -Path $Path
-
+    $Path = Get-PodeStaticRoutePath -Route $Path
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
@@ -111,7 +110,7 @@ function Attach
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
     # open up the file as a stream
-    $fs = [System.IO.File]::OpenRead($Path)
+    $fs = (Get-Item $Path).OpenRead()
 
     # setup the response details and headers
     $WebEvent.Response.ContentLength64 = $fs.Length
@@ -366,7 +365,7 @@ function Include
     }
 
     # only look in the view directory
-    $Path = Join-ServerRoot 'views' $Path
+    $Path = (Join-Path $PodeSession.Server.InbuiltDrives['views'] $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {
@@ -433,7 +432,7 @@ function View
     }
 
     # only look in the view directory
-    $Path = Join-ServerRoot 'views' $Path
+    $Path = (Join-Path $PodeSession.Server.InbuiltDrives['views'] $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {

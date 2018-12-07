@@ -187,6 +187,39 @@ function New-PodeSelfSignedCertificate
     Write-Host " Done" -ForegroundColor Green
 }
 
+function Get-HostIPRegex
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Both', 'Hostname', 'IP')]
+        [string]
+        $Type
+    )
+
+    $ip_rgx = '\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all'
+    $host_rgx = '([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
+
+    switch ($Type.ToLowerInvariant())
+    {
+        'both' {
+            return "(?<host>($($ip_rgx)|$($host_rgx)))"
+        }
+
+        'hostname' {
+            return "(?<host>($($host_rgx)))"
+        }
+
+        'ip' {
+            return "(?<host>($($ip_rgx)))"
+        }
+    }
+}
+
+function Get-PortRegex
+{
+    return '(?<port>\d+)'
+}
+
 function Test-IPAddress
 {
     param (
@@ -195,7 +228,7 @@ function Test-IPAddress
         $IP
     )
 
-    if ((Test-Empty $IP) -or $IP -ieq '*' -or $IP -ieq 'all') {
+    if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all') -or ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$")) {
         return $true
     }
 
@@ -249,8 +282,12 @@ function Get-IPAddress
         $IP
     )
 
-    if ((Test-Empty $IP) -or $IP -ieq '*' -or $IP -ieq 'all') {
+    if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
         return [System.Net.IPAddress]::Any
+    }
+
+    if ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$") {
+        return $IP
     }
 
     return [System.Net.IPAddress]::Parse($IP)
@@ -378,6 +415,7 @@ function Add-PodeRunspace
     {
         $ps = [powershell]::Create()
         $ps.RunspacePool = $PodeSession.RunspacePools[$Type]
+        $ps.AddScript({ Add-PodePSDrives }) | Out-Null
         $ps.AddScript($ScriptBlock) | Out-Null
 
         if (!(Test-Empty $Parameters)) {
@@ -523,19 +561,69 @@ function Close-Pode
         $Exit
     )
 
+    # stpo all current runspaces
     Close-PodeRunspaces -ClosePool
+
+    # stop the file monitor if it's running
     Stop-PodeFileMonitor
 
     try {
+        # remove all the cancellation tokens
         dispose $PodeSession.Tokens.Cancellation
         dispose $PodeSession.Tokens.Restart
     } catch {
         $Error[0] | Out-Default
     }
 
+    # remove all of the pode temp drives
+    Remove-PodePSDrives
+
     if ($Exit -and $PodeSession.Server.Type -ine 'script') {
         Write-Host " Done" -ForegroundColor Green
     }
+}
+
+function New-PodePSDrive
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Name
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        $Name = "PodeDir$(Get-NewGuid)"
+    }
+
+    $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global)
+
+    if (!$PodeSession.Server.Drives.ContainsKey($drive.Name)) {
+        $PodeSession.Server.Drives[$drive.Name] = $Path
+    }
+
+    return "$($drive.Name):"
+}
+
+function Add-PodePSDrives
+{
+    $PodeSession.Server.Drives.Keys | ForEach-Object {
+        New-PodePSDrive -Path $PodeSession.Server.Drives[$_] -Name $_ | Out-Null
+    }
+}
+
+function Add-PodePSInbuiltDrives
+{
+    $PodeSession.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path (Join-ServerRoot 'views'))
+    $PodeSession.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path (Join-ServerRoot 'public'))
+}
+
+function Remove-PodePSDrives
+{
+    Get-PSDrive PodeDir* | Remove-PSDrive | Out-Null
 }
 
 <#

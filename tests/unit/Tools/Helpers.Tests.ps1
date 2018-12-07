@@ -173,6 +173,26 @@ Describe 'Test-IsPSCore' {
     }
 }
 
+Describe 'Get-HostIPRegex' {
+    It 'Returns valid Hostname regex' {
+        Get-HostIPRegex -Type Hostname | Should Be '(?<host>(([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+    }
+
+    It 'Returns valid IP regex' {
+        Get-HostIPRegex -Type IP | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all))'
+    }
+
+    It 'Returns valid IP and Hostname regex' {
+        Get-HostIPRegex -Type Both | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all|([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+    }
+}
+
+Describe 'Get-PortRegex' {
+    It 'Returns valid port regex' {
+        Get-PortRegex | Should Be '(?<port>\d+)'
+    }
+}
+
 Describe 'Test-IPAddress' {
     Context 'Values that are for any IP' {
         It 'Returns true for no value' {
@@ -189,6 +209,16 @@ Describe 'Test-IPAddress' {
 
         It 'Returns true for all' {
             Test-IPAddress -IP 'all' | Should Be $true
+        }
+    }
+
+    Context 'Values for Hostnames' {
+        It 'Returns true for valid Hostname' {
+            Test-IPAddress -IP 'foo.com' | Should Be $true
+        }
+
+        It 'Returns false for invalid Hostname' {
+            Test-IPAddress -IP '~fake.net' | Should Be $false
         }
     }
 
@@ -326,6 +356,16 @@ Describe 'Get-IPAddress' {
 
         It 'Returns any IP for all' {
             (Get-IPAddress -IP 'all').ToString() | Should Be '0.0.0.0'
+        }
+    }
+
+    Context 'Values for Hostnames' {
+        It 'Returns Hostname for valid Hostname' {
+            (Get-IPAddress -IP 'foo.com').ToString() | Should Be 'foo.com'
+        }
+
+        It 'Throws error for invalid IP' {
+            { Get-IPAddress -IP '~fake.net' } | Should Throw 'invalid ip address'
         }
     }
 

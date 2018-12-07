@@ -46,7 +46,7 @@ function Get-PodeRoute
 
         if ($isStatic) {
             return @{
-                'Folder' = $found.Path;
+                'Path' = $found.Path;
                 'Defaults' = $found.Defaults;
                 'File' = $Matches['file'];
             }
@@ -67,36 +67,36 @@ function Get-PodeStaticRoutePath
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Path
+        $Route
     )
 
-    # attempt to get a static route
-    $route = Get-PodeRoute -HttpMethod 'static' -Route $Path
+    # attempt to get a static route for the path
+    $found = Get-PodeRoute -HttpMethod 'static' -Route $Route
 
     # if we have a defined static route, use that
-    if ($null -ne $route) {
+    if ($null -ne $found) {
         # if there's no file, we need to check defaults
-        if ([string]::IsNullOrWhiteSpace($route.File) -and (Get-Count @($route.Defaults)) -gt 0)
+        if ([string]::IsNullOrWhiteSpace($found.File) -and (Get-Count @($found.Defaults)) -gt 0)
         {
-            if ((Get-Count @($route.Defaults)) -eq 1) {
-                $route.File = @($route.Defaults)[0]
+            if ((Get-Count @($found.Defaults)) -eq 1) {
+                $found.File = @($found.Defaults)[0]
             }
             else {
-                foreach ($def in $route.Defaults) {
-                    if (Test-PodePath (Join-ServerRoot $route.Folder $def) -NoStatus) {
-                        $route.File = $def
+                foreach ($def in $found.Defaults) {
+                    if (Test-PodePath (Join-Path $found.Path $def) -NoStatus) {
+                        $found.File = $def
                         break
                     }
                 }
             }
         }
 
-        return (Join-ServerRoot $route.Folder $route.File)
+        return (Join-Path $found.Path $found.File)
     }
 
     # else, use the public static directory (but only if path is a file)
-    if (Test-PathIsFile $Path) {
-        return (Join-ServerRoot 'public' $Path)
+    if (Test-PathIsFile $Route) {
+        return (Join-Path $PodeSession.Server.InbuiltDrives['public'] $Route)
     }
 
     # otherwise, just return null
@@ -130,8 +130,17 @@ function Route
         [Parameter()]
         [Alias('d')]
         [string[]]
-        $Defaults
+        $Defaults,
+
+        [switch]
+        [Alias('rm')]
+        $Remove
     )
+
+    if ($Remove) {
+        Remove-PodeRoute -HttpMethod $HttpMethod -Route $Route
+        return
+    }
 
     if ($HttpMethod -ieq 'static') {
         Add-PodeStaticRoute -Route $Route -Path ([string](@($Middleware))[0]) -Defaults $Defaults
@@ -143,6 +152,43 @@ function Route
 
         Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock
     }
+}
+
+function Remove-PodeRoute
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
+        [string]
+        $HttpMethod,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Route
+    )
+
+    # lower the method
+    $HttpMethod = $HttpMethod.ToLowerInvariant()
+
+    # split route on '?' for query
+    $Route = Split-PodeRouteQuery -Route $Route
+
+    # ensure route isn't empty
+    if (Test-Empty $Route) {
+        throw "No route supplied for removing $($HttpMethod) definition"
+    }
+
+    # ensure the route has appropriate slashes and replace parameters
+    $Route = Update-PodeRouteSlashes -Route $Route
+    $Route = Update-PodeRoutePlaceholders -Route $Route
+
+    # ensure route does exist
+    if (!$PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
+        return
+    }
+
+    # remove the route logic
+    $PodeSession.Server.Routes[$HttpMethod].Remove($Route) | Out-Null
 }
 
 function Add-PodeRoute
@@ -163,7 +209,10 @@ function Add-PodeRoute
 
         [Parameter()]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [switch]
+        $Remove
     )
 
     # if middleware and scriptblock are null, error
@@ -222,16 +271,7 @@ function Add-PodeRoute
 
     # ensure the route has appropriate slashes
     $Route = Update-PodeRouteSlashes -Route $Route
-
-    # replace placeholder parameters with regex
-    $placeholder = '\:(?<tag>[\w]+)'
-    if ($Route -imatch $placeholder) {
-        $Route = [regex]::Escape($Route)
-    }
-
-    while ($Route -imatch $placeholder) {
-        $Route = ($Route -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
-    }
+    $Route = Update-PodeRoutePlaceholders -Route $Route
 
     # ensure route doesn't already exist
     if ($PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
@@ -273,7 +313,10 @@ function Add-PodeStaticRoute
 
         [Parameter()]
         [string[]]
-        $Defaults
+        $Defaults,
+
+        [switch]
+        $Remove
     )
 
     # store the route method
@@ -287,14 +330,18 @@ function Add-PodeStaticRoute
         throw "No route supplied for $($HttpMethod) definition"
     }
 
-    # if static, ensure the path exists
+    # if static, ensure the path exists at server root
     if (Test-Empty $Path) {
         throw "No path supplied for $($HttpMethod) definition"
     }
 
-    if (!(Test-Path (Join-ServerRoot $Path))) {
+    $Path = (Join-ServerRoot $Path)
+    if (!(Test-Path $Path)) {
         throw "Folder supplied for $($HttpMethod) route does not exist: $($Path)"
     }
+
+    # setup a temp drive for the path
+    $Path = New-PodePSDrive -Path $Path
 
     # ensure the route has appropriate slashes
     $Route = Update-PodeRouteSlashes -Route $Route -Static
@@ -314,6 +361,27 @@ function Add-PodeStaticRoute
         'Path' = $Path;
         'Defaults' = $Defaults;
     }
+}
+
+function Update-PodeRoutePlaceholders
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Route
+    )
+
+    # replace placeholder parameters with regex
+    $placeholder = '\:(?<tag>[\w]+)'
+    if ($Route -imatch $placeholder) {
+        $Route = [regex]::Escape($Route)
+    }
+
+    while ($Route -imatch $placeholder) {
+        $Route = ($Route -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
+    }
+
+    return $Route
 }
 
 function Update-PodeRouteSlashes

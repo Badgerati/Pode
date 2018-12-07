@@ -133,6 +133,9 @@ function Start-PodeServer
 {
     try
     {
+        # setup temp drives for internal dirs
+        Add-PodePSInbuiltDrives
+
         # run the logic
         Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
 
@@ -188,6 +191,9 @@ function Restart-PodeServer
 
         # close all current runspaces
         Close-PodeRunspaces
+
+        # remove all of the pode temp drives
+        Remove-PodePSDrives
 
         # clear up timers, schedules and loggers
         $PodeSession.Server.Routes.Keys.Clone() | ForEach-Object {

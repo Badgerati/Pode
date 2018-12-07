@@ -4,11 +4,11 @@ Form authentication is for when you're using a `<form>` in HTML, and you submit 
 
 ## Setup
 
-To setup and start using Form authentication in Pode you specify `auth use form` in your server script, the validator script you need to supply will have the username/password supplied as arguments to the scriptblock:
+To setup and start using Form authentication in Pode you specify `auth use <name> -t form` in your server script, the validator script you need to supply will have the username/password supplied as arguments to the scriptblock:
 
 ```powershell
 Server {
-    auth use form -v {
+    auth use login -t form -v {
         param($username, $password)
 
         # check if the user is valid
@@ -24,7 +24,7 @@ For example, to look for the field `email` rather than rather than the default `
 
 ```powershell
 Server {
-    auth use form -v {
+    auth use login -t form -v {
         # check
     } -o @{ 'UsernameField' = 'email' }
 }
@@ -40,7 +40,7 @@ The following will use Form authentication to validate every request on every `r
 
 ```powershell
 Server {
-    middleware (auth check form)
+    middleware (auth check login)
 }
 ```
 
@@ -48,7 +48,7 @@ Whereas the following example will use Form authentication to only validate requ
 
 ```powershell
 Server {
-    route get '/info' (auth check form) {
+    route get '/info' (auth check login) {
         # logic
     }
 }
@@ -63,7 +63,7 @@ Server {
     listen *:8080 http
 
     # setup form authentication to validate a user
-    auth use form -v {
+    auth use login -t form -v {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -79,7 +79,7 @@ Server {
     }
 
     # check the request on this route against the authentication
-    route get '/cpu' (auth check form) {
+    route get '/cpu' (auth check login) {
         json @{ 'cpu' = 82 }
     }
 

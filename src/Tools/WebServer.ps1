@@ -132,7 +132,7 @@ function Start-WebServer
                     Add-PodeLogEndware -WebEvent $WebEvent
 
                     # invoke middleware
-                    if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeSession.Server.Middleware)) {
+                    if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeSession.Server.Middleware -Route $WebEvent.Path)) {
                         # get the route logic
                         $route = Get-PodeRoute -HttpMethod $WebEvent.Method -Route $WebEvent.Path
                         if ($null -eq $route) {
