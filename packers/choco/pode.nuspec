@@ -45,7 +45,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
   <files>
     <file src="tools\**" target="tools" />
     <file src="..\..\src\**" target="src" />
-    <file src="..\..\LICENSE.txt" target="src/LICENSE.txt">
-    <file src=".\VERIFICATION.txt" target="src/VERIFICATION.txt">
+    <file src="..\..\LICENSE.txt" target="src/LICENSE.txt" />
+    <file src=".\VERIFICATION.txt" target="src/VERIFICATION.txt" />
   </files>
 </package>
