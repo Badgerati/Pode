@@ -8,7 +8,7 @@ To setup and start using Basic authentication in Pode you can call `auth use <na
 
 ```powershell
 Server {
-    auth use logic -t basic -v {
+    auth use login -t basic -v {
         param($username, $password)
 
         # check if the user is valid
