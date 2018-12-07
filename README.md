@@ -26,7 +26,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 
 ## Features
 
-* Cross-platform via PowerShell Core
+* Cross-platform via PowerShell Core (with support for PS4.0+)
 * Listen on IP address or host name
 * Support for HTTP, HTTPS, TCP and SMTP
 * Host REST APIs, Web Pages, and Static Content
