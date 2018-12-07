@@ -4,11 +4,11 @@ Basic authentication is when you pass an encoded `username:password` value on th
 
 ## Setup
 
-To setup and start using Basic authentication in Pode you can set `auth use basic` in your server script, the validator script you need to supply will have the username/password passed as arguments to the scriptblock:
+To setup and start using Basic authentication in Pode you can call `auth use <name> -t basic` in your server script, the validator script you need to supply will have the username/password passed as arguments to the scriptblock:
 
 ```powershell
 Server {
-    auth use basic -v {
+    auth use login -t basic -v {
         param($username, $password)
 
         # check if the user is valid
@@ -24,7 +24,7 @@ For example, to use `ASCII` encoding rather than the default `ISO-8859-1` you co
 
 ```powershell
 Server {
-    auth use basic -v {
+    auth use login -t basic -v {
         # check
     } -o @{ 'Encoding' = 'ASCII' }
 }
@@ -40,7 +40,7 @@ The following will use Basic authentication to validate every request on every `
 
 ```powershell
 Server {
-    middleware (auth check basic)
+    middleware (auth check login)
 }
 ```
 
@@ -48,7 +48,7 @@ Whereas the following example will use Basic authentication to only validate req
 
 ```powershell
 Server {
-    route get '/info' (auth check basic) {
+    route get '/info' (auth check login) {
         # logic
     }
 }
@@ -63,7 +63,7 @@ Server {
     listen *:8080 http
 
     # setup basic authentication to validate a user
-    auth use basic -v {
+    auth use login -t basic -v {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -79,7 +79,7 @@ Server {
     }
 
     # check the request on this route against the authentication
-    route get '/cpu' (auth check basic) {
+    route get '/cpu' (auth check login) {
         json @{ 'cpu' = 82 }
     }
 

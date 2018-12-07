@@ -2,17 +2,32 @@
 
 ## Description
 
-The `auth` function allows you to setup/use and validate/check against defined authentication methods on web requests; this could be Basic or Form authentication, to custom defined authentication. Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session signed-cookie).
+The `auth` function allows you to `use` and `check` against defined authentication methods on web requests; this could be Basic/Form authentication, or custom defined authentication. Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session signed-cookie).
 
 ## Actions
 
 ### Use
 
+```powershell
+# inbuilt
+auth use <name> -validator {} [-type <string>] [-options @{}]
+
+# custom
+auth use -custom <name> -parser {} -validator {} [-type <string>] [-options @{}]
+```
+
 The `auth use` action allows you to specify and configure which authentication methods your server will use; you can have many of them, defining which one to validate against on the `auth check` action.
 
-The name of the method specified should be a valid inbuilt method, unless you have stated that the method is custom. If custom, you *must* supply a parser script which will parse payloads/headers for credentials and then return this data as an array - which will then be supplied to the validator script.
+The `name` of the method can be anything, so long as you specify the `type` as well. The `type` should be a valid inbuilt method, unless you have stated that the method is custom. If custom, you *must* supply a parser script which will parse payloads/headers for credentials and then return this data as an array - which will then be supplied to the validator script.
+
+!!! info
+    If you don't supply a `type` then the `name` will be used instead.
 
 ### Check
+
+```powershell
+auth check <name> [-options @{}]
+```
 
 The `auth check` action allows you to define which authentication method to validate a request against. The action returns a valid middleware script, meaning you can either use this action on specific `route` definitions, or globally for all routes as `middleware`. If this action fails, then a 401 response is returned.
 
@@ -37,7 +52,7 @@ The following table contains options that you can supply to an `auth check -o @{
 
 ### Example 1
 
-The following example will setup sessionless `Basic` authentication, and then use it as `route` middleware. This will require authentication on every request. The basic authentication will check for an `{ "Authorization": "Basic user:pass" }` header on the request:
+The following example will setup sessionless `Basic` authentication, and then use it as `route` middleware. This will require authentication on every request. The basic authentication will check for an `{ "Authorization": "Basic <user:pass>" }` header on the request:
 
 ```powershell
 Server {
@@ -115,7 +130,8 @@ Server {
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
 | Action | string | true | The action to perform on the `auth` function (Values: Use, Check) | empty |
-| Name | string | true | The name of the authentication middleware; if `-Custom` is not specified, then this will be the name of an inbuilt authentication method | empty |
+| Name | string | true | The name of the authentication middleware that will be used to reference and validate against in the `check` call | empty |
+| Type | string | false | The type of the authentication middleware; if `-Custom` is not specified, then this will be the name of an inbuilt authentication method | empty |
 | Validator | scriptblock | false | A script that will be passed user credentials, here you can validate the user is valid and exists in some data store | null |
 | Parser | scriptblock | false | If `-Custom` is supplied then this parameter is required. This is the custom script where you can parse payloads/querystring or headers to source user credentials, that will then be supplied to your validator | null |
 | Options | hashtable | false | A hashtable of options to customise the authentication method. Depending on the method is this be options like FieldName or Encoding | null |

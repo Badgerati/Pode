@@ -28,25 +28,37 @@ function Auth
         [hashtable]
         $Options,
 
+        [Parameter()]
+        [Alias('t')]
+        [string]
+        $Type,
+
         [switch]
         [Alias('c')]
         $Custom
     )
 
+    # for the 'use' action, ensure we have a validator. and a parser for custom types
     if ($Action -ieq 'use') {
         if (Test-Empty $Validator) {
             throw "Authentication method '$($Name)' is missing required Validator script"
         }
 
-        if ($Custom -and (Test-Empty $Parser)) {
-            throw "Custom authentication method '$($Name)' is missing required Parser script"
+        # don't fail if custom and type supplied, and it's already defined
+        if ($Custom)
+        {
+            $typeDefined = (![string]::IsNullOrWhiteSpace($Type) -and $PodeSession.Server.Authentications.ContainsKey($Type))
+            if (!$typeDefined -and (Test-Empty $Parser)) {
+                throw "Custom authentication method '$($Name)' is missing required Parser script"
+            }
         }
     }
 
+    # invoke the appropriate auth logic for the action
     switch ($Action.ToLowerInvariant())
     {
         'use' {
-            Invoke-AuthUse -Name $Name -Validator $Validator -Parser $Parser -Options $Options
+            Invoke-AuthUse -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Options $Options -Custom:$Custom
         }
 
         'check' {
@@ -68,6 +80,10 @@ function Invoke-AuthUse
         $Validator,
 
         [Parameter()]
+        [string]
+        $Type,
+
+        [Parameter()]
         [scriptblock]
         $Parser,
 
@@ -80,7 +96,7 @@ function Invoke-AuthUse
     )
 
     # get the auth data
-    $AuthData = (Get-PodeAuthMethod -Name $Name -Validator $Validator -Parser $Parser -Custom:$Custom)
+    $AuthData = (Get-PodeAuthMethod -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Custom:$Custom)
 
     # ensure the name doesn't already exist
     if ($PodeSession.Server.Authentications.ContainsKey($AuthData.Name)) {
@@ -98,6 +114,7 @@ function Invoke-AuthUse
 
     # setup object for auth method
     $obj = @{
+        'Type' = $AuthData.Type;
         'Options' = $Options;
         'Parser' = $AuthData.Parser;
         'Validator' = $AuthData.Validator;
@@ -211,6 +228,10 @@ function Get-PodeAuthMethod
         $Validator,
 
         [Parameter()]
+        [string]
+        $Type,
+
+        [Parameter()]
         [scriptblock]
         $Parser,
 
@@ -218,10 +239,22 @@ function Get-PodeAuthMethod
         $Custom
     )
 
+    # set type as name, if no type passed
+    if ([string]::IsNullOrWhiteSpace($Type)) {
+        $Type = $Name
+    }
+
     # first, is it just a custom type?
     if ($Custom) {
+        # if type supplied, re-use an already defined custom type's parser
+        if ($PodeSession.Server.Authentications.ContainsKey($Type))
+        {
+            $Parser = $PodeSession.Server.Authentications[$Type].Parser
+        }
+
         return @{
             'Name' = $Name;
+            'Type' = $Type;
             'Custom' = $true;
             'Parser' = $Parser;
             'Validator' = $Validator;
@@ -229,25 +262,26 @@ function Get-PodeAuthMethod
     }
 
     # otherwise, check the inbuilt ones
-    switch ($Name.ToLowerInvariant())
+    switch ($Type.ToLowerInvariant())
     {
         'basic' {
-            return (Get-PodeAuthBasic -ScriptBlock $Validator)
+            return (Get-PodeAuthBasic -Name $Name -ScriptBlock $Validator)
         }
 
         'form' {
-            return (Get-PodeAuthForm -ScriptBlock $Validator)
+            return (Get-PodeAuthForm -Name $Name -ScriptBlock $Validator)
         }
     }
 
     # if we get here, check if a parser was passed for custom type
     if (Test-Empty $Parser) {
-        throw "Authentication method '$($Name)' does not exist as an inbuilt type, nor has a Parser been passed for a custom type"
+        throw "Authentication method '$($Type)' does not exist as an inbuilt type, nor has a Parser been passed for a custom type"
     }
 
-    # a parser was passed, so it is a custom type
+    # a parser was passed, it is a custom type
     return @{
         'Name' = $Name;
+        'Type' = $Type;
         'Custom' = $true;
         'Parser' = $Parser;
         'Validator' = $Validator;
@@ -326,6 +360,11 @@ function Get-PodeAuthBasic
 {
     param (
         [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock
@@ -389,7 +428,8 @@ function Get-PodeAuthBasic
     }
 
     return @{
-        'Name' = 'Basic';
+        'Name' = $Name;
+        'Type' = 'Basic';
         'Custom' = $false;
         'Parser' = $parser;
         'Validator' = $ScriptBlock;
@@ -399,6 +439,11 @@ function Get-PodeAuthBasic
 function Get-PodeAuthForm
 {
     param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [scriptblock]
@@ -430,7 +475,8 @@ function Get-PodeAuthForm
     }
 
     return @{
-        'Name' = 'Form';
+        'Name' = $Name;
+        'Type' = 'Form';
         'Custom' = $false;
         'Parser' = $parser;
         'Validator' = $ScriptBlock;
