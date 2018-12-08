@@ -35,7 +35,7 @@ Below is a quick example of using Pode to create a single REST API endpoint to r
 
 ```powershell
 Server {
-    listen *:8080 http
+    listen localhost:8080 http
 
     route get '/ping' {
         json @{ 'value' = 'pong' }

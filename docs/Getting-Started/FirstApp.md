@@ -9,7 +9,7 @@ The following steps will run you through creating your first Pode app, and give 
 
 * First, create a `/my-first-pode-app` directory, this should be where ever you put your project/learning code.
 
-* Open PowerShell (as an Admin), and navigate to the above directory.
+* Open PowerShell, and navigate to the above directory.
 
 * Run `pode init` in the console, this will create a basic `package.json` file for you - see the [`CLI`](../CLI) reference for more information.
 
@@ -48,7 +48,7 @@ Server {
 
 ```powershell
 Server {
-    listen *:8080 http
+    listen localhost:8080 http
 }
 ```
 
@@ -56,7 +56,7 @@ Server {
 
 ```powershell
 Server {
-    listen *:8080 http
+    listen localhost:8080 http
 
     route get '/' {
         json @{ 'value' = 'Hello, world!' }
