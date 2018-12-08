@@ -12,7 +12,12 @@ function Start-SmtpServer
     }
 
     # create the listener for smtp
-    $endpoint = New-Object System.Net.IPEndPoint($PodeSession.Server.IP.Address, $port)
+    $ipAddress = $PodeSession.Server.IP.Address
+    if (Test-Hostname -Hostname $ipAddress) {
+        $ipAddress = (Get-IPAddressesForHostname -Hostname $ipAddress | Select-Object -First 1)
+    }
+
+    $endpoint = New-Object System.Net.IPEndPoint($ipAddress, $port)
     $listener = New-Object System.Net.Sockets.TcpListener -ArgumentList $endpoint
 
     try

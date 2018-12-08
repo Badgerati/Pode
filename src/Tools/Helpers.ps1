@@ -101,6 +101,28 @@ function Test-IsPSCore
     return (Get-PSVersionTable).PSEdition -ieq 'core'
 }
 
+function Test-IsAdminUser
+{
+    # check the current platform, if it's unix then return true
+    if (Test-IsUnix) {
+        return $true
+    }
+
+    try {
+        $principal = New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
+        if ($principal -eq $null) {
+            return $false
+        }
+
+        return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+    }
+    catch [exception] {
+        Write-Host 'Error checking user administrator priviledges' -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        return $false
+    }
+}
+
 function New-PodeSelfSignedCertificate
 {
     param (
@@ -241,6 +263,17 @@ function Test-IPAddress
     }
 }
 
+function Test-Hostname
+{
+    param (
+        [Parameter()]
+        [string]
+        $Hostname
+    )
+
+    return ($Hostname -imatch "^$(Get-HostIPRegex -Type Hostname)$")
+}
+
 function ConvertTo-IPAddress
 {
     param (
@@ -252,6 +285,17 @@ function ConvertTo-IPAddress
     return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Endpoint).Address.ToString())
 }
 
+function Get-IPAddressesForHostname
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Hostname
+    )
+
+    return @(([System.Net.Dns]::GetHostAddresses($Hostname)).IPAddressToString)
+}
+
 function Test-IPAddressLocal
 {
     param (
@@ -260,7 +304,7 @@ function Test-IPAddressLocal
         $IP
     )
 
-    return (@('0.0.0.0', '*', '127.0.0.1', 'all') -icontains $IP)
+    return (@('127.0.0.1', '::1', '[::1]', 'localhost') -icontains $IP)
 }
 
 function Test-IPAddressAny
@@ -272,6 +316,17 @@ function Test-IPAddressAny
     )
 
     return (@('0.0.0.0', '*', 'all') -icontains $IP)
+}
+
+function Test-IPAddressLocalOrAny
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $IP
+    )
+
+    return ((Test-IPAddressLocal -IP $IP) -or (Test-IPAddressAny -IP $IP))
 }
 
 function Get-IPAddress

@@ -13,7 +13,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Server -Threads 2 {
 
     # listen on localhost:8085
-    listen *:$Port http
+    listen localhost:$Port http
 
     limit ip @('127.0.0.1', '[::1]') 5 10
 

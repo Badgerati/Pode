@@ -290,7 +290,11 @@ function Listen
         [Parameter()]
         [Alias('cert')]
         [string]
-        $Certificate = $null
+        $Certificate = $null,
+
+        [switch]
+        [Alias('f')]
+        $Force
     )
 
     $hostRgx = Get-HostIPRegex -Type Both
@@ -326,7 +330,7 @@ function Listen
 
     # set the ip for the session
     $PodeSession.Server.IP.Address = (Get-IPAddress $_host)
-    if (!(Test-IPAddressLocal -IP $PodeSession.Server.IP.Address)) {
+    if (!(Test-IPAddressLocalOrAny -IP $PodeSession.Server.IP.Address)) {
         $PodeSession.Server.IP.Name = $PodeSession.Server.IP.Address
     }
 
@@ -340,6 +344,11 @@ function Listen
     if ($Type -ieq 'https') {
         $PodeSession.Server.IP.Ssl = $true
         $PodeSession.Server.IP.Certificate.Name = $Certificate
+    }
+
+    # if the address is non-local, then check admin privileges
+    if (!$Force -and !(Test-IPAddressLocal -IP $PodeSession.Server.IP.Address) -and !(Test-IsAdminUser)) {
+        throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
     }
 }
 
