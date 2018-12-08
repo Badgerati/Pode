@@ -290,20 +290,48 @@ Describe 'Test-IPAddressLocal' {
     }
 
     Context 'Values that are localhost' {
+        It 'Returns true for 127.0.0.1' {
+            Test-IPAddressLocal -IP '127.0.0.1' | Should Be $true
+        }
+
+        It 'Returns true for localhost' {
+            Test-IPAddressLocal -IP 'localhost' | Should Be $true
+        }
+    }
+}
+
+Describe 'Test-IPAddressLocalOrAny' {
+    Context 'Null values' {
+        It 'Throws error for empty' {
+            { Test-IPAddressLocalOrAny -IP ([string]::Empty) } | Should Throw 'because it is an empty'
+        }
+
+        It 'Throws error for null' {
+            { Test-IPAddressLocalOrAny -IP $null } | Should Throw 'because it is an empty'
+        }
+    }
+
+    Context 'Values not localhost' {
+        It 'Returns false for non-localhost IP' {
+            Test-IPAddressLocalOrAny -IP '192.168.10.10' | Should Be $false
+        }
+    }
+
+    Context 'Values that are localhost' {
         It 'Returns true for 0.0.0.0' {
-            Test-IPAddressLocal -IP '0.0.0.0' | Should Be $true
+            Test-IPAddressLocalOrAny -IP '0.0.0.0' | Should Be $true
         }
 
         It 'Returns true for asterisk' {
-            Test-IPAddressLocal -IP '*' | Should Be $true
+            Test-IPAddressLocalOrAny -IP '*' | Should Be $true
         }
 
         It 'Returns true for all' {
-            Test-IPAddressLocal -IP 'all' | Should Be $true
+            Test-IPAddressLocalOrAny -IP 'all' | Should Be $true
         }
 
         It 'Returns true for 127.0.0.1' {
-            Test-IPAddressLocal -IP '127.0.0.1' | Should Be $true
+            Test-IPAddressLocalOrAny -IP '127.0.0.1' | Should Be $true
         }
     }
 }
@@ -311,31 +339,31 @@ Describe 'Test-IPAddressLocal' {
 Describe 'Test-IPAddressAny' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-IPAddressLocal -IP ([string]::Empty) } | Should Throw 'because it is an empty'
+            { Test-IPAddressAny -IP ([string]::Empty) } | Should Throw 'because it is an empty'
         }
 
         It 'Throws error for null' {
-            { Test-IPAddressLocal -IP $null } | Should Throw 'because it is an empty'
+            { Test-IPAddressAny -IP $null } | Should Throw 'because it is an empty'
         }
     }
 
     Context 'Values not any' {
         It 'Returns false for non-any IP' {
-            Test-IPAddressLocal -IP '192.168.10.10' | Should Be $false
+            Test-IPAddressAny -IP '192.168.10.10' | Should Be $false
         }
     }
 
     Context 'Values that are any' {
         It 'Returns true for 0.0.0.0' {
-            Test-IPAddressLocal -IP '0.0.0.0' | Should Be $true
+            Test-IPAddressAny -IP '0.0.0.0' | Should Be $true
         }
 
         It 'Returns true for asterisk' {
-            Test-IPAddressLocal -IP '*' | Should Be $true
+            Test-IPAddressAny -IP '*' | Should Be $true
         }
 
         It 'Returns true for all' {
-            Test-IPAddressLocal -IP 'all' | Should Be $true
+            Test-IPAddressAny -IP 'all' | Should Be $true
         }
     }
 }

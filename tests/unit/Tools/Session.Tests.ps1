@@ -67,6 +67,7 @@ Describe 'Listen' {
 
     Context 'Valid parameters supplied' {
         Mock Test-IPAddress { return $true }
+        Mock Test-IsAdminUser { return $true }
 
         It 'Set just a Hostname address' {
             $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
