@@ -47,12 +47,14 @@ nav:
     - View Engines:
       - Pode: Tutorials/ViewEngines/Pode.md
       - Third Party: Tutorials/ViewEngines/ThirdParty.md
+    - Desktop Application: Tutorials/DesktopApp.md
     - SMTP Server: Tutorials/SmtpServer.md
 
   - Functions:
     - Core:
       - Endware: Functions/Core/Endware.md
       - Engine: Functions/Core/Engine.md
+      - Gui: Functions/Core/Gui.md
       - Handler: Functions/Core/Handler.md
       - Import: Functions/Core/Import.md
       - Listen: Functions/Core/Listen.md

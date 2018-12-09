@@ -30,18 +30,19 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Listen on IP address or host name
 * Support for HTTP, HTTPS, TCP and SMTP
 * Host REST APIs, Web Pages, and Static Content
-* Multiple thread support for incoming requests
+* Multi-thread support for incoming requests
 * Inbuilt template engine, with support for third-parties
-* Async timers for lightweight repeatable processes
-* Async scheduled tasks using cron expressions for larger processes
+* Async timers for short-running repeatable processes
+* Async scheduled tasks using cron expressions for short/long-running processes
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 * Cross-state variable access across multiple runspaces
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
-* Generate/bind self-signed certificates, and signed certificates on Windows
 * Middleware and sessions on web servers
 * Authentication on requests, which can either be sessionless or session persistent
+* (Windows) Generate/bind self-signed certificates, and signed certificates
+* (Windows) Open the hosted server as a desktop application
 
 ## Build Your First App
 

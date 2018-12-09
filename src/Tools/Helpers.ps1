@@ -450,7 +450,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Schedules')]
+        [ValidateSet('Main', 'Schedules', 'Gui')]
         [string]
         $Type,
 
@@ -520,7 +520,7 @@ function Close-PodeRunspaces
 
         # dispose the runspace pools
         if ($ClosePool -and $null -ne $PodeSession.RunspacePools) {
-            $PodeSession.RunspacePools.Values | Where-Object { !$_.IsDisposed } | ForEach-Object {
+            $PodeSession.RunspacePools.Values | Where-Object { $null -ne $_ -and !$_.IsDisposed } | ForEach-Object {
                 dispose $_ -Close
             }
         }

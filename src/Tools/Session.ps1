@@ -84,6 +84,16 @@ function New-PodeSession
         };
     }
 
+    # setup gui details
+    $session.Server.Gui = @{
+        'Enabled' = $false;
+        'Name' = $null;
+        'Icon' = $null;
+        'State' = 'Normal';
+        'ShowInTaskbar' = $true;
+        'WindowStyle' = 'SingleBorderWindow';
+    }
+
     # shared temp drives
     $session.Server.Drives = @{}
     $session.Server.InbuiltDrives = @{}
@@ -159,6 +169,7 @@ function New-PodeSession
     $session.RunspacePools = @{
         'Main' = $null;
         'Schedules' = $null;
+        'Gui' = $null;
     }
 
     # session state
@@ -196,6 +207,13 @@ function New-PodeSession
     # setup schedule runspace pool
     $session.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
     $session.RunspacePools.Schedules.Open()
+
+    # setup gui runspace pool (only for non-ps-core)
+    if (!(Test-IsPSCore)) {
+        $session.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $state, $Host)
+        $session.RunspacePools.Gui.ApartmentState = 'STA'
+        $session.RunspacePools.Gui.Open()
+    }
 
     # return the new session
     return $session

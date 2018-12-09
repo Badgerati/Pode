@@ -104,8 +104,8 @@ function Server
             return
         }
 
-        # sit here waiting for termination
-        while (!(Test-TerminationPressed -Key $key)) {
+        # sit here waiting for termination or cancellation
+        while (!(Test-TerminationPressed -Key $key) -and !($PodeSession.Tokens.Cancellation.IsCancellationRequested)) {
             Start-Sleep -Seconds 1
 
             # get the next key presses
@@ -147,6 +147,9 @@ function Start-PodeServer
 
             # start runspace for schedules
             Start-ScheduleRunspace
+
+            # start runspace for gui
+            Start-GuiRunspace
         }
 
         # start the appropriate server
