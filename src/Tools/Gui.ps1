@@ -33,8 +33,8 @@ function Start-GuiRunspace
                 }
                 catch {
                     $count++
-                    if ($count -le 10) {
-                        Start-Sleep -Seconds 1
+                    if ($count -le 50) {
+                        Start-Sleep -Milliseconds 200
                     }
                     else {
                         throw "Failed to connect to URL: $($endpoint)"
@@ -46,7 +46,7 @@ function Start-GuiRunspace
             [System.Reflection.Assembly]::LoadWithPartialName('PresentationFramework') | Out-Null
             [System.Reflection.Assembly]::LoadWithPartialName('PresentationCore') | Out-Null
 
-            # setup the WPF XAML
+            # setup the WPF XAML for the server
             $gui_browser = "
                 <Window
                     xmlns=`"http://schemas.microsoft.com/winfx/2006/xaml/presentation`"
