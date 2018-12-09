@@ -53,6 +53,7 @@ nav:
     - Core:
       - Endware: Functions/Core/Endware.md
       - Engine: Functions/Core/Engine.md
+      - Gui: Functions/Core/Gui.md
       - Handler: Functions/Core/Handler.md
       - Import: Functions/Core/Import.md
       - Listen: Functions/Core/Listen.md
