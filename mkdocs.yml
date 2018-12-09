@@ -47,6 +47,7 @@ nav:
     - View Engines:
       - Pode: Tutorials/ViewEngines/Pode.md
       - Third Party: Tutorials/ViewEngines/ThirdParty.md
+    - Desktop Application: Tutorials/DesktopApp.md
     - SMTP Server: Tutorials/SmtpServer.md
 
   - Functions:

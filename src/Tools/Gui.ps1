@@ -104,10 +104,12 @@ function Gui
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
+        [Alias('n')]
         [string]
         $Name,
 
         [Parameter()]
+        [Alias('o')]
         [hashtable]
         $Options
     )
