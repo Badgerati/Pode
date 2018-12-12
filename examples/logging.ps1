@@ -11,35 +11,32 @@ Server {
     engine pode
 
     # termial/cli logger
-    logger 'terminal'
+    logger terminal
 
     # daily file logger
-    logger 'file' @{
+    logger file @{
         'Path' = $null; # default is '<root>/logs'
         'MaxDays' = 4;
     }
 
     # custom logger
-    logger 'custom_output' {
-        param($session)
-        $session.Log.Request.Protocol | Out-Default
+    logger -c output {
+        param($event)
+        $event.Log.Request.Protocol | Out-Default
     }
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        param($session)
         view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     route 'get' '/error' {
-        param($session)
         status 500
     }
 
     # GET request to download a file
     route 'get' '/download' {
-        param($session)
         attach 'Anger.jpg'
     }
 

@@ -209,7 +209,7 @@ function Restart-PodeServer
 
         $PodeSession.Timers.Clear()
         $PodeSession.Schedules.Clear()
-        $PodeSession.Loggers.Clear()
+        $PodeSession.Server.Logging.Methods.Clear()
 
         # clear middle/endware
         $PodeSession.Server.Middleware = @()

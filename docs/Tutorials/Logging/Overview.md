@@ -1,6 +1,6 @@
 # Logging Overview
 
-Logging in Pode allows you to log web events onto the terminal, into a file, or into some custom logging platform (such as LogStash or Splunk). To start logging requests to your server you use the [`logger`](../../Functions/Core/Logger) function.
+Logging in Pode allows you to log web events onto the [terminal](../Terminal), into a [file](../File), or into some [custom](../Custom) logging platform (such as LogStash or Splunk). To start logging requests to your server you use the [`logger`](../../Functions/Core/Logger) function.
 
 !!! tip
     You can have many loggers defined, so you could log to the terminal, a file, and other custom tools - you aren't restricted to just one logger!
