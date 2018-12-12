@@ -7,7 +7,7 @@ function Get-PodeLogger
         $Name
     )
 
-    return $PodeSession.Loggers[$Name]
+    return $PodeSession.Server.Logging.Methods[$Name]
 }
 
 function Add-PodeLogEndware
@@ -69,7 +69,7 @@ function Add-PodeLogObject
         $Response
     )
 
-    if ($PodeSession.DisableLogging -or (Get-Count $PodeSession.Loggers) -eq 0) {
+    if ($PodeSession.Server.Logging.Disabled -or (Get-Count $PodeSession.Server.Logging.Methods) -eq 0) {
         return
     }
 
@@ -85,7 +85,7 @@ function Add-PodeLogObject
 
 function Start-LoggerRunspace
 {
-    if ((Get-Count $PodeSession.Loggers) -eq 0) {
+    if ((Get-Count $PodeSession.Server.Logging.Methods) -eq 0) {
         return
     }
 
@@ -129,7 +129,7 @@ function Start-LoggerRunspace
             $str = (Get-RequestString $r)
 
             # apply log request to supplied loggers
-            $PodeSession.Loggers.Keys | ForEach-Object {
+            $PodeSession.Server.Logging.Methods.Keys | ForEach-Object {
                 switch ($_.ToLowerInvariant())
                 {
                     'terminal' {
@@ -137,7 +137,7 @@ function Start-LoggerRunspace
                     }
 
                     'file' {
-                        $details = $PodeSession.Loggers[$_]
+                        $details = $PodeSession.Server.Logging.Methods[$_]
                         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
                         # generate path to log path and date file
@@ -164,7 +164,7 @@ function Start-LoggerRunspace
                     }
 
                     { $_ -ilike 'custom_*' } {
-                        Invoke-ScriptBlock -ScriptBlock $PodeSession.Loggers[$_] -Arguments @{
+                        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logging.Methods[$_] -Arguments @{
                             'Log' = $r;
                             'Lockable' = $PodeSession.Lockable;
                         }
@@ -185,25 +185,36 @@ function Logger
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
+        [Alias('n')]
         [string]
         $Name,
 
         [Parameter()]
+        [Alias('d')]
         [object]
-        $Details = $null
+        $Details = $null,
+
+        [switch]
+        [Alias('c')]
+        $Custom
     )
 
     # is logging disabled?
-    if ($PodeSession.DisableLogging) {
+    if ($PodeSession.Server.Logging.Disabled) {
         Write-Host "Logging has been disabled for $($Name)" -ForegroundColor DarkCyan
         return
     }
 
-    # lower the name
+    # set the logger as custom if flag is passed
+    if ($Name -inotlike 'custom_*' -and $Custom) {
+        $Name = "custom_$($Name)"
+    }
+
+    # lowercase the name
     $Name = $Name.ToLowerInvariant()
 
     # ensure the logger doesn't already exist
-    if ($PodeSession.Loggers.ContainsKey($Name)) {
+    if ($PodeSession.Server.Logging.Methods.ContainsKey($Name)) {
         throw "Logger called $($Name) already exists"
     }
 
@@ -226,7 +237,7 @@ function Logger
     }
 
     # add the logger, along with any given details (hashtable/scriptblock)
-    $PodeSession.Loggers[$Name] = $Details
+    $PodeSession.Server.Logging.Methods[$Name] = $Details
 
     # if a file logger, create base directory (file is a dummy file, and won't be created)
     if ($Name -ieq 'file') {
@@ -243,7 +254,7 @@ function Logger
     }
 
     # if this is the first logger, start the logging runspace
-    if ($PodeSession.Loggers.Count -eq 1) {
+    if ($PodeSession.Server.Logging.Methods.Count -eq 1) {
         Start-LoggerRunspace
     }
 }

@@ -2,18 +2,15 @@
 
 Sometimes you don't want to log to a file, or the terminal; instead you want to log to something better, like LogStash, Splunk, or any other central logging platform. Although Pode doesn't have these inbuilt (yet!) it is possible to create a custom `logger`, where you define a scriptblock with logic to send logs to these platforms.
 
-!!! important
-    Custom loggers *must* have a name that starts with `custom_`. There are plans to remove this and use a `-custom` switch similar to [`Custom Authentication`](../Authentication/Custom).
-
 ## Setup
 
-To create a custom logger you need to supply a scriptblock to the `logger` function. The following example will output the web request method/resource to the terminal. The scriptblock will be supplied a single argument that has a log object which contains details of the request/response:
+To create a custom logger you need to supply a scriptblock to the `logger` function, as well as the `-Custom` (`-c`) flag. The following example will output the web request method/resource to the terminal; the scriptblock will be supplied a single argument that has a log object which contains details of the request/response:
 
 ```powershell
 Server {
     listen *:8080 http
 
-    logger custom_terminal {
+    logger -c terminal {
         param($event)
 
         $method = $event.Log.Request.Method

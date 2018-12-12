@@ -51,8 +51,6 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name DisableLogging -Value $DisableLogging -PassThru |
-        Add-Member -MemberType NoteProperty -Name Loggers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
@@ -150,6 +148,12 @@ function New-PodeSession
     # authnetication methods
     $session.Server.Authentications = @{}
 
+    # logging methods
+    $session.Server.Logging = @{
+        'Methods' = @{};
+        'Disabled' = $DisableLogging;
+    }
+
     # create new cancellation tokens
     $session.Tokens = @{
         'Cancellation' = New-Object System.Threading.CancellationTokenSource;
@@ -233,8 +237,6 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Session.Schedules -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Session.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
-        Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
-        Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value $Session.Server -PassThru)

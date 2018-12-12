@@ -36,11 +36,11 @@ Server {
 
 ### Example 3
 
-The following example will create a custom log tool that outputs the request method/resource to the terminal. The name of the custom logger *must* be like `custom_*`, and a scriptblock should be supplied - the script will be supplied a single argument, which is a log object contains details of the request/response:
+The following example will create a custom log tool that outputs the request method/resource to the terminal. For custom loggers a scriptblock *must* be supplied - the script will be supplied a single argument, which is a log object contains details of the request/response:
 
 ```powershell
 Server {
-    logger custom_terminal {
+    logger -c terminal {
         param($obj)
 
         $method = $obj.Log.Request.Method
@@ -78,5 +78,6 @@ The `.Log` object will have the following structure:
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
-| Name | string | true | The name of the logger; inbuilt loggers are `terminal` and `file`. Custom loggers must have a name like `custom_*` | empty |
+| Name | string | true | The name of the logger; inbuilt loggers are `terminal` and `file`. Custom loggers can have any name, but the `-Custom` switch must be supplied | empty |
 | Details | object | false | For inbuilt loggers this should be a `hashtable`. For custom loggers this should be the custom `scriptblock` to define how the logger works | null |
+| Custom | switch | false | When supplied, will configure the logger defined as being custom | false |
