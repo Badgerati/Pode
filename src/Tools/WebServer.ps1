@@ -29,31 +29,6 @@ function Engine
 
 function Start-WebServer
 {
-    param (
-        [switch]
-        $Https
-    )
-
-    # grab the protocol
-    $protocol = (iftet $Https 'https' 'http')
-
-    # grab the ip address
-    $_ip = "$($PodeSession.Server.IP.Address)"
-    if ($_ip -ieq '0.0.0.0') {
-        $_ip = '*'
-    }
-
-    # grab the port
-    $port = $PodeSession.Server.IP.Port
-    if ($port -eq 0) {
-        $port = (iftet $Https 8443 8080)
-    }
-
-    # if it's https, generate a self-signed cert or bind an existing one
-    if ($Https -and $PodeSession.Server.IP.Ssl) {
-        New-PodeSelfSignedCertificate -IP $PodeSession.Server.IP.Address -Port $port -Certificate $PodeSession.Server.IP.Certificate.Name
-    }
-
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
         (Get-PodeAccessMiddleware),
@@ -66,13 +41,46 @@ function Start-WebServer
 
     $PodeSession.Server.Middleware = ($inbuilt_middleware + $PodeSession.Server.Middleware)
 
+    # work out which endpoints to listen on
+    $endpoints = @()
+    $PodeSession.Server.Endpoints | ForEach-Object {
+        # get the protocol
+        $_protocol = (iftet $_.Ssl 'https' 'http')
+
+        # get the ip address
+        $_ip = "$($_.Address)"
+        if ($_ip -ieq '0.0.0.0') {
+            $_ip = '*'
+        }
+
+        # get the port
+        $_port = [int]($_.Port)
+        if ($_port -eq 0) {
+            $_port = (iftet $_.Ssl 8443 8080)
+        }
+
+        # if this endpoint is https, generate a self-signed cert or bind an existing one
+        if ($_.Ssl) {
+            New-PodeSelfSignedCertificate -IP $_.Address -Port $_port -Certificate $_.Certificate.Name
+        }
+
+        # add endpoint to list
+        $endpoints += @{
+            'Prefix' = "$($_protocol)://$($_ip):$($_port)/";
+            'Name' = "$($_protocol)://$($_.Name):$($_port)/";
+        }
+    }
+
     # create the listener on http and/or https
     $listener = New-Object System.Net.HttpListener
 
     try
     {
-        # start listening on ip:port
-        $listener.Prefixes.Add("$($protocol)://$($_ip):$($port)/")
+        # start listening on defined endpoints
+        $endpoints | ForEach-Object {
+            $listener.Prefixes.Add($_.Prefix)
+        }
+
         $listener.Start()
     }
     catch {
@@ -90,7 +98,11 @@ function Start-WebServer
     }
 
     # state where we're running
-    Write-Host "Listening on $($protocol)://$($PodeSession.Server.IP.Name):$($port)/ [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeSession.Threads) thread(s)]:" -ForegroundColor Yellow
+
+    $endpoints | ForEach-Object {
+        Write-Host "`t- $($_.Name)" -ForegroundColor Yellow
+    }
 
     # script for listening out for incoming requests
     $listenScript = {

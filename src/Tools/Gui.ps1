@@ -8,16 +8,22 @@ function Start-GuiRunspace
     $script = {
         try
         {
-            # get the endpoint on which we're currently listening
-            $protocol = (iftet $PodeSession.Server.IP.Ssl 'https' 'http')
-
-            # grab the port
-            $port = $PodeSession.Server.IP.Port
-            if ($port -eq 0) {
-                $port = (iftet $PodeSession.Server.IP.Ssl 8443 8080)
+            # if there are multiple endpoints, flag warning we're only using the first
+            if (($PodeSession.Server.Endpoints | Measure-Object).Count -gt 1) {
+                Write-Host "Multiple endpoints defined, only the first will be used" -ForegroundColor Yellow
             }
 
-            $endpoint = "$($protocol)://$($PodeSession.Server.IP.Name):$($port)"
+            # get the endpoint on which we're currently listening
+            $endpoint = $PodeSession.Server.Endpoints[0]
+            $protocol = (iftet $endpoint.Ssl 'https' 'http')
+
+            # grab the port
+            $port = $endpoint.Port
+            if ($port -eq 0) {
+                $port = (iftet $endpoint.Ssl 8443 8080)
+            }
+
+            $endpoint = "$($protocol)://$($endpoint.Name):$($port)"
 
             # poll the server for a response
             $count = 0

@@ -14,6 +14,7 @@ Server -Threads 2 {
 
     # listen on localhost:8085
     listen localhost:$Port http
+    listen localhost:8090 http
 
     limit ip @('127.0.0.1', '[::1]') 5 10
 
