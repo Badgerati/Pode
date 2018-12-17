@@ -5,12 +5,6 @@ function New-PodeSession
         $ScriptBlock,
 
         [int]
-        $Port = 0,
-
-        [string]
-        $IP = $null,
-
-        [int]
         $Threads = 1,
 
         [int]
@@ -18,10 +12,6 @@ function New-PodeSession
 
         [string]
         $ServerRoot,
-
-        [ValidateSet('HTTP', 'HTTPS', 'SCRIPT', 'SERVICE', 'SMTP', 'TCP')]
-        [string]
-        $ServerType,
 
         [string]
         $Name = $null,
@@ -55,13 +45,18 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
 
-    # set the server type, name, logic and root
+    # set the server name, logic and root
     $session.Server.Name = $Name
-    $session.Server.Type = $ServerType
     $session.Server.Root = $ServerRoot
     $session.Server.Logic = $ScriptBlock
     $session.Server.Interval = $Interval
     $session.Server.FileMonitor = $FileMonitor
+
+    # set the server default type
+    $session.Server.Type = ([string]::Empty)
+    if ($Interval -gt 0) {
+        $session.Server.Type = 'SERVICE'
+    }
 
     # check if there is any global configuration
     $session.Server.Configuration = @{}
@@ -72,15 +67,7 @@ function New-PodeSession
     }
 
     # set the IP address details
-    $session.Server.IP = @{
-        'Address' = $null;
-        'Port' = $Port;
-        'Name' = 'localhost';
-        'Ssl' = ($ServerType -ieq 'https');
-        'Certificate' = @{
-            'Name' = $null;
-        };
-    }
+    $session.Server.Endpoints = @()
 
     # setup gui details
     $session.Server.Gui = @{
@@ -321,7 +308,7 @@ function Listen
     $portRgx = Get-PortRegex
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
-    # validate that we have a valid ip:port address
+    # validate that we have a valid ip/host:port address
     if (!(($IPPort -imatch "^$($cmbdRgx)$") -or ($IPPort -imatch "^$($hostRgx)[\:]{0,1}") -or ($IPPort -imatch "[\:]{0,1}$($portRgx)$"))) {
         throw "Failed to parse '$($IPPort)' as a valid IP:Port address"
     }
@@ -348,27 +335,59 @@ function Listen
         throw "Port cannot be negative: $($_port)"
     }
 
+    # new endpoint object
+    $obj = @{
+        'Address' = $null;
+        'Port' = $null;
+        'Name' = 'localhost';
+        'Ssl' = $false;
+        'Certificate' = @{
+            'Name' = $null;
+        };
+    }
+
     # set the ip for the session
-    $PodeSession.Server.IP.Address = (Get-IPAddress $_host)
-    if (!(Test-IPAddressLocalOrAny -IP $PodeSession.Server.IP.Address)) {
-        $PodeSession.Server.IP.Name = $PodeSession.Server.IP.Address
+    $obj.Address = (Get-IPAddress $_host)
+    if (!(Test-IPAddressLocalOrAny -IP $obj.Address)) {
+        $obj.Name = $obj.Address
     }
 
     # set the port for the session
-    $PodeSession.Server.IP.Port = $_port
-
-    # set the server type
-    $PodeSession.Server.Type = $Type
+    $obj.Port = $_port
 
     # if the server type is https, set cert details
     if ($Type -ieq 'https') {
-        $PodeSession.Server.IP.Ssl = $true
-        $PodeSession.Server.IP.Certificate.Name = $Certificate
+        $obj.Ssl = $true
+        $obj.Certificate.Name = $Certificate
     }
 
     # if the address is non-local, then check admin privileges
-    if (!$Force -and !(Test-IPAddressLocal -IP $PodeSession.Server.IP.Address) -and !(Test-IsAdminUser)) {
+    if (!$Force -and !(Test-IPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {
         throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
+    }
+
+    # has this endpoint been added before? (for http/https we can just not add it again)
+    $exists = ($PodeSession.Server.Endpoints | Where-Object {
+        ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
+    } | Measure-Object).Count
+
+    # has an endpoint already been defined for smtp/tcp?
+    if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeSession.Server.Type) {
+        throw "An endpoint for $($Type.ToUpperInvariant()) has already been defined"
+    }
+
+    if (!$exists) {
+        # set server type, ensure we aren't trying to change the server's type
+        $_type = (iftet ($Type -ieq 'https') 'http' $Type)
+        if ([string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
+            $PodeSession.Server.Type = $_type
+        }
+        elseif ($PodeSession.Server.Type -ine $_type) {
+            throw "Cannot add $($Type.ToUpperInvariant()) endpoint when already listening to $($PodeSession.Server.Type.ToUpperInvariant()) endpoints"
+        }
+
+        # add the new endpoint
+        $PodeSession.Server.Endpoints += $obj
     }
 }
 

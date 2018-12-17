@@ -13,7 +13,7 @@ The following steps will run you through creating your first Pode app, and give 
 
 * Run `pode init` in the console, this will create a basic `package.json` file for you - see the [`CLI`](../CLI) reference for more information.
 
-    * The `init` command will ask for some input, leave everything as default (just press enter).
+    * The `init` action will ask for some input, leave everything as default (just press enter).
 
 ```powershell
 λ  pode init
@@ -44,7 +44,7 @@ Server {
 }
 ```
 
-* Now we have our server, we need to get it to [`listen`](../../Functions/Core/Listen) on a port. This will allow us to receive requests and respond to them. The below tells you server to listen on port `8080` for HTTP requests:
+* Now we have our server, we need to get it to [`listen`](../../Functions/Core/Listen) on an endpoint. This will allow us to receive requests and respond to them. The below tells you server to listen on `localhost` for port `8080` for HTTP requests:
 
 ```powershell
 Server {

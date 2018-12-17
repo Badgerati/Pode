@@ -157,7 +157,7 @@ function New-PodeSelfSignedCertificate
 
     # ensure a cert has been supplied
     if (Test-Empty $Certificate) {
-        throw "A certificate is required for ssl connections, either 'self' or '*.example.com' can be supplied to the 'listen' command"
+        throw "A certificate is required for ssl connections, either 'self' or '*.example.com' can be supplied to the 'listen' function"
     }
 
     # generate a self-signed cert
@@ -290,10 +290,30 @@ function Get-IPAddressesForHostname
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $Hostname
+        $Hostname,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('All', 'IPv4', 'IPv6')]
+        [string]
+        $Type
     )
 
-    return @(([System.Net.Dns]::GetHostAddresses($Hostname)).IPAddressToString)
+    # get the ip addresses for the hostname
+    $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
+
+    # return ips based on type
+    switch ($Type.ToLowerInvariant())
+    {
+        'ipv4' {
+            $ips = @(($ips | Where-Object { $_.AddressFamily -ieq 'InterNetwork' }))
+        }
+
+        'ipv6' {
+            $ips = @(($ips | Where-Object { $_.AddressFamily -ieq 'InterNetworkV6' }))
+        }
+    }
+
+    return @(($ips | Select-Object -ExpandProperty IPAddressToString))
 }
 
 function Test-IPAddressLocal
@@ -633,7 +653,7 @@ function Close-Pode
     # remove all of the pode temp drives
     Remove-PodePSDrives
 
-    if ($Exit -and $PodeSession.Server.Type -ine 'script') {
+    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
         Write-Host " Done" -ForegroundColor Green
     }
 }

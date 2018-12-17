@@ -15,7 +15,7 @@ Describe 'Start-PodeServer' {
     Mock Start-WebServer { }
 
     It 'Calls one-off script logic' {
-        $PodeSession.Server = @{ 'Type' = 'SCRIPT'; 'Logic' = {} }
+        $PodeSession.Server = @{ 'Type' = ([string]::Empty); 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -98,47 +98,7 @@ Describe 'Get-PodeServerType' {
         }
 
         It 'Returns script when nothing is supplied' {
-            Get-PodeServerType | Should Be 'SCRIPT'
-        }
-    }
-}
-
-Describe 'Set-PodePortForServerType' {
-    Context 'Valid parameters supplied' {
-        It 'Uses 25 for smtp' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'SMTP' }
-            Set-PodePortForServerType
-            $PodeSession.Server.IP.Port | Should Be 25
-        }
-
-        It 'Uses 8080 for http' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'HTTP' }
-            Set-PodePortForServerType
-            $PodeSession.Server.IP.Port | Should Be 8080
-        }
-
-        It 'Uses 8443 for https' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'HTTPS' }
-            Set-PodePortForServerType
-            $PodeSession.Server.IP.Port | Should Be 8443
-        }
-
-        It 'Uses 0 for tcp' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'TCP' }
-            Set-PodePortForServerType
-            $PodeSession.Server.IP.Port | Should Be 0
-        }
-
-        It 'Uses 0 for script' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'SCRIPT' }
-            Set-PodePortForServerType
-            $PodeSession.Server.IP.Port | Should Be 0
-        }
-
-        It 'Uses 0 for service' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Port' = 0 }; 'Type' = 'SERVICE' }
-            Set-PodePortForServerType
-            $PodeSession.Server.IP.Port | Should Be 0
+            Get-PodeServerType | Should Be ([string]::Empty)
         }
     }
 }

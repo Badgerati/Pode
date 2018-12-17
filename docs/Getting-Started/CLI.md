@@ -11,7 +11,7 @@ All of these commands are centered around the `package.json` format - similar to
 
 ### Build
 
-The `build` command will run the script found in the `package.json` file, at the `scripts/build` value:
+The `build` action will run the script found in the `package.json` file, at the `scripts/build` value:
 
 ```powershell
 pode build
@@ -19,7 +19,7 @@ pode build
 
 ### Init
 
-The `init` command will help you create a new `package.json` file from scratch. It will ask a few questions, such as author/name/etc, and then create the file for you:
+The `init` action will help you create a new `package.json` file from scratch. It will ask a few questions, such as author/name/etc, and then create the file for you:
 
 ```powershell
 pode init
@@ -30,7 +30,7 @@ pode init
 
 ### Install
 
-The `install` command will run the script found in the `package.json` file, at the `scripts/install` value:
+The `install` action will run the script found in the `package.json` file, at the `scripts/install` value:
 
 ```powershell
 pode install
@@ -38,7 +38,7 @@ pode install
 
 ### Start
 
-The `start` command will run the script found in the `package.json` file, at the `scripts/start` value. If this value is not set, then this command will instead run the value under `main`:
+The `start` action will run the script found in the `package.json` file, at the `scripts/start` value. If this value is not set, then this action will instead run the value under `main`:
 
 ```powershell
 pode start
@@ -46,7 +46,7 @@ pode start
 
 ### Test
 
-The `test` command will run the script found in the `package.json` file, at the `scripts/test` value:
+The `test` action will run the script found in the `package.json` file, at the `scripts/test` value:
 
 ```powershell
 pode test
