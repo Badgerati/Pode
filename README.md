@@ -46,7 +46,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 
 ## Build Your First App
 
-Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will listen on a port, create the route, and respond with JSON when `http://localhost:8080/ping` is hit:
+Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will listen on an endpoint, create the route, and respond with JSON when `http://localhost:8080/ping` is hit:
 
 ```powershell
 Server {

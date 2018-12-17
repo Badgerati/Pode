@@ -32,7 +32,7 @@ Pode is a Cross-Platform PowerShell framework to create web servers that host RE
 
 ## Quick Look!
 
-Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will [`listen`](./Functions/Core/Listen) on a port, create the [`route`](./Functions/Core/Route), and respond with [`JSON`](./Functions/Response/Json) when `http://localhost:8080/ping` is hit:
+Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will [`listen`](./Functions/Core/Listen) on an endpoint, create the [`route`](./Functions/Core/Route), and respond with [`JSON`](./Functions/Response/Json) when `http://localhost:8080/ping` is hit:
 
 ```powershell
 Server {

@@ -157,7 +157,7 @@ function New-PodeSelfSignedCertificate
 
     # ensure a cert has been supplied
     if (Test-Empty $Certificate) {
-        throw "A certificate is required for ssl connections, either 'self' or '*.example.com' can be supplied to the 'listen' command"
+        throw "A certificate is required for ssl connections, either 'self' or '*.example.com' can be supplied to the 'listen' function"
     }
 
     # generate a self-signed cert

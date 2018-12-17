@@ -10,7 +10,7 @@ The `gui` function allows you to run a server and have it automatically open as 
 If you run your server directly, then the terminal will remain visible. However, you could have a script which opens PowerShell as hidden and launches the server.
 
 !!! tip
-    You can use the `gui` and listen on any IP/host however, it's recommended to `listen` on the localhost - that way you don't need to run the application with elevated permissions.
+    You can use the `gui` and listen on any endpoint however, it's recommended to `listen` on the localhost - that way you don't need to run the application with elevated permissions.
 
 ## Examples
 
