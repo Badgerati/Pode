@@ -10,7 +10,7 @@
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a Cross-Platform PowerShell framework that allows you to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/) and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) servers. It also allows you to render dynamic files using [Pode](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which is effectively embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines.
+Pode is a Cross-Platform PowerShell framework to create web servers that host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. It also allows you to render dynamic files using [Pode](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which is effectively embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines.
 
 ## Documentation
 
@@ -27,7 +27,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 ## Features
 
 * Cross-platform via PowerShell Core (with support for PS4.0+)
-* Listen on IP address or host name
+* Listen on a single or multiple IP address/hostnames
 * Support for HTTP, HTTPS, TCP and SMTP
 * Host REST APIs, Web Pages, and Static Content
 * Multi-thread support for incoming requests
