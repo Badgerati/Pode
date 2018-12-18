@@ -4,7 +4,9 @@
 
 The `route` function allows you to bind logic to be invoked against a URL path and HTTP method. The function also accepts custom middleware to be invoked, before running the main route logic - such as authentication.
 
-You can also use the `route` function to specify routes to static content paths. Normally if you request a static file Pode will check the `/public` directory, but you can specify other paths using `route static` (example below).
+You can also use the `route` function to specify routes to static content paths. Normally if you request a static file Pode will check the `/public` directory, but you can specify other paths using `route static` (example below). If you call a directory path with the directory structure, then a default file (such as `index.html`) will be searched for and returned.
+
+Routes can also be bound against a specific protocol or endpoint. This allows you to bind multiple root (`/`) routes against different endpoints - if you're listening to multiple endpoints.
 
 !!! info
     The scriptblock supplied for the main route logic is invoked with a single parameter for the current web event. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
@@ -13,7 +15,7 @@ You can also use the `route` function to specify routes to static content paths.
 
 ### Example 1
 
-The following example sets up a `GET /ping` route, that returns `value: pong`:
+The following example sets up a `GET /ping` route, that returns `{ "value": "pong" }`:
 
 ```powershell
 Server {
@@ -135,16 +137,55 @@ Server {
 }
 ```
 
+### Example 7
+
+The following example sets up two `GET /ping` routes: one that applies to only http requests, and another for everything else:
+
+```powershell
+Server {
+    listen *:8080 http
+
+    route get '/ping' {
+        json @{ 'value' = 'ping' }
+    }
+
+    route get '/ping' -protocol http {
+        json @{ 'value' = 'pong' }
+    }
+}
+```
+
+### Example 8
+
+The following example sets up two `GET /ping` routes: one that applies to one endpoint, and the other to the other endpoint:
+
+```powershell
+Server {
+    listen pode.foo.com:8080 http
+    listen pode.bar.com:8080 http
+
+    route get '/ping' -endpoint pode.foo.com {
+        json @{ 'value' = 'ping' }
+    }
+
+    route get '/ping' -endpoint pode.bar.com {
+        json @{ 'value' = 'pong' }
+    }
+}
+```
+
 ## Parameters
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
-| HttpMethod | string | true | The HTTP method to bind the route onto (Values: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, STATIC) | null |
+| HttpMethod | string | true | The HTTP method to bind the route onto (Values: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, STATIC, *) | null |
 | Route | string | true | The route path to listen on, the root path is `/`. The path can also contain parameters such as `/:userId` | empty |
 | Middleware | object[] | false | Custom middleware for the `route` that will be invoked before the main logic is invoked - such as authentication. For non-static routes this is an array of `scriptblocks`, but for a static route this is the path to the static content directory | null |
 | ScriptBlock | scriptblock | true | The main route logic that will be invoked when the route endpoint is hit | null |
 | Defaults | string[] | false | For static routes only, this is an array of default pages that could be displayed when the static directory is called | ['index.html', 'index.htm', 'default.html', 'default.htm'] |
+| Protocol | string | false | The protocol to bind the route against (Values: Empty, HTTP, HTTPS) | empty |
+| Endpoint | string | false | The endpoint to bind the route against - this will typically be the endpoint used in your `listen` function | empty |
 | Remove | switch | false | When passed, will remove a defined route | false |
 
 !!! tip
-    There is a special `*` method you can use, which means a route that applies to every HTTP method
+    The special `*` method allows you to bind a route against every HTTP method. This method takes priority over the other methods; if you have a route for `/` against `GET` and `*`, then the `*` method will be used.
