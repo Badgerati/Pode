@@ -127,7 +127,7 @@ function Get-PodePublicMiddleware
         param($s)
 
         # get the static file path
-        $path = Get-PodeStaticRoutePath -Route $s.Path
+        $path = Get-PodeStaticRoutePath -Route $s.Path -Protocol $s.Protocol
         if ($null -eq $path) {
             return $true
         }
@@ -148,10 +148,7 @@ function Get-PodeRouteValidateMiddleware
             param($s)
 
             # ensure the path has a route
-            $route = Get-PodeRoute -HttpMethod $s.Method -Route $s.Path
-            if ($null -eq $route) {
-                $route = Get-PodeRoute -HttpMethod '*' -Route $s.Path
-            }
+            $route = Get-PodeRoute -HttpMethod $s.Method -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint -CheckWildMethod
 
             # if there's no route defined, it's a 404
             if ($null -eq $route -or $null -eq $route.Logic) {

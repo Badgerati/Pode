@@ -139,6 +139,8 @@ function Start-WebServer
                     $WebEvent.Lockable = $PodeSession.Lockable
                     $WebEvent.Path = ($request.RawUrl -isplit "\?")[0]
                     $WebEvent.Method = $request.HttpMethod.ToLowerInvariant()
+                    $WebEvent.Protocol = $request.Url.Scheme
+                    $WebEvent.Endpoint = $request.Url.Authority
 
                     # add logging endware for post-request
                     Add-PodeLogEndware -WebEvent $WebEvent
@@ -146,10 +148,8 @@ function Start-WebServer
                     # invoke middleware
                     if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeSession.Server.Middleware -Route $WebEvent.Path)) {
                         # get the route logic
-                        $route = Get-PodeRoute -HttpMethod $WebEvent.Method -Route $WebEvent.Path
-                        if ($null -eq $route) {
-                            $route = Get-PodeRoute -HttpMethod '*' -Route $WebEvent.Path
-                        }
+                        $route = Get-PodeRoute -HttpMethod $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
+                            -Endpoint $WebEvent.Endpoint -CheckWildMethod
 
                         # invoke route and custom middleware
                         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
