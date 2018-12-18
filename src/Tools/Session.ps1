@@ -304,36 +304,8 @@ function Listen
         $Force
     )
 
-    $hostRgx = Get-HostIPRegex -Type Both
-    $portRgx = Get-PortRegex
-    $cmbdRgx = "$($hostRgx)\:$($portRgx)"
-
-    # validate that we have a valid ip/host:port address
-    if (!(($IPPort -imatch "^$($cmbdRgx)$") -or ($IPPort -imatch "^$($hostRgx)[\:]{0,1}") -or ($IPPort -imatch "[\:]{0,1}$($portRgx)$"))) {
-        throw "Failed to parse '$($IPPort)' as a valid IP:Port address"
-    }
-
-    # grab the ip address
-    $_host = $Matches['host']
-    if (Test-Empty $_host) {
-        $_host = '*'
-    }
-
-    # ensure we have a valid ip address
-    if (!(Test-IPAddress -IP $_host)) {
-        throw "Invalid IP address has been supplied: $($IP)"
-    }
-
-    # grab the port
-    $_port = $Matches['port']
-    if (Test-Empty $_port) {
-        $_port = 0
-    }
-
-    # ensure the port is valid
-    if ($_port -lt 0) {
-        throw "Port cannot be negative: $($_port)"
-    }
+    # parse the endpoint for host/port info
+    $_endpoint = Get-PodeEndpointInfo -Endpoint $IPPort
 
     # new endpoint object
     $obj = @{
@@ -347,13 +319,13 @@ function Listen
     }
 
     # set the ip for the session
-    $obj.Address = (Get-IPAddress $_host)
+    $obj.Address = (Get-IPAddress $_endpoint.Host)
     if (!(Test-IPAddressLocalOrAny -IP $obj.Address)) {
         $obj.Name = $obj.Address
     }
 
     # set the port for the session
-    $obj.Port = $_port
+    $obj.Port = $_endpoint.Port
 
     # if the server type is https, set cert details
     if ($Type -ieq 'https') {

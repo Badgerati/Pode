@@ -213,6 +213,12 @@ function Route
     # uppercase the method
     $HttpMethod = $HttpMethod.ToUpperInvariant()
 
+    # if an endpoint was supplied, add any appropriate wildcards
+    if (![string]::IsNullOrWhiteSpace($Endpoint)) {
+        $_endpoint = Get-PodeEndpointInfo -Endpoint $Endpoint -AnyPortOnZero
+        $Endpoint = "$($_endpoint.Host):$($_endpoint.Port)"
+    }
+
     # are we removing the route's logic?
     if ($Remove) {
         Remove-PodeRoute -HttpMethod $HttpMethod -Route $Route -Protocol $Protocol -Endpoint $Endpoint
