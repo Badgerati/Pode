@@ -173,7 +173,7 @@ Describe 'Route' {
         It 'Throws error because route and endpoint already exists' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
                 @{'Protocol' = ''; 'Endpoint' = ''}
-                @{'Protocol' = ''; 'Endpoint' = 'pode.foo.com'}
+                @{'Protocol' = ''; 'Endpoint' = 'pode.foo.com:*'}
             ); }; }; }
 
             { Route -HttpMethod GET -Route '/' -Endpoint 'pode.foo.com' {} } | Should Throw 'already defined for'
@@ -182,8 +182,8 @@ Describe 'Route' {
         It 'Throws error because route, endpoint and protocol already exists' {
             $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
                 @{'Protocol' = ''; 'Endpoint' = ''}
-                @{'Protocol' = ''; 'Endpoint' = 'pode.foo.com'}
-                @{'Protocol' = 'https'; 'Endpoint' = 'pode.foo.com'}
+                @{'Protocol' = ''; 'Endpoint' = 'pode.foo.com:*'}
+                @{'Protocol' = 'https'; 'Endpoint' = 'pode.foo.com:*'}
             ); }; }; }
 
             { Route -HttpMethod GET -Route '/' -Protocol 'https' -Endpoint 'pode.foo.com' {} } | Should Throw 'already defined for'
@@ -200,6 +200,62 @@ Describe 'Route' {
             $routes['/users'].Length | Should Be 1
             $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
             $routes['/users'][0].Middleware | Should Be $null
+        }
+
+        It 'Adds route with full endpoint' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' { Write-Host 'hello' } -Endpoint 'pode.foo.com:8080'
+
+            $routes = $PodeSession.Server.Routes['get']
+            $routes | Should Not be $null
+            $routes.ContainsKey('/users') | Should Be $true
+            $routes['/users'] | Should Not Be $null
+            $routes['/users'].Length | Should Be 1
+            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].Endpoint | Should Be 'pode.foo.com:8080'
+        }
+
+        It 'Adds route with wildcard host endpoint' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' { Write-Host 'hello' } -Endpoint '8080'
+
+            $routes = $PodeSession.Server.Routes['get']
+            $routes | Should Not be $null
+            $routes.ContainsKey('/users') | Should Be $true
+            $routes['/users'] | Should Not Be $null
+            $routes['/users'].Length | Should Be 1
+            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].Endpoint | Should Be '*:8080'
+        }
+
+        It 'Adds route with wildcard port endpoint' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' { Write-Host 'hello' } -Endpoint 'pode.foo.com'
+
+            $routes = $PodeSession.Server.Routes['get']
+            $routes | Should Not be $null
+            $routes.ContainsKey('/users') | Should Be $true
+            $routes['/users'] | Should Not Be $null
+            $routes['/users'].Length | Should Be 1
+            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].Endpoint | Should Be 'pode.foo.com:*'
+        }
+
+        It 'Adds route with http protocol' {
+            $PodeSession.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' { Write-Host 'hello' } -Protocol 'http'
+
+            $routes = $PodeSession.Server.Routes['get']
+            $routes | Should Not be $null
+            $routes.ContainsKey('/users') | Should Be $true
+            $routes['/users'] | Should Not Be $null
+            $routes['/users'].Length | Should Be 1
+            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].Protocol | Should Be 'http'
         }
 
         It 'Adds route with simple url, and then removes it' {
