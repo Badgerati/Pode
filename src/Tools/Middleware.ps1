@@ -127,7 +127,7 @@ function Get-PodePublicMiddleware
         param($s)
 
         # get the static file path
-        $path = Get-PodeStaticRoutePath -Route $s.Path -Protocol $s.Protocol
+        $path = Get-PodeStaticRoutePath -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint
         if ($null -eq $path) {
             return $true
         }
