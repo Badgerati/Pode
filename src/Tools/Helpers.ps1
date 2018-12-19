@@ -242,6 +242,59 @@ function Get-PortRegex
     return '(?<port>\d+)'
 }
 
+function Get-PodeEndpointInfo
+{
+    param (
+        [Parameter()]
+        [string]
+        $Endpoint,
+
+        [switch]
+        $AnyPortOnZero
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Endpoint)) {
+        return $null
+    }
+
+    $hostRgx = Get-HostIPRegex -Type Both
+    $portRgx = Get-PortRegex
+    $cmbdRgx = "$($hostRgx)\:$($portRgx)"
+
+    # validate that we have a valid ip/host:port address
+    if (!(($Endpoint -imatch "^$($cmbdRgx)$") -or ($Endpoint -imatch "^$($hostRgx)[\:]{0,1}") -or ($Endpoint -imatch "[\:]{0,1}$($portRgx)$"))) {
+        throw "Failed to parse '$($Endpoint)' as a valid IP/Host:Port address"
+    }
+
+    # grab the ip address/hostname
+    $_host = $Matches['host']
+    if (Test-Empty $_host) {
+        $_host = '*'
+    }
+
+    # ensure we have a valid ip address/hostname
+    if (!(Test-IPAddress -IP $_host)) {
+        throw "The IP address supplied is invalid: $($_host)"
+    }
+
+    # grab the port
+    $_port = $Matches['port']
+    if (Test-Empty $_port) {
+        $_port = 0
+    }
+
+    # ensure the port is valid
+    if ($_port -lt 0) {
+        throw "The port cannot be negative: $($_port)"
+    }
+
+    # return the info
+    return @{
+        'Host' = $_host;
+        'Port' = (iftet ($AnyPortOnZero -and $_port -eq 0) '*' $_port);
+    }
+}
+
 function Test-IPAddress
 {
     param (
