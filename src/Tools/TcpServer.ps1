@@ -36,7 +36,7 @@ function Start-TcpServer
     }
 
     # state where we're running
-    Write-Host "Listening on tcp://$($PodeSession.Server.Endpoints[0].Name):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on tcp://$($PodeSession.Server.Endpoints[0].HostName):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {

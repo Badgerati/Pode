@@ -284,7 +284,7 @@ function Listen
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
-        [Alias('ipp')]
+        [Alias('ipp', 'e', 'endpoint')]
         [string]
         $IPPort,
         
@@ -299,6 +299,11 @@ function Listen
         [string]
         $Certificate = $null,
 
+        [Parameter()]
+        [Alias('n', 'id')]
+        [string]
+        $Name = $null,
+
         [switch]
         [Alias('f')]
         $Force
@@ -307,12 +312,22 @@ function Listen
     # parse the endpoint for host/port info
     $_endpoint = Get-PodeEndpointInfo -Endpoint $IPPort
 
+    # if a name was supplied, check it is unique
+    if (![string]::IsNullOrWhiteSpace($Name) -and
+        (Get-Count ($PodeSession.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
+    {
+        throw "An endpoint with the name '$($Name)' has already been defined"
+    }
+
     # new endpoint object
     $obj = @{
+        'Name' = $Name;
         'Address' = $null;
+        'RawAddress' = $IPPort;
         'Port' = $null;
-        'Name' = 'localhost';
+        'HostName' = 'localhost';
         'Ssl' = $false;
+        'Protocol' = $Type;
         'Certificate' = @{
             'Name' = $null;
         };
@@ -321,7 +336,7 @@ function Listen
     # set the ip for the session
     $obj.Address = (Get-IPAddress $_endpoint.Host)
     if (!(Test-IPAddressLocalOrAny -IP $obj.Address)) {
-        $obj.Name = $obj.Address
+        $obj.HostName = "$($obj.Address)"
     }
 
     # set the port for the session

@@ -77,7 +77,22 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 0
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].Name | Should Be ([string]::Empty)
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].RawAddress | Should Be 'foo.com'
+        }
+
+        It 'Set Hostname address with a Name' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP 'foo.com' -Type 'HTTP' -Name 'Example'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 0
+            $PodeSession.Server.Endpoints[0].Name | Should Be 'Example'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'foo.com'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
         }
 
@@ -89,8 +104,9 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 0
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'foo.com'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].RawAddress | Should Be 'foo.com:'
         }
 
         It 'Set both the Hostname address and port' {
@@ -101,7 +117,7 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 80
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'foo.com'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
         }
 
@@ -113,7 +129,7 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 0
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }
 
@@ -125,8 +141,9 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 0
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Endpoints[0].RawAddress | Should Be 'all'
         }
 
         It 'Set just an IPv4 address with colon' {
@@ -137,7 +154,7 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 0
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }
 
@@ -149,7 +166,7 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 80
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
         }
 
@@ -161,7 +178,7 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 80
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
         }
 
@@ -173,7 +190,7 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 80
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }
 
@@ -185,8 +202,9 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints | Should Not Be $null
             $PodeSession.Server.Endpoints.Length | Should Be 1
             $PodeSession.Server.Endpoints[0].Port | Should Be 80
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Endpoints[0].RawAddress | Should Be '*:80'
         }
 
         It 'Throws error for an invalid IPv4' {
@@ -215,11 +233,31 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints.Length | Should Be 2
 
             $PodeSession.Server.Endpoints[0].Port | Should Be 80
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
 
             $PodeSession.Server.Endpoints[1].Port | Should Be 80
-            $PodeSession.Server.Endpoints[1].Name | Should Be 'pode.foo.com'
+            $PodeSession.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
+            $PodeSession.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
+        }
+
+        It 'Add two endpoints to listen on, with different names' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'HTTP' -Name 'Example1'
+            Listen -IP 'pode.foo.com:80' -Type 'HTTP' -Name 'Example2'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 2
+
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].Name | Should Be 'Example1'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+
+            $PodeSession.Server.Endpoints[1].Port | Should Be 80
+            $PodeSession.Server.Endpoints[1].Name | Should Be 'Example2'
+            $PodeSession.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
             $PodeSession.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
         }
 
@@ -233,11 +271,11 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints.Length | Should Be 2
 
             $PodeSession.Server.Endpoints[0].Port | Should Be 80
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
 
             $PodeSession.Server.Endpoints[1].Port | Should Be 80
-            $PodeSession.Server.Endpoints[1].Name | Should Be 'pode.foo.com'
+            $PodeSession.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
             $PodeSession.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
         }
 
@@ -251,7 +289,7 @@ Describe 'Listen' {
             $PodeSession.Server.Endpoints.Length | Should Be 1
 
             $PodeSession.Server.Endpoints[0].Port | Should Be 80
-            $PodeSession.Server.Endpoints[0].Name | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }
 
@@ -259,6 +297,12 @@ Describe 'Listen' {
             $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP '127.0.0.1:80' -Type 'HTTP'
             { Listen -IP 'pode.foo.com:80' -Type 'SMTP' } | Should Throw 'cannot add smtp endpoint'
+        }
+
+        It 'Throws error when adding two endpoints with the same name' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'HTTP' -Name 'Example'
+            { Listen -IP 'pode.foo.com:80' -Type 'HTTP' -Name 'Example' } | Should Throw 'already been defined'
         }
 
         It 'Throws error when adding two SMTP endpoints' {
