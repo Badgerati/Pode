@@ -67,7 +67,7 @@ function Start-WebServer
         # add endpoint to list
         $endpoints += @{
             'Prefix' = "$($_protocol)://$($_ip):$($_port)/";
-            'Name' = "$($_protocol)://$($_.Name):$($_port)/";
+            'HostName' = "$($_protocol)://$($_.HostName):$($_port)/";
         }
     }
 
@@ -101,7 +101,7 @@ function Start-WebServer
     Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeSession.Threads) thread(s)]:" -ForegroundColor Yellow
 
     $endpoints | ForEach-Object {
-        Write-Host "`t- $($_.Name)" -ForegroundColor Yellow
+        Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
     }
 
     # script for listening out for incoming requests

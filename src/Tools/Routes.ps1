@@ -205,6 +205,11 @@ function Route
         [string]
         $Endpoint,
 
+        [Parameter()]
+        [Alias('ln', 'lid')]
+        [string]
+        $ListenName,
+
         [switch]
         [Alias('rm')]
         $Remove
@@ -213,8 +218,21 @@ function Route
     # uppercase the method
     $HttpMethod = $HttpMethod.ToUpperInvariant()
 
-    # if an endpoint was supplied, add any appropriate wildcards
-    if (![string]::IsNullOrWhiteSpace($Endpoint)) {
+    # if a ListenName was supplied, find it and use it
+    if (!(Test-Empty $ListenName)) {
+        # ensure it exists
+        $found = ($PodeSession.Server.Endpoints | Where-Object { $_.Name -eq $ListenName } | Select-Object -First 1)
+        if ($null -eq $found) {
+            throw "Listen endpoint with name '$($Name)' does not exist"
+        }
+
+        # override and set the protocol and endpoint
+        $Protocol = $found.Protocol
+        $Endpoint = $found.RawAddress
+    }
+
+    # if an endpoint was supplied (or used from a listen name), set any appropriate wildcards
+    if (!(Test-Empty $Endpoint)) {
         $_endpoint = Get-PodeEndpointInfo -Endpoint $Endpoint -AnyPortOnZero
         $Endpoint = "$($_endpoint.Host):$($_endpoint.Port)"
     }

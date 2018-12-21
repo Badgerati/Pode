@@ -388,7 +388,7 @@ function Test-IPAddressAny
         $IP
     )
 
-    return (@('0.0.0.0', '*', 'all') -icontains $IP)
+    return (@('0.0.0.0', '*', 'all', '::', '[::]') -icontains $IP)
 }
 
 function Test-IPAddressLocalOrAny
@@ -412,6 +412,10 @@ function Get-IPAddress
 
     if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
         return [System.Net.IPAddress]::Any
+    }
+
+    if (($IP -ieq '::') -or ($IP -ieq '[::]')) {
+        return [System.Net.IPAddress]::IPv6Any
     }
 
     if ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$") {

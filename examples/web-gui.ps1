@@ -7,13 +7,15 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a server, and start listening on port 8090
 Server {
 
+    # listen on localhost:8090
+    listen localhost:8090 http -n 'local1'
+    listen localhost:8091 http -n 'local2'
+
     # tell this server to run as a desktop gui
     gui 'Pode Desktop Application' @{
-        'Icon' = '../images/icon.png'
+        'Icon' = '../images/icon.png';
+        'ListenName' = 'local2'
     }
-
-    # listen on localhost:8090
-    listen localhost:8090 http
 
     # set view engine to pode renderer
     engine pode

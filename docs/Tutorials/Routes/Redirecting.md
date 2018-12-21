@@ -9,11 +9,11 @@ When in a `route`, to inform the client to redirect to a different endpoint you 
 The make-up of the `redirect` function is as follows:
 
 ```powershell
-redirect [-port <int>] [-protocol <http|https>] [-moved]
+redirect [-port <int>] [-protocol <http|https>] [-endpoint <string>] [-moved]
 redirect [-url <string>] [-moved]
 
 # or shorthand:
-redirect [-p <int>] [-pr <http|https>] [-m]
+redirect [-p <int>] [-pr <http|https>] [-e <string>] [-m]
 redirect [-u <string>] [-m]
 ```
 

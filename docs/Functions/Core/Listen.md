@@ -78,5 +78,6 @@ Server {
 | ---- | ---- | -------- | ----------- | ------- |
 | IPPort | string | true | The IP/Host:Port combination for an endpoint that the server should listen on | null |
 | Type | string | true | The protocol of the endpoint the server should use: HTTP, HTTPS, SMTP, TCP | null |
-| Cert | string | false | The certificate to bind to the endpoint. If the certificate is `self` then Pode will create a self-signed certificate. If the certificate is `*.example.com` then it must be installed to `Cert:/LocalMachine/My` | null |
+| Cert | string | false | The certificate to bind to the endpoint. If the certificate is `self` then Pode will create a self-signed certificate. If the certificate is `*.example.com` then it must be installed to `Cert:/LocalMachine/My` | empty |
+| Name | string | false | A unique name for this endpoint, which can be used on the [`route`](../Route) and [`gui`](../Gui) functions | empty |
 | Force | switch | false | If supplied, will force the `listen` function to not run the administrator check | false |

@@ -15,12 +15,12 @@ Routes can also be bound against a specific protocol or endpoint. This allows yo
 To setup and use routes in Pode you should use the [`route`](../../../Function/Core/Route) function. The general make-up of the `route` function is as follows - the former is for HTTP requests, where as the latter is for static content:
 
 ```powershell
-route <method> <route> [<middleware>] <scriptblock> [-protocol <string>] [-endpoint <string>] [-remove]
-route static <route> <path> [<defaults>] [-protocol <string>] [-endpoint <string>] [-remove]
+route <method> <route> [<middleware>] <scriptblock> [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove]
+route static <route> <path> [<defaults>] [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove]
 
 # or shorthand:
-route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-rm]
-route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-rm]
+route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-ln <string>] [-rm]
+route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-ln <string>] [-rm]
 ```
 
 For example, let's say you want a basic `GET /ping` endpoint to just return `pong` as a JSON response:

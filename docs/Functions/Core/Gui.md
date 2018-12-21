@@ -53,3 +53,4 @@ Server {
 | ShowInTaskbar | bool | false | Defines whether or not the application should appear in the taskbar |  true |
 | State | string | false | The state of the application when it opens. (Values: Normal, Maximized, Minimized) | Normal |
 | WindowStyle | string | false | The border style of the application when it opens. (Values: None, SingleBorderWindow, ThreeDBorderWindow, ToolWindow) | SingleBorderWindow |
+| ListenName | string | false | The name of a [`listen`](../Listen) endpoint to use - useful if you have multiple endpoints defined | empty |

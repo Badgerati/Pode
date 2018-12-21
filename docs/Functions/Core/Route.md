@@ -6,7 +6,7 @@ The `route` function allows you to bind logic to be invoked against a URL path a
 
 You can also use the `route` function to specify routes to static content paths. Normally if you request a static file Pode will check the `/public` directory, but you can specify other paths using `route static` (example below). If you call a directory path with the directory structure, then a default file (such as `index.html`) will be searched for and returned.
 
-Routes can also be bound against a specific protocol or endpoint. This allows you to bind multiple root (`/`) routes against different endpoints - if you're listening to multiple endpoints.
+Routes can also be bound against a specific protocol or endpoint. This allows you to bind multiple routes against different endpoints - if you're listening to multiple endpoints.
 
 !!! info
     The scriptblock supplied for the main route logic is invoked with a single parameter for the current web event. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
@@ -174,6 +174,25 @@ Server {
 }
 ```
 
+### Example 9
+
+The following example sets up two `GET /ping` routes: one that applies to one endpoint, and the other to the other endpoint; this is done using the name supplied to the `listen` function:
+
+```powershell
+Server {
+    listen pode.foo.com:8080 http -name 'pode1'
+    listen pode.bar.com:8080 http -name 'pode2'
+
+    route get '/ping' -listenName 'pode1' {
+        json @{ 'value' = 'ping' }
+    }
+
+    route get '/ping' -listenName 'pode2' {
+        json @{ 'value' = 'pong' }
+    }
+}
+```
+
 ## Parameters
 
 | Name | Type | Required | Description | Default |
@@ -185,6 +204,7 @@ Server {
 | Defaults | string[] | false | For static routes only, this is an array of default pages that could be displayed when the static directory is called | ['index.html', 'index.htm', 'default.html', 'default.htm'] |
 | Protocol | string | false | The protocol to bind the route against (Values: Empty, HTTP, HTTPS) | empty |
 | Endpoint | string | false | The endpoint to bind the route against - this will typically be the endpoint used in your `listen` function | empty |
+| ListenName | string | false | The name of a [`listen`](../Listen) endpoint to bind the route against. This can be use instead of `-Protocol` and `-Endpoint`, but if used with them, will override their values | empty |
 | Remove | switch | false | When passed, will remove a defined route | false |
 
 !!! tip

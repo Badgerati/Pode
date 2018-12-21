@@ -36,7 +36,7 @@ function Start-SmtpServer
     }
 
     # state where we're running
-    Write-Host "Listening on smtp://$($PodeSession.Server.Endpoints[0].Name):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on smtp://$($PodeSession.Server.Endpoints[0].HostName):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {
@@ -63,7 +63,7 @@ function Start-SmtpServer
             $data = [string]::Empty
 
             # open response to smtp request
-            tcp write "220 $($PodeSession.Server.Endpoints[0].Name) -- Pode Proxy Server"
+            tcp write "220 $($PodeSession.Server.Endpoints[0].HostName) -- Pode Proxy Server"
             $msg = [string]::Empty
 
             # respond to smtp request

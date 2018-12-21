@@ -8,13 +8,20 @@ function Start-GuiRunspace
     $script = {
         try
         {
-            # if there are multiple endpoints, flag warning we're only using the first
-            if (($PodeSession.Server.Endpoints | Measure-Object).Count -gt 1) {
-                Write-Host "Multiple endpoints defined, only the first will be used" -ForegroundColor Yellow
+            # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
+            if ($null -eq $PodeSession.Server.Gui.Endpoint)
+            {
+                if (($PodeSession.Server.Endpoints | Measure-Object).Count -gt 1) {
+                    Write-Host "Multiple endpoints defined, only the first will be used for the GUI" -ForegroundColor Yellow
+                }
             }
 
-            # get the endpoint on which we're currently listening
-            $endpoint = $PodeSession.Server.Endpoints[0]
+            # get the endpoint on which we're currently listening, or use explicitly passed one
+            $endpoint = $PodeSession.Server.Gui.Endpoint
+            if ($null -eq $endpoint) {
+                $endpoint = $PodeSession.Server.Endpoints[0]
+            }
+
             $protocol = (iftet $endpoint.Ssl 'https' 'http')
 
             # grab the port
@@ -23,7 +30,7 @@ function Start-GuiRunspace
                 $port = (iftet $endpoint.Ssl 8443 8080)
             }
 
-            $endpoint = "$($protocol)://$($endpoint.Name):$($port)"
+            $endpoint = "$($protocol)://$($endpoint.HostName):$($port)"
 
             # poll the server for a response
             $count = 0
@@ -146,6 +153,10 @@ function Gui
         if (!(Test-Empty $Options.WindowStyle)) {
             $PodeSession.Server.Gui['WindowStyle'] = $Options.WindowStyle
         }
+
+        if (!(Test-Empty $Options.ListenName)) {
+            $PodeSession.Server.Gui['ListenName'] = $Options.ListenName
+        }
     }
 
     # validate the settings
@@ -164,5 +175,18 @@ function Gui
     $styles = @('None', 'SingleBorderWindow', 'ThreeDBorderWindow', 'ToolWindow')
     if (!(Test-Empty $style) -and ($styles -inotcontains $style)) {
         throw "Invalid GUI window style supplied, should be blank or one of $($styles -join ' / ')"
+    }
+
+    # ensure a listen endpoint with name exists - if one has been passed
+    if (!(Test-Empty $PodeSession.Server.Gui.ListenName)) {
+        $found = ($PodeSession.Server.Endpoints | Where-Object {
+            $_.Name -eq $PodeSession.Server.Gui.ListenName
+        } | Select-Object -First 1)
+
+        if ($null -eq $found) {
+            throw "Listen endpoint with name '$($Name)' does not exist"
+        }
+
+        $PodeSession.Server.Gui['Endpoint'] = $found
     }
 }
