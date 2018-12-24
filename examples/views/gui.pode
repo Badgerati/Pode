@@ -1,0 +1,18 @@
+<html>
+    <head>
+        <title>Pode Page</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <link rel="stylesheet" type="text/css" href="styles/simple.css.pode">
+    </head>
+    <body>
+        Hello, world! This is Pode page in a desktop gui!
+        <ul>
+        $(foreach ($i in $data.numbers)
+        {
+            "<li>value: $i</li>";
+        })
+        </ul>
+
+        <img src="Anger.jpg" />
+    </body>
+</html>

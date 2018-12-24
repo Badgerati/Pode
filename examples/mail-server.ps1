@@ -5,7 +5,9 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 25
-Server -Smtp -Threads 2 {
+Server -Threads 2 {
+
+    listen localhost smtp
 
     # allow the local ip
     access allow ip 127.0.0.1

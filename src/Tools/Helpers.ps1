@@ -101,6 +101,28 @@ function Test-IsPSCore
     return (Get-PSVersionTable).PSEdition -ieq 'core'
 }
 
+function Test-IsAdminUser
+{
+    # check the current platform, if it's unix then return true
+    if (Test-IsUnix) {
+        return $true
+    }
+
+    try {
+        $principal = New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
+        if ($principal -eq $null) {
+            return $false
+        }
+
+        return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+    }
+    catch [exception] {
+        Write-Host 'Error checking user administrator priviledges' -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        return $false
+    }
+}
+
 function New-PodeSelfSignedCertificate
 {
     param (
@@ -135,7 +157,7 @@ function New-PodeSelfSignedCertificate
 
     # ensure a cert has been supplied
     if (Test-Empty $Certificate) {
-        throw "A certificate is required for ssl connections, either 'self' or '*.example.com' can be supplied to the 'listen' command"
+        throw "A certificate is required for ssl connections, either 'self' or '*.example.com' can be supplied to the 'listen' function"
     }
 
     # generate a self-signed cert
@@ -220,6 +242,59 @@ function Get-PortRegex
     return '(?<port>\d+)'
 }
 
+function Get-PodeEndpointInfo
+{
+    param (
+        [Parameter()]
+        [string]
+        $Endpoint,
+
+        [switch]
+        $AnyPortOnZero
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Endpoint)) {
+        return $null
+    }
+
+    $hostRgx = Get-HostIPRegex -Type Both
+    $portRgx = Get-PortRegex
+    $cmbdRgx = "$($hostRgx)\:$($portRgx)"
+
+    # validate that we have a valid ip/host:port address
+    if (!(($Endpoint -imatch "^$($cmbdRgx)$") -or ($Endpoint -imatch "^$($hostRgx)[\:]{0,1}") -or ($Endpoint -imatch "[\:]{0,1}$($portRgx)$"))) {
+        throw "Failed to parse '$($Endpoint)' as a valid IP/Host:Port address"
+    }
+
+    # grab the ip address/hostname
+    $_host = $Matches['host']
+    if (Test-Empty $_host) {
+        $_host = '*'
+    }
+
+    # ensure we have a valid ip address/hostname
+    if (!(Test-IPAddress -IP $_host)) {
+        throw "The IP address supplied is invalid: $($_host)"
+    }
+
+    # grab the port
+    $_port = $Matches['port']
+    if (Test-Empty $_port) {
+        $_port = 0
+    }
+
+    # ensure the port is valid
+    if ($_port -lt 0) {
+        throw "The port cannot be negative: $($_port)"
+    }
+
+    # return the info
+    return @{
+        'Host' = $_host;
+        'Port' = (iftet ($AnyPortOnZero -and $_port -eq 0) '*' $_port);
+    }
+}
+
 function Test-IPAddress
 {
     param (
@@ -241,6 +316,17 @@ function Test-IPAddress
     }
 }
 
+function Test-Hostname
+{
+    param (
+        [Parameter()]
+        [string]
+        $Hostname
+    )
+
+    return ($Hostname -imatch "^$(Get-HostIPRegex -Type Hostname)$")
+}
+
 function ConvertTo-IPAddress
 {
     param (
@@ -252,6 +338,37 @@ function ConvertTo-IPAddress
     return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Endpoint).Address.ToString())
 }
 
+function Get-IPAddressesForHostname
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Hostname,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('All', 'IPv4', 'IPv6')]
+        [string]
+        $Type
+    )
+
+    # get the ip addresses for the hostname
+    $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
+
+    # return ips based on type
+    switch ($Type.ToLowerInvariant())
+    {
+        'ipv4' {
+            $ips = @(($ips | Where-Object { $_.AddressFamily -ieq 'InterNetwork' }))
+        }
+
+        'ipv6' {
+            $ips = @(($ips | Where-Object { $_.AddressFamily -ieq 'InterNetworkV6' }))
+        }
+    }
+
+    return @(($ips | Select-Object -ExpandProperty IPAddressToString))
+}
+
 function Test-IPAddressLocal
 {
     param (
@@ -260,7 +377,7 @@ function Test-IPAddressLocal
         $IP
     )
 
-    return (@('0.0.0.0', '*', '127.0.0.1', 'all') -icontains $IP)
+    return (@('127.0.0.1', '::1', '[::1]', 'localhost') -icontains $IP)
 }
 
 function Test-IPAddressAny
@@ -271,7 +388,18 @@ function Test-IPAddressAny
         $IP
     )
 
-    return (@('0.0.0.0', '*', 'all') -icontains $IP)
+    return (@('0.0.0.0', '*', 'all', '::', '[::]') -icontains $IP)
+}
+
+function Test-IPAddressLocalOrAny
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $IP
+    )
+
+    return ((Test-IPAddressLocal -IP $IP) -or (Test-IPAddressAny -IP $IP))
 }
 
 function Get-IPAddress
@@ -284,6 +412,10 @@ function Get-IPAddress
 
     if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
         return [System.Net.IPAddress]::Any
+    }
+
+    if (($IP -ieq '::') -or ($IP -ieq '[::]')) {
+        return [System.Net.IPAddress]::IPv6Any
     }
 
     if ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$") {
@@ -395,7 +527,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Schedules')]
+        [ValidateSet('Main', 'Schedules', 'Gui')]
         [string]
         $Type,
 
@@ -465,7 +597,7 @@ function Close-PodeRunspaces
 
         # dispose the runspace pools
         if ($ClosePool -and $null -ne $PodeSession.RunspacePools) {
-            $PodeSession.RunspacePools.Values | Where-Object { !$_.IsDisposed } | ForEach-Object {
+            $PodeSession.RunspacePools.Values | Where-Object { $null -ne $_ -and !$_.IsDisposed } | ForEach-Object {
                 dispose $_ -Close
             }
         }
@@ -578,7 +710,7 @@ function Close-Pode
     # remove all of the pode temp drives
     Remove-PodePSDrives
 
-    if ($Exit -and $PodeSession.Server.Type -ine 'script') {
+    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
         Write-Host " Done" -ForegroundColor Green
     }
 }

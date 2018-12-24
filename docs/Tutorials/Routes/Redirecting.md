@@ -9,11 +9,11 @@ When in a `route`, to inform the client to redirect to a different endpoint you 
 The make-up of the `redirect` function is as follows:
 
 ```powershell
-redirect [-port <int>] [-protocol <http|https>] [-moved]
+redirect [-port <int>] [-protocol <http|https>] [-endpoint <string>] [-moved]
 redirect [-url <string>] [-moved]
 
 # or shorthand:
-redirect [-p <int>] [-pr <http|https>] [-m]
+redirect [-p <int>] [-pr <http|https>] [-e <string>] [-m]
 redirect [-u <string>] [-m]
 ```
 
@@ -38,6 +38,7 @@ The below example will redirect the user to the same host/server, but with a dif
 ```powershell
 Server {
     listen *:8080 http
+    listen *:8086 https
 
     route get '/redirect' {
         redirect -port 8086 -protocol https
@@ -45,14 +46,15 @@ Server {
 }
 ```
 
-This final example will redirect every route path, on every action, to https:
+This final example will redirect every HTTP request, on every action and route, to https:
 
 ```powershell
 Server {
     listen *:8080 http
+    listen *:8443 http
 
-    route * * {
-        redirect -port 443 -protocol https
+    route * * -p http {
+        redirect -port 8443 -protocol https
     }
 }
 ```

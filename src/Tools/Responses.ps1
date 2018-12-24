@@ -170,6 +170,11 @@ function Redirect
         [string]
         $Protocol,
 
+        [Parameter()]
+        [Alias('e')]
+        [string]
+        $Endpoint,
+
         [switch]
         [Alias('m')]
         $Moved
@@ -178,11 +183,18 @@ function Redirect
     if (Test-Empty $Url) {
         $uri = $WebEvent.Request.Url
 
+        # set the protocol
         $Protocol = $Protocol.ToLowerInvariant()
         if (Test-Empty $Protocol) {
             $Protocol = $uri.Scheme
         }
 
+        # set the endpoint
+        if (Test-Empty $Endpoint) {
+            $Endpoint = $uri.Host
+        }
+
+        # set the port
         if ($Port -le 0) {
             $Port = $uri.Port
         }
@@ -192,7 +204,8 @@ function Redirect
             $PortStr = ":$($Port)"
         }
 
-        $Url = "$($Protocol)://$($uri.Host)$($PortStr)$($uri.PathAndQuery)"
+        # combine to form the url
+        $Url = "$($Protocol)://$($Endpoint)$($PortStr)$($uri.PathAndQuery)"
     }
 
     $WebEvent.Response.RedirectLocation = $Url

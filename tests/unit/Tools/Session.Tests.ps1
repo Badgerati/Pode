@@ -67,137 +67,254 @@ Describe 'Listen' {
 
     Context 'Valid parameters supplied' {
         Mock Test-IPAddress { return $true }
+        Mock Test-IsAdminUser { return $true }
 
         It 'Set just a Hostname address' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP 'foo.com' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 0
-            $PodeSession.Server.IP.Name | Should Be 'foo.com'
-            $PodeSession.Server.IP.Address.ToString() | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 0
+            $PodeSession.Server.Endpoints[0].Name | Should Be ([string]::Empty)
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].RawAddress | Should Be 'foo.com'
+        }
+
+        It 'Set Hostname address with a Name' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP 'foo.com' -Type 'HTTP' -Name 'Example'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 0
+            $PodeSession.Server.Endpoints[0].Name | Should Be 'Example'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
         }
 
         It 'Set just a Hostname address with colon' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP 'foo.com:' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 0
-            $PodeSession.Server.IP.Name | Should Be 'foo.com'
-            $PodeSession.Server.IP.Address.ToString() | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 0
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].RawAddress | Should Be 'foo.com:'
         }
 
         It 'Set both the Hostname address and port' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP 'foo.com:80' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 80
-            $PodeSession.Server.IP.Name | Should Be 'foo.com'
-            $PodeSession.Server.IP.Address.ToString() | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'foo.com'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
         }
 
         It 'Set just an IPv4 address' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP '127.0.0.1' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 0
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address.ToString() | Should Be '127.0.0.1'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 0
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set just an IPv4 address for all' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP 'all' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 0
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 0
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Endpoints[0].RawAddress | Should Be 'all'
         }
 
         It 'Set just an IPv4 address with colon' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP '127.0.0.1:' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 0
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address.ToString() | Should Be '127.0.0.1'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 0
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set just a port' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP '80' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 80
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
         }
 
         It 'Set just a port with colon' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP ':80' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 80
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
         }
 
         It 'Set both IPv4 address and port' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP '127.0.0.1:80' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 80
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address.ToString() | Should Be '127.0.0.1'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set both IPv4 address and port for all' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             Listen -IP '*:80' -Type 'HTTP'
 
             $PodeSession.Server.Type | Should Be 'HTTP'
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 80
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
+            $PodeSession.Server.Endpoints[0].RawAddress | Should Be '*:80'
         }
 
-        It 'Throws error for just an invalid IPv4' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+        It 'Throws error for an invalid IPv4' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             { Listen -IP '256.0.0.1' -Type 'HTTP' } | Should Throw 'Invalid IP Address'
 
             $PodeSession.Server.Type | Should Be $null
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 0
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address | Should Be $null
+            $PodeSession.Server.Endpoints | Should Be $null
         }
 
         It 'Throws error for an invalid IPv4 address with port' {
-            $PodeSession.Server = @{ 'IP' = @{ 'Address' = $null; 'Name' = 'localhost'; 'Port' = 0; }; 'Type' = $null }
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             { Listen -IP '256.0.0.1:80' -Type 'HTTP' } | Should Throw 'Invalid IP Address'
 
             $PodeSession.Server.Type | Should Be $null
-            $PodeSession.Server.IP | Should Not Be $null
-            $PodeSession.Server.IP.Port | Should Be 0
-            $PodeSession.Server.IP.Name | Should Be 'localhost'
-            $PodeSession.Server.IP.Address | Should Be $null
+            $PodeSession.Server.Endpoints | Should Be $null
+        }
+
+        It 'Add two endpoints to listen on, of the same type' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'HTTP'
+            Listen -IP 'pode.foo.com:80' -Type 'HTTP'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 2
+
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+
+            $PodeSession.Server.Endpoints[1].Port | Should Be 80
+            $PodeSession.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
+            $PodeSession.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
+        }
+
+        It 'Add two endpoints to listen on, with different names' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'HTTP' -Name 'Example1'
+            Listen -IP 'pode.foo.com:80' -Type 'HTTP' -Name 'Example2'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 2
+
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].Name | Should Be 'Example1'
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+
+            $PodeSession.Server.Endpoints[1].Port | Should Be 80
+            $PodeSession.Server.Endpoints[1].Name | Should Be 'Example2'
+            $PodeSession.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
+            $PodeSession.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
+        }
+
+        It 'Add two endpoints to listen on, one of HTTP and one of HTTPS' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'HTTP'
+            Listen -IP 'pode.foo.com:80' -Type 'HTTPS'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 2
+
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+
+            $PodeSession.Server.Endpoints[1].Port | Should Be 80
+            $PodeSession.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
+            $PodeSession.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
+        }
+
+        It 'Add two endpoints to listen on, but one added as they are the same' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'HTTP'
+            Listen -IP '127.0.0.1:80' -Type 'HTTP'
+
+            $PodeSession.Server.Type | Should Be 'HTTP'
+            $PodeSession.Server.Endpoints | Should Not Be $null
+            $PodeSession.Server.Endpoints.Length | Should Be 1
+
+            $PodeSession.Server.Endpoints[0].Port | Should Be 80
+            $PodeSession.Server.Endpoints[0].HostName | Should Be 'localhost'
+            $PodeSession.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+        }
+
+        It 'Throws error when adding two endpoints of different types' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'HTTP'
+            { Listen -IP 'pode.foo.com:80' -Type 'SMTP' } | Should Throw 'cannot add smtp endpoint'
+        }
+
+        It 'Throws error when adding two endpoints with the same name' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'HTTP' -Name 'Example'
+            { Listen -IP 'pode.foo.com:80' -Type 'HTTP' -Name 'Example' } | Should Throw 'already been defined'
+        }
+
+        It 'Throws error when adding two SMTP endpoints' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'SMTP'
+            { Listen -IP 'pode.foo.com:80' -Type 'SMTP' } | Should Throw 'already been defined'
+        }
+
+        It 'Throws error when adding two TCP endpoints' {
+            $PodeSession.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            Listen -IP '127.0.0.1:80' -Type 'TCP'
+            { Listen -IP 'pode.foo.com:80' -Type 'TCP' } | Should Throw 'already been defined'
         }
     }
 }

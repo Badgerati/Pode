@@ -5,12 +5,6 @@ function New-PodeSession
         $ScriptBlock,
 
         [int]
-        $Port = 0,
-
-        [string]
-        $IP = $null,
-
-        [int]
         $Threads = 1,
 
         [int]
@@ -18,10 +12,6 @@ function New-PodeSession
 
         [string]
         $ServerRoot,
-
-        [ValidateSet('HTTP', 'HTTPS', 'SCRIPT', 'SERVICE', 'SMTP', 'TCP')]
-        [string]
-        $ServerType,
 
         [string]
         $Name = $null,
@@ -51,19 +41,22 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name DisableLogging -Value $DisableLogging -PassThru |
-        Add-Member -MemberType NoteProperty -Name Loggers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
 
-    # set the server type, name, logic and root
+    # set the server name, logic and root
     $session.Server.Name = $Name
-    $session.Server.Type = $ServerType
     $session.Server.Root = $ServerRoot
     $session.Server.Logic = $ScriptBlock
     $session.Server.Interval = $Interval
     $session.Server.FileMonitor = $FileMonitor
+
+    # set the server default type
+    $session.Server.Type = ([string]::Empty)
+    if ($Interval -gt 0) {
+        $session.Server.Type = 'SERVICE'
+    }
 
     # check if there is any global configuration
     $session.Server.Configuration = @{}
@@ -74,14 +67,16 @@ function New-PodeSession
     }
 
     # set the IP address details
-    $session.Server.IP = @{
-        'Address' = $null;
-        'Port' = $Port;
-        'Name' = 'localhost';
-        'Ssl' = ($ServerType -ieq 'https');
-        'Certificate' = @{
-            'Name' = $null;
-        };
+    $session.Server.Endpoints = @()
+
+    # setup gui details
+    $session.Server.Gui = @{
+        'Enabled' = $false;
+        'Name' = $null;
+        'Icon' = $null;
+        'State' = 'Normal';
+        'ShowInTaskbar' = $true;
+        'WindowStyle' = 'SingleBorderWindow';
     }
 
     # shared temp drives
@@ -140,6 +135,12 @@ function New-PodeSession
     # authnetication methods
     $session.Server.Authentications = @{}
 
+    # logging methods
+    $session.Server.Logging = @{
+        'Methods' = @{};
+        'Disabled' = $DisableLogging;
+    }
+
     # create new cancellation tokens
     $session.Tokens = @{
         'Cancellation' = New-Object System.Threading.CancellationTokenSource;
@@ -159,6 +160,7 @@ function New-PodeSession
     $session.RunspacePools = @{
         'Main' = $null;
         'Schedules' = $null;
+        'Gui' = $null;
     }
 
     # session state
@@ -197,6 +199,13 @@ function New-PodeSession
     $session.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
     $session.RunspacePools.Schedules.Open()
 
+    # setup gui runspace pool (only for non-ps-core)
+    if (!(Test-IsPSCore)) {
+        $session.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $state, $Host)
+        $session.RunspacePools.Gui.ApartmentState = 'STA'
+        $session.RunspacePools.Gui.Open()
+    }
+
     # return the new session
     return $session
 }
@@ -215,8 +224,6 @@ function New-PodeStateSession
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Session.Schedules -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Session.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
-        Add-Member -MemberType NoteProperty -Name DisableLogging -Value $Session.DisableLogging -PassThru |
-        Add-Member -MemberType NoteProperty -Name Loggers -Value $Session.Loggers -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value $Session.Server -PassThru)
@@ -277,7 +284,7 @@ function Listen
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
-        [Alias('ipp')]
+        [Alias('ipp', 'e', 'endpoint')]
         [string]
         $IPPort,
         
@@ -290,56 +297,84 @@ function Listen
         [Parameter()]
         [Alias('cert')]
         [string]
-        $Certificate = $null
+        $Certificate = $null,
+
+        [Parameter()]
+        [Alias('n', 'id')]
+        [string]
+        $Name = $null,
+
+        [switch]
+        [Alias('f')]
+        $Force
     )
 
-    $hostRgx = Get-HostIPRegex -Type Both
-    $portRgx = Get-PortRegex
-    $cmbdRgx = "$($hostRgx)\:$($portRgx)"
+    # parse the endpoint for host/port info
+    $_endpoint = Get-PodeEndpointInfo -Endpoint $IPPort
 
-    # validate that we have a valid ip:port address
-    if (!(($IPPort -imatch "^$($cmbdRgx)$") -or ($IPPort -imatch "^$($hostRgx)[\:]{0,1}") -or ($IPPort -imatch "[\:]{0,1}$($portRgx)$"))) {
-        throw "Failed to parse '$($IPPort)' as a valid IP:Port address"
+    # if a name was supplied, check it is unique
+    if (![string]::IsNullOrWhiteSpace($Name) -and
+        (Get-Count ($PodeSession.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
+    {
+        throw "An endpoint with the name '$($Name)' has already been defined"
     }
 
-    # grab the ip address
-    $_host = $Matches['host']
-    if (Test-Empty $_host) {
-        $_host = '*'
-    }
-
-    # ensure we have a valid ip address
-    if (!(Test-IPAddress -IP $_host)) {
-        throw "Invalid IP address has been supplied: $($IP)"
-    }
-
-    # grab the port
-    $_port = $Matches['port']
-    if (Test-Empty $_port) {
-        $_port = 0
-    }
-
-    # ensure the port is valid
-    if ($_port -lt 0) {
-        throw "Port cannot be negative: $($_port)"
+    # new endpoint object
+    $obj = @{
+        'Name' = $Name;
+        'Address' = $null;
+        'RawAddress' = $IPPort;
+        'Port' = $null;
+        'HostName' = 'localhost';
+        'Ssl' = $false;
+        'Protocol' = $Type;
+        'Certificate' = @{
+            'Name' = $null;
+        };
     }
 
     # set the ip for the session
-    $PodeSession.Server.IP.Address = (Get-IPAddress $_host)
-    if (!(Test-IPAddressLocal -IP $PodeSession.Server.IP.Address)) {
-        $PodeSession.Server.IP.Name = $PodeSession.Server.IP.Address
+    $obj.Address = (Get-IPAddress $_endpoint.Host)
+    if (!(Test-IPAddressLocalOrAny -IP $obj.Address)) {
+        $obj.HostName = "$($obj.Address)"
     }
 
     # set the port for the session
-    $PodeSession.Server.IP.Port = $_port
-
-    # set the server type
-    $PodeSession.Server.Type = $Type
+    $obj.Port = $_endpoint.Port
 
     # if the server type is https, set cert details
     if ($Type -ieq 'https') {
-        $PodeSession.Server.IP.Ssl = $true
-        $PodeSession.Server.IP.Certificate.Name = $Certificate
+        $obj.Ssl = $true
+        $obj.Certificate.Name = $Certificate
+    }
+
+    # if the address is non-local, then check admin privileges
+    if (!$Force -and !(Test-IPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {
+        throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
+    }
+
+    # has this endpoint been added before? (for http/https we can just not add it again)
+    $exists = ($PodeSession.Server.Endpoints | Where-Object {
+        ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
+    } | Measure-Object).Count
+
+    # has an endpoint already been defined for smtp/tcp?
+    if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeSession.Server.Type) {
+        throw "An endpoint for $($Type.ToUpperInvariant()) has already been defined"
+    }
+
+    if (!$exists) {
+        # set server type, ensure we aren't trying to change the server's type
+        $_type = (iftet ($Type -ieq 'https') 'http' $Type)
+        if ([string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
+            $PodeSession.Server.Type = $_type
+        }
+        elseif ($PodeSession.Server.Type -ine $_type) {
+            throw "Cannot add $($Type.ToUpperInvariant()) endpoint when already listening to $($PodeSession.Server.Type.ToUpperInvariant()) endpoints"
+        }
+
+        # add the new endpoint
+        $PodeSession.Server.Endpoints += $obj
     }
 }
 
