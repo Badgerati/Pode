@@ -1000,6 +1000,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../DesktopApp/" title="Desktop Application" class="md-nav__link">
+      Desktop Application
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
     </a>
@@ -1069,6 +1081,18 @@
   <li class="md-nav__item">
     <a href="../../../Functions/Core/Engine/" title="Engine" class="md-nav__link">
       Engine
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Gui/" title="Gui" class="md-nav__link">
+      Gui
     </a>
   </li>
 
@@ -1677,6 +1701,7 @@
                 <h1 id="route-overview">Route Overview</h1>
 <p>Routes in Pode allow you to bind logic that should be invoked when a user calls a certain path on a URL, for a specific HTTP method, against your server. Routes allow you to host REST APIs and Web Pages, as well as using custom middleware for things like authentication.</p>
 <p>You can also specify static routes, that redirect requests to static content to internal directories.</p>
+<p>Routes can also be bound against a specific protocol or endpoint. This allows you to bind multiple root (<code>/</code>) routes against different endpoints - if you're listening to multiple endpoints.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>The following HTTP methods are supported by routes in Pode:
@@ -1684,12 +1709,16 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 </div>
 <h2 id="usage">Usage</h2>
 <p>To setup and use routes in Pode you should use the <a href="../../../Function/Core/Route"><code>route</code></a> function. The general make-up of the <code>route</code> function is as follows - the former is for HTTP requests, where as the latter is for static content:</p>
-<div class="codehilite"><pre><span></span><span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
-<span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
+<div class="codehilite"><pre><span></span><span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-endpoint</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-listenName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
+<span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-endpoint</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-listenName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
+
+<span class="c"># or shorthand:</span>
+<span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ln</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-rm</span><span class="p">]</span>
+<span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ln</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-rm</span><span class="p">]</span>
 </pre></div>
 
 
-<p>For example, let's say you want a basic <code>GET ping</code> endpoint to just return <code>pong</code> as a JSON response:</p>
+<p>For example, let's say you want a basic <code>GET /ping</code> endpoint to just return <code>pong</code> as a JSON response:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 

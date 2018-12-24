@@ -917,6 +917,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Tutorials/DesktopApp/" title="Desktop Application" class="md-nav__link">
+      Desktop Application
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Tutorials/SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
     </a>
@@ -988,6 +1000,18 @@
   <li class="md-nav__item">
     <a href="../../Core/Engine/" title="Engine" class="md-nav__link">
       Engine
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Core/Gui/" title="Gui" class="md-nav__link">
+      Gui
     </a>
   </li>
 
@@ -1317,6 +1341,13 @@
           <li class="md-nav__item">
   <a href="#example-4" title="Example 4" class="md-nav__link">
     Example 4
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-5" title="Example 5" class="md-nav__link">
+    Example 5
   </a>
   
 </li>
@@ -1657,6 +1688,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-5" title="Example 5" class="md-nav__link">
+    Example 5
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1690,7 +1728,7 @@
                 
                 <h1 id="redirect">Redirect</h1>
 <h2 id="description">Description</h2>
-<p>The <code>redirect</code> function allows you to specify a URL to which to redirect the enduser. You can either specify a raw or relative URL, or alter the current request URI's port/protocol - such as redirecting from HTTP to HTTPS.</p>
+<p>The <code>redirect</code> function allows you to specify a URL to which to redirect the enduser. You can either specify a raw or relative URL, or alter the current request URI's endpoint/port/protocol - such as redirecting from HTTP to HTTPS.</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
 <p>The following example will redirect the enduser to <code>https://google.com</code>:</p>
@@ -1740,6 +1778,19 @@
 </pre></div>
 
 
+<h3 id="example-5">Example 5</h3>
+<p>The following example will redirect every method and route from the <code>127.0.0.2</code> endpoint to the localhost one - the port and protocol will remain untouched:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">listen</span> <span class="n">127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+    <span class="n">listen</span> <span class="n">127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">2</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+
+    <span class="n">route</span> <span class="p">*</span> <span class="p">*</span> <span class="n">-endpoint</span> <span class="n">127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">2</span> <span class="p">{</span>
+        <span class="n">redirect</span> <span class="n">-endpoint</span> <span class="n">127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
 <h2 id="parameters">Parameters</h2>
 <table>
 <thead>
@@ -1771,6 +1822,13 @@
 <td>string</td>
 <td>false</td>
 <td>If no URL is supplied, then the redirect will be based on the current request URI's protocol. This parameter will override the current protocol of the request URI (Values: Empty, HTTP, HTTPS)</td>
+<td>empty</td>
+</tr>
+<tr>
+<td>Endpoint</td>
+<td>string</td>
+<td>false</td>
+<td>If no URL is supplied, then the redirect will be based on the current request URI's endpoint. This parameter will override the current endpoint of the request URI</td>
 <td>empty</td>
 </tr>
 <tr>

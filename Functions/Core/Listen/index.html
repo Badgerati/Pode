@@ -917,6 +917,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Tutorials/DesktopApp/" title="Desktop Application" class="md-nav__link">
+      Desktop Application
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Tutorials/SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
     </a>
@@ -990,6 +1002,18 @@
   <li class="md-nav__item">
     <a href="../Engine/" title="Engine" class="md-nav__link">
       Engine
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Gui/" title="Gui" class="md-nav__link">
+      Gui
     </a>
   </li>
 
@@ -1096,6 +1120,13 @@
           <li class="md-nav__item">
   <a href="#example-5" title="Example 5" class="md-nav__link">
     Example 5
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-6" title="Example 6" class="md-nav__link">
+    Example 6
   </a>
   
 </li>
@@ -1671,6 +1702,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-6" title="Example 6" class="md-nav__link">
+    Example 6
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1704,7 +1742,12 @@
                 
                 <h1 id="listen">Listen</h1>
 <h2 id="description">Description</h2>
-<p>The <code>listen</code> function allows you to specify the IP/Host, Port and Protocol that your <code>Server</code> will listen on. If the protocol is <code>https</code> then you can also specify a certificate to bind, even having Pode create a self-signed certificate for you.</p>
+<p>The <code>listen</code> function allows you to specify the IP/Host, Port and Protocol for endpoints that your <code>Server</code> will listen on. If the protocol is <code>https</code> then you can also specify a certificate to bind, even having Pode create a self-signed certificate for you.</p>
+<p>The <code>listen</code> function will check for administrator privileges on Windows, unless the endpoint you're attempting to listen on is a localhost one.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can specify multiple endpoints to listen on for HTTP/HTTPS endpoints however, you can only supply a single endpoint for SMTP/TCP</p>
+</div>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
 <p>The following example will listen on every IP over port 8080 for HTTP requests:</p>
@@ -1714,22 +1757,14 @@
 </pre></div>
 
 
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>This will setup a web server and will require a <code>route</code> to be configured</p>
-</div>
 <h3 id="example-2">Example 2</h3>
-<p>The following example will listen on localhost over port 25 for SMTP requests:</p>
+<p>The following example will listen on localhost over port 25 for SMTP requests (this will not require administrator privileges):</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="n">127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span><span class="err">:</span><span class="n">25</span> <span class="n">smtp</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>This will setup an SMTP server and will require a <code>handler</code> to be configured</p>
-</div>
 <h3 id="example-3">Example 3</h3>
 <p>The following example will listen on a specific IP address over port 8443 for HTTPS requests; it will also inform Pode to create and bind a self-signed certificate to the IP:Port:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
@@ -1747,9 +1782,18 @@
 
 
 <h3 id="example-5">Example 5</h3>
-<p>The following example will listen on a wildcard host name over port 8080 for HTTP requests:</p>
+<p>The following example will listen on a wildcard endpoint over port 8080 for HTTP requests:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="example-6">Example 6</h3>
+<p>The following example will listen on multiple endpoints for HTTP (Note, you can specify a combination of HTTP/HTTPS endpoints):</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">listen</span> <span class="n">pode</span><span class="p">.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+    <span class="n">listen</span> <span class="n">pode</span><span class="p">.</span><span class="n">bar</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -1770,22 +1814,36 @@
 <td>IPPort</td>
 <td>string</td>
 <td>true</td>
-<td>The IP/Host:Port combination that the server should listen on</td>
+<td>The IP/Host:Port combination for an endpoint that the server should listen on</td>
 <td>null</td>
 </tr>
 <tr>
 <td>Type</td>
 <td>string</td>
 <td>true</td>
-<td>The type of server: HTTP, HTTPS, SMTP, TCP</td>
+<td>The protocol of the endpoint the server should use: HTTP, HTTPS, SMTP, TCP</td>
 <td>null</td>
 </tr>
 <tr>
 <td>Cert</td>
 <td>string</td>
 <td>false</td>
-<td>The certificate to bind to the IP:Port. If the certificate is <code>self</code> then Pode will create a self-signed certificate. If the certificate is <code>*.example.com</code> then it must be installed to <code>Cert:/LocalMachine/My</code></td>
-<td>null</td>
+<td>The certificate to bind to the endpoint. If the certificate is <code>self</code> then Pode will create a self-signed certificate. If the certificate is <code>*.example.com</code> then it must be installed to <code>Cert:/LocalMachine/My</code></td>
+<td>empty</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>string</td>
+<td>false</td>
+<td>A unique name for this endpoint, which can be used on the <a href="../Route"><code>route</code></a> and <a href="../Gui"><code>gui</code></a> functions</td>
+<td>empty</td>
+</tr>
+<tr>
+<td>Force</td>
+<td>switch</td>
+<td>false</td>
+<td>If supplied, will force the <code>listen</code> function to not run the administrator check</td>
+<td>false</td>
 </tr>
 </tbody>
 </table>

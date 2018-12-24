@@ -959,6 +959,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../DesktopApp/" title="Desktop Application" class="md-nav__link">
+      Desktop Application
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
     </a>
@@ -1028,6 +1040,18 @@
   <li class="md-nav__item">
     <a href="../../../Functions/Core/Engine/" title="Engine" class="md-nav__link">
       Engine
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Gui/" title="Gui" class="md-nav__link">
+      Gui
     </a>
   </li>
 
@@ -1594,16 +1618,12 @@
                 
                 <h1 id="custom-logging">Custom Logging</h1>
 <p>Sometimes you don't want to log to a file, or the terminal; instead you want to log to something better, like LogStash, Splunk, or any other central logging platform. Although Pode doesn't have these inbuilt (yet!) it is possible to create a custom <code>logger</code>, where you define a scriptblock with logic to send logs to these platforms.</p>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>Custom loggers <em>must</em> have a name that starts with <code>custom_</code>. There are plans to remove this and use a <code>-custom</code> switch similar to <a href="../Authentication/Custom"><code>Custom Authentication</code></a>.</p>
-</div>
 <h2 id="setup">Setup</h2>
-<p>To create a custom logger you need to supply a scriptblock to the <code>logger</code> function. The following example will output the web request method/resource to the terminal. The scriptblock will be supplied a single argument that has a log object which contains details of the request/response:</p>
+<p>To create a custom logger you need to supply a scriptblock to the <code>logger</code> function, as well as the <code>-Custom</code> (<code>-c</code>) flag. The following example will output the web request method/resource to the terminal; the scriptblock will be supplied a single argument that has a log object which contains details of the request/response:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
-    <span class="n">logger</span> <span class="n">custom_terminal</span> <span class="p">{</span>
+    <span class="n">logger</span> <span class="n">-c</span> <span class="n">terminal</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
 
         <span class="nv">$method</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Log</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">Method</span>

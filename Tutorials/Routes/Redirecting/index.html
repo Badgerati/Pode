@@ -959,6 +959,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../DesktopApp/" title="Desktop Application" class="md-nav__link">
+      Desktop Application
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
     </a>
@@ -1028,6 +1040,18 @@
   <li class="md-nav__item">
     <a href="../../../Functions/Core/Engine/" title="Engine" class="md-nav__link">
       Engine
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Gui/" title="Gui" class="md-nav__link">
+      Gui
     </a>
   </li>
 
@@ -1597,11 +1621,11 @@
 <h2 id="usage">Usage</h2>
 <p>When in a <code>route</code>, to inform the client to redirect to a different endpoint you can use the <a href="../../../Functions/Response/Redirect"><code>redirect</code></a> function.</p>
 <p>The make-up of the <code>redirect</code> function is as follows:</p>
-<div class="codehilite"><pre><span></span><span class="n">redirect</span> <span class="p">[</span><span class="n">-port</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">http</span><span class="p">|</span><span class="n">https</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-moved</span><span class="p">]</span>
+<div class="codehilite"><pre><span></span><span class="n">redirect</span> <span class="p">[</span><span class="n">-port</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">http</span><span class="p">|</span><span class="n">https</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-endpoint</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-moved</span><span class="p">]</span>
 <span class="n">redirect</span> <span class="p">[</span><span class="n">-url</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-moved</span><span class="p">]</span>
 
 <span class="c"># or shorthand:</span>
-<span class="n">redirect</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-pr</span> <span class="p">&lt;</span><span class="n">http</span><span class="p">|</span><span class="n">https</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-m</span><span class="p">]</span>
+<span class="n">redirect</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-pr</span> <span class="p">&lt;</span><span class="n">http</span><span class="p">|</span><span class="n">https</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-m</span><span class="p">]</span>
 <span class="n">redirect</span> <span class="p">[</span><span class="n">-u</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-m</span><span class="p">]</span>
 </pre></div>
 
@@ -1622,6 +1646,7 @@
 <p>The below example will redirect the user to the same host/server, but with a different protocol and port:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8086</span> <span class="n">https</span>
 
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/redirect&#39;</span> <span class="p">{</span>
         <span class="n">redirect</span> <span class="n">-port</span> <span class="n">8086</span> <span class="n">-protocol</span> <span class="n">https</span>
@@ -1630,12 +1655,13 @@
 </pre></div>
 
 
-<p>This final example will redirect every route path, on every action, to https:</p>
+<p>This final example will redirect every HTTP request, on every action and route, to https:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8443</span> <span class="n">http</span>
 
-    <span class="n">route</span> <span class="p">*</span> <span class="p">*</span> <span class="p">{</span>
-        <span class="n">redirect</span> <span class="n">-port</span> <span class="n">443</span> <span class="n">-protocol</span> <span class="n">https</span>
+    <span class="n">route</span> <span class="p">*</span> <span class="p">*</span> <span class="n">-p</span> <span class="n">http</span> <span class="p">{</span>
+        <span class="n">redirect</span> <span class="n">-port</span> <span class="n">8443</span> <span class="n">-protocol</span> <span class="n">https</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>

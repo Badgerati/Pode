@@ -1005,6 +1005,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Tutorials/DesktopApp/" title="Desktop Application" class="md-nav__link">
+      Desktop Application
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Tutorials/SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
     </a>
@@ -1074,6 +1086,18 @@
   <li class="md-nav__item">
     <a href="../../Functions/Core/Engine/" title="Engine" class="md-nav__link">
       Engine
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Core/Gui/" title="Gui" class="md-nav__link">
+      Gui
     </a>
   </li>
 
@@ -1695,13 +1719,13 @@
 </div>
 <h2 id="commands">Commands</h2>
 <h3 id="build">Build</h3>
-<p>The <code>build</code> command will run the script found in the <code>package.json</code> file, at the <code>scripts/build</code> value:</p>
+<p>The <code>build</code> action will run the script found in the <code>package.json</code> file, at the <code>scripts/build</code> value:</p>
 <div class="codehilite"><pre><span></span><span class="n">pode</span> <span class="n">build</span>
 </pre></div>
 
 
 <h3 id="init">Init</h3>
-<p>The <code>init</code> command will help you create a new <code>package.json</code> file from scratch. It will ask a few questions, such as author/name/etc, and then create the file for you:</p>
+<p>The <code>init</code> action will help you create a new <code>package.json</code> file from scratch. It will ask a few questions, such as author/name/etc, and then create the file for you:</p>
 <div class="codehilite"><pre><span></span><span class="n">pode</span> <span class="n">init</span>
 </pre></div>
 
@@ -1711,19 +1735,19 @@
 <p>By default, Pode will pre-populate the  <code>test</code>, <code>build</code> and <code>install</code> values using <code>yarn</code>, <code>psake</code> and <code>pester</code> respectively</p>
 </div>
 <h3 id="install">Install</h3>
-<p>The <code>install</code> command will run the script found in the <code>package.json</code> file, at the <code>scripts/install</code> value:</p>
+<p>The <code>install</code> action will run the script found in the <code>package.json</code> file, at the <code>scripts/install</code> value:</p>
 <div class="codehilite"><pre><span></span><span class="n">pode</span> <span class="n">install</span>
 </pre></div>
 
 
 <h3 id="start">Start</h3>
-<p>The <code>start</code> command will run the script found in the <code>package.json</code> file, at the <code>scripts/start</code> value. If this value is not set, then this command will instead run the value under <code>main</code>:</p>
+<p>The <code>start</code> action will run the script found in the <code>package.json</code> file, at the <code>scripts/start</code> value. If this value is not set, then this action will instead run the value under <code>main</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">pode</span> <span class="n">start</span>
 </pre></div>
 
 
 <h3 id="test">Test</h3>
-<p>The <code>test</code> command will run the script found in the <code>package.json</code> file, at the <code>scripts/test</code> value:</p>
+<p>The <code>test</code> action will run the script found in the <code>package.json</code> file, at the <code>scripts/test</code> value:</p>
 <div class="codehilite"><pre><span></span><span class="n">pode</span> <span class="n">test</span>
 </pre></div>
 

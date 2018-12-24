@@ -917,6 +917,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Tutorials/DesktopApp/" title="Desktop Application" class="md-nav__link">
+      Desktop Application
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Tutorials/SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
     </a>
@@ -990,6 +1002,18 @@
   <li class="md-nav__item">
     <a href="../Engine/" title="Engine" class="md-nav__link">
       Engine
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Gui/" title="Gui" class="md-nav__link">
+      Gui
     </a>
   </li>
 
@@ -1703,9 +1727,9 @@
 <p>The <code>hashtable</code> supplied to <code>logger file</code> is optional. If no <code>Path</code> is supplied then a <code>/logs</code> directory will be created at the server script root path, and if <code>MaxDays</code> is &lt;= 0 then the log files will be kept forever.</p>
 </div>
 <h3 id="example-3">Example 3</h3>
-<p>The following example will create a custom log tool that outputs the request method/resource to the terminal. The name of the custom logger <em>must</em> be like <code>custom_*</code>, and a scriptblock should be supplied - the script will be supplied a single argument, which is a log object contains details of the request/response:</p>
+<p>The following example will create a custom log tool that outputs the request method/resource to the terminal. For custom loggers a scriptblock <em>must</em> be supplied - the script will be supplied a single argument, which is a log object contains details of the request/response:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">logger</span> <span class="n">custom_terminal</span> <span class="p">{</span>
+    <span class="n">logger</span> <span class="n">-c</span> <span class="n">terminal</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$obj</span><span class="p">)</span>
 
         <span class="nv">$method</span> <span class="p">=</span> <span class="nv">$obj</span><span class="p">.</span><span class="n">Log</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">Method</span>
@@ -1755,7 +1779,7 @@
 <td>Name</td>
 <td>string</td>
 <td>true</td>
-<td>The name of the logger; inbuilt loggers are <code>terminal</code> and <code>file</code>. Custom loggers must have a name like <code>custom_*</code></td>
+<td>The name of the logger; inbuilt loggers are <code>terminal</code> and <code>file</code>. Custom loggers can have any name, but the <code>-Custom</code> switch must be supplied</td>
 <td>empty</td>
 </tr>
 <tr>
@@ -1764,6 +1788,13 @@
 <td>false</td>
 <td>For inbuilt loggers this should be a <code>hashtable</code>. For custom loggers this should be the custom <code>scriptblock</code> to define how the logger works</td>
 <td>null</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>switch</td>
+<td>false</td>
+<td>When supplied, will configure the logger defined as being custom</td>
+<td>false</td>
 </tr>
 </tbody>
 </table>
