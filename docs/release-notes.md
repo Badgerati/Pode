@@ -1,5 +1,19 @@
 # Release Notes
 
+## v0.23.0
+
+```plain
+### Features
+* #77: Ability to run a web server, and view it through a Desktop Application (Windows only)
+
+### Enhancements
+* #137: Don't require admin privileges when listening on Localhost
+* #140: Add a Custom switch to the Logger function - no need to use the "custom_<name>" format any more!
+* #142: Ability to listen on multiple endpoints - especially useful for hostnames against a single IP address
+* #143: Support on routes to allow them to be bound against specific hostnames/protocols
+* #146: Listen function to have Name parameter - so we can select which one to bind a Route/Gui to better
+```
+
 ## v0.22.0
 
 ```plain
