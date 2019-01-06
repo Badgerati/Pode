@@ -15,7 +15,7 @@ function Auth
 
         [Parameter()]
         [Alias('v')]
-        [scriptblock]
+        [object]
         $Validator,
 
         [Parameter()]
@@ -40,8 +40,15 @@ function Auth
 
     # for the 'use' action, ensure we have a validator. and a parser for custom types
     if ($Action -ieq 'use') {
+        # was a validator passed
         if (Test-Empty $Validator) {
             throw "Authentication method '$($Name)' is missing required Validator script"
+        }
+
+        # is the validator a string/scriptblock?
+        $vTypes = @('string', 'scriptblock')
+        if ($vTypes -inotcontains (Get-Type $Validator).Name) {
+            throw "Authentication method '$($Name)' has an invalid validator supplied, should be one of: $($vTypes -join ', ')"
         }
 
         # don't fail if custom and type supplied, and it's already defined
@@ -76,7 +83,7 @@ function Invoke-AuthUse
         $Name,
 
         [Parameter(Mandatory=$true)]
-        [scriptblock]
+        [object]
         $Validator,
 
         [Parameter()]
@@ -224,7 +231,7 @@ function Get-PodeAuthMethod
         $Name,
 
         [Parameter(Mandatory=$true)]
-        [scriptblock]
+        [object]
         $Validator,
 
         [Parameter()]
@@ -242,6 +249,11 @@ function Get-PodeAuthMethod
     # set type as name, if no type passed
     if ([string]::IsNullOrWhiteSpace($Type)) {
         $Type = $Name
+    }
+
+    # if the validator is a string - check and get an inbuilt validator
+    if ((Get-Type $Validator).Name -ieq 'string') {
+        $Validator = (Get-PodeAuthValidator -Validator $Validator)
     }
 
     # first, is it just a custom type?
@@ -353,6 +365,42 @@ function Set-PodeAuthStatus
         }
 
         return $true
+    }
+}
+
+function Get-PodeAuthValidator
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Validator
+    )
+
+    # source the script for the validator
+    switch ($Validator.ToLowerInvariant()) {
+        'windows-ad' {
+            # TODO: Check PowerShell/OS version
+            # TODO: Ensure server is bound to an AD
+
+            return {
+                param($username, $password)
+
+                $ad = (New-Object System.DirectoryServices.DirectoryEntry '', "$($username)", "$($password)").psbase
+                if (Test-Empty $ad.name) {
+                    return $null
+                }
+
+                return @{ 'user' = @{
+                    'username' = $ad.username;
+                    'domain' = ($ad.name -ireplace 'DC=', '');
+                } }
+            }
+        }
+
+        default {
+            throw "An inbuilt validator does not exist for '$($Validator)'"
+        }
     }
 }
 
