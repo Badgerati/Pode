@@ -185,9 +185,11 @@ function Invoke-AuthCheck
 
         # validate the request and get a user
         try {
-            # if it's a custom type the parser will return the dat for use to pass to the validator
+            # if it's a custom type the parser will return the data for use to pass to the validator
             if ($auth.Custom) {
                 $data = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($s, $auth.Options) -Return -Splat)
+                $data += $auth.Options
+
                 $result = (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments $data -Return -Splat)
             }
             else {
@@ -380,20 +382,29 @@ function Get-PodeAuthValidator
     # source the script for the validator
     switch ($Validator.ToLowerInvariant()) {
         'windows-ad' {
-            # TODO: Check PowerShell/OS version
-            # TODO: Ensure server is bound to an AD
+            # Check PowerShell/OS version
+            $version = $PSVersionTable.PSVersion
+            if ((Test-IsUnix) -or ($version.Major -eq 6 -and $version.Minor -eq 0)) {
+                throw 'Windows AD authentication is currently only supported on Windows PowerShell, and Windows PowerShell Core v6.1+'
+            }
 
+            # setup the AD vaidator
             return {
-                param($username, $password)
+                param($username, $password, $options)
 
-                $ad = (New-Object System.DirectoryServices.DirectoryEntry '', "$($username)", "$($password)").psbase
-                if (Test-Empty $ad.name) {
+                $fqdn = $options.Fqdn
+                if (Test-Empty $fqdn) {
+                    $fqdn = $env:USERDNSDOMAIN
+                }
+
+                $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($fqdn)", "$($username)", "$($password)")
+                if (Test-Empty $ad.distinguishedName) {
                     return $null
                 }
 
                 return @{ 'user' = @{
-                    'username' = $ad.username;
-                    'domain' = ($ad.name -ireplace 'DC=', '');
+                    'Username' = $ad.psbase.username;
+                    'FQDN' = $fqdn;
                 } }
             }
         }
@@ -472,7 +483,7 @@ function Get-PodeAuthBasic
         $u = $decoded.Substring(0, $index)
         $p = $decoded.Substring($index + 1)
 
-        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($u, $p) -Return -Splat)
+        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($u, $p, $auth.Options) -Return -Splat)
     }
 
     return @{
@@ -519,7 +530,7 @@ function Get-PodeAuthForm
         }
 
         # validate and return
-        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($username, $password) -Return -Splat)
+        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($username, $password, $auth.Options) -Return -Splat)
     }
 
     return @{
