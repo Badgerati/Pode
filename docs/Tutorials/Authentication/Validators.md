@@ -16,7 +16,7 @@ Server {
 * Support: Windows (PowerShell, and PS Core v6.1+ only)
 * *Note: Example of Windows AD on Linux below*
 
-This will validate a user's credentials, supplied from a web-form against the default DNS domain:
+This will validate a user's credentials, supplied via a web-form against the default DNS domain:
 
 ```powershell
 Server {
@@ -31,6 +31,8 @@ Server {
     auth use login -t form -v 'windows-ad' -o @{ 'fqdn' = 'test.example.com' }
 }
 ```
+
+The User object returned, accessible on `routes`, will contain the Username and FQDN.
 
 The inbuilt support is only for Windows, but you can use libraries such as [Novell.Directory.Ldap.NETStandard](https://www.nuget.org/packages/Novell.Directory.Ldap.NETStandard/) with dotnet core on *nix environments:
 

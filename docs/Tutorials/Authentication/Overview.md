@@ -100,6 +100,30 @@ The following table contains options that you can supply to an `auth check -o @{
 !!! info
     The `Login` option allows you to have authentication on your login pages, such that if there is no user in a current session then the login page displays - rather then being 401'd. Whereas if there is an authenticated user in the session it will auto-redirect to the `SuccessUrl`.
 
+## Users
+
+After a successful validation, an `Auth` object will be created for use against the Request. This `Auth` object will be accessible via the argument supplied to `routes` adn `middleware` (though it will only be available in middleware created after `auth check`).
+
+The object will further contain:
+
+| Name | Description |
+| ---- | ----------- |
+| User | Details about the authenticated user |
+| IsAuthenticated | States if the request is for an authenticated user, can be `$true`, `$false` or `$null` |
+| Store | States whether the authentication is for a session, and will be stored as a cookie |
+
+The following example get the user's name from the `Auth` object:
+
+```powershell
+route get '/' (auth check form) {
+    param($e)
+
+    view 'index' -data @{
+        'Username' = $e.Auth.User.Name;
+    }
+}
+```
+
 ## Inbuilt Validators
 
 Overtime Pode will start to support some [inbuilt validators](../Validators) for authentication - such as Windows Active Directory. More information can be found on the [validators](../Validators) page, but to use an inbuilt script you just need to specify the name.
