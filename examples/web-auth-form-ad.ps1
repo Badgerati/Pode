@@ -5,13 +5,13 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 <#
-This examples shows how to use session persistant authentication, for things like logins on websites.
+This examples shows how to use session persistant authentication using Windows Active Directory.
 The example used here is Form authentication, sent from the <form> in HTML.
 
 Navigating to the 'http://localhost:8085' endpoint in your browser will auto-rediect you to the '/login'
-page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
-back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
-take you back to the login page.
+page. Here, you can type the details for a domain user. Clicking 'Login' will take you back to the home
+page with a greeting and a view counter. Clicking 'Logout' will purge the session and take you back to
+the login page.
 #>
 
 # create a server, and start listening on port 8085
@@ -30,21 +30,8 @@ Server -Threads 2 {
         'Extend' = $true;
     })
 
-    # setup form auth (<form> in HTML)
-    auth use login -t form -v {
-        param($username, $password)
-
-        # here you'd check a real user storage, this is just for example
-        if ($username -eq 'morty' -and $password -eq 'pickle') {
-            return @{ 'user' = @{
-                'ID' ='M0R7Y302'
-                'Name' = 'Morty';
-                'Type' = 'Human';
-            } }
-        }
-
-        return $null
-    }
+    # setup form auth against windows AD (<form> in HTML)
+    auth use login -t form -v 'windows-ad' -o @{ 'fqdn' = '<domain>' }
 
     # home page:
     # redirects to login page if not authenticated

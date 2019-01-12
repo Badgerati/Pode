@@ -7,33 +7,36 @@
     <version>$version$</version>
     <authors>Badgerati</authors>
     <owners>Badgerati</owners>
-    <summary>Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs, Web Sites, and TCP/SMTP Servers</summary>
+    <summary>Pode is a Cross-Platform PowerShell framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers</summary>
     <description>
-Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs, Web Sites, and TCP/SMTP Servers
+Pode is a Cross-Platform PowerShell framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers
 
 ### Features
 
-* Can run on *nix environments using PowerShell Core
-* Host REST APIs, Web Pages, Static Content, TCP and SMTP server
-* Multiple threads can be used to response to incoming requests
+* Cross-platform via PowerShell Core (with support for PS4.0+)
+* Listen on a single or multiple IP address/hostnames
+* Support for HTTP, HTTPS, TCP and SMTP
+* Host REST APIs, Web Pages, and Static Content
+* Multi-thread support for incoming requests
 * Inbuilt template engine, with support for third-parties
-* Setup async timers to be used as one off tasks, or for housekeeping services
-* Ability to schedule async tasks using cron expressions
+* Async timers for short-running repeatable processes
+* Async scheduled tasks using cron expressions for short/long-running processes
 * Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
 * Cross-state variable access across multiple runspaces
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
-* Support for generating/binding self-signed certificates, and signed certificates on Windows
-* Support for middleware and sessions on web servers
-* Can use authentication on requests, which can either be sessionless or session persistent
+* Middleware and sessions on web servers
+* Authentication on requests, such as Basic and Windows Active Directory
+* (Windows) Generate/bind self-signed certificates, and signed certificates
+* (Windows) Open the hosted server as a desktop application
 
     </description>
     <projectUrl>https://github.com/Badgerati/Pode</projectUrl>
     <packageSourceUrl>https://github.com/Badgerati/Pode/tree/master/packers</packageSourceUrl>
     <docsUrl>https://badgerati.github.io/Pode</docsUrl>
     <bugTrackerUrl>https://github.com/Badgerati/Pode/issues</bugTrackerUrl>
-    <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html unix cross-platform access-control file-monitoring multithreaded rate-limiting cron schedule middleware session authentication</tags>
+    <tags>pode powershell web server rest api http tcp smtp listener webpages json xml html unix cross-platform access-control file-monitoring multithreaded rate-limiting cron schedule middleware session authentication active-directory</tags>
     <copyright>Copyright 2017-2018</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -43,5 +46,7 @@ Pode is a Cross-Platform PowerShell framework that allows you to host REST APIs,
   <files>
     <file src="tools\**" target="tools" />
     <file src="..\..\src\**" target="src" />
+    <file src="..\..\LICENSE.txt" target="src/LICENSE.txt" />
+    <file src=".\VERIFICATION.txt" target="src/VERIFICATION.txt" />
   </files>
 </package>

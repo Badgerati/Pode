@@ -13,7 +13,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Server -Threads 2 {
 
     # listen on localhost:8085
-    listen *:$Port http
+    listen localhost:$Port http
+    listen localhost:8090 http
 
     limit ip @('127.0.0.1', '[::1]') 5 10
 
@@ -34,13 +35,11 @@ Server -Threads 2 {
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        param($event)
         view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     route 'get' '/error' {
-        param($event)
         status 500
     }
 
@@ -62,7 +61,6 @@ Server -Threads 2 {
 
     # GET request to download a file
     route 'get' '/download' {
-        param($event)
         attach 'Anger.jpg'
     }
 
@@ -79,11 +77,6 @@ Server -Threads 2 {
 
     route get '/api/*/hello' {
         json @{ 'value' = 'works for every hello route' }
-    }
-
-    # ALL request, supports every method and route (good for mass https redirect)
-    route * * {
-        redirect -protocol https
     }
 
 } -FileMonitor

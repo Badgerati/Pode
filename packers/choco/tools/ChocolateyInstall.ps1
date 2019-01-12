@@ -1,23 +1,49 @@
 $ErrorActionPreference = 'Stop'
 
-# Install Module
-# Determine which Program Files path to use
-if (![string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
-    $modulePath = Join-Path $env:ProgramFiles (Join-Path 'WindowsPowerShell' 'Modules')
-}
-else {
-    $modulePath = Join-Path ${env:ProgramFiles(x86)} (Join-Path 'WindowsPowerShell' 'Modules')
-}
 
-# Check to see if we need to create the Modules path
-if (!(Test-Path $modulePath))
+# create the module directory, and copy files over
+function Install-PodeModule($path, $version)
 {
-    Write-Host "Creating path: $modulePath"
-    New-Item -ItemType Directory -Path $modulePath -Force | Out-Null
-    if (!$?) {
-        throw "Failed to create: $modulePath"
+    # Create module
+    $path = Join-Path $path 'Pode'
+    if (![string]::IsNullOrWhiteSpace($version)) {
+        $path = Join-Path $path $version
+    }
+
+    if (!(Test-Path $path))
+    {
+        Write-Host "Creating module directory: $($path)"
+        New-Item -ItemType Directory -Path $path -Force | Out-Null
+        if (!$?) {
+            throw "Failed to create: $path"
+        }
+    }
+
+    # Copy contents to module
+    Write-Host 'Copying scripts to module path'
+
+    try
+    {
+        Push-Location (Join-Path $env:ChocolateyPackageFolder 'src')
+
+        New-Item -ItemType Directory -Path (Join-Path $path 'Tools') -Force | Out-Null
+        Copy-Item -Path ./Tools/* -Destination (Join-Path $path 'Tools') -Force | Out-Null
+        Copy-Item -Path ./Pode.psm1 -Destination $path -Force | Out-Null
+        Copy-Item -Path ./Pode.psd1 -Destination $path -Force | Out-Null
+    }
+    finally {
+        Pop-Location
     }
 }
+
+
+
+# Determine which Program Files path to use
+$progFiles = [string]$env:ProgramFiles
+
+# Install PS Module
+# Set the module path
+$modulePath = Join-Path $progFiles (Join-Path 'WindowsPowerShell' 'Modules')
 
 # Check to see if Modules path is in PSModulePaths
 $psModules = $env:PSModulePath
@@ -29,30 +55,23 @@ if (!$psModules.Contains($modulePath))
     $env:PSModulePath = $psModules
 }
 
-# Create Pode module
-$podeModulePath = Join-Path $modulePath 'Pode'
-if (!(Test-Path $podeModulePath))
-{
-    Write-Host 'Creating Pode module directory'
-    New-Item -ItemType Directory -Path $podeModulePath -Force | Out-Null
-    if (!$?) {
-        throw "Failed to create: $podeModulePath"
-    }
+# create the module
+if ($PSVersionTable.PSVersion.Major -ge 5) {
+    Install-PodeModule $modulePath '$version$'
+}
+else {
+    Install-PodeModule $modulePath
 }
 
-# Copy contents to module
-Write-Host 'Copying Pode to module path'
 
-try
-{
-    Push-Location (Join-Path $env:ChocolateyPackageFolder 'src')
+# Install PS-Core Module
+$def = (Get-Command pwsh -ErrorAction SilentlyContinue).Definition
 
-    New-Item -ItemType Directory -Path (Join-Path $podeModulePath 'Tools') -Force | Out-Null
-    Copy-Item -Path ./Tools/* -Destination (Join-Path $podeModulePath 'Tools') -Force | Out-Null
-    Copy-Item -Path ./Pode.psm1 -Destination $podeModulePath -Force | Out-Null
-    Copy-Item -Path ./Pode.psd1 -Destination $podeModulePath -Force | Out-Null
-}
-finally
+if (![string]::IsNullOrWhiteSpace($def))
 {
-    Pop-Location
+    # Set the module path
+    $modulePath = Join-Path $progFiles (Join-Path 'PowerShell' 'Modules')
+
+    # create the module
+    Install-PodeModule $modulePath '$version$'
 }

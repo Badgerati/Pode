@@ -6,12 +6,27 @@ function Invoke-PodeMiddleware
         $WebEvent,
 
         [Parameter()]
-        $Middleware
+        $Middleware,
+
+        [Parameter()]
+        [string]
+        $Route
     )
 
     # if there's no middleware, do nothing
     if (Test-Empty $Middleware) {
         return $true
+    }
+
+    # filter the middleware down by route (retaining order)
+    if (!(Test-Empty $Route))
+    {
+        $Middleware = @($Middleware | Where-Object {
+            (Test-Empty $_.Route) -or
+            ($_.Route -ieq '/') -or
+            ($_.Route -ieq $Route) -or
+            ($Route -imatch "^$($_.Route)$")
+        })
     }
 
     # continue or halt?
@@ -112,7 +127,7 @@ function Get-PodePublicMiddleware
         param($s)
 
         # get the static file path
-        $path = Get-PodeStaticRoutePath -Path $s.Path
+        $path = Get-PodeStaticRoutePath -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint
         if ($null -eq $path) {
             return $true
         }
@@ -133,10 +148,7 @@ function Get-PodeRouteValidateMiddleware
             param($s)
 
             # ensure the path has a route
-            $route = Get-PodeRoute -HttpMethod $s.Method -Route $s.Path
-            if ($null -eq $route) {
-                $route = Get-PodeRoute -HttpMethod '*' -Route $s.Path
-            }
+            $route = Get-PodeRoute -HttpMethod $s.Method -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint -CheckWildMethod
 
             # if there's no route defined, it's a 404
             if ($null -eq $route -or $null -eq $route.Logic) {
@@ -206,27 +218,76 @@ function Get-PodeQueryMiddleware
 function Middleware
 {
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, Position=0, ParameterSetName='Script')]
+        [Parameter(Mandatory=$true, Position=1, ParameterSetName='ScriptRoute')]
         [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock,
 
+        [Parameter(Mandatory=$true, Position=0, ParameterSetName='ScriptRoute')]
+        [Parameter(Mandatory=$true, Position=0, ParameterSetName='HashRoute')]
+        [Alias('r')]
+        [string]
+        $Route,
+
+        [Parameter(Mandatory=$true, Position=0, ParameterSetName='Hash')]
+        [Parameter(Mandatory=$true, Position=1, ParameterSetName='HashRoute')]
+        [Alias('h')]
+        [hashtable]
+        $HashTable,
+
         [Parameter()]
         [Alias('n')]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $Return
     )
 
-    # if a name was supplied, ensure is doesn't already exist
+    # if a name was supplied, ensure it doesn't already exist
     if (!(Test-Empty $Name)) {
         if (($PodeSession.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
             throw "Middleware with defined name of $($Name) already exists"
         }
     }
 
+    # if route is empty, set it to root
+    $Route = Coalesce $Route '/'
+    $Route = Split-PodeRouteQuery -Route $Route
+    $Route = Coalesce $Route '/'
+    $Route = Update-PodeRouteSlashes -Route $Route
+    $Route = Update-PodeRoutePlaceholders -Route $Route
+
+    # create the middleware hash, or re-use a passed one
+    if (Test-Empty $HashTable)
+    {
+        $HashTable = @{
+            'Name' = $Name;
+            'Route' = $Route;
+            'Logic' = $ScriptBlock;
+        }
+    }
+    else
+    {
+        if (Test-Empty $HashTable.Logic) {
+            throw 'Middleware supplied has no Logic'
+        }
+
+        if (Test-Empty $HashTable.Route) {
+            $HashTable.Route = $Route
+        }
+
+        if (Test-Empty $HashTable.Name) {
+            $HashTable.Name = $Name
+        }
+    }
+
     # add the scriptblock to array of middleware that needs to be run
-    $PodeSession.Server.Middleware += @{
-        'Name' = $Name;
-        'Logic' = $ScriptBlock;
+    if ($Return) {
+        return $HashTable
+    }
+    else {
+        $PodeSession.Server.Middleware += $HashTable
     }
 }

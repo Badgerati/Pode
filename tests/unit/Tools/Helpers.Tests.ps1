@@ -173,6 +173,26 @@ Describe 'Test-IsPSCore' {
     }
 }
 
+Describe 'Get-HostIPRegex' {
+    It 'Returns valid Hostname regex' {
+        Get-HostIPRegex -Type Hostname | Should Be '(?<host>(([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+    }
+
+    It 'Returns valid IP regex' {
+        Get-HostIPRegex -Type IP | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all))'
+    }
+
+    It 'Returns valid IP and Hostname regex' {
+        Get-HostIPRegex -Type Both | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all|([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+    }
+}
+
+Describe 'Get-PortRegex' {
+    It 'Returns valid port regex' {
+        Get-PortRegex | Should Be '(?<port>\d+)'
+    }
+}
+
 Describe 'Test-IPAddress' {
     Context 'Values that are for any IP' {
         It 'Returns true for no value' {
@@ -189,6 +209,16 @@ Describe 'Test-IPAddress' {
 
         It 'Returns true for all' {
             Test-IPAddress -IP 'all' | Should Be $true
+        }
+    }
+
+    Context 'Values for Hostnames' {
+        It 'Returns true for valid Hostname' {
+            Test-IPAddress -IP 'foo.com' | Should Be $true
+        }
+
+        It 'Returns false for invalid Hostname' {
+            Test-IPAddress -IP '~fake.net' | Should Be $false
         }
     }
 
@@ -260,20 +290,48 @@ Describe 'Test-IPAddressLocal' {
     }
 
     Context 'Values that are localhost' {
+        It 'Returns true for 127.0.0.1' {
+            Test-IPAddressLocal -IP '127.0.0.1' | Should Be $true
+        }
+
+        It 'Returns true for localhost' {
+            Test-IPAddressLocal -IP 'localhost' | Should Be $true
+        }
+    }
+}
+
+Describe 'Test-IPAddressLocalOrAny' {
+    Context 'Null values' {
+        It 'Throws error for empty' {
+            { Test-IPAddressLocalOrAny -IP ([string]::Empty) } | Should Throw 'because it is an empty'
+        }
+
+        It 'Throws error for null' {
+            { Test-IPAddressLocalOrAny -IP $null } | Should Throw 'because it is an empty'
+        }
+    }
+
+    Context 'Values not localhost' {
+        It 'Returns false for non-localhost IP' {
+            Test-IPAddressLocalOrAny -IP '192.168.10.10' | Should Be $false
+        }
+    }
+
+    Context 'Values that are localhost' {
         It 'Returns true for 0.0.0.0' {
-            Test-IPAddressLocal -IP '0.0.0.0' | Should Be $true
+            Test-IPAddressLocalOrAny -IP '0.0.0.0' | Should Be $true
         }
 
         It 'Returns true for asterisk' {
-            Test-IPAddressLocal -IP '*' | Should Be $true
+            Test-IPAddressLocalOrAny -IP '*' | Should Be $true
         }
 
         It 'Returns true for all' {
-            Test-IPAddressLocal -IP 'all' | Should Be $true
+            Test-IPAddressLocalOrAny -IP 'all' | Should Be $true
         }
 
         It 'Returns true for 127.0.0.1' {
-            Test-IPAddressLocal -IP '127.0.0.1' | Should Be $true
+            Test-IPAddressLocalOrAny -IP '127.0.0.1' | Should Be $true
         }
     }
 }
@@ -281,31 +339,31 @@ Describe 'Test-IPAddressLocal' {
 Describe 'Test-IPAddressAny' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-IPAddressLocal -IP ([string]::Empty) } | Should Throw 'because it is an empty'
+            { Test-IPAddressAny -IP ([string]::Empty) } | Should Throw 'because it is an empty'
         }
 
         It 'Throws error for null' {
-            { Test-IPAddressLocal -IP $null } | Should Throw 'because it is an empty'
+            { Test-IPAddressAny -IP $null } | Should Throw 'because it is an empty'
         }
     }
 
     Context 'Values not any' {
         It 'Returns false for non-any IP' {
-            Test-IPAddressLocal -IP '192.168.10.10' | Should Be $false
+            Test-IPAddressAny -IP '192.168.10.10' | Should Be $false
         }
     }
 
     Context 'Values that are any' {
         It 'Returns true for 0.0.0.0' {
-            Test-IPAddressLocal -IP '0.0.0.0' | Should Be $true
+            Test-IPAddressAny -IP '0.0.0.0' | Should Be $true
         }
 
         It 'Returns true for asterisk' {
-            Test-IPAddressLocal -IP '*' | Should Be $true
+            Test-IPAddressAny -IP '*' | Should Be $true
         }
 
         It 'Returns true for all' {
-            Test-IPAddressLocal -IP 'all' | Should Be $true
+            Test-IPAddressAny -IP 'all' | Should Be $true
         }
     }
 }
@@ -326,6 +384,16 @@ Describe 'Get-IPAddress' {
 
         It 'Returns any IP for all' {
             (Get-IPAddress -IP 'all').ToString() | Should Be '0.0.0.0'
+        }
+    }
+
+    Context 'Values for Hostnames' {
+        It 'Returns Hostname for valid Hostname' {
+            (Get-IPAddress -IP 'foo.com').ToString() | Should Be 'foo.com'
+        }
+
+        It 'Throws error for invalid IP' {
+            { Get-IPAddress -IP '~fake.net' } | Should Throw 'invalid ip address'
         }
     }
 

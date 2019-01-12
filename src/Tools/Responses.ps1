@@ -99,8 +99,7 @@ function Attach
     )
 
     # only download files from public/static-route directories
-    $Path = Get-PodeStaticRoutePath -Path $Path
-
+    $Path = Get-PodeStaticRoutePath -Route $Path
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
@@ -111,7 +110,7 @@ function Attach
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
     # open up the file as a stream
-    $fs = [System.IO.File]::OpenRead($Path)
+    $fs = (Get-Item $Path).OpenRead()
 
     # setup the response details and headers
     $WebEvent.Response.ContentLength64 = $fs.Length
@@ -171,6 +170,11 @@ function Redirect
         [string]
         $Protocol,
 
+        [Parameter()]
+        [Alias('e')]
+        [string]
+        $Endpoint,
+
         [switch]
         [Alias('m')]
         $Moved
@@ -179,11 +183,18 @@ function Redirect
     if (Test-Empty $Url) {
         $uri = $WebEvent.Request.Url
 
+        # set the protocol
         $Protocol = $Protocol.ToLowerInvariant()
         if (Test-Empty $Protocol) {
             $Protocol = $uri.Scheme
         }
 
+        # set the endpoint
+        if (Test-Empty $Endpoint) {
+            $Endpoint = $uri.Host
+        }
+
+        # set the port
         if ($Port -le 0) {
             $Port = $uri.Port
         }
@@ -193,7 +204,8 @@ function Redirect
             $PortStr = ":$($Port)"
         }
 
-        $Url = "$($Protocol)://$($uri.Host)$($PortStr)$($uri.PathAndQuery)"
+        # combine to form the url
+        $Url = "$($Protocol)://$($Endpoint)$($PortStr)$($uri.PathAndQuery)"
     }
 
     $WebEvent.Response.RedirectLocation = $Url
@@ -366,7 +378,7 @@ function Include
     }
 
     # only look in the view directory
-    $Path = Join-ServerRoot 'views' $Path
+    $Path = (Join-Path $PodeSession.Server.InbuiltDrives['views'] $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {
@@ -433,7 +445,7 @@ function View
     }
 
     # only look in the view directory
-    $Path = Join-ServerRoot 'views' $Path
+    $Path = (Join-Path $PodeSession.Server.InbuiltDrives['views'] $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {

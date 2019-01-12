@@ -73,21 +73,15 @@ function Server
 
         # create session object
         $PodeSession = New-PodeSession -ScriptBlock $ScriptBlock `
-            -Port $Port `
-            -IP $IP `
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot $MyInvocation.PSScriptRoot `
-            -ServerType $ServerType `
             -DisableLogging:$DisableLogging `
             -FileMonitor:$FileMonitor
 
-        # set a default port for the server type
-        Set-PodePortForServerType
-
-        # parse ip:port to listen on (if both have been supplied)
-        if (!(Test-Empty $IP) -or $PodeSession.Server.IP.Port -gt 0) {
-            listen -IPPort "$($IP):$($PodeSession.Server.IP.Port)" -Type $PodeSession.Server.Type
+        # for legacy support, create initial listener from Server parameters
+        if (@('http', 'https', 'smtp', 'tcp') -icontains $serverType) {
+            listen "$($IP):$($Port)" $serverType
         }
 
         # set it so ctrl-c can terminate
@@ -100,12 +94,12 @@ function Server
         Start-PodeServer
 
         # at this point, if it's just a one-one off script, return
-        if ($PodeSession.Server.Type -ieq 'script') {
+        if ([string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
             return
         }
 
-        # sit here waiting for termination
-        while (!(Test-TerminationPressed -Key $key)) {
+        # sit here waiting for termination or cancellation
+        while (!(Test-TerminationPressed -Key $key) -and !($PodeSession.Tokens.Cancellation.IsCancellationRequested)) {
             Start-Sleep -Seconds 1
 
             # get the next key presses
@@ -133,17 +127,23 @@ function Start-PodeServer
 {
     try
     {
+        # setup temp drives for internal dirs
+        Add-PodePSInbuiltDrives
+
         # run the logic
         Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
 
         $_type = $PodeSession.Server.Type.ToUpperInvariant()
-        if ($_type -ine 'script')
+        if (![string]::IsNullOrWhiteSpace($_type))
         {
             # start runspace for timers
             Start-TimerRunspace
 
             # start runspace for schedules
             Start-ScheduleRunspace
+
+            # start runspace for gui
+            Start-GuiRunspace
         }
 
         # start the appropriate server
@@ -157,12 +157,8 @@ function Start-PodeServer
                 Start-TcpServer
             }
 
-            'HTTP' {
+            { $_ -ieq 'HTTP' -or $_ -ieq 'HTTPS' } {
                 Start-WebServer
-            }
-
-            'HTTPS' {
-                Start-WebServer -Https
             }
 
             'SERVICE' {
@@ -171,7 +167,6 @@ function Start-PodeServer
         }
     }
     catch {
-        $Error[0] | Out-Default
         throw $_.Exception
     }
 }
@@ -189,6 +184,9 @@ function Restart-PodeServer
         # close all current runspaces
         Close-PodeRunspaces
 
+        # remove all of the pode temp drives
+        Remove-PodePSDrives
+
         # clear up timers, schedules and loggers
         $PodeSession.Server.Routes.Keys.Clone() | ForEach-Object {
             $PodeSession.Server.Routes[$_].Clear()
@@ -200,7 +198,7 @@ function Restart-PodeServer
 
         $PodeSession.Timers.Clear()
         $PodeSession.Schedules.Clear()
-        $PodeSession.Loggers.Clear()
+        $PodeSession.Server.Logging.Methods.Clear()
 
         # clear middle/endware
         $PodeSession.Server.Middleware = @()
@@ -277,27 +275,5 @@ function Get-PodeServerType
         return 'SERVICE'
     }
 
-    return 'SCRIPT'
-}
-
-function Set-PodePortForServerType
-{
-    if ($PodeSession.Server.IP.Port -gt 0) {
-        return
-    }
-
-    switch ($PodeSession.Server.Type.ToUpperInvariant())
-    {
-        'SMTP' {
-            $PodeSession.Server.IP.Port = 25
-        }
-
-        'HTTP' {
-            $PodeSession.Server.IP.Port = 8080
-        }
-
-        'HTTPS' {
-            $PodeSession.Server.IP.Port = 8443
-        }
-    }
+    return ([string]::Empty)
 }

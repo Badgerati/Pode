@@ -30,7 +30,7 @@ Server -Thread 2 {
 }
 ```
 
-Next, we'll need to [`listen`](../../../Functions/Core/Listen) on an IP/Port and then specify the [`engine`](../../../Functions/Core/Engine) as using `.pode` files:
+Next, we'll need to [`listen`](../../../Functions/Core/Listen) on an endpoint and then specify the [`engine`](../../../Functions/Core/Engine) as using `.pode` files:
 
 ```powershell
 listen *:8080 http

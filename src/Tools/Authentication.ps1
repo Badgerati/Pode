@@ -15,7 +15,7 @@ function Auth
 
         [Parameter()]
         [Alias('v')]
-        [scriptblock]
+        [object]
         $Validator,
 
         [Parameter()]
@@ -28,25 +28,44 @@ function Auth
         [hashtable]
         $Options,
 
+        [Parameter()]
+        [Alias('t')]
+        [string]
+        $Type,
+
         [switch]
         [Alias('c')]
         $Custom
     )
 
+    # for the 'use' action, ensure we have a validator. and a parser for custom types
     if ($Action -ieq 'use') {
+        # was a validator passed
         if (Test-Empty $Validator) {
             throw "Authentication method '$($Name)' is missing required Validator script"
         }
 
-        if ($Custom -and (Test-Empty $Parser)) {
-            throw "Custom authentication method '$($Name)' is missing required Parser script"
+        # is the validator a string/scriptblock?
+        $vTypes = @('string', 'scriptblock')
+        if ($vTypes -inotcontains (Get-Type $Validator).Name) {
+            throw "Authentication method '$($Name)' has an invalid validator supplied, should be one of: $($vTypes -join ', ')"
+        }
+
+        # don't fail if custom and type supplied, and it's already defined
+        if ($Custom)
+        {
+            $typeDefined = (![string]::IsNullOrWhiteSpace($Type) -and $PodeSession.Server.Authentications.ContainsKey($Type))
+            if (!$typeDefined -and (Test-Empty $Parser)) {
+                throw "Custom authentication method '$($Name)' is missing required Parser script"
+            }
         }
     }
 
+    # invoke the appropriate auth logic for the action
     switch ($Action.ToLowerInvariant())
     {
         'use' {
-            Invoke-AuthUse -Name $Name -Validator $Validator -Parser $Parser -Options $Options
+            Invoke-AuthUse -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Options $Options -Custom:$Custom
         }
 
         'check' {
@@ -64,8 +83,12 @@ function Invoke-AuthUse
         $Name,
 
         [Parameter(Mandatory=$true)]
-        [scriptblock]
+        [object]
         $Validator,
+
+        [Parameter()]
+        [string]
+        $Type,
 
         [Parameter()]
         [scriptblock]
@@ -80,7 +103,7 @@ function Invoke-AuthUse
     )
 
     # get the auth data
-    $AuthData = (Get-PodeAuthMethod -Name $Name -Validator $Validator -Parser $Parser -Custom:$Custom)
+    $AuthData = (Get-PodeAuthMethod -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Custom:$Custom)
 
     # ensure the name doesn't already exist
     if ($PodeSession.Server.Authentications.ContainsKey($AuthData.Name)) {
@@ -98,6 +121,7 @@ function Invoke-AuthUse
 
     # setup object for auth method
     $obj = @{
+        'Type' = $AuthData.Type;
         'Options' = $Options;
         'Parser' = $AuthData.Parser;
         'Validator' = $AuthData.Validator;
@@ -161,9 +185,11 @@ function Invoke-AuthCheck
 
         # validate the request and get a user
         try {
-            # if it's a custom type the parser will return the dat for use to pass to the validator
+            # if it's a custom type the parser will return the data for use to pass to the validator
             if ($auth.Custom) {
                 $data = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($s, $auth.Options) -Return -Splat)
+                $data += $auth.Options
+
                 $result = (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments $data -Return -Splat)
             }
             else {
@@ -207,8 +233,12 @@ function Get-PodeAuthMethod
         $Name,
 
         [Parameter(Mandatory=$true)]
-        [scriptblock]
+        [object]
         $Validator,
+
+        [Parameter()]
+        [string]
+        $Type,
 
         [Parameter()]
         [scriptblock]
@@ -218,10 +248,27 @@ function Get-PodeAuthMethod
         $Custom
     )
 
+    # set type as name, if no type passed
+    if ([string]::IsNullOrWhiteSpace($Type)) {
+        $Type = $Name
+    }
+
+    # if the validator is a string - check and get an inbuilt validator
+    if ((Get-Type $Validator).Name -ieq 'string') {
+        $Validator = (Get-PodeAuthValidator -Validator $Validator)
+    }
+
     # first, is it just a custom type?
     if ($Custom) {
+        # if type supplied, re-use an already defined custom type's parser
+        if ($PodeSession.Server.Authentications.ContainsKey($Type))
+        {
+            $Parser = $PodeSession.Server.Authentications[$Type].Parser
+        }
+
         return @{
             'Name' = $Name;
+            'Type' = $Type;
             'Custom' = $true;
             'Parser' = $Parser;
             'Validator' = $Validator;
@@ -229,25 +276,26 @@ function Get-PodeAuthMethod
     }
 
     # otherwise, check the inbuilt ones
-    switch ($Name.ToLowerInvariant())
+    switch ($Type.ToLowerInvariant())
     {
         'basic' {
-            return (Get-PodeAuthBasic -ScriptBlock $Validator)
+            return (Get-PodeAuthBasic -Name $Name -ScriptBlock $Validator)
         }
 
         'form' {
-            return (Get-PodeAuthForm -ScriptBlock $Validator)
+            return (Get-PodeAuthForm -Name $Name -ScriptBlock $Validator)
         }
     }
 
     # if we get here, check if a parser was passed for custom type
     if (Test-Empty $Parser) {
-        throw "Authentication method '$($Name)' does not exist as an inbuilt type, nor has a Parser been passed for a custom type"
+        throw "Authentication method '$($Type)' does not exist as an inbuilt type, nor has a Parser been passed for a custom type"
     }
 
-    # a parser was passed, so it is a custom type
+    # a parser was passed, it is a custom type
     return @{
         'Name' = $Name;
+        'Type' = $Type;
         'Custom' = $true;
         'Parser' = $Parser;
         'Validator' = $Validator;
@@ -322,9 +370,59 @@ function Set-PodeAuthStatus
     }
 }
 
+function Get-PodeAuthValidator
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Validator
+    )
+
+    # source the script for the validator
+    switch ($Validator.ToLowerInvariant()) {
+        'windows-ad' {
+            # Check PowerShell/OS version
+            $version = $PSVersionTable.PSVersion
+            if ((Test-IsUnix) -or ($version.Major -eq 6 -and $version.Minor -eq 0)) {
+                throw 'Windows AD authentication is currently only supported on Windows PowerShell, and Windows PowerShell Core v6.1+'
+            }
+
+            # setup the AD vaidator
+            return {
+                param($username, $password, $options)
+
+                $fqdn = $options.Fqdn
+                if (Test-Empty $fqdn) {
+                    $fqdn = $env:USERDNSDOMAIN
+                }
+
+                $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($fqdn)", "$($username)", "$($password)")
+                if (Test-Empty $ad.distinguishedName) {
+                    return $null
+                }
+
+                return @{ 'user' = @{
+                    'Username' = $ad.psbase.username;
+                    'FQDN' = $fqdn;
+                } }
+            }
+        }
+
+        default {
+            throw "An inbuilt validator does not exist for '$($Validator)'"
+        }
+    }
+}
+
 function Get-PodeAuthBasic
 {
     param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [scriptblock]
@@ -385,11 +483,12 @@ function Get-PodeAuthBasic
         $u = $decoded.Substring(0, $index)
         $p = $decoded.Substring($index + 1)
 
-        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($u, $p) -Return -Splat)
+        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($u, $p, $auth.Options) -Return -Splat)
     }
 
     return @{
-        'Name' = 'Basic';
+        'Name' = $Name;
+        'Type' = 'Basic';
         'Custom' = $false;
         'Parser' = $parser;
         'Validator' = $ScriptBlock;
@@ -399,6 +498,11 @@ function Get-PodeAuthBasic
 function Get-PodeAuthForm
 {
     param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [scriptblock]
@@ -426,11 +530,12 @@ function Get-PodeAuthForm
         }
 
         # validate and return
-        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($username, $password) -Return -Splat)
+        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($username, $password, $auth.Options) -Return -Splat)
     }
 
     return @{
-        'Name' = 'Form';
+        'Name' = $Name;
+        'Type' = 'Form';
         'Custom' = $false;
         'Parser' = $parser;
         'Validator' = $ScriptBlock;

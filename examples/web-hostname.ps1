@@ -9,11 +9,12 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8085 at pode.foo.com
+# -- You will need to add "127.0.0.1  pode.foo.com" to your hosts file
 Server -Threads 2 {
 
     # listen on localhost:8085
-    listen *:$Port http
+    listen pode.foo.com:$Port http
 
     # set view engine to pode renderer
     engine pode

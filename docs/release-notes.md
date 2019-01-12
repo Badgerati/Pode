@@ -1,5 +1,30 @@
 # Release Notes
 
+## v0.23.0
+
+```plain
+### Features
+* #77: Ability to run a web server, and view it through a Desktop Application (Windows only)
+
+### Enhancements
+* #137: Don't require admin privileges when listening on Localhost
+* #140: Add a Custom switch to the Logger function - no need to use the "custom_<name>" format any more!
+* #142: Ability to listen on multiple endpoints - especially useful for hostnames against a single IP address
+* #143: Support on routes to allow them to be bound against specific hostnames/protocols
+* #146: Listen function to have Name parameter - so we can select which one to bind a Route/Gui to better
+```
+
+## v0.22.0
+
+```plain
+### Enhancements
+* #123: Ability to remove a `route`
+* #124: Views, Public and custom static routes now use `New-PSDrive` to prevent directory tranversing
+* #128: Ability to `listen` using a host name
+* #130: `auth` now allows re-using inbuilt/custom parsers. Rather than `name` the type, the name is now any custom name you want to use and yuo specify the `-type` (like basic, etc). If no `-type` supplied, `name` is used as the type instead
+* #131: There's now a route parameter on `middleware`, so you can define global middleware that only run on requests for specific routes.
+```
+
 ## v0.21.0
 
 ```plain
