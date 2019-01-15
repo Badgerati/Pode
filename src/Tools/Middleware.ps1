@@ -172,14 +172,8 @@ function Get-PodeBodyMiddleware
 
         try
         {
-            # read any post data
-            $data = stream ([System.IO.StreamReader]::new($e.Request.InputStream, $e.Request.ContentEncoding)) {
-                param($r)
-                return $r.ReadToEnd()
-            }
-
             # attempt to parse that data
-            $result = ConvertFrom-PodeContent -ContentType $e.Request.ContentType -Content $data -Encoding $e.Request.ContentEncoding
+            $result = ConvertFrom-RequestContent -Request $e.Request
 
             # set session data
             $e.Data = $result.Data

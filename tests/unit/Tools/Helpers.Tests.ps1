@@ -605,11 +605,11 @@ Describe 'Test-ValidNetworkFailure' {
     }
 }
 
-Describe 'ConvertFrom-PodeContent' {
+Describe 'ConvertFrom-RequestContent' {
     Context 'Valid values' {
         It 'Returns xml data' {
             $value = '<root><value>test</value></root>'
-            $data = ConvertFrom-PodeContent -ContentType 'text/xml' -Content $value
+            $data = ConvertFrom-RequestContent -ContentType 'text/xml' -Content $value
             $data | Should Not Be $null
             $data.root | Should Not Be $null
             $data.root.value | Should Be 'test'
@@ -617,21 +617,21 @@ Describe 'ConvertFrom-PodeContent' {
 
         It 'Returns json data' {
             $value = '{ "value": "test" }'
-            $data = ConvertFrom-PodeContent -ContentType 'application/json' -Content $value
+            $data = ConvertFrom-RequestContent -ContentType 'application/json' -Content $value
             $data | Should Not Be $null
             $data.value | Should Be 'test'
         }
 
         It 'Returns csv data' {
             $value = "value`ntest"
-            $data = ConvertFrom-PodeContent -ContentType 'text/csv' -Content $value
+            $data = ConvertFrom-RequestContent -ContentType 'text/csv' -Content $value
             $data | Should Not Be $null
             $data[0].value | Should Be 'test'
         }
 
         It 'Returns original data' {
             $value = "test"
-            ConvertFrom-PodeContent -ContentType 'text/custom' -Content $value | Should Be 'test'
+            ConvertFrom-RequestContent -ContentType 'text/custom' -Content $value | Should Be 'test'
         }
     }
 }

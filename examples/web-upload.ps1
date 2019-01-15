@@ -22,17 +22,7 @@ Server -Threads 2 {
 
     # GET request to upload a file
     route 'post' '/upload' {
-        param($e)
-
-        $e.Request.ContentEncoding | Out-Default
-
-        Write-Host "= = = == = = =  = ="
-        Write-Host ($e.Files[$e.Data['avatar']].Bytes)
-        Write-Host "= = = == = = =  = ="
-
-        [System.IO.File]::WriteAllText($e.Data['avatar'], $e.Files[$e.Data['avatar']].Bytes, [System.Text.Encoding]::ASCII)
-        #[System.IO.File]::WriteAllBytes($e.Data['avatar'], $e.Files[$e.Data['avatar']].Bytes)
-
+        save 'avatar' '.'
         redirect '/'
     }
 

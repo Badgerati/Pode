@@ -1072,32 +1072,42 @@ function Test-ValidNetworkFailure
     return (($msgs | Where-Object { $Exception.Message -ilike $_ } | Measure-Object).Count -gt 0)
 }
 
-function ConvertFrom-PodeContent
+function ConvertFrom-RequestContent
 {
     param (
         [Parameter()]
-        [string]
-        $ContentType,
-
-        [Parameter()]
-        $Content,
-
-        [Parameter()]
-        $Encoding
+        $Request
     )
 
+    # get the requests content type and boundary
+    $MetaData = Get-ContentTypeAndBoundary -ContentType $Request.ContentType
+    $Encoding = $Request.ContentEncoding
+
+    # result object for data/files
     $Result = @{
         'Data' = @{};
         'Files' = @{};
     }
 
-    if ((Test-Empty $Content) -or (Test-Empty $ContentType)) {
+    # if there is no content-type then do nothing
+    if (Test-Empty $MetaData.ContentType) {
         return $Result
     }
 
-    $TypeSplit = Split-ContentTypeAndBoundary -ContentType $ContentType
+    # if the content-type is not multipart/form-data, get the string data
+    if ($MetaData.ContentType -ine 'multipart/form-data') {
+        $Content = stream ([System.IO.StreamReader]::new($Request.InputStream, $Encoding)) {
+            return $args[0].ReadToEnd()
+        }
 
-    switch ($TypeSplit.ContentType) {
+        # if there is no content then do nothing
+        if (Test-Empty $Content) {
+            return $Result
+        }
+    }
+
+    # run action for the content type
+    switch ($MetaData.ContentType) {
         { $_ -ilike '*/json' } {
             $Result.Data = ($Content | ConvertFrom-Json)
         }
@@ -1115,92 +1125,123 @@ function ConvertFrom-PodeContent
         }
 
         { $_ -ieq 'multipart/form-data' } {
+            # convert the stream to bytes
+            $Content = ConvertFrom-StreamToBytes -Stream $Request.InputStream
+            $Lines = Get-ByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
 
-            Write-Host $Content
-
-            #-------------------
-            # split out using the boundary
-            $split = @($Content -isplit $TypeSplit.Boundary) 
-
-            foreach ($item in $split) {
-                $item = $item.Trim()
-
-                # just move along if empty
-                if ((Test-Empty $item) -or $item -ieq '--') {
-                    continue
+            # get the indexes for boundary lines (start and end)
+            $boundaryIndexes = @()
+            for ($i = 0; $i -lt $Lines.Length; $i++) {
+                if ((Test-ByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.Start -Encoding $Encoding) -or
+                    (Test-ByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.End -Encoding $Encoding)) {
+                    $boundaryIndexes += $i
                 }
+            }
 
-                # split out on each new line
-                $items = $item -isplit "`r`n"
+            # loop through the boundary indexes (exclude last, as it's the end boundary)
+            for ($i = 0; $i -lt ($boundaryIndexes.Length - 1); $i++)
+            {
+                $bIndex = $boundaryIndexes[$i]
 
-                # work out each field/file names
+                # the next line contains the key-value field names (content-disposition)
                 $fields = @{}
-                @($items[0] -isplit ';') | ForEach-Object {
+                $disp = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+1] -Encoding $Encoding -RemoveNewLine
+
+                @($disp -isplit ';') | ForEach-Object {
                     $atoms = @($_ -isplit '=')
                     if ($atoms.Length -eq 2) {
                         $fields.Add($atoms[0].Trim(), $atoms[1].Trim(' "'))
                     }
                 }
 
-                # work out field values (3rd line of $items)
+                # use the next line to work out field values
                 if (!$fields.ContainsKey('filename')) {
-                    $Result.Data.Add($fields.name, $items[2].Trim())
+                    $value = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+3] -Encoding $Encoding -RemoveNewLine
+                    $Result.Data.Add($fields.name, $value)
                 }
 
-                # work out files and content type (2nd line, and 4th+ lines)
+                # if we have a file, work out file and content type
                 if ($fields.ContainsKey('filename')) {
                     $Result.Data.Add($fields.name, $fields.filename)
 
                     if (!(Test-Empty $fields.filename)) {
+                        $type = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
+
                         $Result.Files.Add($fields.filename, @{
-                            'ContentType' = (@($items[1] -isplit ':')[1].Trim());
+                            'ContentType' = (@($type -isplit ':')[1].Trim());
                             'Bytes' = $null;
                         })
 
-                        #$str = [System.Text.StringBuilder]::new()
-                        #$items[3..($items.Length - 1)] | % {
-                        #    $str.AppendLine($_.Trim())
-                        #}
+                        $bytes = @()
+                        $Lines[($bIndex+4)..($boundaryIndexes[$i+1]-1)] | ForEach-Object {
+                            $bytes += $_
+                        }
 
-
-                        $bytes = ($items[3..($items.Length - 1)] -join "`r`n")
-                        Write-Host "`n`n"
-                        Write-Host "= = = == = = =  = ="
-                        Write-Host $bytes
-                        Write-Host "= = = == = = =  = ="
-
-                        #$Result.Files[$fields.filename].Bytes = $Encoding.GetBytes($str.ToString())
-                        #$Result.Files[$fields.filename].Bytes = $Encoding.GetBytes($bytes)
-                        $Result.Files[$fields.filename].Bytes = $bytes
-                        #$Result.Files[$fields.filename].Bytes = [System.Text.Encoding]::ASCII.GetBytes($bytes)
+                        $Result.Files[$fields.filename].Bytes = (Remove-NewLineBytesFromArray $bytes $Encoding)
                     }
                 }
             }
-            #-------------------
         }
     }
 
     return $Result
 }
 
-function Split-ContentTypeAndBoundary
+function Test-ByteArrayIsBoundary
 {
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
+        [byte[]]
+        $Bytes,
+
+        [Parameter()]
+        [string]
+        $Boundary,
+
+        [Parameter()]
+        $Encoding = [System.Text.Encoding]::UTF8
+    )
+
+    # if no bytes, return
+    if ($Bytes.Length -eq 0) {
+        return $false
+    }
+
+    # if length difference >3, return (ie, 2 offset for `r`n)
+    if (($Bytes.Length - $Boundary.Length) -gt 3) {
+        return $false
+    }
+
+    # check if bytes starts with the boundary
+    return (ConvertFrom-BytesToString $Bytes $Encoding).StartsWith($Boundary)
+}
+
+function Get-ContentTypeAndBoundary
+{
+    param (
+        [Parameter()]
         [string]
         $ContentType
     )
 
     $obj = @{
-        'ContentType' = '';
-        'Boundary' = '';
+        'ContentType' = [string]::Empty;
+        'Boundary' = @{
+            'Start' = [string]::Empty;
+            'End' = [string]::Empty;
+        }
+    }
+
+    if (Test-Empty $ContentType) {
+        return $obj
     }
 
     $split = @($ContentType -isplit ';')
     $obj.ContentType = $split[0].Trim()
 
     if ($split.Length -gt 1) {
-        $obj.Boundary = "--$(($split[1] -isplit '=')[1].Trim())"
+        $obj.Boundary.Start = "--$(($split[1] -isplit '=')[1].Trim())"
+        $obj.Boundary.End = "$($obj.Boundary.Start)--"
     }
 
     return $obj
