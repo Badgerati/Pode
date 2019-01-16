@@ -67,11 +67,11 @@ Server {
 
     # GET request for web page on "localhost:8085/"
     route get '/' {
-        view 'sign-up'
+        view 'signup'
     }
 
     # POST request to save the avatar and create user
-    route post '/sign-up' {
+    route post '/signup' {
         param($e)
 
         # do some logic here to create user
