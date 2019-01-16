@@ -122,16 +122,16 @@ function Save
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter()]
         [Alias('p')]
         [string]
-        $Path
+        $Path = '.'
     )
 
     # if path is '.', replace with server root
-    if ($Path -eq '.') {
-        $Path = $PodeSession.Server.Root
+    if ($Path -match '^\.[\\/]{0,1}') {
+        $Path = $Path -replace '^\.[\\/]{0,1}', ''
+        $Path = Join-Path $PodeSession.Server.Root $Path
     }
 
     # ensure the parameter name exists in data

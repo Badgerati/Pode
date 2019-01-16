@@ -22,9 +22,9 @@ Server -Threads 2 {
         view 'web-upload'
     }
 
-    # GET request to upload a file
+    # POST request to upload a file
     route 'post' '/upload' {
-        save 'avatar' '.'
+        save 'avatar'
         redirect '/'
     }
 
