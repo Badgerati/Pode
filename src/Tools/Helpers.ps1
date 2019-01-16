@@ -963,71 +963,6 @@ function Get-FileName
     return [System.IO.Path]::GetFileName($Path)
 }
 
-<#
-    This is basically like "using" in .Net
-#>
-function Stream
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [System.IDisposable]
-        $InputObject,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [scriptblock]
-        $ScriptBlock
-    )
-
-    try {
-        return (Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments $InputObject -Return -NoNewClosure)
-    }
-    catch {
-        $Error[0] | Out-Default
-        throw $_.Exception
-    }
-    finally {
-        $InputObject.Dispose()
-    }
-}
-
-function Dispose
-{
-    param (
-        [Parameter()]
-        [System.IDisposable]
-        $InputObject,
-
-        [switch]
-        $Close,
-
-        [switch]
-        $CheckNetwork
-    )
-
-    if ($InputObject -eq $null) {
-        return
-    }
-
-    try {
-        if ($Close) {
-            $InputObject.Close()
-        }
-    }
-    catch [exception] {
-        if ($CheckNetwork -and (Test-ValidNetworkFailure $_.Exception)) {
-            return
-        }
-
-        $Error[0] | Out-Default
-        throw $_.Exception
-    }
-    finally {
-        $InputObject.Dispose()
-    }
-}
-
 function Stopwatch
 {
     param (
@@ -1096,9 +1031,7 @@ function ConvertFrom-RequestContent
 
     # if the content-type is not multipart/form-data, get the string data
     if ($MetaData.ContentType -ine 'multipart/form-data') {
-        $Content = stream ([System.IO.StreamReader]::new($Request.InputStream, $Encoding)) {
-            return $args[0].ReadToEnd()
-        }
+        $Content = Read-StreamToEnd -Stream $Request.InputStream -Encoding $Encoding
 
         # if there is no content then do nothing
         if (Test-Empty $Content) {
@@ -1181,6 +1114,10 @@ function ConvertFrom-RequestContent
                     }
                 }
             }
+        }
+
+        default {
+            $Result.Data = $Content
         }
     }
 

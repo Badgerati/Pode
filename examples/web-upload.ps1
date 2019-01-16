@@ -15,6 +15,8 @@ Server -Threads 2 {
     # listen on localhost:8085
     listen *:$Port http
 
+    engine html
+
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
         view 'web-upload'
@@ -26,4 +28,4 @@ Server -Threads 2 {
         redirect '/'
     }
 
-}
+} -FileMonitor

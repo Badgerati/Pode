@@ -28,6 +28,25 @@ function Write-BytesToStream
     }
 }
 
+function Read-StreamToEnd
+{
+    param (
+        [Parameter()]
+        $Stream,
+
+        [Parameter()]
+        $Encoding = [System.Text.Encoding]::UTF8
+    )
+
+    if ($null -eq $Stream) {
+        return [string]::Empty
+    }
+
+    return (stream ([System.IO.StreamReader]::new($Stream, $Encoding)) {
+        return $args[0].ReadToEnd()
+    })
+}
+
 function Read-ByteLineFromByteArray
 {
     param (
@@ -206,4 +225,69 @@ function Remove-NewLineBytesFromArray
     }
 
     return $Bytes[0..$length]
+}
+
+<#
+    This is basically like "using" in .Net
+#>
+function Stream
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [System.IDisposable]
+        $InputObject,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    try {
+        return (Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments $InputObject -Return -NoNewClosure)
+    }
+    catch {
+        $Error[0] | Out-Default
+        throw $_.Exception
+    }
+    finally {
+        $InputObject.Dispose()
+    }
+}
+
+function Dispose
+{
+    param (
+        [Parameter()]
+        [System.IDisposable]
+        $InputObject,
+
+        [switch]
+        $Close,
+
+        [switch]
+        $CheckNetwork
+    )
+
+    if ($InputObject -eq $null) {
+        return
+    }
+
+    try {
+        if ($Close) {
+            $InputObject.Close()
+        }
+    }
+    catch [exception] {
+        if ($CheckNetwork -and (Test-ValidNetworkFailure $_.Exception)) {
+            return
+        }
+
+        $Error[0] | Out-Default
+        throw $_.Exception
+    }
+    finally {
+        $InputObject.Dispose()
+    }
 }
