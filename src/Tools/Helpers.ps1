@@ -727,12 +727,20 @@ function New-PodePSDrive
         $Name
     )
 
+    # if no name is passed, used a randomly generated one
     if ([string]::IsNullOrWhiteSpace($Name)) {
         $Name = "PodeDir$(Get-NewGuid)"
     }
 
+    # if the path supplied doesn't exist, error
+    if (!(Test-Path $Path)) {
+        throw "Path does not exist: $($Path)"
+    }
+
+    # create the temp drive
     $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global)
 
+    # store internally, and return the drive's name
     if (!$PodeSession.Server.Drives.ContainsKey($drive.Name)) {
         $PodeSession.Server.Drives[$drive.Name] = $Path
     }
@@ -749,8 +757,17 @@ function Add-PodePSDrives
 
 function Add-PodePSInbuiltDrives
 {
-    $PodeSession.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path (Join-ServerRoot 'views'))
-    $PodeSession.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path (Join-ServerRoot 'public'))
+    # create drive for views, if path exists
+    $path = (Join-ServerRoot 'views')
+    if (Test-Path $path) {
+        $PodeSession.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
+    }
+
+    # create drive for public content, if path exists
+    $path = (Join-ServerRoot 'public')
+    if (Test-Path $path) {
+        $PodeSession.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
+    }
 }
 
 function Remove-PodePSDrives
