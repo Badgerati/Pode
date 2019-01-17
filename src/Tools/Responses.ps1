@@ -23,26 +23,10 @@ function Write-ToResponse
         $res.ContentType = $ContentType
     }
 
-    if ((Get-Type $Value).Name -ieq 'string') {
-        $Value = [System.Text.Encoding]::UTF8.GetBytes($Value)
-    }
-
+    $Value = ConvertFrom-ValueToBytes -Value $Value
     $res.ContentLength64 = $Value.Length
 
-    try {
-        $memory = New-Object -TypeName System.IO.MemoryStream
-        $memory.Write($Value, 0, $Value.Length)
-        $memory.WriteTo($res.OutputStream)
-        $memory.Close()
-    }
-    catch {
-        if (Test-ValidNetworkFailure $_.Exception) {
-            return
-        }
-
-        $Error[0] | Out-Default
-        throw $_.Exception
-    }
+    Write-BytesToStream -Bytes $Value -Stream $res.OutputStream -CheckNetwork
 }
 
 function Write-ToResponseFromFile
@@ -98,7 +82,7 @@ function Attach
         $Path
     )
 
-    # only download files from public/static-route directories
+    # only attach files from public/static-route directories
     $Path = Get-PodeStaticRoutePath -Route $Path
 
     # test the file path, and set status accordingly
@@ -127,6 +111,47 @@ function Attach
     }
 
     dispose $fs
+}
+
+function Save
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [Alias('n')]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [Alias('p')]
+        [string]
+        $Path = '.'
+    )
+
+    # if path is '.', replace with server root
+    if ($Path -match '^\.[\\/]{0,1}') {
+        $Path = $Path -replace '^\.[\\/]{0,1}', ''
+        $Path = Join-Path $PodeSession.Server.Root $Path
+    }
+
+    # ensure the parameter name exists in data
+    $fileName = $WebEvent.Data[$Name]
+    if (Test-Empty $fileName) {
+        throw "A parameter called '$($Name)' was not supplied in the request"
+    }
+
+    # ensure the file data exists
+    if (!$WebEvent.Files.ContainsKey($fileName)) {
+        throw "No data for file '$($fileName)' was uploaded in the request"
+    }
+
+    # if the path is a directory, add the filename
+    if (Test-PathIsDirectory -Path $Path) {
+        $Path = Join-Path $Path $fileName
+    }
+
+    # save the file
+    [System.IO.File]::WriteAllBytes($Path, $WebEvent.Files[$fileName].Bytes)
 }
 
 function Status
