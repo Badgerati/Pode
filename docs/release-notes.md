@@ -1,5 +1,20 @@
 # Release Notes
 
+## v0.24.0
+
+```plain
+### Features
+* #125: Helper support function for uploading files from a web form
+
+### Enhancements
+* #149: Inbuilt support for Windows AD Authentication
+
+### Bugs
+* #152: Fix the Choco install script so it installs the module for PowerShell Core as well
+* #155: After an Internal Restart, the View Engine is not set back to the default
+* #158: If views/public directories don't exist, the creation of PSDrive fails
+```
+
 ## v0.23.0
 
 ```plain
