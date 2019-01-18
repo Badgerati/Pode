@@ -854,6 +854,19 @@
     Check
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters" title="Parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -862,8 +875,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#check-parameters" title="Check Parameters" class="md-nav__link">
-    Check Parameters
+  <a href="#users" title="Users" class="md-nav__link">
+    Users
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inbuilt-validators" title="Inbuilt Validators" class="md-nav__link">
+    Inbuilt Validators
   </a>
   
 </li>
@@ -876,6 +896,18 @@
   
 </nav>
     
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Validators/" title="Validators" class="md-nav__link">
+      Validators
+    </a>
   </li>
 
         
@@ -986,7 +1018,38 @@
 
 
   <li class="md-nav__item">
-    <a href="../../DesktopApp/" title="Desktop Application" class="md-nav__link">
+    <a href="../../SmtpServer/" title="SMTP Server" class="md-nav__link">
+      SMTP Server
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
+    
+    <label class="md-nav__link" for="nav-4-17">
+      Misc
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-17">
+        Misc
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Misc/DesktopApp/" title="Desktop Application" class="md-nav__link">
       Desktop Application
     </a>
   </li>
@@ -998,9 +1061,14 @@
 
 
   <li class="md-nav__item">
-    <a href="../../SmtpServer/" title="SMTP Server" class="md-nav__link">
-      SMTP Server
+    <a href="../../Misc/UploadFiles/" title="Uploading Files" class="md-nav__link">
+      Uploading Files
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1449,6 +1517,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Utility/Save/" title="Save" class="md-nav__link">
+      Save
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Utility/State/" title="State" class="md-nav__link">
       State
     </a>
@@ -1637,6 +1717,19 @@
     Check
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters" title="Parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1645,8 +1738,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#check-parameters" title="Check Parameters" class="md-nav__link">
-    Check Parameters
+  <a href="#users" title="Users" class="md-nav__link">
+    Users
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inbuilt-validators" title="Inbuilt Validators" class="md-nav__link">
+    Inbuilt Validators
   </a>
   
 </li>
@@ -1674,17 +1774,17 @@
 <p>Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session signed-cookie).</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>To use session-persistent authentication you will also need to use <a href="../../../Functions/Middleware/Sessions"><code>session</code></a> middleware.</p>
+<p>To use session-persistent authentication you will also need to use the <a href="../../../Functions/Middleware/Sessions"><code>session</code></a> middleware.</p>
 </div>
 <p>To setup and use authentication in Pode you need to use the <a href="../../../Functions/Middleware/Auth"><code>auth</code></a> function and middleware. The <code>auth</code> function has two actions: <code>use</code> and <code>check</code> which are detailed below:</p>
 <h2 id="actions">Actions</h2>
 <h3 id="use">Use</h3>
 <p>The <code>auth use</code> action allows you to specify and configure which authentication methods your server will use; you can have many methods configured, defining which one to validate against on the <code>auth check</code> action.</p>
 <p>The make-up of the <code>use</code> action is:</p>
-<div class="codehilite"><pre><span></span><span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-validator</span> <span class="p">{}</span> <span class="p">[</span><span class="n">-options</span> <span class="p">@{}]</span> <span class="p">[</span><span class="n">-parser</span> <span class="p">{}]</span> <span class="p">[</span><span class="n">-type</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-custom</span><span class="p">]</span>
+<div class="codehilite"><pre><span></span><span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-validator</span> <span class="p">&lt;{}|</span><span class="n">string</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-options</span> <span class="p">@{}]</span> <span class="p">[</span><span class="n">-parser</span> <span class="p">{}]</span> <span class="p">[</span><span class="n">-type</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-custom</span><span class="p">]</span>
 
 <span class="c"># or shorthand:</span>
-<span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-v</span> <span class="p">{}</span> <span class="p">[</span><span class="n">-o</span> <span class="p">@{}]</span> <span class="p">[</span><span class="n">-p</span> <span class="p">{}]</span> <span class="p">[</span><span class="n">-t</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-c</span><span class="p">]</span>
+<span class="n">auth</span> <span class="n">use</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="n">-v</span> <span class="p">&lt;{}|</span><span class="n">string</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-o</span> <span class="p">@{}]</span> <span class="p">[</span><span class="n">-p</span> <span class="p">{}]</span> <span class="p">[</span><span class="n">-t</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-c</span><span class="p">]</span>
 </pre></div>
 
 
@@ -1699,7 +1799,7 @@
 </pre></div>
 
 
-<p>or, if you want to use a custom name:</p>
+<p>or, if you want to use Basic authentication but with a custom name (such as 'login'):</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">auth</span> <span class="n">use</span> <span class="n">login</span> <span class="n">-t</span> <span class="n">basic</span> <span class="n">-v</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$username</span><span class="p">,</span> <span class="nv">$pass</span><span class="p">)</span>
@@ -1710,10 +1810,10 @@
 </pre></div>
 
 
-<p>The <code>&lt;name&gt;</code> of the authentication method can be anything, so long as you specify the <code>&lt;type&gt;</code> as well. The <code>&lt;type&gt;</code> of the authentication method specified should be a valid inbuilt method (such as Basic or Form), unless you have stated that the method is custom (<code>-c</code>). If you do not specify a <code>&lt;type&gt;</code> then the <code>&lt;name&gt;</code> is used instead - in which case this needs to follow the same rules as <code>&lt;type&gt;</code>.</p>
-<p>The validator (<code>-v</code>) script is used to find a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the validator passes, then a <code>user</code> needs to be returned from the script via <code>@{ 'user' = $user }</code> - if <code>$null</code> or a null user is returned then the validator script is assumed to have failed.</p>
-<p>Some auth methods also have options (<code>-o</code>) that can be supplied as a hashtable, such as field name or encoding overrides. Available options will vary between authentication methods, and can be seen on their tutorial pages, such as <a href="../Basic"><code>Basic</code></a>.</p>
-<p>If a custom (<code>-c</code>) authentication method is used, you <em>must</em> supply a parser (<code>-p</code>) script which will parse payloads/headers for credentials and then return this data as an array - which will then be supplied to the validator (<code>-v</code>) script.</p>
+<p>The <code>&lt;name&gt;</code> of the authentication method can be anything, so long as you specify the <code>&lt;type&gt;</code> as well. The <code>&lt;type&gt;</code> specified should be a valid inbuilt method (such as Basic or Form), unless you have stated that the method is custom (<code>-c</code>). If you do not specify a <code>&lt;type&gt;</code> then the <code>&lt;name&gt;</code> is used as the type instead - in which case the name needs to follow the same rules as <code>&lt;type&gt;</code>.</p>
+<p>The validator (<code>-v</code>) script is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the validator passes, then a <code>user</code> needs to be returned from the script via <code>@{ 'user' = $user }</code> - if <code>$null</code> or a null user is returned then the validator script is assumed to have failed, thus meaning the user will have failed to authenticate.</p>
+<p>Some authentication methods also have options (<code>-o</code>) that can be supplied as a hashtable, such as field name or encoding overrides. Available options will vary between authentication methods, and can be seen on their tutorial pages, such as <a href="../Basic"><code>Basic</code></a>.</p>
+<p>If a custom (<code>-c</code>) authentication method is used, you <em>must</em> supply a parser (<code>-p</code>) script which can parse payloads/headers for credentials and then return this data as an array - which will then be supplied to the validator (<code>-v</code>) script.</p>
 <h3 id="check">Check</h3>
 <p>The <code>auth check</code> action allows you to define which authentication method to validate a request against. The action returns a valid middleware script, meaning you can either use this action on specific <code>route</code> definitions, or globally for all routes as <code>middleware</code>. If this action fails, then a 401 response is returned.</p>
 <p>The make-up of the <code>check</code> action is:</p>
@@ -1739,7 +1839,7 @@
 
 <p>On success, this action will then allow the <code>route</code> logic to be invoked. If <a href="../../../Functions/Middleware/Session"><code>session</code></a> <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> has been configured then an authenticated session is also created for future requests, using a signed session-cookie.</p>
 <p>When the user makes another call using the same authenticated session and that cookie is passed, then the <code>auth check</code> action will detect the already authenticated session and skip the validator script. If you're using sessions and you don't want the <code>auth check</code> to check the session, or store the user against the session, then pass <code>-o @{ 'Session' = $false }</code> to the <code>auth check</code> call.</p>
-<h2 id="check-parameters">Check Parameters</h2>
+<h4 id="parameters">Parameters</h4>
 <p>The following table contains options that you can supply to an <code>auth check -o @{}</code> call - these are all optional:</p>
 <table>
 <thead>
@@ -1757,7 +1857,7 @@
 </tr>
 <tr>
 <td>SuccessUrl</td>
-<td>The URL to redirect to should authenticationh succeed</td>
+<td>The URL to redirect to should authentication succeed</td>
 <td>empty</td>
 </tr>
 <tr>
@@ -1781,6 +1881,49 @@
 <p class="admonition-title">Info</p>
 <p>The <code>Login</code> option allows you to have authentication on your login pages, such that if there is no user in a current session then the login page displays - rather then being 401'd. Whereas if there is an authenticated user in the session it will auto-redirect to the <code>SuccessUrl</code>.</p>
 </div>
+<h2 id="users">Users</h2>
+<p>After a successful validation, an <code>Auth</code> object will be created for use against the Request. This <code>Auth</code> object will be accessible via the argument supplied to <code>routes</code> adn <code>middleware</code> (though it will only be available in middleware created after <code>auth check</code>).</p>
+<p>The object will further contain:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User</td>
+<td>Details about the authenticated user</td>
+</tr>
+<tr>
+<td>IsAuthenticated</td>
+<td>States if the request is for an authenticated user, can be <code>$true</code>, <code>$false</code> or <code>$null</code></td>
+</tr>
+<tr>
+<td>Store</td>
+<td>States whether the authentication is for a session, and will be stored as a cookie</td>
+</tr>
+</tbody>
+</table>
+<p>The following example get the user's name from the <code>Auth</code> object:</p>
+<div class="codehilite"><pre><span></span><span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">form</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
+
+    <span class="n">view</span> <span class="s1">&#39;index&#39;</span> <span class="n">-data</span> <span class="p">@{</span>
+        <span class="s1">&#39;Username&#39;</span> <span class="p">=</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Auth</span><span class="p">.</span><span class="n">User</span><span class="p">.</span><span class="n">Name</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="inbuilt-validators">Inbuilt Validators</h2>
+<p>Overtime Pode will start to support some <a href="../Validators">inbuilt validators</a> for authentication - such as Windows Active Directory. More information can be found on the <a href="../Validators">validators</a> page, but to use an inbuilt script you just need to specify the name.</p>
+<p>For example, the below would use the inbuilt validator script for Windows AD:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">auth</span> <span class="n">use</span> <span class="n">basic</span> <span class="n">-v</span> <span class="s1">&#39;windows-ad&#39;</span>
+<span class="p">}</span>
+</pre></div>
                 
                   
                 
@@ -1816,13 +1959,13 @@
           </a>
         
         
-          <a href="../Basic/" title="Basic" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../Validators/" title="Validators" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Basic
+                Validators
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
