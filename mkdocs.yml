@@ -40,6 +40,7 @@ nav:
       - Custom: Tutorials/Logging/Custom.md
     - Authentication:
       - Overview: Tutorials/Authentication/Overview.md
+      - Validators: Tutorials/Authentication/Validators.md
       - Basic: Tutorials/Authentication/Basic.md
       - Form: Tutorials/Authentication/Form.md
       - Custom: Tutorials/Authentication/Custom.md
@@ -47,8 +48,10 @@ nav:
     - View Engines:
       - Pode: Tutorials/ViewEngines/Pode.md
       - Third Party: Tutorials/ViewEngines/ThirdParty.md
-    - Desktop Application: Tutorials/DesktopApp.md
     - SMTP Server: Tutorials/SmtpServer.md
+    - Misc:
+      - Desktop Application: Tutorials/Misc/DesktopApp.md
+      - Uploading Files: Tutorials/Misc/UploadFiles.md
 
   - Functions:
     - Core:
@@ -85,6 +88,7 @@ nav:
       - Dispose: Functions/Utility/Dispose.md
       - Include: Functions/Utility/Include.md
       - Lock: Functions/Utility/Lock.md
+      - Save: Functions/Utility/Save.md
       - State: Functions/Utility/State.md
       - Stopwatch: Functions/Utility/Stopwatch.md
       - Stream: Functions/Utility/Stream.md

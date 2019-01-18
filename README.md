@@ -40,7 +40,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
 * Middleware and sessions on web servers
-* Authentication on requests, which can either be sessionless or session persistent
+* Authentication on requests, such as Basic and Windows Active Directory
 * (Windows) Generate/bind self-signed certificates, and signed certificates
 * (Windows) Open the hosted server as a desktop application
 

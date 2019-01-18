@@ -204,8 +204,12 @@ function Restart-PodeServer
         $PodeSession.Server.Middleware = @()
         $PodeSession.Server.Endware = @()
 
-        # clear up view engine
-        $PodeSession.Server.ViewEngine.Clear()
+        # set view engine back to default
+        $PodeSession.Server.ViewEngine = @{
+            'Engine' = 'html';
+            'Extension' = 'html';
+            'Script' = $null;
+        }
 
         # clear up cookie sessions
         $PodeSession.Server.Cookies.Session.Clear()

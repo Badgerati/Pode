@@ -1,21 +1,37 @@
-# Determine which Program Files path to use
-if (![string]::IsNullOrWhiteSpace($env:ProgramFiles))
+function Remove-PodeModule($path)
 {
-    $modulePath = Join-Path $env:ProgramFiles (Join-Path 'WindowsPowerShell' 'Modules')
-}
-else
-{
-    $modulePath = Join-Path ${env:ProgramFiles(x86)} (Join-Path 'WindowsPowerShell' 'Modules')
+    $path = Join-Path $path 'Pode'
+    if (Test-Path $path)
+    {
+        Write-Host "Deleting module directory: $($path)"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+        if (!$?) {
+            throw "Failed to delete: $path"
+        }
+    }
 }
 
-# Delete Pode module
-$podeModulePath = Join-Path $modulePath 'Pode'
-if (Test-Path $podeModulePath)
+
+
+# Determine which Program Files path to use
+$progFiles = [string]$env:ProgramFiles
+
+# Remove PS Module
+# Set the module path
+$modulePath = Join-Path $progFiles (Join-Path 'WindowsPowerShell' 'Modules')
+
+# Delete module
+Remove-PodeModule $modulePath
+
+
+# Remove PS-Core Module
+$def = (Get-Command pwsh -ErrorAction SilentlyContinue).Definition
+
+if (![string]::IsNullOrWhiteSpace($def))
 {
-    Write-Host 'Deleting Pode module directory'
-    Remove-Item -Path $podeModulePath -Recurse -Force | Out-Null
-    if (!$?)
-    {
-        throw "Failed to delete: $podeModulePath"
-    }
+    # Set the module path
+    $modulePath = Join-Path $progFiles (Join-Path 'PowerShell' 'Modules')
+
+    # Delete module
+    Remove-PodeModule $modulePath
 }

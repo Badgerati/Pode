@@ -168,21 +168,16 @@ function Get-PodeRouteValidateMiddleware
 function Get-PodeBodyMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '@body' -ScriptBlock {
-        param($s)
+        param($e)
 
         try
         {
-            # read any post data
-            $data = stream ([System.IO.StreamReader]::new($s.Request.InputStream, $s.Request.ContentEncoding)) {
-                param($r)
-                return $r.ReadToEnd()
-            }
-
             # attempt to parse that data
-            $data = ConvertFrom-PodeContent -ContentType $s.Request.ContentType -Content $data
+            $result = ConvertFrom-RequestContent -Request $e.Request
 
             # set session data
-            $s.Data = $data
+            $e.Data = $result.Data
+            $e.Files = $result.Files
 
             # payload parsed
             return $true
