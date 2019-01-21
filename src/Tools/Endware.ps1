@@ -36,5 +36,5 @@ function Endware
     )
 
     # add the scriptblock to array of endware that needs to be run
-    $PodeSession.Server.Endware += $ScriptBlock
+    $PodeContext.Server.Endware += $ScriptBlock
 }

@@ -16,8 +16,8 @@ function Test-IPLimit
     }
 
     # get the limit rules and active list
-    $rules = $PodeSession.Server.Limits.Rules[$type]
-    $active = $PodeSession.Server.Limits.Active[$type]
+    $rules = $PodeContext.Server.Limits.Rules[$type]
+    $active = $PodeContext.Server.Limits.Active[$type]
     $now = [DateTime]::UtcNow
 
     # if there are no rules, it's valid
@@ -103,8 +103,8 @@ function Test-IPAccess
     }
 
     # get permission lists for ip
-    $allow = $PodeSession.Server.Access.Allow[$type]
-    $deny = $PodeSession.Server.Access.Deny[$type]
+    $allow = $PodeContext.Server.Access.Allow[$type]
+    $deny = $PodeContext.Server.Access.Deny[$type]
 
     # are they empty?
     $alEmpty = (Test-Empty $allow)
@@ -214,13 +214,13 @@ function Add-IPLimit
     }
 
     # get current rules
-    $rules = $PodeSession.Server.Limits.Rules[$type]
+    $rules = $PodeContext.Server.Limits.Rules[$type]
 
     # setup up perm type
     if ($null -eq $rules) {
-        $PodeSession.Server.Limits.Rules[$type] = @{}
-        $PodeSession.Server.Limits.Active[$type] = @{}
-        $rules = $PodeSession.Server.Limits.Rules[$type]
+        $PodeContext.Server.Limits.Rules[$type] = @{}
+        $PodeContext.Server.Limits.Active[$type] = @{}
+        $rules = $PodeContext.Server.Limits.Rules[$type]
     }
 
     # have we already added the ip?
@@ -321,13 +321,13 @@ function Add-IPAccess
     $opp = "$(if ($Permission -ieq 'allow') { 'Deny' } else { 'Allow' })"
 
     # get permission lists for type
-    $permType = $PodeSession.Server.Access[$Permission][$type]
-    $oppType = $PodeSession.Server.Access[$opp][$type]
+    $permType = $PodeContext.Server.Access[$Permission][$type]
+    $oppType = $PodeContext.Server.Access[$opp][$type]
 
     # setup up perm type
     if ($null -eq $permType) {
-        $PodeSession.Server.Access[$Permission][$type] = @{}
-        $permType = $PodeSession.Server.Access[$Permission][$type]
+        $PodeContext.Server.Access[$Permission][$type] = @{}
+        $permType = $PodeContext.Server.Access[$Permission][$type]
     }
 
     # have we already added the ip?

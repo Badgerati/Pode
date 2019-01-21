@@ -2,7 +2,7 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit[\\/]', '/src/'
 Get-ChildItem "$($src)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
-$PodeSession = @{ 'Server' = $null; }
+$PodeContext = @{ 'Server' = $null; }
 
 Describe 'Start-PodeServer' {
     Mock Add-PodePSInbuiltDrives { }
@@ -15,7 +15,7 @@ Describe 'Start-PodeServer' {
     Mock Start-WebServer { }
 
     It 'Calls one-off script logic' {
-        $PodeSession.Server = @{ 'Type' = ([string]::Empty); 'Logic' = {} }
+        $PodeContext.Server = @{ 'Type' = ([string]::Empty); 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -27,7 +27,7 @@ Describe 'Start-PodeServer' {
     }
 
     It 'Calls smtp server logic' {
-        $PodeSession.Server = @{ 'Type' = 'SMTP'; 'Logic' = {} }
+        $PodeContext.Server = @{ 'Type' = 'SMTP'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -39,7 +39,7 @@ Describe 'Start-PodeServer' {
     }
 
     It 'Calls tcp server logic' {
-        $PodeSession.Server = @{ 'Type' = 'TCP'; 'Logic' = {} }
+        $PodeContext.Server = @{ 'Type' = 'TCP'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -51,7 +51,7 @@ Describe 'Start-PodeServer' {
     }
 
     It 'Calls http web server logic' {
-        $PodeSession.Server = @{ 'Type' = 'HTTP'; 'Logic' = {} }
+        $PodeContext.Server = @{ 'Type' = 'HTTP'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -63,7 +63,7 @@ Describe 'Start-PodeServer' {
     }
 
     It 'Calls https web server logic' {
-        $PodeSession.Server = @{ 'Type' = 'HTTPS'; 'Logic' = {} }
+        $PodeContext.Server = @{ 'Type' = 'HTTPS'; 'Logic' = {} }
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It

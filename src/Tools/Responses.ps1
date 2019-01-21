@@ -45,7 +45,7 @@ function Write-ToResponseFromFile
     # are we dealing with a dynamic file for the view engine?
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
-    if ((Test-Empty $ext) -or $ext -ine $PodeSession.Server.ViewEngine.Extension) {
+    if ((Test-Empty $ext) -or $ext -ine $PodeContext.Server.ViewEngine.Extension) {
         $content = Get-ContentAsBytes -Path $Path
         Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
         return
@@ -54,7 +54,7 @@ function Write-ToResponseFromFile
     # generate dynamic content
     $content = [string]::Empty
 
-    switch ($PodeSession.Server.ViewEngine.Engine)
+    switch ($PodeContext.Server.ViewEngine.Engine)
     {
         'pode' {
             $content = Get-Content -Path $Path -Raw -Encoding utf8
@@ -62,8 +62,8 @@ function Write-ToResponseFromFile
         }
 
         default {
-            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments $Path -Return)
+            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
             }
         }
     }
@@ -131,7 +131,7 @@ function Save
     # if path is '.', replace with server root
     if ($Path -match '^\.[\\/]{0,1}') {
         $Path = $Path -replace '^\.[\\/]{0,1}', ''
-        $Path = Join-Path $PodeSession.Server.Root $Path
+        $Path = Join-Path $PodeContext.Server.Root $Path
     }
 
     # ensure the parameter name exists in data
@@ -399,11 +399,11 @@ function Include
     $ext = Get-FileExtension -Path $Path
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
     if (!$hasExt) {
-        $Path += ".$($PodeSession.Server.ViewEngine.Extension)"
+        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
     # only look in the view directory
-    $Path = (Join-Path $PodeSession.Server.InbuiltDrives['views'] $Path)
+    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {
@@ -411,7 +411,7 @@ function Include
     }
 
     # run any engine logic
-    $engine = $PodeSession.Server.ViewEngine.Engine
+    $engine = $PodeContext.Server.ViewEngine.Engine
     if ($hasExt) {
         $engine = $ext.Trim('.')
     }
@@ -430,8 +430,8 @@ function Include
         }
 
         default {
-            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
             }
         }
     }
@@ -466,11 +466,11 @@ function View
     $ext = Get-FileExtension -Path $Path
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
     if (!$hasExt) {
-        $Path += ".$($PodeSession.Server.ViewEngine.Extension)"
+        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
     # only look in the view directory
-    $Path = (Join-Path $PodeSession.Server.InbuiltDrives['views'] $Path)
+    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
@@ -478,7 +478,7 @@ function View
     }
 
     # run any engine logic
-    $engine = $PodeSession.Server.ViewEngine.Engine
+    $engine = $PodeContext.Server.ViewEngine.Engine
     if ($hasExt) {
         $engine = $ext.Trim('.')
     }
@@ -497,8 +497,8 @@ function View
         }
 
         default {
-            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
             }
         }
     }

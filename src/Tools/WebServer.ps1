@@ -22,9 +22,9 @@ function Engine
         $Extension = $Engine.ToLowerInvariant()
     }
 
-    $PodeSession.Server.ViewEngine.Engine = $Engine.ToLowerInvariant()
-    $PodeSession.Server.ViewEngine.Extension = $Extension
-    $PodeSession.Server.ViewEngine.Script = $ScriptBlock
+    $PodeContext.Server.ViewEngine.Engine = $Engine.ToLowerInvariant()
+    $PodeContext.Server.ViewEngine.Extension = $Extension
+    $PodeContext.Server.ViewEngine.Script = $ScriptBlock
 }
 
 function Start-WebServer
@@ -39,11 +39,11 @@ function Start-WebServer
         (Get-PodeQueryMiddleware)
     )
 
-    $PodeSession.Server.Middleware = ($inbuilt_middleware + $PodeSession.Server.Middleware)
+    $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
 
     # work out which endpoints to listen on
     $endpoints = @()
-    $PodeSession.Server.Endpoints | ForEach-Object {
+    $PodeContext.Server.Endpoints | ForEach-Object {
         # get the protocol
         $_protocol = (iftet $_.Ssl 'https' 'http')
 
@@ -98,7 +98,7 @@ function Start-WebServer
     }
 
     # state where we're running
-    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeSession.Threads) thread(s)]:" -ForegroundColor Yellow
+    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
 
     $endpoints | ForEach-Object {
         Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
@@ -118,11 +118,11 @@ function Start-WebServer
 
         try
         {
-            while ($Listener.IsListening -and !$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get request and response
                 $task = $Listener.GetContextAsync()
-                $task.Wait($PodeSession.Tokens.Cancellation.Token)
+                $task.Wait($PodeContext.Tokens.Cancellation.Token)
 
                 try
                 {
@@ -136,7 +136,7 @@ function Start-WebServer
                     $WebEvent.Auth = @{}
                     $WebEvent.Response = $response
                     $WebEvent.Request = $request
-                    $WebEvent.Lockable = $PodeSession.Lockable
+                    $WebEvent.Lockable = $PodeContext.Lockable
                     $WebEvent.Path = ($request.RawUrl -isplit "\?")[0]
                     $WebEvent.Method = $request.HttpMethod.ToLowerInvariant()
                     $WebEvent.Protocol = $request.Url.Scheme
@@ -146,7 +146,7 @@ function Start-WebServer
                     Add-PodeLogEndware -WebEvent $WebEvent
 
                     # invoke middleware
-                    if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeSession.Server.Middleware -Route $WebEvent.Path)) {
+                    if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                         # get the route logic
                         $route = Get-PodeRoute -HttpMethod $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
                             -Endpoint $WebEvent.Endpoint -CheckWildMethod
@@ -163,7 +163,7 @@ function Start-WebServer
                 }
 
                 # invoke endware specifc to the current web event
-                $_endware = ($WebEvent.OnEnd + @($PodeSession.Server.Endware))
+                $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
                 Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
 
                 # close response stream (check if exists, as closing the writer closes this stream on unix)
@@ -180,7 +180,7 @@ function Start-WebServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeSession.Threads | ForEach-Object {
+    1..$PodeContext.Threads | ForEach-Object {
         Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
             -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
@@ -195,7 +195,7 @@ function Start-WebServer
 
         try
         {
-            while ($Listener.IsListening -and !$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 Start-Sleep -Seconds 1
             }

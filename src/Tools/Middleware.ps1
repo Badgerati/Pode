@@ -74,11 +74,11 @@ function Get-PodeInbuiltMiddleware
     )
 
     # check if middleware contains an override
-    $override = ($PodeSession.Server.Middleware | Where-Object { $_.Name -ieq $Name })
+    $override = ($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name })
 
     # if override there, remove it from middleware
     if ($override) {
-        $PodeSession.Server.Middleware = @($PodeSession.Server.Middleware | Where-Object { $_.Name -ine $Name })
+        $PodeContext.Server.Middleware = @($PodeContext.Server.Middleware | Where-Object { $_.Name -ine $Name })
         $ScriptBlock = $override.Logic
     }
 
@@ -241,7 +241,7 @@ function Middleware
 
     # if a name was supplied, ensure it doesn't already exist
     if (!(Test-Empty $Name)) {
-        if (($PodeSession.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
+        if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
             throw "Middleware with defined name of $($Name) already exists"
         }
     }
@@ -282,6 +282,6 @@ function Middleware
         return $HashTable
     }
     else {
-        $PodeSession.Server.Middleware += $HashTable
+        $PodeContext.Server.Middleware += $HashTable
     }
 }

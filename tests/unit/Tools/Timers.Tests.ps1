@@ -15,12 +15,12 @@ Describe 'Get-PodeTimer' {
 
     Context 'Valid values supplied' {
         It 'Returns null as the timer does not exist' {
-            $PodeSession = @{ 'Timers' = @{}; }
+            $PodeContext = @{ 'Timers' = @{}; }
             Get-PodeTimer -Name 'test' | Should Be $null
         }
 
         It 'Returns timer for name' {
-            $PodeSession = @{ 'Timers' = @{ 'test' = @{ 'Name' = 'test'; }; }; }
+            $PodeContext = @{ 'Timers' = @{ 'test' = @{ 'Name' = 'test'; }; }; }
             $result = (Get-PodeTimer -Name 'test')
 
             $result | Should BeOfType System.Collections.Hashtable
@@ -46,35 +46,35 @@ Describe 'Timer' {
 
     Context 'Valid timer parameters' {
         It 'Throws error because timer already exists' {
-            $PodeSession = @{ 'Timers' = @{ 'test' = $null }; }
+            $PodeContext = @{ 'Timers' = @{ 'test' = $null }; }
             { Timer -Name 'test' -Interval 1 -ScriptBlock {} } | Should Throw 'already exists'
         }
 
         It 'Throws error because interval is 0' {
-            $PodeSession = @{ 'Timers' = @{}; }
+            $PodeContext = @{ 'Timers' = @{}; }
             { Timer -Name 'test' -Interval 0 -ScriptBlock {} } | Should Throw 'interval less than or equal to 0'
         }
 
         It 'Throws error because interval is less than 0' {
-            $PodeSession = @{ 'Timers' = @{}; }
+            $PodeContext = @{ 'Timers' = @{}; }
             { Timer -Name 'test' -Interval -1 -ScriptBlock {} } | Should Throw 'interval less than or equal to 0'
         }
 
         It 'Throws error because limit is negative' {
-            $PodeSession = @{ 'Timers' = @{}; }
+            $PodeContext = @{ 'Timers' = @{}; }
             { Timer -Name 'test' -Interval 1 -ScriptBlock {} -Limit -1 } | Should Throw 'negative limit'
         }
 
         It 'Throws error because skip is negative' {
-            $PodeSession = @{ 'Timers' = @{}; }
+            $PodeContext = @{ 'Timers' = @{}; }
             { Timer -Name 'test' -Interval 1 -ScriptBlock {} -Skip -1 } | Should Throw 'negative skip'
         }
 
         It 'Adds new timer to session with no limit' {
-            $PodeSession = @{ 'Timers' = @{}; }
+            $PodeContext = @{ 'Timers' = @{}; }
             Timer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
 
-            $timer = $PodeSession.Timers['test']
+            $timer = $PodeContext.Timers['test']
             $timer | Should Not Be $null
             $timer.Name | Should Be 'test'
             $timer.Interval | Should Be 1
@@ -88,10 +88,10 @@ Describe 'Timer' {
         }
 
         It 'Adds new timer to session with limit' {
-            $PodeSession = @{ 'Timers' = @{}; }
+            $PodeContext = @{ 'Timers' = @{}; }
             Timer -Name 'test' -Interval 3 -ScriptBlock { Write-Host 'hello' } -Limit 2 -Skip 1
 
-            $timer = $PodeSession.Timers['test']
+            $timer = $PodeContext.Timers['test']
             $timer | Should Not Be $null
             $timer.Name | Should Be 'test'
             $timer.Interval | Should Be 3

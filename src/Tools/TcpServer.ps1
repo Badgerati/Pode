@@ -6,13 +6,13 @@ function Start-TcpServer
     }
 
     # grab the relavant port
-    $port = $PodeSession.Server.Endpoints[0].Port
+    $port = $PodeContext.Server.Endpoints[0].Port
     if ($port -eq 0) {
         $port = 9001
     }
 
     # get the IP address for the server
-    $ipAddress = $PodeSession.Server.Endpoints[0].Address
+    $ipAddress = $PodeContext.Server.Endpoints[0].Address
     if (Test-Hostname -Hostname $ipAddress) {
         $ipAddress = (Get-IPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
         $ipAddress = (Get-IPAddress $ipAddress)
@@ -36,7 +36,7 @@ function Start-TcpServer
     }
 
     # state where we're running
-    Write-Host "Listening on tcp://$($PodeSession.Server.Endpoints[0].HostName):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on tcp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {
@@ -52,11 +52,11 @@ function Start-TcpServer
 
         try
         {
-            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get an incoming request
                 $task = $Listener.AcceptTcpClientAsync()
-                $task.Wait($PodeSession.Tokens.Cancellation.Token)
+                $task.Wait($PodeContext.Tokens.Cancellation.Token)
                 $client = $task.Result
 
                 # convert the ip
@@ -66,7 +66,7 @@ function Start-TcpServer
                 if ((Test-IPAccess -IP $ip) -and (Test-IPLimit -IP $ip)) {
                     $TcpEvent = @{
                         'Client' = $client;
-                        'Lockalble' = $PodeSession.Lockable
+                        'Lockalble' = $PodeContext.Lockable
                     }
 
                     Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $TcpEvent -Scoped
@@ -86,7 +86,7 @@ function Start-TcpServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeSession.Threads | ForEach-Object {
+    1..$PodeContext.Threads | ForEach-Object {
         Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
             -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
@@ -101,7 +101,7 @@ function Start-TcpServer
 
         try
         {
-            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 Start-Sleep -Seconds 1
             }

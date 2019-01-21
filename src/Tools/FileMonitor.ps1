@@ -1,11 +1,11 @@
 function Start-PodeFileMonitor
 {
-    if (!$PodeSession.Server.FileMonitor) {
+    if (!$PodeContext.Server.FileMonitor) {
         return
     }
 
     # what folder and filter are we moitoring?
-    $folder = $PodeSession.Server.Root
+    $folder = $PodeContext.Server.Root
     $filter = '*.*'
 
     # setup the file monitor
@@ -41,12 +41,12 @@ function Start-PodeFileMonitor
     Register-ObjectEvent -InputObject $timer -EventName 'Elapsed' -SourceIdentifier (Get-PodeFileMonitorTimerName) -Action {
         $Event.MessageData.Session.Tokens.Restart.Cancel()
         $Event.Sender.Stop()
-    } -MessageData @{ 'Session' = $PodeSession; } -SupportEvent
+    } -MessageData @{ 'Session' = $PodeContext; } -SupportEvent
 }
 
 function Stop-PodeFileMonitor
 {
-    if ($PodeSession.Server.FileMonitor) {
+    if ($PodeContext.Server.FileMonitor) {
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Create) -Force
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Delete) -Force
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Update) -Force

@@ -7,7 +7,7 @@ function Get-PodeLogger
         $Name
     )
 
-    return $PodeSession.Server.Logging.Methods[$Name]
+    return $PodeContext.Server.Logging.Methods[$Name]
 }
 
 function Add-PodeLogEndware
@@ -69,7 +69,7 @@ function Add-PodeLogObject
         $Response
     )
 
-    if ($PodeSession.Server.Logging.Disabled -or (Get-Count $PodeSession.Server.Logging.Methods) -eq 0) {
+    if ($PodeContext.Server.Logging.Disabled -or (Get-Count $PodeContext.Server.Logging.Methods) -eq 0) {
         return
     }
 
@@ -80,12 +80,12 @@ function Add-PodeLogObject
         $LogObject.Response.Size = $Response.ContentLength64
     }
 
-    $PodeSession.RequestsToLog.Add($LogObject) | Out-Null
+    $PodeContext.RequestsToLog.Add($LogObject) | Out-Null
 }
 
 function Start-LoggerRunspace
 {
-    if ((Get-Count $PodeSession.Server.Logging.Methods) -eq 0) {
+    if ((Get-Count $PodeContext.Server.Logging.Methods) -eq 0) {
         return
     }
 
@@ -112,7 +112,7 @@ function Start-LoggerRunspace
         while ($true)
         {
             # if there are no requests to log, just sleep
-            if ((Get-Count $PodeSession.RequestsToLog) -eq 0) {
+            if ((Get-Count $PodeContext.RequestsToLog) -eq 0) {
                 Start-Sleep -Seconds 1
                 continue
             }
@@ -120,16 +120,16 @@ function Start-LoggerRunspace
             # safetly pop off the first log request from the array
             $r = $null
 
-            lock $PodeSession.RequestsToLog {
-                $r = $PodeSession.RequestsToLog[0]
-                $PodeSession.RequestsToLog.RemoveAt(0) | Out-Null
+            lock $PodeContext.RequestsToLog {
+                $r = $PodeContext.RequestsToLog[0]
+                $PodeContext.RequestsToLog.RemoveAt(0) | Out-Null
             }
 
             # convert the request into a log string
             $str = (Get-RequestString $r)
 
             # apply log request to supplied loggers
-            $PodeSession.Server.Logging.Methods.Keys | ForEach-Object {
+            $PodeContext.Server.Logging.Methods.Keys | ForEach-Object {
                 switch ($_.ToLowerInvariant())
                 {
                     'terminal' {
@@ -137,7 +137,7 @@ function Start-LoggerRunspace
                     }
 
                     'file' {
-                        $details = $PodeSession.Server.Logging.Methods[$_]
+                        $details = $PodeContext.Server.Logging.Methods[$_]
                         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
                         # generate path to log path and date file
@@ -164,9 +164,9 @@ function Start-LoggerRunspace
                     }
 
                     { $_ -ilike 'custom_*' } {
-                        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logging.Methods[$_] -Arguments @{
+                        Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Logging.Methods[$_] -Arguments @{
                             'Log' = $r;
-                            'Lockable' = $PodeSession.Lockable;
+                            'Lockable' = $PodeContext.Lockable;
                         }
                     }
                 }
@@ -200,7 +200,7 @@ function Logger
     )
 
     # is logging disabled?
-    if ($PodeSession.Server.Logging.Disabled) {
+    if ($PodeContext.Server.Logging.Disabled) {
         Write-Host "Logging has been disabled for $($Name)" -ForegroundColor DarkCyan
         return
     }
@@ -214,7 +214,7 @@ function Logger
     $Name = $Name.ToLowerInvariant()
 
     # ensure the logger doesn't already exist
-    if ($PodeSession.Server.Logging.Methods.ContainsKey($Name)) {
+    if ($PodeContext.Server.Logging.Methods.ContainsKey($Name)) {
         throw "Logger called $($Name) already exists"
     }
 
@@ -237,7 +237,7 @@ function Logger
     }
 
     # add the logger, along with any given details (hashtable/scriptblock)
-    $PodeSession.Server.Logging.Methods[$Name] = $Details
+    $PodeContext.Server.Logging.Methods[$Name] = $Details
 
     # if a file logger, create base directory (file is a dummy file, and won't be created)
     if ($Name -ieq 'file') {
@@ -254,7 +254,7 @@ function Logger
     }
 
     # if this is the first logger, start the logging runspace
-    if ($PodeSession.Server.Logging.Methods.Count -eq 1) {
+    if ($PodeContext.Server.Logging.Methods.Count -eq 1) {
         Start-LoggerRunspace
     }
 }

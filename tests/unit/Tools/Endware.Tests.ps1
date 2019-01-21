@@ -11,23 +11,23 @@ Describe 'Endware' {
 
     Context 'Valid parameters' {
         It 'Adds single Endware to list' {
-            $PodeSession = @{ 'Server' = @{ 'Endware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Endware' = @(); }; }
 
             Endware -ScriptBlock { write-host 'end1' }
 
-            $PodeSession.Server.Endware.Length | Should Be 1
-            $PodeSession.Server.Endware[0].ToString() | Should Be ({ Write-Host 'end1' }).ToString()
+            $PodeContext.Server.Endware.Length | Should Be 1
+            $PodeContext.Server.Endware[0].ToString() | Should Be ({ Write-Host 'end1' }).ToString()
         }
 
         It 'Adds two Endwares to list' {
-            $PodeSession = @{ 'Server' = @{ 'Endware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Endware' = @(); }; }
 
             Endware -ScriptBlock { write-host 'end1' }
             Endware -ScriptBlock { write-host 'end2' }
 
-            $PodeSession.Server.Endware.Length | Should Be 2
-            $PodeSession.Server.Endware[0].ToString() | Should Be ({ Write-Host 'end1' }).ToString()
-            $PodeSession.Server.Endware[1].ToString() | Should Be ({ Write-Host 'end2' }).ToString()
+            $PodeContext.Server.Endware.Length | Should Be 2
+            $PodeContext.Server.Endware[0].ToString() | Should Be ({ Write-Host 'end1' }).ToString()
+            $PodeContext.Server.Endware[1].ToString() | Should Be ({ Write-Host 'end2' }).ToString()
         }
     }
 }

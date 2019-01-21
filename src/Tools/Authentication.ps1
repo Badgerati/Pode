@@ -54,7 +54,7 @@ function Auth
         # don't fail if custom and type supplied, and it's already defined
         if ($Custom)
         {
-            $typeDefined = (![string]::IsNullOrWhiteSpace($Type) -and $PodeSession.Server.Authentications.ContainsKey($Type))
+            $typeDefined = (![string]::IsNullOrWhiteSpace($Type) -and $PodeContext.Server.Authentications.ContainsKey($Type))
             if (!$typeDefined -and (Test-Empty $Parser)) {
                 throw "Custom authentication method '$($Name)' is missing required Parser script"
             }
@@ -106,7 +106,7 @@ function Invoke-AuthUse
     $AuthData = (Get-PodeAuthMethod -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Custom:$Custom)
 
     # ensure the name doesn't already exist
-    if ($PodeSession.Server.Authentications.ContainsKey($AuthData.Name)) {
+    if ($PodeContext.Server.Authentications.ContainsKey($AuthData.Name)) {
         throw "Authentication method '$($AuthData.Name)' already defined"
     }
 
@@ -129,7 +129,7 @@ function Invoke-AuthUse
     }
 
     # apply auth method to session
-    $PodeSession.Server.Authentications[$AuthData.Name] = $obj
+    $PodeContext.Server.Authentications[$AuthData.Name] = $obj
 }
 
 function Invoke-AuthCheck
@@ -146,7 +146,7 @@ function Invoke-AuthCheck
     )
 
     # ensure the auth type exists
-    if (!$PodeSession.Server.Authentications.ContainsKey($Name)) {
+    if (!$PodeContext.Server.Authentications.ContainsKey($Name)) {
         throw "Authentication method '$($Name)' is not defined"
     }
 
@@ -181,7 +181,7 @@ function Invoke-AuthCheck
         }
 
         # get the auth type
-        $auth = $PodeSession.Server.Authentications[$s.Middleware.Options.AuthType]
+        $auth = $PodeContext.Server.Authentications[$s.Middleware.Options.AuthType]
 
         # validate the request and get a user
         try {
@@ -261,9 +261,9 @@ function Get-PodeAuthMethod
     # first, is it just a custom type?
     if ($Custom) {
         # if type supplied, re-use an already defined custom type's parser
-        if ($PodeSession.Server.Authentications.ContainsKey($Type))
+        if ($PodeContext.Server.Authentications.ContainsKey($Type))
         {
-            $Parser = $PodeSession.Server.Authentications[$Type].Parser
+            $Parser = $PodeContext.Server.Authentications[$Type].Parser
         }
 
         return @{

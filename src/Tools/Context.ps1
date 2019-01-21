@@ -1,4 +1,4 @@
-function New-PodeSession
+function New-PodeContext
 {
     param (
         [scriptblock]
@@ -171,7 +171,7 @@ function New-PodeSession
     $_session = New-PodeStateSession $session
 
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeSession', $_session, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $_session, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null)
     )
 
@@ -251,23 +251,23 @@ function State
     )
 
     try {
-        if ($null -eq $PodeSession -or $null -eq $PodeSession.Server.State) {
+        if ($null -eq $PodeContext -or $null -eq $PodeContext.Server.State) {
             return $null
         }
 
         switch ($Action.ToLowerInvariant())
         {
             'set' {
-                $PodeSession.Server.State[$Name] = $Object
+                $PodeContext.Server.State[$Name] = $Object
             }
 
             'get' {
-                $Object = $PodeSession.Server.State[$Name]
+                $Object = $PodeContext.Server.State[$Name]
             }
 
             'remove' {
-                $Object = $PodeSession.Server.State[$Name]
-                $PodeSession.Server.State.Remove($Name) | Out-Null
+                $Object = $PodeContext.Server.State[$Name]
+                $PodeContext.Server.State.Remove($Name) | Out-Null
             }
         }
 
@@ -314,7 +314,7 @@ function Listen
 
     # if a name was supplied, check it is unique
     if (![string]::IsNullOrWhiteSpace($Name) -and
-        (Get-Count ($PodeSession.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
+        (Get-Count ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
     {
         throw "An endpoint with the name '$($Name)' has already been defined"
     }
@@ -354,27 +354,27 @@ function Listen
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
-    $exists = ($PodeSession.Server.Endpoints | Where-Object {
+    $exists = ($PodeContext.Server.Endpoints | Where-Object {
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
     # has an endpoint already been defined for smtp/tcp?
-    if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeSession.Server.Type) {
+    if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeContext.Server.Type) {
         throw "An endpoint for $($Type.ToUpperInvariant()) has already been defined"
     }
 
     if (!$exists) {
         # set server type, ensure we aren't trying to change the server's type
         $_type = (iftet ($Type -ieq 'https') 'http' $Type)
-        if ([string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
-            $PodeSession.Server.Type = $_type
+        if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
+            $PodeContext.Server.Type = $_type
         }
-        elseif ($PodeSession.Server.Type -ine $_type) {
-            throw "Cannot add $($Type.ToUpperInvariant()) endpoint when already listening to $($PodeSession.Server.Type.ToUpperInvariant()) endpoints"
+        elseif ($PodeContext.Server.Type -ine $_type) {
+            throw "Cannot add $($Type.ToUpperInvariant()) endpoint when already listening to $($PodeContext.Server.Type.ToUpperInvariant()) endpoints"
         }
 
         # add the new endpoint
-        $PodeSession.Server.Endpoints += $obj
+        $PodeContext.Server.Endpoints += $obj
     }
 }
 
@@ -412,7 +412,7 @@ function Import
     }
 
     # import the module into each runspace
-    $PodeSession.RunspacePools.Values | ForEach-Object {
+    $PodeContext.RunspacePools.Values | ForEach-Object {
         $_.InitialSessionState.ImportPSModule($_path)
     }
 }

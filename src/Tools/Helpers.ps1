@@ -546,7 +546,7 @@ function Add-PodeRunspace
     try
     {
         $ps = [powershell]::Create()
-        $ps.RunspacePool = $PodeSession.RunspacePools[$Type]
+        $ps.RunspacePool = $PodeContext.RunspacePools[$Type]
         $ps.AddScript({ Add-PodePSDrives }) | Out-Null
         $ps.AddScript($ScriptBlock) | Out-Null
 
@@ -560,7 +560,7 @@ function Add-PodeRunspace
             $ps.BeginInvoke() | Out-Null
         }
         else {
-            $PodeSession.Runspaces += @{
+            $PodeContext.Runspaces += @{
                 'Pool' = $Type;
                 'Runspace' = $ps;
                 'Status' = $ps.BeginInvoke();
@@ -582,22 +582,22 @@ function Close-PodeRunspaces
     )
 
     try {
-        if (!(Test-Empty $PodeSession.Runspaces)) {
+        if (!(Test-Empty $PodeContext.Runspaces)) {
             # sleep for 1s before doing this, to let listeners dispose
             Start-Sleep -Seconds 1
 
             # now dispose runspaces
-            $PodeSession.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
+            $PodeContext.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
                 dispose $_.Runspace
                 $_.Stopped = $true
             }
 
-            $PodeSession.Runspaces = @()
+            $PodeContext.Runspaces = @()
         }
 
         # dispose the runspace pools
-        if ($ClosePool -and $null -ne $PodeSession.RunspacePools) {
-            $PodeSession.RunspacePools.Values | Where-Object { $null -ne $_ -and !$_.IsDisposed } | ForEach-Object {
+        if ($ClosePool -and $null -ne $PodeContext.RunspacePools) {
+            $PodeContext.RunspacePools.Values | Where-Object { $null -ne $_ -and !$_.IsDisposed } | ForEach-Object {
                 dispose $_ -Close
             }
         }
@@ -624,7 +624,7 @@ function Test-TerminationPressed
         $Key = $null
     )
 
-    if ($PodeSession.DisableTermination) {
+    if ($PodeContext.DisableTermination) {
         return $false
     }
 
@@ -676,7 +676,7 @@ function Start-TerminationListener
 
                 if ($cancel) {
                     Write-Host 'Terminating...' -NoNewline
-                    $PodeSession.Tokens.Cancellation.Cancel()
+                    $PodeContext.Tokens.Cancellation.Cancel()
                     break
                 }
             }
@@ -701,8 +701,8 @@ function Close-Pode
 
     try {
         # remove all the cancellation tokens
-        dispose $PodeSession.Tokens.Cancellation
-        dispose $PodeSession.Tokens.Restart
+        dispose $PodeContext.Tokens.Cancellation
+        dispose $PodeContext.Tokens.Restart
     } catch {
         $Error[0] | Out-Default
     }
@@ -710,7 +710,7 @@ function Close-Pode
     # remove all of the pode temp drives
     Remove-PodePSDrives
 
-    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
+    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
         Write-Host " Done" -ForegroundColor Green
     }
 }
@@ -741,8 +741,8 @@ function New-PodePSDrive
     $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global)
 
     # store internally, and return the drive's name
-    if (!$PodeSession.Server.Drives.ContainsKey($drive.Name)) {
-        $PodeSession.Server.Drives[$drive.Name] = $Path
+    if (!$PodeContext.Server.Drives.ContainsKey($drive.Name)) {
+        $PodeContext.Server.Drives[$drive.Name] = $Path
     }
 
     return "$($drive.Name):"
@@ -750,8 +750,8 @@ function New-PodePSDrive
 
 function Add-PodePSDrives
 {
-    $PodeSession.Server.Drives.Keys | ForEach-Object {
-        New-PodePSDrive -Path $PodeSession.Server.Drives[$_] -Name $_ | Out-Null
+    $PodeContext.Server.Drives.Keys | ForEach-Object {
+        New-PodePSDrive -Path $PodeContext.Server.Drives[$_] -Name $_ | Out-Null
     }
 }
 
@@ -760,13 +760,13 @@ function Add-PodePSInbuiltDrives
     # create drive for views, if path exists
     $path = (Join-ServerRoot 'views')
     if (Test-Path $path) {
-        $PodeSession.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for public content, if path exists
     $path = (Join-ServerRoot 'public')
     if (Test-Path $path) {
-        $PodeSession.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
     }
 }
 
@@ -841,7 +841,7 @@ function Join-ServerRoot
 
     # use the root path of the server
     if (Test-Empty $Root) {
-        $Root = $PodeSession.Server.Root
+        $Root = $PodeContext.Server.Root
     }
 
     # join the folder/file to the root path
