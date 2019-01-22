@@ -245,7 +245,7 @@ function Open-PodeConfiguration
     # check to see if an environmental config exists (if the env var is set)
     if (!(Test-Empty $env:PODE_ENVIRONMENT)) {
         $_path = (Join-ServerRoot -Folder '.' -FilePath "pode.$($env:PODE_ENVIRONMENT).json" -Root $ServerRoot)
-        if (!(Test-PodePath -Path $_path -NoStatus)) {
+        if (Test-PodePath -Path $_path -NoStatus) {
             $configPath = $_path
         }
     }
