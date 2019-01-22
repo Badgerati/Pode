@@ -59,12 +59,7 @@ function New-PodeContext
     }
 
     # check if there is any global configuration
-    $ctx.Server.Configuration = @{}
-
-    $configPath = (Join-ServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
-    if (Test-PodePath -Path $configPath  -NoStatus) {
-        $ctx.Server.Configuration = (Get-Content $configPath -Raw | ConvertFrom-Json)
-    }
+    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot
 
     # set the IP address details
     $ctx.Server.Endpoints = @()
@@ -227,6 +222,40 @@ function New-PodeStateContext
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Context.RequestsToLog -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Context.Lockable -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
+}
+
+function Get-PodeConfiguration
+{
+    return $PodeContext.Server.Configuration
+}
+
+function Open-PodeConfiguration
+{
+    param (
+        [Parameter()]
+        [string]
+        $ServerRoot = $null
+    )
+
+    $config = @{}
+
+    # set the path to the root config file
+    $configPath = (Join-ServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
+
+    # check to see if an environmental config exists (if the env var is set)
+    if (!(Test-Empty $env:PODE_ENVIRONMENT)) {
+        $_path = (Join-ServerRoot -Folder '.' -FilePath "pode.$($env:PODE_ENVIRONMENT).json" -Root $ServerRoot)
+        if (!(Test-PodePath -Path $_path -NoStatus)) {
+            $configPath = $_path
+        }
+    }
+
+    # check the path exists, and load the config
+    if (Test-PodePath -Path $configPath -NoStatus) {
+        $config = (Get-Content $configPath -Raw | ConvertFrom-Json)
+    }
+
+    return $config
 }
 
 function State
