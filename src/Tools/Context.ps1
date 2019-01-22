@@ -33,8 +33,8 @@ function New-PodeContext
         $Threads = 1
     }
 
-    # basic session object
-    $session = New-Object -TypeName psobject |
+    # basic context object
+    $ctx = New-Object -TypeName psobject |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
@@ -46,31 +46,31 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
 
     # set the server name, logic and root
-    $session.Server.Name = $Name
-    $session.Server.Root = $ServerRoot
-    $session.Server.Logic = $ScriptBlock
-    $session.Server.Interval = $Interval
-    $session.Server.FileMonitor = $FileMonitor
+    $ctx.Server.Name = $Name
+    $ctx.Server.Root = $ServerRoot
+    $ctx.Server.Logic = $ScriptBlock
+    $ctx.Server.Interval = $Interval
+    $ctx.Server.FileMonitor = $FileMonitor
 
     # set the server default type
-    $session.Server.Type = ([string]::Empty)
+    $ctx.Server.Type = ([string]::Empty)
     if ($Interval -gt 0) {
-        $session.Server.Type = 'SERVICE'
+        $ctx.Server.Type = 'SERVICE'
     }
 
     # check if there is any global configuration
-    $session.Server.Configuration = @{}
+    $ctx.Server.Configuration = @{}
 
     $configPath = (Join-ServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
     if (Test-PodePath -Path $configPath  -NoStatus) {
-        $session.Server.Configuration = (Get-Content $configPath -Raw | ConvertFrom-Json)
+        $ctx.Server.Configuration = (Get-Content $configPath -Raw | ConvertFrom-Json)
     }
 
     # set the IP address details
-    $session.Server.Endpoints = @()
+    $ctx.Server.Endpoints = @()
 
     # setup gui details
-    $session.Server.Gui = @{
+    $ctx.Server.Gui = @{
         'Enabled' = $false;
         'Name' = $null;
         'Icon' = $null;
@@ -80,21 +80,21 @@ function New-PodeContext
     }
 
     # shared temp drives
-    $session.Server.Drives = @{}
-    $session.Server.InbuiltDrives = @{}
+    $ctx.Server.Drives = @{}
+    $ctx.Server.InbuiltDrives = @{}
 
     # shared state between runspaces
-    $session.Server.State = @{}
+    $ctx.Server.State = @{}
 
-    # session engine for rendering views
-    $session.Server.ViewEngine = @{
+    # view engine for rendering pages
+    $ctx.Server.ViewEngine = @{
         'Engine' = 'html';
         'Extension' = 'html';
         'Script' = $null;
     }
 
     # routes for pages and api
-    $session.Server.Routes = @{
+    $ctx.Server.Routes = @{
         'delete' = @{};
         'get' = @{};
         'head' = @{};
@@ -109,66 +109,66 @@ function New-PodeContext
     }
 
     # handlers for tcp
-    $session.Server.Handlers = @{
+    $ctx.Server.Handlers = @{
         'tcp' = $null;
         'smtp' = $null;
         'service' = $null;
     }
 
     # setup basic access placeholders
-    $session.Server.Access = @{
+    $ctx.Server.Access = @{
         'Allow' = @{};
         'Deny' = @{};
     }
 
     # setup basic limit rules
-    $session.Server.Limits = @{
+    $ctx.Server.Limits = @{
         'Rules' = @{};
         'Active' = @{};
     }
 
     # cookies and session logic
-    $session.Server.Cookies = @{
+    $ctx.Server.Cookies = @{
         'Session' = @{};
     }
 
     # authnetication methods
-    $session.Server.Authentications = @{}
+    $ctx.Server.Authentications = @{}
 
     # logging methods
-    $session.Server.Logging = @{
+    $ctx.Server.Logging = @{
         'Methods' = @{};
         'Disabled' = $DisableLogging;
     }
 
     # create new cancellation tokens
-    $session.Tokens = @{
+    $ctx.Tokens = @{
         'Cancellation' = New-Object System.Threading.CancellationTokenSource;
         'Restart' = New-Object System.Threading.CancellationTokenSource;
     }
 
     # requests that should be logged
-    $session.RequestsToLog = New-Object System.Collections.ArrayList
+    $ctx.RequestsToLog = New-Object System.Collections.ArrayList
 
     # middleware that needs to run
-    $session.Server.Middleware = @()
+    $ctx.Server.Middleware = @()
 
     # endware that needs to run
-    $session.Server.Endware = @()
+    $ctx.Server.Endware = @()
 
     # runspace pools
-    $session.RunspacePools = @{
+    $ctx.RunspacePools = @{
         'Main' = $null;
         'Schedules' = $null;
         'Gui' = $null;
     }
 
     # session state
-    $session.Lockable = [hashtable]::Synchronized(@{})
+    $ctx.Lockable = [hashtable]::Synchronized(@{})
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule((Get-Module -Name Pode).Path)
 
-    $_session = New-PodeStateSession $session
+    $_session = New-PodeStateContext $ctx
 
     $variables = @(
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $_session, $null),
@@ -180,7 +180,7 @@ function New-PodeContext
     }
 
     # setup runspaces
-    $session.Runspaces = @()
+    $ctx.Runspaces = @()
 
     # setup main runspace pool
     $threadsCounts = @{
@@ -192,41 +192,41 @@ function New-PodeContext
     }
 
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $Threads
-    $session.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $state, $Host)
-    $session.RunspacePools.Main.Open()
+    $ctx.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $state, $Host)
+    $ctx.RunspacePools.Main.Open()
 
     # setup schedule runspace pool
-    $session.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
-    $session.RunspacePools.Schedules.Open()
+    $ctx.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
+    $ctx.RunspacePools.Schedules.Open()
 
     # setup gui runspace pool (only for non-ps-core)
     if (!(Test-IsPSCore)) {
-        $session.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $state, $Host)
-        $session.RunspacePools.Gui.ApartmentState = 'STA'
-        $session.RunspacePools.Gui.Open()
+        $ctx.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $state, $Host)
+        $ctx.RunspacePools.Gui.ApartmentState = 'STA'
+        $ctx.RunspacePools.Gui.Open()
     }
 
-    # return the new session
-    return $session
+    # return the new context
+    return $ctx
 }
 
-function New-PodeStateSession
+function New-PodeStateContext
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Session
+        $Context
     )
 
     return (New-Object -TypeName psobject |
-        Add-Member -MemberType NoteProperty -Name Threads -Value $Session.Threads -PassThru |
-        Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
-        Add-Member -MemberType NoteProperty -Name Schedules -Value $Session.Schedules -PassThru |
-        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Session.RunspacePools -PassThru |
-        Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
-        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
-        Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
-        Add-Member -MemberType NoteProperty -Name Server -Value $Session.Server -PassThru)
+        Add-Member -MemberType NoteProperty -Name Threads -Value $Context.Threads -PassThru |
+        Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
+        Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
+        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
+        Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
+        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Context.RequestsToLog -PassThru |
+        Add-Member -MemberType NoteProperty -Name Lockable -Value $Context.Lockable -PassThru |
+        Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
 }
 
 function State
@@ -333,13 +333,13 @@ function Listen
         };
     }
 
-    # set the ip for the session
+    # set the ip for the context
     $obj.Address = (Get-IPAddress $_endpoint.Host)
     if (!(Test-IPAddressLocalOrAny -IP $obj.Address)) {
         $obj.HostName = "$($obj.Address)"
     }
 
-    # set the port for the session
+    # set the port for the context
     $obj.Port = $_endpoint.Port
 
     # if the server type is https, set cert details

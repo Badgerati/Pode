@@ -20,11 +20,11 @@ Describe 'State' {
     }
 
     Context 'Valid parameters supplied' {
-        It 'Returns null for no session' {
+        It 'Returns null for no context' {
             State -Action Set -Name 'test' | Should Be $null
         }
 
-        It 'Returns null for no shared state in session' {
+        It 'Returns null for no shared state in context' {
             $PodeContext.Server = @{ 'State' = $null }
             State -Action Set -Name 'test' | Should Be $null
         }
@@ -333,7 +333,7 @@ Describe 'Script' {
     Context 'Valid parameters supplied' {
         Mock 'Resolve-Path' { return 'c:/some/file.txt' }
 
-        It 'Returns null for no shared state in session' {
+        It 'Returns null for no shared state in context' {
             $PodeContext = @{ 'RunspacePools' = @{
                 'Main' = @{
                     'InitialSessionState' = [initialsessionstate]::CreateDefault()
