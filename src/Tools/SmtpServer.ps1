@@ -6,13 +6,13 @@ function Start-SmtpServer
     }
 
     # grab the relavant port
-    $port = $PodeSession.Server.Endpoints[0].Port
+    $port = $PodeContext.Server.Endpoints[0].Port
     if ($port -eq 0) {
         $port = 25
     }
 
     # get the IP address for the server
-    $ipAddress = $PodeSession.Server.Endpoints[0].Address
+    $ipAddress = $PodeContext.Server.Endpoints[0].Address
     if (Test-Hostname -Hostname $ipAddress) {
         $ipAddress = (Get-IPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
         $ipAddress = (Get-IPAddress $ipAddress)
@@ -36,7 +36,7 @@ function Start-SmtpServer
     }
 
     # state where we're running
-    Write-Host "Listening on smtp://$($PodeSession.Server.Endpoints[0].HostName):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on smtp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {
@@ -63,7 +63,7 @@ function Start-SmtpServer
             $data = [string]::Empty
 
             # open response to smtp request
-            tcp write "220 $($PodeSession.Server.Endpoints[0].HostName) -- Pode Proxy Server"
+            tcp write "220 $($PodeContext.Server.Endpoints[0].HostName) -- Pode Proxy Server"
             $msg = [string]::Empty
 
             # respond to smtp request
@@ -108,7 +108,7 @@ function Start-SmtpServer
                             $SmtpEvent.From = $mail_from
                             $SmtpEvent.To = $rcpt_tos
                             $SmtpEvent.Data = $data
-                            $SmtpEvent.Lockable = $PodeSession.Lockable
+                            $SmtpEvent.Lockable = $PodeContext.Lockable
 
                             # call user handlers for processing smtp data
                             Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
@@ -126,11 +126,11 @@ function Start-SmtpServer
 
         try
         {
-            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get an incoming request
                 $task = $Listener.AcceptTcpClientAsync()
-                $task.Wait($PodeSession.Tokens.Cancellation.Token)
+                $task.Wait($PodeContext.Tokens.Cancellation.Token)
                 $client = $task.Result
 
                 # convert the ip
@@ -146,7 +146,7 @@ function Start-SmtpServer
                     $SmtpEvent = @{}
                     $TcpEvent = @{
                         'Client' = $client;
-                        'Lockable' = $PodeSession.Lockable
+                        'Lockable' = $PodeContext.Lockable
                     }
 
                     Invoke-ScriptBlock -ScriptBlock $process
@@ -161,7 +161,7 @@ function Start-SmtpServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeSession.Threads | ForEach-Object {
+    1..$PodeContext.Threads | ForEach-Object {
         Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
             -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
@@ -176,7 +176,7 @@ function Start-SmtpServer
 
         try
         {
-            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 Start-Sleep -Seconds 1
             }

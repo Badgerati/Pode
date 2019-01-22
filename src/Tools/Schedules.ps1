@@ -7,12 +7,12 @@ function Get-PodeSchedule
         $Name
     )
 
-    return $PodeSession.Schedules[$Name]
+    return $PodeContext.Schedules[$Name]
 }
 
 function Start-ScheduleRunspace
 {
-    if ((Get-Count $PodeSession.Schedules) -eq 0) {
+    if ((Get-Count $PodeContext.Schedules) -eq 0) {
         return
     }
 
@@ -26,7 +26,7 @@ function Start-ScheduleRunspace
             $_now = [DateTime]::Now
 
             # select the schedules that need triggering
-            $PodeSession.Schedules.Values |
+            $PodeContext.Schedules.Values |
                 Where-Object {
                     ($null -eq $_.StartTime -or $_.StartTime -le $_now) -and
                     ($null -eq $_.EndTime -or $_.EndTime -ge $_now) -and
@@ -47,7 +47,7 @@ function Start-ScheduleRunspace
                 try {
                     # trigger the schedules logic
                     Add-PodeRunspace -Type 'Schedules' -ScriptBlock (($_.Script).GetNewClosure()) `
-                        -Parameters @{ 'Lockable' = $PodeSession.Lockable } -Forget
+                        -Parameters @{ 'Lockable' = $PodeContext.Lockable } -Forget
                 }
                 catch {
                     $Error[0]
@@ -58,13 +58,13 @@ function Start-ScheduleRunspace
             }
 
             # add any schedules to remove that have exceeded their end time
-            $_remove += @($PodeSession.Schedules.Values |
+            $_remove += @($PodeContext.Schedules.Values |
                 Where-Object { ($null -ne $_.EndTime -and $_.EndTime -lt $_now) }).Name
 
             # remove any schedules
             $_remove | ForEach-Object {
-                if ($PodeSession.Schedules.ContainsKey($_)) {
-                    $PodeSession.Schedules.Remove($_)
+                if ($PodeContext.Schedules.ContainsKey($_)) {
+                    $PodeContext.Schedules.Remove($_)
                 }
             }
 
@@ -112,7 +112,7 @@ function Schedule
     $Name = $Name.ToLowerInvariant()
 
     # ensure the schedule doesn't already exist
-    if ($PodeSession.Schedules.ContainsKey($Name)) {
+    if ($PodeContext.Schedules.ContainsKey($Name)) {
         throw "Schedule called $($Name) already exists"
     }
 
@@ -134,7 +134,7 @@ function Schedule
     $exp = ConvertFrom-CronExpression -Expression $Cron
 
     # add the schedule
-    $PodeSession.Schedules[$Name] = @{
+    $PodeContext.Schedules[$Name] = @{
         'Name' = $Name;
         'StartTime' = $StartTime;
         'EndTime' = $EndTime;

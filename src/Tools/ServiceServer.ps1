@@ -6,20 +6,20 @@ function Start-ServiceServer
     }
 
     # state we're running
-    Write-Host "Server looping every $($PodeSession.Server.Interval)secs" -ForegroundColor Yellow
+    Write-Host "Server looping every $($PodeContext.Server.Interval)secs" -ForegroundColor Yellow
 
     # script for the looping server
     $serverScript = {
         try
         {
-            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # invoke the service logic
                 Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'Service') -Scoped
-                #Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
+                #Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
 
                 # sleep before next run
-                Start-Sleep -Seconds $PodeSession.Server.Interval
+                Start-Sleep -Seconds $PodeContext.Server.Interval
             }
         }
         catch [System.OperationCanceledException] {}

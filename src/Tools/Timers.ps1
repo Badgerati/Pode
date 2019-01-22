@@ -7,12 +7,12 @@ function Get-PodeTimer
         $Name
     )
 
-    return $PodeSession.Timers[$Name]
+    return $PodeContext.Timers[$Name]
 }
 
 function Start-TimerRunspace
 {
-    if ((Get-Count $PodeSession.Timers) -eq 0) {
+    if ((Get-Count $PodeContext.Timers) -eq 0) {
         return
     }
 
@@ -22,7 +22,7 @@ function Start-TimerRunspace
             $_remove = @()
             $_now = [DateTime]::Now
 
-            $PodeSession.Timers.Values | Where-Object { $_.NextTick -le $_now } | ForEach-Object {
+            $PodeContext.Timers.Values | Where-Object { $_.NextTick -le $_now } | ForEach-Object {
                 $run = $true
 
                 # increment total number of runs for timer (do we still need to count?)
@@ -44,7 +44,7 @@ function Start-TimerRunspace
 
                 if ($run) {
                     try {
-                        Invoke-ScriptBlock -ScriptBlock $_.Script -Arguments @{ 'Lockable' = $PodeSession.Lockable } -Scoped
+                        Invoke-ScriptBlock -ScriptBlock $_.Script -Arguments @{ 'Lockable' = $PodeContext.Lockable } -Scoped
                     }
                     catch {
                         $Error[0]
@@ -56,7 +56,7 @@ function Start-TimerRunspace
 
             # remove any timers
             $_remove | ForEach-Object {
-                $PodeSession.Timers.Remove($_)
+                $PodeContext.Timers.Remove($_)
             }
 
             Start-Sleep -Seconds 1
@@ -100,7 +100,7 @@ function Timer
     $Name = $Name.ToLowerInvariant()
 
     # ensure the timer doesn't already exist
-    if ($PodeSession.Timers.ContainsKey($Name)) {
+    if ($PodeContext.Timers.ContainsKey($Name)) {
         throw "Timer called $($Name) already exists"
     }
 
@@ -125,11 +125,11 @@ function Timer
 
     # run script if it's not being skipped
     if ($Skip -eq 0) {
-        Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments @{ 'Lockable' = $PodeSession.Lockable } -Scoped
+        Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments @{ 'Lockable' = $PodeContext.Lockable } -Scoped
     }
 
     # add the timer
-    $PodeSession.Timers[$Name] = @{
+    $PodeContext.Timers[$Name] = @{
         'Name' = $Name;
         'Interval' = $Interval;
         'Limit' = $Limit;

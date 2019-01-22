@@ -19,7 +19,7 @@ Describe 'Get-PodeInbuiltMiddleware' {
 
     Context 'Valid parameters' {
         It 'using default inbuilt logic' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(
                 @{ 'Name' = $null; 'Logic' = { write-host 'pre1' } }
             ); }; }
 
@@ -29,12 +29,12 @@ Describe 'Get-PodeInbuiltMiddleware' {
             $logic.Name | Should Be '@access'
             $logic.Logic.ToString() | Should Be ({ write-host 'in1' }).ToString()
 
-            $PodeSession.Server.Middleware.Length | Should Be 1
-            $PodeSession.Server.Middleware[0].Logic | Should Be ({ write-host 'pre1' }).ToString()
+            $PodeContext.Server.Middleware.Length | Should Be 1
+            $PodeContext.Server.Middleware[0].Logic | Should Be ({ write-host 'pre1' }).ToString()
         }
 
         It 'using default override logic' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(
                 @{ 'Name' = $null; 'Logic' = { write-host 'pre1' } };
                 @{ 'Name' = '@access'; 'Logic' = { write-host 'over1' } }
             ); }; }
@@ -45,8 +45,8 @@ Describe 'Get-PodeInbuiltMiddleware' {
             $logic.Name | Should Be '@access'
             $logic.Logic.ToString() | Should Be ({ write-host 'over1' }).ToString()
 
-            $PodeSession.Server.Middleware.Length | Should Be 1
-            $PodeSession.Server.Middleware[0].Logic | Should Be ({ write-host 'pre1' }).ToString()
+            $PodeContext.Server.Middleware.Length | Should Be 1
+            $PodeContext.Server.Middleware[0].Logic | Should Be ({ write-host 'pre1' }).ToString()
         }
     }
 }
@@ -64,57 +64,57 @@ Describe 'Middleware' {
 
     Context 'Valid parameters' {
         It 'Adds single middleware script to list' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -ScriptBlock { write-host 'middle1' }
 
-            $PodeSession.Server.Middleware.Length | Should Be 1
-            $PodeSession.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $PodeContext.Server.Middleware.Length | Should Be 1
+            $PodeContext.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
         }
 
         It 'Adds single middleware script to list with route' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -Route '/api' -ScriptBlock { write-host 'middle1' }
 
-            $PodeSession.Server.Middleware.Length | Should Be 1
-            $PodeSession.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $PodeSession.Server.Middleware[0].Route | Should Be '/api'
+            $PodeContext.Server.Middleware.Length | Should Be 1
+            $PodeContext.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $PodeContext.Server.Middleware[0].Route | Should Be '/api'
         }
 
         It 'Adds single middleware script to list with route and return' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             $result = (Middleware -Route '/api' -ScriptBlock { write-host 'middle1' } -Return)
 
-            $PodeSession.Server.Middleware.Length | Should Be 0
+            $PodeContext.Server.Middleware.Length | Should Be 0
             $result.Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
             $result.Route | Should Be '/api'
         }
 
         It 'Adds two middleware scripts to list' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -ScriptBlock { write-host 'middle1' }
             Middleware -ScriptBlock { write-host 'middle2' }
 
-            $PodeSession.Server.Middleware.Length | Should Be 2
-            $PodeSession.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $PodeSession.Server.Middleware[1].Logic.ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
+            $PodeContext.Server.Middleware.Length | Should Be 2
+            $PodeContext.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $PodeContext.Server.Middleware[1].Logic.ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
         }
 
         It 'Adds middleware script to override inbuilt ones' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -ScriptBlock { write-host 'middle1' } -Name '@access'
 
-            $PodeSession.Server.Middleware.Length | Should Be 1
-            $PodeSession.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $PodeSession.Server.Middleware[0].Name | Should Be '@access'
+            $PodeContext.Server.Middleware.Length | Should Be 1
+            $PodeContext.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $PodeContext.Server.Middleware[0].Name | Should Be '@access'
         }
 
         It 'Throws error when adding middleware script with duplicate name' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -ScriptBlock { write-host 'middle1' } -Name '@access'
             { Middleware -ScriptBlock { write-host 'middle2' } -Name '@access' } | Should Throw 'already exists'
@@ -125,57 +125,57 @@ Describe 'Middleware' {
         }
 
         It 'Adds single middleware hash to list' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -HashTable @{ 'Logic' = { write-host 'middle1' } }
 
-            $PodeSession.Server.Middleware.Length | Should Be 1
-            $PodeSession.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $PodeContext.Server.Middleware.Length | Should Be 1
+            $PodeContext.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
         }
 
         It 'Adds single middleware hash to list with route' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -Route '/api' -HashTable @{ 'Logic' = { write-host 'middle1' } }
 
-            $PodeSession.Server.Middleware.Length | Should Be 1
-            $PodeSession.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $PodeSession.Server.Middleware[0].Route | Should Be '/api'
+            $PodeContext.Server.Middleware.Length | Should Be 1
+            $PodeContext.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $PodeContext.Server.Middleware[0].Route | Should Be '/api'
         }
 
         It 'Adds single middleware hash to list with route and return' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             $result = (Middleware -Route '/api' -HashTable @{ 'Logic' = { write-host 'middle1' } } -Return)
 
-            $PodeSession.Server.Middleware.Length | Should Be 0
+            $PodeContext.Server.Middleware.Length | Should Be 0
             $result.Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
             $result.Route | Should Be '/api'
         }
 
         It 'Adds two middleware hashs to list' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -HashTable @{ 'Logic' = { write-host 'middle1' } }
             Middleware -HashTable @{ 'Logic' = { write-host 'middle2' } }
 
-            $PodeSession.Server.Middleware.Length | Should Be 2
-            $PodeSession.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $PodeSession.Server.Middleware[1].Logic.ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
+            $PodeContext.Server.Middleware.Length | Should Be 2
+            $PodeContext.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $PodeContext.Server.Middleware[1].Logic.ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
         }
 
         It 'Adds middleware hash to override inbuilt ones' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -HashTable @{ 'Logic' = { write-host 'middle1' } } -Name '@access'
 
-            $PodeSession.Server.Middleware.Length | Should Be 1
-            $PodeSession.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $PodeSession.Server.Middleware[0].Name | Should Be '@access'
+            $PodeContext.Server.Middleware.Length | Should Be 1
+            $PodeContext.Server.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+            $PodeContext.Server.Middleware[0].Name | Should Be '@access'
         }
 
         It 'Throws error when adding middleware hash with duplicate name' {
-            $PodeSession = @{ 'Server' = @{ 'Middleware' = @(); }; }
+            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Middleware -HashTable @{ 'Logic' = { write-host 'middle1' } } -Name '@access'
             { Middleware -HashTable @{ 'Logic' = { write-host 'middle2' } } -Name '@access' } | Should Throw 'already exists'
