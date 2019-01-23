@@ -1,4 +1,4 @@
-# Pode
+# <img src="https://github.com/Badgerati/Pode/blob/develop/images/icon.png?raw=true" width="25" /> Pode
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://badgerati.github.io/Pode)
@@ -10,7 +10,12 @@
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a Cross-Platform PowerShell framework to create web servers that host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. It also allows you to render dynamic files using [Pode](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which is effectively embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines.
+Pode is a Cross-Platform PowerShell framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines. plus many more featuers!
+
+<p align="center">
+    <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code.png?raw=true" />
+</p>
+
 
 ## Documentation
 
