@@ -7,9 +7,9 @@
     <version>$version$</version>
     <authors>Badgerati</authors>
     <owners>Badgerati</owners>
-    <summary>Pode is a Cross-Platform PowerShell framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers</summary>
+    <summary>Pode is a Cross-Platform PowerShell framework for creating web servers to host REST APIs, Web Sites, and TCP/SMTP Servers</summary>
     <description>
-Pode is a Cross-Platform PowerShell framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers
+Pode is a Cross-Platform PowerShell framework for creating web servers to host REST APIs, Web Sites, and TCP/SMTP Servers
 
 ### Features
 
