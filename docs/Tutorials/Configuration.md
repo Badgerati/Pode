@@ -1,6 +1,6 @@
 # Configuration
 
-There is an *optional* configuration file that can work side-by-side with Pode. This file should be called `pode.json`, and must be placed in the same root directory as your main server script.
+There is an *optional* configuration file that can be used with Pode called called `pode.json`, and should be located at the root directory of your server script.
 
 ## Structure
 
@@ -22,7 +22,7 @@ After this, you can put whatever else you want into the configuration file.
 
 ## Usage
 
-The configuration file is automatically loaded when you start your server. Pode will look at the root of your server for a `pode.json` file, and if found it will be loaded internally.
+The configuration file is automatically loaded when you start your server. Pode will look in the root directory of your server for a `pode.json` file, and if found it will be loaded internally.
 
 Within your scripts you can use the [`Get-PodeConfiguration`](../../Functions/Helpers/Get-PodeConfiguration) function, which will return the contents of the file.
 
@@ -34,7 +34,7 @@ For example, say you have the following `pode.json`:
 }
 ```
 
-Then you can get the port number via:
+Then you can get and use the port number via:
 
 ```powershell
 Server {
@@ -45,4 +45,6 @@ Server {
 
 ## Environments
 
-lorem
+Besides the default `pode.json` file, Pode also supports environmental files based on the `$env:PODE_ENVIRONMENT` environment variable.
+
+For example, if you set the `PODE_ENVIRONMENT` variable to `dev`, then Pode will look for `pode.dev.json` first. If `pode.dev.json` does not exist, then the default `pode.json` is loaded instead.
