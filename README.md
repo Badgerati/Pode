@@ -1,4 +1,4 @@
-# Pode
+# <img src="https://github.com/Badgerati/Pode/blob/develop/images/icon.png?raw=true" width="25" /> Pode
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://badgerati.github.io/Pode)
@@ -10,7 +10,13 @@
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a Cross-Platform PowerShell framework to create web servers that host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. It also allows you to render dynamic files using [Pode](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which is effectively embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines.
+Pode is a Cross-Platform PowerShell framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines. Plus many more features!
+
+<p align="center">
+    <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code.png?raw=true" />
+</p>
+
+See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app!
 
 ## Documentation
 
@@ -43,22 +49,6 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Authentication on requests, such as Basic and Windows Active Directory
 * (Windows) Generate/bind self-signed certificates, and signed certificates
 * (Windows) Open the hosted server as a desktop application
-
-## Build Your First App
-
-Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will listen on an endpoint, create the route, and respond with JSON when `http://localhost:8080/ping` is hit:
-
-```powershell
-Server {
-    listen localhost:8080 http
-
-    route get '/ping' {
-        json @{ 'value' = 'pong' }
-    }
-}
-```
-
-See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app!
 
 ## Install
 

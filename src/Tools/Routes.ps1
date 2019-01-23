@@ -551,7 +551,7 @@ function Split-PodeRouteQuery
 
 function Get-PodeStaticRouteDefaults
 {
-    $config = $PodeContext.Server.Configuration
+    $config = Get-PodeConfiguration
     if (!(Test-Empty $config) -and $null -ne $config.web.static.defaults) {
         return @($config.web.static.defaults)
     }

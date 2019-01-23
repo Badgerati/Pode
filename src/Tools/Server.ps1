@@ -227,6 +227,9 @@ function Restart-PodeServer
         dispose $PodeContext.Tokens.Restart
         $PodeContext.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
 
+        # reload the configuration
+        $PodeContext.Server.Configuration = Open-PodeConfiguration
+
         Write-Host " Done" -ForegroundColor Green
 
         # restart the server

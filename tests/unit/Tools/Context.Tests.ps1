@@ -4,6 +4,16 @@ Get-ChildItem "$($src)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
 $PodeContext = @{ 'Server' = $null; }
 
+Describe 'Get-PodeConfiguration' {
+    It 'Returns JSON config' {
+        $json = '{ "settings": { "port": 90 } }'
+        $PodeContext.Server = @{ 'Configuration' = ($json | ConvertFrom-Json) }
+        $config = Get-PodeConfiguration
+        $config | Should Not Be $null
+        $config.settings.port | Should Be 90
+    }
+}
+
 Describe 'State' {
     Context 'Invalid parameters supplied' {
         It 'Throw null name parameter error' {
