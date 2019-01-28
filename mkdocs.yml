@@ -96,6 +96,7 @@ nav:
 
     - Helpers:
       - Coalesce: Functions/Helpers/Coalesce.md
+      - Get-PodeConfiguration: Functions/Helpers/Get-PodeConfiguration.md
       - Invoke-ScriptBlock: Functions/Helpers/Invoke-ScriptBlock.md
       - Test-Empty: Functions/Helpers/Test-Empty.md
       - Test-IsPSCore: Functions/Helpers/Test-IsPSCore.md

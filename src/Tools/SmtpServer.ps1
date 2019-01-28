@@ -95,7 +95,7 @@ function Start-SmtpServer
 
                         if ($msg.StartsWith('MAIL FROM')) {
                             tcp write '250 OK'
-                            $mail_from = Get-SmtpEmail $msg
+                            $mail_from = (Get-SmtpEmail $msg)
                         }
 
                         if ($msg.StartsWith('DATA'))
@@ -108,7 +108,14 @@ function Start-SmtpServer
                             $SmtpEvent.From = $mail_from
                             $SmtpEvent.To = $rcpt_tos
                             $SmtpEvent.Data = $data
+                            $SmtpEvent.Subject = (Get-SmtpSubject $data)
                             $SmtpEvent.Lockable = $PodeContext.Lockable
+
+                            # set the email body/type
+                            $info = (Get-SmtpBody $data)
+                            $SmtpEvent.Body = $info.Body
+                            $SmtpEvent.ContentType = $info.ContentType
+                            $SmtpEvent.ContentEncoding = $info.ContentEncoding
 
                             # call user handlers for processing smtp data
                             Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
@@ -205,10 +212,106 @@ function Get-SmtpEmail
         $Value
     )
 
-    $tmp = ($Value -isplit ':')
+    $tmp = @($Value -isplit ':')
     if ($tmp.Length -gt 1) {
-        return $tmp[1].Trim().Trim('<', '>')
+        return $tmp[1].Trim().Trim(' <>')
     }
 
     return [string]::Empty
+}
+
+function Get-SmtpSubject
+{
+    param (
+        [Parameter()]
+        [string]
+        $Data
+    )
+
+    return (Get-SmtpLineFromData -Data $Data -Name 'Subject')
+}
+
+function Get-SmtpBody
+{
+    param (
+        [Parameter()]
+        [string]
+        $Data
+    )
+
+    # body info object
+    $BodyInfo = @{
+        'ContentType' = $null;
+        'ContentEncoding' = $null;
+        'Body' = $null;
+    }
+
+    # get the content type
+    $BodyInfo.ContentType = (Get-SmtpLineFromData -Data $Data -Name 'Content-Type')
+
+    # get the content encoding
+    $BodyInfo.ContentEncoding = (Get-SmtpLineFromData -Data $Data -Name 'Content-Transfer-Encoding')
+
+    # split the message up
+    $dataSplit = @($Data -isplit [System.Environment]::NewLine)
+
+    # get the index of the first blank line, and last dot
+    $indexOfBlankLine = $dataSplit.IndexOf([string]::Empty)
+    $indexOfLastDot = [array]::LastIndexOf($dataSplit, '.')
+
+    # get the body
+    $BodyInfo.Body = ($dataSplit[($indexOfBlankLine + 1)..($indexOfLastDot - 2)] -join [System.Environment]::NewLine)
+
+    # if there's no body, just return
+    if (($indexOfLastDot -eq -1) -or (Test-Empty $BodyInfo.Body)) {
+        return $BodyInfo
+    }
+
+    # decode body based on encoding
+    switch ($BodyInfo.ContentEncoding.ToLowerInvariant()) {
+        'base64' {
+            $BodyInfo.Body = [System.Convert]::FromBase64String($BodyInfo.Body)
+        }
+    }
+
+    # only if body is bytes, first decode based on type
+    switch ($BodyInfo.ContentType) {
+        { $_ -ilike '*utf-7*' } {
+            $BodyInfo.Body = [System.Text.Encoding]::UTF7.GetString($BodyInfo.Body)
+        }
+
+        { $_ -ilike '*utf-8*' } {
+            $BodyInfo.Body = [System.Text.Encoding]::UTF8.GetString($BodyInfo.Body)
+        }
+
+        { $_ -ilike '*utf-16*' } {
+            $BodyInfo.Body = [System.Text.Encoding]::Unicode.GetString($BodyInfo.Body)
+        }
+
+        { $_ -ilike '*utf-32*' } {
+            $BodyInfo.Body = [System.Text.Encoding]::UTF32.GetString($BodyInfo.Body)
+        }
+    }
+
+    return $BodyInfo
+}
+
+function Get-SmtpLineFromData
+{
+    param (
+        [Parameter()]
+        [string]
+        $Data,
+
+        [Parameter()]
+        [string]
+        $Name
+    )
+
+    $line = (@($Data -isplit [System.Environment]::NewLine) | Where-Object {
+        $_ -ilike "$($Name):*"
+    } | Select-Object -First 1)
+
+    return ($line -ireplace "^$($Name)\:\s+", '').Trim()
+
 }
