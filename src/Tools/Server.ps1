@@ -32,6 +32,16 @@ function Server
         [int]
         $Threads = 1,
 
+        [Parameter()]
+        [Alias('fme')]
+        [string[]]
+        $FileMonitorExclude,
+
+        [Parameter()]
+        [Alias('fmi')]
+        [string[]]
+        $FileMonitorInclude,
+
         [switch]
         $Smtp,
 
@@ -45,12 +55,15 @@ function Server
         $Https,
 
         [switch]
+        [Alias('dt')]
         $DisableTermination,
 
         [switch]
+        [Alias('dl')]
         $DisableLogging,
 
         [switch]
+        [Alias('fm')]
         $FileMonitor
     )
 
@@ -76,6 +89,8 @@ function Server
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot $MyInvocation.PSScriptRoot `
+            -FileMonitorExclude $FileMonitorExclude `
+            -FileMonitorInclude $FileMonitorInclude `
             -DisableLogging:$DisableLogging `
             -FileMonitor:$FileMonitor
 
