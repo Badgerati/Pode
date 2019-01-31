@@ -1336,3 +1336,57 @@ function Test-PathIsDirectory
 
     return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
+
+function Convert-PathSeparators
+{
+    param (
+        [Parameter()]
+        $Paths
+    )
+
+    return @($Paths | ForEach-Object {
+        if (!(Test-Empty $_)) {
+            $_ -ireplace '[\\/]', [System.IO.Path]::DirectorySeparatorChar
+        }
+    })
+}
+
+function Convert-PathPatternToRegex
+{
+    param (
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    $Path = $Path -ireplace '\.', '\.'
+    $Path = $Path -ireplace '[\\/]', '[\\/]'
+    $Path = $Path -ireplace '\*', '.*?'
+    return "^$($Path)$"
+}
+
+function Convert-PathPatternsToRegex
+{
+    param (
+        [Parameter()]
+        [string[]]
+        $Paths
+    )
+
+    # if no paths, return null
+    if (Test-Empty $Paths) {
+        return $null
+    }
+
+    # replace certain chars
+    $Paths = @($Paths | ForEach-Object {
+        if (!(Test-Empty $_)) {
+            $tmp = $_ -ireplace '\.', '\.'
+            $tmp = $tmp -ireplace '[\\/]', '[\\/]'
+            $tmp -ireplace '\*', '.*?'
+        }
+    })
+
+    # join them all together
+    return "^($($Paths -join '|'))$"
+}

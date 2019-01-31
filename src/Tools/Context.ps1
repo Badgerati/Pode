@@ -16,6 +16,12 @@ function New-PodeContext
         [string]
         $Name = $null,
 
+        [string[]]
+        $FileMonitorExclude = $null,
+
+        [string[]]
+        $FileMonitorInclude = $null,
+
         [switch]
         $DisableLogging,
 
@@ -50,16 +56,36 @@ function New-PodeContext
     $ctx.Server.Root = $ServerRoot
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.Interval = $Interval
-    $ctx.Server.FileMonitor = $FileMonitor
+
+    # check if there is any global configuration
+    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot
+
+    # setup file monitoring details (code has priority over config)
+    if (!(Test-Empty $ctx.Server.Configuration)) {
+        if (!$FileMonitor) {
+            $FileMonitor = [bool]$ctx.Server.Configuration.server.fileMonitor.enable
+        }
+
+        if (Test-Empty $FileMonitorExclude) {
+            $FileMonitorExclude = $ctx.Server.Configuration.server.fileMonitor.exclude
+        }
+
+        if (Test-Empty $FileMonitorInclude) {
+            $FileMonitorInclude = $ctx.Server.Configuration.server.fileMonitor.include
+        }
+    }
+
+    $ctx.Server.FileMonitor = @{
+        'Enabled' = $FileMonitor;
+        'Exclude' = (Convert-PathPatternsToRegex -Paths $FileMonitorExclude);
+        'Include' = (Convert-PathPatternsToRegex -Paths $FileMonitorInclude);
+    }
 
     # set the server default type
     $ctx.Server.Type = ([string]::Empty)
     if ($Interval -gt 0) {
         $ctx.Server.Type = 'SERVICE'
     }
-
-    # check if there is any global configuration
-    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot
 
     # set the IP address details
     $ctx.Server.Endpoints = @()

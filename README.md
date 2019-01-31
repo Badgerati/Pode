@@ -32,7 +32,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 
 ## Features
 
-* Cross-platform via PowerShell Core (with support for PS4.0+)
+* Cross-platform using PowerShell Core (with support for PS4.0+)
 * Listen on a single or multiple IP address/hostnames
 * Support for HTTP, HTTPS, TCP and SMTP
 * Host REST APIs, Web Pages, and Static Content
@@ -40,7 +40,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes
 * Async scheduled tasks using cron expressions for short/long-running processes
-* Supports logging to CLI, Files, and custom loggers to other services like LogStash, etc.
+* Supports request logging to CLI, Files, and custom loggers to other services like LogStash
 * Cross-state variable access across multiple runspaces
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
@@ -64,3 +64,7 @@ Install-Module -Name Pode
 # docker
 docker pull badgerati/pode
 ```
+
+## Contributing
+
+Pull Requests, Bug Reports and Feature Requests are welcome!
