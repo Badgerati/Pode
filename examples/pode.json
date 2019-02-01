@@ -4,7 +4,11 @@
             "defaults": [
                 "index.html",
                 "default.html"
-            ]
+            ],
+            "cache": {
+                "enable": true,
+                "maxAge": 15
+            }
         }
     }
 }
