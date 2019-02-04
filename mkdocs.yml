@@ -28,6 +28,7 @@ nav:
       - Status Codes: Tutorials/Routes/StatusCodes.md
       - Redirecting: Tutorials/Routes/Redirecting.md
       - Web Pages: Tutorials/Routes/WebPages.md
+      - Static Content: Tutorials/Routes/StaticContent.md
       - Login Page: Tutorials/Routes/LoginPage.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md

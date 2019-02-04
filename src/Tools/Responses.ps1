@@ -25,12 +25,9 @@ function Write-ToResponse
         return
     }
 
-    # get config
-    $config = Get-PodeConfiguration
-
     # set a cache value
-    if ($Cache -and [bool]$config.web.static.cache.enable) {
-        $age = [int](coalesce $config.web.static.cache.maxAge 3600)
+    if ($Cache) {
+        $age = $PodeContext.Server.Web.Static.Cache.MaxAge
         $res.AddHeader('Cache-Control', "max-age=$($age), must-revalidate")
         $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($age).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
     }

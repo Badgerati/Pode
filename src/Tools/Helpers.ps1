@@ -1370,8 +1370,16 @@ function Convert-PathPatternsToRegex
     param (
         [Parameter()]
         [string[]]
-        $Paths
+        $Paths,
+
+        [switch]
+        $NotSlashes
     )
+
+    # remove any empty entries
+    $Paths = @($Paths | Where-Object {
+        !(Test-Empty $_)
+    })
 
     # if no paths, return null
     if (Test-Empty $Paths) {
@@ -1382,7 +1390,11 @@ function Convert-PathPatternsToRegex
     $Paths = @($Paths | ForEach-Object {
         if (!(Test-Empty $_)) {
             $tmp = $_ -ireplace '\.', '\.'
-            $tmp = $tmp -ireplace '[\\/]', '[\\/]'
+
+            if (!$NotSlashes) {
+                $tmp = $tmp -ireplace '[\\/]', '[\\/]'
+            }
+
             $tmp -ireplace '\*', '.*?'
         }
     })
