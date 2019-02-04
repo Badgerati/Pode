@@ -35,7 +35,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Cross-platform using PowerShell Core (with support for PS4.0+)
 * Listen on a single or multiple IP address/hostnames
 * Support for HTTP, HTTPS, TCP and SMTP
-* Host REST APIs, Web Pages, and Static Content
+* Host REST APIs, Web Pages, and Static Content (with caching)
 * Multi-thread support for incoming requests
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes
