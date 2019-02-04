@@ -300,7 +300,7 @@ function Set-PodeWebConfiguration
 
     $Context.Server.Web = @{
         'Static' = @{
-            'Defaults' = @($Configuration.web.static.defaults);
+            'Defaults' = $Configuration.web.static.defaults;
             'Cache' = @{
                 'Enabled' = [bool]$Configuration.web.static.cache.enable;
                 'MaxAge' = [int](coalesce $Configuration.web.static.cache.maxAge 3600);
