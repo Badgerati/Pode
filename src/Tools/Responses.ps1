@@ -7,25 +7,39 @@ function Write-ToResponse
 
         [Parameter()]
         [string]
-        $ContentType = $null
+        $ContentType = $null,
+
+        [switch]
+        $Cache
     )
 
+    # if there's nothing to write, return
     if (Test-Empty $Value) {
         return
     }
 
     $res = $WebEvent.Response
-    if ($null -eq $res -or $null -eq $res.OutputStream -or !$res.OutputStream.CanWrite) {
+
+    # if the response stream isn't writable, return
+    if (($null -eq $res) -or ($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite) {
         return
     }
 
+    # set a cache value
+    if ($Cache) {
+        $age = $PodeContext.Server.Web.Static.Cache.MaxAge
+        $res.AddHeader('Cache-Control', "max-age=$($age), must-revalidate")
+        $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($age).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
+    }
+
+    # specify the content-type if supplied
     if (!(Test-Empty $ContentType)) {
         $res.ContentType = $ContentType
     }
 
+    # write the content to the response
     $Value = ConvertFrom-ValueToBytes -Value $Value
     $res.ContentLength64 = $Value.Length
-
     Write-BytesToStream -Bytes $Value -Stream $res.OutputStream -CheckNetwork
 }
 
@@ -34,7 +48,10 @@ function Write-ToResponseFromFile
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Path
+        $Path,
+
+        [switch]
+        $Cache
     )
 
     # test the file path, and set status accordingly
@@ -45,9 +62,10 @@ function Write-ToResponseFromFile
     # are we dealing with a dynamic file for the view engine?
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
+    # this is a static file
     if ((Test-Empty $ext) -or $ext -ine $PodeContext.Server.ViewEngine.Extension) {
         $content = Get-ContentAsBytes -Path $Path
-        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
+        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext) -Cache:$Cache
         return
     }
 

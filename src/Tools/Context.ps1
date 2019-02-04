@@ -58,7 +58,7 @@ function New-PodeContext
     $ctx.Server.Interval = $Interval
 
     # check if there is any global configuration
-    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot
+    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
     # setup file monitoring details (code has priority over config)
     if (!(Test-Empty $ctx.Server.Configuration)) {
@@ -67,11 +67,11 @@ function New-PodeContext
         }
 
         if (Test-Empty $FileMonitorExclude) {
-            $FileMonitorExclude = $ctx.Server.Configuration.server.fileMonitor.exclude
+            $FileMonitorExclude = @($ctx.Server.Configuration.server.fileMonitor.exclude)
         }
 
         if (Test-Empty $FileMonitorInclude) {
-            $FileMonitorInclude = $ctx.Server.Configuration.server.fileMonitor.include
+            $FileMonitorInclude = @($ctx.Server.Configuration.server.fileMonitor.include)
         }
     }
 
@@ -260,7 +260,10 @@ function Open-PodeConfiguration
     param (
         [Parameter()]
         [string]
-        $ServerRoot = $null
+        $ServerRoot = $null,
+
+        [Parameter()]
+        $Context
     )
 
     $config = @{}
@@ -279,9 +282,33 @@ function Open-PodeConfiguration
     # check the path exists, and load the config
     if (Test-PodePath -Path $configPath -NoStatus) {
         $config = (Get-Content $configPath -Raw | ConvertFrom-Json)
+        Set-PodeWebConfiguration -Configuration $config -Context $Context
     }
 
     return $config
+}
+
+function Set-PodeWebConfiguration
+{
+    param (
+        [Parameter()]
+        $Configuration,
+
+        [Parameter()]
+        $Context
+    )
+
+    $Context.Server.Web = @{
+        'Static' = @{
+            'Defaults' = $Configuration.web.static.defaults;
+            'Cache' = @{
+                'Enabled' = [bool]$Configuration.web.static.cache.enable;
+                'MaxAge' = [int](coalesce $Configuration.web.static.cache.maxAge 3600);
+                'Include' = (Convert-PathPatternsToRegex -Paths @($Configuration.web.static.cache.include) -NotSlashes);
+                'Exclude' = (Convert-PathPatternsToRegex -Paths @($Configuration.web.static.cache.exclude) -NotSlashes);
+            }
+        }
+    }
 }
 
 function State

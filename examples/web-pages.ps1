@@ -16,7 +16,7 @@ Server -Threads 2 {
     listen localhost:$Port http
     listen localhost:8090 http
 
-    limit ip @('127.0.0.1', '[::1]') 5 10
+    # limit ip @('127.0.0.1', '[::1]') 5 10
 
     # allow the local ip and some other ips
     access allow ip @('127.0.0.1', '[::1]')

@@ -243,7 +243,7 @@ function Restart-PodeServer
         $PodeContext.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
 
         # reload the configuration
-        $PodeContext.Server.Configuration = Open-PodeConfiguration
+        $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
         Write-Host " Done" -ForegroundColor Green
 
