@@ -822,6 +822,11 @@ function Lock
     }
 }
 
+function Root
+{
+    return $PodeContext.Server.Root
+}
+
 function Join-ServerRoot
 {
     param (

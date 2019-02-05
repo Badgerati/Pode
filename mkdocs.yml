@@ -90,6 +90,7 @@ nav:
       - Dispose: Functions/Utility/Dispose.md
       - Include: Functions/Utility/Include.md
       - Lock: Functions/Utility/Lock.md
+      - Root: Functions/Utility/Root.md
       - Save: Functions/Utility/Save.md
       - State: Functions/Utility/State.md
       - Stopwatch: Functions/Utility/Stopwatch.md
