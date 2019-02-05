@@ -419,6 +419,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Getting-Started/KnownIssues/" title="Known Issues" class="md-nav__link">
+      Known Issues
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -580,6 +592,20 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#usage" title="Usage" class="md-nav__link">
+    Usage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environments" title="Environments" class="md-nav__link">
+    Environments
+  </a>
+  
+</li>
+      
       
       
       
@@ -654,6 +680,18 @@
   <li class="md-nav__item">
     <a href="../Routes/WebPages/" title="Web Pages" class="md-nav__link">
       Web Pages
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Routes/StaticContent/" title="Static Content" class="md-nav__link">
+      Static Content
     </a>
   </li>
 
@@ -1468,6 +1506,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Utility/Root/" title="Root" class="md-nav__link">
+      Root
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Utility/Save/" title="Save" class="md-nav__link">
       Save
     </a>
@@ -1554,6 +1604,18 @@
   <li class="md-nav__item">
     <a href="../../Functions/Helpers/Coalesce/" title="Coalesce" class="md-nav__link">
       Coalesce
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
+      Get-PodeConfiguration
     </a>
   </li>
 
@@ -1655,6 +1717,20 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#usage" title="Usage" class="md-nav__link">
+    Usage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environments" title="Environments" class="md-nav__link">
+    Environments
+  </a>
+  
+</li>
+      
       
       
       
@@ -1675,16 +1751,12 @@
                 
                 
                 <h1 id="configuration">Configuration</h1>
-<p>There is an <em>optional</em> configuration file that can work side-by-side with Pode. This file should be called <code>pode.json</code>, and must be placed in the same root directory as your main server script.</p>
-<p>A lot of inbuilt configuration in Pode can be customised via the main server script, however there are times when it's easier to just use a configuration file - hence the optional existance of a <code>pode.json</code> file.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This file does not have to exist, unless you wish to use it.</p>
-</div>
+<p>There is an <em>optional</em> configuration file that can be used with Pode called called <code>pode.json</code>, and should be located at the root directory of your server script.</p>
 <h2 id="structure">Structure</h2>
-<p>The file itself is just basic JSON, and has 4 main sections:</p>
+<p>The configuration file is just plain JSON, so normal JSON syntax applies. Within the file you can put any settings you want however, there are 5 defined sections that should ideally be left for Pode:</p>
 <div class="codehilite"><pre><span></span><span class="p">{</span>
     <span class="nt">&quot;server&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="p">},</span>
+    <span class="nt">&quot;service&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="p">},</span>
     <span class="nt">&quot;web&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="p">},</span>
     <span class="nt">&quot;smtp&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="p">},</span>
     <span class="nt">&quot;tcp&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="p">}</span>
@@ -1692,7 +1764,29 @@
 </pre></div>
 
 
-<p>Right now there is only one section that if of any use, and that is <code>web/static/defaults</code> for defining default static page (as <a href="../Routes/Overview#default-pages">seen here</a>).</p>
+<p>These 5 sections apply to the different server types you can build with Pode, and could be used for later inbuilt options (such as the current <code>web/static/defaults</code> for defining <a href="../Routes/Overview#default-pages">default static pages</a>).</p>
+<p>After this, you can put whatever else you want into the configuration file.</p>
+<h2 id="usage">Usage</h2>
+<p>The configuration file is automatically loaded when you start your server. Pode will look in the root directory of your server for a <code>pode.json</code> file, and if found it will be loaded internally.</p>
+<p>Within your scripts you can use the <a href="../../Functions/Helpers/Get-PodeConfiguration"><code>Get-PodeConfiguration</code></a> function, which will return the contents of the file.</p>
+<p>For example, say you have the following <code>pode.json</code>:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="mi">8080</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Then you can get and use the port number via:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="nv">$port</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-PodeConfiguration</span><span class="p">).</span><span class="n">port</span>
+    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="nv">$port</span> <span class="n">http</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="environments">Environments</h2>
+<p>Besides the default <code>pode.json</code> file, Pode also supports environmental files based on the <code>$env:PODE_ENVIRONMENT</code> environment variable.</p>
+<p>For example, if you set the <code>PODE_ENVIRONMENT</code> variable to <code>dev</code>, then Pode will look for <code>pode.dev.json</code> first. If <code>pode.dev.json</code> does not exist, then the default <code>pode.json</code> is loaded instead.</p>
                 
                   
                 

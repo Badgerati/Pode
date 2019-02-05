@@ -419,6 +419,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Getting-Started/KnownIssues/" title="Known Issues" class="md-nav__link">
+      Known Issues
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -634,26 +646,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#static-content" title="Static Content" class="md-nav__link">
-    Static Content
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#default-pages" title="Default Pages" class="md-nav__link">
-    Default Pages
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
       
       
       
@@ -697,6 +689,18 @@
   <li class="md-nav__item">
     <a href="../WebPages/" title="Web Pages" class="md-nav__link">
       Web Pages
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../StaticContent/" title="Static Content" class="md-nav__link">
+      Static Content
     </a>
   </li>
 
@@ -1511,6 +1515,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Utility/Root/" title="Root" class="md-nav__link">
+      Root
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Utility/Save/" title="Save" class="md-nav__link">
       Save
     </a>
@@ -1597,6 +1613,18 @@
   <li class="md-nav__item">
     <a href="../../../Functions/Helpers/Coalesce/" title="Coalesce" class="md-nav__link">
       Coalesce
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
+      Get-PodeConfiguration
     </a>
   </li>
 
@@ -1716,26 +1744,6 @@
   <a href="#parameters" title="Parameters" class="md-nav__link">
     Parameters
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#static-content" title="Static Content" class="md-nav__link">
-    Static Content
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#default-pages" title="Default Pages" class="md-nav__link">
-    Default Pages
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1876,51 +1884,6 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 
 <p>The following request will invoke the above route:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="s1">&#39;http://localhost:8080/users/12345&#39;</span> <span class="n">-Method</span> <span class="n">Get</span>
-</pre></div>
-
-
-<h2 id="static-content">Static Content</h2>
-<p>The following is an example of using the <code>route</code> function to define routes to static content, that allow you to specify where to get static files from for certain routes. This example will define a static route for <code>/assets</code>, and will point to the route at the internal directory <code>./content/assets</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
-    <span class="n">route</span> <span class="n">static</span> <span class="s1">&#39;/assets&#39;</span> <span class="s1">&#39;./content/assets&#39;</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<p>The following request will retrieve an image from the <code>./content/assets/images</code> directory:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="s1">&#39;http://localhost:8080/assets/images/icon.png&#39;</span> <span class="n">-Method</span> <span class="n">Get</span>
-</pre></div>
-
-
-<h3 id="default-pages">Default Pages</h3>
-<p>Furthermore, for static content, Pode also supports returning default pages when a static content directory is requested. The inbuilt default pages are:</p>
-<div class="codehilite"><pre><span></span>index.html
-index.htm
-default.html
-default.htm
-</pre></div>
-
-
-<p>These pages are checked in order, and if one is found then its content is returned. Using the above static server script, if the <code>./content/assets/home</code> directory contained an <code>index.html</code> page, then the following request would return the content for the <code>index.html</code> page:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="s1">&#39;http://localhost:8080/assets/images/home&#39;</span> <span class="n">-Method</span> <span class="n">Get</span>
-</pre></div>
-
-
-<p>The default pages can be configured in two ways; either by using the <code>-Defaults</code> parameter on the <code>route</code>, or by setting the list in the <code>pode.json</code> <a href="../../Configuration">configuration file</a>. To set the defaults to be only a <code>home.html</code> page, both ways would work as follows:</p>
-<p><em>Defaults Parameter</em></p>
-<div class="codehilite"><pre><span></span><span class="n">route</span> <span class="n">static</span> <span class="s1">&#39;/assets&#39;</span> <span class="s1">&#39;./content/assets&#39;</span> <span class="n">-d</span> <span class="p">@(</span><span class="s1">&#39;home.html&#39;</span><span class="p">)</span>
-</pre></div>
-
-
-<p><em>Configuration File</em></p>
-<div class="codehilite"><pre><span></span><span class="p">{</span>
-    <span class="nt">&quot;web&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;static&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="nt">&quot;defaults&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="s2">&quot;home.html&quot;</span> <span class="p">]</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">}</span>
 </pre></div>
                 
                   

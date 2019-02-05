@@ -419,6 +419,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Getting-Started/KnownIssues/" title="Known Issues" class="md-nav__link">
+      Known Issues
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -616,6 +628,18 @@
   <li class="md-nav__item">
     <a href="../Routes/WebPages/" title="Web Pages" class="md-nav__link">
       Web Pages
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Routes/StaticContent/" title="Static Content" class="md-nav__link">
+      Static Content
     </a>
   </li>
 
@@ -1439,6 +1463,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Utility/Root/" title="Root" class="md-nav__link">
+      Root
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Utility/Save/" title="Save" class="md-nav__link">
       Save
     </a>
@@ -1525,6 +1561,18 @@
   <li class="md-nav__item">
     <a href="../../Functions/Helpers/Coalesce/" title="Coalesce" class="md-nav__link">
       Coalesce
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
+      Get-PodeConfiguration
     </a>
   </li>
 
@@ -1630,8 +1678,8 @@
                 
                 
                 <h1 id="smtp-server">SMTP Server</h1>
-<p>Pode has an inbuilt SMTP server which will automatically create a TCP listener on port 25 (unless you pass a different port number to <code>listen</code>).</p>
-<p>Unlike with web <code>route</code> logic, SMTP uses something called a <a href="../../Functions/Core/Handler"><code>handler</code></a>. You can only have one handler per <code>server</code>.</p>
+<p>Pode has an inbuilt SMTP server which will automatically creates a TCP listener on port 25 (unless you pass a different port number to <code>listen</code> function).</p>
+<p>Unlike with web <code>route</code> logic, SMTP uses the <a href="../../Functions/Core/Handler"><code>handler</code></a> function, which lets you specify logic for handling responses from TCP streams. Just note that you can only have one <code>handler</code> per <code>server</code>.</p>
 <p>To create a <code>handler</code> for the inbuilt SMTP server you can use the following example:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">25</span> <span class="n">smtp</span>
@@ -1647,7 +1695,53 @@
 </pre></div>
 
 
-<p>The SMTP <code>handler</code> will be passed the email received, and this object will have the <code>From</code> address, the single/multiple <code>To</code> addresses, and the raw <code>Data</code> of the email body.</p>
+<p>The SMTP <code>handler</code> will be passed the received email, and this object will have the following properties:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>From</td>
+<td>string</td>
+<td>The email address of the person sending the email</td>
+</tr>
+<tr>
+<td>To</td>
+<td>string[]</td>
+<td>The email addresses receiving the email (this is to, cc, and bcc)</td>
+</tr>
+<tr>
+<td>Subject</td>
+<td>string</td>
+<td>The subject of the email</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>string</td>
+<td>The body of the email, decoded depending on content type/encoding</td>
+</tr>
+<tr>
+<td>ContentType</td>
+<td>string</td>
+<td>The content type of the original email body</td>
+</tr>
+<tr>
+<td>ContentEncoding</td>
+<td>string</td>
+<td>The content encoding of the original email body</td>
+</tr>
+<tr>
+<td>Data</td>
+<td>string</td>
+<td>The full raw data of the email</td>
+</tr>
+</tbody>
+</table>
                 
                   
                 

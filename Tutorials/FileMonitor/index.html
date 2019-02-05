@@ -419,6 +419,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Getting-Started/KnownIssues/" title="Known Issues" class="md-nav__link">
+      Known Issues
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -495,9 +507,38 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        File Monitor
+      </label>
+    
     <a href="./" title="File Monitor" class="md-nav__link md-nav__link--active">
       File Monitor
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#includeexclude" title="Include/Exclude" class="md-nav__link">
+    Include/Exclude
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -625,6 +666,18 @@
   <li class="md-nav__item">
     <a href="../Routes/WebPages/" title="Web Pages" class="md-nav__link">
       Web Pages
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Routes/StaticContent/" title="Static Content" class="md-nav__link">
+      Static Content
     </a>
   </li>
 
@@ -1439,6 +1492,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Utility/Root/" title="Root" class="md-nav__link">
+      Root
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Utility/Save/" title="Save" class="md-nav__link">
       Save
     </a>
@@ -1535,6 +1600,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
+      Get-PodeConfiguration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
@@ -1616,6 +1693,22 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#includeexclude" title="Include/Exclude" class="md-nav__link">
+    Include/Exclude
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1630,15 +1723,26 @@
                 
                 
                 <h1 id="file-monitor">File Monitor</h1>
-<p>Pode has inbuilt file monitoring which can trigger an internal server restart if it detects file changes within the same directory as your Pode script. To enable the monitoring supply the <code>-FileMonitor</code> switch to your <a href="../../Functions/Core/Server"><code>Server</code></a>:</p>
+<p>Pode has inbuilt support for file monitoring which can trigger an internal server restart, this occurs if Pode detects any file changes within the same directory as your server's script. To enable monitoring you can use the <code>-FileMonitor</code> switch in your <a href="../../Functions/Core/Server"><code>Server</code></a> script, or enable it through the <code>pode.json</code> configuration file:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="c"># logic</span>
 <span class="p">}</span> <span class="n">-FileMonitor</span>
 </pre></div>
 
 
-<p>Once enabled, Pode will actively monitor all file changes within the directory of your script. Ie, if your script was at <code>C:/Apps/Pode/server.ps1</code>, then Pode will monitor the <code>C:/Apps/Pode</code> directory and sub-directories for changes. When a change is detected, Pode will wait a couple of seconds before triggering the restart; this is so multiple rapid changes don't trigger multiple restarts.</p>
-<p>The changes that are being monitored by Pode are:</p>
+<p>or:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;server&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;fileMonitor&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">true</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Once enabled, Pode will actively monitor all file changes within the directory of your script. Ie, if your script was at <code>C:/Apps/Pode/server.ps1</code>, then Pode will monitor the <code>C:/Apps/Pode</code> directory and all sub-directories/files for changes. When a change is detected, Pode will wait 2 seconds before triggering the restart - this is so multiple rapid changes don't trigger multiple restarts.</p>
+<p>The file changes that are being monitored by Pode are:</p>
 <ul>
 <li>Updates</li>
 <li>Creation</li>
@@ -1646,8 +1750,47 @@
 </ul>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>If you change the main server script itself, those changes will not be picked up. It's best to import/dot-source other modules/scripts into your <code>Server</code> scriptblock, as the internal restart re-executes this scriptblock. If you do make changes to the main server script, you'll need to terminate and restart the server.</p>
+<p>If you change the main <code>Server</code> script itself, the changes will not be picked up. It's best to import/dot-source other modules/scripts into your <code>Server</code> script, as the internal restart re-executes this scriptblock. If you do make changes to the main server script, you'll need to terminate and restart the server.</p>
 </div>
+<h2 id="includeexclude">Include/Exclude</h2>
+<p>You can include/exclude paths/files/extensions from triggering an internal restart. To include specific paths/files you can use the <code>-FileMonitorInclude</code> parameter on your <code>Server</code>, and to exclude you can use the <code>-FileMonitorExclude</code> parameter. You can also configure them within the <code>pode.json</code> configuration file.</p>
+<p>Both of the parameters are arrays, and the values should be patterns for paths/files/extensions - for paths, they should always be from the root directory of your server.</p>
+<p>For example, to state that all <code>txt</code> and <code>ps1</code> files should only trigger restarts, you would do:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="c"># logic</span>
+<span class="p">}</span> <span class="n">-FileMonitor</span> <span class="n">-FileMonitorInclude</span> <span class="p">@(</span><span class="s1">&#39;*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;*.ps1&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>or:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;server&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;fileMonitor&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+            <span class="nt">&quot;include&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="s2">&quot;*.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;*.ps1&quot;</span> <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>And to state that changes within the <code>public</code> directory should not trigger a restart, you would do:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="c"># logic</span>
+<span class="p">}</span> <span class="n">-FileMonitor</span> <span class="n">-FileMonitorExclude</span> <span class="p">@(</span><span class="s1">&#39;public/*&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>or:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;server&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;fileMonitor&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+            <span class="nt">&quot;exclude&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="s2">&quot;public/*&quot;</span> <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
                 
                   
                 
