@@ -1,4 +1,4 @@
-function New-PodeSession
+function New-PodeContext
 {
     param (
         [scriptblock]
@@ -15,6 +15,12 @@ function New-PodeSession
 
         [string]
         $Name = $null,
+
+        [string[]]
+        $FileMonitorExclude = $null,
+
+        [string[]]
+        $FileMonitorInclude = $null,
 
         [switch]
         $DisableLogging,
@@ -33,8 +39,8 @@ function New-PodeSession
         $Threads = 1
     }
 
-    # basic session object
-    $session = New-Object -TypeName psobject |
+    # basic context object
+    $ctx = New-Object -TypeName psobject |
         Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
@@ -46,31 +52,46 @@ function New-PodeSession
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
 
     # set the server name, logic and root
-    $session.Server.Name = $Name
-    $session.Server.Root = $ServerRoot
-    $session.Server.Logic = $ScriptBlock
-    $session.Server.Interval = $Interval
-    $session.Server.FileMonitor = $FileMonitor
-
-    # set the server default type
-    $session.Server.Type = ([string]::Empty)
-    if ($Interval -gt 0) {
-        $session.Server.Type = 'SERVICE'
-    }
+    $ctx.Server.Name = $Name
+    $ctx.Server.Root = $ServerRoot
+    $ctx.Server.Logic = $ScriptBlock
+    $ctx.Server.Interval = $Interval
 
     # check if there is any global configuration
-    $session.Server.Configuration = @{}
+    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
-    $configPath = (Join-ServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
-    if (Test-PodePath -Path $configPath  -NoStatus) {
-        $session.Server.Configuration = (Get-Content $configPath -Raw | ConvertFrom-Json)
+    # setup file monitoring details (code has priority over config)
+    if (!(Test-Empty $ctx.Server.Configuration)) {
+        if (!$FileMonitor) {
+            $FileMonitor = [bool]$ctx.Server.Configuration.server.fileMonitor.enable
+        }
+
+        if (Test-Empty $FileMonitorExclude) {
+            $FileMonitorExclude = @($ctx.Server.Configuration.server.fileMonitor.exclude)
+        }
+
+        if (Test-Empty $FileMonitorInclude) {
+            $FileMonitorInclude = @($ctx.Server.Configuration.server.fileMonitor.include)
+        }
+    }
+
+    $ctx.Server.FileMonitor = @{
+        'Enabled' = $FileMonitor;
+        'Exclude' = (Convert-PathPatternsToRegex -Paths $FileMonitorExclude);
+        'Include' = (Convert-PathPatternsToRegex -Paths $FileMonitorInclude);
+    }
+
+    # set the server default type
+    $ctx.Server.Type = ([string]::Empty)
+    if ($Interval -gt 0) {
+        $ctx.Server.Type = 'SERVICE'
     }
 
     # set the IP address details
-    $session.Server.Endpoints = @()
+    $ctx.Server.Endpoints = @()
 
     # setup gui details
-    $session.Server.Gui = @{
+    $ctx.Server.Gui = @{
         'Enabled' = $false;
         'Name' = $null;
         'Icon' = $null;
@@ -80,21 +101,21 @@ function New-PodeSession
     }
 
     # shared temp drives
-    $session.Server.Drives = @{}
-    $session.Server.InbuiltDrives = @{}
+    $ctx.Server.Drives = @{}
+    $ctx.Server.InbuiltDrives = @{}
 
     # shared state between runspaces
-    $session.Server.State = @{}
+    $ctx.Server.State = @{}
 
-    # session engine for rendering views
-    $session.Server.ViewEngine = @{
+    # view engine for rendering pages
+    $ctx.Server.ViewEngine = @{
         'Engine' = 'html';
         'Extension' = 'html';
         'Script' = $null;
     }
 
     # routes for pages and api
-    $session.Server.Routes = @{
+    $ctx.Server.Routes = @{
         'delete' = @{};
         'get' = @{};
         'head' = @{};
@@ -109,69 +130,69 @@ function New-PodeSession
     }
 
     # handlers for tcp
-    $session.Server.Handlers = @{
+    $ctx.Server.Handlers = @{
         'tcp' = $null;
         'smtp' = $null;
         'service' = $null;
     }
 
     # setup basic access placeholders
-    $session.Server.Access = @{
+    $ctx.Server.Access = @{
         'Allow' = @{};
         'Deny' = @{};
     }
 
     # setup basic limit rules
-    $session.Server.Limits = @{
+    $ctx.Server.Limits = @{
         'Rules' = @{};
         'Active' = @{};
     }
 
     # cookies and session logic
-    $session.Server.Cookies = @{
+    $ctx.Server.Cookies = @{
         'Session' = @{};
     }
 
     # authnetication methods
-    $session.Server.Authentications = @{}
+    $ctx.Server.Authentications = @{}
 
     # logging methods
-    $session.Server.Logging = @{
+    $ctx.Server.Logging = @{
         'Methods' = @{};
         'Disabled' = $DisableLogging;
     }
 
     # create new cancellation tokens
-    $session.Tokens = @{
+    $ctx.Tokens = @{
         'Cancellation' = New-Object System.Threading.CancellationTokenSource;
         'Restart' = New-Object System.Threading.CancellationTokenSource;
     }
 
     # requests that should be logged
-    $session.RequestsToLog = New-Object System.Collections.ArrayList
+    $ctx.RequestsToLog = New-Object System.Collections.ArrayList
 
     # middleware that needs to run
-    $session.Server.Middleware = @()
+    $ctx.Server.Middleware = @()
 
     # endware that needs to run
-    $session.Server.Endware = @()
+    $ctx.Server.Endware = @()
 
     # runspace pools
-    $session.RunspacePools = @{
+    $ctx.RunspacePools = @{
         'Main' = $null;
         'Schedules' = $null;
         'Gui' = $null;
     }
 
     # session state
-    $session.Lockable = [hashtable]::Synchronized(@{})
+    $ctx.Lockable = [hashtable]::Synchronized(@{})
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule((Get-Module -Name Pode).Path)
 
-    $_session = New-PodeStateSession $session
+    $_session = New-PodeStateContext $ctx
 
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeSession', $_session, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $_session, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null)
     )
 
@@ -180,7 +201,7 @@ function New-PodeSession
     }
 
     # setup runspaces
-    $session.Runspaces = @()
+    $ctx.Runspaces = @()
 
     # setup main runspace pool
     $threadsCounts = @{
@@ -192,41 +213,102 @@ function New-PodeSession
     }
 
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $Threads
-    $session.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $state, $Host)
-    $session.RunspacePools.Main.Open()
+    $ctx.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $state, $Host)
+    $ctx.RunspacePools.Main.Open()
 
     # setup schedule runspace pool
-    $session.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
-    $session.RunspacePools.Schedules.Open()
+    $ctx.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
+    $ctx.RunspacePools.Schedules.Open()
 
     # setup gui runspace pool (only for non-ps-core)
     if (!(Test-IsPSCore)) {
-        $session.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $state, $Host)
-        $session.RunspacePools.Gui.ApartmentState = 'STA'
-        $session.RunspacePools.Gui.Open()
+        $ctx.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $state, $Host)
+        $ctx.RunspacePools.Gui.ApartmentState = 'STA'
+        $ctx.RunspacePools.Gui.Open()
     }
 
-    # return the new session
-    return $session
+    # return the new context
+    return $ctx
 }
 
-function New-PodeStateSession
+function New-PodeStateContext
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Session
+        $Context
     )
 
     return (New-Object -TypeName psobject |
-        Add-Member -MemberType NoteProperty -Name Threads -Value $Session.Threads -PassThru |
-        Add-Member -MemberType NoteProperty -Name Timers -Value $Session.Timers -PassThru |
-        Add-Member -MemberType NoteProperty -Name Schedules -Value $Session.Schedules -PassThru |
-        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Session.RunspacePools -PassThru |
-        Add-Member -MemberType NoteProperty -Name Tokens -Value $Session.Tokens -PassThru |
-        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Session.RequestsToLog -PassThru |
-        Add-Member -MemberType NoteProperty -Name Lockable -Value $Session.Lockable -PassThru |
-        Add-Member -MemberType NoteProperty -Name Server -Value $Session.Server -PassThru)
+        Add-Member -MemberType NoteProperty -Name Threads -Value $Context.Threads -PassThru |
+        Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
+        Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
+        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
+        Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
+        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Context.RequestsToLog -PassThru |
+        Add-Member -MemberType NoteProperty -Name Lockable -Value $Context.Lockable -PassThru |
+        Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
+}
+
+function Get-PodeConfiguration
+{
+    return $PodeContext.Server.Configuration
+}
+
+function Open-PodeConfiguration
+{
+    param (
+        [Parameter()]
+        [string]
+        $ServerRoot = $null,
+
+        [Parameter()]
+        $Context
+    )
+
+    $config = @{}
+
+    # set the path to the root config file
+    $configPath = (Join-ServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
+
+    # check to see if an environmental config exists (if the env var is set)
+    if (!(Test-Empty $env:PODE_ENVIRONMENT)) {
+        $_path = (Join-ServerRoot -Folder '.' -FilePath "pode.$($env:PODE_ENVIRONMENT).json" -Root $ServerRoot)
+        if (Test-PodePath -Path $_path -NoStatus) {
+            $configPath = $_path
+        }
+    }
+
+    # check the path exists, and load the config
+    if (Test-PodePath -Path $configPath -NoStatus) {
+        $config = (Get-Content $configPath -Raw | ConvertFrom-Json)
+        Set-PodeWebConfiguration -Configuration $config -Context $Context
+    }
+
+    return $config
+}
+
+function Set-PodeWebConfiguration
+{
+    param (
+        [Parameter()]
+        $Configuration,
+
+        [Parameter()]
+        $Context
+    )
+
+    $Context.Server.Web = @{
+        'Static' = @{
+            'Defaults' = $Configuration.web.static.defaults;
+            'Cache' = @{
+                'Enabled' = [bool]$Configuration.web.static.cache.enable;
+                'MaxAge' = [int](coalesce $Configuration.web.static.cache.maxAge 3600);
+                'Include' = (Convert-PathPatternsToRegex -Paths @($Configuration.web.static.cache.include) -NotSlashes);
+                'Exclude' = (Convert-PathPatternsToRegex -Paths @($Configuration.web.static.cache.exclude) -NotSlashes);
+            }
+        }
+    }
 }
 
 function State
@@ -251,23 +333,23 @@ function State
     )
 
     try {
-        if ($null -eq $PodeSession -or $null -eq $PodeSession.Server.State) {
+        if ($null -eq $PodeContext -or $null -eq $PodeContext.Server.State) {
             return $null
         }
 
         switch ($Action.ToLowerInvariant())
         {
             'set' {
-                $PodeSession.Server.State[$Name] = $Object
+                $PodeContext.Server.State[$Name] = $Object
             }
 
             'get' {
-                $Object = $PodeSession.Server.State[$Name]
+                $Object = $PodeContext.Server.State[$Name]
             }
 
             'remove' {
-                $Object = $PodeSession.Server.State[$Name]
-                $PodeSession.Server.State.Remove($Name) | Out-Null
+                $Object = $PodeContext.Server.State[$Name]
+                $PodeContext.Server.State.Remove($Name) | Out-Null
             }
         }
 
@@ -314,7 +396,7 @@ function Listen
 
     # if a name was supplied, check it is unique
     if (![string]::IsNullOrWhiteSpace($Name) -and
-        (Get-Count ($PodeSession.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
+        (Get-Count ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
     {
         throw "An endpoint with the name '$($Name)' has already been defined"
     }
@@ -333,13 +415,13 @@ function Listen
         };
     }
 
-    # set the ip for the session
+    # set the ip for the context
     $obj.Address = (Get-IPAddress $_endpoint.Host)
     if (!(Test-IPAddressLocalOrAny -IP $obj.Address)) {
         $obj.HostName = "$($obj.Address)"
     }
 
-    # set the port for the session
+    # set the port for the context
     $obj.Port = $_endpoint.Port
 
     # if the server type is https, set cert details
@@ -354,27 +436,27 @@ function Listen
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
-    $exists = ($PodeSession.Server.Endpoints | Where-Object {
+    $exists = ($PodeContext.Server.Endpoints | Where-Object {
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
     # has an endpoint already been defined for smtp/tcp?
-    if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeSession.Server.Type) {
+    if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeContext.Server.Type) {
         throw "An endpoint for $($Type.ToUpperInvariant()) has already been defined"
     }
 
     if (!$exists) {
         # set server type, ensure we aren't trying to change the server's type
         $_type = (iftet ($Type -ieq 'https') 'http' $Type)
-        if ([string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
-            $PodeSession.Server.Type = $_type
+        if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
+            $PodeContext.Server.Type = $_type
         }
-        elseif ($PodeSession.Server.Type -ine $_type) {
-            throw "Cannot add $($Type.ToUpperInvariant()) endpoint when already listening to $($PodeSession.Server.Type.ToUpperInvariant()) endpoints"
+        elseif ($PodeContext.Server.Type -ine $_type) {
+            throw "Cannot add $($Type.ToUpperInvariant()) endpoint when already listening to $($PodeContext.Server.Type.ToUpperInvariant()) endpoints"
         }
 
         # add the new endpoint
-        $PodeSession.Server.Endpoints += $obj
+        $PodeContext.Server.Endpoints += $obj
     }
 }
 
@@ -412,7 +494,7 @@ function Import
     }
 
     # import the module into each runspace
-    $PodeSession.RunspacePools.Values | ForEach-Object {
+    $PodeContext.RunspacePools.Values | ForEach-Object {
         $_.InitialSessionState.ImportPSModule($_path)
     }
 }

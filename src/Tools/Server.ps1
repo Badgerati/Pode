@@ -32,6 +32,16 @@ function Server
         [int]
         $Threads = 1,
 
+        [Parameter()]
+        [Alias('fme')]
+        [string[]]
+        $FileMonitorExclude,
+
+        [Parameter()]
+        [Alias('fmi')]
+        [string[]]
+        $FileMonitorInclude,
+
         [switch]
         $Smtp,
 
@@ -45,17 +55,20 @@ function Server
         $Https,
 
         [switch]
+        [Alias('dt')]
         $DisableTermination,
 
         [switch]
+        [Alias('dl')]
         $DisableLogging,
 
         [switch]
+        [Alias('fm')]
         $FileMonitor
     )
 
     # ensure the session is clean
-    $PodeSession = $null
+    $PodeContext = $null
 
     # validate port passed
     if ($Port -lt 0) {
@@ -72,10 +85,12 @@ function Server
         $serverType = Get-PodeServerType -Port $Port -Interval $Interval -Smtp:$Smtp -Tcp:$Tcp -Https:$Https
 
         # create session object
-        $PodeSession = New-PodeSession -ScriptBlock $ScriptBlock `
+        $PodeContext = New-PodeContext -ScriptBlock $ScriptBlock `
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot $MyInvocation.PSScriptRoot `
+            -FileMonitorExclude $FileMonitorExclude `
+            -FileMonitorInclude $FileMonitorInclude `
             -DisableLogging:$DisableLogging `
             -FileMonitor:$FileMonitor
 
@@ -94,32 +109,32 @@ function Server
         Start-PodeServer
 
         # at this point, if it's just a one-one off script, return
-        if ([string]::IsNullOrWhiteSpace($PodeSession.Server.Type)) {
+        if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
             return
         }
 
         # sit here waiting for termination or cancellation
-        while (!(Test-TerminationPressed -Key $key) -and !($PodeSession.Tokens.Cancellation.IsCancellationRequested)) {
+        while (!(Test-TerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
             Start-Sleep -Seconds 1
 
             # get the next key presses
             $key = Get-ConsoleKey
 
             # check for internal restart
-            if (($PodeSession.Tokens.Restart.IsCancellationRequested) -or (Test-RestartPressed -Key $key)) {
+            if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-RestartPressed -Key $key)) {
                 Restart-PodeServer
             }
         }
 
         Write-Host 'Terminating...' -NoNewline -ForegroundColor Yellow
-        $PodeSession.Tokens.Cancellation.Cancel()
+        $PodeContext.Tokens.Cancellation.Cancel()
     }
     finally {
         # clean the runspaces and tokens
         Close-Pode -Exit
 
         # clean the session
-        $PodeSession = $null
+        $PodeContext = $null
     }
 }
 
@@ -131,9 +146,9 @@ function Start-PodeServer
         Add-PodePSInbuiltDrives
 
         # run the logic
-        Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Logic -NoNewClosure
+        Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
 
-        $_type = $PodeSession.Server.Type.ToUpperInvariant()
+        $_type = $PodeContext.Server.Type.ToUpperInvariant()
         if (![string]::IsNullOrWhiteSpace($_type))
         {
             # start runspace for timers
@@ -179,7 +194,7 @@ function Restart-PodeServer
         Write-Host 'Restarting server...' -NoNewline -ForegroundColor Cyan
 
         # cancel the session token
-        $PodeSession.Tokens.Cancellation.Cancel()
+        $PodeContext.Tokens.Cancellation.Cancel()
 
         # close all current runspaces
         Close-PodeRunspaces
@@ -188,44 +203,47 @@ function Restart-PodeServer
         Remove-PodePSDrives
 
         # clear up timers, schedules and loggers
-        $PodeSession.Server.Routes.Keys.Clone() | ForEach-Object {
-            $PodeSession.Server.Routes[$_].Clear()
+        $PodeContext.Server.Routes.Keys.Clone() | ForEach-Object {
+            $PodeContext.Server.Routes[$_].Clear()
         }
 
-        $PodeSession.Server.Handlers.Keys.Clone() | ForEach-Object {
-            $PodeSession.Server.Handlers[$_] = $null
+        $PodeContext.Server.Handlers.Keys.Clone() | ForEach-Object {
+            $PodeContext.Server.Handlers[$_] = $null
         }
 
-        $PodeSession.Timers.Clear()
-        $PodeSession.Schedules.Clear()
-        $PodeSession.Server.Logging.Methods.Clear()
+        $PodeContext.Timers.Clear()
+        $PodeContext.Schedules.Clear()
+        $PodeContext.Server.Logging.Methods.Clear()
 
         # clear middle/endware
-        $PodeSession.Server.Middleware = @()
-        $PodeSession.Server.Endware = @()
+        $PodeContext.Server.Middleware = @()
+        $PodeContext.Server.Endware = @()
 
         # set view engine back to default
-        $PodeSession.Server.ViewEngine = @{
+        $PodeContext.Server.ViewEngine = @{
             'Engine' = 'html';
             'Extension' = 'html';
             'Script' = $null;
         }
 
         # clear up cookie sessions
-        $PodeSession.Server.Cookies.Session.Clear()
+        $PodeContext.Server.Cookies.Session.Clear()
 
         # clear up authentication methods
-        $PodeSession.Server.Authentications.Clear()
+        $PodeContext.Server.Authentications.Clear()
 
         # clear up shared state
-        $PodeSession.Server.State.Clear()
+        $PodeContext.Server.State.Clear()
 
         # recreate the session tokens
-        dispose $PodeSession.Tokens.Cancellation
-        $PodeSession.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
+        dispose $PodeContext.Tokens.Cancellation
+        $PodeContext.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
 
-        dispose $PodeSession.Tokens.Restart
-        $PodeSession.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
+        dispose $PodeContext.Tokens.Restart
+        $PodeContext.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
+
+        # reload the configuration
+        $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
         Write-Host " Done" -ForegroundColor Green
 

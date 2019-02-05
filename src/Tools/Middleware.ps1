@@ -74,11 +74,11 @@ function Get-PodeInbuiltMiddleware
     )
 
     # check if middleware contains an override
-    $override = ($PodeSession.Server.Middleware | Where-Object { $_.Name -ieq $Name })
+    $override = ($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name })
 
     # if override there, remove it from middleware
     if ($override) {
-        $PodeSession.Server.Middleware = @($PodeSession.Server.Middleware | Where-Object { $_.Name -ine $Name })
+        $PodeContext.Server.Middleware = @($PodeContext.Server.Middleware | Where-Object { $_.Name -ine $Name })
         $ScriptBlock = $override.Logic
     }
 
@@ -124,16 +124,31 @@ function Get-PodeLimitMiddleware
 function Get-PodePublicMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '@public' -ScriptBlock {
-        param($s)
+        param($e)
 
         # get the static file path
-        $path = Get-PodeStaticRoutePath -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint
+        $path = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
         if ($null -eq $path) {
             return $true
         }
 
+        # check current state of caching
+        $config = $PodeContext.Server.Web.Static.Cache
+        $caching = $config.Enabled
+
+        # if caching, check include/exclude
+        if ($caching) {
+            if (($null -ne $config.Exclude) -and ($e.Path -imatch $config.Exclude)) {
+                $caching = $false
+            }
+
+            if (($null -ne $config.Include) -and ($e.Path -inotmatch $config.Include)) {
+                $caching = $false
+            }
+        }
+
         # write the file to the response
-        Write-ToResponseFromFile -Path $path
+        Write-ToResponseFromFile -Path $path -Cache:$caching
 
         # static content found, stop
         return $false
@@ -241,7 +256,7 @@ function Middleware
 
     # if a name was supplied, ensure it doesn't already exist
     if (!(Test-Empty $Name)) {
-        if (($PodeSession.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
+        if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
             throw "Middleware with defined name of $($Name) already exists"
         }
     }
@@ -282,6 +297,6 @@ function Middleware
         return $HashTable
     }
     else {
-        $PodeSession.Server.Middleware += $HashTable
+        $PodeContext.Server.Middleware += $HashTable
     }
 }

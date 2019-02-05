@@ -8,7 +8,7 @@ function Session
     )
 
     # check that session logic hasn't already been defined
-    if (!(Test-Empty $PodeSession.Server.Cookies.Session)) {
+    if (!(Test-Empty $PodeContext.Server.Cookies.Session)) {
         throw 'Session middleware logic has already been defined'
     }
 
@@ -48,7 +48,7 @@ function Session
     }
 
     # set options against session
-    $PodeSession.Server.Cookies.Session = @{
+    $PodeContext.Server.Cookies.Session = @{
         'Name' = (coalesce $Options.Name 'pode.sid');
         'SecretKey' = $Options.Secret;
         'GenerateId' = (coalesce $Options.GenerateId { return (Get-NewGuid) });
@@ -82,7 +82,7 @@ function Session
             }
 
             # get the session's data
-            elseif ($null -ne ($data = $PodeSession.Server.Cookies.Session.Store.Get($s.Session.Id))) {
+            elseif ($null -ne ($data = $PodeContext.Server.Cookies.Session.Store.Get($s.Session.Id))) {
                 $s.Session.Data = $data
                 Set-PodeSessionCookieDataHash -Session $s.Session
             }
@@ -132,13 +132,13 @@ function Get-PodeSessionCookie
     )
 
     # get the session from cookie
-    $cookie = $Request.Cookies[$PodeSession.Server.Cookies.Session.Name]
+    $cookie = $Request.Cookies[$PodeContext.Server.Cookies.Session.Name]
     if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
         return $null
     }
 
     # ensure the session was signed
-    $session = (Invoke-CookieUnsign -Signature $cookie.Value -Secret $PodeSession.Server.Cookies.Session.SecretKey)
+    $session = (Invoke-CookieUnsign -Signature $cookie.Value -Secret $PodeContext.Server.Cookies.Session.SecretKey)
     if (Test-Empty $session) {
         return $null
     }
@@ -147,7 +147,7 @@ function Get-PodeSessionCookie
     $data = @{
         'Name' = $cookie.Name;
         'Id' = $session;
-        'Cookie' = $PodeSession.Server.Cookies.Session.Info;
+        'Cookie' = $PodeContext.Server.Cookies.Session.Info;
         'Data' = @{};
     }
 
@@ -168,7 +168,7 @@ function Set-PodeSessionCookie
     )
 
     # sign the session
-    $signedValue = (Invoke-CookieSign -Value $Session.Id -Secret $PodeSession.Server.Cookies.Session.SecretKey)
+    $signedValue = (Invoke-CookieSign -Value $Session.Id -Secret $PodeContext.Server.Cookies.Session.SecretKey)
 
     # create a new cookie
     $cookie = [System.Net.Cookie]::new($Session.Name, $signedValue)
@@ -210,9 +210,9 @@ function Remove-PodeSessionCookie
 function New-PodeSessionCookie
 {
     $sid = @{
-        'Name' = $PodeSession.Server.Cookies.Session.Name;
-        'Id' = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.Cookies.Session.GenerateId -Return);
-        'Cookie' = $PodeSession.Server.Cookies.Session.Info;
+        'Name' = $PodeContext.Server.Cookies.Session.Name;
+        'Id' = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Cookies.Session.GenerateId -Return);
+        'Cookie' = $PodeContext.Server.Cookies.Session.Info;
         'Data' = @{};
     }
 
@@ -285,7 +285,7 @@ function Set-PodeSessionCookieHelpers
         $expiry = (Get-PodeSessionCookieExpiry -Session $session)
 
         # save session data to store
-        $PodeSession.Server.Cookies.Session.Store.Set($session.Id, $session.Data, $expiry)
+        $PodeContext.Server.Cookies.Session.Store.Set($session.Id, $session.Data, $expiry)
 
         # update session's data hash
         Set-PodeSessionCookieDataHash -Session $session
@@ -296,7 +296,7 @@ function Set-PodeSessionCookieHelpers
         param($session)
 
         # remove data from store
-        $PodeSession.Server.Cookies.Session.Store.Delete($session.Id)
+        $PodeContext.Server.Cookies.Session.Store.Delete($session.Id)
 
         # clear session
         $session.Clear()
@@ -348,7 +348,7 @@ function Set-PodeSessionCookieInMemClearDown
 {
     # cleardown expired inmem session every 10 minutes
     schedule '__pode_session_inmem_cleanup__' '0/10 * * * *' {
-        $store = $PodeSession.Server.Cookies.Session.Store
+        $store = $PodeContext.Server.Cookies.Session.Store
         if (Test-Empty $store.Memory) {
             return
         }

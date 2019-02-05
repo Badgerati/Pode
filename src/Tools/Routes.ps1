@@ -24,7 +24,7 @@ function Get-PodeRoute
     )
 
     # first, if supplied, check the wildcard method
-    if ($CheckWildMethod -and $PodeSession.Server.Routes['*'].Count -ne 0) {
+    if ($CheckWildMethod -and $PodeContext.Server.Routes['*'].Count -ne 0) {
         $found = Get-PodeRoute -HttpMethod '*' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
         if ($null -ne $found) {
             return $found
@@ -35,7 +35,7 @@ function Get-PodeRoute
     $isStatic = ($HttpMethod -ieq 'static')
 
     # first ensure we have the method
-    $method = $PodeSession.Server.Routes[$HttpMethod]
+    $method = $PodeContext.Server.Routes[$HttpMethod]
     if ($null -eq $method) {
         return $null
     }
@@ -133,7 +133,7 @@ function Get-PodeStaticRoutePath
 
     # else, use the public static directory (but only if path is a file)
     if (Test-PathIsFile $Route) {
-        return (Join-Path $PodeSession.Server.InbuiltDrives['public'] $Route)
+        return (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
     }
 
     # otherwise, just return null
@@ -221,7 +221,7 @@ function Route
     # if a ListenName was supplied, find it and use it
     if (!(Test-Empty $ListenName)) {
         # ensure it exists
-        $found = ($PodeSession.Server.Endpoints | Where-Object { $_.Name -eq $ListenName } | Select-Object -First 1)
+        $found = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $ListenName } | Select-Object -First 1)
         if ($null -eq $found) {
             throw "Listen endpoint with name '$($Name)' does not exist"
         }
@@ -290,18 +290,18 @@ function Remove-PodeRoute
     $Route = Update-PodeRoutePlaceholders -Route $Route
 
     # ensure route does exist
-    if (!$PodeSession.Server.Routes[$HttpMethod].ContainsKey($Route)) {
+    if (!$PodeContext.Server.Routes[$HttpMethod].ContainsKey($Route)) {
         return
     }
 
     # remove the route's logic
-    $PodeSession.Server.Routes[$HttpMethod][$Route] = @($PodeSession.Server.Routes[$HttpMethod][$Route] | Where-Object {
+    $PodeContext.Server.Routes[$HttpMethod][$Route] = @($PodeContext.Server.Routes[$HttpMethod][$Route] | Where-Object {
         !($_.Protocol -ieq $Protocol -and $_.Endpoint -ieq $Endpoint)
     })
 
     # if the route has no more logic, just remove it
-    if ((Get-Count $PodeSession.Server.Routes[$HttpMethod][$Route]) -eq 0) {
-        $PodeSession.Server.Routes[$HttpMethod].Remove($Route) | Out-Null
+    if ((Get-Count $PodeContext.Server.Routes[$HttpMethod][$Route]) -eq 0) {
+        $PodeContext.Server.Routes[$HttpMethod].Remove($Route) | Out-Null
     }
 }
 
@@ -408,7 +408,7 @@ function Add-PodeRoute
     }
 
     # add the route logic
-    $PodeSession.Server.Routes[$HttpMethod][$Route] += @(@{
+    $PodeContext.Server.Routes[$HttpMethod][$Route] += @(@{
         'Logic' = $ScriptBlock;
         'Middleware' = $Middleware;
         'Protocol' = $Protocol;
@@ -476,7 +476,7 @@ function Add-PodeStaticRoute
     }
 
     # add the route path
-    $PodeSession.Server.Routes[$HttpMethod][$Route] += @(@{
+    $PodeContext.Server.Routes[$HttpMethod][$Route] += @(@{
         'Path' = $Path;
         'Defaults' = $Defaults;
         'Protocol' = $Protocol;
@@ -551,9 +551,8 @@ function Split-PodeRouteQuery
 
 function Get-PodeStaticRouteDefaults
 {
-    $config = $PodeSession.Server.Configuration
-    if (!(Test-Empty $config) -and $null -ne $config.web.static.defaults) {
-        return @($config.web.static.defaults)
+    if (!(Test-Empty $PodeContext.Server.Web.Static.Defaults)) {
+        return @($PodeContext.Server.Web.Static.Defaults)
     }
 
     return @(
@@ -584,7 +583,7 @@ function Test-PodeRouteAndError
         $Endpoint
     )
 
-    $found = @($PodeSession.Server.Routes[$HttpMethod][$Route])
+    $found = @($PodeContext.Server.Routes[$HttpMethod][$Route])
 
     if (($found | Where-Object { $_.Protocol -ieq $Protocol -and $_.Endpoint -ieq $Endpoint } | Measure-Object).Count -eq 0) {
         return

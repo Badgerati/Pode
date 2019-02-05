@@ -11,6 +11,7 @@ nav:
     - Docker: Getting-Started/Docker.md
     - Frontend: Getting-Started/Frontend.md
     - Run as a Service: Getting-Started/RunAsService.md
+    - Known Issues: Getting-Started/KnownIssues.md
 
   - Tutorials:
     - Basics: Tutorials/Basics.md
@@ -27,6 +28,7 @@ nav:
       - Status Codes: Tutorials/Routes/StatusCodes.md
       - Redirecting: Tutorials/Routes/Redirecting.md
       - Web Pages: Tutorials/Routes/WebPages.md
+      - Static Content: Tutorials/Routes/StaticContent.md
       - Login Page: Tutorials/Routes/LoginPage.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md
@@ -88,6 +90,7 @@ nav:
       - Dispose: Functions/Utility/Dispose.md
       - Include: Functions/Utility/Include.md
       - Lock: Functions/Utility/Lock.md
+      - Root: Functions/Utility/Root.md
       - Save: Functions/Utility/Save.md
       - State: Functions/Utility/State.md
       - Stopwatch: Functions/Utility/Stopwatch.md
@@ -96,6 +99,7 @@ nav:
 
     - Helpers:
       - Coalesce: Functions/Helpers/Coalesce.md
+      - Get-PodeConfiguration: Functions/Helpers/Get-PodeConfiguration.md
       - Invoke-ScriptBlock: Functions/Helpers/Invoke-ScriptBlock.md
       - Test-Empty: Functions/Helpers/Test-Empty.md
       - Test-IsPSCore: Functions/Helpers/Test-IsPSCore.md

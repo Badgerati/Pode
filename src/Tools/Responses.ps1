@@ -7,25 +7,39 @@ function Write-ToResponse
 
         [Parameter()]
         [string]
-        $ContentType = $null
+        $ContentType = $null,
+
+        [switch]
+        $Cache
     )
 
+    # if there's nothing to write, return
     if (Test-Empty $Value) {
         return
     }
 
     $res = $WebEvent.Response
-    if ($null -eq $res -or $null -eq $res.OutputStream -or !$res.OutputStream.CanWrite) {
+
+    # if the response stream isn't writable, return
+    if (($null -eq $res) -or ($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite) {
         return
     }
 
+    # set a cache value
+    if ($Cache) {
+        $age = $PodeContext.Server.Web.Static.Cache.MaxAge
+        $res.AddHeader('Cache-Control', "max-age=$($age), must-revalidate")
+        $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($age).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
+    }
+
+    # specify the content-type if supplied
     if (!(Test-Empty $ContentType)) {
         $res.ContentType = $ContentType
     }
 
+    # write the content to the response
     $Value = ConvertFrom-ValueToBytes -Value $Value
     $res.ContentLength64 = $Value.Length
-
     Write-BytesToStream -Bytes $Value -Stream $res.OutputStream -CheckNetwork
 }
 
@@ -34,7 +48,10 @@ function Write-ToResponseFromFile
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Path
+        $Path,
+
+        [switch]
+        $Cache
     )
 
     # test the file path, and set status accordingly
@@ -45,16 +62,17 @@ function Write-ToResponseFromFile
     # are we dealing with a dynamic file for the view engine?
     $ext = Get-FileExtension -Path $Path -TrimPeriod
 
-    if ((Test-Empty $ext) -or $ext -ine $PodeSession.Server.ViewEngine.Extension) {
+    # this is a static file
+    if ((Test-Empty $ext) -or $ext -ine $PodeContext.Server.ViewEngine.Extension) {
         $content = Get-ContentAsBytes -Path $Path
-        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
+        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext) -Cache:$Cache
         return
     }
 
     # generate dynamic content
     $content = [string]::Empty
 
-    switch ($PodeSession.Server.ViewEngine.Engine)
+    switch ($PodeContext.Server.ViewEngine.Engine)
     {
         'pode' {
             $content = Get-Content -Path $Path -Raw -Encoding utf8
@@ -62,8 +80,8 @@ function Write-ToResponseFromFile
         }
 
         default {
-            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments $Path -Return)
+            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
             }
         }
     }
@@ -131,7 +149,7 @@ function Save
     # if path is '.', replace with server root
     if ($Path -match '^\.[\\/]{0,1}') {
         $Path = $Path -replace '^\.[\\/]{0,1}', ''
-        $Path = Join-Path $PodeSession.Server.Root $Path
+        $Path = Join-Path $PodeContext.Server.Root $Path
     }
 
     # ensure the parameter name exists in data
@@ -399,11 +417,11 @@ function Include
     $ext = Get-FileExtension -Path $Path
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
     if (!$hasExt) {
-        $Path += ".$($PodeSession.Server.ViewEngine.Extension)"
+        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
     # only look in the view directory
-    $Path = (Join-Path $PodeSession.Server.InbuiltDrives['views'] $Path)
+    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {
@@ -411,7 +429,7 @@ function Include
     }
 
     # run any engine logic
-    $engine = $PodeSession.Server.ViewEngine.Engine
+    $engine = $PodeContext.Server.ViewEngine.Engine
     if ($hasExt) {
         $engine = $ext.Trim('.')
     }
@@ -430,8 +448,8 @@ function Include
         }
 
         default {
-            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
             }
         }
     }
@@ -466,11 +484,11 @@ function View
     $ext = Get-FileExtension -Path $Path
     $hasExt = ![string]::IsNullOrWhiteSpace($ext)
     if (!$hasExt) {
-        $Path += ".$($PodeSession.Server.ViewEngine.Extension)"
+        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
     # only look in the view directory
-    $Path = (Join-Path $PodeSession.Server.InbuiltDrives['views'] $Path)
+    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
@@ -478,7 +496,7 @@ function View
     }
 
     # run any engine logic
-    $engine = $PodeSession.Server.ViewEngine.Engine
+    $engine = $PodeContext.Server.ViewEngine.Engine
     if ($hasExt) {
         $engine = $ext.Trim('.')
     }
@@ -497,8 +515,8 @@ function View
         }
 
         default {
-            if ($null -ne $PodeSession.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeSession.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
             }
         }
     }

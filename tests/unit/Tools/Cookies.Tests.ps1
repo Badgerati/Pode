@@ -17,7 +17,7 @@ Describe 'Get-PodeSessionCookie' {
                 'Cookies' = @{}
             }
 
-            $PodeSession = @{
+            $PodeContext = @{
                 'Server' = @{ 'Cookies' = @{ 'Session' = @{
                     'Name' = 'pode.sid';
                     'SecretKey' = 'key';
@@ -40,7 +40,7 @@ Describe 'Get-PodeSessionCookie' {
                 }
             }
 
-            $PodeSession = @{
+            $PodeContext = @{
                 'Server' = @{ 'Cookies' = @{ 'Session' = @{
                     'Name' = 'pode.sid';
                     'SecretKey' = 'key';
@@ -63,7 +63,7 @@ Describe 'Get-PodeSessionCookie' {
                 }
             }
 
-            $PodeSession = @{
+            $PodeContext = @{
                 'Server' = @{ 'Cookies' = @{ 'Session' = @{
                     'Name' = 'pode.sid';
                     'SecretKey' = 'key';
@@ -119,7 +119,7 @@ Describe 'New-PodeSessionCookie' {
     Mock 'Invoke-ScriptBlock' { return 'value' }
 
     It 'Creates a new session object' {
-        $PodeSession = @{
+        $PodeContext = @{
             'Server' = @{ 'Cookies' = @{ 'Session' = @{
                 'Name' = 'pode.sid';
                 'SecretKey' = 'key';
@@ -192,9 +192,9 @@ Describe 'Get-PodeSessionCookieInMemStore' {
 
 Describe 'Set-PodeSessionCookieInMemClearDown' {
     It 'Adds a new schedule for clearing down' {
-        $PodeSession = @{ 'Schedules' = @{}}
+        $PodeContext = @{ 'Schedules' = @{}}
         Set-PodeSessionCookieInMemClearDown
-        $PodeSession.Schedules.Count | Should Be 1
-        $PodeSession.Schedules.Contains('__pode_session_inmem_cleanup__') | Should Be $true
+        $PodeContext.Schedules.Count | Should Be 1
+        $PodeContext.Schedules.Contains('__pode_session_inmem_cleanup__') | Should Be $true
     }
 }

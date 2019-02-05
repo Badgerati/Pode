@@ -6,13 +6,13 @@ function Start-SmtpServer
     }
 
     # grab the relavant port
-    $port = $PodeSession.Server.Endpoints[0].Port
+    $port = $PodeContext.Server.Endpoints[0].Port
     if ($port -eq 0) {
         $port = 25
     }
 
     # get the IP address for the server
-    $ipAddress = $PodeSession.Server.Endpoints[0].Address
+    $ipAddress = $PodeContext.Server.Endpoints[0].Address
     if (Test-Hostname -Hostname $ipAddress) {
         $ipAddress = (Get-IPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
         $ipAddress = (Get-IPAddress $ipAddress)
@@ -36,7 +36,7 @@ function Start-SmtpServer
     }
 
     # state where we're running
-    Write-Host "Listening on smtp://$($PodeSession.Server.Endpoints[0].HostName):$($port) [$($PodeSession.Threads) thread(s)]" -ForegroundColor Yellow
+    Write-Host "Listening on smtp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {
@@ -63,7 +63,7 @@ function Start-SmtpServer
             $data = [string]::Empty
 
             # open response to smtp request
-            tcp write "220 $($PodeSession.Server.Endpoints[0].HostName) -- Pode Proxy Server"
+            tcp write "220 $($PodeContext.Server.Endpoints[0].HostName) -- Pode Proxy Server"
             $msg = [string]::Empty
 
             # respond to smtp request
@@ -95,7 +95,7 @@ function Start-SmtpServer
 
                         if ($msg.StartsWith('MAIL FROM')) {
                             tcp write '250 OK'
-                            $mail_from = Get-SmtpEmail $msg
+                            $mail_from = (Get-SmtpEmail $msg)
                         }
 
                         if ($msg.StartsWith('DATA'))
@@ -108,7 +108,14 @@ function Start-SmtpServer
                             $SmtpEvent.From = $mail_from
                             $SmtpEvent.To = $rcpt_tos
                             $SmtpEvent.Data = $data
-                            $SmtpEvent.Lockable = $PodeSession.Lockable
+                            $SmtpEvent.Subject = (Get-SmtpSubject $data)
+                            $SmtpEvent.Lockable = $PodeContext.Lockable
+
+                            # set the email body/type
+                            $info = (Get-SmtpBody $data)
+                            $SmtpEvent.Body = $info.Body
+                            $SmtpEvent.ContentType = $info.ContentType
+                            $SmtpEvent.ContentEncoding = $info.ContentEncoding
 
                             # call user handlers for processing smtp data
                             Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
@@ -126,11 +133,11 @@ function Start-SmtpServer
 
         try
         {
-            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get an incoming request
                 $task = $Listener.AcceptTcpClientAsync()
-                $task.Wait($PodeSession.Tokens.Cancellation.Token)
+                $task.Wait($PodeContext.Tokens.Cancellation.Token)
                 $client = $task.Result
 
                 # convert the ip
@@ -146,7 +153,7 @@ function Start-SmtpServer
                     $SmtpEvent = @{}
                     $TcpEvent = @{
                         'Client' = $client;
-                        'Lockable' = $PodeSession.Lockable
+                        'Lockable' = $PodeContext.Lockable
                     }
 
                     Invoke-ScriptBlock -ScriptBlock $process
@@ -161,7 +168,7 @@ function Start-SmtpServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeSession.Threads | ForEach-Object {
+    1..$PodeContext.Threads | ForEach-Object {
         Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
             -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
@@ -176,7 +183,7 @@ function Start-SmtpServer
 
         try
         {
-            while (!$PodeSession.Tokens.Cancellation.IsCancellationRequested)
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 Start-Sleep -Seconds 1
             }
@@ -205,10 +212,106 @@ function Get-SmtpEmail
         $Value
     )
 
-    $tmp = ($Value -isplit ':')
+    $tmp = @($Value -isplit ':')
     if ($tmp.Length -gt 1) {
-        return $tmp[1].Trim().Trim('<', '>')
+        return $tmp[1].Trim().Trim(' <>')
     }
 
     return [string]::Empty
+}
+
+function Get-SmtpSubject
+{
+    param (
+        [Parameter()]
+        [string]
+        $Data
+    )
+
+    return (Get-SmtpLineFromData -Data $Data -Name 'Subject')
+}
+
+function Get-SmtpBody
+{
+    param (
+        [Parameter()]
+        [string]
+        $Data
+    )
+
+    # body info object
+    $BodyInfo = @{
+        'ContentType' = $null;
+        'ContentEncoding' = $null;
+        'Body' = $null;
+    }
+
+    # get the content type
+    $BodyInfo.ContentType = (Get-SmtpLineFromData -Data $Data -Name 'Content-Type')
+
+    # get the content encoding
+    $BodyInfo.ContentEncoding = (Get-SmtpLineFromData -Data $Data -Name 'Content-Transfer-Encoding')
+
+    # split the message up
+    $dataSplit = @($Data -isplit [System.Environment]::NewLine)
+
+    # get the index of the first blank line, and last dot
+    $indexOfBlankLine = $dataSplit.IndexOf([string]::Empty)
+    $indexOfLastDot = [array]::LastIndexOf($dataSplit, '.')
+
+    # get the body
+    $BodyInfo.Body = ($dataSplit[($indexOfBlankLine + 1)..($indexOfLastDot - 2)] -join [System.Environment]::NewLine)
+
+    # if there's no body, just return
+    if (($indexOfLastDot -eq -1) -or (Test-Empty $BodyInfo.Body)) {
+        return $BodyInfo
+    }
+
+    # decode body based on encoding
+    switch ($BodyInfo.ContentEncoding.ToLowerInvariant()) {
+        'base64' {
+            $BodyInfo.Body = [System.Convert]::FromBase64String($BodyInfo.Body)
+        }
+    }
+
+    # only if body is bytes, first decode based on type
+    switch ($BodyInfo.ContentType) {
+        { $_ -ilike '*utf-7*' } {
+            $BodyInfo.Body = [System.Text.Encoding]::UTF7.GetString($BodyInfo.Body)
+        }
+
+        { $_ -ilike '*utf-8*' } {
+            $BodyInfo.Body = [System.Text.Encoding]::UTF8.GetString($BodyInfo.Body)
+        }
+
+        { $_ -ilike '*utf-16*' } {
+            $BodyInfo.Body = [System.Text.Encoding]::Unicode.GetString($BodyInfo.Body)
+        }
+
+        { $_ -ilike '*utf-32*' } {
+            $BodyInfo.Body = [System.Text.Encoding]::UTF32.GetString($BodyInfo.Body)
+        }
+    }
+
+    return $BodyInfo
+}
+
+function Get-SmtpLineFromData
+{
+    param (
+        [Parameter()]
+        [string]
+        $Data,
+
+        [Parameter()]
+        [string]
+        $Name
+    )
+
+    $line = (@($Data -isplit [System.Environment]::NewLine) | Where-Object {
+        $_ -ilike "$($Name):*"
+    } | Select-Object -First 1)
+
+    return ($line -ireplace "^$($Name)\:\s+", '').Trim()
+
 }

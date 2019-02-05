@@ -7,7 +7,7 @@ function Get-PodeTcpHandler
         $Type
     )
 
-    return $PodeSession.Server.Handlers[$Type]
+    return $PodeContext.Server.Handlers[$Type]
 }
 
 function Handler
@@ -28,10 +28,10 @@ function Handler
     $Type = $Type.ToLowerInvariant()
 
     # ensure handler isn't already set
-    if ($null -ne $PodeSession.Server.Handlers[$Type]) {
+    if ($null -ne $PodeContext.Server.Handlers[$Type]) {
         throw "Handler for $($Type) already defined"
     }
 
     # add the handler
-    $PodeSession.Server.Handlers[$Type] = $ScriptBlock
+    $PodeContext.Server.Handlers[$Type] = $ScriptBlock
 }

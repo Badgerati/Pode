@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.25.0
+
+```plain
+### Features
+* #170: Support for Static Content Caching, with ability to include/exclude routes/extensions
+
+### Enhancements
+* #161: New method to return configuration from the pode.json file, plus improved docs and support for environment configs
+* #165: Support on the inbuilt SMTP server for Subject and decoded Body
+* #168: Ability to exclude/include paths/extensions when triggering an Internal Restart
+
+### Documentation
+* #45: Add "Known Issues" pages to documentation
+
+### Clean-Up
+* #160: Internally, rename occurrences of $PodeSession to $PodeContext
+```
+
 ## v0.24.0
 
 ```plain

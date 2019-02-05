@@ -24,7 +24,7 @@ Server -Threads 2 {
     # PUT update a file to trigger monitor
     route 'put' '/file' {
         param($session)
-        'Hello, world!' | Out-File -FilePath "$($PodeSession.Server.Root)/file.txt" -Append -Force
+        'Hello, world!' | Out-File -FilePath "$($PodeContext.Server.Root)/file.txt" -Append -Force
     }
 
 } -FileMonitor
