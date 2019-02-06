@@ -46,6 +46,7 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
@@ -186,13 +187,23 @@ function New-PodeContext
 
     # session state
     $ctx.Lockable = [hashtable]::Synchronized(@{})
+
+    # setup runspaces
+    $ctx.Runspaces = @()
+
+    # return the new context
+    return $ctx
+}
+
+function New-PodeRunspaceState
+{
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule((Get-Module -Name Pode).Path)
 
-    $_session = New-PodeStateContext $ctx
+    $session = New-PodeStateContext -Context $PodeContext
 
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $_session, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $session, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null)
     )
 
@@ -200,9 +211,11 @@ function New-PodeContext
         $state.Variables.Add($_)
     }
 
-    # setup runspaces
-    $ctx.Runspaces = @()
+    $PodeContext.RunspaceState = $state
+}
 
+function New-PodeRunspacePools
+{
     # setup main runspace pool
     $threadsCounts = @{
         'Default' = 1;
@@ -212,23 +225,20 @@ function New-PodeContext
         'Misc' = 1;
     }
 
-    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $Threads
-    $ctx.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $state, $Host)
-    $ctx.RunspacePools.Main.Open()
+    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $PodeContext.Threads
+    $PodeContext.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+    $PodeContext.RunspacePools.Main.Open()
 
     # setup schedule runspace pool
-    $ctx.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $state, $Host)
-    $ctx.RunspacePools.Schedules.Open()
+    $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $PodeContext.RunspaceState, $Host)
+    $PodeContext.RunspacePools.Schedules.Open()
 
     # setup gui runspace pool (only for non-ps-core)
     if (!(Test-IsPSCore)) {
-        $ctx.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $state, $Host)
-        $ctx.RunspacePools.Gui.ApartmentState = 'STA'
-        $ctx.RunspacePools.Gui.Open()
+        $PodeContext.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
+        $PodeContext.RunspacePools.Gui.ApartmentState = 'STA'
+        $PodeContext.RunspacePools.Gui.Open()
     }
-
-    # return the new context
-    return $ctx
 }
 
 function New-PodeStateContext
@@ -493,8 +503,6 @@ function Import
         throw "Failed to import module '$($Path)'"
     }
 
-    # import the module into each runspace
-    $PodeContext.RunspacePools.Values | ForEach-Object {
-        $_.InitialSessionState.ImportPSModule($_path)
-    }
+    # import the module into the runspace state
+    $PodeContext.RunspaceState.ImportPSModule($_path)
 }

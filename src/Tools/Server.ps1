@@ -145,8 +145,10 @@ function Start-PodeServer
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 
-        # run the logic
+        # create the runspace state, execute the server logic, and start the runspaces
+        New-PodeRunspaceState
         Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
+        New-PodeRunspacePools
 
         $_type = $PodeContext.Server.Type.ToUpperInvariant()
         if (![string]::IsNullOrWhiteSpace($_type))
