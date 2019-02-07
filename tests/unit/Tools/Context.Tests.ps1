@@ -344,15 +344,37 @@ Describe 'Script' {
         Mock 'Resolve-Path' { return 'c:/some/file.txt' }
 
         It 'Returns null for no shared state in context' {
-            $PodeContext = @{ 'RunspacePools' = @{
-                'Main' = @{
-                    'InitialSessionState' = [initialsessionstate]::CreateDefault()
-                }
-            } }
+            $PodeContext = @{ 'RunspaceState' = [initialsessionstate]::CreateDefault() }
 
             Script -Path 'file.txt'
 
-            $modules = @($PodeContext.RunspacePools.Main.InitialSessionState.Modules)
+            $modules = @($PodeContext.RunspaceState.Modules)
+            $modules.Length | Should Be 1
+            $modules[0].Name | Should Be 'c:/some/file.txt'
+        }
+    }
+}
+
+Describe 'Import' {
+    Context 'Invalid parameters supplied' {
+        It 'Throw null path parameter error' {
+            { Import -Path $null } | Should Throw 'The argument is null or empty'
+        }
+
+        It 'Throw empty path parameter error' {
+            { Import -Path ([string]::Empty) } | Should Throw 'The argument is null or empty'
+        }
+    }
+
+    Context 'Valid parameters supplied' {
+        Mock 'Resolve-Path' { return 'c:/some/file.txt' }
+
+        It 'Returns null for no shared state in context' {
+            $PodeContext = @{ 'RunspaceState' = [initialsessionstate]::CreateDefault() }
+
+            Import -Path 'file.txt'
+
+            $modules = @($PodeContext.RunspaceState.Modules)
             $modules.Length | Should Be 1
             $modules[0].Name | Should Be 'c:/some/file.txt'
         }

@@ -7,6 +7,8 @@ $PodeContext = @{ 'Server' = $null; }
 Describe 'Start-PodeServer' {
     Mock Add-PodePSInbuiltDrives { }
     Mock Invoke-ScriptBlock { }
+    Mock New-PodeRunspaceState { }
+    Mock New-PodeRunspacePools { }
     Mock Start-TimerRunspace { }
     Mock Start-ScheduleRunspace { }
     Mock Start-Sleep { }
@@ -19,6 +21,8 @@ Describe 'Start-PodeServer' {
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 0 -Scope It
         Assert-MockCalled Start-ScheduleRunspace -Times 0 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
@@ -31,6 +35,8 @@ Describe 'Start-PodeServer' {
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 1 -Scope It
@@ -43,6 +49,8 @@ Describe 'Start-PodeServer' {
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
@@ -55,6 +63,8 @@ Describe 'Start-PodeServer' {
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
@@ -67,6 +77,8 @@ Describe 'Start-PodeServer' {
         Start-PodeServer | Out-Null
 
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
