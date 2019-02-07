@@ -9,6 +9,7 @@ Describe 'Start-PodeServer' {
     Mock Invoke-ScriptBlock { }
     Mock New-PodeRunspaceState { }
     Mock New-PodeRunspacePools { }
+    Mock Start-LoggerRunspace { }
     Mock Start-TimerRunspace { }
     Mock Start-ScheduleRunspace { }
     Mock Start-Sleep { }

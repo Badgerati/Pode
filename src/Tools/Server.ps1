@@ -153,6 +153,9 @@ function Start-PodeServer
         $_type = $PodeContext.Server.Type.ToUpperInvariant()
         if (![string]::IsNullOrWhiteSpace($_type))
         {
+            # start runspace for loggers
+            Start-LoggerRunspace
+
             # start runspace for timers
             Start-TimerRunspace
 
@@ -199,7 +202,7 @@ function Restart-PodeServer
         $PodeContext.Tokens.Cancellation.Cancel()
 
         # close all current runspaces
-        Close-PodeRunspaces
+        Close-PodeRunspaces -ClosePool
 
         # remove all of the pode temp drives
         Remove-PodePSDrives

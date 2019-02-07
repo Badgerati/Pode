@@ -252,9 +252,4 @@ function Logger
         Write-Host "Log Path: $($path)" -ForegroundColor DarkCyan
         New-Item -Path $path -ItemType Directory -Force | Out-Null
     }
-
-    # if this is the first logger, start the logging runspace
-    if ($PodeContext.Server.Logging.Methods.Count -eq 1) {
-        Start-LoggerRunspace
-    }
 }
