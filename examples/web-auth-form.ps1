@@ -43,7 +43,7 @@ Server -Threads 2 {
             } }
         }
 
-        return $null
+        return @{ 'message' = 'Invalid details supplied' }
     }
 
     # home page:
@@ -65,7 +65,7 @@ Server -Threads 2 {
     # checking user authetication (to prevent a 401 status)
     route 'get' '/login' (auth check login -o @{ 'login' = $true; 'successUrl' = '/' }) {
         param($e)
-        view 'auth-login'
+        view -fm 'auth-login'
     }
 
     # login check:
@@ -74,6 +74,7 @@ Server -Threads 2 {
     route 'post' '/login' (auth check login -o @{
         'failureUrl' = '/login';
         'successUrl' = '/';
+        'failureFlash' = $true;
     }) {}
 
     # logout check:
