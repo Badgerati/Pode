@@ -145,7 +145,7 @@ function Flash
         throw 'Sessions are required to use Flash messages'
     }
 
-    if (@('add', 'get') -icontains $Action -and (Test-Empty $Key)) {
+    if (@('add', 'get', 'remove') -icontains $Action -and (Test-Empty $Key)) {
         throw "A Key is required for the Flash $($Action) action"
     }
 
@@ -169,7 +169,7 @@ function Flash
         'get' {
             # retrieve value from session, then delete it
             if ($null -eq $WebEvent.Session.Data.Flash) {
-                return $null
+                return @()
             }
 
             $v = @($WebEvent.Session.Data.Flash[$Key])

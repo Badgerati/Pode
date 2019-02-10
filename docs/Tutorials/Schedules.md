@@ -10,6 +10,9 @@ To create a new schedule in your server you use the [`schedule`](../../Functions
 
 ```powershell
 schedule <name> <cron> <scriptblock> [-start <datetime>] [-end <datetime>] [-limit <int>]
+
+# or shorthand:
+schedule <name> <cron> <scriptblock> [-s <datetime>] [-e <datetime>] [-l <int>]
 ```
 
 Each schedule must have a `<name>`, a `<cron>` expression, and a `<scriptblock>` for the main logic. The `<name>` must be unique across all schedules.

@@ -33,7 +33,7 @@ If supplied, the `GenerateId` script must be a `scriptblock` that returns a vali
 
 ### Store
 
-If supplied, the `Store` must be a valid object with the following required functions:
+If supplied, the `Store` must be a valid `psobject` with the following required `ScriptMethod` members:
 
 ```powershell
 [hashtable] Get([string] $sessionId)
@@ -43,9 +43,26 @@ If supplied, the `Store` must be a valid object with the following required func
 
 If no store is supplied, then a default in-memory store is used - with auto-cleanup for expired sessions.
 
-To add data to a session you can utilise the `.Session.Data` object within the parameter supplied to a `route` - or other middleware. The data will be saved at the end of the route logic automatically using [`endware`](../../../Functions/Core/Endware). When a request comes in using the same session, the data is loaded from the store.
+For example, the `Delete` method could be done as follows:
 
-An example of using a `session` in a `route` to increment a views counter could be as follows (the counter will continue to increment on each call to the route until the session expires):
+```powershell
+$store = New-Object -TypeName psobject
+
+$store | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+    param($sessionId)
+    Remove-RedisKey $sessionId | Out-Null
+}
+
+return $store
+```
+
+## Session Data
+
+To add data to a session you can utilise the `.Session.Data` object within the argument supplied to a `route` - or other middleware. The data will be saved at the end of the route logic automatically using [`endware`](../../../Functions/Core/Endware). When a request comes in using the same session, the data is loaded from the store.
+
+### Example
+
+An example of using sessions in a `route` to increment a views counter could be done as follows (the counter will continue to increment on each call to the route until the session expires after 2mins):
 
 ```powershell
 Server {

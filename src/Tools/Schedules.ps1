@@ -100,11 +100,11 @@ function Schedule
         $Limit = 0,
 
         [Parameter()]
-        [Alias('Start')]
+        [Alias('start', 's')]
         $StartTime = $null,
 
         [Parameter()]
-        [Alias('End')]
+        [Alias('end', 'e')]
         $EndTime = $null
     )
 
