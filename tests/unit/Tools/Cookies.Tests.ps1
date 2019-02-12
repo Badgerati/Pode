@@ -7,14 +7,14 @@ $now = [datetime]::UtcNow
 Describe 'Flash' {
     Context 'Invalid parameters supplied' {
         It 'Throws invalid action error' {
-            { Flash -Action 'MOO' -Key '' -Value '' } | Should Throw "Cannot validate argument on parameter 'Action'"
+            { Flash -Action 'MOO' -Key '' -Message '' } | Should Throw "Cannot validate argument on parameter 'Action'"
         }
     }
 
     Context 'Valid parameters' {
         It 'Throws error because sessions are not configured' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{} } }
-            { Flash -Action Add -Key '' -Value '' } | Should Throw 'Sessions are required'
+            { Flash -Action Add -Key '' -Message '' } | Should Throw 'Sessions are required'
         }
 
         It 'Throws error for no key supplied on Add' {
@@ -36,7 +36,7 @@ Describe 'Flash' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-            Flash -Action Add -Key 'Test1' -Value 'Value1'
+            Flash -Action Add -Key 'Test1' -Message 'Value1'
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 1
@@ -58,8 +58,8 @@ Describe 'Flash' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-            Flash -Action Add -Key 'Test1' -Value 'Value1'
-            Flash -Action Add -Key 'Test2' -Value 'Value2'
+            Flash -Action Add -Key 'Test1' -Message 'Value1'
+            Flash -Action Add -Key 'Test2' -Message 'Value2'
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 2
@@ -71,8 +71,8 @@ Describe 'Flash' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-            Flash -Action Add -Key 'Test1' -Value 'Value1'
-            Flash -Action Add -Key 'Test1' -Value 'Value2'
+            Flash -Action Add -Key 'Test1' -Message 'Value1'
+            Flash -Action Add -Key 'Test1' -Message 'Value2'
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 1
@@ -85,8 +85,8 @@ Describe 'Flash' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-            Flash -Action Add -Key 'Test1' -Value 'Value1'
-            Flash -Action Add -Key 'Test2' -Value 'Value2'
+            Flash -Action Add -Key 'Test1' -Message 'Value1'
+            Flash -Action Add -Key 'Test2' -Message 'Value2'
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 2
@@ -125,8 +125,8 @@ Describe 'Flash' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-            Flash -Action Add -Key 'Test1' -Value 'Value1'
-            Flash -Action Add -Key 'Test2' -Value 'Value2'
+            Flash -Action Add -Key 'Test1' -Message 'Value1'
+            Flash -Action Add -Key 'Test2' -Message 'Value2'
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 2
@@ -142,8 +142,8 @@ Describe 'Flash' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-            Flash -Action Add -Key 'Test1' -Value 'Value1'
-            Flash -Action Add -Key 'Test1' -Value 'Value2'
+            Flash -Action Add -Key 'Test1' -Message 'Value1'
+            Flash -Action Add -Key 'Test1' -Message 'Value2'
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 1
@@ -161,8 +161,8 @@ Describe 'Flash' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-            Flash -Action Add -Key 'Test1' -Value 'Value1'
-            Flash -Action Add -Key 'Test2' -Value 'Value2'
+            Flash -Action Add -Key 'Test1' -Message 'Value1'
+            Flash -Action Add -Key 'Test2' -Message 'Value2'
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 2
@@ -177,8 +177,8 @@ Describe 'Flash' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
-            Flash -Action Add -Key 'Test1' -Value 'Value1'
-            Flash -Action Add -Key 'Test2' -Value 'Value2'
+            Flash -Action Add -Key 'Test1' -Message 'Value1'
+            Flash -Action Add -Key 'Test2' -Message 'Value2'
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 2

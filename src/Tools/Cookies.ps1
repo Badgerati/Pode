@@ -137,7 +137,7 @@ function Flash
 
         [Parameter()]
         [string]
-        $Value
+        $Message
     )
 
     # if sessions haven't been setup, error
@@ -153,21 +153,21 @@ function Flash
     switch ($Action.ToLowerInvariant())
     {
         'add' {
-            # append the value against the key
+            # append the message against the key
             if ($null -eq $WebEvent.Session.Data.Flash) {
                 $WebEvent.Session.Data.Flash = @{}
             }
 
             if ($null -eq $WebEvent.Session.Data.Flash[$Key]) {
-                $WebEvent.Session.Data.Flash[$Key] = @($Value)
+                $WebEvent.Session.Data.Flash[$Key] = @($Message)
             }
             else {
-                $WebEvent.Session.Data.Flash[$Key] += @($Value)
+                $WebEvent.Session.Data.Flash[$Key] += @($Message)
             }
         }
 
         'get' {
-            # retrieve value from session, then delete it
+            # retrieve messages from session, then delete it
             if ($null -eq $WebEvent.Session.Data.Flash) {
                 return @()
             }
