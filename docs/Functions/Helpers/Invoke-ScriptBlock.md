@@ -2,7 +2,7 @@
 
 ## Description
 
-The `Invoke-ScriptBlock` function takes a scriptblock and invokes it. You can specify arguments, and whether a value should be returned.
+The `Invoke-ScriptBlock` function takes a scriptblock and invokes it. You can specify arguments to pass to the script, and whether a value should be returned.
 
 By default the scriptblock will have the `GetNewClosure()` method called, and will be invoked in the current scope; these can be toggled via `-NoNewClosure` and `-Scoped` respectively.
 
@@ -62,9 +62,9 @@ Server {
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
-| ScriptBlock | scriptblock | true | ... | null |
-| Arguments | hashtable/array | false | ... | null |
-| Scoped | switch | false | ... | false |
-| Return | switch | false | ... | false |
-| Splat | switch | false | ... | false |
-| NoNewClosure | switch | false | ... | false |
+| ScriptBlock | scriptblock | true | The script to be invoked | null |
+| Arguments | hashtable/array | false | Any arguments that need to be passed to the script | null |
+| Scoped | switch | false | If passed, the script will be invoked within its own scope; otherwise it will be invoked within the current scope | false |
+| Return | switch | false | If passed, will attempt to return any value from the script; otherwise nothing is returned, even if the script returns a value | false |
+| Splat | switch | false | If passed, the arguments array/hastable will be split-up and passed as mutliple arguments; otherwise it will be passed as a single argument | false |
+| NoNewClosure | switch | false | If passed, the script will not have its `GetNewClosure()` method called | false |

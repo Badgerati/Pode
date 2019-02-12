@@ -30,6 +30,7 @@ nav:
       - Web Pages: Tutorials/Routes/WebPages.md
       - Static Content: Tutorials/Routes/StaticContent.md
       - Login Page: Tutorials/Routes/LoginPage.md
+      - Flash Messages: Tutorials/Routes/FlashMessages.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md
       - Access Rules: Tutorials/Middleware/AccessRules.md
@@ -46,12 +47,12 @@ nav:
       - Basic: Tutorials/Authentication/Basic.md
       - Form: Tutorials/Authentication/Form.md
       - Custom: Tutorials/Authentication/Custom.md
-    - Cron Expressions: Tutorials/CronExpressions.md
     - View Engines:
       - Pode: Tutorials/ViewEngines/Pode.md
       - Third Party: Tutorials/ViewEngines/ThirdParty.md
     - SMTP Server: Tutorials/SmtpServer.md
     - Misc:
+      - Cron Expressions: Tutorials/Misc/CronExpressions.md
       - Desktop Application: Tutorials/Misc/DesktopApp.md
       - Uploading Files: Tutorials/Misc/UploadFiles.md
 
@@ -88,6 +89,7 @@ nav:
 
     - Utility:
       - Dispose: Functions/Utility/Dispose.md
+      - Flash: Functions/Utility/Flash.md
       - Include: Functions/Utility/Include.md
       - Lock: Functions/Utility/Lock.md
       - Root: Functions/Utility/Root.md

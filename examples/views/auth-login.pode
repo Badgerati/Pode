@@ -21,5 +21,9 @@
             </div>
         </form>
 
+        $(if ($Data.flash['auth-error']) {
+            "<p>$($Data.flash['auth-error'])</p>"
+        })
+
     </body>
 </html>

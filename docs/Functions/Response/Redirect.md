@@ -2,11 +2,25 @@
 
 ## Description
 
-The `redirect` function allows you to specify a URL to which to redirect the enduser. You can either specify a raw or relative URL, or alter the current request URI's endpoint/port/protocol - such as redirecting from HTTP to HTTPS.
+The `redirect` function allows you to specify a URL to which the enduser should be redirected. You can either specify a raw or relative URL, or alter the current request URI's endpoint/port/protocol - such as redirecting from HTTP to HTTPS.
 
 ## Examples
 
 ### Example 1
+
+The following example will redirect the enduser to the relative `/login` URL on the same endpoint:
+
+```powershell
+Server {
+    listen *:8080 http
+
+    route get '/logout' {
+        redirect -url '/login'
+    }
+}
+```
+
+### Example 2
 
 The following example will redirect the enduser to `https://google.com`:
 
@@ -20,7 +34,7 @@ Server {
 }
 ```
 
-### Example 2
+### Example 3
 
 Assuming the current request URI is `http://localhost:8080`, then the following example will redirect the enduser to `http://localhost:8090`:
 
@@ -34,7 +48,7 @@ Server {
 }
 ```
 
-### Example 3
+### Example 4
 
 Assuming the current request URI is `http://localhost:8080`, then the following example will redirect the enduser to `https://localhost:8080`:
 
@@ -48,7 +62,7 @@ Server {
 }
 ```
 
-### Example 4
+### Example 5
 
 The following example will redirect every method and route to https:
 
@@ -62,7 +76,7 @@ Server {
 }
 ```
 
-### Example 5
+### Example 6
 
 The following example will redirect every method and route from the `127.0.0.2` endpoint to the localhost one - the port and protocol will remain untouched:
 

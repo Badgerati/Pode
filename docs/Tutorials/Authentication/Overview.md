@@ -92,6 +92,8 @@ The following table contains options that you can supply to an `auth check -o @{
 | Name | Description | Default |
 | ---- | ----------- | ------- |
 | FailureUrl | The URL to redirect to should authentication fail | empty |
+| FailureMessage | Overrides any error message thrown during authentication validation | empty |
+| FailureFlash | If true, any error message thrown will be loaded into the session's [`flash`](../../Misc/FlashMessages) messages under the `auth-error` key | false |
 | SuccessUrl | The URL to redirect to should authentication succeed | empty |
 | Session | If true, check if the session already has an authenticated user; storing the user in the session if they are authenticated | true |
 | Login | If true, check the authentication status in the session and redirect to the SuccessUrl if the user is authenticated. Otherwise proceed to the page with no authentication required | false |

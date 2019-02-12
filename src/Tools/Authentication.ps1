@@ -156,65 +156,68 @@ function Invoke-AuthCheck
 
     # setup the middleware logic
     $logic = {
-        param($s)
+        param($e)
 
         # Route options for using sessions
-        $storeInSession = ($s.Middleware.Options.Session -ne $false)
-        $usingSessions = (!(Test-Empty $s.Session))
+        $storeInSession = ($e.Middleware.Options.Session -ne $false)
+        $usingSessions = (!(Test-Empty $e.Session))
 
         # check for logout command
-        if ($s.Middleware.Options.Logout -eq $true) {
-            Remove-PodeAuth -Session $s
-            return (Set-PodeAuthStatus -StatusCode 302 -Options $s.Middleware.Options)
+        if ($e.Middleware.Options.Logout -eq $true) {
+            Remove-PodeAuth -Event $e
+            return (Set-PodeAuthStatus -StatusCode 302 -Options $e.Middleware.Options)
         }
 
         # if the session already has a user/isAuth'd, then setup method and return
-        if ($usingSessions -and !(Test-Empty $s.Session.Data.Auth.User) -and $s.Session.Data.Auth.IsAuthenticated) {
-            $s.Auth = $s.Session.Data.Auth
-            return (Set-PodeAuthStatus -Options $s.Middleware.Options)
+        if ($usingSessions -and !(Test-Empty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
+            $e.Auth = $e.Session.Data.Auth
+            return (Set-PodeAuthStatus -Options $e.Middleware.Options)
         }
 
         # check if the login flag is set, in which case just return
-        if ($s.Middleware.Options.Login -eq $true) {
-            Remove-PodeSessionCookie -Response $s.Response -Session $s.Session
+        if ($e.Middleware.Options.Login -eq $true) {
+            if (!(Test-Empty $e.Session.Data.Auth)) {
+                Remove-PodeSessionCookie -Response $e.Response -Session $e.Session
+            }
+
             return $true
         }
 
         # get the auth type
-        $auth = $PodeContext.Server.Authentications[$s.Middleware.Options.AuthType]
+        $auth = $PodeContext.Server.Authentications[$e.Middleware.Options.AuthType]
 
         # validate the request and get a user
         try {
             # if it's a custom type the parser will return the data for use to pass to the validator
             if ($auth.Custom) {
-                $data = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($s, $auth.Options) -Return -Splat)
+                $data = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($e, $auth.Options) -Return -Splat)
                 $data += $auth.Options
 
                 $result = (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments $data -Return -Splat)
             }
             else {
-                $result = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($s, $auth) -Return -Splat)
+                $result = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($e, $auth) -Return -Splat)
             }
         }
         catch {
             $_.Exception | Out-Default
-            return (Set-PodeAuthStatus -StatusCode 500 -Options $s.Middleware.Options)
+            return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Options $e.Middleware.Options)
         }
 
         # if there is no result return false (failed auth)
         if ((Test-Empty $result) -or (Test-Empty $result.User)) {
             return (Set-PodeAuthStatus -StatusCode (coalesce $result.Code 401) `
-                -Description $result.Message -Options $s.Middleware.Options)
+                -Description $result.Message -Options $e.Middleware.Options)
         }
 
         # assign the user to the session, and wire up a quick method
-        $s.Auth = @{}
-        $s.Auth.User = $result.User
-        $s.Auth.IsAuthenticated = $true
-        $s.Auth.Store = $storeInSession
+        $e.Auth = @{}
+        $e.Auth.User = $result.User
+        $e.Auth.IsAuthenticated = $true
+        $e.Auth.Store = $storeInSession
 
         # continue
-        return (Set-PodeAuthStatus -Options $s.Middleware.Options)
+        return (Set-PodeAuthStatus -Options $e.Middleware.Options)
     }
 
     # return the middleware
@@ -307,24 +310,24 @@ function Remove-PodeAuth
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Session
+        $Event
     )
 
     # blank out the auth
-    $Session.Auth = @{}
+    $Event.Auth = @{}
 
     # if a session auth is found, blank it
-    if (!(Test-Empty $Session.Session.Data.Auth)) {
-        $Session.Session.Data.Remove('Auth')
+    if (!(Test-Empty $Event.Session.Data.Auth)) {
+        $Event.Session.Data.Remove('Auth')
     }
 
     # redirect to a failure url, or onto the current path?
-    if (Test-Empty $Session.Middleware.Options.FailureUrl) {
-        $Session.Middleware.Options.FailureUrl = $Session.Request.Url.AbsolutePath
+    if (Test-Empty $Event.Middleware.Options.FailureUrl) {
+        $Event.Middleware.Options.FailureUrl = $Event.Request.Url.AbsolutePath
     }
 
     # Delete the session (remove from store, blank it, and remove from Response)
-    Remove-PodeSessionCookie -Response $Session.Response -Session $Session.Session
+    Remove-PodeSessionCookie -Response $Event.Response -Session $Event.Session
 }
 
 function Set-PodeAuthStatus
@@ -346,6 +349,14 @@ function Set-PodeAuthStatus
     # if a statuscode supplied, assume failure
     if ($StatusCode -gt 0)
     {
+        # override description with the failureMessage if supplied
+        $Description = (coalesce $Options.FailureMessage $Description)
+
+        # add error to flash if flagged
+        if ([bool]$Options.FailureFlash) {
+            flash add 'auth-error' $Description
+        }
+
         # check if we have a failure url redirect
         if (!(Test-Empty $Options.FailureUrl)) {
             redirect $Options.FailureUrl
@@ -399,10 +410,10 @@ function Get-PodeAuthValidator
 
                 $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($fqdn)", "$($username)", "$($password)")
                 if (Test-Empty $ad.distinguishedName) {
-                    return $null
+                    return @{ 'Message' = 'Invalid credentials supplied' }
                 }
 
-                return @{ 'user' = @{
+                return @{ 'User' = @{
                     'Username' = $ad.psbase.username;
                     'FQDN' = $fqdn;
                 } }
@@ -430,10 +441,10 @@ function Get-PodeAuthBasic
     )
 
     $parser = {
-        param($s, $auth)
+        param($e, $auth)
 
         # get the auth header
-        $header = $s.Request.Headers['Authorization']
+        $header = $e.Request.Headers['Authorization']
         if ($null -eq $header) {
             return @{
                 'User' = $null;
@@ -510,15 +521,15 @@ function Get-PodeAuthForm
     )
 
     $parser = {
-        param($s, $auth)
+        param($e, $auth)
 
         # get user/pass keys to get from payload
         $userField = (coalesce $auth.Options.UsernameField 'username')
         $passField = (coalesce $auth.Options.PasswordField 'password')
 
         # get the user/pass
-        $username = $s.Data.$userField
-        $password = $s.Data.$passField
+        $username = $e.Data.$userField
+        $password = $e.Data.$passField
 
         # if either are empty, deny
         if ((Test-Empty $username) -or (Test-Empty $password)) {
