@@ -1,5 +1,16 @@
 # Release Notes
 
+## v0.26.0
+
+```plain
+### Features
+* #162: Basic support for local modules in "package.json" on "pode install"
+* #175: Support for flash messages on sessions, and in authentication
+
+### Bugs
+* #72: RunspacePools aren't being recreated during a restart, and modules fail to import into other RunspacePools
+```
+
 ## v0.25.0
 
 ```plain
