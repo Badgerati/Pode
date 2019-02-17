@@ -858,6 +858,29 @@ function Join-ServerRoot
     }
 }
 
+function Join-PodePaths
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string[]]
+        $Paths
+    )
+
+    if ($Paths.Length -lt 1) {
+        return $Paths[0]
+    }
+
+    $_path = Join-Path $Paths[0] $Paths[1]
+
+    if ($Paths.Length -gt 2) {
+        $Paths[2..($Paths.Length - 1)] | ForEach-Object {
+            $_path = Join-Path $_path $_
+        }
+    }
+
+    return $_path
+}
+
 function Invoke-ScriptBlock
 {
     param (

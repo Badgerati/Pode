@@ -342,6 +342,7 @@ Describe 'Script' {
 
     Context 'Valid parameters supplied' {
         Mock 'Resolve-Path' { return 'c:/some/file.txt' }
+        Mock 'Test-PodePath' { return $true }
 
         It 'Returns null for no shared state in context' {
             $PodeContext = @{ 'RunspaceState' = [initialsessionstate]::CreateDefault() }
@@ -368,6 +369,7 @@ Describe 'Import' {
 
     Context 'Valid parameters supplied' {
         Mock 'Resolve-Path' { return 'c:/some/file.txt' }
+        Mock 'Test-PodePath' { return $true }
 
         It 'Returns null for no shared state in context' {
             $PodeContext = @{ 'RunspaceState' = [initialsessionstate]::CreateDefault() }

@@ -10,6 +10,7 @@ nav:
     - CLI: Getting-Started/CLI.md
     - Docker: Getting-Started/Docker.md
     - Frontend: Getting-Started/Frontend.md
+    - Local Modules: Getting-Started/LocalModules.md
     - Run as a Service: Getting-Started/RunAsService.md
     - Known Issues: Getting-Started/KnownIssues.md
 
@@ -21,7 +22,7 @@ nav:
     - Timers: Tutorials/Timers.md
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
-    - External Modules: Tutorials/ExternalModules.md
+    - Importing Modules: Tutorials/ImportingModules.md
     - Configuration: Tutorials/Configuration.md
     - Routes:
       - Overview: Tutorials/Routes/Overview.md
