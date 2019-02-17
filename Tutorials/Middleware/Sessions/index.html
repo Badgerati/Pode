@@ -413,6 +413,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Getting-Started/LocalModules/" title="Local Modules" class="md-nav__link">
+      Local Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
       Run as a Service
     </a>
@@ -547,8 +559,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../ExternalModules/" title="External Modules" class="md-nav__link">
-      External Modules
+    <a href="../../ImportingModules/" title="Importing Modules" class="md-nav__link">
+      Importing Modules
     </a>
   </li>
 
@@ -652,6 +664,18 @@
   <li class="md-nav__item">
     <a href="../../Routes/LoginPage/" title="Login Page" class="md-nav__link">
       Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Routes/FlashMessages/" title="Flash Messages" class="md-nav__link">
+      Flash Messages
     </a>
   </li>
 
@@ -768,6 +792,26 @@
           <li class="md-nav__item">
   <a href="#store" title="Store" class="md-nav__link">
     Store
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#session-data" title="Session Data" class="md-nav__link">
+    Session Data
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" title="Example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -954,27 +998,15 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../CronExpressions/" title="Cron Expressions" class="md-nav__link">
-      Cron Expressions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
     
-    <label class="md-nav__link" for="nav-4-15">
+    <label class="md-nav__link" for="nav-4-14">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-15">
+      <label class="md-nav__title" for="nav-4-14">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1028,17 +1060,29 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
     
-    <label class="md-nav__link" for="nav-4-17">
+    <label class="md-nav__link" for="nav-4-16">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-17">
+      <label class="md-nav__title" for="nav-4-16">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
+      Cron Expressions
+    </a>
+  </li>
+
         
           
           
@@ -1490,6 +1534,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Utility/Flash/" title="Flash" class="md-nav__link">
+      Flash
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Utility/Include/" title="Include" class="md-nav__link">
       Include
     </a>
@@ -1745,6 +1801,26 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#session-data" title="Session Data" class="md-nav__link">
+    Session Data
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" title="Example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
       
       
       
@@ -1789,7 +1865,7 @@
 <h3 id="generateid">GenerateId</h3>
 <p>If supplied, the <code>GenerateId</code> script must be a <code>scriptblock</code> that returns a valid string. The string itself should be a random unique value, that can be used as a unique session identifier. If no <code>GenerateId</code> script is supplied, then the default <code>sessionId</code> is a <code>guid</code>.</p>
 <h3 id="store">Store</h3>
-<p>If supplied, the <code>Store</code> must be a valid object with the following required functions:</p>
+<p>If supplied, the <code>Store</code> must be a valid <code>psobject</code> with the following required <code>ScriptMethod</code> members:</p>
 <div class="codehilite"><pre><span></span><span class="no">[hashtable]</span> <span class="n">Get</span><span class="p">(</span><span class="no">[string]</span> <span class="nv">$sessionId</span><span class="p">)</span>
 <span class="no">[void]</span>      <span class="n">Set</span><span class="p">(</span><span class="no">[string]</span> <span class="nv">$sessionId</span><span class="p">,</span> <span class="no">[hashtable]</span> <span class="nv">$data</span><span class="p">,</span> <span class="no">[datetime]</span> <span class="nv">$expiry</span><span class="p">)</span>
 <span class="no">[void]</span>      <span class="n">Delete</span><span class="p">(</span><span class="no">[string]</span> <span class="nv">$sessionId</span><span class="p">)</span>
@@ -1797,8 +1873,22 @@
 
 
 <p>If no store is supplied, then a default in-memory store is used - with auto-cleanup for expired sessions.</p>
-<p>To add data to a session you can utilise the <code>.Session.Data</code> object within the parameter supplied to a <code>route</code> - or other middleware. The data will be saved at the end of the route logic automatically using <a href="../../../Functions/Core/Endware"><code>endware</code></a>. When a request comes in using the same session, the data is loaded from the store.</p>
-<p>An example of using a <code>session</code> in a <code>route</code> to increment a views counter could be as follows (the counter will continue to increment on each call to the route until the session expires):</p>
+<p>For example, the <code>Delete</code> method could be done as follows:</p>
+<div class="codehilite"><pre><span></span><span class="nv">$store</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">-TypeName</span> <span class="n">psobject</span>
+
+<span class="nv">$store</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">ScriptMethod</span> <span class="n">-Name</span> <span class="n">Delete</span> <span class="n">-Value</span> <span class="p">{</span>
+    <span class="k">param</span><span class="p">(</span><span class="nv">$sessionId</span><span class="p">)</span>
+    <span class="nb">Remove-RedisKey</span> <span class="nv">$sessionId</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+<span class="p">}</span>
+
+<span class="k">return</span> <span class="nv">$store</span>
+</pre></div>
+
+
+<h2 id="session-data">Session Data</h2>
+<p>To add data to a session you can utilise the <code>.Session.Data</code> object within the argument supplied to a <code>route</code> - or other middleware. The data will be saved at the end of the route logic automatically using <a href="../../../Functions/Core/Endware"><code>endware</code></a>. When a request comes in using the same session, the data is loaded from the store.</p>
+<h3 id="example">Example</h3>
+<p>An example of using sessions in a <code>route</code> to increment a views counter could be done as follows (the counter will continue to increment on each call to the route until the session expires after 2mins):</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">middleware</span> <span class="p">(</span><span class="n">session</span> <span class="p">@{</span> <span class="s1">&#39;secret&#39;</span> <span class="p">=</span> <span class="s1">&#39;schwifty&#39;</span><span class="p">;</span> <span class="s1">&#39;duration&#39;</span> <span class="p">=</span> <span class="n">120</span><span class="p">;</span> <span class="p">})</span>
 

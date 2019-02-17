@@ -413,6 +413,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Getting-Started/LocalModules/" title="Local Modules" class="md-nav__link">
+      Local Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
       Run as a Service
     </a>
@@ -547,8 +559,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../ExternalModules/" title="External Modules" class="md-nav__link">
-      External Modules
+    <a href="../../ImportingModules/" title="Importing Modules" class="md-nav__link">
+      Importing Modules
     </a>
   </li>
 
@@ -652,6 +664,18 @@
   <li class="md-nav__item">
     <a href="../../Routes/LoginPage/" title="Login Page" class="md-nav__link">
       Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Routes/FlashMessages/" title="Flash Messages" class="md-nav__link">
+      Flash Messages
     </a>
   </li>
 
@@ -955,27 +979,15 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../CronExpressions/" title="Cron Expressions" class="md-nav__link">
-      Cron Expressions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
     
-    <label class="md-nav__link" for="nav-4-15">
+    <label class="md-nav__link" for="nav-4-14">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-15">
+      <label class="md-nav__title" for="nav-4-14">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1029,17 +1041,29 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
     
-    <label class="md-nav__link" for="nav-4-17">
+    <label class="md-nav__link" for="nav-4-16">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-17">
+      <label class="md-nav__title" for="nav-4-16">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
+      Cron Expressions
+    </a>
+  </li>
+
         
           
           
@@ -1491,6 +1515,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Utility/Flash/" title="Flash" class="md-nav__link">
+      Flash
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Utility/Include/" title="Include" class="md-nav__link">
       Include
     </a>
@@ -1767,9 +1803,9 @@
                 
                 
                 <h1 id="middleware-overview">Middleware Overview</h1>
-<p>When working with web servers in Pode - rest apis, routes, web-pages, etc. - they have support for using <a href="../../../Functions/Core/Middleware"><code>middleware</code></a>. Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the <code>route</code> logic.</p>
-<p>Middleware is supported as a general <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> function, as well as on the <a href="../../../Functions/Core/Route"><code>route</code></a> function for custom middleware - like authentication</p>
-<p>Pode itself has some inbuilt middleware, which is overridable so you can use your own custom middleware; for example, Pode has inbuilt middleware for rate limiting, but you can override this with <code>middleware</code> and the name <code>@limit</code> (more on the <a href="../AccessRules">Access Rules</a> and <a href="../RateLimiting">Rate Limiting</a> page).</p>
+<p>When working with web servers in Pode - rest apis, routes, web-pages, etc. - they have support for using <a href="../../../Functions/Core/Middleware"><code>middleware</code></a>. Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the web event for later use, or terminate the response without processing the <code>route</code> logic.</p>
+<p>Middleware is supported as a general <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> function, as well as on the <a href="../../../Functions/Core/Route"><code>route</code></a> function for custom middleware - like authentication.</p>
+<p>Pode itself has some inbuilt middleware, which is overridable so you can use your own custom middleware. For example, Pode has inbuilt middleware for rate limiting, but you can override this with <code>middleware</code> and the name <code>@limit</code> (more on the <a href="../AccessRules">Access Rules</a> and <a href="../RateLimiting">Rate Limiting</a> page).</p>
 <h2 id="global-middleware">Global Middleware</h2>
 <p>To setup and use middleware in Pode you use the <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> function. This will setup global middleware that will run, in the order created, on every request prior to <code>route</code> logic being invoked.</p>
 <p>The make-up of the <code>middleware</code> function is as follows:</p>
@@ -1777,7 +1813,7 @@
 </pre></div>
 
 
-<p>The <code>middleware</code> function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a <code>route</code>). The event object passed contains the current <code>Request</code> and <code>Response</code> objects - you can also add more custom objects to it, as the event is just a <code>hashtable</code>. The <code>-Name</code> parameter is defined later, but it solely used for allowing you to override the inbuilt middleware of Pode. The <code>route</code> value allows you to specify which routes to run the middleware against.</p>
+<p>The <code>middleware</code> function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a <code>route</code>). The event object passed contains the current <code>Request</code> and <code>Response</code> objects - you can also add more custom objects to it, as the event is just a <code>hashtable</code>. The <code>-Name</code> parameter is defined later, but is solely used for allowing you to override the inbuilt middleware of Pode. The <code>route</code> value allows you to specify which routes to run the middleware against.</p>
 <p>If you want to keep processing and proceed to the next middleware/route then <code>return $true</code> from the scriptblock, otherwise <code>return $false</code> and the response will be closed immediately.</p>
 <p>The following example is middleware that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new <code>Agent</code> key on the session for later <code>middleware</code>/<code>route</code> logic:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
@@ -1917,7 +1953,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../../Routes/LoginPage/" title="Login Page" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../../Routes/FlashMessages/" title="Flash Messages" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1926,7 +1962,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Login Page
+                Flash Messages
               </span>
             </div>
           </a>

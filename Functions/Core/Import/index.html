@@ -413,6 +413,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Getting-Started/LocalModules/" title="Local Modules" class="md-nav__link">
+      Local Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
       Run as a Service
     </a>
@@ -545,8 +557,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Tutorials/ExternalModules/" title="External Modules" class="md-nav__link">
-      External Modules
+    <a href="../../../Tutorials/ImportingModules/" title="Importing Modules" class="md-nav__link">
+      Importing Modules
     </a>
   </li>
 
@@ -650,6 +662,18 @@
   <li class="md-nav__item">
     <a href="../../../Tutorials/Routes/LoginPage/" title="Login Page" class="md-nav__link">
       Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/FlashMessages/" title="Flash Messages" class="md-nav__link">
+      Flash Messages
     </a>
   </li>
 
@@ -892,27 +916,15 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/CronExpressions/" title="Cron Expressions" class="md-nav__link">
-      Cron Expressions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
     
-    <label class="md-nav__link" for="nav-4-15">
+    <label class="md-nav__link" for="nav-4-14">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-15">
+      <label class="md-nav__title" for="nav-4-14">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -966,17 +978,29 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
     
-    <label class="md-nav__link" for="nav-4-17">
+    <label class="md-nav__link" for="nav-4-16">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-17">
+      <label class="md-nav__title" for="nav-4-16">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
+      Cron Expressions
+    </a>
+  </li>
+
         
           
           
@@ -1504,6 +1528,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Utility/Flash/" title="Flash" class="md-nav__link">
+      Flash
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Utility/Include/" title="Include" class="md-nav__link">
       Include
     </a>
@@ -1794,10 +1830,11 @@
                 
                 <h1 id="import">Import</h1>
 <h2 id="description">Description</h2>
-<p>The <code>import</code> function allows you to declare paths to PowerShell Modules (<code>.psm1</code>/<code>.psd1</code>) that need to be imported into each runspace - you can also specify the name of a module you already have installed. Because Pode runs most things in isolated runspaces, importing and using external modules in Pode can be quite bothersome, with <code>import</code> Pode will handle importing your modules into all async runspaces for you.</p>
+<p>The <code>import</code> function lets you declare paths to PowerShell Modules (<code>.psm1</code>/<code>.psd1</code>) that need to be imported into each runspace - you can also specify the name of a module you already have installed. Because Pode runs most things in isolated runspaces, importing and using external modules in Pode can be quite bothersome, with <code>import</code> Pode will handle importing your modules into all runspaces for you.</p>
+<p>If a module name is used rather than a raw path, then Pode will check you're server's <a href="../../../Getting-Started/LocalModules"><code>ps_modules</code></a> directory first, and then check your globally installed modules.</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
-<p>The following example will import the specified module file into each of the runspaces that Pode creates. This way you'll be able to use each of the functions declared wihtin the module in <code>routes</code>, <code>timers</code>, <code>schedules</code>, <code>loggers</code>, <code>handlers</code>, etc. (basically, everything):</p>
+<p>The following example will import the specified module file into each of the runspaces that Pode creates. This way you'll be able to use each of the functions declared within  the module in <code>routes</code>, <code>timers</code>, <code>schedules</code>, <code>loggers</code>, <code>handlers</code>, etc. (basically, everything):</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">import</span> <span class="s1">&#39;./path/to/module.psm1&#39;</span>
 <span class="p">}</span>
@@ -1805,7 +1842,7 @@
 
 
 <h3 id="example-2">Example 2</h3>
-<p>The following example will import the module <code>EPS</code>, for views, into each of the runspaces:</p>
+<p>The following example will import the <code>EPS</code> module, for views, into each of the runspaces:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">import</span> <span class="n">eps</span>
 <span class="p">}</span>
@@ -1830,6 +1867,13 @@
 <td>true</td>
 <td>The path to a PowerShell Module (<code>.psm1</code>/<code>.psd1</code>), or the name of an installed mode, that should be imported into the runspaces</td>
 <td>empty</td>
+</tr>
+<tr>
+<td>Now</td>
+<td>switch</td>
+<td>false</td>
+<td>If true, the module will be imported immediately into the current scope</td>
+<td>false</td>
 </tr>
 </tbody>
 </table>

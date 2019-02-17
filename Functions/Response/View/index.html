@@ -413,6 +413,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Getting-Started/LocalModules/" title="Local Modules" class="md-nav__link">
+      Local Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
       Run as a Service
     </a>
@@ -545,8 +557,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Tutorials/ExternalModules/" title="External Modules" class="md-nav__link">
-      External Modules
+    <a href="../../../Tutorials/ImportingModules/" title="Importing Modules" class="md-nav__link">
+      Importing Modules
     </a>
   </li>
 
@@ -650,6 +662,18 @@
   <li class="md-nav__item">
     <a href="../../../Tutorials/Routes/LoginPage/" title="Login Page" class="md-nav__link">
       Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/FlashMessages/" title="Flash Messages" class="md-nav__link">
+      Flash Messages
     </a>
   </li>
 
@@ -892,27 +916,15 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/CronExpressions/" title="Cron Expressions" class="md-nav__link">
-      Cron Expressions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
     
-    <label class="md-nav__link" for="nav-4-15">
+    <label class="md-nav__link" for="nav-4-14">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-15">
+      <label class="md-nav__title" for="nav-4-14">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -966,17 +978,29 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
     
-    <label class="md-nav__link" for="nav-4-17">
+    <label class="md-nav__link" for="nav-4-16">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-17">
+      <label class="md-nav__title" for="nav-4-16">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
+      Cron Expressions
+    </a>
+  </li>
+
         
           
           
@@ -1511,6 +1535,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Utility/Flash/" title="Flash" class="md-nav__link">
+      Flash
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Utility/Include/" title="Include" class="md-nav__link">
       Include
     </a>
@@ -1808,8 +1844,8 @@
                 
                 <h1 id="view">View</h1>
 <h2 id="description">Description</h2>
-<p>The <code>view</code> function allows you to render any of the view files that you place within the <code>/views</code> directory. When you call <code>view</code>, Pode will automatically look within this directory.</p>
-<p>Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it to Pode by using the <a href="../../Core/Engine"><code>engine</code></a> function.</p>
+<p>The <code>view</code> function allows you to render view files that are placed within the <code>/views</code> directory at the root of your server. When you call <code>view</code>, Pode will automatically look within this directory for files.</p>
+<p>Pode uses a View Engine to render either HTML, Pode, or other file types. Default is HTML, and you can change it to Pode, or other third-party engines, by using the <a href="../../Core/Engine"><code>engine</code></a> function.</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
 <p>The following example will render the <code>index.html</code> view when you navigate to <code>http://localhost:8080</code>:</p>
@@ -1872,11 +1908,18 @@
 <td>null</td>
 </tr>
 <tr>
-<td>data</td>
+<td>Data</td>
 <td>hashtable</td>
 <td>false</td>
 <td>A hashtable of dynamic data that will be supplied to <code>.pode</code>, and other third-party template engine, view files</td>
 <td><code>@{}</code></td>
+</tr>
+<tr>
+<td>FlashMessages</td>
+<td>switch</td>
+<td>false</td>
+<td>If true, will load all flash messages from the current session into the dynamic view's data as <code>$data.flash</code></td>
+<td>false</td>
 </tr>
 </tbody>
 </table>

@@ -413,6 +413,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Getting-Started/LocalModules/" title="Local Modules" class="md-nav__link">
+      Local Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
       Run as a Service
     </a>
@@ -599,8 +611,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../ExternalModules/" title="External Modules" class="md-nav__link">
-      External Modules
+    <a href="../ImportingModules/" title="Importing Modules" class="md-nav__link">
+      Importing Modules
     </a>
   </li>
 
@@ -704,6 +716,18 @@
   <li class="md-nav__item">
     <a href="../Routes/LoginPage/" title="Login Page" class="md-nav__link">
       Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Routes/FlashMessages/" title="Flash Messages" class="md-nav__link">
+      Flash Messages
     </a>
   </li>
 
@@ -946,27 +970,15 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../CronExpressions/" title="Cron Expressions" class="md-nav__link">
-      Cron Expressions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
     
-    <label class="md-nav__link" for="nav-4-15">
+    <label class="md-nav__link" for="nav-4-14">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-15">
+      <label class="md-nav__title" for="nav-4-14">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1020,17 +1032,29 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
     
-    <label class="md-nav__link" for="nav-4-17">
+    <label class="md-nav__link" for="nav-4-16">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-17">
+      <label class="md-nav__title" for="nav-4-16">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
+      Cron Expressions
+    </a>
+  </li>
+
         
           
           
@@ -1482,6 +1506,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Utility/Flash/" title="Flash" class="md-nav__link">
+      Flash
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Utility/Include/" title="Include" class="md-nav__link">
       Include
     </a>
@@ -1752,10 +1788,13 @@
                 
                 <h1 id="schedules">Schedules</h1>
 <p>A schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process.</p>
-<p>Schedule triggers are defined using <a href="../CronExpressions"><code>cron expressions</code></a>, basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a a defined end time.</p>
+<p>Schedule triggers are defined using <a href="../Misc/CronExpressions"><code>cron expressions</code></a>, basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a a defined end time.</p>
 <h2 id="create-a-schedule">Create a Schedule</h2>
 <p>To create a new schedule in your server you use the <a href="../../Functions/Core/Schedule"><code>schedule</code></a> function. The make-up of the function is as follows:</p>
 <div class="codehilite"><pre><span></span><span class="n">schedule</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">cron</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-start</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-end</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-limit</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span>
+
+<span class="c"># or shorthand:</span>
+<span class="n">schedule</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">cron</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-s</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-l</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span>
 </pre></div>
 
 

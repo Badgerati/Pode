@@ -413,6 +413,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Getting-Started/LocalModules/" title="Local Modules" class="md-nav__link">
+      Local Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
       Run as a Service
     </a>
@@ -619,8 +631,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../ExternalModules/" title="External Modules" class="md-nav__link">
-      External Modules
+    <a href="../ImportingModules/" title="Importing Modules" class="md-nav__link">
+      Importing Modules
     </a>
   </li>
 
@@ -724,6 +736,18 @@
   <li class="md-nav__item">
     <a href="../Routes/LoginPage/" title="Login Page" class="md-nav__link">
       Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Routes/FlashMessages/" title="Flash Messages" class="md-nav__link">
+      Flash Messages
     </a>
   </li>
 
@@ -966,27 +990,15 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../CronExpressions/" title="Cron Expressions" class="md-nav__link">
-      Cron Expressions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
     
-    <label class="md-nav__link" for="nav-4-15">
+    <label class="md-nav__link" for="nav-4-14">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-15">
+      <label class="md-nav__title" for="nav-4-14">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1040,17 +1052,29 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
     
-    <label class="md-nav__link" for="nav-4-17">
+    <label class="md-nav__link" for="nav-4-16">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-17">
+      <label class="md-nav__title" for="nav-4-16">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
+      Cron Expressions
+    </a>
+  </li>
+
         
           
           
@@ -1502,6 +1526,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Utility/Flash/" title="Flash" class="md-nav__link">
+      Flash
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Utility/Include/" title="Include" class="md-nav__link">
       Include
     </a>
@@ -1795,7 +1831,7 @@
 <p>To do this, you use the <a href="../../Functions/Utility/State"><code>state</code></a> function with an action of <code>set</code>, <code>get</code> or <code>remove</code>, in combination with the <a href="../../Functions/Utility/Lock"><code>lock</code></a> function to ensure thread safety</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>It's wise to use the <code>state</code> function in conjunction with the <code>lock</code> function, so as to ensure thread safety between runspaces. The session object supplied to a <code>route</code>, <code>timer</code>, <code>schedule</code> and <code>logger</code> each contain a <code>.Lockable</code> resource that can be supplied to the <code>lock</code> function.</p>
+<p>It's wise to use the <code>state</code> function in conjunction with the <code>lock</code> function, so as to ensure thread safety between runspaces. The argument object supplied to the <code>route</code>, <code>handler</code>, <code>timer</code>, <code>schedule</code>, <code>middleware</code>, <code>endware</code> and <code>logger</code> functions each contain a <code>.Lockable</code> resource that can be supplied to the <code>lock</code> function.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -1819,9 +1855,9 @@
 <p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will set a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
 
-        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
             <span class="n">state</span> <span class="n">set</span> <span class="s1">&#39;data&#39;</span> <span class="p">@{</span> <span class="s1">&#39;Name&#39;</span> <span class="p">=</span> <span class="s1">&#39;Rick Sanchez&#39;</span> <span class="p">}</span> <span class="p">|</span> <span class="nb">Out-Null</span>
         <span class="p">}</span>
     <span class="p">}</span>
@@ -1846,10 +1882,10 @@
 <p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will get a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
         <span class="nv">$value</span> <span class="p">=</span> <span class="nv">$null</span>
 
-        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
             <span class="nv">$value</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span>
         <span class="p">}</span>
 
@@ -1860,7 +1896,7 @@
 
 
 <h3 id="remove">Remove</h3>
-<p>The <code>state remove</code> action will remove a variable from the shared state. You only need to supply the variable's name from it to be removed from the state. The action will also return the value stored in the state before removing the variable.</p>
+<p>The <code>state remove</code> action will remove a variable from the shared state. You only need to supply the variable's name for it to be removed from the state. The action will also return the value stored in the state before removing the variable.</p>
 <p>The make-up of the <code>remove</code> action is:</p>
 <div class="codehilite"><pre><span></span><span class="n">state</span> <span class="n">remove</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span>
 </pre></div>
@@ -1876,9 +1912,9 @@
 <p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will remove a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
 
-        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
             <span class="n">state</span> <span class="n">remove</span> <span class="s1">&#39;data&#39;</span> <span class="p">|</span> <span class="nb">Out-Null</span>
         <span class="p">}</span>
     <span class="p">}</span>
@@ -1896,10 +1932,10 @@
 
     <span class="c"># timer to add a random number to the shared state</span>
     <span class="n">timer</span> <span class="s1">&#39;forever&#39;</span> <span class="n">2</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
 
         <span class="c"># ensure we&#39;re thread safe</span>
-        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
 
             <span class="c"># attempt to get the hashtable from the state</span>
             <span class="nv">$hash</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>
@@ -1911,10 +1947,10 @@
 
     <span class="c"># route to return the value of the hashtable from shared state</span>
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
 
         <span class="c"># again, ensure we&#39;re thread safe</span>
-        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
 
             <span class="c"># get the hashtable from the state and return it</span>
             <span class="nv">$hash</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>
@@ -1922,12 +1958,12 @@
         <span class="p">}</span>
     <span class="p">}</span>
 
-    <span class="c"># route to remove the hashable from shared state</span>
+    <span class="c"># route to remove the hashtable from shared state</span>
     <span class="n">route</span> <span class="n">delete</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
 
         <span class="c"># ensure we&#39;re thread safe</span>
-        <span class="n">lock</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Lockable</span> <span class="p">{</span>
 
             <span class="c"># remove the hashtable from the state</span>
             <span class="n">state</span> <span class="n">remove</span> <span class="s1">&#39;hash&#39;</span> <span class="p">|</span> <span class="nb">Out-Null</span>
@@ -1970,13 +2006,13 @@
           </a>
         
         
-          <a href="../ExternalModules/" title="External Modules" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../ImportingModules/" title="Importing Modules" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                External Modules
+                Importing Modules
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

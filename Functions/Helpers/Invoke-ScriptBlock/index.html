@@ -413,6 +413,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Getting-Started/LocalModules/" title="Local Modules" class="md-nav__link">
+      Local Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Getting-Started/RunAsService/" title="Run as a Service" class="md-nav__link">
       Run as a Service
     </a>
@@ -545,8 +557,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Tutorials/ExternalModules/" title="External Modules" class="md-nav__link">
-      External Modules
+    <a href="../../../Tutorials/ImportingModules/" title="Importing Modules" class="md-nav__link">
+      Importing Modules
     </a>
   </li>
 
@@ -650,6 +662,18 @@
   <li class="md-nav__item">
     <a href="../../../Tutorials/Routes/LoginPage/" title="Login Page" class="md-nav__link">
       Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/FlashMessages/" title="Flash Messages" class="md-nav__link">
+      Flash Messages
     </a>
   </li>
 
@@ -892,27 +916,15 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/CronExpressions/" title="Cron Expressions" class="md-nav__link">
-      Cron Expressions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-14" type="checkbox" id="nav-4-14">
     
-    <label class="md-nav__link" for="nav-4-15">
+    <label class="md-nav__link" for="nav-4-14">
       View Engines
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-15">
+      <label class="md-nav__title" for="nav-4-14">
         View Engines
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -966,17 +978,29 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
     
-    <label class="md-nav__link" for="nav-4-17">
+    <label class="md-nav__link" for="nav-4-16">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-17">
+      <label class="md-nav__title" for="nav-4-16">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
+      Cron Expressions
+    </a>
+  </li>
+
         
           
           
@@ -1430,6 +1454,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Utility/Flash/" title="Flash" class="md-nav__link">
+      Flash
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Utility/Include/" title="Include" class="md-nav__link">
       Include
     </a>
@@ -1808,7 +1844,7 @@
                 
                 <h1 id="invoke-scriptblock">Invoke-ScriptBlock</h1>
 <h2 id="description">Description</h2>
-<p>The <code>Invoke-ScriptBlock</code> function takes a scriptblock and invokes it. You can specify arguments, and whether a value should be returned.</p>
+<p>The <code>Invoke-ScriptBlock</code> function takes a scriptblock and invokes it. You can specify arguments to pass to the script, and whether a value should be returned.</p>
 <p>By default the scriptblock will have the <code>GetNewClosure()</code> method called, and will be invoked in the current scope; these can be toggled via <code>-NoNewClosure</code> and <code>-Scoped</code> respectively.</p>
 <p>If any arguments are supplied, they will be supplied as a single argument to the scriptblock. By using the <code>-Splat</code> switch, then if the arguments are an array/hashtable they will be passed as multiple arguments instead.</p>
 <h2 id="examples">Examples</h2>
@@ -1870,42 +1906,42 @@
 <td>ScriptBlock</td>
 <td>scriptblock</td>
 <td>true</td>
-<td>...</td>
+<td>The script to be invoked</td>
 <td>null</td>
 </tr>
 <tr>
 <td>Arguments</td>
 <td>hashtable/array</td>
 <td>false</td>
-<td>...</td>
+<td>Any arguments that need to be passed to the script</td>
 <td>null</td>
 </tr>
 <tr>
 <td>Scoped</td>
 <td>switch</td>
 <td>false</td>
-<td>...</td>
+<td>If passed, the script will be invoked within its own scope; otherwise it will be invoked within the current scope</td>
 <td>false</td>
 </tr>
 <tr>
 <td>Return</td>
 <td>switch</td>
 <td>false</td>
-<td>...</td>
+<td>If passed, will attempt to return any value from the script; otherwise nothing is returned, even if the script returns a value</td>
 <td>false</td>
 </tr>
 <tr>
 <td>Splat</td>
 <td>switch</td>
 <td>false</td>
-<td>...</td>
+<td>If passed, the arguments array/hastable will be split-up and passed as mutliple arguments; otherwise it will be passed as a single argument</td>
 <td>false</td>
 </tr>
 <tr>
 <td>NoNewClosure</td>
 <td>switch</td>
 <td>false</td>
-<td>...</td>
+<td>If passed, the script will not have its <code>GetNewClosure()</code> method called</td>
 <td>false</td>
 </tr>
 </tbody>
