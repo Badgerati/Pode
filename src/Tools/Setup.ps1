@@ -5,7 +5,11 @@ function Pode
         [ValidateSet('init', 'test', 'start', 'install', 'build')]
         [Alias('a')]
         [string]
-        $Action
+        $Action,
+
+        [switch]
+        [Alias('d')]
+        $Dev
     )
 
     # default config file name and content
@@ -13,7 +17,7 @@ function Pode
     $name = Split-Path -Leaf -Path $pwd
     $data = $null
 
-    # defualt config data that's used to populate on init
+    # default config data that's used to populate on init
     $map = @{
         'name' = $name;
         'version' = '1.0.0';
@@ -41,14 +45,14 @@ function Pode
             return
         }
         else {
-            $value = $data.scripts.$Action
+            $actionScript = $data.scripts.$Action
 
-            if ([string]::IsNullOrWhiteSpace($value) -and $Action -ieq 'start') {
-                $value = $data.main
+            if ([string]::IsNullOrWhiteSpace($actionScript) -and $Action -ieq 'start') {
+                $actionScript = $data.main
             }
 
-            if ([string]::IsNullOrWhiteSpace($value)) {
-                Write-Host "package.config does not contain a script for $($Action)" -ForegroundColor Yellow
+            if ([string]::IsNullOrWhiteSpace($actionScript) -and $Action -ine 'install') {
+                Write-Host "package.json does not contain a script for the $($Action) action" -ForegroundColor Yellow
                 return
             }
         }
@@ -84,19 +88,24 @@ function Pode
         }
 
         'test' {
-            Invoke-PodePackageScript -Value $value
+            Invoke-PodePackageScript -ActionScript $actionScript
         }
 
         'start' {
-            Invoke-PodePackageScript -Value $value
+            Invoke-PodePackageScript -ActionScript $actionScript
         }
 
         'install' {
-            Invoke-PodePackageScript -Value $value
+            if ($Dev) {
+                Install-PodeLocalModules -Modules $data.devModules
+            }
+
+            Install-PodeLocalModules -Modules $data.modules
+            Invoke-PodePackageScript -ActionScript $actionScript
         }
 
         'build' {
-            Invoke-PodePackageScript -Value $value
+            Invoke-PodePackageScript -ActionScript $actionScript
         }
     }
 }
@@ -106,17 +115,63 @@ function Invoke-PodePackageScript
     param (
         [Parameter()]
         [string]
-        $Value
+        $ActionScript
     )
 
-    if ([string]::IsNullOrWhiteSpace($Value)) {
+    if ([string]::IsNullOrWhiteSpace($ActionScript)) {
         return
     }
 
     if (Test-IsPSCore) {
-        pwsh.exe /c "$($value)"
+        pwsh.exe /c "$($ActionScript)"
     }
     else {
-        powershell.exe /c "$($value)"
+        powershell.exe /c "$($ActionScript)"
+    }
+}
+
+function Install-PodeLocalModules
+{
+    param (
+        [Parameter()]
+        $Modules = $null
+    )
+
+    if ($null -eq $Modules) {
+        return
+    }
+
+    $psModules = './ps_modules'
+
+    # download modules to ps_modules
+    $Modules.psobject.properties.name | ForEach-Object {
+        $_name = $_
+        $_version = $Modules.$_name
+
+        try {
+            # if version is latest, retrieve current
+            if ($_version -ieq 'latest') {
+                $_version = [string]((Find-Module $_name -ErrorAction Ignore).Version)
+            }
+
+            Write-Host "=> Downloading $($_name)@$($_version)... " -NoNewline -ForegroundColor Cyan
+
+            # if the current version exists, do nothing
+            if (!(Test-Path (Join-Path $psModules "$($_name)/$($_version)"))) {
+                # remove other versions
+                if (Test-Path (Join-Path $psModules "$($_name)")) {
+                    Remove-Item -Path (Join-Path $psModules "$($_name)") -Force -Recurse | Out-Null
+                }
+
+                # download the module
+                Save-Module -Name $_name -RequiredVersion $_version -Path $psModules -Force -ErrorAction Stop | Out-Null
+            }
+
+            Write-Host 'Success' -ForegroundColor Green
+        }
+        catch {
+            Write-Host 'Failed' -ForegroundColor Red
+            throw "Module or version not found: $($_name)@$($_version)"
+        }
     }
 }

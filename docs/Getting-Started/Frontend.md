@@ -20,7 +20,7 @@ yarn add bootstrap
 yarn add lodash
 ```
 
-## Build via Pode
+## Pode Install
 
 Once you've added some libraries you can use `pode install` to trigger `yarn`. This will tell `yarn` to install the packages to a `pode_modules` directory.
 

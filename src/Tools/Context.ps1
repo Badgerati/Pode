@@ -489,20 +489,45 @@ function Import
         [ValidateNotNullOrEmpty()]
         [Alias('p')]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        [Alias('n')]
+        $Now
     )
 
-    # ensure the path exists, or it exists as a module
+    # check to see if a raw path to a module was supplied
     $_path = Resolve-Path -Path $Path -ErrorAction Ignore
+
+    # if the resolved path is empty, then it's a module name that was supplied
     if ([string]::IsNullOrWhiteSpace($_path)) {
-        $_path = (Get-Module -Name $Path -ListAvailable | Select-Object -First 1).Path
+        # check to see if module is in ps_modules
+        $_psModulePath = Join-ServerRoot -Folder (Join-PodePaths @('ps_modules', $Path))
+        if (Test-Path $_psModulePath) {
+            $_path = (Get-ChildItem (Join-PodePaths @($_psModulePath, '*', "$($Path).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
+        }
+
+        # otherwise, use a global module
+        else {
+            $_path = (Get-Module -Name $Path -ListAvailable | Select-Object -First 1).Path
+        }
     }
 
     # if it's still empty, error
     if ([string]::IsNullOrWhiteSpace($_path)) {
-        throw "Failed to import module '$($Path)'"
+        throw "Failed to import module: $($Path)"
+    }
+
+    # check if the path exists
+    if (!(Test-PodePath $_path -NoStatus)) {
+        throw "The module path does not exist: $($_path)"
     }
 
     # import the module into the runspace state
     $PodeContext.RunspaceState.ImportPSModule($_path)
+
+    # import the module now, if specified
+    if ($Now) {
+        Import-Module $_path -Force -DisableNameChecking -ErrorAction Stop | Out-Null
+    }
 }
