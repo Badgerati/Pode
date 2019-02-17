@@ -75,7 +75,7 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
 ```
 
 !!! important
-    The `ContentType` is required as it tells allows Pode how to parse the requests payload.
+    The `ContentType` is required as it informs Pode on how to parse the requests payload. For example, if the content type were `application/json`, then Pode will attempt to parse the body of the request as JSON - converting it to a hashtable.
 
 ## Query Strings
 

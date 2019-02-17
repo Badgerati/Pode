@@ -10,6 +10,12 @@
     },
     "dependencies": {
     },
+    "modules": {
+        "eps": "0.5.0"
+    },
+    "devModules": {
+        "pester": "latest"
+    },
     "author": "Matthew Kelly (Badgerati)",
     "license": "MIT"
 }

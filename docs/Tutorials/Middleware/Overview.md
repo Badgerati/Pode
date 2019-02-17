@@ -1,10 +1,10 @@
 # Middleware Overview
 
-When working with web servers in Pode - rest apis, routes, web-pages, etc. - they have support for using [`middleware`](../../../Functions/Core/Middleware). Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the request for later use, or terminate the response without processing the `route` logic.
+When working with web servers in Pode - rest apis, routes, web-pages, etc. - they have support for using [`middleware`](../../../Functions/Core/Middleware). Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the web event for later use, or terminate the response without processing the `route` logic.
 
-Middleware is supported as a general [`middleware`](../../../Functions/Core/Middleware) function, as well as on the [`route`](../../../Functions/Core/Route) function for custom middleware - like authentication
+Middleware is supported as a general [`middleware`](../../../Functions/Core/Middleware) function, as well as on the [`route`](../../../Functions/Core/Route) function for custom middleware - like authentication.
 
-Pode itself has some inbuilt middleware, which is overridable so you can use your own custom middleware; for example, Pode has inbuilt middleware for rate limiting, but you can override this with `middleware` and the name `@limit` (more on the [Access Rules](../AccessRules) and [Rate Limiting](../RateLimiting) page).
+Pode itself has some inbuilt middleware, which is overridable so you can use your own custom middleware. For example, Pode has inbuilt middleware for rate limiting, but you can override this with `middleware` and the name `@limit` (more on the [Access Rules](../AccessRules) and [Rate Limiting](../RateLimiting) page).
 
 ## Global Middleware
 
@@ -16,7 +16,7 @@ The make-up of the `middleware` function is as follows:
 middleware [<route>] <scriptblock> [-name <string>]
 ```
 
-The `middleware` function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a `route`). The event object passed contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`. The `-Name` parameter is defined later, but it solely used for allowing you to override the inbuilt middleware of Pode. The `route` value allows you to specify which routes to run the middleware against.
+The `middleware` function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a `route`). The event object passed contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`. The `-Name` parameter is defined later, but is solely used for allowing you to override the inbuilt middleware of Pode. The `route` value allows you to specify which routes to run the middleware against.
 
 If you want to keep processing and proceed to the next middleware/route then `return $true` from the scriptblock, otherwise `return $false` and the response will be closed immediately.
 

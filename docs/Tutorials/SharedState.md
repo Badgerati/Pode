@@ -5,7 +5,7 @@ Most things in Pode all run in isolated runspaces, which means you can't create 
 To do this, you use the [`state`](../../Functions/Utility/State) function with an action of `set`, `get` or `remove`, in combination with the [`lock`](../../Functions/Utility/Lock) function to ensure thread safety
 
 !!! tip
-    It's wise to use the `state` function in conjunction with the `lock` function, so as to ensure thread safety between runspaces. The session object supplied to a `route`, `timer`, `schedule` and `logger` each contain a `.Lockable` resource that can be supplied to the `lock` function.
+    It's wise to use the `state` function in conjunction with the `lock` function, so as to ensure thread safety between runspaces. The argument object supplied to the `route`, `handler`, `timer`, `schedule`, `middleware`, `endware` and `logger` functions each contain a `.Lockable` resource that can be supplied to the `lock` function.
 
 !!! warning
     If you omit the use of `lock`, you will run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
@@ -35,9 +35,9 @@ As per the tip above, it's always worth wrapping `state` actions within a `lock`
 ```powershell
 Server {
     timer 'do-something' 5 {
-        param($s)
+        param($e)
 
-        lock $s.Lockable {
+        lock $e.Lockable {
             state set 'data' @{ 'Name' = 'Rick Sanchez' } | Out-Null
         }
     }
@@ -67,10 +67,10 @@ As per the tip above, it's always worth wrapping `state` actions within a `lock`
 ```powershell
 Server {
     timer 'do-something' 5 {
-        param($s)
+        param($e)
         $value = $null
 
-        lock $s.Lockable {
+        lock $e.Lockable {
             $value = (state get 'data')
         }
 
@@ -81,7 +81,7 @@ Server {
 
 ### Remove
 
-The `state remove` action will remove a variable from the shared state. You only need to supply the variable's name from it to be removed from the state. The action will also return the value stored in the state before removing the variable.
+The `state remove` action will remove a variable from the shared state. You only need to supply the variable's name for it to be removed from the state. The action will also return the value stored in the state before removing the variable.
 
 The make-up of the `remove` action is:
 
@@ -102,9 +102,9 @@ As per the tip above, it's always worth wrapping `state` actions within a `lock`
 ```powershell
 Server {
     timer 'do-something' 5 {
-        param($s)
+        param($e)
 
-        lock $s.Lockable {
+        lock $e.Lockable {
             state remove 'data' | Out-Null
         }
     }
@@ -129,10 +129,10 @@ Server {
 
     # timer to add a random number to the shared state
     timer 'forever' 2 {
-        param($s)
+        param($e)
 
         # ensure we're thread safe
-        lock $s.Lockable {
+        lock $e.Lockable {
 
             # attempt to get the hashtable from the state
             $hash = (state get 'hash')
@@ -144,10 +144,10 @@ Server {
 
     # route to return the value of the hashtable from shared state
     route get '/' {
-        param($s)
+        param($e)
 
         # again, ensure we're thread safe
-        lock $s.Lockable {
+        lock $e.Lockable {
 
             # get the hashtable from the state and return it
             $hash = (state get 'hash')
@@ -155,12 +155,12 @@ Server {
         }
     }
 
-    # route to remove the hashable from shared state
+    # route to remove the hashtable from shared state
     route delete '/' {
-        param($s)
+        param($e)
 
         # ensure we're thread safe
-        lock $s.Lockable {
+        lock $e.Lockable {
 
             # remove the hashtable from the state
             state remove 'hash' | Out-Null

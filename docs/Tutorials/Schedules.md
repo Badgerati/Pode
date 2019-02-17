@@ -2,7 +2,7 @@
 
 A schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process.
 
-Schedule triggers are defined using [`cron expressions`](../CronExpressions), basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a a defined end time.
+Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions), basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a a defined end time.
 
 ## Create a Schedule
 
@@ -10,6 +10,9 @@ To create a new schedule in your server you use the [`schedule`](../../Functions
 
 ```powershell
 schedule <name> <cron> <scriptblock> [-start <datetime>] [-end <datetime>] [-limit <int>]
+
+# or shorthand:
+schedule <name> <cron> <scriptblock> [-s <datetime>] [-e <datetime>] [-l <int>]
 ```
 
 Each schedule must have a `<name>`, a `<cron>` expression, and a `<scriptblock>` for the main logic. The `<name>` must be unique across all schedules.

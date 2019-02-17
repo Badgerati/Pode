@@ -25,7 +25,7 @@ Pode is a Cross-Platform PowerShell framework to create web servers that host RE
 * Optional file monitoring to trigger internal server restart on file changes
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
-* Middleware and sessions on web servers
+* Middleware and Sessions on web servers, with Flash message support
 * Authentication on requests, such as Basic and Windows Active Directory
 * (Windows) Generate/bind self-signed certificates, and signed certificates
 * (Windows) Open the hosted server as a desktop application

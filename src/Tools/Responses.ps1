@@ -467,7 +467,11 @@ function View
 
         [Parameter()]
         [Alias('d')]
-        $Data = @{}
+        $Data = @{},
+
+        [switch]
+        [Alias('fm')]
+        $FlashMessages
     )
 
     # default data if null
@@ -478,6 +482,18 @@ function View
     # add path to data as "pagename" - unless key already exists
     if (!$Data.ContainsKey('pagename')) {
         $Data['pagename'] = $Path
+    }
+
+    # load all flash messages if needed
+    if ($FlashMessages -and !(Test-Empty $WebEvent.Session.Data.Flash)) {
+        $Data['flash'] = @{}
+
+        (flash keys) | Foreach-Object {
+            $Data.flash[$_] = (flash get $_)
+        }
+    }
+    elseif (Test-Empty $Data['flash']) {
+        $Data['flash'] = @{}
     }
 
     # add view engine extension

@@ -2,9 +2,9 @@
 
 ## Description
 
-The `view` function allows you to render any of the view files that you place within the `/views` directory. When you call `view`, Pode will automatically look within this directory.
+The `view` function allows you to render view files that are placed within the `/views` directory at the root of your server. When you call `view`, Pode will automatically look within this directory for files.
 
-Pode uses a View Engine to either render HTML, Pode, or other types. Default is HTML, and you can change it to Pode by using the [`engine`](../../Core/Engine) function.
+Pode uses a View Engine to render either HTML, Pode, or other file types. Default is HTML, and you can change it to Pode, or other third-party engines, by using the [`engine`](../../Core/Engine) function.
 
 ## Examples
 
@@ -59,4 +59,5 @@ Server {
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
 | Path | string | true | The path to the view to render, relative to your `/views` directory | null |
-| data | hashtable | false | A hashtable of dynamic data that will be supplied to `.pode`, and other third-party template engine, view files | `@{}` |
+| Data | hashtable | false | A hashtable of dynamic data that will be supplied to `.pode`, and other third-party template engine, view files | `@{}` |
+| FlashMessages | switch | false | If true, will load all flash messages from the current session into the dynamic view's data as `$data.flash` | false |
