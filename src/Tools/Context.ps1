@@ -528,6 +528,6 @@ function Import
 
     # import the module now, if specified
     if ($Now) {
-        Import-Module $_path -Force -DisableNameChecking -ErrorAction Stop | Out-Null
+        Import-Module $_path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
     }
 }
