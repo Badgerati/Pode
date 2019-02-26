@@ -158,7 +158,11 @@ function Start-SmtpServer
                 }
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            if ($null -ne $TcpEvent.Client) {
+                dispose $TcpEvent.Client -Close
+            }
+        }
         catch {
             $Error[0] | Out-Default
             throw $_.Exception
