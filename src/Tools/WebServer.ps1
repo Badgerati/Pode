@@ -125,7 +125,6 @@ function Start-WebServer
 
                 try
                 {
-                    #$context = $task.Result
                     $request = $context.Request
                     $response = $context.Response
 
