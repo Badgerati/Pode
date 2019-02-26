@@ -89,6 +89,7 @@ nav:
       - Xml: Functions/Response/Xml.md
 
     - Utility:
+      - Await: Functions/Utility/Await.md
       - Dispose: Functions/Utility/Dispose.md
       - Flash: Functions/Utility/Flash.md
       - Include: Functions/Utility/Include.md
