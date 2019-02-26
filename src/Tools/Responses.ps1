@@ -566,20 +566,19 @@ function Tcp
     switch ($Action.ToLowerInvariant())
     {
         'write' {
-            $stream = $Client.GetStream()
             $encoder = New-Object System.Text.ASCIIEncoding
             $buffer = $encoder.GetBytes("$($Message)`r`n")
-            $stream.Write($buffer, 0, $buffer.Length)
+            $stream = $Client.GetStream()
+            await $stream.WriteAsync($buffer, 0, $buffer.Length)
             $stream.Flush()
         }
 
         'read' {
             $bytes = New-Object byte[] 8192
-            $stream = $Client.GetStream()
             $encoder = New-Object System.Text.ASCIIEncoding
-            $bytesRead = $stream.Read($bytes, 0, 8192)
-            $message = $encoder.GetString($bytes, 0, $bytesRead)
-            return $message
+            $stream = $Client.GetStream()
+            $bytesRead = (await $stream.ReadAsync($bytes, 0, 8192))
+            return $encoder.GetString($bytes, 0, $bytesRead)
         }
     }
 }

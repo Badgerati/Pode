@@ -822,6 +822,28 @@ function Lock
     }
 }
 
+function Await
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [System.Threading.Tasks.Task]
+        $Task
+    )
+
+    # is there a cancel token to supply?
+    if ($null -eq $PodeContext -or $null -eq $PodeContext.Tokens.Cancellation.Token) {
+        $Task.Wait()
+    }
+    else {
+        $Task.Wait($PodeContext.Tokens.Cancellation.Token)
+    }
+
+    # only return a value if the result has one
+    if ($null -ne $Task.Result) {
+        return $Task.Result
+    }
+}
+
 function Root
 {
     return $PodeContext.Server.Root
