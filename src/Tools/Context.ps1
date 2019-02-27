@@ -450,12 +450,12 @@ function Listen
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
-    # has an endpoint already been defined for smtp/tcp?
-    if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeContext.Server.Type) {
-        throw "An endpoint for $($Type.ToUpperInvariant()) has already been defined"
-    }
-
     if (!$exists) {
+        # has an endpoint already been defined for smtp/tcp?
+        if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeContext.Server.Type) {
+            throw "An endpoint for $($Type.ToUpperInvariant()) has already been defined"
+        }
+
         # set server type, ensure we aren't trying to change the server's type
         $_type = (iftet ($Type -ieq 'https') 'http' $Type)
         if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
