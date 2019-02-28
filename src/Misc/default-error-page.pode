@@ -1,0 +1,43 @@
+<html style='background-color: #01b0c4; overflow-y: hidden'>
+
+    <head>
+        <title>$($data.status.code)</title>
+    </head>
+
+    <body style='color: white; font-family: Helvetica,Arial,sans-serif;'>
+
+        <div style='padding: 4em; text-align: center'>
+            <p style='font-size: 3em; margin: 0; margin-top: 1.5em; margin-bottom: 0.5em;'>
+                Pode Server Error
+            </p>
+            <hr style='border-style: solid; width: 50%;' />
+            <p style='font-size: 10em; margin: 0;'>
+                $($data.status.code)
+            </p>
+            <p style='font-size: 1.3em;'>
+                $($data.url)
+            </p>
+
+            $(if ($null -ne $data.exception) {
+                "<pre style='text-align: left;
+                    padding: 3em 5em;
+                    font-size: 1.2em;
+                    background-color: darkslategray;
+                    border: 1px solid white;
+                    border-radius: 1em;
+                    margin-top: 5em;
+                    max-height: 15em;
+                    max-width: 100%;
+                    overflow-y: auto;
+                    overflow-x: auto;'>
+$($data.exception.message)
+$($data.exception.line)
+$($data.exception.stacktrace)
+    + $($data.exception.category)
+                </pre>"
+            })
+        </div>
+
+    </body>
+
+</html>

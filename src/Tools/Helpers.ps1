@@ -23,6 +23,51 @@ function ConvertFrom-PodeFile
     return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
 }
 
+function Get-PodeFileContentUsingViewEngine
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [hashtable]
+        $Data
+    )
+
+    # work out the engine to use when parsing the file
+    $engine = $PodeContext.Server.ViewEngine.Engine
+
+    $ext = Get-FileExtension -Path $Path -TrimPeriod
+    if (!(Test-Empty $ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
+        $engine = $ext
+    }
+
+    # setup the content
+    $content = [string]::Empty
+
+    # run the relevant engine logic
+    switch ($engine.ToLowerInvariant())
+    {
+        'html' {
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
+        }
+
+        'pode' {
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
+            $content = ConvertFrom-PodeFile -Content $content -Data $Data
+        }
+
+        default {
+            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
+                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+            }
+        }
+    }
+
+    return $content
+}
+
 function Get-Type
 {
     param (
@@ -768,6 +813,12 @@ function Add-PodePSInbuiltDrives
     if (Test-Path $path) {
         $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
     }
+
+    # create drive for errors, if path exists
+    $path = (Join-ServerRoot 'errors')
+    if (Test-Path $path) {
+        $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
+    }
 }
 
 function Remove-PodePSDrives
@@ -1004,7 +1055,6 @@ function Get-FileExtension
     )
 
     $ext = [System.IO.Path]::GetExtension($Path)
-
     if ($TrimPeriod) {
         $ext = $ext.Trim('.')
     }
@@ -1451,4 +1501,9 @@ function Convert-PathPatternsToRegex
 
     # join them all together
     return "^($($Paths -join '|'))$"
+}
+
+function Get-PodeModuleRootPath
+{
+    return (Split-Path -Parent -Path $PodeContext.Server.PodeModulePath)
 }
