@@ -191,8 +191,14 @@ function Status
         $Exception
     )
 
-    # set the code/description
+    # set the code
     $WebEvent.Response.StatusCode = $Code
+
+    # set an appropriate description (mapping if supplied is blank)
+    if (Test-Empty $Description) {
+        $Description = (Get-PodeStatusDescription -StatusCode $Code)
+    }
+
     if (!(Test-Empty $Description)) {
         $WebEvent.Response.StatusDescription = $Description
     }
@@ -424,8 +430,7 @@ function Include
 
     # add view engine extension
     $ext = Get-FileExtension -Path $Path
-    $hasExt = ![string]::IsNullOrWhiteSpace($ext)
-    if (!$hasExt) {
+    if (Test-Empty $ext) {
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
@@ -438,32 +443,7 @@ function Include
     }
 
     # run any engine logic
-    $engine = $PodeContext.Server.ViewEngine.Engine
-    if ($hasExt) {
-        $engine = $ext.Trim('.')
-    }
-
-    $content = [string]::Empty
-
-    switch ($engine.ToLowerInvariant())
-    {
-        'html' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
-        }
-
-        'pode' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
-            $content = ConvertFrom-PodeFile -Content $content -Data $Data
-        }
-
-        default {
-            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
-            }
-        }
-    }
-
-    return $content
+    return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
 }
 
 function Show-PodeErrorPage
@@ -513,7 +493,7 @@ function Show-PodeErrorPage
 
     # is exception trace showing enabled?
     $ex = $null
-    if ($null -ne $Exception) {
+    if (($null -ne $Exception) -and ([bool](Get-PodeConfiguration).web.errorPages.showException)) {
         $ex = @{
             'Message' = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message);
             'StackTrace' = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace);

@@ -41,3 +41,25 @@ Describe 'Get-PodeContentType' {
         }
     }
 }
+
+Describe 'Get-PodeStatusDescription' {
+    It 'Returns no description for no StatusCode' {
+        Get-PodeStatusDescription | Should Be ([string]::Empty)
+    }
+
+    It 'Returns no description for unknown StatusCode' {
+        Get-PodeStatusDescription -StatusCode 9001 | Should Be ([string]::Empty)
+    }
+
+    It 'Returns description for StatusCode' {
+        Get-PodeStatusDescription -StatusCode 404 | Should Be 'Not Found'
+    }
+
+    It 'Returns description for first StatusCode' {
+        Get-PodeStatusDescription -StatusCode 100 | Should Be 'Continue'
+    }
+
+    It 'Returns description for last StatusCode' {
+        Get-PodeStatusDescription -StatusCode 526 | Should Be 'Invalid SSL Certificate'
+    }
+}

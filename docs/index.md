@@ -16,6 +16,7 @@ Pode is a Cross-Platform PowerShell framework to create web servers that host RE
 * Listen on a single or multiple IP address/hostnames
 * Support for HTTP, HTTPS, TCP and SMTP
 * Host REST APIs, Web Pages, and Static Content (with caching)
+* Support for custom error pages
 * Multi-thread support for incoming requests
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes

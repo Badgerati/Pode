@@ -7,8 +7,17 @@
     <body style='color: white; font-family: Helvetica,Arial,sans-serif;'>
 
         <div style='padding: 4em; text-align: center'>
-            <p style='font-size: 3em; margin: 0; margin-top: 1.5em; margin-bottom: 0.5em;'>
-                Pode Server Error
+            <p style='font-size: 3em;
+                margin: 0;
+                margin-top: 1.5em;
+                margin-bottom: 0.5em;'>
+                $(if ($data.status.code -eq 418) {
+                    "☕ "
+                }
+                else {
+                    "⚠️ "
+                })
+                $($data.status.description)
             </p>
             <hr style='border-style: solid; width: 50%;' />
             <p style='font-size: 10em; margin: 0;'>
@@ -37,6 +46,13 @@ $($data.exception.stacktrace)
                 </pre>"
             })
         </div>
+
+        <p style='float: left;
+            font-size: 0.9em;
+            position: fixed;
+            bottom: 0px;'>
+            🧡 Powered by <a href='https://badgerati.github.io/Pode/' style='color: wheat; text-decoration: none;'>Pode</a>
+        </p>
 
     </body>
 
