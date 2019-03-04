@@ -47,7 +47,8 @@ $($data.exception.stacktrace)
             })
         </div>
 
-        <p style='float: left;
+        <p style='text-align: center;
+            width: 100%;
             font-size: 0.9em;
             position: fixed;
             bottom: 0px;'>
