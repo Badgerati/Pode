@@ -24,9 +24,9 @@ nav:
     - Shared State: Tutorials/SharedState.md
     - Importing Modules: Tutorials/ImportingModules.md
     - Configuration: Tutorials/Configuration.md
-    - Routes:
+    - Web & Routes:
       - Overview: Tutorials/Routes/Overview.md
-      - Status Codes: Tutorials/Routes/StatusCodes.md
+      - Error Pages: Tutorials/Routes/ErrorPages.md
       - Redirecting: Tutorials/Routes/Redirecting.md
       - Web Pages: Tutorials/Routes/WebPages.md
       - Static Content: Tutorials/Routes/StaticContent.md
