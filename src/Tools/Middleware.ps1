@@ -46,7 +46,7 @@ function Invoke-PodeMiddleware
             $WebEvent.Middleware.Clear()
         }
         catch {
-            status 500
+            status 500 -e $_
             $continue = $false
             $_.Exception | Out-Default
         }
@@ -185,8 +185,7 @@ function Get-PodeBodyMiddleware
     return (Get-PodeInbuiltMiddleware -Name '@body' -ScriptBlock {
         param($e)
 
-        try
-        {
+        try {
             # attempt to parse that data
             $result = ConvertFrom-RequestContent -Request $e.Request
 
@@ -197,9 +196,8 @@ function Get-PodeBodyMiddleware
             # payload parsed
             return $true
         }
-        catch [exception]
-        {
-            status 400
+        catch {
+            status 400 -e $_
             return $false
         }
     })
@@ -210,15 +208,13 @@ function Get-PodeQueryMiddleware
     return (Get-PodeInbuiltMiddleware -Name '@query' -ScriptBlock {
         param($s)
 
-        try
-        {
+        try {
             # set the query string from the request
             $s.Query = (ConvertFrom-NameValueToHashTable -Collection $s.Request.QueryString)
             return $true
         }
-        catch [exception]
-        {
-            status 400
+        catch {
+            status 400 -e $_
             return $false
         }
     })

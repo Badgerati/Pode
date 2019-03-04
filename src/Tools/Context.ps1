@@ -57,6 +57,7 @@ function New-PodeContext
     $ctx.Server.Root = $ServerRoot
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.Interval = $Interval
+    $ctx.Server.PodeModulePath = (Get-PodeModulePath)
 
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
@@ -198,7 +199,7 @@ function New-PodeContext
 function New-PodeRunspaceState
 {
     $state = [initialsessionstate]::CreateDefault()
-    $state.ImportPSModule((Get-Module -Name Pode).Path)
+    $state.ImportPSModule($PodeContext.Server.PodeModulePath)
 
     $session = New-PodeStateContext -Context $PodeContext
 

@@ -156,7 +156,7 @@ function Start-WebServer
                     }
                 }
                 catch {
-                    status 500
+                    status 500 -e $_
                     $Error[0] | Out-Default
                 }
 
