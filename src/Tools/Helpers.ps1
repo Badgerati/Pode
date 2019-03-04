@@ -1503,6 +1503,34 @@ function Convert-PathPatternsToRegex
     return "^($($Paths -join '|'))$"
 }
 
+function Get-PodeModulePath
+{
+    # if there's 1 module imported already, use that
+    $importedModule = @(Get-Module -Name Pode)
+    if (($importedModule | Measure-Object).Count -eq 1) {
+        return ($importedModule | Select-Object -First 1).Path
+    }
+
+    # if there's none or more, attempt to get the module used for 'engine'
+    try {
+        $usedModule = (Get-Command -Name 'Engine').Module
+        if (($usedModule | Measure-Object).Count -eq 1) {
+            return $usedModule.Path
+        }
+    }
+    catch { }
+
+    # if there were multiple to begin with, use the newest version
+    if (($importedModule | Measure-Object).Count -gt 1) {
+        return ($importedModule | Sort-Object -Property Version | Select-Object -Last 1).Path
+    }
+
+    # otherwise there were none, use the latest installed
+    return (Get-Module -ListAvailable -Name Pode |
+        Sort-Object -Property Version |
+        Select-Object -Last 1).Path
+}
+
 function Get-PodeModuleRootPath
 {
     return (Split-Path -Parent -Path $PodeContext.Server.PodeModulePath)

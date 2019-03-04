@@ -57,7 +57,7 @@ function New-PodeContext
     $ctx.Server.Root = $ServerRoot
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.Interval = $Interval
-    $ctx.Server.PodeModulePath = (Get-Module -Name Pode | Select-Object -Last 1).Path
+    $ctx.Server.PodeModulePath = (Get-PodeModulePath)
 
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
