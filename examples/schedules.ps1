@@ -12,7 +12,12 @@ Server {
 
     # schedule minutely using predefined cron
     schedule 'predefined' '@minutely' -Limit 2 {
-        # logic
+        'hello, world!' | Out-Default
+    }
+
+    # schedule defined using two cron expressions
+    schedule 'two-crons' @('0/3 * * * *', '0/5 * * * *') {
+        'double cron' | Out-Default
     }
 
     # schedule to run every tuesday at midnight
