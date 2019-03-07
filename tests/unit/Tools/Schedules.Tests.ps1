@@ -46,7 +46,12 @@ Describe 'Schedule' {
         }
 
         It 'Throw empty cron parameter error' {
-            { Schedule -Name 'test' -Cron ([string]::Empty) -ScriptBlock {} } | Should Throw 'The argument is null or empty'
+            if (Test-IsPSCore) {
+                { Schedule -Name 'test' -Cron ([string]::Empty) -ScriptBlock {} } | Should Throw 'The argument is null, empty'
+            }
+            else {
+                { Schedule -Name 'test' -Cron ([string]::Empty) -ScriptBlock {} } | Should Throw 'The argument is null or empty'
+            }
         }
 
         It 'Throw null scriptblock parameter error' {
