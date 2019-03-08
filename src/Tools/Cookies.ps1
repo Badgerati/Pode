@@ -431,7 +431,7 @@ function Get-PodeSessionCookieInMemStore
 function Set-PodeSessionCookieInMemClearDown
 {
     # cleardown expired inmem session every 10 minutes
-    schedule '__pode_session_inmem_cleanup__' '0/10 * * * *' {
+    Schedule -Name '__pode_session_inmem_cleanup__' -Cron '0/10 * * * *' -ScriptBlock {
         $store = $PodeContext.Server.Cookies.Session.Store
         if (Test-Empty $store.Memory) {
             return
