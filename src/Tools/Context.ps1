@@ -533,7 +533,7 @@ function Import
     }
 }
 
-function New-PodeAutoRestarts
+function New-PodeAutoRestartServer
 {
     $config = Get-PodeConfiguration
     if ($null -eq $config -or $null -eq $config.server.restart)  {

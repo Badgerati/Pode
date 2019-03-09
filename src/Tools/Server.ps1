@@ -143,7 +143,7 @@ function Start-PodeServer
     try
     {
         # create timer/schedules for auto-restarting
-        New-PodeAutoRestarts
+        New-PodeAutoRestartServer
 
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives

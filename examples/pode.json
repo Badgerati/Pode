@@ -13,10 +13,5 @@
                 ]
             }
         }
-    },
-    "server": {
-        "restart": {
-            "crons": [ "@minutely" ]
-        }
     }
 }
