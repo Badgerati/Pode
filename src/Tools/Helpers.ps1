@@ -60,7 +60,12 @@ function Get-PodeFileContentUsingViewEngine
 
         default {
             if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+                if (Test-Empty $Data) {
+                    $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
+                }
+                else {
+                    $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+                }
             }
         }
     }
@@ -923,28 +928,48 @@ function Join-ServerRoot
     }
 
     # join the folder/file to the root path
-    if ([string]::IsNullOrWhiteSpace($FilePath)) {
-        return (Join-Path $Root $Folder)
+    return (Join-PodePaths @($Root, $Folder, $FilePath))
+}
+
+function Remove-PodeEmptyItemsFromArray
+{
+    param (
+        [Parameter()]
+        $Array
+    )
+
+    if ($null -eq $Array) {
+        return @()
     }
-    else {
-        return (Join-Path $Root (Join-Path $Folder $FilePath))
-    }
+
+    return @(@($Array -ne ([string]::Empty)) -ne $null)
 }
 
 function Join-PodePaths
 {
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string[]]
         $Paths
     )
 
-    if ($Paths.Length -lt 1) {
+    # remove any empty/null paths
+    $Paths = Remove-PodeEmptyItemsFromArray $Paths
+
+    # if there are no paths, return blank
+    if (Test-Empty $Paths) {
+        return ([string]::Empty)
+    }
+
+    # return the first path if singular
+    if ($Paths.Length -eq 1) {
         return $Paths[0]
     }
 
+    # join the first two paths
     $_path = Join-Path $Paths[0] $Paths[1]
 
+    # if there are any more, add them on
     if ($Paths.Length -gt 2) {
         $Paths[2..($Paths.Length - 1)] | ForEach-Object {
             $_path = Join-Path $_path $_
@@ -1416,11 +1441,14 @@ function Test-PodePath
 function Test-PathIsFile
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter()]
         [string]
         $Path
     )
+
+    if (Test-Empty $Path) {
+        return $false
+    }
 
     return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }

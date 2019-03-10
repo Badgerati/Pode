@@ -34,7 +34,7 @@ The page used is as follows:
 ```html
 <html>
     <head>
-        <link rel="stylesheet" type="text/css" href="styles/main.css">
+        <link rel="stylesheet" type="text/css" href="/styles/main.css">
     </head>
     <body>
         <h1>Hello, world!</h1>

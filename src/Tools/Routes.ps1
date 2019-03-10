@@ -113,15 +113,17 @@ function Get-PodeStaticRoutePath
     # if we have a defined static route, use that
     if ($null -ne $found) {
         # if there's no file, we need to check defaults
-        if ([string]::IsNullOrWhiteSpace($found.File) -and (Get-Count @($found.Defaults)) -gt 0)
+        if (!(Test-PathIsFile $found.File) -and (Get-Count @($found.Defaults)) -gt 0)
         {
+            $found.File = (coalesce $found.File ([string]::Empty))
+
             if ((Get-Count @($found.Defaults)) -eq 1) {
-                $found.File = @($found.Defaults)[0]
+                $found.File = Join-PodePaths @($found.File, @($found.Defaults)[0])
             }
             else {
                 foreach ($def in $found.Defaults) {
                     if (Test-PodePath (Join-Path $found.Path $def) -NoStatus) {
-                        $found.File = $def
+                        $found.File = Join-PodePaths @($found.File, $def)
                         break
                     }
                 }
@@ -131,8 +133,8 @@ function Get-PodeStaticRoutePath
         return (Join-Path $found.Path $found.File)
     }
 
-    # else, use the public static directory (but only if path is a file)
-    if (Test-PathIsFile $Route) {
+    # else, use the public static directory (but only if path is a file, and a public dir is present)
+    if ((Test-PathIsFile $Route) -and !(Test-Empty $PodeContext.Server.InbuiltDrives['public'])) {
         return (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
     }
 
@@ -523,14 +525,9 @@ function Update-PodeRouteSlashes
 
     if ($Static)
     {
-        # ensure the route ends with a '/*'
-        $Route = $Route.TrimEnd('*')
-
-        if (!$Route.EndsWith('/')) {
-            $Route = "$($Route)/"
-        }
-
-        $Route = "$($Route)(?<file>*)"
+        # ensure the static route ends with '/{0,1}.*'
+        $Route = $Route.TrimEnd('/*')
+        $Route = "$($Route)[/]{0,1}(?<file>*)"
     }
 
     # replace * with .*

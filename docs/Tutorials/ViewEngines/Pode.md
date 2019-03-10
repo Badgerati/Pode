@@ -141,7 +141,7 @@ To load the above `.css.pode` file in a view file:
 <!-- /views/index.pode -->
 <html>
    <head>
-      <link rel="stylesheet" href="styles/main.css.pode">
+      <link rel="stylesheet" href="/styles/main.css.pode">
    </head>
    <body>
         <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
