@@ -1,10 +1,10 @@
 # Cron Expressions
 
-[Schedules](../../Functions/Core/Schedule/) in Pode use cron expressions to define when they trigger. This page is a brief overview of the expressions supported by Pode.
+[`Schedules`](../../../Functions/Core/Schedule/) and [`Auto Server Restarting`](../../ServerRestarting/AutoRestarting) in Pode use cron expressions to define when they trigger. This page is a brief overview of the expressions supported by Pode.
 
 ## Basic
 
-Pode supports all basic features of cron expressions in the following format:
+Pode supports all basic features of cron-expressions in the following format:
 
 ```
 <min> <hour> <day-of-month> <month> <day-of-week>
