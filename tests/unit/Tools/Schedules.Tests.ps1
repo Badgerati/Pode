@@ -46,7 +46,12 @@ Describe 'Schedule' {
         }
 
         It 'Throw empty cron parameter error' {
-            { Schedule -Name 'test' -Cron ([string]::Empty) -ScriptBlock {} } | Should Throw 'The argument is null or empty'
+            if (Test-IsPSCore) {
+                { Schedule -Name 'test' -Cron ([string]::Empty) -ScriptBlock {} } | Should Throw 'The argument is null, empty'
+            }
+            else {
+                { Schedule -Name 'test' -Cron ([string]::Empty) -ScriptBlock {} } | Should Throw 'The argument is null or empty'
+            }
         }
 
         It 'Throw null scriptblock parameter error' {
@@ -73,7 +78,7 @@ Describe 'Schedule' {
             { Schedule -Name 'test' -Cron '@hourly' -ScriptBlock {} -StartTime $start -EndTime $end } | Should Throw 'starttime after the endtime'
         }
 
-        It 'Adds new schedule to session' {
+        It 'Adds new schedule supplying everything' {
             $PodeContext = @{ 'Schedules' = @{}; }
             $start = ([DateTime]::Now.AddHours(3))
             $end = ([DateTime]::Now.AddHours(5))
@@ -87,6 +92,71 @@ Describe 'Schedule' {
             $schedule.EndTime | Should Be $end
             $schedule.Script | Should Not Be $null
             $schedule.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $schedule.Crons.Length | Should Be 1
+        }
+
+        It 'Adds new schedule with no start time' {
+            $PodeContext = @{ 'Schedules' = @{}; }
+            $end = ([DateTime]::Now.AddHours(5))
+
+            Schedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -EndTime $end
+
+            $schedule = $PodeContext.Schedules['test']
+            $schedule | Should Not Be $null
+            $schedule.Name | Should Be 'test'
+            $schedule.StartTime | Should Be $null
+            $schedule.EndTime | Should Be $end
+            $schedule.Script | Should Not Be $null
+            $schedule.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $schedule.Crons.Length | Should Be 1
+        }
+
+        It 'Adds new schedule with no end time' {
+            $PodeContext = @{ 'Schedules' = @{}; }
+            $start = ([DateTime]::Now.AddHours(3))
+
+            Schedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start
+
+            $schedule = $PodeContext.Schedules['test']
+            $schedule | Should Not Be $null
+            $schedule.Name | Should Be 'test'
+            $schedule.StartTime | Should Be $start
+            $schedule.EndTime | Should Be $null
+            $schedule.Script | Should Not Be $null
+            $schedule.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $schedule.Crons.Length | Should Be 1
+        }
+
+        It 'Adds new schedule with just a cron' {
+            $PodeContext = @{ 'Schedules' = @{}; }
+
+            Schedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' }
+
+            $schedule = $PodeContext.Schedules['test']
+            $schedule | Should Not Be $null
+            $schedule.Name | Should Be 'test'
+            $schedule.StartTime | Should Be $null
+            $schedule.EndTime | Should Be $null
+            $schedule.Script | Should Not Be $null
+            $schedule.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $schedule.Crons.Length | Should Be 1
+        }
+
+        It 'Adds new schedule with two crons' {
+            $PodeContext = @{ 'Schedules' = @{}; }
+            $start = ([DateTime]::Now.AddHours(3))
+            $end = ([DateTime]::Now.AddHours(5))
+
+            Schedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+
+            $schedule = $PodeContext.Schedules['test']
+            $schedule | Should Not Be $null
+            $schedule.Name | Should Be 'test'
+            $schedule.StartTime | Should Be $start
+            $schedule.EndTime | Should Be $end
+            $schedule.Script | Should Not Be $null
+            $schedule.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $schedule.Crons.Length | Should Be 2
         }
     }
 }

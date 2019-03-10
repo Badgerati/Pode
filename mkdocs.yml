@@ -18,7 +18,10 @@ nav:
     - Basics: Tutorials/Basics.md
     - Threading: Tutorials/Threading.md
     - Certificates: Tutorials/Certificates.md
-    - File Monitor: Tutorials/FileMonitor.md
+    - Server Restarting:
+      - Overview: Tutorials/ServerRestarting/Overview.md
+      - File Monitoring: Tutorials/ServerRestarting/FileMonitoring.md
+      - Auto-Restarting: Tutorials/ServerRestarting/AutoRestarting.md
     - Timers: Tutorials/Timers.md
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md

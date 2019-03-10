@@ -30,7 +30,7 @@ function Start-ScheduleRunspace
                 Where-Object {
                     ($null -eq $_.StartTime -or $_.StartTime -le $_now) -and
                     ($null -eq $_.EndTime -or $_.EndTime -ge $_now) -and
-                    (Test-CronExpression -Expression $_.Cron -DateTime $_now)
+                    (Test-CronExpressions -Expressions $_.Crons -DateTime $_now)
                 } | ForEach-Object {
 
                 # increment total number of triggers for the schedule
@@ -54,7 +54,7 @@ function Start-ScheduleRunspace
                 }
 
                 # reset the cron if it's random
-                $_.Cron = Reset-RandomCronExpression -Expression $_.Cron
+                $_.Crons = Reset-RandomCronExpressions -Expressions $_.Crons
             }
 
             # add any schedules to remove that have exceeded their end time
@@ -86,7 +86,7 @@ function Schedule
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
-        [string]
+        [string[]]
         $Cron,
 
         [Parameter(Mandatory=$true)]
@@ -130,15 +130,12 @@ function Schedule
         throw "Schedule $($Name) cannot have a StartTime after the EndTime"
     }
 
-    # parse the cron expression
-    $exp = ConvertFrom-CronExpression -Expression $Cron
-
     # add the schedule
     $PodeContext.Schedules[$Name] = @{
         'Name' = $Name;
         'StartTime' = $StartTime;
         'EndTime' = $EndTime;
-        'Cron' = $exp;
+        'Crons' = (ConvertFrom-CronExpressions -Expressions @($Cron));
         'Limit' = $Limit;
         'Count' = 0;
         'Countable' = ($Limit -gt 0);

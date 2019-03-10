@@ -532,3 +532,44 @@ function Import
         Import-Module $_path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
     }
 }
+
+function New-PodeAutoRestartServer
+{
+    $config = Get-PodeConfiguration
+    if ($null -eq $config -or $null -eq $config.server.restart)  {
+        return
+    }
+
+    $restart = $config.server.restart
+
+    # period - setup a timer
+    $period = [int]$restart.period
+    if ($period -gt 0) {
+        Timer -Name '__pode_restart_period__' -Interval ($period * 60) -ScriptBlock {
+            $PodeContext.Tokens.Restart.Cancel()
+        } -Skip 1
+    }
+
+    # times - convert into cron expressions
+    $times = @(@($restart.times) -ne $null)
+    if (($times | Measure-Object).Count -gt 0) {
+        $crons = @()
+
+        @($times) | ForEach-Object {
+            $atoms = $_ -split '\:'
+            $crons += "$([int]$atoms[1]) $([int]$atoms[0]) * * *"
+        }
+
+        Schedule -Name '__pode_restart_times__' -Cron @($crons) -ScriptBlock {
+            $PodeContext.Tokens.Restart.Cancel()
+        }
+    }
+
+    # crons - setup schedules
+    $crons = @(@($restart.crons) -ne $null)
+    if (($crons | Measure-Object).Count -gt 0) {
+        Schedule -Name '__pode_restart_crons__' -Cron @($crons) -ScriptBlock {
+            $PodeContext.Tokens.Restart.Cancel()
+        }
+    }
+}

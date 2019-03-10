@@ -84,7 +84,7 @@ function Server
         # get the current server type
         $serverType = Get-PodeServerType -Port $Port -Interval $Interval -Smtp:$Smtp -Tcp:$Tcp -Https:$Https
 
-        # create session object
+        # create main context object
         $PodeContext = New-PodeContext -ScriptBlock $ScriptBlock `
             -Threads $Threads `
             -Interval $Interval `
@@ -113,7 +113,7 @@ function Server
             return
         }
 
-        # sit here waiting for termination or cancellation
+        # sit here waiting for termination/cancellation, or to restart the server
         while (!(Test-TerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
             Start-Sleep -Seconds 1
 
@@ -142,6 +142,9 @@ function Start-PodeServer
 {
     try
     {
+        # create timer/schedules for auto-restarting
+        New-PodeAutoRestartServer
+
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 

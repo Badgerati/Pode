@@ -23,7 +23,7 @@ Pode is a Cross-Platform PowerShell framework to create web servers that host RE
 * Async scheduled tasks using cron expressions for short/long-running processes
 * Supports request logging to CLI, Files, and custom loggers to other services like LogStash
 * Cross-state variable access across multiple runspaces
-* Optional file monitoring to trigger internal server restart on file changes
+* Restart the server via file monitoring, or defined periods/times
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
 * Middleware and Sessions on web servers, with Flash message support

@@ -44,12 +44,24 @@ Server {
 }
 ```
 
+### Example 4
+
+The following example will create a `schedule` using multiple predefined cron expressions to trigger every minute and every hour:
+
+```powershell
+Server {
+    schedule 'minutely' @('@minutely', '@hourly') {
+        # logic
+    }
+}
+```
+
 ## Parameters
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
 | Name | string | true | A unique name for the schedule | empty |
-| Cron | string | true | A cron expression to define when the schedule should trigger | empty |
+| Cron | string[] | true | A cron expression, or multiple cron expressions, that define when the schedule should trigger | empty |
 | ScriptBlock | scriptblock | true | The main logic that will be invoked on each trigger | null |
 | StartTime | datetime | false | Defines when the schedule should start | now |
 | EndTime | datetime | false | Defines when the schedule should end | never |

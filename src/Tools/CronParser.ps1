@@ -25,7 +25,7 @@ function Get-CronFieldConstraints
         'Months' = @(
             'January', 'February', 'March', 'April', 'May', 'June', 'July',
             'August', 'September', 'October', 'November', 'December'
-        )
+        );
     }
 }
 
@@ -79,6 +79,20 @@ function Get-CronFieldAliases
             'Sat' = 6;
         };
     }
+}
+
+function ConvertFrom-CronExpressions
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $Expressions
+    )
+
+    return @(@($Expressions) | ForEach-Object {
+        ConvertFrom-CronExpression -Expression $_
+    })
 }
 
 function ConvertFrom-CronExpression
@@ -257,6 +271,19 @@ function ConvertFrom-CronExpression
     return $cron
 }
 
+function Reset-RandomCronExpressions
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Expressions
+    )
+
+    return @(@($Expressions) | ForEach-Object {
+        Reset-RandomCronExpression -Expression $_
+    })
+}
+
 function Reset-RandomCronExpression
 {
     param (
@@ -288,6 +315,22 @@ function Reset-RandomCronExpression
     $Expression.DayOfWeek = (Reset-Atom -Atom $Expression.DayOfWeek)
 
     return $Expression
+}
+
+function Test-CronExpressions
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Expressions,
+
+        [Parameter()]
+        $DateTime = $null
+    )
+
+    return ((@($Expressions) | Where-Object {
+        Test-CronExpression -Expression $_ -DateTime $DateTime
+    } | Measure-Object).Count -gt 0)
 }
 
 function Test-CronExpression
