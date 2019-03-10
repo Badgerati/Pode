@@ -46,7 +46,7 @@ Server {
 
 ### Example 4
 
-The following example will create a `schedule` using a multiple predefined crons to trigger every minute and hour:
+The following example will create a `schedule` using multiple predefined cron expressions to trigger every minute and every hour:
 
 ```powershell
 Server {

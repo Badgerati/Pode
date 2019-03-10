@@ -4,7 +4,7 @@
 
 ## Basic
 
-Pode supports all basic features of cron-expressions in the following format:
+Pode supports all basic features of cron expressions in the following format:
 
 ```
 <min> <hour> <day-of-month> <month> <day-of-week>

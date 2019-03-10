@@ -2,9 +2,9 @@
 
 You can schedule automatic server restarts by using the `server.restart` section within your `pode.json` configuration file. You can schedule server restarts in 3 ways:
 
-1. **Periodic**: A single value that defined after how many minutes the server should restart.
+1. **Periodic**: A single value that defines after how many minutes the server should restart.
 2. **Times**: An array of times that define at which times each day the server should restart.
-3. **Cron Expressions**: An array of [`cron-expression`](../../Misc/CronExpressions) that define when the server should restart.
+3. **Cron Expressions**: An array of [`cron expression`](../../Misc/CronExpressions) that define when the server should restart.
 
 The section in your `pode.json` file could look as follows (you can define 1 or all):
 
@@ -34,6 +34,9 @@ Periodic server restarts are defined using a single value, which is the number o
 }
 ```
 
+!!! note
+    The period starts from the moment the server is started.
+
 ## Times
 
 Server restarts can be fined by the time of day, this is an array of times each day to restart your server. For example, if you wanted to restart your server at 09:45 and 21:15 every day, then you could add the following to your `pode.json` file:
@@ -50,7 +53,7 @@ Server restarts can be fined by the time of day, this is an array of times each 
 
 ## Cron Expressions
 
-To further advance timed and periodic server restarts, you can also define when a restart should occur by using an array of [`cron-expressions`](../../Misc/CronExpressions). For example, should you want to restart your server on every Tuesday and Friday at 12:00, then you could add the following to your `pode.json` file:
+To further advance timed and periodic server restarts, you can also define when a restart should occur by using an array of [`cron expressions`](../../Misc/CronExpressions). For example, should you want to restart your server on every Tuesday and Friday at 12:00, then you could add the following to your `pode.json` file:
 
 ```json
 {
