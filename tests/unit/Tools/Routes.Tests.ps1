@@ -301,8 +301,8 @@ Describe 'Route' {
 
             $route = $PodeContext.Server.Routes['static']
             $route | Should Not Be $null
-            $route.ContainsKey('/assets/(?<file>.*)') | Should Be $true
-            $route['/assets/(?<file>.*)'].Path | Should Be './assets'
+            $route.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should Be $true
+            $route['/assets[/]{0,1}(?<file>.*)'].Path | Should Be './assets'
         }
 
         It 'Throws error when adding static route for non-existing folder' {
