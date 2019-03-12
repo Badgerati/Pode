@@ -123,11 +123,11 @@ function Test-Empty
         }
 
         'array' {
-            return ((Get-Count $Value) -eq 0 -or $Value.Count -eq 0)
+            return ((Get-Count $Value) -eq 0)
         }
     }
 
-    return ([string]::IsNullOrWhiteSpace($Value) -or (Get-Count $Value) -eq 0 -or $Value.Count -eq 0)
+    return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-Count $Value) -eq 0))
 }
 
 function Get-PSVersionTable
@@ -1357,7 +1357,15 @@ function Get-Count
         $Object
     )
 
-    return ($Object | Measure-Object).Count
+    if ($null -eq $Object) {
+        return 0
+    }
+
+    if ($Object.Length -ge $Object.Count) {
+        return $Object.Length
+    }
+
+    return $Object.Count
 }
 
 function Get-ContentAsBytes

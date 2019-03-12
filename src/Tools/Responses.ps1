@@ -38,9 +38,26 @@ function Write-ToResponse
     }
 
     # write the content to the response
-    $Value = ConvertFrom-ValueToBytes -Value $Value
+    if ($Value.GetType().Name -ieq 'string') {
+        $Value = ConvertFrom-ValueToBytes -Value $Value
+    }
+
     $res.ContentLength64 = $Value.Length
-    Write-BytesToStream -Bytes $Value -Stream $res.OutputStream -CheckNetwork
+
+    try {
+        $ms = New-Object -TypeName System.IO.MemoryStream
+        $ms.Write($Value, 0, $Value.Length)
+        $ms.WriteTo($res.OutputStream)
+        $ms.Close()
+    }
+    catch {
+        if ((Test-ValidNetworkFailure $_.Exception)) {
+            return
+        }
+
+        $_.Exception | Out-Default
+        throw
+    }
 }
 
 function Write-ToResponseFromFile
@@ -64,7 +81,13 @@ function Write-ToResponseFromFile
 
     # this is a static file
     if ((Test-Empty $mainExt) -or ($mainExt -ieq 'html') -or ($mainExt -ine $PodeContext.Server.ViewEngine.Extension)) {
-        $content = (Get-ContentAsBytes -Path $Path)
+        if (Test-IsPSCore) {
+            $content = (Get-Content -Path $Path -Raw -AsByteStream)
+        }
+        else {
+            $content = (Get-Content -Path $Path -Raw -Encoding byte)
+        }
+
         Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
         return
     }
