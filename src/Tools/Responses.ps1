@@ -38,9 +38,26 @@ function Write-ToResponse
     }
 
     # write the content to the response
-    $Value = ConvertFrom-ValueToBytes -Value $Value
+    if ($Value.GetType().Name -ieq 'string') {
+        $Value = ConvertFrom-ValueToBytes -Value $Value
+    }
+
     $res.ContentLength64 = $Value.Length
-    Write-BytesToStream -Bytes $Value -Stream $res.OutputStream -CheckNetwork
+
+    try {
+        $ms = New-Object -TypeName System.IO.MemoryStream
+        $ms.Write($Value, 0, $Value.Length)
+        $ms.WriteTo($res.OutputStream)
+        $ms.Close()
+    }
+    catch {
+        if ((Test-ValidNetworkFailure $_.Exception)) {
+            return
+        }
+
+        $_.Exception | Out-Default
+        throw
+    }
 }
 
 function Write-ToResponseFromFile
@@ -59,35 +76,30 @@ function Write-ToResponseFromFile
         return
     }
 
-    # are we dealing with a dynamic file for the view engine?
-    $ext = Get-FileExtension -Path $Path -TrimPeriod
+    # are we dealing with a dynamic file for the view engine? (ignore html)
+    $mainExt = Get-FileExtension -Path $Path -TrimPeriod
 
     # this is a static file
-    if ((Test-Empty $ext) -or $ext -ine $PodeContext.Server.ViewEngine.Extension) {
-        $content = Get-ContentAsBytes -Path $Path
-        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext) -Cache:$Cache
+    if ((Test-Empty $mainExt) -or ($mainExt -ieq 'html') -or ($mainExt -ine $PodeContext.Server.ViewEngine.Extension)) {
+        if (Test-IsPSCore) {
+            $content = (Get-Content -Path $Path -Raw -AsByteStream)
+        }
+        else {
+            $content = (Get-Content -Path $Path -Raw -Encoding byte)
+        }
+
+        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
         return
     }
 
     # generate dynamic content
-    $content = [string]::Empty
+    $content = Get-PodeFileContentUsingViewEngine -Path $Path
 
-    switch ($PodeContext.Server.ViewEngine.Engine)
-    {
-        'pode' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
-            $content = ConvertFrom-PodeFile -Content $content
-        }
+    # get the sub-file extension, if empty, use original
+    $subExt = Get-FileExtension -Path (Get-FileName -Path $Path -WithoutExtension) -TrimPeriod
+    $subExt = (coalesce $subExt $mainExt)
 
-        default {
-            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
-            }
-        }
-    }
-
-    $ext = Get-FileExtension -Path (Get-FileName -Path $Path -WithoutExtension) -TrimPeriod
-    Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
+    Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
 }
 
 function Attach

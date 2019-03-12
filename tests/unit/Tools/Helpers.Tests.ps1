@@ -666,16 +666,6 @@ Describe 'Get-NewGuid' {
 }
 
 Describe 'Test-PathIsFile' {
-    Context 'Null values' {
-        It 'Throws error for empty' {
-            { Test-PathIsFile -Path ([string]::Empty) } | Should Throw 'argument is null or empty'
-        }
-
-        It 'Throws error for null' {
-            { Test-PathIsFile -Path $null } | Should Throw 'argument is null or empty'
-        }
-    }
-
     Context 'Valid values' {
         It 'Returns true for a file' {
             Test-PathIsFile -Path './some/path/file.txt' | Should Be $true
@@ -706,5 +696,42 @@ Describe 'Test-PathIsDirectory' {
         It 'Returns false for a file' {
             Test-PathIsDirectory -Path './some/path/file.txt' | Should Be $false
         }
+    }
+}
+
+Describe 'Remove-PodeEmptyItemsFromArray' {
+    It 'Returns an empty array for no array passed' {
+        Remove-PodeEmptyItemsFromArray @() | Should Be @()
+    }
+
+    It 'Returns an empty array for an array of empty items' {
+        Remove-PodeEmptyItemsFromArray @('', $null) | Should Be @()
+    }
+
+    It 'Returns a single item array' {
+        Remove-PodeEmptyItemsFromArray @('app', '', $null) | Should Be @('app')
+    }
+
+    It 'Returns a multi item array' {
+        Remove-PodeEmptyItemsFromArray @('app', 'test', '', $null) | Should Be @('app', 'test')
+    }
+}
+
+Describe 'Join-PodePaths' {
+    It 'Returns valid for 0 items' {
+        Join-PodePaths @() | Should Be ([string]::Empty)
+    }
+
+    It 'Returns valid for 1 item' {
+        Join-PodePaths @('this') | Should Be 'this'
+    }
+
+    It 'Returns valid for 2 items' {
+        Join-PodePaths @('this', 'is') | Should Be (Join-Path 'this' 'is')
+    }
+
+    It 'Returns valid for 2+ items' {
+        $result = (Join-Path (Join-Path (Join-Path 'this' 'is') 'a') 'path')
+        Join-PodePaths @('this', 'is', 'a', 'path') | Should Be $result
     }
 }
