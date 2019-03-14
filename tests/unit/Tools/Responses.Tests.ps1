@@ -4,12 +4,16 @@ Get-ChildItem "$($src)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
 Describe 'Status' {
     Context 'Valid values supplied' {
+        Mock 'Show-PodeErrorPage' { }
+
         It 'Sets StatusCode only' {
             $WebEvent = @{ 'Response' = @{ 'StatusCode' = 0; 'StatusDescription' = '' } }
             Status -Code 418
 
             $WebEvent.Response.StatusCode | Should Be 418
-            $WebEvent.Response.StatusDescription | Should Be ''
+            $WebEvent.Response.StatusDescription | Should Be "I'm a Teapot"
+
+            Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 1
         }
 
         It 'Sets StatusCode and StatusDescription' {
@@ -18,6 +22,18 @@ Describe 'Status' {
 
             $WebEvent.Response.StatusCode | Should Be 418
             $WebEvent.Response.StatusDescription | Should Be 'I am a Teapot'
+
+            Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 1
+        }
+
+        It 'Sets 200 StatusCode' {
+            $WebEvent = @{ 'Response' = @{ 'StatusCode' = 0; 'StatusDescription' = '' } }
+            Status -Code 200
+
+            $WebEvent.Response.StatusCode | Should Be 200
+            $WebEvent.Response.StatusDescription | Should Be 'OK'
+
+            Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 0
         }
     }
 }

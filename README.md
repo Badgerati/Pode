@@ -36,13 +36,14 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Listen on a single or multiple IP address/hostnames
 * Support for HTTP, HTTPS, TCP and SMTP
 * Host REST APIs, Web Pages, and Static Content (with caching)
+* Support for custom error pages
 * Multi-thread support for incoming requests
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes
 * Async scheduled tasks using cron expressions for short/long-running processes
 * Supports request logging to CLI, Files, and custom loggers to other services like LogStash
 * Cross-state variable access across multiple runspaces
-* Optional file monitoring to trigger internal server restart on file changes
+* Restart the server via file monitoring, or defined periods/times
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
 * Middleware and Sessions on web servers, with Flash message support

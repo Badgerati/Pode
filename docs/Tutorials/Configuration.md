@@ -2,6 +2,9 @@
 
 There is an *optional* configuration file that can be used with Pode called called `pode.json`, and should be located at the root directory of your server script.
 
+!!! note
+    When a server restart occurs, the `pode.json` file will be reloaded.
+
 ## Structure
 
 The configuration file is just plain JSON, so normal JSON syntax applies. Within the file you can put any settings you want however, there are 5 defined sections that should ideally be left for Pode:

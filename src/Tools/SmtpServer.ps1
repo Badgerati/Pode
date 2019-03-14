@@ -104,18 +104,21 @@ function Start-SmtpServer
                             $data = (tcp read)
                             tcp write '250 OK'
 
-                            # set event data
+                            # set event data/headers
                             $SmtpEvent.From = $mail_from
                             $SmtpEvent.To = $rcpt_tos
                             $SmtpEvent.Data = $data
-                            $SmtpEvent.Subject = (Get-SmtpSubject $data)
+                            $SmtpEvent.Headers = (Get-SmtpHeadersFromData $data)
                             $SmtpEvent.Lockable = $PodeContext.Lockable
 
-                            # set the email body/type
-                            $info = (Get-SmtpBody $data)
-                            $SmtpEvent.Body = $info.Body
-                            $SmtpEvent.ContentType = $info.ContentType
-                            $SmtpEvent.ContentEncoding = $info.ContentEncoding
+                            # set the subject/priority/content-types
+                            $SmtpEvent.Subject = $SmtpEvent.Headers['Subject']
+                            $SmtpEvent.IsUrgent = (($SmtpEvent.Headers['Priority'] -ieq 'urgent') -or ($SmtpEvent.Headers['Importance'] -ieq 'high'))
+                            $SmtpEvent.ContentType = $SmtpEvent.Headers['Content-Type']
+                            $SmtpEvent.ContentEncoding = $SmtpEvent.Headers['Content-Transfer-Encoding']
+
+                            # set the email body
+                            $SmtpEvent.Body = (Get-SmtpBody -Data $data -ContentType $SmtpEvent.ContentType -ContentEncoding $SmtpEvent.ContentEncoding)
 
                             # call user handlers for processing smtp data
                             Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
@@ -136,9 +139,7 @@ function Start-SmtpServer
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get an incoming request
-                $task = $Listener.AcceptTcpClientAsync()
-                $task.Wait($PodeContext.Tokens.Cancellation.Token)
-                $client = $task.Result
+                $client = (await $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
                 $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)
@@ -160,7 +161,11 @@ function Start-SmtpServer
                 }
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            if ($null -ne $TcpEvent.Client) {
+                dispose $TcpEvent.Client -Close
+            }
+        }
         catch {
             $Error[0] | Out-Default
             throw $_.Exception
@@ -220,37 +225,21 @@ function Get-SmtpEmail
     return [string]::Empty
 }
 
-function Get-SmtpSubject
-{
-    param (
-        [Parameter()]
-        [string]
-        $Data
-    )
-
-    return (Get-SmtpLineFromData -Data $Data -Name 'Subject')
-}
-
 function Get-SmtpBody
 {
     param (
         [Parameter()]
         [string]
-        $Data
+        $Data,
+
+        [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [string]
+        $ContentEncoding
     )
-
-    # body info object
-    $BodyInfo = @{
-        'ContentType' = $null;
-        'ContentEncoding' = $null;
-        'Body' = $null;
-    }
-
-    # get the content type
-    $BodyInfo.ContentType = (Get-SmtpLineFromData -Data $Data -Name 'Content-Type')
-
-    # get the content encoding
-    $BodyInfo.ContentEncoding = (Get-SmtpLineFromData -Data $Data -Name 'Content-Transfer-Encoding')
 
     # split the message up
     $dataSplit = @($Data -isplit [System.Environment]::NewLine)
@@ -260,58 +249,62 @@ function Get-SmtpBody
     $indexOfLastDot = [array]::LastIndexOf($dataSplit, '.')
 
     # get the body
-    $BodyInfo.Body = ($dataSplit[($indexOfBlankLine + 1)..($indexOfLastDot - 2)] -join [System.Environment]::NewLine)
+    $body = ($dataSplit[($indexOfBlankLine + 1)..($indexOfLastDot - 2)] -join [System.Environment]::NewLine)
 
     # if there's no body, just return
-    if (($indexOfLastDot -eq -1) -or (Test-Empty $BodyInfo.Body)) {
-        return $BodyInfo
+    if (($indexOfLastDot -eq -1) -or (Test-Empty $body)) {
+        return $body
     }
 
     # decode body based on encoding
-    switch ($BodyInfo.ContentEncoding.ToLowerInvariant()) {
+    switch ($ContentEncoding.ToLowerInvariant()) {
         'base64' {
-            $BodyInfo.Body = [System.Convert]::FromBase64String($BodyInfo.Body)
+            $body = [System.Convert]::FromBase64String($body)
         }
     }
 
     # only if body is bytes, first decode based on type
-    switch ($BodyInfo.ContentType) {
+    switch ($ContentType) {
         { $_ -ilike '*utf-7*' } {
-            $BodyInfo.Body = [System.Text.Encoding]::UTF7.GetString($BodyInfo.Body)
+            $body = [System.Text.Encoding]::UTF7.GetString($body)
         }
 
         { $_ -ilike '*utf-8*' } {
-            $BodyInfo.Body = [System.Text.Encoding]::UTF8.GetString($BodyInfo.Body)
+            $body = [System.Text.Encoding]::UTF8.GetString($body)
         }
 
         { $_ -ilike '*utf-16*' } {
-            $BodyInfo.Body = [System.Text.Encoding]::Unicode.GetString($BodyInfo.Body)
+            $body = [System.Text.Encoding]::Unicode.GetString($body)
         }
 
         { $_ -ilike '*utf-32*' } {
-            $BodyInfo.Body = [System.Text.Encoding]::UTF32.GetString($BodyInfo.Body)
+            $body = [System.Text.Encoding]::UTF32.GetString($body)
         }
     }
 
-    return $BodyInfo
+    return $body
 }
 
-function Get-SmtpLineFromData
+function Get-SmtpHeadersFromData
 {
     param (
         [Parameter()]
         [string]
-        $Data,
-
-        [Parameter()]
-        [string]
-        $Name
+        $Data
     )
 
-    $line = (@($Data -isplit [System.Environment]::NewLine) | Where-Object {
-        $_ -ilike "$($Name):*"
-    } | Select-Object -First 1)
+    $headers = @{}
+    $lines = @($Data -isplit [System.Environment]::NewLine)
 
-    return ($line -ireplace "^$($Name)\:\s+", '').Trim()
+    foreach ($line in $lines) {
+        if ([string]::IsNullOrWhiteSpace($line)) {
+            break
+        }
 
+        if ($line -imatch '^(?<name>.*?)\:\s+(?<value>.*?)$') {
+            $headers[$Matches['name'].Trim()] = $Matches['value'].Trim()
+        }
+    }
+
+    return $headers
 }

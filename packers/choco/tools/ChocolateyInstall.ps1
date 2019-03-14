@@ -27,9 +27,13 @@ function Install-PodeModule($path, $version)
         Push-Location (Join-Path $env:ChocolateyPackageFolder 'src')
 
         New-Item -ItemType Directory -Path (Join-Path $path 'Tools') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $path 'Misc') -Force | Out-Null
+
         Copy-Item -Path ./Tools/* -Destination (Join-Path $path 'Tools') -Force | Out-Null
+        Copy-Item -Path ./Misc/* -Destination (Join-Path $path 'Misc') -Force | Out-Null
         Copy-Item -Path ./Pode.psm1 -Destination $path -Force | Out-Null
         Copy-Item -Path ./Pode.psd1 -Destination $path -Force | Out-Null
+        Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
     }
     finally {
         Pop-Location

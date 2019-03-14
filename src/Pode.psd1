@@ -20,7 +20,7 @@
     Author = 'Matthew Kelly (Badgerati)'
 
     # Copyright statement for this module
-    Copyright = 'Copyright (c) 2017-2018 Matthew Kelly (Badgerati), licensed under the MIT License.'
+    Copyright = 'Copyright (c) 2017-2019 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
     Description = 'Pode is a Cross-Platform PowerShell framework for creating web servers to host REST APIs, Web Sites, and TCP/SMTP Servers'
@@ -78,7 +78,8 @@
         'Save',
         'Get-PodeConfiguration',
         'Root',
-        'Flash'
+        'Flash',
+        'Await'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
@@ -99,6 +100,9 @@
 
             # A URL to an icon representing this module.
             IconUri = 'https://cdn.rawgit.com/Badgerati/Pode/master/images/icon.png'
+
+            # Release notes for this particular version of the module
+            ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
 
         }
     }

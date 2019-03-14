@@ -121,12 +121,10 @@ function Start-WebServer
             while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get request and response
-                $task = $Listener.GetContextAsync()
-                $task.Wait($PodeContext.Tokens.Cancellation.Token)
+                $context = (await $Listener.GetContextAsync())
 
                 try
                 {
-                    $context = $task.Result
                     $request = $context.Request
                     $response = $context.Response
 
@@ -158,7 +156,7 @@ function Start-WebServer
                     }
                 }
                 catch {
-                    status 500
+                    status 500 -e $_
                     $Error[0] | Out-Default
                 }
 

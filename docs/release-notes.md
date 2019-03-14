@@ -1,5 +1,28 @@
 # Release Notes
 
+## v0.27.0
+
+```plain
+### Features
+* #185: Support for Server Restarts either Periodically or at specific Times, with support for cron expressions
+* #188: Support for Custom Error pages, with inbuilt Pode error pages
+
+### Enhancements
+* #189: SMTP server to parse data headers and have them set on the event object
+
+### Performance
+* #196: Massive improvements to performance when loading static content
+
+### Bugs
+* #181: Importing modules into the current scope should be done Globally, making them instantly accessible
+* #183: TCP Reads and Writes should be Async so they can be terminated more easily
+* #184: SMTP and TCP servers fail to Restart
+* #196: Default paths on Static Content fail when using nested directories
+
+### General
+* #194: Update Dockerfile from using PSCore 6.1.0 to 6.1.3
+```
+
 ## v0.26.0
 
 ```plain

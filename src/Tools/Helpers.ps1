@@ -23,6 +23,56 @@ function ConvertFrom-PodeFile
     return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
 }
 
+function Get-PodeFileContentUsingViewEngine
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [hashtable]
+        $Data
+    )
+
+    # work out the engine to use when parsing the file
+    $engine = $PodeContext.Server.ViewEngine.Engine
+
+    $ext = Get-FileExtension -Path $Path -TrimPeriod
+    if (!(Test-Empty $ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
+        $engine = $ext
+    }
+
+    # setup the content
+    $content = [string]::Empty
+
+    # run the relevant engine logic
+    switch ($engine.ToLowerInvariant())
+    {
+        'html' {
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
+        }
+
+        'pode' {
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
+            $content = ConvertFrom-PodeFile -Content $content -Data $Data
+        }
+
+        default {
+            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
+                if (Test-Empty $Data) {
+                    $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
+                }
+                else {
+                    $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+                }
+            }
+        }
+    }
+
+    return $content
+}
+
 function Get-Type
 {
     param (
@@ -73,11 +123,11 @@ function Test-Empty
         }
 
         'array' {
-            return ((Get-Count $Value) -eq 0 -or $Value.Count -eq 0)
+            return ((Get-Count $Value) -eq 0)
         }
     }
 
-    return ([string]::IsNullOrWhiteSpace($Value) -or (Get-Count $Value) -eq 0 -or $Value.Count -eq 0)
+    return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-Count $Value) -eq 0))
 }
 
 function Get-PSVersionTable
@@ -768,6 +818,12 @@ function Add-PodePSInbuiltDrives
     if (Test-Path $path) {
         $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
     }
+
+    # create drive for errors, if path exists
+    $path = (Join-ServerRoot 'errors')
+    if (Test-Path $path) {
+        $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
+    }
 }
 
 function Remove-PodePSDrives
@@ -822,6 +878,28 @@ function Lock
     }
 }
 
+function Await
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [System.Threading.Tasks.Task]
+        $Task
+    )
+
+    # is there a cancel token to supply?
+    if ($null -eq $PodeContext -or $null -eq $PodeContext.Tokens.Cancellation.Token) {
+        $Task.Wait()
+    }
+    else {
+        $Task.Wait($PodeContext.Tokens.Cancellation.Token)
+    }
+
+    # only return a value if the result has one
+    if ($null -ne $Task.Result) {
+        return $Task.Result
+    }
+}
+
 function Root
 {
     return $PodeContext.Server.Root
@@ -850,28 +928,48 @@ function Join-ServerRoot
     }
 
     # join the folder/file to the root path
-    if ([string]::IsNullOrWhiteSpace($FilePath)) {
-        return (Join-Path $Root $Folder)
+    return (Join-PodePaths @($Root, $Folder, $FilePath))
+}
+
+function Remove-PodeEmptyItemsFromArray
+{
+    param (
+        [Parameter()]
+        $Array
+    )
+
+    if ($null -eq $Array) {
+        return @()
     }
-    else {
-        return (Join-Path $Root (Join-Path $Folder $FilePath))
-    }
+
+    return @(@($Array -ne ([string]::Empty)) -ne $null)
 }
 
 function Join-PodePaths
 {
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string[]]
         $Paths
     )
 
-    if ($Paths.Length -lt 1) {
+    # remove any empty/null paths
+    $Paths = Remove-PodeEmptyItemsFromArray $Paths
+
+    # if there are no paths, return blank
+    if (Test-Empty $Paths) {
+        return ([string]::Empty)
+    }
+
+    # return the first path if singular
+    if ($Paths.Length -eq 1) {
         return $Paths[0]
     }
 
+    # join the first two paths
     $_path = Join-Path $Paths[0] $Paths[1]
 
+    # if there are any more, add them on
     if ($Paths.Length -gt 2) {
         $Paths[2..($Paths.Length - 1)] | ForEach-Object {
             $_path = Join-Path $_path $_
@@ -982,7 +1080,6 @@ function Get-FileExtension
     )
 
     $ext = [System.IO.Path]::GetExtension($Path)
-
     if ($TrimPeriod) {
         $ext = $ext.Trim('.')
     }
@@ -1260,7 +1357,15 @@ function Get-Count
         $Object
     )
 
-    return ($Object | Measure-Object).Count
+    if ($null -eq $Object) {
+        return 0
+    }
+
+    if ($Object.Length -ge $Object.Count) {
+        return $Object.Length
+    }
+
+    return $Object.Count
 }
 
 function Get-ContentAsBytes
@@ -1344,11 +1449,14 @@ function Test-PodePath
 function Test-PathIsFile
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter()]
         [string]
         $Path
     )
+
+    if (Test-Empty $Path) {
+        return $false
+    }
 
     return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
@@ -1429,4 +1537,37 @@ function Convert-PathPatternsToRegex
 
     # join them all together
     return "^($($Paths -join '|'))$"
+}
+
+function Get-PodeModulePath
+{
+    # if there's 1 module imported already, use that
+    $importedModule = @(Get-Module -Name Pode)
+    if (($importedModule | Measure-Object).Count -eq 1) {
+        return ($importedModule | Select-Object -First 1).Path
+    }
+
+    # if there's none or more, attempt to get the module used for 'engine'
+    try {
+        $usedModule = (Get-Command -Name 'Engine').Module
+        if (($usedModule | Measure-Object).Count -eq 1) {
+            return $usedModule.Path
+        }
+    }
+    catch { }
+
+    # if there were multiple to begin with, use the newest version
+    if (($importedModule | Measure-Object).Count -gt 1) {
+        return ($importedModule | Sort-Object -Property Version | Select-Object -Last 1).Path
+    }
+
+    # otherwise there were none, use the latest installed
+    return (Get-Module -ListAvailable -Name Pode |
+        Sort-Object -Property Version |
+        Select-Object -Last 1).Path
+}
+
+function Get-PodeModuleRootPath
+{
+    return (Split-Path -Parent -Path $PodeContext.Server.PodeModulePath)
 }

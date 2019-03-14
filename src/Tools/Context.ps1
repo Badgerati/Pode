@@ -57,6 +57,7 @@ function New-PodeContext
     $ctx.Server.Root = $ServerRoot
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.Interval = $Interval
+    $ctx.Server.PodeModulePath = (Get-PodeModulePath)
 
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
@@ -198,7 +199,7 @@ function New-PodeContext
 function New-PodeRunspaceState
 {
     $state = [initialsessionstate]::CreateDefault()
-    $state.ImportPSModule((Get-Module -Name Pode).Path)
+    $state.ImportPSModule($PodeContext.Server.PodeModulePath)
 
     $session = New-PodeStateContext -Context $PodeContext
 
@@ -450,12 +451,12 @@ function Listen
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
-    # has an endpoint already been defined for smtp/tcp?
-    if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeContext.Server.Type) {
-        throw "An endpoint for $($Type.ToUpperInvariant()) has already been defined"
-    }
-
     if (!$exists) {
+        # has an endpoint already been defined for smtp/tcp?
+        if (@('smtp', 'tcp') -icontains $Type -and $Type -ieq $PodeContext.Server.Type) {
+            throw "An endpoint for $($Type.ToUpperInvariant()) has already been defined"
+        }
+
         # set server type, ensure we aren't trying to change the server's type
         $_type = (iftet ($Type -ieq 'https') 'http' $Type)
         if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
@@ -528,6 +529,47 @@ function Import
 
     # import the module now, if specified
     if ($Now) {
-        Import-Module $_path -Force -DisableNameChecking -ErrorAction Stop | Out-Null
+        Import-Module $_path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
+    }
+}
+
+function New-PodeAutoRestartServer
+{
+    $config = Get-PodeConfiguration
+    if ($null -eq $config -or $null -eq $config.server.restart)  {
+        return
+    }
+
+    $restart = $config.server.restart
+
+    # period - setup a timer
+    $period = [int]$restart.period
+    if ($period -gt 0) {
+        Timer -Name '__pode_restart_period__' -Interval ($period * 60) -ScriptBlock {
+            $PodeContext.Tokens.Restart.Cancel()
+        } -Skip 1
+    }
+
+    # times - convert into cron expressions
+    $times = @(@($restart.times) -ne $null)
+    if (($times | Measure-Object).Count -gt 0) {
+        $crons = @()
+
+        @($times) | ForEach-Object {
+            $atoms = $_ -split '\:'
+            $crons += "$([int]$atoms[1]) $([int]$atoms[0]) * * *"
+        }
+
+        Schedule -Name '__pode_restart_times__' -Cron @($crons) -ScriptBlock {
+            $PodeContext.Tokens.Restart.Cancel()
+        }
+    }
+
+    # crons - setup schedules
+    $crons = @(@($restart.crons) -ne $null)
+    if (($crons | Measure-Object).Count -gt 0) {
+        Schedule -Name '__pode_restart_crons__' -Cron @($crons) -ScriptBlock {
+            $PodeContext.Tokens.Restart.Cancel()
+        }
     }
 }

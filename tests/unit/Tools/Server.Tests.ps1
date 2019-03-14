@@ -13,6 +13,7 @@ Describe 'Start-PodeServer' {
     Mock Start-TimerRunspace { }
     Mock Start-ScheduleRunspace { }
     Mock Start-Sleep { }
+    Mock New-PodeAutoRestartServer { }
     Mock Start-SmtpServer { }
     Mock Start-TcpServer { }
     Mock Start-WebServer { }

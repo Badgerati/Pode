@@ -2,7 +2,7 @@
     <head>
         <title>Pode Page</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <link rel="stylesheet" type="text/css" href="styles/simple.css.pode">
+        <link rel="stylesheet" type="text/css" href="/styles/simple.css.pode">
     </head>
     <body>
         Hello, world! This is Pode page in a desktop gui!

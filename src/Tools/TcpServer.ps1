@@ -55,9 +55,7 @@ function Start-TcpServer
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get an incoming request
-                $task = $Listener.AcceptTcpClientAsync()
-                $task.Wait($PodeContext.Tokens.Cancellation.Token)
-                $client = $task.Result
+                $client = (await $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
                 $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)

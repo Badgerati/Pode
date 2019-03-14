@@ -38,9 +38,26 @@ function Write-ToResponse
     }
 
     # write the content to the response
-    $Value = ConvertFrom-ValueToBytes -Value $Value
+    if ($Value.GetType().Name -ieq 'string') {
+        $Value = ConvertFrom-ValueToBytes -Value $Value
+    }
+
     $res.ContentLength64 = $Value.Length
-    Write-BytesToStream -Bytes $Value -Stream $res.OutputStream -CheckNetwork
+
+    try {
+        $ms = New-Object -TypeName System.IO.MemoryStream
+        $ms.Write($Value, 0, $Value.Length)
+        $ms.WriteTo($res.OutputStream)
+        $ms.Close()
+    }
+    catch {
+        if ((Test-ValidNetworkFailure $_.Exception)) {
+            return
+        }
+
+        $_.Exception | Out-Default
+        throw
+    }
 }
 
 function Write-ToResponseFromFile
@@ -59,35 +76,30 @@ function Write-ToResponseFromFile
         return
     }
 
-    # are we dealing with a dynamic file for the view engine?
-    $ext = Get-FileExtension -Path $Path -TrimPeriod
+    # are we dealing with a dynamic file for the view engine? (ignore html)
+    $mainExt = Get-FileExtension -Path $Path -TrimPeriod
 
     # this is a static file
-    if ((Test-Empty $ext) -or $ext -ine $PodeContext.Server.ViewEngine.Extension) {
-        $content = Get-ContentAsBytes -Path $Path
-        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext) -Cache:$Cache
+    if ((Test-Empty $mainExt) -or ($mainExt -ieq 'html') -or ($mainExt -ine $PodeContext.Server.ViewEngine.Extension)) {
+        if (Test-IsPSCore) {
+            $content = (Get-Content -Path $Path -Raw -AsByteStream)
+        }
+        else {
+            $content = (Get-Content -Path $Path -Raw -Encoding byte)
+        }
+
+        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
         return
     }
 
     # generate dynamic content
-    $content = [string]::Empty
+    $content = Get-PodeFileContentUsingViewEngine -Path $Path
 
-    switch ($PodeContext.Server.ViewEngine.Engine)
-    {
-        'pode' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
-            $content = ConvertFrom-PodeFile -Content $content
-        }
+    # get the sub-file extension, if empty, use original
+    $subExt = Get-FileExtension -Path (Get-FileName -Path $Path -WithoutExtension) -TrimPeriod
+    $subExt = (coalesce $subExt $mainExt)
 
-        default {
-            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
-            }
-        }
-    }
-
-    $ext = Get-FileExtension -Path (Get-FileName -Path $Path -WithoutExtension) -TrimPeriod
-    Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $ext)
+    Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
 }
 
 function Attach
@@ -184,13 +196,28 @@ function Status
         [Parameter()]
         [Alias('d')]
         [string]
-        $Description
+        $Description,
+
+        [Parameter()]
+        [Alias('e')]
+        $Exception
     )
 
+    # set the code
     $WebEvent.Response.StatusCode = $Code
+
+    # set an appropriate description (mapping if supplied is blank)
+    if (Test-Empty $Description) {
+        $Description = (Get-PodeStatusDescription -StatusCode $Code)
+    }
 
     if (!(Test-Empty $Description)) {
         $WebEvent.Response.StatusDescription = $Description
+    }
+
+    # if the status code is >=400 then attempt to load error page
+    if ($Code -ge 400) {
+        Show-PodeErrorPage -Code $Code -Description $Description -Exception $Exception
     }
 }
 
@@ -415,8 +442,7 @@ function Include
 
     # add view engine extension
     $ext = Get-FileExtension -Path $Path
-    $hasExt = ![string]::IsNullOrWhiteSpace($ext)
-    if (!$hasExt) {
+    if (Test-Empty $ext) {
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
@@ -429,32 +455,76 @@ function Include
     }
 
     # run any engine logic
-    $engine = $PodeContext.Server.ViewEngine.Engine
-    if ($hasExt) {
-        $engine = $ext.Trim('.')
+    return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
+}
+
+function Show-PodeErrorPage
+{
+    param (
+        [Parameter()]
+        [int]
+        $Code,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        $Exception
+    )
+
+    # get the custom errors path
+    $customErrPath = $PodeContext.Server.InbuiltDrives['errors']
+
+    # the actual error page path
+    $errPagePath = [string]::Empty
+
+    # if their is a custom error page, use it
+    if (!(Test-Empty $customErrPath)) {
+        $statusPage = (Join-Path $customErrPath "$($Code).*" -Resolve -ErrorAction Ignore)
+        $defaultPage = (Join-Path $customErrPath "default.*" -Resolve -ErrorAction Ignore)
+
+        # use the status page or the default page?
+        if ((Test-PodePath -Path $statusPage -NoStatus)) {
+            $errPagePath = $statusPage
+        }
+        elseif ((Test-PodePath -Path $defaultPage -NoStatus)) {
+            $errPagePath = $defaultPage
+        }
     }
 
-    $content = [string]::Empty
+    # if we haven't found a custom page, use the inbuilt pode one
+    if (Test-Empty $errPagePath) {
+        $errPagePath = Join-PodePaths @((Get-PodeModuleRootPath), 'Misc', 'default-error-page.pode')
+    }
 
-    switch ($engine.ToLowerInvariant())
-    {
-        'html' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
-        }
+    # if there's still no error path, return
+    if (!(Test-PodePath $errPagePath -NoStatus)) {
+        return
+    }
 
-        'pode' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
-            $content = ConvertFrom-PodeFile -Content $content -Data $Data
-        }
-
-        default {
-            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
-            }
+    # is exception trace showing enabled?
+    $ex = $null
+    if (($null -ne $Exception) -and ([bool](Get-PodeConfiguration).web.errorPages.showExceptions)) {
+        $ex = @{
+            'Message' = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message);
+            'StackTrace' = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace);
+            'Line' = [System.Web.HttpUtility]::HtmlEncode($Exception.InvocationInfo.PositionMessage);
+            'Category' = [System.Web.HttpUtility]::HtmlEncode($Exception.CategoryInfo.ToString());
         }
     }
 
-    return $content
+    # run any engine logic and render it
+    $content = Get-PodeFileContentUsingViewEngine -Path $errPagePath -Data @{
+        'Url' = ($WebEvent.Protocol + '://' + $WebEvent.Endpoint + $WebEvent.Path);
+        'Status' = @{
+            'Code' = $Code;
+            'Description' = $Description;
+        };
+        'Exception' = $ex;
+    }
+
+    html -Value $content
 }
 
 function View
@@ -498,8 +568,7 @@ function View
 
     # add view engine extension
     $ext = Get-FileExtension -Path $Path
-    $hasExt = ![string]::IsNullOrWhiteSpace($ext)
-    if (!$hasExt) {
+    if (Test-Empty $ext) {
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
@@ -511,33 +580,8 @@ function View
         return
     }
 
-    # run any engine logic
-    $engine = $PodeContext.Server.ViewEngine.Engine
-    if ($hasExt) {
-        $engine = $ext.Trim('.')
-    }
-
-    $content = [string]::Empty
-
-    switch ($engine.ToLowerInvariant())
-    {
-        'html' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
-        }
-
-        'pode' {
-            $content = Get-Content -Path $Path -Raw -Encoding utf8
-            $content = ConvertFrom-PodeFile -Content $content -Data $Data
-        }
-
-        default {
-            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
-            }
-        }
-    }
-
-    html -Value $content
+    # run any engine logic and render it
+    html -Value (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
 }
 
 function Tcp
@@ -566,20 +610,19 @@ function Tcp
     switch ($Action.ToLowerInvariant())
     {
         'write' {
-            $stream = $Client.GetStream()
             $encoder = New-Object System.Text.ASCIIEncoding
             $buffer = $encoder.GetBytes("$($Message)`r`n")
-            $stream.Write($buffer, 0, $buffer.Length)
+            $stream = $Client.GetStream()
+            await $stream.WriteAsync($buffer, 0, $buffer.Length)
             $stream.Flush()
         }
 
         'read' {
             $bytes = New-Object byte[] 8192
-            $stream = $Client.GetStream()
             $encoder = New-Object System.Text.ASCIIEncoding
-            $bytesRead = $stream.Read($bytes, 0, 8192)
-            $message = $encoder.GetString($bytes, 0, $bytesRead)
-            return $message
+            $stream = $Client.GetStream()
+            $bytesRead = (await $stream.ReadAsync($bytes, 0, 8192))
+            return $encoder.GetString($bytes, 0, $bytesRead)
         }
     }
 }

@@ -186,7 +186,7 @@ The following are the web pages used above, as well as the CSS style. The web pa
 <html>
     <head>
         <title>Auth Home</title>
-        <link rel="stylesheet" type="text/css" href="styles/main.css">
+        <link rel="stylesheet" type="text/css" href="/styles/main.css">
     </head>
     <body>
         Hello, $($data.Username)! You have view this page $($data.Views) times!
@@ -206,7 +206,7 @@ The following are the web pages used above, as well as the CSS style. The web pa
 <html>
     <head>
         <title>Auth Login</title>
-        <link rel="stylesheet" type="text/css" href="styles/main.css">
+        <link rel="stylesheet" type="text/css" href="/styles/main.css">
     </head>
     <body>
         Please Login:

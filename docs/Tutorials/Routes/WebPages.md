@@ -19,7 +19,7 @@ Server {
 ```
 
 !!! info
-    If your web page references any CSS, JavaScript, etc. files, then Pode will automatically find them within the `/public` directory - or any relative `static` routes you may have defined. For example, if you reference `<link rel="stylesheet" type="text/css" href="styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
+    If your web page references any CSS, JavaScript, etc. files, then Pode will automatically find them within the `/public` directory - or any relative `static` routes you may have defined. For example, if you reference `<link rel="stylesheet" type="text/css" href="/styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
 ## Full Example
 
@@ -55,7 +55,7 @@ Server {
 <html>
     <head>
         <title>Home Page</title>
-        <link rel="stylesheet" type="text/css" href="styles/main.css">
+        <link rel="stylesheet" type="text/css" href="/styles/main.css">
     </head>
     <body>
         <h1>Hello, world!</h1>
@@ -70,7 +70,7 @@ Server {
 <html>
     <head>
         <title>About Me</title>
-        <link rel="stylesheet" type="text/css" href="styles/main.css">
+        <link rel="stylesheet" type="text/css" href="/styles/main.css">
     </head>
     <body>
         <h1>About Me</h1>

@@ -9,13 +9,13 @@ Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions
 To create a new schedule in your server you use the [`schedule`](../../Functions/Core/Schedule) function. The make-up of the function is as follows:
 
 ```powershell
-schedule <name> <cron> <scriptblock> [-start <datetime>] [-end <datetime>] [-limit <int>]
+schedule <name> <cron(s)> <scriptblock> [-start <datetime>] [-end <datetime>] [-limit <int>]
 
 # or shorthand:
-schedule <name> <cron> <scriptblock> [-s <datetime>] [-e <datetime>] [-l <int>]
+schedule <name> <cron(s)> <scriptblock> [-s <datetime>] [-e <datetime>] [-l <int>]
 ```
 
-Each schedule must have a `<name>`, a `<cron>` expression, and a `<scriptblock>` for the main logic. The `<name>` must be unique across all schedules.
+Each schedule must have a `<name>`, one or more `<cron>` expressions, and a `<scriptblock>` for the main logic. The `<name>` must be unique across all schedules.
 
 To create a basic `schedule`, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:
 
@@ -27,11 +27,21 @@ Server {
 }
 ```
 
-Whereas the following will create the same schedule, but will only trigger the schedule 4 times:
+Whereas the following will create the same schedule, but will only trigger the schedule 4 times due to the `-limit` value supplied:
 
 ```powershell
 Server {
     schedule 'date' '5 0 * * TUE' -limit 4 {
+        Write-Host "$([DateTime]::Now)"
+    }
+}
+```
+
+You can also supply multiple cron expressions for the same `schedule`. For example, the following will trigger the same schedule every minute and every hour:
+
+```powershell
+Server {
+    schedule 'date' @('@minutely', '@hourly') {
         Write-Host "$([DateTime]::Now)"
     }
 }
