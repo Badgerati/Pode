@@ -510,10 +510,58 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-4" type="checkbox" id="nav-4-4">
+    
+    <label class="md-nav__link" for="nav-4-4">
+      Server Restarting
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-4">
+        Server Restarting
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
-    <a href="../FileMonitor/" title="File Monitor" class="md-nav__link">
-      File Monitor
+    <a href="../ServerRestarting/Overview/" title="Overview" class="md-nav__link">
+      Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ServerRestarting/FileMonitoring/" title="File Monitoring" class="md-nav__link">
+      File Monitoring
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ServerRestarting/AutoRestarting/" title="Auto-Restarting" class="md-nav__link">
+      Auto-Restarting
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -639,11 +687,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
     <label class="md-nav__link" for="nav-4-10">
-      Routes
+      Web & Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
       <label class="md-nav__title" for="nav-4-10">
-        Routes
+        Web & Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -666,8 +714,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../Routes/StatusCodes/" title="Status Codes" class="md-nav__link">
-      Status Codes
+    <a href="../Routes/ErrorPages/" title="Error Pages" class="md-nav__link">
+      Error Pages
     </a>
   </li>
 
@@ -1494,6 +1542,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Utility/Await/" title="Await" class="md-nav__link">
+      Await
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Utility/Dispose/" title="Dispose" class="md-nav__link">
       Dispose
     </a>
@@ -1791,14 +1851,14 @@
 <p>Schedule triggers are defined using <a href="../Misc/CronExpressions"><code>cron expressions</code></a>, basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a a defined end time.</p>
 <h2 id="create-a-schedule">Create a Schedule</h2>
 <p>To create a new schedule in your server you use the <a href="../../Functions/Core/Schedule"><code>schedule</code></a> function. The make-up of the function is as follows:</p>
-<div class="codehilite"><pre><span></span><span class="n">schedule</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">cron</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-start</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-end</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-limit</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span>
+<div class="codehilite"><pre><span></span><span class="n">schedule</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">cron</span><span class="p">(</span><span class="n">s</span><span class="p">)&gt;</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-start</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-end</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-limit</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span>
 
 <span class="c"># or shorthand:</span>
-<span class="n">schedule</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">cron</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-s</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-l</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span>
+<span class="n">schedule</span> <span class="p">&lt;</span><span class="n">name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">cron</span><span class="p">(</span><span class="n">s</span><span class="p">)&gt;</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-s</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">datetime</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-l</span> <span class="p">&lt;</span><span class="n">int</span><span class="p">&gt;]</span>
 </pre></div>
 
 
-<p>Each schedule must have a <code>&lt;name&gt;</code>, a <code>&lt;cron&gt;</code> expression, and a <code>&lt;scriptblock&gt;</code> for the main logic. The <code>&lt;name&gt;</code> must be unique across all schedules.</p>
+<p>Each schedule must have a <code>&lt;name&gt;</code>, one or more <code>&lt;cron&gt;</code> expressions, and a <code>&lt;scriptblock&gt;</code> for the main logic. The <code>&lt;name&gt;</code> must be unique across all schedules.</p>
 <p>To create a basic <code>schedule</code>, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">schedule</span> <span class="s1">&#39;date&#39;</span> <span class="s1">&#39;5 0 * * TUE&#39;</span> <span class="p">{</span>
@@ -1808,9 +1868,18 @@
 </pre></div>
 
 
-<p>Whereas the following will create the same schedule, but will only trigger the schedule 4 times:</p>
+<p>Whereas the following will create the same schedule, but will only trigger the schedule 4 times due to the <code>-limit</code> value supplied:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">schedule</span> <span class="s1">&#39;date&#39;</span> <span class="s1">&#39;5 0 * * TUE&#39;</span> <span class="n">-limit</span> <span class="n">4</span> <span class="p">{</span>
+        <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>You can also supply multiple cron expressions for the same <code>schedule</code>. For example, the following will trigger the same schedule every minute and every hour:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">schedule</span> <span class="s1">&#39;date&#39;</span> <span class="p">@(</span><span class="s1">&#39;@minutely&#39;</span><span class="p">,</span> <span class="s1">&#39;@hourly&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
     <span class="p">}</span>
 <span class="p">}</span>

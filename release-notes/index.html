@@ -347,6 +347,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0270" title="v0.27.0" class="md-nav__link">
+    v0.27.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0260" title="v0.26.0" class="md-nav__link">
     v0.26.0
   </a>
@@ -677,10 +684,58 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-4" type="checkbox" id="nav-4-4">
+    
+    <label class="md-nav__link" for="nav-4-4">
+      Server Restarting
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-4">
+        Server Restarting
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
-    <a href="../Tutorials/FileMonitor/" title="File Monitor" class="md-nav__link">
-      File Monitor
+    <a href="../Tutorials/ServerRestarting/Overview/" title="Overview" class="md-nav__link">
+      Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Tutorials/ServerRestarting/FileMonitoring/" title="File Monitoring" class="md-nav__link">
+      File Monitoring
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Tutorials/ServerRestarting/AutoRestarting/" title="Auto-Restarting" class="md-nav__link">
+      Auto-Restarting
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -754,11 +809,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
     <label class="md-nav__link" for="nav-4-10">
-      Routes
+      Web & Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
       <label class="md-nav__title" for="nav-4-10">
-        Routes
+        Web & Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -781,8 +836,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../Tutorials/Routes/StatusCodes/" title="Status Codes" class="md-nav__link">
-      Status Codes
+    <a href="../Tutorials/Routes/ErrorPages/" title="Error Pages" class="md-nav__link">
+      Error Pages
     </a>
   </li>
 
@@ -1609,6 +1664,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Functions/Utility/Await/" title="Await" class="md-nav__link">
+      Await
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Functions/Utility/Dispose/" title="Dispose" class="md-nav__link">
       Dispose
     </a>
@@ -1862,6 +1929,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0270" title="v0.27.0" class="md-nav__link">
+    v0.27.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0260" title="v0.26.0" class="md-nav__link">
     v0.26.0
   </a>
@@ -2021,6 +2095,28 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v0270">v0.27.0</h2>
+<div class="codehilite"><pre><span></span>### Features
+* #185: Support for Server Restarts either Periodically or at specific Times, with support for cron expressions
+* #188: Support for Custom Error pages, with inbuilt Pode error pages
+
+### Enhancements
+* #189: SMTP server to parse data headers and have them set on the event object
+
+### Performance
+* #196: Massive improvements to performance when loading static content
+
+### Bugs
+* #181: Importing modules into the current scope should be done Globally, making them instantly accessible
+* #183: TCP Reads and Writes should be Async so they can be terminated more easily
+* #184: SMTP and TCP servers fail to Restart
+* #196: Default paths on Static Content fail when using nested directories
+
+### General
+* #194: Update Dockerfile from using PSCore 6.1.0 to 6.1.3
+</pre></div>
+
+
 <h2 id="v0260">v0.26.0</h2>
 <div class="codehilite"><pre><span></span><span class="c1">### Features</span>
 <span class="o">*</span> <span class="c1">#162: Basic support for local modules in &quot;package.json&quot; on &quot;pode install&quot;</span>

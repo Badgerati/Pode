@@ -508,10 +508,58 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-4" type="checkbox" id="nav-4-4">
+    
+    <label class="md-nav__link" for="nav-4-4">
+      Server Restarting
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-4">
+        Server Restarting
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
-    <a href="../../../Tutorials/FileMonitor/" title="File Monitor" class="md-nav__link">
-      File Monitor
+    <a href="../../../Tutorials/ServerRestarting/Overview/" title="Overview" class="md-nav__link">
+      Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/ServerRestarting/FileMonitoring/" title="File Monitoring" class="md-nav__link">
+      File Monitoring
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/ServerRestarting/AutoRestarting/" title="Auto-Restarting" class="md-nav__link">
+      Auto-Restarting
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -585,11 +633,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-10" type="checkbox" id="nav-4-10">
     
     <label class="md-nav__link" for="nav-4-10">
-      Routes
+      Web & Routes
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
       <label class="md-nav__title" for="nav-4-10">
-        Routes
+        Web & Routes
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -612,8 +660,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/StatusCodes/" title="Status Codes" class="md-nav__link">
-      Status Codes
+    <a href="../../../Tutorials/Routes/ErrorPages/" title="Error Pages" class="md-nav__link">
+      Error Pages
     </a>
   </li>
 
@@ -1254,6 +1302,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-4" title="Example 4" class="md-nav__link">
+    Example 4
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1516,6 +1571,18 @@
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Utility/Await/" title="Await" class="md-nav__link">
+      Await
+    </a>
+  </li>
+
         
           
           
@@ -1811,6 +1878,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-4" title="Example 4" class="md-nav__link">
+    Example 4
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1877,6 +1951,16 @@
 </pre></div>
 
 
+<h3 id="example-4">Example 4</h3>
+<p>The following example will create a <code>schedule</code> using multiple predefined cron expressions to trigger every minute and every hour:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">schedule</span> <span class="s1">&#39;minutely&#39;</span> <span class="p">@(</span><span class="s1">&#39;@minutely&#39;</span><span class="p">,</span> <span class="s1">&#39;@hourly&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c"># logic</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
 <h2 id="parameters">Parameters</h2>
 <table>
 <thead>
@@ -1898,9 +1982,9 @@
 </tr>
 <tr>
 <td>Cron</td>
-<td>string</td>
+<td>string[]</td>
 <td>true</td>
-<td>A cron expression to define when the schedule should trigger</td>
+<td>A cron expression, or multiple cron expressions, that define when the schedule should trigger</td>
 <td>empty</td>
 </tr>
 <tr>
