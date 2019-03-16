@@ -36,7 +36,7 @@
     
     
       
-        <title>Listen - Pode</title>
+        <title>Load - Pode</title>
       
     
     
@@ -98,7 +98,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="../../../#listen" tabindex="1" class="md-skip">
+      <a href="../../../#load" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -124,7 +124,7 @@
                 Pode
               </span>
               <span class="md-header-nav__topic">
-                Listen
+                Load
               </span>
             
           
@@ -1190,6 +1190,18 @@
           
           
 
+
+  <li class="md-nav__item">
+    <a href="../Listen/" title="Listen" class="md-nav__link">
+      Listen
+    </a>
+  </li>
+
+        
+          
+          
+          
+
   
 
 
@@ -1201,11 +1213,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Listen
+        Load
       </label>
     
-    <a href="./" title="Listen" class="md-nav__link md-nav__link--active">
-      Listen
+    <a href="./" title="Load" class="md-nav__link md-nav__link--active">
+      Load
     </a>
     
       
@@ -1240,41 +1252,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#example-2" title="Example 2" class="md-nav__link">
-    Example 2
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-3" title="Example 3" class="md-nav__link">
-    Example 3
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-4" title="Example 4" class="md-nav__link">
-    Example 4
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-5" title="Example 5" class="md-nav__link">
-    Example 5
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-6" title="Example 6" class="md-nav__link">
-    Example 6
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1295,18 +1272,6 @@
   
 </nav>
     
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Load/" title="Load" class="md-nav__link">
-      Load
-    </a>
   </li>
 
         
@@ -1890,41 +1855,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#example-2" title="Example 2" class="md-nav__link">
-    Example 2
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-3" title="Example 3" class="md-nav__link">
-    Example 3
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-4" title="Example 4" class="md-nav__link">
-    Example 4
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-5" title="Example 5" class="md-nav__link">
-    Example 5
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-6" title="Example 6" class="md-nav__link">
-    Example 6
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1953,63 +1883,17 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Functions/Core/Listen.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Functions/Core/Load.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="listen">Listen</h1>
+                <h1 id="load">Load</h1>
 <h2 id="description">Description</h2>
-<p>The <code>listen</code> function allows you to specify the IP/Host, Port and Protocol for endpoints that your <code>Server</code> will listen on. If the protocol is <code>https</code> then you can also specify a certificate to bind, even having Pode create a self-signed certificate for you.</p>
-<p>The <code>listen</code> function will check for administrator privileges on Windows, unless the endpoint you're attempting to listen on is a localhost one.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You can specify multiple endpoints to listen on for HTTP/HTTPS endpoints however, you can only supply a single endpoint for SMTP/TCP</p>
-</div>
+<p>The <code>load</code> function can be used to dot-source other PowerShell scripts into your server. While normal dot-sourcing still works as normal in Pode, this function is used to aid relative paths when running your server as a Service (as relative paths may resolve from where the service is running, and not where the server is running).</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
-<p>The following example will listen on every IP over port 8080 for HTTP requests:</p>
+<p>The following example will run the given PowerShell script, creating any <code>routes</code>, etc., that are needed. Because the path is relative, the server's root path will be automatically added:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h3 id="example-2">Example 2</h3>
-<p>The following example will listen on localhost over port 25 for SMTP requests (this will not require administrator privileges):</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="n">127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span><span class="err">:</span><span class="n">25</span> <span class="n">smtp</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h3 id="example-3">Example 3</h3>
-<p>The following example will listen on a specific IP address over port 8443 for HTTPS requests; it will also inform Pode to create and bind a self-signed certificate to the IP:Port:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="n">10</span><span class="p">.</span><span class="n">10</span><span class="p">.</span><span class="n">1</span><span class="p">.</span><span class="n">4</span><span class="err">:</span><span class="n">8443</span> <span class="n">https</span> <span class="n">-cert</span> <span class="n">self</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h3 id="example-4">Example 4</h3>
-<p>The following example will listen on a specific host name over port 8080 for HTTP requests:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="n">pode</span><span class="p">.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h3 id="example-5">Example 5</h3>
-<p>The following example will listen on a wildcard endpoint over port 8080 for HTTP requests:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="p">*.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
-<span class="p">}</span>
-</pre></div>
-
-
-<h3 id="example-6">Example 6</h3>
-<p>The following example will listen on multiple endpoints for HTTP (Note, you can specify a combination of HTTP/HTTPS endpoints):</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="n">pode</span><span class="p">.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
-    <span class="n">listen</span> <span class="n">pode</span><span class="p">.</span><span class="n">bar</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+    <span class="n">load</span> <span class="s1">&#39;./routes/api.ps1&#39;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -2027,39 +1911,11 @@
 </thead>
 <tbody>
 <tr>
-<td>IPPort</td>
+<td>Path</td>
 <td>string</td>
 <td>true</td>
-<td>The IP/Host:Port combination for an endpoint that the server should listen on</td>
-<td>null</td>
-</tr>
-<tr>
-<td>Type</td>
-<td>string</td>
-<td>true</td>
-<td>The protocol of the endpoint the server should use: HTTP, HTTPS, SMTP, TCP</td>
-<td>null</td>
-</tr>
-<tr>
-<td>Cert</td>
-<td>string</td>
-<td>false</td>
-<td>The certificate to bind to the endpoint. If the certificate is <code>self</code> then Pode will create a self-signed certificate. If the certificate is <code>*.example.com</code> then it must be installed to <code>Cert:/LocalMachine/My</code></td>
+<td>The path to a PowerShell script (<code>.ps1</code>) that needs to be dot-sourced</td>
 <td>empty</td>
-</tr>
-<tr>
-<td>Name</td>
-<td>string</td>
-<td>false</td>
-<td>A unique name for this endpoint, which can be used on the <a href="../Route"><code>route</code></a> and <a href="../Gui"><code>gui</code></a> functions</td>
-<td>empty</td>
-</tr>
-<tr>
-<td>Force</td>
-<td>switch</td>
-<td>false</td>
-<td>If supplied, will force the <code>listen</code> function to not run the administrator check</td>
-<td>false</td>
 </tr>
 </tbody>
 </table>
@@ -2083,7 +1939,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../Import/" title="Import" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../Listen/" title="Listen" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -2092,19 +1948,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Import
+                Listen
               </span>
             </div>
           </a>
         
         
-          <a href="../Load/" title="Load" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../Logger/" title="Logger" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Load
+                Logger
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
