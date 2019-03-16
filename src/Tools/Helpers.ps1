@@ -1528,6 +1528,10 @@ function Convert-PathPatternsToRegex
             $tmp = $_ -ireplace '\.', '\.'
 
             if (!$NotSlashes) {
+                if ($tmp -match '[\\/]\*$') {
+                    $tmp = $tmp -replace '[\\/]\*$', '/{0,1}*'
+                }
+
                 $tmp = $tmp -ireplace '[\\/]', '[\\/]'
             }
 

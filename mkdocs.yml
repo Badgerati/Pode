@@ -68,6 +68,7 @@ nav:
       - Handler: Functions/Core/Handler.md
       - Import: Functions/Core/Import.md
       - Listen: Functions/Core/Listen.md
+      - Load: Functions/Core/Load.md
       - Logger: Functions/Core/Logger.md
       - Middleware: Functions/Core/Middleware.md
       - Route: Functions/Core/Route.md

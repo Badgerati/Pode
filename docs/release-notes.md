@@ -1,5 +1,13 @@
 # Release Notes
 
+## v0.27.1
+
+```plain
+### Bugs
+* #199: Fix issues with relative paths when running server as a service
+* #200: Fix issue with file monitor, where folder patterns fail to match on new files
+```
+
 ## v0.27.0
 
 ```plain
