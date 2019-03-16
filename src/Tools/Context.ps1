@@ -497,6 +497,12 @@ function Import
         $Now
     )
 
+    # if path is '.', replace with server root
+    if ($Path -match '^\.[\\/]{0,1}') {
+        $Path = $Path -replace '^\.[\\/]{0,1}', ''
+        $Path = Join-Path $PodeContext.Server.Root $Path
+    }
+
     # check to see if a raw path to a module was supplied
     $_path = Resolve-Path -Path $Path -ErrorAction Ignore
 
@@ -531,6 +537,34 @@ function Import
     if ($Now) {
         Import-Module $_path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
     }
+}
+
+function Load
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [Alias('p')]
+        [string]
+        $Path
+    )
+
+    # if path is '.', replace with server root
+    if ($Path -match '^\.[\\/]{0,1}') {
+        $Path = $Path -replace '^\.[\\/]{0,1}', ''
+        $Path = Join-Path $PodeContext.Server.Root $Path
+    }
+
+    # check to see if a raw path to a script was supplied
+    $_path = Resolve-Path -Path $Path -ErrorAction Ignore
+
+    # check if the path exists
+    if (!(Test-PodePath $_path -NoStatus)) {
+        throw "The script path does not exist: $($_path)"
+    }
+
+    # dot-source the script
+    . $_path
 }
 
 function New-PodeAutoRestartServer
