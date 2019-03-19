@@ -25,7 +25,7 @@ nav:
     - Timers: Tutorials/Timers.md
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
-    - Importing Modules: Tutorials/ImportingModules.md
+    - Modules & SnapIns: Tutorials/ImportingModules.md
     - Configuration: Tutorials/Configuration.md
     - Web & Routes:
       - Overview: Tutorials/Routes/Overview.md
