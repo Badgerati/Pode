@@ -35,9 +35,6 @@ function Start-TcpServer
         throw $_.Exception
     }
 
-    # state where we're running
-    Write-Host "Listening on tcp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
-
     # script for listening out of for incoming requests
     $listenScript = {
         param (
@@ -117,4 +114,7 @@ function Start-TcpServer
     }
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+
+    # state where we're running
+    Write-Host "Listening on tcp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
 }
