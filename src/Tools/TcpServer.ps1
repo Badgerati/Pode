@@ -71,9 +71,7 @@ function Start-TcpServer
                 }
 
                 # close the connection
-                if ($null -ne $client -and $client.Connected) {
-                    dispose $client -Close
-                }
+                Close-PodeTcpConnection
             }
         }
         catch [System.OperationCanceledException] {}

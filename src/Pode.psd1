@@ -34,7 +34,6 @@
         'Get-PodeRoute',
         'Handler',
         'Get-PodeTcpHandler',
-        'Get-SmtpEmail',
         'Tcp',
         'Server',
         'Engine',

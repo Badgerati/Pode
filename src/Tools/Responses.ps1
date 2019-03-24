@@ -584,6 +584,29 @@ function View
     html -Value (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
 }
 
+function Close-PodeTcpConnection
+{
+    param (
+        [Parameter()]
+        $Client,
+
+        [switch]
+        $Quit
+    )
+
+    if ($null -eq $Client) {
+        $Client = $TcpEvent.Client
+    }
+
+    if ($null -ne $Client) {
+        if ($Quit -and $Client.Connected) {
+            tcp write '221 Bye'
+        }
+
+        dispose $Client -Close
+    }
+}
+
 function Tcp
 {
     param (
