@@ -108,12 +108,12 @@ task TestDeps {
         Install-Module -Name Pester -Scope CurrentUser -RequiredVersion '4.4.2' -Force -SkipPublisherCheck
     }
 
-    # install pscoverage - for coveralls
+    # install coveralls
     if (Test-IsAppVeyor)
     {
-        if (((Get-Module -ListAvailable PSCoverage) | Where-Object { $_.Version -ieq '1.0.78' }) -eq $null) {
-            Write-Host 'Installing PSCoverage'
-            Install-Module -Name PSCoverage -Scope CurrentUser -RequiredVersion '1.0.78' -Force -SkipPublisherCheck
+        if (((Get-Module -ListAvailable coveralls) | Where-Object { $_.Version -ieq '1.0.25' }) -eq $null) {
+            Write-Host 'Installing Coveralls'
+            Install-Module -Name coveralls -Scope CurrentUser -RequiredVersion '1.0.25' -Force -SkipPublisherCheck
         }
     }
 }
@@ -185,10 +185,10 @@ task PushAppVeyorTests -If (Test-IsAppVeyor) {
     Push-AppveyorArtifact $TestResultFile
 }
 
-# Synopsis: If AppyVeyor, ublish code coverage stats
+# Synopsis: If AppyVeyor, push code coverage stats
 task PushCodeCoverage -If (Test-IsAppVeyor) {
-    $report = New-CoverageReport -CodeCoverage $Script:TestStatus.CodeCoverage -RepoToken $env:PODE_COVERALLS_TOKEN -ModuleRoot $pwd
-    Publish-CoverageReport -CoverageReport $report
+    $coverage = Format-Coverage -PesterResults $Script:TestStatus -CoverallsApiToken $env:PODE_COVERALLS_TOKEN -RootFolder $pwd -BranchName $ENV:APPVEYOR_REPO_BRANCH
+    Publish-Coverage -Coverage $coverage
 }
 
 
