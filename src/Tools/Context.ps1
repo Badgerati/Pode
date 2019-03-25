@@ -263,6 +263,11 @@ function New-PodeStateContext
 
 function Get-PodeConfiguration
 {
+    return (config)
+}
+
+function Config
+{
     return $PodeContext.Server.Configuration
 }
 
@@ -593,7 +598,7 @@ function Load
 
 function New-PodeAutoRestartServer
 {
-    $config = Get-PodeConfiguration
+    $config = (config)
     if ($null -eq $config -or $null -eq $config.server.restart)  {
         return
     }
