@@ -31,7 +31,7 @@ function New-PodeContext
 
     # set a random server name if one not supplied
     if (Test-Empty $Name) {
-        $Name = Get-RandomName
+        $Name = Get-PodeRandomName
     }
 
     # ensure threads are always >0
