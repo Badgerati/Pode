@@ -1,5 +1,12 @@
 # Release Notes
 
+## v0.27.2
+
+```plain
+### Bugs
+* #212: Incorrect variable name used in html, csv, xml and json functions when referencing files
+```
+
 ## v0.27.1
 
 ```plain

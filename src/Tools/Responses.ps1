@@ -300,7 +300,7 @@ function Json
 
     if ($File) {
         # test the file path, and set status accordingly
-        if (!(Test-PodePath $Path)) {
+        if (!(Test-PodePath $Value)) {
             return
         }
         else {
@@ -330,7 +330,7 @@ function Csv
 
     if ($File) {
         # test the file path, and set status accordingly
-        if (!(Test-PodePath $Path)) {
+        if (!(Test-PodePath $Value)) {
             return
         }
         else {
@@ -369,7 +369,7 @@ function Xml
 
     if ($File) {
         # test the file path, and set status accordingly
-        if (!(Test-PodePath $Path)) {
+        if (!(Test-PodePath $Value)) {
             return
         }
         else {
@@ -403,7 +403,7 @@ function Html
 
     if ($File) {
         # test the file path, and set status accordingly
-        if (!(Test-PodePath $Path)) {
+        if (!(Test-PodePath $Value)) {
             return
         }
         else {
