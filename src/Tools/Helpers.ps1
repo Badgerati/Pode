@@ -73,6 +73,17 @@ function Get-PodeFileContentUsingViewEngine
     return $content
 }
 
+function Get-PodeFileContent
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+
+    return (Get-Content -Path $Path -Raw -Encoding utf8)
+}
+
 function Get-Type
 {
     param (

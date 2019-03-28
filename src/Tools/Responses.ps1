@@ -304,7 +304,7 @@ function Json
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Raw -Encoding utf8
+            $Value = Get-PodeFileContent -Path $Value
         }
     }
     elseif (Test-Empty $Value) {
@@ -334,7 +334,7 @@ function Csv
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Raw -Encoding utf8
+            $Value = Get-PodeFileContent -Path $Value
         }
     }
     elseif (Test-Empty $Value) {
@@ -373,7 +373,7 @@ function Xml
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Raw -Encoding utf8
+            $Value = Get-PodeFileContent -Path $Value
         }
     }
     elseif (Test-Empty $value) {
@@ -407,7 +407,7 @@ function Html
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Raw -Encoding utf8
+            $Value = Get-PodeFileContent -Path $Value
         }
     }
     elseif (Test-Empty $value) {
