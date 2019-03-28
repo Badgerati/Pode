@@ -19,7 +19,7 @@ function Write-BytesToStream
         $ms.Close()
     }
     catch {
-        if ($CheckNetwork -and (Test-ValidNetworkFailure $_.Exception)) {
+        if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
             return
         }
 
@@ -157,7 +157,7 @@ function ConvertFrom-ValueToBytes
         $Encoding = [System.Text.Encoding]::UTF8
     )
 
-    if ((Get-Type $Value).Name -ieq 'string') {
+    if ((Get-PodeType $Value).Name -ieq 'string') {
         $Value = $Encoding.GetBytes($Value)
     }
 
@@ -280,7 +280,7 @@ function Dispose
         }
     }
     catch [exception] {
-        if ($CheckNetwork -and (Test-ValidNetworkFailure $_.Exception)) {
+        if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
             return
         }
 

@@ -113,11 +113,11 @@ function Get-PodeStaticRoutePath
     # if we have a defined static route, use that
     if ($null -ne $found) {
         # if there's no file, we need to check defaults
-        if (!(Test-PathIsFile $found.File) -and (Get-Count @($found.Defaults)) -gt 0)
+        if (!(Test-PodePathIsFile $found.File) -and (Get-PodeCount @($found.Defaults)) -gt 0)
         {
             $found.File = (coalesce $found.File ([string]::Empty))
 
-            if ((Get-Count @($found.Defaults)) -eq 1) {
+            if ((Get-PodeCount @($found.Defaults)) -eq 1) {
                 $found.File = Join-PodePaths @($found.File, @($found.Defaults)[0])
             }
             else {
@@ -134,7 +134,7 @@ function Get-PodeStaticRoutePath
     }
 
     # else, use the public static directory (but only if path is a file, and a public dir is present)
-    if ((Test-PathIsFile $Route) -and !(Test-Empty $PodeContext.Server.InbuiltDrives['public'])) {
+    if ((Test-PodePathIsFile $Route) -and !(Test-Empty $PodeContext.Server.InbuiltDrives['public'])) {
         return (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
     }
 
@@ -250,7 +250,7 @@ function Route
         Add-PodeStaticRoute -Route $Route -Path ([string](@($Middleware))[0]) -Protocol $Protocol -Endpoint $Endpoint -Defaults $Defaults
     }
     else {
-        if ((Get-Count $Defaults) -gt 0) {
+        if ((Get-PodeCount $Defaults) -gt 0) {
             throw "[$($HttpMethod)] $($Route) has default static files defined, which is only for [STATIC] routes"
         }
 
@@ -302,7 +302,7 @@ function Remove-PodeRoute
     })
 
     # if the route has no more logic, just remove it
-    if ((Get-Count $PodeContext.Server.Routes[$HttpMethod][$Route]) -eq 0) {
+    if ((Get-PodeCount $PodeContext.Server.Routes[$HttpMethod][$Route]) -eq 0) {
         $PodeContext.Server.Routes[$HttpMethod].Remove($Route) | Out-Null
     }
 }
@@ -344,7 +344,7 @@ function Add-PodeRoute
     # ensure middleware is either a scriptblock, or a valid hashtable
     if (!(Test-Empty $Middleware)) {
         @($Middleware) | ForEach-Object {
-            $_type = (Get-Type $_).Name
+            $_type = (Get-PodeType $_).Name
 
             # is the type valid
             if ($_type -ine 'scriptblock' -and $_type -ine 'hashtable') {
@@ -357,7 +357,7 @@ function Add-PodeRoute
                     throw "A Hashtable middleware supplied for the '[$($HttpMethod)] $($Route)' route has no Logic defined"
                 }
 
-                $_ltype = (Get-Type $_.Logic).Name
+                $_ltype = (Get-PodeType $_.Logic).Name
                 if ($_ltype -ine 'scriptblock') {
                     throw "A Hashtable middleware supplied for the '[$($HttpMethod)] $($Route)' route has has an invalid Logic type. Expected ScriptBlock, but got: $($_ltype)"
                 }
@@ -368,12 +368,12 @@ function Add-PodeRoute
     # if middleware set, but not scriptblock, set middle and script
     if (!(Test-Empty $Middleware) -and ($null -eq $ScriptBlock)) {
         # if multiple middleware, error
-        if ((Get-Type $Middleware).BaseName -ieq 'array' -and (Get-Count $Middleware) -ne 1) {
+        if ((Get-PodeType $Middleware).BaseName -ieq 'array' -and (Get-PodeCount $Middleware) -ne 1) {
             throw "[$($HttpMethod)] $($Route) has no logic defined"
         }
 
         $ScriptBlock = {}
-        if ((Get-Type $Middleware[0]).Name -ieq 'scriptblock') {
+        if ((Get-PodeType $Middleware[0]).Name -ieq 'scriptblock') {
             $ScriptBlock = $Middleware[0]
             $Middleware = $null
         }
@@ -400,7 +400,7 @@ function Add-PodeRoute
         $Middleware = @($Middleware)
 
         for ($i = 0; $i -lt $Middleware.Length; $i++) {
-            if ((Get-Type $Middleware[$i]).Name -ieq 'scriptblock')
+            if ((Get-PodeType $Middleware[$i]).Name -ieq 'scriptblock')
             {
                 $Middleware[$i] = @{
                     'Logic' = $Middleware[$i]
@@ -458,7 +458,7 @@ function Add-PodeStaticRoute
         throw "No path supplied for $($HttpMethod) definition"
     }
 
-    $Path = (Join-ServerRoot $Path)
+    $Path = (Join-PodeServerRoot $Path)
     if (!(Test-Path $Path)) {
         throw "Folder supplied for $($HttpMethod) route does not exist: $($Path)"
     }

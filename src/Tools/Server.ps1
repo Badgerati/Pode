@@ -76,7 +76,7 @@ function Server
     }
 
     # if an ip address was passed, ensure it's valid
-    if (!(Test-Empty $IP) -and !(Test-IPAddress $IP)) {
+    if (!(Test-Empty $IP) -and !(Test-PodeIPAddress $IP)) {
         throw "Invalid IP address has been supplied: $($IP)"
     }
 
@@ -114,14 +114,14 @@ function Server
         }
 
         # sit here waiting for termination/cancellation, or to restart the server
-        while (!(Test-TerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
+        while (!(Test-PodeTerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
             Start-Sleep -Seconds 1
 
             # get the next key presses
-            $key = Get-ConsoleKey
+            $key = Get-PodeConsoleKey
 
             # check for internal restart
-            if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-RestartPressed -Key $key)) {
+            if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                 Restart-PodeServer
             }
         }

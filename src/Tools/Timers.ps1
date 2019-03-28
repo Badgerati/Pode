@@ -12,7 +12,7 @@ function Get-PodeTimer
 
 function Start-PodeTimerRunspace
 {
-    if ((Get-Count $PodeContext.Timers) -eq 0) {
+    if ((Get-PodeCount $PodeContext.Timers) -eq 0) {
         return
     }
 

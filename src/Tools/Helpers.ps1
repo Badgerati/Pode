@@ -38,7 +38,7 @@ function Get-PodeFileContentUsingViewEngine
     # work out the engine to use when parsing the file
     $engine = $PodeContext.Server.ViewEngine.Engine
 
-    $ext = Get-FileExtension -Path $Path -TrimPeriod
+    $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
     if (!(Test-Empty $ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
         $engine = $ext
     }
@@ -84,7 +84,7 @@ function Get-PodeFileContent
     return (Get-Content -Path $Path -Raw -Encoding utf8)
 }
 
-function Get-Type
+function Get-PodeType
 {
     param (
         [Parameter()]
@@ -109,7 +109,7 @@ function Test-Empty
         $Value
     )
 
-    $type = Get-Type $Value
+    $type = Get-PodeType $Value
     if ($null -eq $type) {
         return $true
     }
@@ -134,32 +134,32 @@ function Test-Empty
         }
 
         'array' {
-            return ((Get-Count $Value) -eq 0)
+            return ((Get-PodeCount $Value) -eq 0)
         }
     }
 
-    return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-Count $Value) -eq 0))
+    return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-PodeCount $Value) -eq 0))
 }
 
-function Get-PSVersionTable
+function Get-PodePSVersionTable
 {
     return $PSVersionTable
 }
 
 function Test-IsUnix
 {
-    return (Get-PSVersionTable).Platform -ieq 'unix'
+    return (Get-PodePSVersionTable).Platform -ieq 'unix'
 }
 
 function Test-IsWindows
 {
-    $v = Get-PSVersionTable
+    $v = Get-PodePSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
 
 function Test-IsPSCore
 {
-    return (Get-PSVersionTable).PSEdition -ieq 'core'
+    return (Get-PodePSVersionTable).PSEdition -ieq 'core'
 }
 
 function Test-IsAdminUser
@@ -334,7 +334,7 @@ function Get-PodeEndpointInfo
     }
 
     # ensure we have a valid ip address/hostname
-    if (!(Test-IPAddress -IP $_host)) {
+    if (!(Test-PodeIPAddress -IP $_host)) {
         throw "The IP address supplied is invalid: $($_host)"
     }
 
@@ -356,7 +356,7 @@ function Get-PodeEndpointInfo
     }
 }
 
-function Test-IPAddress
+function Test-PodeIPAddress
 {
     param (
         [Parameter()]
@@ -388,7 +388,7 @@ function Test-Hostname
     return ($Hostname -imatch "^$(Get-HostIPRegex -Type Hostname)$")
 }
 
-function ConvertTo-IPAddress
+function ConvertTo-PodeIPAddress
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -399,7 +399,7 @@ function ConvertTo-IPAddress
     return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Endpoint).Address.ToString())
 }
 
-function Get-IPAddressesForHostname
+function Get-PodeIPAddressesForHostname
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -430,7 +430,7 @@ function Get-IPAddressesForHostname
     return @(($ips | Select-Object -ExpandProperty IPAddressToString))
 }
 
-function Test-IPAddressLocal
+function Test-PodeIPAddressLocal
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -441,7 +441,7 @@ function Test-IPAddressLocal
     return (@('127.0.0.1', '::1', '[::1]', 'localhost') -icontains $IP)
 }
 
-function Test-IPAddressAny
+function Test-PodeIPAddressAny
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -452,7 +452,7 @@ function Test-IPAddressAny
     return (@('0.0.0.0', '*', 'all', '::', '[::]') -icontains $IP)
 }
 
-function Test-IPAddressLocalOrAny
+function Test-PodeIPAddressLocalOrAny
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -460,10 +460,10 @@ function Test-IPAddressLocalOrAny
         $IP
     )
 
-    return ((Test-IPAddressLocal -IP $IP) -or (Test-IPAddressAny -IP $IP))
+    return ((Test-PodeIPAddressLocal -IP $IP) -or (Test-PodeIPAddressAny -IP $IP))
 }
 
-function Get-IPAddress
+function Get-PodeIPAddress
 {
     param (
         [Parameter()]
@@ -486,7 +486,7 @@ function Get-IPAddress
     return [System.Net.IPAddress]::Parse($IP)
 }
 
-function Test-IPAddressInRange
+function Test-PodeIPAddressInRange
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -514,7 +514,7 @@ function Test-IPAddressInRange
     return $valid
 }
 
-function Test-IPAddressIsSubnetMask
+function Test-PodeIPAddressIsSubnetMask
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -526,7 +526,7 @@ function Test-IPAddressIsSubnetMask
     return (($IP -split '/').Length -gt 1)
 }
 
-function Get-SubnetRange
+function Get-PodeSubnetRange
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -669,7 +669,7 @@ function Close-PodeRunspaces
     }
 }
 
-function Get-ConsoleKey
+function Get-PodeConsoleKey
 {
     if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
         return $null
@@ -678,7 +678,7 @@ function Get-ConsoleKey
     return [Console]::ReadKey($true)
 }
 
-function Test-TerminationPressed
+function Test-PodeTerminationPressed
 {
     param (
         [Parameter()]
@@ -690,13 +690,13 @@ function Test-TerminationPressed
     }
 
     if ($null -eq $Key) {
-        $Key = Get-ConsoleKey
+        $Key = Get-PodeConsoleKey
     }
 
     return ($null -ne $Key -and $Key.Key -ieq 'c' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
 }
 
-function Test-RestartPressed
+function Test-PodeRestartPressed
 {
     param (
         [Parameter()]
@@ -704,13 +704,13 @@ function Test-RestartPressed
     )
 
     if ($null -eq $Key) {
-        $Key = Get-ConsoleKey
+        $Key = Get-PodeConsoleKey
     }
 
     return ($null -ne $Key -and $Key.Key -ieq 'r' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
 }
 
-function Start-TerminationListener
+function Start-PodeTerminationListener
 {
     Add-PodeRunspace -Type 'Main' {
         # default variables
@@ -764,7 +764,8 @@ function Close-Pode
         # remove all the cancellation tokens
         dispose $PodeContext.Tokens.Cancellation
         dispose $PodeContext.Tokens.Restart
-    } catch {
+    }
+    catch {
         $Error[0] | Out-Default
     }
 
@@ -819,19 +820,19 @@ function Add-PodePSDrives
 function Add-PodePSInbuiltDrives
 {
     # create drive for views, if path exists
-    $path = (Join-ServerRoot 'views')
+    $path = (Join-PodeServerRoot 'views')
     if (Test-Path $path) {
         $PodeContext.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for public content, if path exists
-    $path = (Join-ServerRoot 'public')
+    $path = (Join-PodeServerRoot 'public')
     if (Test-Path $path) {
         $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for errors, if path exists
-    $path = (Join-ServerRoot 'errors')
+    $path = (Join-PodeServerRoot 'errors')
     if (Test-Path $path) {
         $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
     }
@@ -916,7 +917,7 @@ function Root
     return $PodeContext.Server.Root
 }
 
-function Join-ServerRoot
+function Join-PodeServerRoot
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -1079,7 +1080,7 @@ function Coalesce
     return (iftet (Test-Empty $Value1) $Value2 $Value1)
 }
 
-function Get-FileExtension
+function Get-PodeFileExtension
 {
     param (
         [Parameter()]
@@ -1098,7 +1099,7 @@ function Get-FileExtension
     return $ext
 }
 
-function Get-FileName
+function Get-PodeFileName
 {
     param (
         [Parameter()]
@@ -1144,7 +1145,7 @@ function Stopwatch
     }
 }
 
-function Test-ValidNetworkFailure
+function Test-PodeValidNetworkFailure
 {
     param (
         [Parameter()]
@@ -1160,7 +1161,7 @@ function Test-ValidNetworkFailure
     return (($msgs | Where-Object { $Exception.Message -ilike $_ } | Measure-Object).Count -gt 0)
 }
 
-function ConvertFrom-RequestContent
+function ConvertFrom-PodeRequestContent
 {
     param (
         [Parameter()]
@@ -1361,7 +1362,7 @@ function Get-NewGuid
     return ([guid]::NewGuid()).ToString()
 }
 
-function Get-Count
+function Get-PodeCount
 {
     param (
         [Parameter()]
@@ -1395,7 +1396,7 @@ function Get-ContentAsBytes
     return (Get-Content -Path $Path -Raw -Encoding byte)
 }
 
-function Test-PathAccess
+function Test-PodePathAccess
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -1437,7 +1438,7 @@ function Test-PodePath
     }
 
     # if the file isn't accessible then fail 401
-    if (!(Test-PathAccess $Path)) {
+    if (!(Test-PodePathAccess $Path)) {
         if (!$NoStatus) {
             status 401
         }
@@ -1446,7 +1447,7 @@ function Test-PodePath
     }
 
     # if we're failing on a directory then fail on 404
-    if ($FailOnDirectory -and (Test-PathIsDirectory $Path)) {
+    if ($FailOnDirectory -and (Test-PodePathIsDirectory $Path)) {
         if (!$NoStatus) {
             status 404
         }
@@ -1457,7 +1458,7 @@ function Test-PodePath
     return $true
 }
 
-function Test-PathIsFile
+function Test-PodePathIsFile
 {
     param (
         [Parameter()]
@@ -1472,7 +1473,7 @@ function Test-PathIsFile
     return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
 
-function Test-PathIsDirectory
+function Test-PodePathIsDirectory
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -1484,7 +1485,7 @@ function Test-PathIsDirectory
     return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
 
-function Convert-PathSeparators
+function Convert-PodePathSeparators
 {
     param (
         [Parameter()]
@@ -1498,7 +1499,7 @@ function Convert-PathSeparators
     })
 }
 
-function Convert-PathPatternToRegex
+function Convert-PodePathPatternToRegex
 {
     param (
         [Parameter()]
@@ -1512,7 +1513,7 @@ function Convert-PathPatternToRegex
     return "^$($Path)$"
 }
 
-function Convert-PathPatternsToRegex
+function Convert-PodePathPatternsToRegex
 {
     param (
         [Parameter()]

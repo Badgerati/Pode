@@ -86,7 +86,7 @@ Describe 'Listen' {
     }
 
     Context 'Valid parameters supplied' {
-        Mock Test-IPAddress { return $true }
+        Mock Test-PodeIPAddress { return $true }
         Mock Test-IsAdminUser { return $true }
 
         It 'Set just a Hostname address' {

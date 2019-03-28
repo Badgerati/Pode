@@ -1,4 +1,4 @@
-function Get-CronFields
+function Get-PodeCronFields
 {
     return @(
         'Minute',
@@ -9,7 +9,7 @@ function Get-CronFields
     )
 }
 
-function Get-CronFieldConstraints
+function Get-PodeCronFieldConstraints
 {
     return @{
         'MinMax' = @(
@@ -29,7 +29,7 @@ function Get-CronFieldConstraints
     }
 }
 
-function Get-CronPredefined
+function Get-PodeCronPredefined
 {
     return @{
         # normal
@@ -52,7 +52,7 @@ function Get-CronPredefined
     }
 }
 
-function Get-CronFieldAliases
+function Get-PodeCronFieldAliases
 {
     return @{
         'Month' = @{
@@ -81,7 +81,7 @@ function Get-CronFieldAliases
     }
 }
 
-function ConvertFrom-CronExpressions
+function ConvertFrom-PodeCronExpressions
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -91,11 +91,11 @@ function ConvertFrom-CronExpressions
     )
 
     return @(@($Expressions) | ForEach-Object {
-        ConvertFrom-CronExpression -Expression $_
+        ConvertFrom-PodeCronExpression -Expression $_
     })
 }
 
-function ConvertFrom-CronExpression
+function ConvertFrom-PodeCronExpression
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -107,7 +107,7 @@ function ConvertFrom-CronExpression
     $Expression = $Expression.Trim()
 
     # check predefineds
-    $predef = Get-CronPredefined
+    $predef = Get-PodeCronPredefined
     if (!(Test-Empty $predef[$Expression])) {
         $Expression = $predef[$Expression]
     }
@@ -122,9 +122,9 @@ function ConvertFrom-CronExpression
     $aliasRgx = '(?<tag>[a-z]{3})'
 
     # get cron obj and validate atoms
-    $fields = Get-CronFields
-    $constraints = Get-CronFieldConstraints
-    $aliases = Get-CronFieldAliases
+    $fields = Get-PodeCronFields
+    $constraints = Get-PodeCronFieldConstraints
+    $aliases = Get-PodeCronFieldAliases
     $cron = @{}
 
     for ($i = 0; $i -lt $atoms.Length; $i++)
@@ -271,7 +271,7 @@ function ConvertFrom-CronExpression
     return $cron
 }
 
-function Reset-RandomCronExpressions
+function Reset-PodeRandomCronExpressions
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -280,11 +280,11 @@ function Reset-RandomCronExpressions
     )
 
     return @(@($Expressions) | ForEach-Object {
-        Reset-RandomCronExpression -Expression $_
+        Reset-PodeRandomCronExpression -Expression $_
     })
 }
 
-function Reset-RandomCronExpression
+function Reset-PodeRandomCronExpression
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -317,7 +317,7 @@ function Reset-RandomCronExpression
     return $Expression
 }
 
-function Test-CronExpressions
+function Test-PodeCronExpressions
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -329,11 +329,11 @@ function Test-CronExpressions
     )
 
     return ((@($Expressions) | Where-Object {
-        Test-CronExpression -Expression $_ -DateTime $DateTime
+        Test-PodeCronExpression -Expression $_ -DateTime $DateTime
     } | Measure-Object).Count -gt 0)
 }
 
-function Test-CronExpression
+function Test-PodeCronExpression
 {
     param (
         [Parameter(Mandatory=$true)]

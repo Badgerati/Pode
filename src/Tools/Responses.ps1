@@ -51,7 +51,7 @@ function Write-PodeValueToResponse
         $ms.Close()
     }
     catch {
-        if ((Test-ValidNetworkFailure $_.Exception)) {
+        if ((Test-PodeValidNetworkFailure $_.Exception)) {
             return
         }
 
@@ -77,7 +77,7 @@ function Write-PodeValueToResponseFromFile
     }
 
     # are we dealing with a dynamic file for the view engine? (ignore html)
-    $mainExt = Get-FileExtension -Path $Path -TrimPeriod
+    $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
 
     # this is a static file
     if ((Test-Empty $mainExt) -or ($mainExt -ieq 'html') -or ($mainExt -ine $PodeContext.Server.ViewEngine.Extension)) {
@@ -96,7 +96,7 @@ function Write-PodeValueToResponseFromFile
     $content = Get-PodeFileContentUsingViewEngine -Path $Path
 
     # get the sub-file extension, if empty, use original
-    $subExt = Get-FileExtension -Path (Get-FileName -Path $Path -WithoutExtension) -TrimPeriod
+    $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
     $subExt = (coalesce $subExt $mainExt)
 
     Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
@@ -120,8 +120,8 @@ function Attach
         return
     }
 
-    $filename = Get-FileName -Path $Path
-    $ext = Get-FileExtension -Path $Path -TrimPeriod
+    $filename = Get-PodeFileName -Path $Path
+    $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
 
     # open up the file as a stream
     $fs = (Get-Item $Path).OpenRead()
@@ -176,7 +176,7 @@ function Save
     }
 
     # if the path is a directory, add the filename
-    if (Test-PathIsDirectory -Path $Path) {
+    if (Test-PodePathIsDirectory -Path $Path) {
         $Path = Join-Path $Path $fileName
     }
 
@@ -310,7 +310,7 @@ function Json
     elseif (Test-Empty $Value) {
         $Value = '{}'
     }
-    elseif ((Get-Type $Value).Name -ine 'string') {
+    elseif ((Get-PodeType $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
@@ -340,7 +340,7 @@ function Csv
     elseif (Test-Empty $Value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-Type $Value).Name -ine 'string') {
+    elseif ((Get-PodeType $Value).Name -ine 'string') {
         $Value = ($Value | ForEach-Object {
             New-Object psobject -Property $_
         })
@@ -379,7 +379,7 @@ function Xml
     elseif (Test-Empty $value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-Type $Value).Name -ine 'string') {
+    elseif ((Get-PodeType $Value).Name -ine 'string') {
         $Value = ($value | ForEach-Object {
             New-Object psobject -Property $_
         })
@@ -413,7 +413,7 @@ function Html
     elseif (Test-Empty $value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-Type $Value).Name -ine 'string') {
+    elseif ((Get-PodeType $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Html)
     }
 
@@ -441,7 +441,7 @@ function Include
     }
 
     # add view engine extension
-    $ext = Get-FileExtension -Path $Path
+    $ext = Get-PodeFileExtension -Path $Path
     if (Test-Empty $ext) {
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
@@ -567,7 +567,7 @@ function View
     }
 
     # add view engine extension
-    $ext = Get-FileExtension -Path $Path
+    $ext = Get-PodeFileExtension -Path $Path
     if (Test-Empty $ext) {
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }

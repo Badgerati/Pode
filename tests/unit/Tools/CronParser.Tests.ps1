@@ -2,9 +2,9 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit[\\/]', '/src/'
 Get-ChildItem "$($src)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
-Describe 'Get-CronFields' {
+Describe 'Get-PodeCronFields' {
     It 'Returns valid cron fields' {
-        Get-CronFields | Should Be @(
+        Get-PodeCronFields | Should Be @(
             'Minute',
             'Hour',
             'DayOfMonth',
@@ -14,9 +14,9 @@ Describe 'Get-CronFields' {
     }
 }
 
-Describe 'Get-CronFieldConstraints' {
+Describe 'Get-PodeCronFieldConstraints' {
     It 'Returns valid cron field constraints' {
-        $constraints = Get-CronFieldConstraints
+        $constraints = Get-PodeCronFieldConstraints
         $constraints | Should Not Be $null
 
         $constraints.MinMax | Should Be @(
@@ -38,9 +38,9 @@ Describe 'Get-CronFieldConstraints' {
     }
 }
 
-Describe 'Get-CronPredefined' {
+Describe 'Get-PodeCronPredefined' {
     It 'Returns valid predefined values' {
-        $values = Get-CronPredefined
+        $values = Get-PodeCronPredefined
         $values | Should Not Be $null
 
         $values['@minutely'] | Should Be '* * * * *'
@@ -60,9 +60,9 @@ Describe 'Get-CronPredefined' {
     }
 }
 
-Describe 'Get-CronFieldAliases' {
+Describe 'Get-PodeCronFieldAliases' {
     It 'Returns valid aliases' {
-        $aliases = Get-CronFieldAliases
+        $aliases = Get-PodeCronFieldAliases
         $aliases | Should Not Be $null
 
         $aliases.Month.Jan | Should Be 1
@@ -88,48 +88,48 @@ Describe 'Get-CronFieldAliases' {
     }
 }
 
-Describe 'ConvertFrom-CronExpression' {
+Describe 'ConvertFrom-PodeCronExpression' {
     Context 'Invalid parameters supplied' {
         It 'Throw null expression parameter error' {
-            { ConvertFrom-CronExpression -Expression $null } | Should Throw 'The argument is null or empty'
+            { ConvertFrom-PodeCronExpression -Expression $null } | Should Throw 'The argument is null or empty'
         }
 
         It 'Throw empty expression parameter error' {
-            { ConvertFrom-CronExpression -Expression ([string]::Empty) } | Should Throw 'The argument is null or empty'
+            { ConvertFrom-PodeCronExpression -Expression ([string]::Empty) } | Should Throw 'The argument is null or empty'
         }
     }
 
     Context 'Valid schedule parameters' {
         It 'Throws error for too few number of cron atoms' {
-            { ConvertFrom-CronExpression -Expression '* * *' } | Should Throw 'Cron expression should only consist of 5 parts'
+            { ConvertFrom-PodeCronExpression -Expression '* * *' } | Should Throw 'Cron expression should only consist of 5 parts'
         }
 
         It 'Throws error for too many number of cron atoms' {
-            { ConvertFrom-CronExpression -Expression '* * * * * *' } | Should Throw 'Cron expression should only consist of 5 parts'
+            { ConvertFrom-PodeCronExpression -Expression '* * * * * *' } | Should Throw 'Cron expression should only consist of 5 parts'
         }
 
         It 'Throws error for range atom with min>max' {
-            { ConvertFrom-CronExpression -Expression '* * 20-15 * *' } | Should Throw 'should not be greater than the max value'
+            { ConvertFrom-PodeCronExpression -Expression '* * 20-15 * *' } | Should Throw 'should not be greater than the max value'
         }
 
         It 'Throws error for range atom with invalid min' {
-            { ConvertFrom-CronExpression -Expression '* * 0-5 * *' } | Should Throw 'is invalid, should be greater than/equal to'
+            { ConvertFrom-PodeCronExpression -Expression '* * 0-5 * *' } | Should Throw 'is invalid, should be greater than/equal to'
         }
 
         It 'Throws error for range atom with invalid max' {
-            { ConvertFrom-CronExpression -Expression '* * 1-32 * *' } | Should Throw 'is invalid, should be less than/equal to'
+            { ConvertFrom-PodeCronExpression -Expression '* * 1-32 * *' } | Should Throw 'is invalid, should be less than/equal to'
         }
 
         It 'Throws error for atom with invalid min' {
-            { ConvertFrom-CronExpression -Expression '* * 0 * *' } | Should Throw 'invalid, should be between'
+            { ConvertFrom-PodeCronExpression -Expression '* * 0 * *' } | Should Throw 'invalid, should be between'
         }
 
         It 'Throws error for atom with invalid max' {
-            { ConvertFrom-CronExpression -Expression '* * 32 * *' } | Should Throw 'invalid, should be between'
+            { ConvertFrom-PodeCronExpression -Expression '* * 32 * *' } | Should Throw 'invalid, should be between'
         }
 
         It 'Returns a valid cron object for predefined' {
-            $cron = ConvertFrom-CronExpression -Expression '@minutely'
+            $cron = ConvertFrom-PodeCronExpression -Expression '@minutely'
 
             $cron.Month.Values | Should Be $null
             $cron.Month.Range.Min | Should Be 1
@@ -170,7 +170,7 @@ Describe 'ConvertFrom-CronExpression' {
         }
 
         It 'Returns a valid cron object for expression' {
-            $cron = ConvertFrom-CronExpression -Expression '0/10 * * * 2'
+            $cron = ConvertFrom-PodeCronExpression -Expression '0/10 * * * 2'
 
             $cron.Month.Values | Should Be $null
             $cron.Month.Range.Min | Should Be 1
