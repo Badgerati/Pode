@@ -65,16 +65,16 @@ function Auth
     switch ($Action.ToLowerInvariant())
     {
         'use' {
-            Invoke-AuthUse -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Options $Options -Custom:$Custom
+            Invoke-PodeAuthUse -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Options $Options -Custom:$Custom
         }
 
         'check' {
-            return (Invoke-AuthCheck -Name $Name -Options $Options)
+            return (Invoke-PodeAuthCheck -Name $Name -Options $Options)
         }
     }
 }
 
-function Invoke-AuthUse
+function Invoke-PodeAuthUse
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -132,7 +132,7 @@ function Invoke-AuthUse
     $PodeContext.Server.Authentications[$AuthData.Name] = $obj
 }
 
-function Invoke-AuthCheck
+function Invoke-PodeAuthCheck
 {
     param (
         [Parameter(Mandatory=$true)]

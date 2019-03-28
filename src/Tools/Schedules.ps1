@@ -10,7 +10,7 @@ function Get-PodeSchedule
     return $PodeContext.Schedules[$Name]
 }
 
-function Start-ScheduleRunspace
+function Start-PodeScheduleRunspace
 {
     if ((Get-Count $PodeContext.Schedules) -eq 0) {
         return

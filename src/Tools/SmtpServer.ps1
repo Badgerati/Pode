@@ -1,4 +1,4 @@
-function Start-SmtpServer
+function Start-PodeSmtpServer
 {
     # ensure we have smtp handlers
     if ($null -eq (Get-PodeTcpHandler -Type 'SMTP')) {

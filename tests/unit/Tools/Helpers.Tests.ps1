@@ -73,10 +73,14 @@ Describe 'Test-Empty' {
     }
 
     Context 'Empty value is passed' {
+        It 'Return true for an empty arraylist' {
+            Test-Empty -Value ([System.Collections.ArrayList]::new()) | Should Be $true
+        }
+
         It 'Return true for an empty array' {
             Test-Empty -Value @() | Should Be $true
         }
-        
+
         It 'Return true for an empty hashtable' {
             Test-Empty -Value @{} | Should Be $true
         }
@@ -88,7 +92,7 @@ Describe 'Test-Empty' {
         It 'Return true for a whitespace string' {
             Test-Empty -Value "  " | Should Be $true
         }
-        
+
         It 'Return true for an empty scriptblock' {
             Test-Empty -Value {} | Should Be $true
         }
@@ -733,5 +737,100 @@ Describe 'Join-PodePaths' {
     It 'Returns valid for 2+ items' {
         $result = (Join-Path (Join-Path (Join-Path 'this' 'is') 'a') 'path')
         Join-PodePaths @('this', 'is', 'a', 'path') | Should Be $result
+    }
+}
+
+Describe 'Get-PodeEndpointInfo' {
+    It 'Returns null for no endpoint' {
+        Get-PodeEndpointInfo -Endpoint ([string]::Empty) | Should Be $null
+    }
+
+    It 'Throws an error for an invalid IP endpoint' {
+        { Get-PodeEndpointInfo -Endpoint '700.0.0.a' } | Should Throw 'Failed to parse'
+    }
+
+    It 'Throws an error for an out-of-range IP endpoint' {
+        { Get-PodeEndpointInfo -Endpoint '700.0.0.0' } | Should Throw 'The IP address supplied is invalid'
+    }
+
+    It 'Throws an error for an invalid Hostname endpoint' {
+        { Get-PodeEndpointInfo -Endpoint '@test.host.com' } | Should Throw 'Failed to parse'
+    }
+}
+
+Describe 'Test-Hostname' {
+    It 'Returns true for a valid hostname' {
+        Test-Hostname -Hostname 'test.host.com' | Should Be $true
+    }
+
+    It 'Returns false for a valid hostname' {
+        Test-Hostname -Hostname 'test.ho@st.com' | Should Be $false
+    }
+}
+
+Describe 'Remove-PodeEmptyItemsFromArray' {
+    It 'Returns an empty array for no entries' {
+        Remove-PodeEmptyItemsFromArray -Array @() | Should Be @()
+    }
+
+    It 'Returns en empty array for an array with null entries' {
+        Remove-PodeEmptyItemsFromArray -Array @($null) | Should Be @()
+    }
+
+    It 'Filters out the null entries' {
+        Remove-PodeEmptyItemsFromArray -Array @('bill', $null, 'bob') | Should Be @('bill', 'bob')
+    }
+
+    It 'Returns an empty array for a null array' {
+        Remove-PodeEmptyItemsFromArray -Array $null | Should Be @()
+    }
+}
+
+Describe 'Invoke-ScriptBlock' {
+    It 'Runs scriptblock unscoped, unsplatted, no-args' {
+        Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
+    }
+
+    It 'Runs scriptblock unscoped, unsplatted, args' {
+        Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Arguments 5 -Return | Should Be 5
+    }
+
+    It 'Runs scriptblock scoped, unsplatted, no-args' {
+        Invoke-ScriptBlock -ScriptBlock { return 7 } -Scoped -Return | Should Be 7
+    }
+
+    It 'Runs scriptblock scoped, unsplatted, args' {
+        Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Scoped -Arguments 5 -Return | Should Be 5
+    }
+
+    It 'Runs scriptblock unscoped, splatted, no-args' {
+        Invoke-ScriptBlock -ScriptBlock { return 7 } -Splat -Return | Should Be 7
+    }
+
+    It 'Runs scriptblock unscoped, splatted, args' {
+        Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Splat -Arguments @(5) -Return | Should Be 5
+    }
+
+    It 'Runs scriptblock scoped, splatted, no-args' {
+        Invoke-ScriptBlock -ScriptBlock { return 7 } -Scoped -Splat -Return | Should Be 7
+    }
+
+    It 'Runs scriptblock scoped, splatted, args' {
+        Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Scoped -Splat -Arguments @(5) -Return | Should Be 5
+    }
+}
+
+Describe 'ConvertFrom-NameValueToHashTable' {
+    It 'Returns null for no collection' {
+        ConvertFrom-NameValueToHashTable -Collection $null | Should Be $null
+    }
+
+    It 'Returns a hashtable from a NameValue collection' {
+        $c = [System.Collections.Specialized.NameValueCollection]::new()
+        $c.Add('colour', 'blue')
+
+        $r = ConvertFrom-NameValueToHashTable -Collection $c
+        $r.GetType().Name | Should Be 'Hashtable'
+        $r.colour | Should Be 'blue'
     }
 }

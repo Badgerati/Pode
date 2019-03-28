@@ -10,7 +10,7 @@ function Get-PodeTimer
     return $PodeContext.Timers[$Name]
 }
 
-function Start-TimerRunspace
+function Start-PodeTimerRunspace
 {
     if ((Get-Count $PodeContext.Timers) -eq 0) {
         return

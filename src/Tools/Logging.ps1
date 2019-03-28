@@ -83,7 +83,7 @@ function Add-PodeLogObject
     $PodeContext.RequestsToLog.Add($LogObject) | Out-Null
 }
 
-function Start-LoggerRunspace
+function Start-PodeLoggerRunspace
 {
     if ((Get-Count $PodeContext.Server.Logging.Methods) -eq 0) {
         return

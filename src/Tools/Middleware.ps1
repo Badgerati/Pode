@@ -148,7 +148,7 @@ function Get-PodePublicMiddleware
         }
 
         # write the file to the response
-        Write-ToResponseFromFile -Path $path -Cache:$caching
+        Write-PodeValueToResponseFromFile -Path $path -Cache:$caching
 
         # static content found, stop
         return $false

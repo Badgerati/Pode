@@ -1,5 +1,5 @@
 # write data to main http response
-function Write-ToResponse
+function Write-PodeValueToResponse
 {
     param (
         [Parameter()]
@@ -60,7 +60,7 @@ function Write-ToResponse
     }
 }
 
-function Write-ToResponseFromFile
+function Write-PodeValueToResponseFromFile
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -88,7 +88,7 @@ function Write-ToResponseFromFile
             $content = (Get-Content -Path $Path -Raw -Encoding byte)
         }
 
-        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
+        Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
         return
     }
 
@@ -99,7 +99,7 @@ function Write-ToResponseFromFile
     $subExt = Get-FileExtension -Path (Get-FileName -Path $Path -WithoutExtension) -TrimPeriod
     $subExt = (coalesce $subExt $mainExt)
 
-    Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
+    Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
 }
 
 function Attach
@@ -314,7 +314,7 @@ function Json
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
-    Write-ToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
+    Write-PodeValueToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
 }
 
 function Csv
@@ -353,7 +353,7 @@ function Csv
         }
     }
 
-    Write-ToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
+    Write-PodeValueToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
 }
 
 function Xml
@@ -387,7 +387,7 @@ function Xml
         $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
     }
 
-    Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
+    Write-PodeValueToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
 }
 
 function Html
@@ -417,7 +417,7 @@ function Html
         $Value = ($Value | ConvertTo-Html)
     }
 
-    Write-ToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
+    Write-PodeValueToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
 }
 
 # include helper to import the content of a view into another view

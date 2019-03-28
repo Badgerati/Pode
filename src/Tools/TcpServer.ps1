@@ -1,4 +1,4 @@
-function Start-TcpServer
+function Start-PodeTcpServer
 {
     # ensure we have tcp handler
     if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {

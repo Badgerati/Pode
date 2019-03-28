@@ -157,35 +157,35 @@ function Start-PodeServer
         if (![string]::IsNullOrWhiteSpace($_type))
         {
             # start runspace for loggers
-            Start-LoggerRunspace
+            Start-PodeLoggerRunspace
 
             # start runspace for timers
-            Start-TimerRunspace
+            Start-PodeTimerRunspace
 
             # start runspace for schedules
-            Start-ScheduleRunspace
+            Start-PodeScheduleRunspace
 
             # start runspace for gui
-            Start-GuiRunspace
+            Start-PodeGuiRunspace
         }
 
         # start the appropriate server
         switch ($_type)
         {
             'SMTP' {
-                Start-SmtpServer
+                Start-PodeSmtpServer
             }
 
             'TCP' {
-                Start-TcpServer
+                Start-PodeTcpServer
             }
 
             { $_ -ieq 'HTTP' -or $_ -ieq 'HTTPS' } {
-                Start-WebServer
+                Start-PodeWebServer
             }
 
             'SERVICE' {
-                Start-ServiceServer
+                Start-PodeServiceServer
             }
         }
     }
