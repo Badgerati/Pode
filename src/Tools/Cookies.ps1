@@ -18,8 +18,8 @@ function Session
     }
 
     # ensure the override generator is a scriptblock
-    if (!(Test-Empty $Options.GenerateId) -and (Get-Type $Options.GenerateId).Name -ine 'scriptblock') {
-        throw "Session GenerateId should be a ScriptBlock, but got: $((Get-Type $Options.GenerateId).Name)"
+    if (!(Test-Empty $Options.GenerateId) -and (Get-PodeType $Options.GenerateId).Name -ine 'scriptblock') {
+        throw "Session GenerateId should be a ScriptBlock, but got: $((Get-PodeType $Options.GenerateId).Name)"
     }
 
     # ensure the override store has the required methods
@@ -51,7 +51,7 @@ function Session
     $PodeContext.Server.Cookies.Session = @{
         'Name' = (coalesce $Options.Name 'pode.sid');
         'SecretKey' = $Options.Secret;
-        'GenerateId' = (coalesce $Options.GenerateId { return (Get-NewGuid) });
+        'GenerateId' = (coalesce $Options.GenerateId { return (Get-PodeNewGuid) });
         'Store' = $store;
         'Info' = @{
             'Duration' = [int]($Options.Duration);
@@ -222,7 +222,7 @@ function Get-PodeSessionCookie
     }
 
     # ensure the session was signed
-    $session = (Invoke-CookieUnsign -Signature $cookie.Value -Secret $PodeContext.Server.Cookies.Session.SecretKey)
+    $session = (Invoke-PodeCookieUnsign -Signature $cookie.Value -Secret $PodeContext.Server.Cookies.Session.SecretKey)
     if (Test-Empty $session) {
         return $null
     }
@@ -252,7 +252,7 @@ function Set-PodeSessionCookie
     )
 
     # sign the session
-    $signedValue = (Invoke-CookieSign -Value $Session.Id -Secret $PodeContext.Server.Cookies.Session.SecretKey)
+    $signedValue = (Invoke-PodeCookieSign -Value $Session.Id -Secret $PodeContext.Server.Cookies.Session.SecretKey)
 
     # create a new cookie
     $cookie = [System.Net.Cookie]::new($Session.Name, $signedValue)
@@ -315,7 +315,7 @@ function Set-PodeSessionCookieDataHash
     )
 
     $Session.Data = (coalesce $Session.Data @{})
-    $Session.DataHash = (Invoke-SHA256Hash -Value ($Session.Data | ConvertTo-Json))
+    $Session.DataHash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json))
 }
 
 function Test-PodeSessionCookieDataHash
@@ -331,7 +331,7 @@ function Test-PodeSessionCookieDataHash
     }
 
     $Session.Data = (coalesce $Session.Data @{})
-    $hash = (Invoke-SHA256Hash -Value ($Session.Data | ConvertTo-Json))
+    $hash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json))
     return ($Session.DataHash -eq $hash)
 }
 

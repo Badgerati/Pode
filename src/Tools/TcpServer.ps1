@@ -1,4 +1,4 @@
-function Start-TcpServer
+function Start-PodeTcpServer
 {
     # ensure we have tcp handler
     if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {
@@ -13,9 +13,9 @@ function Start-TcpServer
 
     # get the IP address for the server
     $ipAddress = $PodeContext.Server.Endpoints[0].Address
-    if (Test-Hostname -Hostname $ipAddress) {
-        $ipAddress = (Get-IPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
-        $ipAddress = (Get-IPAddress $ipAddress)
+    if (Test-PodeHostname -Hostname $ipAddress) {
+        $ipAddress = (Get-PodeIPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
+        $ipAddress = (Get-PodeIPAddress $ipAddress)
     }
 
     try
@@ -55,10 +55,10 @@ function Start-TcpServer
                 $client = (await $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
-                $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)
+                $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
 
                 # ensure the request ip is allowed and deal with the tcp call
-                if ((Test-IPAccess -IP $ip) -and (Test-IPLimit -IP $ip)) {
+                if ((Test-PodeIPAccess -IP $ip) -and (Test-PodeIPLimit -IP $ip)) {
                     $TcpEvent = @{
                         'Client' = $client;
                         'Lockalble' = $PodeContext.Lockable

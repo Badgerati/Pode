@@ -30,7 +30,7 @@ Describe 'Get-PodeSchedule' {
 }
 
 Describe 'Schedule' {
-    Mock 'ConvertFrom-CronExpression' { @{} }
+    Mock 'ConvertFrom-PodeCronExpression' { @{} }
 
     Context 'Invalid parameters supplied' {
         It 'Throw null name parameter error' {

@@ -31,7 +31,7 @@ function New-PodeContext
 
     # set a random server name if one not supplied
     if (Test-Empty $Name) {
-        $Name = Get-RandomName
+        $Name = Get-PodeRandomName
     }
 
     # ensure threads are always >0
@@ -79,8 +79,8 @@ function New-PodeContext
 
     $ctx.Server.FileMonitor = @{
         'Enabled' = $FileMonitor;
-        'Exclude' = (Convert-PathPatternsToRegex -Paths $FileMonitorExclude);
-        'Include' = (Convert-PathPatternsToRegex -Paths $FileMonitorInclude);
+        'Exclude' = (Convert-PodePathPatternsToRegex -Paths $FileMonitorExclude);
+        'Include' = (Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude);
     }
 
     # set the server default type
@@ -263,6 +263,11 @@ function New-PodeStateContext
 
 function Get-PodeConfiguration
 {
+    return (config)
+}
+
+function Config
+{
     return $PodeContext.Server.Configuration
 }
 
@@ -280,11 +285,11 @@ function Open-PodeConfiguration
     $config = @{}
 
     # set the path to the root config file
-    $configPath = (Join-ServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
+    $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
 
     # check to see if an environmental config exists (if the env var is set)
     if (!(Test-Empty $env:PODE_ENVIRONMENT)) {
-        $_path = (Join-ServerRoot -Folder '.' -FilePath "pode.$($env:PODE_ENVIRONMENT).json" -Root $ServerRoot)
+        $_path = (Join-PodeServerRoot -Folder '.' -FilePath "pode.$($env:PODE_ENVIRONMENT).json" -Root $ServerRoot)
         if (Test-PodePath -Path $_path -NoStatus) {
             $configPath = $_path
         }
@@ -315,8 +320,8 @@ function Set-PodeWebConfiguration
             'Cache' = @{
                 'Enabled' = [bool]$Configuration.web.static.cache.enable;
                 'MaxAge' = [int](coalesce $Configuration.web.static.cache.maxAge 3600);
-                'Include' = (Convert-PathPatternsToRegex -Paths @($Configuration.web.static.cache.include) -NotSlashes);
-                'Exclude' = (Convert-PathPatternsToRegex -Paths @($Configuration.web.static.cache.exclude) -NotSlashes);
+                'Include' = (Convert-PodePathPatternsToRegex -Paths @($Configuration.web.static.cache.include) -NotSlashes);
+                'Exclude' = (Convert-PodePathPatternsToRegex -Paths @($Configuration.web.static.cache.exclude) -NotSlashes);
             }
         }
     }
@@ -407,7 +412,7 @@ function Listen
 
     # if a name was supplied, check it is unique
     if (![string]::IsNullOrWhiteSpace($Name) -and
-        (Get-Count ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
+        (Get-PodeCount ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
     {
         throw "An endpoint with the name '$($Name)' has already been defined"
     }
@@ -427,8 +432,8 @@ function Listen
     }
 
     # set the ip for the context
-    $obj.Address = (Get-IPAddress $_endpoint.Host)
-    if (!(Test-IPAddressLocalOrAny -IP $obj.Address)) {
+    $obj.Address = (Get-PodeIPAddress $_endpoint.Host)
+    if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
         $obj.HostName = "$($obj.Address)"
     }
 
@@ -442,7 +447,7 @@ function Listen
     }
 
     # if the address is non-local, then check admin privileges
-    if (!$Force -and !(Test-IPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {
+    if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {
         throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
     }
 
@@ -532,7 +537,7 @@ function Import
         # if the resolved path is empty, then it's a module name that was supplied
         if ([string]::IsNullOrWhiteSpace($_path)) {
             # check to see if module is in ps_modules
-            $_psModulePath = Join-ServerRoot -Folder (Join-PodePaths @('ps_modules', $Path))
+            $_psModulePath = Join-PodeServerRoot -Folder (Join-PodePaths @('ps_modules', $Path))
             if (Test-Path $_psModulePath) {
                 $_path = (Get-ChildItem (Join-PodePaths @($_psModulePath, '*', "$($Path).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
             }
@@ -593,7 +598,7 @@ function Load
 
 function New-PodeAutoRestartServer
 {
-    $config = Get-PodeConfiguration
+    $config = (config)
     if ($null -eq $config -or $null -eq $config.server.restart)  {
         return
     }

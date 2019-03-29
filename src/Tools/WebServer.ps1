@@ -27,7 +27,7 @@ function Engine
     $PodeContext.Server.ViewEngine.Script = $ScriptBlock
 }
 
-function Start-WebServer
+function Start-PodeWebServer
 {
     # setup any inbuilt middleware
     $inbuilt_middleware = @(

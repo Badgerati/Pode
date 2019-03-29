@@ -9,14 +9,16 @@ Describe 'Start-PodeServer' {
     Mock Invoke-ScriptBlock { }
     Mock New-PodeRunspaceState { }
     Mock New-PodeRunspacePools { }
-    Mock Start-LoggerRunspace { }
-    Mock Start-TimerRunspace { }
-    Mock Start-ScheduleRunspace { }
+    Mock Start-PodeLoggerRunspace { }
+    Mock Start-PodeTimerRunspace { }
+    Mock Start-PodeScheduleRunspace { }
+    Mock Start-PodeGuiRunspace { }
     Mock Start-Sleep { }
     Mock New-PodeAutoRestartServer { }
-    Mock Start-SmtpServer { }
-    Mock Start-TcpServer { }
-    Mock Start-WebServer { }
+    Mock Start-PodeSmtpServer { }
+    Mock Start-PodeTcpServer { }
+    Mock Start-PodeWebServer { }
+    Mock Start-PodeServiceServer { }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ 'Type' = ([string]::Empty); 'Logic' = {} }
@@ -25,11 +27,11 @@ Describe 'Start-PodeServer' {
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-        Assert-MockCalled Start-TimerRunspace -Times 0 -Scope It
-        Assert-MockCalled Start-ScheduleRunspace -Times 0 -Scope It
-        Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
-        Assert-MockCalled Start-TcpServer -Times 0 -Scope It
-        Assert-MockCalled Start-WebServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTimerRunspace -Times 0 -Scope It
+        Assert-MockCalled Start-PodeScheduleRunspace -Times 0 -Scope It
+        Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeWebServer -Times 0 -Scope It
     }
 
     It 'Calls smtp server logic' {
@@ -39,11 +41,11 @@ Describe 'Start-PodeServer' {
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-        Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-SmtpServer -Times 1 -Scope It
-        Assert-MockCalled Start-TcpServer -Times 0 -Scope It
-        Assert-MockCalled Start-WebServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeSmtpServer -Times 1 -Scope It
+        Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeWebServer -Times 0 -Scope It
     }
 
     It 'Calls tcp server logic' {
@@ -53,11 +55,11 @@ Describe 'Start-PodeServer' {
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-        Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
-        Assert-MockCalled Start-TcpServer -Times 1 -Scope It
-        Assert-MockCalled Start-WebServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTcpServer -Times 1 -Scope It
+        Assert-MockCalled Start-PodeWebServer -Times 0 -Scope It
     }
 
     It 'Calls http web server logic' {
@@ -67,11 +69,11 @@ Describe 'Start-PodeServer' {
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-        Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
-        Assert-MockCalled Start-TcpServer -Times 0 -Scope It
-        Assert-MockCalled Start-WebServer -Times 1 -Scope It
+        Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeWebServer -Times 1 -Scope It
     }
 
     It 'Calls https web server logic' {
@@ -81,11 +83,11 @@ Describe 'Start-PodeServer' {
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-        Assert-MockCalled Start-TimerRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-ScheduleRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-SmtpServer -Times 0 -Scope It
-        Assert-MockCalled Start-TcpServer -Times 0 -Scope It
-        Assert-MockCalled Start-WebServer -Times 1 -Scope It
+        Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
+        Assert-MockCalled Start-PodeWebServer -Times 1 -Scope It
     }
 }
 

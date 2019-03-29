@@ -69,7 +69,7 @@ function Add-PodeLogObject
         $Response
     )
 
-    if ($PodeContext.Server.Logging.Disabled -or (Get-Count $PodeContext.Server.Logging.Methods) -eq 0) {
+    if ($PodeContext.Server.Logging.Disabled -or (Get-PodeCount $PodeContext.Server.Logging.Methods) -eq 0) {
         return
     }
 
@@ -83,9 +83,9 @@ function Add-PodeLogObject
     $PodeContext.RequestsToLog.Add($LogObject) | Out-Null
 }
 
-function Start-LoggerRunspace
+function Start-PodeLoggerRunspace
 {
-    if ((Get-Count $PodeContext.Server.Logging.Methods) -eq 0) {
+    if ((Get-PodeCount $PodeContext.Server.Logging.Methods) -eq 0) {
         return
     }
 
@@ -112,7 +112,7 @@ function Start-LoggerRunspace
         while ($true)
         {
             # if there are no requests to log, just sleep
-            if ((Get-Count $PodeContext.RequestsToLog) -eq 0) {
+            if ((Get-PodeCount $PodeContext.RequestsToLog) -eq 0) {
                 Start-Sleep -Seconds 1
                 continue
             }
@@ -142,7 +142,7 @@ function Start-LoggerRunspace
 
                         # generate path to log path and date file
                         if ($null -eq $details -or (Test-Empty $details.Path)) {
-                            $path = (Join-ServerRoot 'logs' "$($date).log" )
+                            $path = (Join-PodeServerRoot 'logs' "$($date).log" )
                         }
                         else {
                             $path = (Join-Path $details.Path "$($date).log")
@@ -219,7 +219,7 @@ function Logger
     }
 
     # ensure the details are of a correct type (inbuilt=hashtable, custom=scriptblock)
-    $type = (Get-Type $Details)
+    $type = (Get-PodeType $Details)
 
     if ($Name -ilike 'custom_*') {
         if ($null -eq $Details) {
@@ -243,7 +243,7 @@ function Logger
     if ($Name -ieq 'file') {
         # has a specific logging path been supplied?
         if ($null -eq $Details -or (Test-Empty $Details.Path)) {
-            $path = (Split-Path -Parent -Path (Join-ServerRoot 'logs' 'tmp.txt'))
+            $path = (Split-Path -Parent -Path (Join-PodeServerRoot 'logs' 'tmp.txt'))
         }
         else {
             $path = $Details.Path

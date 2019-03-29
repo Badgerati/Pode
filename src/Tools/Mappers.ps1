@@ -9,8 +9,8 @@ function Get-PodeContentType
         $DefaultIsNull
     )
 
-    if ($Extension -eq $null) {
-        $Extension = '.'
+    if ([string]::IsNullOrWhiteSpace($Extension)) {
+        $Extension = [string]::Empty
     }
 
     if (!$Extension.StartsWith('.')) {
@@ -635,7 +635,7 @@ function Get-PodeContentType
         '.xtp' { return 'application/octet-stream' }
         '.xwd' { return 'image/x-xwindowdump' }
         '.z' { return 'application/x-compress' }
-        '.zip' { return 'application/zip'}
+        '.zip' { return 'application/zip' }
         default { return (iftet $DefaultIsNull $null 'text/plain') }
     }
 }

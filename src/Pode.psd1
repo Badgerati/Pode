@@ -31,19 +31,12 @@
     # Functions to export from this Module
     FunctionsToExport = @(
         'Route',
-        'Get-PodeRoute',
         'Handler',
-        'Get-PodeTcpHandler',
         'Tcp',
         'Server',
         'Engine',
-        'Start-SmtpServer',
-        'Start-TcpServer',
-        'Start-WebServer',
         'Html',
         'Json',
-        'Write-ToResponse',
-        'Write-ToResponseFromFile',
         'View',
         'Xml',
         'Pode',
@@ -53,6 +46,7 @@
         'Test-IsUnix',
         'Test-IsWindows',
         'Test-IsPSCore',
+        'Test-Empty',
         'Status',
         'Redirect',
         'Include',
@@ -79,7 +73,8 @@
         'Root',
         'Flash',
         'Await',
-        'Load'
+        'Load',
+        'Config'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

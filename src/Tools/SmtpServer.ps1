@@ -1,4 +1,4 @@
-function Start-SmtpServer
+function Start-PodeSmtpServer
 {
     # ensure we have smtp handlers
     if ($null -eq (Get-PodeTcpHandler -Type 'SMTP')) {
@@ -13,9 +13,9 @@ function Start-SmtpServer
 
     # get the IP address for the server
     $ipAddress = $PodeContext.Server.Endpoints[0].Address
-    if (Test-Hostname -Hostname $ipAddress) {
-        $ipAddress = (Get-IPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
-        $ipAddress = (Get-IPAddress $ipAddress)
+    if (Test-PodeHostname -Hostname $ipAddress) {
+        $ipAddress = (Get-PodeIPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
+        $ipAddress = (Get-PodeIPAddress $ipAddress)
     }
 
     try
@@ -139,10 +139,10 @@ function Start-SmtpServer
                 $client = (await $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
-                $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)
+                $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
 
                 # ensure the request ip is allowed
-                if (!(Test-IPAccess -IP $ip) -or !(Test-IPLimit -IP $ip)) {
+                if (!(Test-PodeIPAccess -IP $ip) -or !(Test-PodeIPLimit -IP $ip)) {
                     Close-PodeTcpConnection -Quit
                 }
 
