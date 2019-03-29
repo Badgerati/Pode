@@ -13,7 +13,7 @@ function Start-PodeTcpServer
 
     # get the IP address for the server
     $ipAddress = $PodeContext.Server.Endpoints[0].Address
-    if (Test-Hostname -Hostname $ipAddress) {
+    if (Test-PodeHostname -Hostname $ipAddress) {
         $ipAddress = (Get-PodeIPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
         $ipAddress = (Get-PodeIPAddress $ipAddress)
     }

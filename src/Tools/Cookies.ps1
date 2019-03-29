@@ -51,7 +51,7 @@ function Session
     $PodeContext.Server.Cookies.Session = @{
         'Name' = (coalesce $Options.Name 'pode.sid');
         'SecretKey' = $Options.Secret;
-        'GenerateId' = (coalesce $Options.GenerateId { return (Get-NewGuid) });
+        'GenerateId' = (coalesce $Options.GenerateId { return (Get-PodeNewGuid) });
         'Store' = $store;
         'Info' = @{
             'Duration' = [int]($Options.Duration);

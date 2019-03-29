@@ -270,7 +270,7 @@ function New-PodeSelfSignedCertificate
     Write-Host " Done" -ForegroundColor Green
 }
 
-function Get-HostIPRegex
+function Get-PodeHostIPRegex
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -318,7 +318,7 @@ function Get-PodeEndpointInfo
         return $null
     }
 
-    $hostRgx = Get-HostIPRegex -Type Both
+    $hostRgx = Get-PodeHostIPRegex -Type Both
     $portRgx = Get-PortRegex
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
@@ -364,7 +364,7 @@ function Test-PodeIPAddress
         $IP
     )
 
-    if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all') -or ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$")) {
+    if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all') -or ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$")) {
         return $true
     }
 
@@ -377,7 +377,7 @@ function Test-PodeIPAddress
     }
 }
 
-function Test-Hostname
+function Test-PodeHostname
 {
     param (
         [Parameter()]
@@ -385,7 +385,7 @@ function Test-Hostname
         $Hostname
     )
 
-    return ($Hostname -imatch "^$(Get-HostIPRegex -Type Hostname)$")
+    return ($Hostname -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$")
 }
 
 function ConvertTo-PodeIPAddress
@@ -479,7 +479,7 @@ function Get-PodeIPAddress
         return [System.Net.IPAddress]::IPv6Any
     }
 
-    if ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$") {
+    if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
         return $IP
     }
 
@@ -791,7 +791,7 @@ function New-PodePSDrive
 
     # if no name is passed, used a randomly generated one
     if ([string]::IsNullOrWhiteSpace($Name)) {
-        $Name = "PodeDir$(Get-NewGuid)"
+        $Name = "PodeDir$(Get-PodeNewGuid)"
     }
 
     # if the path supplied doesn't exist, error
@@ -1169,7 +1169,7 @@ function ConvertFrom-PodeRequestContent
     )
 
     # get the requests content type and boundary
-    $MetaData = Get-ContentTypeAndBoundary -ContentType $Request.ContentType
+    $MetaData = Get-PodeContentTypeAndBoundary -ContentType $Request.ContentType
     $Encoding = $Request.ContentEncoding
 
     # result object for data/files
@@ -1185,7 +1185,7 @@ function ConvertFrom-PodeRequestContent
 
     # if the content-type is not multipart/form-data, get the string data
     if ($MetaData.ContentType -ine 'multipart/form-data') {
-        $Content = Read-StreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+        $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
 
         # if there is no content then do nothing
         if (Test-Empty $Content) {
@@ -1208,19 +1208,19 @@ function ConvertFrom-PodeRequestContent
         }
 
         { $_ -ilike '*/x-www-form-urlencoded' } {
-            $Result.Data = (ConvertFrom-NameValueToHashTable -Collection ([System.Web.HttpUtility]::ParseQueryString($Content)))
+            $Result.Data = (ConvertFrom-PodeNameValueToHashTable -Collection ([System.Web.HttpUtility]::ParseQueryString($Content)))
         }
 
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
-            $Content = ConvertFrom-StreamToBytes -Stream $Request.InputStream
-            $Lines = Get-ByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
+            $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            $Lines = Get-PodeByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
 
             # get the indexes for boundary lines (start and end)
             $boundaryIndexes = @()
             for ($i = 0; $i -lt $Lines.Length; $i++) {
-                if ((Test-ByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.Start -Encoding $Encoding) -or
-                    (Test-ByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.End -Encoding $Encoding)) {
+                if ((Test-PodeByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.Start -Encoding $Encoding) -or
+                    (Test-PodeByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.End -Encoding $Encoding)) {
                     $boundaryIndexes += $i
                 }
             }
@@ -1232,7 +1232,7 @@ function ConvertFrom-PodeRequestContent
 
                 # the next line contains the key-value field names (content-disposition)
                 $fields = @{}
-                $disp = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+1] -Encoding $Encoding -RemoveNewLine
+                $disp = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+1] -Encoding $Encoding -RemoveNewLine
 
                 @($disp -isplit ';') | ForEach-Object {
                     $atoms = @($_ -isplit '=')
@@ -1243,7 +1243,7 @@ function ConvertFrom-PodeRequestContent
 
                 # use the next line to work out field values
                 if (!$fields.ContainsKey('filename')) {
-                    $value = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+3] -Encoding $Encoding -RemoveNewLine
+                    $value = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+3] -Encoding $Encoding -RemoveNewLine
                     $Result.Data.Add($fields.name, $value)
                 }
 
@@ -1252,7 +1252,7 @@ function ConvertFrom-PodeRequestContent
                     $Result.Data.Add($fields.name, $fields.filename)
 
                     if (!(Test-Empty $fields.filename)) {
-                        $type = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
+                        $type = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
 
                         $Result.Files.Add($fields.filename, @{
                             'ContentType' = (@($type -isplit ':')[1].Trim());
@@ -1264,7 +1264,7 @@ function ConvertFrom-PodeRequestContent
                             $bytes += $_
                         }
 
-                        $Result.Files[$fields.filename].Bytes = (Remove-NewLineBytesFromArray $bytes $Encoding)
+                        $Result.Files[$fields.filename].Bytes = (Remove-PodeNewLineBytesFromArray $bytes $Encoding)
                     }
                 }
             }
@@ -1278,36 +1278,7 @@ function ConvertFrom-PodeRequestContent
     return $Result
 }
 
-function Test-ByteArrayIsBoundary
-{
-    param (
-        [Parameter()]
-        [byte[]]
-        $Bytes,
-
-        [Parameter()]
-        [string]
-        $Boundary,
-
-        [Parameter()]
-        $Encoding = [System.Text.Encoding]::UTF8
-    )
-
-    # if no bytes, return
-    if ($Bytes.Length -eq 0) {
-        return $false
-    }
-
-    # if length difference >3, return (ie, 2 offset for `r`n)
-    if (($Bytes.Length - $Boundary.Length) -gt 3) {
-        return $false
-    }
-
-    # check if bytes starts with the boundary
-    return (ConvertFrom-BytesToString $Bytes $Encoding).StartsWith($Boundary)
-}
-
-function Get-ContentTypeAndBoundary
+function Get-PodeContentTypeAndBoundary
 {
     param (
         [Parameter()]
@@ -1338,7 +1309,7 @@ function Get-ContentTypeAndBoundary
     return $obj
 }
 
-function ConvertFrom-NameValueToHashTable
+function ConvertFrom-PodeNameValueToHashTable
 {
     param (
         [Parameter()]
@@ -1357,7 +1328,7 @@ function ConvertFrom-NameValueToHashTable
     return $ht
 }
 
-function Get-NewGuid
+function Get-PodeNewGuid
 {
     return ([guid]::NewGuid()).ToString()
 }
@@ -1378,22 +1349,6 @@ function Get-PodeCount
     }
 
     return $Object.Count
-}
-
-function Get-ContentAsBytes
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Path
-    )
-
-    if (Test-IsPSCore) {
-        return (Get-Content -Path $Path -Raw -AsByteStream)
-    }
-
-    return (Get-Content -Path $Path -Raw -Encoding byte)
 }
 
 function Test-PodePathAccess

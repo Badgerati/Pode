@@ -39,7 +39,7 @@ function Write-PodeValueToResponse
 
     # write the content to the response
     if ($Value.GetType().Name -ieq 'string') {
-        $Value = ConvertFrom-ValueToBytes -Value $Value
+        $Value = ConvertFrom-PodeValueToBytes -Value $Value
     }
 
     $res.ContentLength64 = $Value.Length

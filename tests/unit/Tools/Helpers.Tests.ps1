@@ -177,17 +177,17 @@ Describe 'Test-IsPSCore' {
     }
 }
 
-Describe 'Get-HostIPRegex' {
+Describe 'Get-PodeHostIPRegex' {
     It 'Returns valid Hostname regex' {
-        Get-HostIPRegex -Type Hostname | Should Be '(?<host>(([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+        Get-PodeHostIPRegex -Type Hostname | Should Be '(?<host>(([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
     }
 
     It 'Returns valid IP regex' {
-        Get-HostIPRegex -Type IP | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all))'
+        Get-PodeHostIPRegex -Type IP | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all))'
     }
 
     It 'Returns valid IP and Hostname regex' {
-        Get-HostIPRegex -Type Both | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all|([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
+        Get-PodeHostIPRegex -Type Both | Should Be '(?<host>(\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d+|\*|all|([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+))'
     }
 }
 
@@ -613,7 +613,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
     Context 'Valid values' {
         It 'Returns xml data' {
             $value = '<root><value>test</value></root>'
-            Mock Read-StreamToEnd { return $value }
+            Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent @{
                 'ContentType' = 'text/xml';
@@ -627,7 +627,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
 
         It 'Returns json data' {
             $value = '{ "value": "test" }'
-            Mock Read-StreamToEnd { return $value }
+            Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent @{
                 'ContentType' = 'application/json';
@@ -640,7 +640,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
 
         It 'Returns csv data' {
             $value = "value`ntest"
-            Mock Read-StreamToEnd { return $value }
+            Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent @{
                 'ContentType' = 'text/csv';
@@ -653,7 +653,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
 
         It 'Returns original data' {
             $value = "test"
-            Mock Read-StreamToEnd { return $value }
+            Mock Read-PodeStreamToEnd { return $value }
             
             (ConvertFrom-PodeRequestContent @{
                 'ContentType' = 'text/custom';
@@ -663,9 +663,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
     }
 }
 
-Describe 'Get-NewGuid' {
+Describe 'Get-PodeNewGuid' {
     It 'Returns a valid guid' {
-        (Get-NewGuid) | Should Not Be $null
+        (Get-PodeNewGuid) | Should Not Be $null
     }
 }
 
@@ -758,13 +758,13 @@ Describe 'Get-PodeEndpointInfo' {
     }
 }
 
-Describe 'Test-Hostname' {
+Describe 'Test-PodeHostname' {
     It 'Returns true for a valid hostname' {
-        Test-Hostname -Hostname 'test.host.com' | Should Be $true
+        Test-PodeHostname -Hostname 'test.host.com' | Should Be $true
     }
 
     It 'Returns false for a valid hostname' {
-        Test-Hostname -Hostname 'test.ho@st.com' | Should Be $false
+        Test-PodeHostname -Hostname 'test.ho@st.com' | Should Be $false
     }
 }
 
@@ -820,16 +820,16 @@ Describe 'Invoke-ScriptBlock' {
     }
 }
 
-Describe 'ConvertFrom-NameValueToHashTable' {
+Describe 'ConvertFrom-PodeNameValueToHashTable' {
     It 'Returns null for no collection' {
-        ConvertFrom-NameValueToHashTable -Collection $null | Should Be $null
+        ConvertFrom-PodeNameValueToHashTable -Collection $null | Should Be $null
     }
 
     It 'Returns a hashtable from a NameValue collection' {
         $c = [System.Collections.Specialized.NameValueCollection]::new()
         $c.Add('colour', 'blue')
 
-        $r = ConvertFrom-NameValueToHashTable -Collection $c
+        $r = ConvertFrom-PodeNameValueToHashTable -Collection $c
         $r.GetType().Name | Should Be 'Hashtable'
         $r.colour | Should Be 'blue'
     }

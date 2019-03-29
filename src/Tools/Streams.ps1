@@ -1,34 +1,4 @@
-function Write-BytesToStream
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [byte[]]
-        $Bytes,
-
-        [Parameter(Mandatory=$true)]
-        $Stream,
-
-        [switch]
-        $CheckNetwork
-    )
-
-    try {
-        $ms = New-Object -TypeName System.IO.MemoryStream
-        $ms.Write($Bytes, 0, $Bytes.Length)
-        $ms.WriteTo($Stream)
-        $ms.Close()
-    }
-    catch {
-        if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
-            return
-        }
-
-        $_.Exception | Out-Default
-        throw $_.Exception
-    }
-}
-
-function Read-StreamToEnd
+function Read-PodeStreamToEnd
 {
     param (
         [Parameter()]
@@ -47,7 +17,7 @@ function Read-StreamToEnd
     })
 }
 
-function Read-ByteLineFromByteArray
+function Read-PodeByteLineFromByteArray
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -65,7 +35,7 @@ function Read-ByteLineFromByteArray
         $IncludeNewLine
     )
 
-    $nlBytes = Get-NewLineBytes -Encoding $Encoding
+    $nlBytes = Get-PodeNewLineBytes -Encoding $Encoding
 
     # attempt to find \n
     $index = [array]::IndexOf($Bytes, $nlBytes.NewLine, $StartIndex)
@@ -88,7 +58,7 @@ function Read-ByteLineFromByteArray
     }
 }
 
-function Get-ByteLinesFromByteArray
+function Get-PodeByteLinesFromByteArray
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -104,7 +74,7 @@ function Get-ByteLinesFromByteArray
 
     # lines
     $lines = @()
-    $nlBytes = Get-NewLineBytes -Encoding $Encoding
+    $nlBytes = Get-PodeNewLineBytes -Encoding $Encoding
 
     # attempt to find \n
     $index = 0
@@ -127,7 +97,7 @@ function Get-ByteLinesFromByteArray
     return $lines
 }
 
-function ConvertFrom-StreamToBytes
+function ConvertFrom-PodeStreamToBytes
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -146,7 +116,7 @@ function ConvertFrom-StreamToBytes
     return $ms.ToArray()
 }
 
-function ConvertFrom-ValueToBytes
+function ConvertFrom-PodeValueToBytes
 {
     param (
         [Parameter()]
@@ -164,7 +134,7 @@ function ConvertFrom-ValueToBytes
     return $Value
 }
 
-function ConvertFrom-BytesToString
+function ConvertFrom-PodeBytesToString
 {
     param (
         [Parameter()]
@@ -190,7 +160,7 @@ function ConvertFrom-BytesToString
     return $value
 }
 
-function Get-NewLineBytes
+function Get-PodeNewLineBytes
 {
     param (
         [Parameter()]
@@ -203,7 +173,36 @@ function Get-NewLineBytes
     }
 }
 
-function Remove-NewLineBytesFromArray
+function Test-PodeByteArrayIsBoundary
+{
+    param (
+        [Parameter()]
+        [byte[]]
+        $Bytes,
+
+        [Parameter()]
+        [string]
+        $Boundary,
+
+        [Parameter()]
+        $Encoding = [System.Text.Encoding]::UTF8
+    )
+
+    # if no bytes, return
+    if ($Bytes.Length -eq 0) {
+        return $false
+    }
+
+    # if length difference >3, return (ie, 2 offset for `r`n)
+    if (($Bytes.Length - $Boundary.Length) -gt 3) {
+        return $false
+    }
+
+    # check if bytes starts with the boundary
+    return (ConvertFrom-PodeBytesToString $Bytes $Encoding).StartsWith($Boundary)
+}
+
+function Remove-PodeNewLineBytesFromArray
 {
     param (
         [Parameter()]
@@ -213,7 +212,7 @@ function Remove-NewLineBytesFromArray
         $Encoding = [System.Text.Encoding]::UTF8
     )
 
-    $nlBytes = Get-NewLineBytes -Encoding $Encoding
+    $nlBytes = Get-PodeNewLineBytes -Encoding $Encoding
     $length = $Bytes.Length
 
     if ($Bytes[$length] -eq $nlBytes.NewLine) {

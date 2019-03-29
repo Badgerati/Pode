@@ -210,7 +210,7 @@ function Get-PodeQueryMiddleware
 
         try {
             # set the query string from the request
-            $s.Query = (ConvertFrom-NameValueToHashTable -Collection $s.Request.QueryString)
+            $s.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $s.Request.QueryString)
             return $true
         }
         catch {
