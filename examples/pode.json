@@ -12,6 +12,9 @@
                     "*.jpg"
                 ]
             }
+        },
+        "errorPages": {
+            "showExceptions": true
         }
     }
 }

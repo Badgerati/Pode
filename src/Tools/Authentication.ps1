@@ -177,7 +177,7 @@ function Invoke-PodeAuthCheck
         # check if the login flag is set, in which case just return
         if ($e.Middleware.Options.Login -eq $true) {
             if (!(Test-Empty $e.Session.Data.Auth)) {
-                Remove-PodeSessionCookie -Response $e.Response -Session $e.Session
+                Remove-PodeSessionCookie -Session $e.Session
             }
 
             return $true
@@ -327,7 +327,7 @@ function Remove-PodeAuth
     }
 
     # Delete the session (remove from store, blank it, and remove from Response)
-    Remove-PodeSessionCookie -Response $Event.Response -Session $Event.Session
+    Remove-PodeSessionCookie -Session $Event.Session
 }
 
 function Set-PodeAuthStatus

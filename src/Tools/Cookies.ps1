@@ -4,7 +4,7 @@ function Session
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [hashtable]
-        $Options
+        $Options = @{}
     )
 
     # check that session logic hasn't already been defined
@@ -58,6 +58,7 @@ function Session
             'Extend' = [bool]($Options.Extend);
             'Secure' = [bool]($Options.Secure);
             'Discard' = [bool]($Options.Discard);
+            'HttpOnly' = [bool]($Options.HttpOnly);
         };
     }
 
@@ -73,7 +74,8 @@ function Session
         try
         {
             # get the session cookie
-            $s.Session = Get-PodeSessionCookie -Request $s.Request
+            $_sessionInfo = $PodeContext.Server.Cookies.Session
+            $s.Session = Get-PodeSessionCookie -Name $_sessionInfo.Name -Secret $_sessionInfo.SecretKey
 
             # if no session on browser, create a new one
             if (!$s.Session) {
@@ -82,7 +84,7 @@ function Session
             }
 
             # get the session's data
-            elseif ($null -ne ($data = $PodeContext.Server.Cookies.Session.Store.Get($s.Session.Id))) {
+            elseif ($null -ne ($data = $_sessionInfo.Store.Get($s.Session.Id))) {
                 $s.Session.Data = $data
                 Set-PodeSessionCookieDataHash -Session $s.Session
             }
@@ -98,7 +100,7 @@ function Session
 
             # add cookie to response if it's new or extendible
             if ($new -or $s.Session.Cookie.Extend) {
-                Set-PodeSessionCookie -Response $s.Response -Session $s.Session
+                Set-PodeSessionCookie -Session $s.Session
             }
 
             # assign endware for session to set cookie/storage
@@ -123,174 +125,6 @@ function Session
     }
 }
 
-function Flash
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('add', 'clear', 'get', 'keys', 'remove')]
-        [string]
-        $Action,
-
-        [Parameter()]
-        [string]
-        $Key,
-
-        [Parameter()]
-        [string]
-        $Message
-    )
-
-    # if sessions haven't been setup, error
-    if ($null -eq $PodeContext.Server.Cookies.Session) {
-        throw 'Sessions are required to use Flash messages'
-    }
-
-    if (@('add', 'get', 'remove') -icontains $Action -and (Test-Empty $Key)) {
-        throw "A Key is required for the Flash $($Action) action"
-    }
-
-    # run logic for the action
-    switch ($Action.ToLowerInvariant())
-    {
-        'add' {
-            # append the message against the key
-            if ($null -eq $WebEvent.Session.Data.Flash) {
-                $WebEvent.Session.Data.Flash = @{}
-            }
-
-            if ($null -eq $WebEvent.Session.Data.Flash[$Key]) {
-                $WebEvent.Session.Data.Flash[$Key] = @($Message)
-            }
-            else {
-                $WebEvent.Session.Data.Flash[$Key] += @($Message)
-            }
-        }
-
-        'get' {
-            # retrieve messages from session, then delete it
-            if ($null -eq $WebEvent.Session.Data.Flash) {
-                return @()
-            }
-
-            $v = @($WebEvent.Session.Data.Flash[$Key])
-            $WebEvent.Session.Data.Flash.Remove($Key)
-
-            if (Test-Empty $v) {
-                return @()
-            }
-
-            return @($v)
-        }
-
-        'keys' {
-            # return list of all current keys
-            if ($null -eq $WebEvent.Session.Data.Flash) {
-                return @()
-            }
-
-            return @($WebEvent.Session.Data.Flash.Keys)
-        }
-
-        'clear' {
-            # clear all keys
-            if ($null -ne $WebEvent.Session.Data.Flash) {
-                $WebEvent.Session.Data.Flash = @{}
-            }
-        }
-
-        'remove' {
-            # remove key from flash messages
-            if ($null -ne $WebEvent.Session.Data.Flash) {
-                $WebEvent.Session.Data.Flash.Remove($Key)
-            }
-        }
-    }
-}
-
-function Get-PodeSessionCookie
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Request
-    )
-
-    # get the session from cookie
-    $cookie = $Request.Cookies[$PodeContext.Server.Cookies.Session.Name]
-    if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
-        return $null
-    }
-
-    # ensure the session was signed
-    $session = (Invoke-PodeCookieUnsign -Signature $cookie.Value -Secret $PodeContext.Server.Cookies.Session.SecretKey)
-    if (Test-Empty $session) {
-        return $null
-    }
-
-    # return session cookie data
-    $data = @{
-        'Name' = $cookie.Name;
-        'Id' = $session;
-        'Cookie' = $PodeContext.Server.Cookies.Session.Info;
-        'Data' = @{};
-    }
-
-    $data.Cookie.TimeStamp = $cookie.TimeStamp
-    return $data
-}
-
-function Set-PodeSessionCookie
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Session
-    )
-
-    # sign the session
-    $signedValue = (Invoke-PodeCookieSign -Value $Session.Id -Secret $PodeContext.Server.Cookies.Session.SecretKey)
-
-    # create a new cookie
-    $cookie = [System.Net.Cookie]::new($Session.Name, $signedValue)
-    $cookie.Secure = $Session.Cookie.Secure
-    $cookie.Discard = $Session.Cookie.Discard
-
-    # calculate the expiry
-    $cookie.Expires = (Get-PodeSessionCookieExpiry -Session $Session)
-
-    # assign cookie to response
-    $Response.AppendCookie($cookie) | Out-Null
-}
-
-function Remove-PodeSessionCookie
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Session
-    )
-
-    # remove the cookie from the response, and reset it to expire
-    $cookie = $Response.Cookies[$Session.Name]
-    $cookie.Discard = $true
-    $cookie.Expires = [DateTime]::UtcNow.AddDays(-2)
-    $Response.AppendCookie($cookie) | Out-Null
-
-    # remove session from store
-    Invoke-ScriptBlock -ScriptBlock $Session.Delete -Arguments @($Session) -Splat
-
-    # blank the session
-    $Session.Clear()
-}
-
 function New-PodeSessionCookie
 {
     $sid = @{
@@ -304,6 +138,301 @@ function New-PodeSessionCookie
 
     $sid.Cookie.TimeStamp = [DateTime]::UtcNow
     return $sid
+}
+
+function Set-PodeSessionCookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    (Set-PodeCookie `
+        -Name $Session.Name `
+        -Value $Session.Id `
+        -Secret $PodeContext.Server.Cookies.Session.SecretKey `
+        -Expiry (Get-PodeSessionCookieExpiry -Session $Session) `
+        -Options $Session.Cookie) | Out-Null
+}
+
+function Get-PodeSessionCookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    # check that the cookie is validly signed
+    if (!(Test-PodeCookieIsSigned -Name $Name -Secret $Secret)) {
+        return $null
+    }
+
+    # get the cookie from the request
+    $cookie = Get-PodeCookie -Name $Name -Secret $Secret
+    if (Test-Empty $cookie) {
+        return $null
+    }
+
+    # generate the session from the cookie
+    $data = @{
+        'Name' = $cookie.Name;
+        'Id' = $cookie.Value;
+        'Cookie' = $PodeContext.Server.Cookies.Session.Info;
+        'Data' = @{};
+    }
+
+    $data.Cookie.TimeStamp = $cookie.TimeStamp
+    return $data
+}
+
+function Remove-PodeSessionCookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Session
+    )
+
+    # remove the cookie from the response
+    Remove-PodeCookie -Name $Session.Name
+
+    # remove session from store
+    Invoke-ScriptBlock -ScriptBlock $Session.Delete -Arguments @($Session) -Splat
+
+    # blank the session
+    $Session.Clear()
+}
+
+function Cookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('add', 'check', 'exists', 'extend', 'get', 'remove')]
+        [Alias('a')]
+        [string]
+        $Action,
+
+        [Parameter(Mandatory=$true)]
+        [Alias('n')]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [Alias('v')]
+        [string]
+        $Value,
+
+        [Parameter()]
+        [Alias('s')]
+        [string]
+        $Secret,
+
+        [Parameter()]
+        [int]
+        $Ttl = 0,
+
+        [Parameter()]
+        [Alias('o')]
+        [hashtable]
+        $Options = @{}
+    )
+
+    # run logic for the action
+    switch ($Action.ToLowerInvariant())
+    {
+        # add/set a cookie against the response
+        'add' {
+            return (Set-PodeCookie -Name $Name -Value $Value -Secret $Secret -Ttl $Ttl -Options $Options)
+        }
+
+        # get a cookie from the request
+        'get' {
+            return (Get-PodeCookie -Name $Name -Secret $Secret)
+        }
+
+        # checks whether a given cookie exists on the request
+        'exists' {
+            return (Test-PodeCookieExists -Name $Name)
+        }
+
+        # removes a given cookie from the request/response
+        'remove' {
+            Remove-PodeCookie -Name $Name
+        }
+
+        # verifies whether a given cookie is signed
+        'check' {
+            return (Test-PodeCookieIsSigned -Name $Name -Secret $Secret)
+        }
+
+        # extends a given cookies expiry
+        'extend' {
+            Update-PodeCookieExpiry -Name $Name -Ttl $Ttl
+        }
+    }
+}
+
+function Test-PodeCookieExists
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    $cookie = $WebEvent.Request.Cookies[$Name]
+    return (!(Test-Empty $cookie) -and !(Test-Empty $cookie.Value))
+}
+
+function Test-PodeCookieIsSigned
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    $cookie = $WebEvent.Request.Cookies[$Name]
+    if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
+        return $false
+    }
+
+    $value = (Invoke-PodeCookieUnsign -Signature $cookie.Value -Secret $Secret)
+    return (!(Test-Empty $value))
+}
+
+function Get-PodeCookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    # get the from cookie
+    $cookie = $WebEvent.Request.Cookies[$Name]
+    if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
+        return $null
+    }
+
+    # if a secret was supplied, attempt to unsign the cookie
+    if (!(Test-Empty $Secret)) {
+        $value = (Invoke-PodeCookieUnsign -Signature $cookie.Value -Secret $Secret)
+        if (!(Test-Empty $value)) {
+            $cookie.Value = $value
+        }
+    }
+
+    return $cookie
+}
+
+function Set-PodeCookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Value,
+
+        [Parameter()]
+        [string]
+        $Secret,
+
+        [Parameter()]
+        [int]
+        $Ttl = 0,
+
+        [Parameter()]
+        [datetime]
+        $Expiry,
+
+        [Parameter()]
+        [hashtable]
+        $Options = @{}
+    )
+
+    # sign the value if we have a secret
+    if (!(Test-Empty $Secret)) {
+        $Value = (Invoke-PodeCookieSign -Value $Value -Secret $Secret)
+    }
+
+    # create a new cookie
+    $cookie = [System.Net.Cookie]::new($Name, $Value)
+    $cookie.Secure = [bool]($Options.Secure)
+    $cookie.Discard = [bool]($Options.Discard)
+    $cookie.HttpOnly = [bool]($Options.HttpOnly)
+
+    if (!(Test-Empty $Expiry)) {
+        $cookie.Expires = $Expiry
+    }
+    elseif ($Ttl -gt 0) {
+        $cookie.Expires = [datetime]::UtcNow.AddSeconds($Ttl)
+    }
+
+    # assign cookie to response
+    $WebEvent.Response.AppendCookie($cookie) | Out-Null
+    return $cookie
+}
+
+function Update-PodeCookieExpiry
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [int]
+        $Ttl = 0,
+
+        [Parameter()]
+        [datetime]
+        $Expiry
+    )
+
+    # extends the expiry on the cookie
+    $cookie = $WebEvent.Response.Cookies[$Name]
+    if (!(Test-Empty $Expiry)) {
+        $cookie.Expires = $Expiry
+    }
+    elseif ($Ttl -gt 0) {
+        $cookie.Expires = [datetime]::UtcNow.AddSeconds($Ttl)
+    }
+
+    $WebEvent.Response.AppendCookie($cookie) | Out-Null
+    return $cookie
+}
+
+function Remove-PodeCookie
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    # remove the cookie from the response, and reset it to expire
+    $cookie = $WebEvent.Response.Cookies[$Name]
+    $cookie.Discard = $true
+    $cookie.Expires = [DateTime]::UtcNow.AddDays(-2)
+    $WebEvent.Response.AppendCookie($cookie) | Out-Null
 }
 
 function Set-PodeSessionCookieDataHash
