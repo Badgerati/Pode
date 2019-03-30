@@ -111,9 +111,19 @@ Describe 'Flash' {
             $WebEvent.Session.Data.Flash.Count | Should Be 0
         }
 
-        It 'returns empty array for Get on key that does not exist' {
+        It 'Returns empty array for Get on key that does not exist' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+
+            $result = Flash -Action Get -Key 'Test1'
+            $result.Length | Should Be 0
+        }
+
+        It 'Returns empty array for Get on key that is empty' {
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{
+                'Flash' = @{ 'Test1' = @(); }
+             } } }
 
             $result = Flash -Action Get -Key 'Test1'
             $result.Length | Should Be 0
@@ -189,6 +199,14 @@ Describe 'Flash' {
 
             $WebEvent.Session.Data.Flash | Should Not Be $null
             $WebEvent.Session.Data.Flash.Count | Should Be 2
+        }
+
+        It 'Returns no keys as none have been added' {
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
+
+            $result = Flash -Action Keys
+            $result.Length | Should Be 0
         }
     }
 }
