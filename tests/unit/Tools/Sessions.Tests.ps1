@@ -202,3 +202,21 @@ Describe 'Set-PodeSessionCookieInMemClearDown' {
         $PodeContext.Schedules.Contains('__pode_session_inmem_cleanup__') | Should Be $true
     }
 }
+
+Describe 'Set-PodeSessionCookie' {
+    It 'Sets a new cookie on the response' {
+        Mock Set-PodeCookie { }
+        Mock Get-PodeSessionCookieExpiry { return ([datetime]::UtcNow) }
+
+        $session = @{
+            'Name' = 'name';
+            'Id' = 'sessionId';
+            'Cookie' = @{};
+        }
+
+        Set-PodeSessionCookie -Session $session
+
+        Assert-MockCalled Set-PodeCookie -Times 1 -Scope It
+        Assert-MockCalled Get-PodeSessionCookieExpiry -Times 1 -Scope It
+    }
+}
