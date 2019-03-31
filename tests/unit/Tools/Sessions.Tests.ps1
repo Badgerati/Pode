@@ -34,13 +34,11 @@ Describe 'Get-PodeSessionCookie' {
         }
 
         It 'Returns no session details for invalid signed sessionId' {
+            $cookie = [System.Net.Cookie]::new('pode.sid', 's:value.kPv88V5o2uJ29sqh2a7P/f3dxcg+JdZJZT3GTIE=')
+
             $WebEvent = @{ 'Request' = @{
                 'Cookies' = @{
-                    'pode.sid' = @{
-                        'Value' = 's:value.kPv88V5o2uJ29sqh2a7P/f3dxcg+JdZJZT3GTIE=';
-                        'Name' = 'pode.sid';
-                        'TimeStamp' = $now;
-                    }
+                    'pode.sid' = $cookie;
                 }
             } }
 
@@ -57,13 +55,11 @@ Describe 'Get-PodeSessionCookie' {
         }
 
         It 'Returns session details' {
+            $cookie = [System.Net.Cookie]::new('pode.sid', 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=')
+
             $WebEvent = @{ 'Request' = @{
                 'Cookies' = @{
-                    'pode.sid' = @{
-                        'Value' = 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=';
-                        'Name' = 'pode.sid';
-                        'TimeStamp' = $now;
-                    }
+                    'pode.sid' = $cookie;
                 }
             } }
 
@@ -79,7 +75,6 @@ Describe 'Get-PodeSessionCookie' {
             $data | Should Not Be $null
             $data.Id | Should Be 'value'
             $data.Name | Should Be 'pode.sid'
-            $data.Cookie.TimeStamp | Should Be $now
             $data.Cookie.Duration | Should Be 60
         }
     }

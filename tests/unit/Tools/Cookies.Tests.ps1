@@ -388,16 +388,16 @@ Describe 'Cookie' {
     }
 
     It 'Throws error for null name' {
-        { Cookie -Action 'Add' -Name $null } | Should Throw "because it is an empty string"
+        { Cookie -Action Set -Name $null } | Should Throw "because it is an empty string"
     }
 
     It 'Throws error for empty name' {
-        { Cookie -Action 'Add' -Name ([string]::Empty) } | Should Throw "because it is an empty string"
+        { Cookie -Action Set -Name ([string]::Empty) } | Should Throw "because it is an empty string"
     }
 
     It 'Calls add method' {
         Mock Set-PodeCookie { return 'cookie' }
-        $c = Cookie -Action Add -Name 'test' -Value 'example'
+        $c = Cookie -Action Set -Name 'test' -Value 'example'
         $c | Should Not Be $null
         $c | Should Be 'cookie'
         Assert-MockCalled Set-PodeCookie -Times 1 -Scope It
@@ -489,5 +489,27 @@ Describe 'Invoke-PodeCookieUnsign' {
         It 'Returns null for unsign data' {
             Invoke-PodeCookieUnsign -Signature 'value' -Secret 'key' | Should Be $null
         }
+    }
+}
+
+Describe 'ConvertTo-PodeCookie' {
+    It 'Returns empty for no cookie' {
+        $r = ConvertTo-PodeCookie -Cookie $null
+        $r.Count | Should Be 0
+    }
+
+    It 'Returns a mapped cookie' {
+        $now = [datetime]::UtcNow.Date
+        $c = [System.Net.Cookie]::new('date', $now)
+
+        $r = ConvertTo-PodeCookie -Cookie $c
+
+        $r.Count | Should Be 9
+        $r.Name | Should Be 'date'
+        $r.Value | Should Be $now
+        $r.Signed | Should Be $false
+        $r.HttpOnly | Should Be $false
+        $r.Discard | Should Be $false
+        $r.Secure | Should Be $false
     }
 }

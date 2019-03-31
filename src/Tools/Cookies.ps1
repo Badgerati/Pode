@@ -2,7 +2,7 @@ function Cookie
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('add', 'check', 'exists', 'extend', 'get', 'remove')]
+        [ValidateSet('check', 'exists', 'extend', 'get', 'remove', 'set')]
         [Alias('a')]
         [string]
         $Action,
@@ -36,7 +36,7 @@ function Cookie
     switch ($Action.ToLowerInvariant())
     {
         # add/set a cookie against the response
-        'add' {
+        'set' {
             return (Set-PodeCookie -Name $Name -Value $Value -Secret $Secret -Ttl $Ttl -Options $Options)
         }
 
@@ -60,9 +60,9 @@ function Cookie
             return (Test-PodeCookieIsSigned -Name $Name -Secret $Secret)
         }
 
-        # extends a given cookies expiry
+        # extends a given cookies expiry (adding the cookie to the response)
         'extend' {
-            Update-PodeCookieExpiry -Name $Name -Ttl $Ttl
+            return (Update-PodeCookieExpiry -Name $Name -Ttl $Ttl)
         }
     }
 }
@@ -109,11 +109,18 @@ function Get-PodeCookie
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Raw
     )
 
-    # get the from cookie
+    # get the cookie from the request
     $cookie = $WebEvent.Request.Cookies[$Name]
+    if (!$Raw) {
+        $cookie = (ConvertTo-PodeCookie -Cookie $cookie)
+    }
+
     if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
         return $null
     }
@@ -175,9 +182,9 @@ function Set-PodeCookie
         $cookie.Expires = [datetime]::UtcNow.AddSeconds($Ttl)
     }
 
-    # assign cookie to response
+    # sets the cookie on the the response
     $WebEvent.Response.AppendCookie($cookie) | Out-Null
-    return $cookie
+    return (ConvertTo-PodeCookie -Cookie $cookie)
 }
 
 function Update-PodeCookieExpiry
@@ -196,8 +203,13 @@ function Update-PodeCookieExpiry
         $Expiry
     )
 
-    # extends the expiry on the cookie
+    # get the cookie from the response - if it's not found, get it from the request
     $cookie = $WebEvent.Response.Cookies[$Name]
+    if (Test-Empty $cookie) {
+        $cookie = Get-PodeCookie -Name $Name -Raw
+    }
+
+    # extends the expiry on the cookie
     if (!(Test-Empty $Expiry)) {
         $cookie.Expires = $Expiry
     }
@@ -205,8 +217,9 @@ function Update-PodeCookieExpiry
         $cookie.Expires = [datetime]::UtcNow.AddSeconds($Ttl)
     }
 
+    # sets the cookie on the the response
     $WebEvent.Response.AppendCookie($cookie) | Out-Null
-    return $cookie
+    return (ConvertTo-PodeCookie -Cookie $cookie)
 }
 
 function Remove-PodeCookie
@@ -217,11 +230,18 @@ function Remove-PodeCookie
         $Name
     )
 
-    # remove the cookie from the response, and reset it to expire
+    # get the cookie from the response - if it's not found, get it from the request
     $cookie = $WebEvent.Response.Cookies[$Name]
-    $cookie.Discard = $true
-    $cookie.Expires = [DateTime]::UtcNow.AddDays(-2)
-    $WebEvent.Response.AppendCookie($cookie) | Out-Null
+    if (Test-Empty $cookie) {
+        $cookie = Get-PodeCookie -Name $Name -Raw
+    }
+
+    # remove the cookie from the response, and reset it to expire
+    if (!(Test-Empty $cookie)) {
+        $cookie.Discard = $true
+        $cookie.Expires = [DateTime]::UtcNow.AddDays(-2)
+        $WebEvent.Response.AppendCookie($cookie) | Out-Null
+    }
 }
 
 function Invoke-PodeCookieSign
@@ -269,4 +289,29 @@ function Invoke-PodeCookieUnsign
     }
 
     return $value
+}
+
+function ConvertTo-PodeCookie
+{
+    param (
+        [Parameter()]
+        [System.Net.Cookie]
+        $Cookie
+    )
+
+    if (Test-Empty $Cookie) {
+        return @{}
+    }
+
+    return @{
+        'Name' = $Cookie.Name;
+        'Value' = $Cookie.Value;
+        'Expires' = $Cookie.Expires;
+        'Expired' = $Cookie.Expired;
+        'Discard' = $Cookie.Discard;
+        'HttpOnly' = $Cookie.HttpOnly;
+        'Secure' = $Cookie.Secure;
+        'TimeStamp' = $Cookie.TimeStamp;
+        'Signed' = $Cookie.Value.StartsWith('s:');
+    }
 }
