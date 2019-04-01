@@ -216,11 +216,7 @@ Describe 'Set-PodeCookie' {
             $script:WebEvent.Response.Cookies[$c.Name] = $c
         }
 
-        $c = Set-PodeCookie -Name 'test' -Value 'example' -Options @{
-            'Secure' = $true;
-            'Discard' = $true;
-            'HttpOnly' = $true;
-        }
+        $c = Set-PodeCookie -Name 'test' -Value 'example' -HttpOnly -Secure -Discard
 
         $c | Should Not Be $null
         $c.Secure | Should Be $true

@@ -148,12 +148,18 @@ function Set-PodeSessionCookie
         $Session
     )
 
+    $secure = [bool]($Session.Cookie.Secure)
+    $discard = [bool]($Session.Cookie.Discard)
+    $httpOnly = [bool]($Session.Cookie.HttpOnly)
+
     (Set-PodeCookie `
         -Name $Session.Name `
         -Value $Session.Id `
         -Secret $PodeContext.Server.Cookies.Session.SecretKey `
         -Expiry (Get-PodeSessionCookieExpiry -Session $Session) `
-        -Options $Session.Cookie) | Out-Null
+        -HttpOnly:$httpOnly `
+        -Discard:$discard `
+        -Secure:$secure) | Out-Null
 }
 
 function Get-PodeSessionCookie

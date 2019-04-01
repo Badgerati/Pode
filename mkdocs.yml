@@ -85,6 +85,7 @@ nav:
 
     - Response:
       - Attach: Functions/Response/Attach.md
+      - Cookie: Functions/Response/Cookie.md
       - Csv: Functions/Response/Csv.md
       - Html: Functions/Response/Html.md
       - Json: Functions/Response/Json.md

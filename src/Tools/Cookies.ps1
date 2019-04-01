@@ -26,10 +26,17 @@ function Cookie
         [int]
         $Ttl = 0,
 
-        [Parameter()]
-        [Alias('o')]
-        [hashtable]
-        $Options = @{}
+        [switch]
+        [Alias('http')]
+        $HttpOnly,
+
+        [switch]
+        [Alias('d')]
+        $Discard,
+
+        [switch]
+        [Alias('ssl')]
+        $Secure
     )
 
     # run logic for the action
@@ -37,7 +44,8 @@ function Cookie
     {
         # add/set a cookie against the response
         'set' {
-            return (Set-PodeCookie -Name $Name -Value $Value -Secret $Secret -Ttl $Ttl -Options $Options)
+            return (Set-PodeCookie -Name $Name -Value $Value -Secret $Secret -Ttl $Ttl `
+                -HttpOnly:$HttpOnly -Discard:$Discard -Secure:$Secure)
         }
 
         # get a cookie from the request
@@ -159,9 +167,14 @@ function Set-PodeCookie
         [datetime]
         $Expiry,
 
-        [Parameter()]
-        [hashtable]
-        $Options = @{}
+        [switch]
+        $HttpOnly,
+
+        [switch]
+        $Discard,
+
+        [switch]
+        $Secure
     )
 
     # sign the value if we have a secret
@@ -171,9 +184,9 @@ function Set-PodeCookie
 
     # create a new cookie
     $cookie = [System.Net.Cookie]::new($Name, $Value)
-    $cookie.Secure = [bool]($Options.Secure)
-    $cookie.Discard = [bool]($Options.Discard)
-    $cookie.HttpOnly = [bool]($Options.HttpOnly)
+    $cookie.Secure = $Secure
+    $cookie.Discard = $Discard
+    $cookie.HttpOnly = $HttpOnly
 
     if (!(Test-Empty $Expiry)) {
         $cookie.Expires = $Expiry

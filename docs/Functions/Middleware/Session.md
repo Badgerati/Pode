@@ -86,8 +86,8 @@ Server {
 | Name | string | false | The name of the session cookie | pode.sid |
 | Duration | int | false | The duration of which the cookie lasts, in seconds (>=0) | 0 |
 | Extend | bool | false | If true, the duration of the cookie will be extended each time a request is made using the session | false |
-| Discard | bool | false | If true, informs the enduser's browser to discard the cookie on expiry | false |
-| Secure | bool | false | If true, informs the enduser's browser to only send the cookie on secure connections | false |
+| Discard | bool | false | If true, informs the browser to discard the cookie on expiry | false |
+| Secure | bool | false | If true, informs the browser to only send the cookie on secure connections | false |
 | HttpOnly | bool | false | If true, the cookie can only be accessed from browsers | false |
 | GenerateId | scriptblock | false | A script that should return a valid string. The string itself should be a random unique value, that can be used as a session identifier | guid |
 | Store | psobject | false | An object that defines specific functions to communicate with a custom data store | null |
