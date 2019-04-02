@@ -239,7 +239,7 @@ Describe 'Set-PodeCookie' {
             $script:WebEvent.Response.Cookies[$c.Name] = $c
         }
 
-        $c = Set-PodeCookie -Name 'test' -Value 'example' -Ttl 3600
+        $c = Set-PodeCookie -Name 'test' -Value 'example' -Duration 3600
         $c | Should Not Be $null
         $c.Name | Should Be 'test'
         $c.Value | Should Be 'example'
@@ -288,7 +288,7 @@ Describe 'Update-PodeCookieExpiry' {
             $script:called = $true
         }
 
-        Update-PodeCookieExpiry -Name 'test' -Ttl 3600
+        Update-PodeCookieExpiry -Name 'test' -Duration 3600
         $called | Should Be $true
 
         ($WebEvent.Response.Cookies['test'].Expires -gt [datetime]::UtcNow.AddSeconds(3000)) | Should Be $true
@@ -349,7 +349,7 @@ Describe 'Update-PodeCookieExpiry' {
             $script:called = $true
         }
 
-        Update-PodeCookieExpiry -Name 'test' -Ttl -1
+        Update-PodeCookieExpiry -Name 'test' -Duration -1
         $called | Should Be $true
 
         $WebEvent.Response.Cookies['test'].Expires | Should Be $ttl

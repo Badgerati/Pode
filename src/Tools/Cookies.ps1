@@ -23,8 +23,9 @@ function Cookie
         $Secret,
 
         [Parameter()]
+        [Alias('ttl')]
         [int]
-        $Ttl = 0,
+        $Duration = 0,
 
         [switch]
         [Alias('http')]
@@ -44,7 +45,7 @@ function Cookie
     {
         # add/set a cookie against the response
         'set' {
-            return (Set-PodeCookie -Name $Name -Value $Value -Secret $Secret -Ttl $Ttl `
+            return (Set-PodeCookie -Name $Name -Value $Value -Secret $Secret -Duration $Duration `
                 -HttpOnly:$HttpOnly -Discard:$Discard -Secure:$Secure)
         }
 
@@ -70,7 +71,7 @@ function Cookie
 
         # extends a given cookies expiry (adding the cookie to the response)
         'extend' {
-            return (Update-PodeCookieExpiry -Name $Name -Ttl $Ttl)
+            return (Update-PodeCookieExpiry -Name $Name -Duration $Duration)
         }
     }
 }
@@ -161,7 +162,7 @@ function Set-PodeCookie
 
         [Parameter()]
         [int]
-        $Ttl = 0,
+        $Duration = 0,
 
         [Parameter()]
         [datetime]
@@ -191,8 +192,8 @@ function Set-PodeCookie
     if (!(Test-Empty $Expiry)) {
         $cookie.Expires = $Expiry
     }
-    elseif ($Ttl -gt 0) {
-        $cookie.Expires = [datetime]::UtcNow.AddSeconds($Ttl)
+    elseif ($Duration -gt 0) {
+        $cookie.Expires = [datetime]::UtcNow.AddSeconds($Duration)
     }
 
     # sets the cookie on the the response
@@ -209,7 +210,7 @@ function Update-PodeCookieExpiry
 
         [Parameter()]
         [int]
-        $Ttl = 0,
+        $Duration = 0,
 
         [Parameter()]
         [datetime]
@@ -226,8 +227,8 @@ function Update-PodeCookieExpiry
     if (!(Test-Empty $Expiry)) {
         $cookie.Expires = $Expiry
     }
-    elseif ($Ttl -gt 0) {
-        $cookie.Expires = [datetime]::UtcNow.AddSeconds($Ttl)
+    elseif ($Duration -gt 0) {
+        $cookie.Expires = [datetime]::UtcNow.AddSeconds($Duration)
     }
 
     # sets the cookie on the the response

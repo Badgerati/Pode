@@ -68,7 +68,7 @@ middleware {
 | Name | string | true | The name of the cookie | empty |
 | Value | string | false | The value to assign to the cookie | empty |
 | Secret | string | false | A secret key to be used to sign the cookie's value | empty |
-| Ttl | int | false | The duration of the cookie in seconds from UtcNow | 0 |
+| Duration | int | false | The duration of the cookie in seconds from UtcNow | 0 |
 | Discard | switch | false | If true, informs the browser to discard the cookie on expiry | false |
 | Secure | switch | false | If true, informs the browser to only send the cookie on secure connections | false |
 | HttpOnly | switch | false | If true, the cookie can only be accessed from browsers | false |
