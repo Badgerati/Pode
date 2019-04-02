@@ -179,7 +179,7 @@ function New-PodeSelfSignedCertificate
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $IP,
+        $Address,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
@@ -191,17 +191,21 @@ function New-PodeSelfSignedCertificate
         $Certificate
     )
 
+    $addrport = "$($Address):$($Port)"
+
     # only bind if windows at the moment
     if (!(Test-IsWindows)) {
         Write-Host "Certificates are currently only supported on Windows" -ForegroundColor Yellow
         return
     }
 
-    # check if this ip/port is already bound
-    $sslPortInUse = (netsh http show sslcert) | Where-Object { $_ -ilike "*IP:port*" -and $_ -ilike "*$($IP):$($Port)" }
-    if ($sslPortInUse)
-    {
-        Write-Host "$($IP):$($Port) already has a certificate bound" -ForegroundColor Green
+    # check if this addr/port is already bound
+    $sslPortInUse = (netsh http show sslcert) | Where-Object {
+        ($_ -ilike "*IP:port*" -or $_ -ilike "*Hostname:port*") -and $_ -ilike "*$($addrport)"
+    }
+
+    if ($sslPortInUse) {
+        Write-Host "$($addrport) already has a certificate bound" -ForegroundColor Green
         return
     }
 
@@ -213,7 +217,7 @@ function New-PodeSelfSignedCertificate
     # generate a self-signed cert
     if (@('self', 'self-signed') -icontains $Certificate)
     {
-        Write-Host "Generating self-signed certificate for $($IP):$($Port)..." -NoNewline -ForegroundColor Cyan
+        Write-Host "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
 
         # generate the cert -- has to call "powershell.exe" for ps-core on windows
         $cert = (PowerShell.exe -NoProfile -Command {
@@ -237,9 +241,9 @@ function New-PodeSelfSignedCertificate
     # ensure a given cert exists for binding
     else
     {
-        Write-Host "Binding $($Certificate) to $($IP):$($Port)..." -NoNewline -ForegroundColor Cyan
+        Write-Host "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
 
-        # ensure the certificate exists, and get it's thumbprint
+        # ensure the certificate exists, and get its thumbprint
         $cert = (Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -imatch [regex]::Escape($Certificate) })
         if (Test-Empty $cert) {
             throw "Failed to find the $($Certificate) certificate at LocalMachine\My"
@@ -248,10 +252,14 @@ function New-PodeSelfSignedCertificate
         $cert = ($cert)[0].Thumbprint
     }
 
-    # bind the cert to the ip:port
-    $ipport = "$($IP):$($Port)"
+    # bind the cert to the ip:port or hostname:port
+    if (Test-IPAddress -IP $Address -IPOnly) {
+        $result = netsh http add sslcert ipport=$addrport certhash=$cert appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
+    }
+    else {
+        $result = netsh http add sslcert hostnameport=$addrport certhash=$cert certstorename=MY appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
+    }
 
-    $result = netsh http add sslcert ipport=$ipport certhash=$cert appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
     if ($LASTEXITCODE -ne 0 -or !$?) {
         throw "Failed to attach certificate:`n$($result)"
     }
@@ -350,11 +358,18 @@ function Test-IPAddress
     param (
         [Parameter()]
         [string]
-        $IP
+        $IP,
+
+        [switch]
+        $IPOnly
     )
 
-    if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all') -or ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$")) {
+    if ((Test-Empty $IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
         return $true
+    }
+
+    if ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$") {
+        return (!$IPOnly)
     }
 
     try {

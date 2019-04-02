@@ -61,7 +61,8 @@ function Start-WebServer
 
         # if this endpoint is https, generate a self-signed cert or bind an existing one
         if ($_.Ssl) {
-            New-PodeSelfSignedCertificate -IP $_.Address -Port $_port -Certificate $_.Certificate.Name
+            $addr = (iftet $_.IsIPAddress $_.Address $_.HostName)
+            New-PodeSelfSignedCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name
         }
 
         # add endpoint to list
