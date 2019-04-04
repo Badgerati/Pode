@@ -507,9 +507,52 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Certificates
+      </label>
+    
     <a href="./" title="Certificates" class="md-nav__link md-nav__link--active">
       Certificates
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#self-signed" title="Self-Signed" class="md-nav__link">
+    Self-Signed
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-installed" title="Pre-Installed" class="md-nav__link">
+    Pre-Installed
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clean-up" title="Clean-Up" class="md-nav__link">
+    Clean-Up
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -1772,6 +1815,36 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#self-signed" title="Self-Signed" class="md-nav__link">
+    Self-Signed
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-installed" title="Pre-Installed" class="md-nav__link">
+    Pre-Installed
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clean-up" title="Clean-Up" class="md-nav__link">
+    Clean-Up
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1790,23 +1863,38 @@
 <p class="admonition-title">Warning</p>
 <p>Binding existing, and generating self-signed certificates is only supported on <em>Windows</em>.</p>
 </div>
-<p>Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing - already installed - certificates for HTTPS. If Pode detects that the <code>IP:Port</code> binding already has a certificate bound then Pode will re-use that certificate and will not create a self-signed certificate, or bind a new certificate.</p>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>If you want to use a new certificate on a binding that already has one, then you'll have to clean-up the binding first: <code>netsh http delete sslcert 0.0.0.0:8443</code>.</p>
-</div>
+<p>Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing - already installed - certificates for HTTPS. If Pode detects that the <code>IP:Port</code> or <code>Hostname:Port</code> binding already has a certificate bound, then Pode will re-use that certificate and will not create a new self-signed certificate, or bind a new certificate.</p>
+<h2 id="self-signed">Self-Signed</h2>
 <p>If you are developing/testing a site on HTTPS then Pode can generate and bind quick self-signed certificates. To do this you can pass the value <code>self</code> to the <code>-cert</code> parameter of the <a href="../../Functions/Core/Listen"><code>listen</code></a>:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="c"># for an IP:</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8443</span> <span class="n">https</span> <span class="n">-cert</span> <span class="n">self</span>
+
+    <span class="c"># for a hostname:</span>
+    <span class="n">listen</span> <span class="n">foo</span><span class="p">.</span><span class="n">bar</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8443</span> <span class="n">https</span> <span class="n">-cert</span> <span class="n">self</span>
 <span class="p">}</span>
 </pre></div>
 
 
+<h2 id="pre-installed">Pre-Installed</h2>
 <p>To bind an already installed signed certificate, the certificate <em>must</em> be installed to <code>Cert:/LocalMachine/My</code>. Then you can pass the certificate name/domain to <code>-cert</code> parameter; an example for <code>*.example.com</code> is as follows:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="c"># for an IP:</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8443</span> <span class="n">https</span> <span class="n">-cert</span> <span class="s1">&#39;*.example.com&#39;</span>
+
+    <span class="c"># for a hostname</span>
+    <span class="n">listen</span> <span class="n">foo</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8443</span> <span class="n">https</span> <span class="n">-cert</span> <span class="s1">&#39;*.example.com&#39;</span>
 <span class="p">}</span>
 </pre></div>
+
+
+<h2 id="clean-up">Clean-Up</h2>
+<p>If you want to use a new certificate on a binding that already has one, then you'll have to clean-up the binding first. Calling either:</p>
+<ul>
+<li><code>netsh http delete sslcert ipport=&lt;ip&gt;:&lt;port&gt;</code></li>
+<li><code>netsh http delete sslcert hostnameport=&lt;hostname&gt;:&lt;port&gt;</code></li>
+</ul>
+<p>will remove the binding.</p>
                 
                   
                 
