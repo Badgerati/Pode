@@ -29,19 +29,49 @@ The following are a summary of the actions you can perform:
 ## Actions
 
 ### Check
-lorem
+
+The `check` action can be used to verify that a given cookie is signed, using the passed secret key. If the cookie is signed then `$true` is returned, otherwise `$false` is returned.
+
+```powershell
+cookie check 'token' -s 'secret-key'
+```
 
 ### Exists
-lorem
+
+The `exists` action can be used to verify that a given cookie is present on the request. If the cookie is present then `$true` is returned, otherwise `$false` is returned.
+
+```powershell
+cookie exists 'token'
+```
 
 ### Extend
-lorem
+
+The `extend` action allows you to extend the expiry time of a given cookie; the cookie's duration will be set to the current time, plus the number of seconds specified. If the cookie isn't present on the response, this action will also add it to the response. If successful, a hashtable describing the cookie will be returned.
+
+```powershell
+cookie extend 'token' -ttl 3600
+```
 
 ### Get
-lorem
+
+The `get` action will return a given cookie, optionally attempting to unsign the cookie's value if a secret key is also supplied. If successful, a hashtable describing the cookie will be returned.
+
+```powershell
+cookie get 'token' -s 'secret-key'
+```
 
 ### Remove
-lorem
+
+The `remove` action will remove a given cookie from the response - setting it to expire immediately, and inform browsers to discard the cookie.
+
+```powershell
+cookie remove 'token'
+```
 
 ### Set
-lorem
+
+The `set` action will create/update a cookie on the response, setting the value (which can be signed by passing a secret key), a duration, and other details described in the [`cookie`](../../../Functions/Response/Cookie) function page. If successful, a hashtable describing the cookie will be returned.
+
+```powershell
+cookie set 'token' 'a1b2c3-d4e5f6' -s 'secret-key' -ttl 3600 -ssl
+```
