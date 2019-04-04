@@ -255,13 +255,15 @@ function New-PodeSelfSignedCertificate
     # bind the cert to the ip:port or hostname:port
     if (Test-IPAddress -IP $Address -IPOnly) {
         $result = netsh http add sslcert ipport=$addrport certhash=$cert appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
+        if ($LASTEXITCODE -ne 0 -or !$?) {
+            throw "Failed to attach certificate against ipport:`n$($result)"
+        }
     }
     else {
         $result = netsh http add sslcert hostnameport=$addrport certhash=$cert certstorename=MY appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
-    }
-
-    if ($LASTEXITCODE -ne 0 -or !$?) {
-        throw "Failed to attach certificate:`n$($result)"
+        if ($LASTEXITCODE -ne 0 -or !$?) {
+            throw "Failed to attach certificate against hostnameport:`n$($result)"
+        }
     }
 
     Write-Host " Done" -ForegroundColor Green
