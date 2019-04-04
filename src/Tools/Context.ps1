@@ -385,7 +385,7 @@ function Listen
         [Alias('ipp', 'e', 'endpoint')]
         [string]
         $IPPort,
-        
+
         [Parameter()]
         [ValidateSet('HTTP', 'HTTPS', 'SMTP', 'TCP')]
         [Alias('t')]
@@ -411,7 +411,7 @@ function Listen
     $_endpoint = Get-PodeEndpointInfo -Endpoint $IPPort
 
     # if a name was supplied, check it is unique
-    if (![string]::IsNullOrWhiteSpace($Name) -and
+    if (!(Test-Empty $Name) -and
         (Get-PodeCount ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
     {
         throw "An endpoint with the name '$($Name)' has already been defined"
@@ -423,6 +423,7 @@ function Listen
         'Address' = $null;
         'RawAddress' = $IPPort;
         'Port' = $null;
+        'IsIPAddress' = $true;
         'HostName' = 'localhost';
         'Ssl' = $false;
         'Protocol' = $Type;
@@ -436,6 +437,8 @@ function Listen
     if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
         $obj.HostName = "$($obj.Address)"
     }
+
+    $obj.IsIPAddress = (Test-PodeIPAddress -IP $obj.Address -IPOnly)
 
     # set the port for the context
     $obj.Port = $_endpoint.Port
