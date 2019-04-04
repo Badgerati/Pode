@@ -25,7 +25,7 @@ nav:
     - Timers: Tutorials/Timers.md
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
-    - Importing Modules: Tutorials/ImportingModules.md
+    - Modules & SnapIns: Tutorials/ImportingModules.md
     - Configuration: Tutorials/Configuration.md
     - Web & Routes:
       - Overview: Tutorials/Routes/Overview.md
@@ -62,6 +62,7 @@ nav:
 
   - Functions:
     - Core:
+      - Config: Functions/Core/Config.md
       - Endware: Functions/Core/Endware.md
       - Engine: Functions/Core/Engine.md
       - Gui: Functions/Core/Gui.md
@@ -107,7 +108,6 @@ nav:
 
     - Helpers:
       - Coalesce: Functions/Helpers/Coalesce.md
-      - Get-PodeConfiguration: Functions/Helpers/Get-PodeConfiguration.md
       - Invoke-ScriptBlock: Functions/Helpers/Invoke-ScriptBlock.md
       - Test-Empty: Functions/Helpers/Test-Empty.md
       - Test-IsPSCore: Functions/Helpers/Test-IsPSCore.md

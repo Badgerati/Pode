@@ -27,7 +27,7 @@ function Engine
     $PodeContext.Server.ViewEngine.Script = $ScriptBlock
 }
 
-function Start-WebServer
+function Start-PodeWebServer
 {
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
@@ -96,13 +96,6 @@ function Start-WebServer
         }
 
         throw $_.Exception
-    }
-
-    # state where we're running
-    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
-
-    $endpoints | ForEach-Object {
-        Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
     }
 
     # script for listening out for incoming requests
@@ -216,4 +209,11 @@ function Start-WebServer
     }
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+
+    # state where we're running
+    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
+
+    $endpoints | ForEach-Object {
+        Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
+    }
 }

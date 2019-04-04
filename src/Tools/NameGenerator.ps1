@@ -1,4 +1,4 @@
-function Get-RandomName
+function Get-PodeRandomName
 {
     $adjs = @(
         "admiring",

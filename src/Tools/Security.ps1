@@ -1,4 +1,4 @@
-function Test-IPLimit
+function Test-PodeIPLimit
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -29,7 +29,7 @@ function Test-IPLimit
     $_active_ip = $active[$IP.String]
     if ($null -eq $_active_ip) {
         $_groups = ($active.Keys | Where-Object { $active[$_].Rule.Grouped } | ForEach-Object { $active[$_] })
-        $_active_ip = ($_groups | Where-Object { Test-IPAddressInRange -IP $IP -LowerIP $_.Rule.Lower -UpperIP $_.Rule.Upper } | Select-Object -First 1)
+        $_active_ip = ($_groups | Where-Object { Test-PodeIPAddressInRange -IP $IP -LowerIP $_.Rule.Lower -UpperIP $_.Rule.Upper } | Select-Object -First 1)
     }
 
     # the ip is active, or part of a grouped subnet
@@ -58,7 +58,7 @@ function Test-IPLimit
     # the ip isn't active
     else {
         # get the ip's rule
-        $_rule_ip = ($rules.Values | Where-Object { Test-IPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Select-Object -First 1)
+        $_rule_ip = ($rules.Values | Where-Object { Test-PodeIPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Select-Object -First 1)
 
         # if ip not in rules, it's valid
         # (add to active list as always allowed - saves running where search everytime)
@@ -86,7 +86,7 @@ function Test-IPLimit
     }
 }
 
-function Test-IPAccess
+function Test-PodeIPAccess
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -116,12 +116,12 @@ function Test-IPAccess
     }
 
     # if value in allow, it's allowed
-    if (!$alEmpty -and ($allow.Values | Where-Object { Test-IPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Measure-Object).Count -gt 0) {
+    if (!$alEmpty -and ($allow.Values | Where-Object { Test-PodeIPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Measure-Object).Count -gt 0) {
         return $true
     }
 
     # if value in deny, it's disallowed
-    if (!$dnEmpty -and ($deny.Values | Where-Object { Test-IPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Measure-Object).Count -gt 0) {
+    if (!$dnEmpty -and ($deny.Values | Where-Object { Test-PodeIPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Measure-Object).Count -gt 0) {
         return $false
     }
 
@@ -164,7 +164,7 @@ function Limit
     )
 
     # if it's array add them all
-    if ((Get-Type $Value).BaseName -ieq 'array') {
+    if ((Get-PodeType $Value).BaseName -ieq 'array') {
         $Value | ForEach-Object {
             limit -Type $Type -Value $_ -Limit $Limit -Seconds $Seconds -Group:$Group
         }
@@ -176,12 +176,12 @@ function Limit
     switch ($Type.ToLowerInvariant())
     {
         'ip' {
-            Add-IPLimit -IP $Value -Limit $Limit -Seconds $Seconds -Group:$Group
+            Add-PodeIPLimit -IP $Value -Limit $Limit -Seconds $Seconds -Group:$Group
         }
     }
 }
 
-function Add-IPLimit
+function Add-PodeIPLimit
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -229,17 +229,17 @@ function Add-IPLimit
     }
 
     # calculate the lower/upper ip bounds
-    if (Test-IPAddressIsSubnetMask -IP $IP) {
-        $_tmp = Get-SubnetRange -SubnetMask $IP
-        $_tmpLo = Get-IPAddress -IP $_tmp.Lower
-        $_tmpHi = Get-IPAddress -IP $_tmp.Upper
+    if (Test-PodeIPAddressIsSubnetMask -IP $IP) {
+        $_tmp = Get-PodeSubnetRange -SubnetMask $IP
+        $_tmpLo = Get-PodeIPAddress -IP $_tmp.Lower
+        $_tmpHi = Get-PodeIPAddress -IP $_tmp.Upper
     }
-    elseif (Test-IPAddressAny -IP $IP) {
-        $_tmpLo = Get-IPAddress -IP '0.0.0.0'
-        $_tmpHi = Get-IPAddress -IP '255.255.255.255'
+    elseif (Test-PodeIPAddressAny -IP $IP) {
+        $_tmpLo = Get-PodeIPAddress -IP '0.0.0.0'
+        $_tmpHi = Get-PodeIPAddress -IP '255.255.255.255'
     }
     else {
-        $_tmpLo = Get-IPAddress -IP $IP
+        $_tmpLo = Get-PodeIPAddress -IP $IP
         $_tmpHi = $_tmpLo
     }
 
@@ -283,7 +283,7 @@ function Access
     )
 
     # if it's array add them all
-    if ((Get-Type $Value).BaseName -ieq 'array') {
+    if ((Get-PodeType $Value).BaseName -ieq 'array') {
         $Value | ForEach-Object {
             access -Permission $Permission -Type $Type -Value $_
         }
@@ -295,12 +295,12 @@ function Access
     switch ($Type.ToLowerInvariant())
     {
         'ip' {
-            Add-IPAccess -Permission $Permission -IP $Value
+            Add-PodeIPAccess -Permission $Permission -IP $Value
         }
     }
 }
 
-function Add-IPAccess
+function Add-PodeIPAccess
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -341,17 +341,17 @@ function Add-IPAccess
     }
 
     # calculate the lower/upper ip bounds
-    if (Test-IPAddressIsSubnetMask -IP $IP) {
-        $_tmp = Get-SubnetRange -SubnetMask $IP
-        $_tmpLo = Get-IPAddress -IP $_tmp.Lower
-        $_tmpHi = Get-IPAddress -IP $_tmp.Upper
+    if (Test-PodeIPAddressIsSubnetMask -IP $IP) {
+        $_tmp = Get-PodeSubnetRange -SubnetMask $IP
+        $_tmpLo = Get-PodeIPAddress -IP $_tmp.Lower
+        $_tmpHi = Get-PodeIPAddress -IP $_tmp.Upper
     }
-    elseif (Test-IPAddressAny -IP $IP) {
-        $_tmpLo = Get-IPAddress -IP '0.0.0.0'
-        $_tmpHi = Get-IPAddress -IP '255.255.255.255'
+    elseif (Test-PodeIPAddressAny -IP $IP) {
+        $_tmpLo = Get-PodeIPAddress -IP '0.0.0.0'
+        $_tmpHi = Get-PodeIPAddress -IP '255.255.255.255'
     }
     else {
-        $_tmpLo = Get-IPAddress -IP $IP
+        $_tmpLo = Get-PodeIPAddress -IP $IP
         $_tmpHi = $_tmpLo
     }
 

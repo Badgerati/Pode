@@ -1,4 +1,4 @@
-function Start-TcpServer
+function Start-PodeTcpServer
 {
     # ensure we have tcp handler
     if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {
@@ -13,9 +13,9 @@ function Start-TcpServer
 
     # get the IP address for the server
     $ipAddress = $PodeContext.Server.Endpoints[0].Address
-    if (Test-Hostname -Hostname $ipAddress) {
-        $ipAddress = (Get-IPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
-        $ipAddress = (Get-IPAddress $ipAddress)
+    if (Test-PodeHostname -Hostname $ipAddress) {
+        $ipAddress = (Get-PodeIPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
+        $ipAddress = (Get-PodeIPAddress $ipAddress)
     }
 
     try
@@ -34,9 +34,6 @@ function Start-TcpServer
 
         throw $_.Exception
     }
-
-    # state where we're running
-    Write-Host "Listening on tcp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {
@@ -58,10 +55,10 @@ function Start-TcpServer
                 $client = (await $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
-                $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)
+                $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
 
                 # ensure the request ip is allowed and deal with the tcp call
-                if ((Test-IPAccess -IP $ip) -and (Test-IPLimit -IP $ip)) {
+                if ((Test-PodeIPAccess -IP $ip) -and (Test-PodeIPLimit -IP $ip)) {
                     $TcpEvent = @{
                         'Client' = $client;
                         'Lockalble' = $PodeContext.Lockable
@@ -71,9 +68,7 @@ function Start-TcpServer
                 }
 
                 # close the connection
-                if ($null -ne $client -and $client.Connected) {
-                    dispose $client -Close
-                }
+                Close-PodeTcpConnection
             }
         }
         catch [System.OperationCanceledException] {}
@@ -117,4 +112,7 @@ function Start-TcpServer
     }
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+
+    # state where we're running
+    Write-Host "Listening on tcp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
 }

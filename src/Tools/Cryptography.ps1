@@ -1,4 +1,4 @@
-function Invoke-HMACSHA256Hash
+function Invoke-PodeHMACSHA256Hash
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -16,7 +16,7 @@ function Invoke-HMACSHA256Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function Invoke-SHA256Hash
+function Invoke-PodeSHA256Hash
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -29,7 +29,7 @@ function Invoke-SHA256Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function Invoke-CookieSign
+function Invoke-PodeCookieSign
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -43,10 +43,10 @@ function Invoke-CookieSign
         $Secret
     )
 
-    return "s:$($Value).$(Invoke-HMACSHA256Hash -Value $Value -Secret $Secret)"
+    return "s:$($Value).$(Invoke-PodeHMACSHA256Hash -Value $Value -Secret $Secret)"
 }
 
-function Invoke-CookieUnsign
+function Invoke-PodeCookieUnsign
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -69,7 +69,7 @@ function Invoke-CookieUnsign
     $value = $Signature.Substring(0, $periodIndex)
     $sig = $Signature.Substring($periodIndex + 1)
 
-    if ((Invoke-HMACSHA256Hash -Value $value -Secret $Secret) -ne $sig) {
+    if ((Invoke-PodeHMACSHA256Hash -Value $value -Secret $Secret) -ne $sig) {
         return $null
     }
 

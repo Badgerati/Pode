@@ -1,4 +1,4 @@
-function Start-GuiRunspace
+function Start-PodeGuiRunspace
 {
     # do nothing if gui not enabled
     if (!$PodeContext.Server.Gui.Enabled) {

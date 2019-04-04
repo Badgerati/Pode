@@ -2,9 +2,11 @@
 
 ## Description
 
-The `import` function lets you declare paths to PowerShell Modules (`.psm1`/`.psd1`) that need to be imported into each runspace - you can also specify the name of a module you already have installed. Because Pode runs most things in isolated runspaces, importing and using external modules in Pode can be quite bothersome, with `import` Pode will handle importing your modules into all runspaces for you.
+The `import` function lets you declare names/paths to PowerShell Modules (`.psm1`/`.psd1`) that need to be imported into each runspace - you can also specify the name of a module you already have installed. Because Pode runs most things in isolated runspaces, importing and using external modules in Pode can be quite bothersome, with `import` Pode will handle importing your modules into all runspaces for you.
 
 If a module name is used rather than a raw path, then Pode will check you're server's [`ps_modules`](../../../Getting-Started/LocalModules) directory first, and then check your globally installed modules.
+
+Using the `-SnapIn` flag, Pode will treat the name supplied to `import` as a snap-in rather than a module - this is only supported on Windows PowerShell.
 
 ## Examples
 
@@ -28,9 +30,20 @@ Server {
 }
 ```
 
+### Example 3
+
+The following example will import the `WDeploySnapin3.0` snap-in into each of the runspaces:
+
+```powershell
+Server {
+    import -snapin 'WDeploySnapin3.0'
+}
+```
+
 ## Parameters
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
 | Path | string | true | The path to a PowerShell Module (`.psm1`/`.psd1`), or the name of an installed mode, that should be imported into the runspaces | empty |
 | Now | switch | false | If true, the module will be imported immediately into the current scope | false |
+| SnapIn | switch | false | If true, Pode will treat the name/path as a snap-in rather than a module | false |

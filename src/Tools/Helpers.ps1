@@ -38,7 +38,7 @@ function Get-PodeFileContentUsingViewEngine
     # work out the engine to use when parsing the file
     $engine = $PodeContext.Server.ViewEngine.Engine
 
-    $ext = Get-FileExtension -Path $Path -TrimPeriod
+    $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
     if (!(Test-Empty $ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
         $engine = $ext
     }
@@ -73,7 +73,18 @@ function Get-PodeFileContentUsingViewEngine
     return $content
 }
 
-function Get-Type
+function Get-PodeFileContent
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+
+    return (Get-Content -Path $Path -Raw -Encoding utf8)
+}
+
+function Get-PodeType
 {
     param (
         [Parameter()]
@@ -98,7 +109,7 @@ function Test-Empty
         $Value
     )
 
-    $type = Get-Type $Value
+    $type = Get-PodeType $Value
     if ($null -eq $type) {
         return $true
     }
@@ -123,32 +134,32 @@ function Test-Empty
         }
 
         'array' {
-            return ((Get-Count $Value) -eq 0)
+            return ((Get-PodeCount $Value) -eq 0)
         }
     }
 
-    return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-Count $Value) -eq 0))
+    return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-PodeCount $Value) -eq 0))
 }
 
-function Get-PSVersionTable
+function Get-PodePSVersionTable
 {
     return $PSVersionTable
 }
 
 function Test-IsUnix
 {
-    return (Get-PSVersionTable).Platform -ieq 'unix'
+    return (Get-PodePSVersionTable).Platform -ieq 'unix'
 }
 
 function Test-IsWindows
 {
-    $v = Get-PSVersionTable
+    $v = Get-PodePSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
 
 function Test-IsPSCore
 {
-    return (Get-PSVersionTable).PSEdition -ieq 'core'
+    return (Get-PodePSVersionTable).PSEdition -ieq 'core'
 }
 
 function Test-IsAdminUser
@@ -253,7 +264,7 @@ function New-PodeSelfSignedCertificate
     }
 
     # bind the cert to the ip:port or hostname:port
-    if (Test-IPAddress -IP $Address -IPOnly) {
+    if (Test-PodeIPAddress -IP $Address -IPOnly) {
         $result = netsh http add sslcert ipport=$addrport certhash=$cert appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
         if ($LASTEXITCODE -ne 0 -or !$?) {
             throw "Failed to attach certificate against ipport:`n$($result)"
@@ -269,7 +280,7 @@ function New-PodeSelfSignedCertificate
     Write-Host " Done" -ForegroundColor Green
 }
 
-function Get-HostIPRegex
+function Get-PodeHostIPRegex
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -317,7 +328,7 @@ function Get-PodeEndpointInfo
         return $null
     }
 
-    $hostRgx = Get-HostIPRegex -Type Both
+    $hostRgx = Get-PodeHostIPRegex -Type Both
     $portRgx = Get-PortRegex
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
@@ -333,7 +344,7 @@ function Get-PodeEndpointInfo
     }
 
     # ensure we have a valid ip address/hostname
-    if (!(Test-IPAddress -IP $_host)) {
+    if (!(Test-PodeIPAddress -IP $_host)) {
         throw "The IP address supplied is invalid: $($_host)"
     }
 
@@ -355,7 +366,7 @@ function Get-PodeEndpointInfo
     }
 }
 
-function Test-IPAddress
+function Test-PodeIPAddress
 {
     param (
         [Parameter()]
@@ -370,7 +381,7 @@ function Test-IPAddress
         return $true
     }
 
-    if ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$") {
+    if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
         return (!$IPOnly)
     }
 
@@ -383,7 +394,7 @@ function Test-IPAddress
     }
 }
 
-function Test-Hostname
+function Test-PodeHostname
 {
     param (
         [Parameter()]
@@ -391,10 +402,10 @@ function Test-Hostname
         $Hostname
     )
 
-    return ($Hostname -imatch "^$(Get-HostIPRegex -Type Hostname)$")
+    return ($Hostname -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$")
 }
 
-function ConvertTo-IPAddress
+function ConvertTo-PodeIPAddress
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -405,7 +416,7 @@ function ConvertTo-IPAddress
     return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Endpoint).Address.ToString())
 }
 
-function Get-IPAddressesForHostname
+function Get-PodeIPAddressesForHostname
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -436,7 +447,7 @@ function Get-IPAddressesForHostname
     return @(($ips | Select-Object -ExpandProperty IPAddressToString))
 }
 
-function Test-IPAddressLocal
+function Test-PodeIPAddressLocal
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -447,7 +458,7 @@ function Test-IPAddressLocal
     return (@('127.0.0.1', '::1', '[::1]', 'localhost') -icontains $IP)
 }
 
-function Test-IPAddressAny
+function Test-PodeIPAddressAny
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -458,7 +469,7 @@ function Test-IPAddressAny
     return (@('0.0.0.0', '*', 'all', '::', '[::]') -icontains $IP)
 }
 
-function Test-IPAddressLocalOrAny
+function Test-PodeIPAddressLocalOrAny
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -466,10 +477,10 @@ function Test-IPAddressLocalOrAny
         $IP
     )
 
-    return ((Test-IPAddressLocal -IP $IP) -or (Test-IPAddressAny -IP $IP))
+    return ((Test-PodeIPAddressLocal -IP $IP) -or (Test-PodeIPAddressAny -IP $IP))
 }
 
-function Get-IPAddress
+function Get-PodeIPAddress
 {
     param (
         [Parameter()]
@@ -485,14 +496,14 @@ function Get-IPAddress
         return [System.Net.IPAddress]::IPv6Any
     }
 
-    if ($IP -imatch "^$(Get-HostIPRegex -Type Hostname)$") {
+    if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
         return $IP
     }
 
     return [System.Net.IPAddress]::Parse($IP)
 }
 
-function Test-IPAddressInRange
+function Test-PodeIPAddressInRange
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -520,7 +531,7 @@ function Test-IPAddressInRange
     return $valid
 }
 
-function Test-IPAddressIsSubnetMask
+function Test-PodeIPAddressIsSubnetMask
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -532,7 +543,7 @@ function Test-IPAddressIsSubnetMask
     return (($IP -split '/').Length -gt 1)
 }
 
-function Get-SubnetRange
+function Get-PodeSubnetRange
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -675,7 +686,7 @@ function Close-PodeRunspaces
     }
 }
 
-function Get-ConsoleKey
+function Get-PodeConsoleKey
 {
     if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
         return $null
@@ -684,7 +695,7 @@ function Get-ConsoleKey
     return [Console]::ReadKey($true)
 }
 
-function Test-TerminationPressed
+function Test-PodeTerminationPressed
 {
     param (
         [Parameter()]
@@ -696,13 +707,13 @@ function Test-TerminationPressed
     }
 
     if ($null -eq $Key) {
-        $Key = Get-ConsoleKey
+        $Key = Get-PodeConsoleKey
     }
 
     return ($null -ne $Key -and $Key.Key -ieq 'c' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
 }
 
-function Test-RestartPressed
+function Test-PodeRestartPressed
 {
     param (
         [Parameter()]
@@ -710,13 +721,13 @@ function Test-RestartPressed
     )
 
     if ($null -eq $Key) {
-        $Key = Get-ConsoleKey
+        $Key = Get-PodeConsoleKey
     }
 
     return ($null -ne $Key -and $Key.Key -ieq 'r' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
 }
 
-function Start-TerminationListener
+function Start-PodeTerminationListener
 {
     Add-PodeRunspace -Type 'Main' {
         # default variables
@@ -770,7 +781,8 @@ function Close-Pode
         # remove all the cancellation tokens
         dispose $PodeContext.Tokens.Cancellation
         dispose $PodeContext.Tokens.Restart
-    } catch {
+    }
+    catch {
         $Error[0] | Out-Default
     }
 
@@ -796,7 +808,7 @@ function New-PodePSDrive
 
     # if no name is passed, used a randomly generated one
     if ([string]::IsNullOrWhiteSpace($Name)) {
-        $Name = "PodeDir$(Get-NewGuid)"
+        $Name = "PodeDir$(Get-PodeNewGuid)"
     }
 
     # if the path supplied doesn't exist, error
@@ -825,19 +837,19 @@ function Add-PodePSDrives
 function Add-PodePSInbuiltDrives
 {
     # create drive for views, if path exists
-    $path = (Join-ServerRoot 'views')
+    $path = (Join-PodeServerRoot 'views')
     if (Test-Path $path) {
         $PodeContext.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for public content, if path exists
-    $path = (Join-ServerRoot 'public')
+    $path = (Join-PodeServerRoot 'public')
     if (Test-Path $path) {
         $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for errors, if path exists
-    $path = (Join-ServerRoot 'errors')
+    $path = (Join-PodeServerRoot 'errors')
     if (Test-Path $path) {
         $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
     }
@@ -922,7 +934,7 @@ function Root
     return $PodeContext.Server.Root
 }
 
-function Join-ServerRoot
+function Join-PodeServerRoot
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -1085,7 +1097,7 @@ function Coalesce
     return (iftet (Test-Empty $Value1) $Value2 $Value1)
 }
 
-function Get-FileExtension
+function Get-PodeFileExtension
 {
     param (
         [Parameter()]
@@ -1104,7 +1116,7 @@ function Get-FileExtension
     return $ext
 }
 
-function Get-FileName
+function Get-PodeFileName
 {
     param (
         [Parameter()]
@@ -1150,7 +1162,7 @@ function Stopwatch
     }
 }
 
-function Test-ValidNetworkFailure
+function Test-PodeValidNetworkFailure
 {
     param (
         [Parameter()]
@@ -1166,7 +1178,7 @@ function Test-ValidNetworkFailure
     return (($msgs | Where-Object { $Exception.Message -ilike $_ } | Measure-Object).Count -gt 0)
 }
 
-function ConvertFrom-RequestContent
+function ConvertFrom-PodeRequestContent
 {
     param (
         [Parameter()]
@@ -1174,7 +1186,7 @@ function ConvertFrom-RequestContent
     )
 
     # get the requests content type and boundary
-    $MetaData = Get-ContentTypeAndBoundary -ContentType $Request.ContentType
+    $MetaData = Get-PodeContentTypeAndBoundary -ContentType $Request.ContentType
     $Encoding = $Request.ContentEncoding
 
     # result object for data/files
@@ -1190,7 +1202,7 @@ function ConvertFrom-RequestContent
 
     # if the content-type is not multipart/form-data, get the string data
     if ($MetaData.ContentType -ine 'multipart/form-data') {
-        $Content = Read-StreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+        $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
 
         # if there is no content then do nothing
         if (Test-Empty $Content) {
@@ -1213,19 +1225,19 @@ function ConvertFrom-RequestContent
         }
 
         { $_ -ilike '*/x-www-form-urlencoded' } {
-            $Result.Data = (ConvertFrom-NameValueToHashTable -Collection ([System.Web.HttpUtility]::ParseQueryString($Content)))
+            $Result.Data = (ConvertFrom-PodeNameValueToHashTable -Collection ([System.Web.HttpUtility]::ParseQueryString($Content)))
         }
 
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
-            $Content = ConvertFrom-StreamToBytes -Stream $Request.InputStream
-            $Lines = Get-ByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
+            $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            $Lines = Get-PodeByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
 
             # get the indexes for boundary lines (start and end)
             $boundaryIndexes = @()
             for ($i = 0; $i -lt $Lines.Length; $i++) {
-                if ((Test-ByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.Start -Encoding $Encoding) -or
-                    (Test-ByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.End -Encoding $Encoding)) {
+                if ((Test-PodeByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.Start -Encoding $Encoding) -or
+                    (Test-PodeByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.End -Encoding $Encoding)) {
                     $boundaryIndexes += $i
                 }
             }
@@ -1237,7 +1249,7 @@ function ConvertFrom-RequestContent
 
                 # the next line contains the key-value field names (content-disposition)
                 $fields = @{}
-                $disp = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+1] -Encoding $Encoding -RemoveNewLine
+                $disp = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+1] -Encoding $Encoding -RemoveNewLine
 
                 @($disp -isplit ';') | ForEach-Object {
                     $atoms = @($_ -isplit '=')
@@ -1248,7 +1260,7 @@ function ConvertFrom-RequestContent
 
                 # use the next line to work out field values
                 if (!$fields.ContainsKey('filename')) {
-                    $value = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+3] -Encoding $Encoding -RemoveNewLine
+                    $value = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+3] -Encoding $Encoding -RemoveNewLine
                     $Result.Data.Add($fields.name, $value)
                 }
 
@@ -1257,7 +1269,7 @@ function ConvertFrom-RequestContent
                     $Result.Data.Add($fields.name, $fields.filename)
 
                     if (!(Test-Empty $fields.filename)) {
-                        $type = ConvertFrom-BytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
+                        $type = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
 
                         $Result.Files.Add($fields.filename, @{
                             'ContentType' = (@($type -isplit ':')[1].Trim());
@@ -1269,7 +1281,7 @@ function ConvertFrom-RequestContent
                             $bytes += $_
                         }
 
-                        $Result.Files[$fields.filename].Bytes = (Remove-NewLineBytesFromArray $bytes $Encoding)
+                        $Result.Files[$fields.filename].Bytes = (Remove-PodeNewLineBytesFromArray $bytes $Encoding)
                     }
                 }
             }
@@ -1283,36 +1295,7 @@ function ConvertFrom-RequestContent
     return $Result
 }
 
-function Test-ByteArrayIsBoundary
-{
-    param (
-        [Parameter()]
-        [byte[]]
-        $Bytes,
-
-        [Parameter()]
-        [string]
-        $Boundary,
-
-        [Parameter()]
-        $Encoding = [System.Text.Encoding]::UTF8
-    )
-
-    # if no bytes, return
-    if ($Bytes.Length -eq 0) {
-        return $false
-    }
-
-    # if length difference >3, return (ie, 2 offset for `r`n)
-    if (($Bytes.Length - $Boundary.Length) -gt 3) {
-        return $false
-    }
-
-    # check if bytes starts with the boundary
-    return (ConvertFrom-BytesToString $Bytes $Encoding).StartsWith($Boundary)
-}
-
-function Get-ContentTypeAndBoundary
+function Get-PodeContentTypeAndBoundary
 {
     param (
         [Parameter()]
@@ -1343,7 +1326,7 @@ function Get-ContentTypeAndBoundary
     return $obj
 }
 
-function ConvertFrom-NameValueToHashTable
+function ConvertFrom-PodeNameValueToHashTable
 {
     param (
         [Parameter()]
@@ -1362,12 +1345,12 @@ function ConvertFrom-NameValueToHashTable
     return $ht
 }
 
-function Get-NewGuid
+function Get-PodeNewGuid
 {
     return ([guid]::NewGuid()).ToString()
 }
 
-function Get-Count
+function Get-PodeCount
 {
     param (
         [Parameter()]
@@ -1385,23 +1368,7 @@ function Get-Count
     return $Object.Count
 }
 
-function Get-ContentAsBytes
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Path
-    )
-
-    if (Test-IsPSCore) {
-        return (Get-Content -Path $Path -Raw -AsByteStream)
-    }
-
-    return (Get-Content -Path $Path -Raw -Encoding byte)
-}
-
-function Test-PathAccess
+function Test-PodePathAccess
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -1443,7 +1410,7 @@ function Test-PodePath
     }
 
     # if the file isn't accessible then fail 401
-    if (!(Test-PathAccess $Path)) {
+    if (!(Test-PodePathAccess $Path)) {
         if (!$NoStatus) {
             status 401
         }
@@ -1452,7 +1419,7 @@ function Test-PodePath
     }
 
     # if we're failing on a directory then fail on 404
-    if ($FailOnDirectory -and (Test-PathIsDirectory $Path)) {
+    if ($FailOnDirectory -and (Test-PodePathIsDirectory $Path)) {
         if (!$NoStatus) {
             status 404
         }
@@ -1463,7 +1430,7 @@ function Test-PodePath
     return $true
 }
 
-function Test-PathIsFile
+function Test-PodePathIsFile
 {
     param (
         [Parameter()]
@@ -1478,7 +1445,7 @@ function Test-PathIsFile
     return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
 
-function Test-PathIsDirectory
+function Test-PodePathIsDirectory
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -1490,7 +1457,7 @@ function Test-PathIsDirectory
     return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
 
-function Convert-PathSeparators
+function Convert-PodePathSeparators
 {
     param (
         [Parameter()]
@@ -1504,7 +1471,7 @@ function Convert-PathSeparators
     })
 }
 
-function Convert-PathPatternToRegex
+function Convert-PodePathPatternToRegex
 {
     param (
         [Parameter()]
@@ -1518,7 +1485,7 @@ function Convert-PathPatternToRegex
     return "^$($Path)$"
 }
 
-function Convert-PathPatternsToRegex
+function Convert-PodePathPatternsToRegex
 {
     param (
         [Parameter()]
