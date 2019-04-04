@@ -1,5 +1,12 @@
 # Release Notes
 
+## v0.27.3
+
+```plain
+### Bugs
+* #217: Binding to hostname throws error
+```
+
 ## v0.27.2
 
 ```plain
