@@ -17,17 +17,17 @@ Describe 'Flash' {
 
         It 'Throws error for no key supplied on Add' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
-            { Flash -Action Add -Key '' } | Should Throw 'A Key is required'
+            { Flash -Action Add -Key '' } | Should Throw 'empty string'
         }
 
         It 'Throws error for no key supplied on Get' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
-            { Flash -Action Get -Key '' } | Should Throw 'A Key is required'
+            { Flash -Action Get -Key '' } | Should Throw 'empty string'
         }
 
         It 'Throws error for no key supplied on Remove' {
             $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
-            { Flash -Action Remove -Key '' } | Should Throw 'A Key is required'
+            { Flash -Action Remove -Key '' } | Should Throw 'empty string'
         }
 
         It 'Adds a single key and value' {

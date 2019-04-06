@@ -2,7 +2,7 @@ function Cookie
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('check', 'exists', 'extend', 'get', 'remove', 'set')]
+        [ValidateSet('Check', 'Exists', 'Extend', 'Get', 'Remove', 'Set')]
         [Alias('a')]
         [string]
         $Action,
@@ -289,12 +289,17 @@ function Invoke-PodeCookieUnsign
         $Secret
     )
 
+    # the signed cookie value must start with "s:"
     if (!$Signature.StartsWith('s:')) {
         return $null
     }
 
     $Signature = $Signature.Substring(2)
     $periodIndex = $Signature.LastIndexOf('.')
+    if ($periodIndex -eq -1) {
+        return $null
+    }
+
     $value = $Signature.Substring(0, $periodIndex)
     $sig = $Signature.Substring($periodIndex + 1)
 

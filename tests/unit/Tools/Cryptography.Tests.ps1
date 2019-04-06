@@ -45,3 +45,9 @@ Describe 'Invoke-PodeSHA256Hash' {
         }
     }
 }
+
+Describe 'New-PodeGuid' {
+    It 'Returns a valid guid' {
+        (New-PodeGuid) | Should Not Be $null
+    }
+}

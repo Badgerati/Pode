@@ -9,7 +9,7 @@ function Session
 
     # check that session logic hasn't already been defined
     if (!(Test-Empty $PodeContext.Server.Cookies.Session)) {
-        throw 'Session middleware logic has already been defined'
+        throw 'Session middleware has already been defined'
     }
 
     # ensure a secret was actually passed
@@ -47,11 +47,11 @@ function Session
         Set-PodeSessionCookieInMemClearDown
     }
 
-    # set options against session
+    # set options against server context
     $PodeContext.Server.Cookies.Session = @{
         'Name' = (coalesce $Options.Name 'pode.sid');
         'SecretKey' = $Options.Secret;
-        'GenerateId' = (coalesce $Options.GenerateId { return (Get-PodeNewGuid) });
+        'GenerateId' = (coalesce $Options.GenerateId { return (New-PodeGuid) });
         'Store' = $store;
         'Info' = @{
             'Duration' = [int]($Options.Duration);
@@ -62,7 +62,7 @@ function Session
         };
     }
 
-    # bind session middleware to attach session function
+    # return scriptblock for the session middleware
     return {
         param($s)
 
