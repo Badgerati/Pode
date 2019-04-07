@@ -423,8 +423,8 @@ function Get-PodeCsrfMiddleware
     }
 
     # if we're using cookies, ensure a global secret exists
-    if ($Cookie -and (Test-Empty $PodeContext.Server.Cookies.Secret)) {
-        throw "When using cookies for CSRF, set a global cookie secret for signing"
+    if ($Cookie -and (Test-Empty (Get-PodeCookieGlobalSecret))) {
+        throw "When using cookies for CSRF, set a global cookie secret for signing - (cookie secret global <value>)"
     }
 
     # set the options against the server context
@@ -545,7 +545,7 @@ function Get-PodeCsrfSecret
     if ($PodeContext.Server.Cookies.Csrf.Cookie) {
         return (Get-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
-            -Secret $PodeContext.Server.Cookies.Secret).Value
+            -Secret (Get-PodeCookieGlobalSecret)).Value
     }
 
     # on session
@@ -570,7 +570,7 @@ function Set-PodeCsrfSecret
         (Set-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
             -Value $Secret `
-            -Secret $PodeContext.Server.Cookies.Secret) | Out-Null
+            -Secret (Get-PodeCookieGlobalSecret)) | Out-Null
     }
 
     # on session

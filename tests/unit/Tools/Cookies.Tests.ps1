@@ -89,6 +89,25 @@ Describe 'Test-PodeCookieIsSigned' {
         Test-PodeCookieIsSigned -Name 'test' -Secret 'key' | Should Be $true
         Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
     }
+
+    It 'Returns true for valid signed cookie, using global secret' {
+        Mock Invoke-PodeCookieUnsign { return 'value' }
+
+        $PodeContext = @{ 'Server' = @{
+            'Cookies' = @{ 'Secrets' = @{
+                'global' = 'key'
+            }
+        } } }
+
+        $WebEvent = @{ 'Request' = @{
+            'Cookies' = @{
+                'test' = @{ 'Value' = 'example' }
+            }
+        } }
+
+        Test-PodeCookieIsSigned -Name 'test' -GlobalSecret | Should Be $true
+        Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
+    }
 }
 
 Describe 'Get-PodeCookie' {
@@ -153,6 +172,28 @@ Describe 'Get-PodeCookie' {
 
         Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
     }
+
+    It 'Returns a cookie, with secret but valid signed, using global secret' {
+        Mock Invoke-PodeCookieUnsign { return 'some-id' }
+
+        $PodeContext = @{ 'Server' = @{
+            'Cookies' = @{ 'Secrets' = @{
+                'global' = 'key'
+            }
+        } } }
+
+        $WebEvent = @{ 'Request' = @{
+            'Cookies' = @{
+                'test' = @{ 'Value' = 'example' }
+            }
+        } }
+
+        $c = Get-PodeCookie -Name 'test' -GlobalSecret
+        $c | Should Not Be $null
+        $c.Value | Should Be 'some-id'
+
+        Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
+    }
 }
 
 Describe 'Set-PodeCookie' {
@@ -194,6 +235,37 @@ Describe 'Set-PodeCookie' {
         }
 
         $c = Set-PodeCookie -Name 'test' -Value 'example' -Secret 'key'
+        $c | Should Not Be $null
+        $c.Name | Should Be 'test'
+        $c.Value | Should Be 'some-id'
+
+        $c = $WebEvent.Response.Cookies['test']
+        $c | Should Not Be $null
+        $c.Name | Should Be 'test'
+        $c.Value | Should Be 'some-id'
+
+        Assert-MockCalled Invoke-PodeCookieSign -Times 1 -Scope It
+    }
+
+    It 'Adds signed cookie to response' {
+        Mock Invoke-PodeCookieSign { return 'some-id' }
+
+        $PodeContext = @{ 'Server' = @{
+            'Cookies' = @{ 'Secrets' = @{
+                'global' = 'key'
+            }
+        } } }
+
+        $script:WebEvent = @{ 'Response' = @{
+            'Cookies' = @{}
+        } }
+
+        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendCookie' -Value {
+            param($c)
+            $script:WebEvent.Response.Cookies[$c.Name] = $c
+        }
+
+        $c = Set-PodeCookie -Name 'test' -Value 'example' -GlobalSecret
         $c | Should Not Be $null
         $c.Name | Should Be 'test'
         $c.Value | Should Be 'some-id'
@@ -430,6 +502,26 @@ Describe 'Cookie' {
         Cookie -Action Extend -Name 'test' -Ttl 3000
         Assert-MockCalled Update-PodeCookieExpiry -Times 1 -Scope It
     }
+
+    It 'Calls secret method to set secret' {
+        $PodeContext = @{ 'Server' = @{
+            'Cookies' = @{ 'Secrets' = @{} }
+        } }
+
+        Cookie -Action Secret -Name 'global' -Value 'test'
+
+        $PodeContext.Server.Cookies.Secrets['global'] | Should Be 'test'
+    }
+
+    It 'Calls secret method to get secret' {
+        $PodeContext = @{ 'Server' = @{
+            'Cookies' = @{ 'Secrets' = @{
+                'global' = 'bill'
+            }
+        } } }
+
+        Cookie -Action Secret -Name 'global' | Should Be 'bill'
+    }
 }
 
 Describe 'Invoke-PodeCookieSign' {
@@ -482,8 +574,12 @@ Describe 'Invoke-PodeCookieUnsign' {
             Invoke-PodeCookieUnsign -Signature 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=' -Secret 'key' | Should Be 'value'
         }
 
-        It 'Returns null for unsign data' {
+        It 'Returns null for unsign data with no tag' {
             Invoke-PodeCookieUnsign -Signature 'value' -Secret 'key' | Should Be $null
+        }
+
+        It 'Returns null for unsign data with no period' {
+            Invoke-PodeCookieUnsign -Signature 's:value' -Secret 'key' | Should Be $null
         }
     }
 }

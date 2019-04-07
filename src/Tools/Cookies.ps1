@@ -80,11 +80,11 @@ function Cookie
 
         # set or get the global cookie secret
         'secret' {
-            if (Test-Empty $Name) {
-                return ($PodeContext.Server.Cookies.Secret)
+            if (Test-Empty $Value) {
+                return ($PodeContext.Server.Cookies.Secrets[$Name])
             }
             else {
-                $PodeContext.Server.Cookies.Secret = $Name
+                $PodeContext.Server.Cookies.Secrets[$Name] = $Value
             }
         }
     }
@@ -119,7 +119,7 @@ function Test-PodeCookieIsSigned
 
     # if the global secret flag is set, overwrite the passed secret
     if ($GlobalSecret) {
-        $Secret = $PodeContext.Server.Cookies.Secret
+        $Secret = (Get-PodeCookieGlobalSecret)
     }
 
     $cookie = $WebEvent.Request.Cookies[$Name]
@@ -151,7 +151,7 @@ function Get-PodeCookie
 
     # if the global secret flag is set, overwrite the passed secret
     if ($GlobalSecret) {
-        $Secret = $PodeContext.Server.Cookies.Secret
+        $Secret = (Get-PodeCookieGlobalSecret)
     }
 
     # get the cookie from the request
@@ -213,7 +213,7 @@ function Set-PodeCookie
 
     # if the global secret flag is set, overwrite the passed secret
     if ($GlobalSecret) {
-        $Secret = $PodeContext.Server.Cookies.Secret
+        $Secret = (Get-PodeCookieGlobalSecret)
     }
 
     # sign the value if we have a secret
@@ -237,6 +237,11 @@ function Set-PodeCookie
     # sets the cookie on the the response
     $WebEvent.Response.AppendCookie($cookie) | Out-Null
     return (ConvertTo-PodeCookie -Cookie $cookie)
+}
+
+function Get-PodeCookieGlobalSecret
+{
+    return $PodeContext.Server.Cookies.Secrets['global']
 }
 
 function Update-PodeCookieExpiry

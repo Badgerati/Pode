@@ -418,3 +418,103 @@ Describe 'Get-PodeQueryMiddleware' {
         }) | Should Be $false
     }
 }
+
+Describe 'Get-PodePublicMiddleware' {
+    Mock Get-PodeInbuiltMiddleware { return @{
+        'Name' = $Name;
+        'Logic' = $ScriptBlock;
+    } }
+
+    It 'Returns a ScriptBlock, invokes true for no static path' {
+        $r = Get-PodePublicMiddleware
+        $r.Name | Should Be '@public'
+        $r.Logic | Should Not Be $null
+
+        Mock Get-PodeStaticRoutePath { return $null }
+        (. $r.Logic @{
+            'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
+        }) | Should Be $true
+    }
+
+    It 'Returns a ScriptBlock, invokes false for static path, with no caching' {
+        $r = Get-PodePublicMiddleware
+        $r.Name | Should Be '@public'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{
+            'Web' = @{ 'Static' = @{
+                'Cache' = @{
+                    'Enabled' = $false
+                }
+            }}
+        }}
+
+        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Write-PodeValueToResponseFromFile { }
+        (. $r.Logic @{
+            'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
+        }) | Should Be $false
+    }
+
+    It 'Returns a ScriptBlock, invokes false for static path, with no caching from exclude' {
+        $r = Get-PodePublicMiddleware
+        $r.Name | Should Be '@public'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{
+            'Web' = @{ 'Static' = @{
+                'Cache' = @{
+                    'Enabled' = $true;
+                    'Exclude' = '/'
+                }
+            }}
+        }}
+
+        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Write-PodeValueToResponseFromFile { }
+        (. $r.Logic @{
+            'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
+        }) | Should Be $false
+    }
+
+    It 'Returns a ScriptBlock, invokes false for static path, with no caching from include' {
+        $r = Get-PodePublicMiddleware
+        $r.Name | Should Be '@public'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{
+            'Web' = @{ 'Static' = @{
+                'Cache' = @{
+                    'Enabled' = $true;
+                    'Include' = '/route'
+                }
+            }}
+        }}
+
+        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Write-PodeValueToResponseFromFile { }
+        (. $r.Logic @{
+            'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
+        }) | Should Be $false
+    }
+
+    It 'Returns a ScriptBlock, invokes false for static path, with caching' {
+        $r = Get-PodePublicMiddleware
+        $r.Name | Should Be '@public'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{
+            'Web' = @{ 'Static' = @{
+                'Cache' = @{
+                    'Enabled' = $true;
+                }
+            }}
+        }}
+
+        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Write-PodeValueToResponseFromFile { }
+        (. $r.Logic @{
+            'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
+        }) | Should Be $false
+    }
+}
