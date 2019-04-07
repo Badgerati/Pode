@@ -19,7 +19,7 @@ function Flash
     )
 
     # if sessions haven't been setup, error
-    if ($null -eq $PodeContext.Server.Cookies.Session) {
+    if (Test-Empty $PodeContext.Server.Cookies.Session) {
         throw 'Sessions are required to use Flash messages'
     }
 

@@ -53,7 +53,7 @@ function New-PodeSalt
         $Length = 8
     )
 
-    $bytes = (Get-PodeRandomBytes -Length $Length)
+    $bytes = [byte[]](Get-PodeRandomBytes -Length $Length)
     return [System.Convert]::ToBase64String($bytes)
 }
 
@@ -70,7 +70,7 @@ function New-PodeGuid
 
     # generate a cryptographically secure guid
     if ($Secure) {
-        $bytes = (Get-PodeRandomBytes -Length $Length)
+        $bytes = [byte[]](Get-PodeRandomBytes -Length $Length)
         return ([guid]::new($bytes)).ToString()
     }
 

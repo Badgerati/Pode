@@ -418,7 +418,7 @@ function Get-PodeCsrfMiddleware
     }
 
     # if sessions haven't been setup and we're not using cookies, error
-    if (!$Cookie -and $null -eq $PodeContext.Server.Cookies.Session) {
+    if (!$Cookie -and (Test-Empty $PodeContext.Server.Cookies.Session)) {
         throw 'Sessions are required to use CSRF unless you pass the -Cookie flag'
     }
 
@@ -449,6 +449,7 @@ function Get-PodeCsrfMiddleware
 
         # verify the token on the request, if invalid, throw a 403
         $token = Get-PodeCsrfToken
+
         if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
             status 403 'Invalid CSRF Token'
             return $false
@@ -505,13 +506,13 @@ function Test-PodeCsrfToken
     }
 
     # get the salt from the token
-    $Token = $Token.Substring(2)
-    $periodIndex = $Token.LastIndexOf('.')
+    $_token = $Token.Substring(2)
+    $periodIndex = $_token.LastIndexOf('.')
     if ($periodIndex -eq -1) {
         return $false
     }
 
-    $salt = $Token.Substring(0, $periodIndex)
+    $salt = $_token.Substring(0, $periodIndex)
 
     # ensure the token is valid
     if ((New-PodeCsrfToken -Secret $Secret -Salt $salt) -ne $Token) {
@@ -544,7 +545,7 @@ function Get-PodeCsrfSecret
     if ($PodeContext.Server.Cookies.Csrf.Cookie) {
         return (Get-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
-            -Secret $PodeContext.Server.Cookies.Secret)
+            -Secret $PodeContext.Server.Cookies.Secret).Value
     }
 
     # on session
@@ -590,13 +591,21 @@ function New-PodeCsrfToken
         $Salt
     )
 
+    # fail if the csrf logic hasn't been defined
+    if (Test-Empty $PodeContext.Server.Cookies.Csrf) {
+        throw 'CSRF middleware has not been defined'
+    }
+
+    # generate a new secret if none supplied
     if (Test-Empty $Secret) {
         $Secret = New-PodeCsrfSecret
     }
 
+    # generate a new salt if none supplied
     if (Test-Empty $Salt) {
         $Salt = (New-PodeSalt -Length 8)
     }
 
+    # return a new token
     return "t:$($Salt).$(Invoke-PodeSHA256Hash -Value "$($Salt)-$($Secret)")"
 }
