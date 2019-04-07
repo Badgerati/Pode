@@ -421,3 +421,70 @@ Describe 'Add-PodeIPAccess' {
         }
     }
 }
+
+Describe 'Csrf' {
+    It 'Returs middleware' {
+        Mock Get-PodeCsrfMiddleware { return { write-host 'hello' } }
+        (Csrf -Action Middleware).ToString() | Should Be ({ write-host 'hello' }).ToString()
+    }
+
+    It 'Returs a token' {
+        Mock New-PodeCsrfToken { return 'token' }
+        Csrf -Action Token | Should Be 'token'
+    }
+}
+
+Describe 'Get-PodeCsrfToken' {
+    It 'Returns the token from the payload' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        $WebEvent = @{ 'Data' = @{
+            'Key' = 'Token'
+        }}
+
+        Get-PodeCsrfToken | Should Be 'Token'
+    }
+
+    It 'Returns the token from the query string' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        $WebEvent = @{
+            'Data' = @{};
+            'Query' = @{ 'Key' = 'Token' };
+        }
+
+        Get-PodeCsrfToken | Should Be 'Token'
+    }
+
+    It 'Returns the token from the headers' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        $WebEvent = @{
+            'Data' = @{};
+            'Query' = @{};
+            'Request' = @{ 'Headers' = @{ 'Key' = 'Token' } }
+        }
+
+        Get-PodeCsrfToken | Should Be 'Token'
+    }
+
+    It 'Returns no token' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        $WebEvent = @{
+            'Data' = @{};
+            'Query' = @{};
+            'Request' = @{ 'Headers' = @{} }
+        }
+
+        Get-PodeCsrfToken | Should Be $null
+    }
+}
