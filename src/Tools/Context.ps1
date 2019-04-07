@@ -154,6 +154,7 @@ function New-PodeContext
     $ctx.Server.Cookies = @{
         'Session' = @{};
         'Csrf' = @{};
+        'Secret' = $null;
     }
 
     # authnetication methods

@@ -64,10 +64,10 @@ function Session
 
     # return scriptblock for the session middleware
     return {
-        param($s)
+        param($e)
 
         # if session already set, return
-        if ($s.Session) {
+        if ($e.Session) {
             return $true
         }
 
@@ -75,44 +75,44 @@ function Session
         {
             # get the session cookie
             $_sessionInfo = $PodeContext.Server.Cookies.Session
-            $s.Session = Get-PodeSessionCookie -Name $_sessionInfo.Name -Secret $_sessionInfo.SecretKey
+            $e.Session = Get-PodeSessionCookie -Name $_sessionInfo.Name -Secret $_sessionInfo.SecretKey
 
             # if no session on browser, create a new one
-            if (!$s.Session) {
-                $s.Session = (New-PodeSessionCookie)
+            if (!$e.Session) {
+                $e.Session = (New-PodeSessionCookie)
                 $new = $true
             }
 
             # get the session's data
-            elseif ($null -ne ($data = $_sessionInfo.Store.Get($s.Session.Id))) {
-                $s.Session.Data = $data
-                Set-PodeSessionCookieDataHash -Session $s.Session
+            elseif ($null -ne ($data = $_sessionInfo.Store.Get($e.Session.Id))) {
+                $e.Session.Data = $data
+                Set-PodeSessionCookieDataHash -Session $e.Session
             }
 
             # session not in store, create a new one
             else {
-                $s.Session = (New-PodeSessionCookie)
+                $e.Session = (New-PodeSessionCookie)
                 $new = $true
             }
 
             # add helper methods to session
-            Set-PodeSessionCookieHelpers -Session $s.Session
+            Set-PodeSessionCookieHelpers -Session $e.Session
 
             # add cookie to response if it's new or extendible
-            if ($new -or $s.Session.Cookie.Extend) {
-                Set-PodeSessionCookie -Session $s.Session
+            if ($new -or $e.Session.Cookie.Extend) {
+                Set-PodeSessionCookie -Session $e.Session
             }
 
             # assign endware for session to set cookie/storage
-            $s.OnEnd += {
-                param($s)
+            $e.OnEnd += {
+                param($e)
 
                 # if auth is in use, then assign to session store
-                if (!(Test-Empty $s.Auth) -and $s.Auth.Store) {
-                    $s.Session.Data.Auth = $s.Auth
+                if (!(Test-Empty $e.Auth) -and $e.Auth.Store) {
+                    $e.Session.Data.Auth = $e.Auth
                 }
 
-                Invoke-ScriptBlock -ScriptBlock $s.Session.Save -Arguments @($s.Session, $true) -Splat
+                Invoke-ScriptBlock -ScriptBlock $e.Session.Save -Arguments @($e.Session, $true) -Splat
             }
         }
         catch {

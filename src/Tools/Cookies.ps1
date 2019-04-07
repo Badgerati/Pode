@@ -2,7 +2,7 @@ function Cookie
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Check', 'Exists', 'Extend', 'Get', 'Remove', 'Set')]
+        [ValidateSet('Check', 'Exists', 'Extend', 'Get', 'Remove', 'Secret', 'Set')]
         [Alias('a')]
         [string]
         $Action,
@@ -37,7 +37,11 @@ function Cookie
 
         [switch]
         [Alias('ssl')]
-        $Secure
+        $Secure,
+
+        [switch]
+        [Alias('gs')]
+        $GlobalSecret
     )
 
     # run logic for the action
@@ -46,12 +50,12 @@ function Cookie
         # add/set a cookie against the response
         'set' {
             return (Set-PodeCookie -Name $Name -Value $Value -Secret $Secret -Duration $Duration `
-                -HttpOnly:$HttpOnly -Discard:$Discard -Secure:$Secure)
+                -HttpOnly:$HttpOnly -Discard:$Discard -Secure:$Secure -GlobalSecret:$GlobalSecret)
         }
 
         # get a cookie from the request
         'get' {
-            return (Get-PodeCookie -Name $Name -Secret $Secret)
+            return (Get-PodeCookie -Name $Name -Secret $Secret -GlobalSecret:$GlobalSecret)
         }
 
         # checks whether a given cookie exists on the request
@@ -66,12 +70,22 @@ function Cookie
 
         # verifies whether a given cookie is signed
         'check' {
-            return (Test-PodeCookieIsSigned -Name $Name -Secret $Secret)
+            return (Test-PodeCookieIsSigned -Name $Name -Secret $Secret -GlobalSecret:$GlobalSecret)
         }
 
         # extends a given cookies expiry (adding the cookie to the response)
         'extend' {
             return (Update-PodeCookieExpiry -Name $Name -Duration $Duration)
+        }
+
+        # set or get the global cookie secret
+        'secret' {
+            if (Test-Empty $Name) {
+                return ($PodeContext.Server.Cookies.Secret)
+            }
+            else {
+                $PodeContext.Server.Cookies.Secret = $Name
+            }
         }
     }
 }
@@ -97,8 +111,16 @@ function Test-PodeCookieIsSigned
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $GlobalSecret
     )
+
+    # if the global secret flag is set, overwrite the passed secret
+    if ($GlobalSecret) {
+        $Secret = $PodeContext.Server.Cookies.Secret
+    }
 
     $cookie = $WebEvent.Request.Cookies[$Name]
     if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
@@ -121,8 +143,16 @@ function Get-PodeCookie
         $Secret,
 
         [switch]
-        $Raw
+        $Raw,
+
+        [switch]
+        $GlobalSecret
     )
+
+    # if the global secret flag is set, overwrite the passed secret
+    if ($GlobalSecret) {
+        $Secret = $PodeContext.Server.Cookies.Secret
+    }
 
     # get the cookie from the request
     $cookie = $WebEvent.Request.Cookies[$Name]
@@ -175,8 +205,16 @@ function Set-PodeCookie
         $Discard,
 
         [switch]
-        $Secure
+        $Secure,
+
+        [switch]
+        $GlobalSecret
     )
+
+    # if the global secret flag is set, overwrite the passed secret
+    if ($GlobalSecret) {
+        $Secret = $PodeContext.Server.Cookies.Secret
+    }
 
     # sign the value if we have a secret
     if (!(Test-Empty $Secret)) {

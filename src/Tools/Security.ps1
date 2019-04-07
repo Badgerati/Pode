@@ -388,11 +388,6 @@ function Csrf
         $Cookie
     )
 
-    # if sessions haven't been setup and we're not using cookies, error
-    if (!$Cookie -and $null -eq $PodeContext.Server.Cookies.Session) {
-        throw 'Sessions are required to use CSRF unless you pass the -Cookie flag'
-    }
-
     switch ($Action.ToLowerInvariant())
     {
         'middleware' {
@@ -422,6 +417,16 @@ function Get-PodeCsrfMiddleware
         throw 'CSRF middleware has already been defined'
     }
 
+    # if sessions haven't been setup and we're not using cookies, error
+    if (!$Cookie -and $null -eq $PodeContext.Server.Cookies.Session) {
+        throw 'Sessions are required to use CSRF unless you pass the -Cookie flag'
+    }
+
+    # if we're using cookies, ensure a global secret exists
+    if ($Cookie -and (Test-Empty $PodeContext.Server.Cookies.Secret)) {
+        throw "When using cookies for CSRF, set a global cookie secret for signing"
+    }
+
     # set the options against the server context
     $PodeContext.Server.Cookies.Csrf = @{
         'Name' = 'pode.csrf';
@@ -431,20 +436,50 @@ function Get-PodeCsrfMiddleware
 
     # return scriptblock for the session middleware
     return {
-        param($s)
+        param($e)
 
         # if the current route method is ignored, just return
+        $ignored = @($PodeContext.Server.Cookies.Csrf.IgnoredMethods)
+        if (!(Test-Empty $ignored) -and ($ignored -icontains $e.Method)) {
+            return $true
+        }
 
         # if there's not a secret, generate and store it
-        # get secret
-            # make one
-            # set on session/cookie
+        $secret = New-PodeCsrfSecret
 
-        # verify the token on the request
+        # verify the token on the request, if invalid, throw a 403
+        $token = Get-PodeCsrfToken
+        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
+            status 403 'Invalid CSRF Token'
+            return $false
+        }
 
-        # move along
+        # token is valid, move along
         return $true
     }
+}
+
+function Get-PodeCsrfToken
+{
+    # key name to search
+    $key = $PodeContext.Server.Cookies.Csrf.Name
+
+    # check the payload
+    if (!(Test-Empty $WebEvent.Data[$key])) {
+        return $WebEvent.Data[$key]
+    }
+
+    # check the query string
+    if (!(Test-Empty $WebEvent.Query[$key])) {
+        return $WebEvent.Query[$key]
+    }
+
+    # check the headers
+    if (!(Test-Empty $WebEvent.Request.Headers[$key])) {
+        return $WebEvent.Request.Headers[$key]
+    }
+
+    return $null
 }
 
 function Test-PodeCsrfToken
@@ -469,7 +504,7 @@ function Test-PodeCsrfToken
         return $false
     }
 
-    # get the salt and hash
+    # get the salt from the token
     $Token = $Token.Substring(2)
     $periodIndex = $Token.LastIndexOf('.')
     if ($periodIndex -eq -1) {
@@ -477,12 +512,6 @@ function Test-PodeCsrfToken
     }
 
     $salt = $Token.Substring(0, $periodIndex)
-    $hash = $Token.Substring($periodIndex + 1)
-
-    # ensure the salt is valid
-    if ((Invoke-PodeSHA256Hash -Value "$($salt)-$($Secret)") -ne $hash) {
-        return $false
-    }
 
     # ensure the token is valid
     if ((New-PodeCsrfToken -Secret $Secret -Salt $salt) -ne $Token) {
@@ -494,17 +523,59 @@ function Test-PodeCsrfToken
 
 function New-PodeCsrfSecret
 {
-    return (New-PodeGuid -Secure -Length 16)
+    # see if there's already a secret in session/cookie
+    $secret = (Get-PodeCsrfSecret)
+    if (!(Test-Empty $secret)) {
+        return $secret
+    }
+
+    # otherwise, make a new secret and cache it
+    $secret = (New-PodeGuid -Secure -Length 16)
+    Set-PodeCsrfSecret -Secret $secret
+    return $secret
 }
 
 function Get-PodeCsrfSecret
 {
-    
+    # key name to get secret
+    $key = $PodeContext.Server.Cookies.Csrf.Name
+
+    # are we getting it from a cookie, or session?
+    if ($PodeContext.Server.Cookies.Csrf.Cookie) {
+        return (Get-PodeCookie `
+            -Name $PodeContext.Server.Cookies.Csrf.Name `
+            -Secret $PodeContext.Server.Cookies.Secret)
+    }
+
+    # on session
+    else {
+        return $WebEvent.Session.Data[$key]
+    }
 }
 
 function Set-PodeCsrfSecret
 {
-    
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Secret
+    )
+
+    # key name to set secret under
+    $key = $PodeContext.Server.Cookies.Csrf.Name
+
+    # are we setting this on a cookie, or session?
+    if ($PodeContext.Server.Cookies.Csrf.Cookie) {
+        (Set-PodeCookie `
+            -Name $PodeContext.Server.Cookies.Csrf.Name `
+            -Value $Secret `
+            -Secret $PodeContext.Server.Cookies.Secret) | Out-Null
+    }
+
+    # on session
+    else {
+        $WebEvent.Session.Data[$key] = $Secret
+    }
 }
 
 function New-PodeCsrfToken
