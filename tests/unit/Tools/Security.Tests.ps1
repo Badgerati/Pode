@@ -488,3 +488,71 @@ Describe 'Get-PodeCsrfToken' {
         Get-PodeCsrfToken | Should Be $null
     }
 }
+
+Describe 'Test-PodeCsrfToken' {
+    It 'Returns false for no secret' {
+        Test-PodeCsrfToken -Secret '' -Token 'value' | Should Be $false
+    }
+
+    It 'Returns false for no token' {
+        Test-PodeCsrfToken -Secret 'key' -Token '' | Should Be $false
+    }
+
+    It 'Returns false for no tag on token' {
+        Test-PodeCsrfToken -Secret 'key' -Token 'value' | Should Be $false
+    }
+
+    It 'Returns false for no period in token' {
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value' | Should Be $false
+    }
+
+    It 'Returns false for token mismatch' {
+        Mock New-PodeCsrfToken { return 'value2' }
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should Be $false
+    }
+
+    It 'Returns true for token match' {
+        Mock New-PodeCsrfToken { return 't:value1.signed' }
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should Be $true
+    }
+}
+
+Describe 'New-PodeCsrfSecret' {
+    It 'Returns an existing secret' {
+        Mock Get-PodeCsrfSecret { return 'key' }
+        New-PodeCsrfSecret | Should Be 'key'
+    }
+
+    It 'Returns a new secret' {
+        Mock Get-PodeCsrfSecret { return '' }
+        Mock New-PodeGuid { return 'new-key' }
+        Mock Set-PodeCsrfSecret { }
+        New-PodeCsrfSecret | Should Be 'new-key'
+    }
+}
+
+Describe 'New-PodeCsrfToken' {
+    It 'Throws error for csrf not being configured' {
+        $PodeContext = @{ 'Server' = @{
+            'Cookies' = @{ 'Csrf' = $null }
+        }}
+
+        { New-PodeCsrfToken } | Should Throw 'not been defined'
+    }
+
+    Mock Invoke-PodeSHA256Hash { return "$($Value)" }
+
+    $PodeContext = @{ 'Server' = @{
+        'Cookies' = @{ 'Csrf' = @{ 'key' = 'value' } }
+    }}
+
+    It 'Returns a token for an existing secret/salt' {
+        New-PodeCsrfToken -Secret 'key' -Salt 'salt' | Should Be 't:salt.salt-key'
+    }
+
+    It 'Returns a token for new secret/salt' {
+        Mock New-PodeCsrfSecret { return 'new-key' }
+        Mock New-PodeSalt { return 'new-salt' }
+        New-PodeCsrfToken | Should Be 't:new-salt.new-salt-new-key'
+    }
+}
