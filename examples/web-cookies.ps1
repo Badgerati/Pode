@@ -14,7 +14,7 @@ Server -Threads 2 {
     engine html
 
     # set a global cookie secret
-    cookie secret 'pi'
+    cookie secrets global 'pi'
 
     # GET request to set/extend a cookie for the date of the request
     route get '/' {

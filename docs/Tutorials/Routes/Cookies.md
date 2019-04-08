@@ -1,6 +1,6 @@
 # Cookies
 
-You can create, remove or extend cookies on web requests/responses by using the [`cookie`](../../../Functions/Responses/Cookie) function.
+You can create, remove or extend cookies on web requests/responses by using the [`cookie`](../../../Functions/Responses/Cookie) function; with extra support for caching secret keys, and setting a global secret that can be reused.
 
 ## Usage
 
@@ -9,10 +9,10 @@ When using the `cookie` function, you supply a specific action to undertake as w
 The make-up of the `cookie` function is as follows:
 
 ```powershell
-cookie <action> <name> [<value>] [-secret <string>] [-duration <int>] [-httpOnly] [-discard] [-secure]
+cookie <action> <name> [<value>] [-secret <string>] [-duration <int>] [-httpOnly] [-discard] [-secure] [-globalSecret]
 
 # or shorthand:
-cookie <action> <name> [<value>] [-s <string>] [-ttl <int>] [-http] [-d] [-ssl]
+cookie <action> <name> [<value>] [-s <string>] [-ttl <int>] [-http] [-d] [-ssl] [-gs]
 ```
 
 The following are a summary of the actions you can perform:
@@ -24,6 +24,7 @@ The following are a summary of the actions you can perform:
 | Extend | Extend the duration of a given cookie | hashtable |
 | Get | Retrieves a cookie from the request, and if a secret is passed unsigns it | hashtable |
 | Remove | Removes a cookie from the response | none |
+| Secrets | Sets or gets a cached named secret key, with "global" being a special key | string |
 | Set | Creates/updates a cookie, and adds it to the response | hashtable |
 
 ## Actions
@@ -66,6 +67,20 @@ The `remove` action will remove a given cookie from the response - setting it to
 
 ```powershell
 cookie remove 'token'
+```
+
+### Secrets
+
+The `secrets` action allows you to cache secret keys that can be reused for signing your cookies. You supply a name for your secret, along with a value - just supplying the name will attempt to return the value for that secret. The `global` name is a special secret name that can be used internally by other functions.
+
+```powershell
+# set/get the special global secret key
+cookie secrets global '<value>'
+$key = cookie secrets global
+
+# set/get a named secret key
+cookie secrets 'my-secret' '<value>'
+$key = cookie secrets 'my-secret'
 ```
 
 ### Set

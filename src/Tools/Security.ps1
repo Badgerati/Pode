@@ -383,6 +383,11 @@ function Csrf
         [string[]]
         $IgnoreMethods = @('GET', 'HEAD', 'OPTIONS', 'TRACE', 'STATIC'),
 
+        [Parameter()]
+        [Alias('s')]
+        [string]
+        $Secret,
+
         [switch]
         [Alias('c')]
         $Cookie
@@ -391,7 +396,7 @@ function Csrf
     switch ($Action.ToLowerInvariant())
     {
         'middleware' {
-            return (Get-PodeCsrfMiddleware -IgnoreMethods $IgnoreMethods -Cookie:$Cookie)
+            return (Get-PodeCsrfMiddleware -IgnoreMethods $IgnoreMethods -Secret $Secret -Cookie:$Cookie)
         }
 
         'token' {
@@ -408,6 +413,10 @@ function Get-PodeCsrfMiddleware
         [string[]]
         $IgnoreMethods = @('GET', 'HEAD', 'OPTIONS', 'TRACE', 'STATIC'),
 
+        [Parameter()]
+        [string]
+        $Secret,
+
         [switch]
         $Cookie
     )
@@ -423,14 +432,19 @@ function Get-PodeCsrfMiddleware
     }
 
     # if we're using cookies, ensure a global secret exists
-    if ($Cookie -and (Test-Empty (Get-PodeCookieGlobalSecret))) {
-        throw "When using cookies for CSRF, set a global cookie secret for signing - (cookie secret global <value>)"
+    if ($Cookie) {
+        $Secret = (coalesce $Secret (Get-PodeCookieGlobalSecret))
+
+        if (Test-Empty $Secret) {
+            throw "When using cookies for CSRF, a secret is required. You can either supply a secret, or set the cookie global secret - (cookie secrets global <value>)"
+        }
     }
 
     # set the options against the server context
     $PodeContext.Server.Cookies.Csrf = @{
         'Name' = 'pode.csrf';
         'Cookie' = $Cookie;
+        'Secret' = $Secret;
         'IgnoredMethods' = $IgnoreMethods;
     }
 
@@ -545,7 +559,7 @@ function Get-PodeCsrfSecret
     if ($PodeContext.Server.Cookies.Csrf.Cookie) {
         return (Get-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
-            -Secret (Get-PodeCookieGlobalSecret)).Value
+            -Secret $PodeContext.Server.Cookies.Csrf.Secret).Value
     }
 
     # on session
@@ -570,7 +584,7 @@ function Set-PodeCsrfSecret
         (Set-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
             -Value $Secret `
-            -Secret (Get-PodeCookieGlobalSecret)) | Out-Null
+            -Secret $PodeContext.Server.Cookies.Csrf.Secret) | Out-Null
     }
 
     # on session

@@ -508,7 +508,7 @@ Describe 'Cookie' {
             'Cookies' = @{ 'Secrets' = @{} }
         } }
 
-        Cookie -Action Secret -Name 'global' -Value 'test'
+        Cookie -Action Secrets -Name 'global' -Value 'test'
 
         $PodeContext.Server.Cookies.Secrets['global'] | Should Be 'test'
     }
@@ -520,7 +520,7 @@ Describe 'Cookie' {
             }
         } } }
 
-        Cookie -Action Secret -Name 'global' | Should Be 'bill'
+        Cookie -Action Secrets -Name 'global' | Should Be 'bill'
     }
 }
 

@@ -23,7 +23,7 @@ Server -Threads 2 {
     # set csrf middleware, then either session middleware, or cookie global secret
     switch ($Type.ToLowerInvariant()) {
         'cookie' {
-            cookie secret global 'rem'
+            cookie secrets global 'rem'
             middleware (csrf -c middleware)
         }
 

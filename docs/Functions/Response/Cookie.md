@@ -4,6 +4,8 @@
 
 The `cookie` function allows you to add/set, get, remove and extend cookies on requests/responses; you can also specify a secret key which will be used to sign/unsign the cookie for you.
 
+The `cookie` function also has an action to set a global secret key, that can be cached and re-used - with support for caching other named secret keys.
+
 ## Examples
 
 ### Example 1
@@ -60,11 +62,29 @@ middleware {
 }
 ```
 
+### Example 5
+
+The following example will define a global secret key, that can be reused throughout your server. After setting, it sets a new cookie using the global key:
+
+```powershell
+# sets a global secret, then sets a new cookie
+cookie secrets global 'some-key'
+cookie set 'name' 'value' -s (cookie secrets global)
+
+# the `-gs` switch will internally retrieve the global secret
+cookie set 'name' 'value' -gs
+
+
+# sets a differently name secret, then uses it
+cookie secrets 'my-secret' 'some-key'
+cookie set 'name' 'value' -s (cookie secrets 'my-secret')
+```
+
 ## Parameters
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
-| Action | string | true | The action to perform on the cookie (Values: Check, Exists, Extend, Get, Remove, Set) | empty |
+| Action | string | true | The action to perform on the cookie (Values: Check, Exists, Extend, Get, Remove, Secrets, Set) | empty |
 | Name | string | true | The name of the cookie | empty |
 | Value | string | false | The value to assign to the cookie | empty |
 | Secret | string | false | A secret key to be used to sign the cookie's value | empty |
@@ -72,6 +92,7 @@ middleware {
 | Discard | switch | false | If true, informs the browser to discard the cookie on expiry | false |
 | Secure | switch | false | If true, informs the browser to only send the cookie on secure connections | false |
 | HttpOnly | switch | false | If true, the cookie can only be accessed from browsers | false |
+| GlobalSecret | switch | false | If true, will use the global cached secret key (overriding a passed secret) | false |
 
 ## Returns
 

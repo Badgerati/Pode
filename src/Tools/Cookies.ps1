@@ -2,7 +2,7 @@ function Cookie
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Check', 'Exists', 'Extend', 'Get', 'Remove', 'Secret', 'Set')]
+        [ValidateSet('Check', 'Exists', 'Extend', 'Get', 'Remove', 'Secrets', 'Set')]
         [Alias('a')]
         [string]
         $Action,
@@ -78,8 +78,8 @@ function Cookie
             return (Update-PodeCookieExpiry -Name $Name -Duration $Duration)
         }
 
-        # set or get the global cookie secret
-        'secret' {
+        # set or get cookie secrets
+        'secrets' {
             if (Test-Empty $Value) {
                 return ($PodeContext.Server.Cookies.Secrets[$Name])
             }
