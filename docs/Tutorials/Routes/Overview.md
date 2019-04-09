@@ -18,7 +18,7 @@ To setup and use routes in Pode you should use the [`route`](../../../Function/C
 route <method> <route> [<middleware>] <scriptblock> [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove]
 route static <route> <path> [<defaults>] [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove]
 
-# or shorthand:
+# or with aliases:
 route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-ln <string>] [-rm]
 route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-ln <string>] [-rm]
 ```

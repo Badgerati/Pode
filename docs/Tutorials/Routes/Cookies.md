@@ -11,7 +11,7 @@ The make-up of the `cookie` function is as follows:
 ```powershell
 cookie <action> <name> [<value>] [-secret <string>] [-duration <int>] [-httpOnly] [-discard] [-secure] [-globalSecret]
 
-# or shorthand:
+# or with aliases:
 cookie <action> <name> [<value>] [-s <string>] [-ttl <int>] [-http] [-d] [-ssl] [-gs]
 ```
 

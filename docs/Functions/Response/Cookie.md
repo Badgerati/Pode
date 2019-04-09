@@ -96,9 +96,11 @@ cookie set 'name' 'value' -s (cookie secrets 'my-secret')
 
 ## Returns
 
-* The `check` and `exists` actions each return a boolean value.
+* The `check` and `exists` actions each return a `boolean` value.
 
-* The `extend`, `get` and `set` actions each return a hashtable that describes the current state of the cookie, this has the following properties:
+* The `secrets` action, with no value passed, returns a `string` value.
+
+* The `extend`, `get` and `set` actions each return a `hashtable` that describes the current state of the cookie, this has the following properties:
 
 | Name | Type |
 | ---- | ---- |

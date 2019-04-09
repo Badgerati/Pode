@@ -424,6 +424,7 @@ Describe 'Add-PodeIPAccess' {
 
 Describe 'Csrf' {
     It 'Returs middleware' {
+        Mock Set-PodeCsrfSetup { }
         Mock Get-PodeCsrfMiddleware { return { write-host 'hello' } }
         (Csrf -Action Middleware).ToString() | Should Be ({ write-host 'hello' }).ToString()
     }

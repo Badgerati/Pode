@@ -372,7 +372,7 @@ function Csrf
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Middleware', 'Token')]
+        [ValidateSet('Check', 'Middleware', 'Setup', 'Token')]
         [Alias('a')]
         [string]
         $Action,
@@ -395,8 +395,17 @@ function Csrf
 
     switch ($Action.ToLowerInvariant())
     {
+        'check' {
+            return (Get-PodeCsrfCheck)
+        }
+
         'middleware' {
-            return (Get-PodeCsrfMiddleware -IgnoreMethods $IgnoreMethods -Secret $Secret -Cookie:$Cookie)
+            Set-PodeCsrfSetup -IgnoreMethods $IgnoreMethods -Secret $Secret -Cookie:$Cookie
+            return (Get-PodeCsrfMiddleware)
+        }
+
+        'setup' {
+            Set-PodeCsrfSetup -IgnoreMethods $IgnoreMethods -Secret $Secret -Cookie:$Cookie
         }
 
         'token' {
@@ -405,7 +414,7 @@ function Csrf
     }
 }
 
-function Get-PodeCsrfMiddleware
+function Set-PodeCsrfSetup
 {
     param (
         [Parameter()]
@@ -423,7 +432,7 @@ function Get-PodeCsrfMiddleware
 
     # check that csrf logic hasn't already been defined
     if (!(Test-Empty $PodeContext.Server.Cookies.Csrf)) {
-        throw 'CSRF middleware has already been defined'
+        return
     }
 
     # if sessions haven't been setup and we're not using cookies, error
@@ -447,8 +456,16 @@ function Get-PodeCsrfMiddleware
         'Secret' = $Secret;
         'IgnoredMethods' = $IgnoreMethods;
     }
+}
 
-    # return scriptblock for the session middleware
+function Get-PodeCsrfMiddleware
+{
+    # check that csrf logic has been defined
+    if (Test-Empty $PodeContext.Server.Cookies.Csrf) {
+        throw 'CSRF middleware has not been defined'
+    }
+
+    # return scriptblock for the csrf middleware
     return {
         param($e)
 
@@ -457,6 +474,33 @@ function Get-PodeCsrfMiddleware
         if (!(Test-Empty $ignored) -and ($ignored -icontains $e.Method)) {
             return $true
         }
+
+        # if there's not a secret, generate and store it
+        $secret = New-PodeCsrfSecret
+
+        # verify the token on the request, if invalid, throw a 403
+        $token = Get-PodeCsrfToken
+
+        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
+            status 403 'Invalid CSRF Token'
+            return $false
+        }
+
+        # token is valid, move along
+        return $true
+    }
+}
+
+function Get-PodeCsrfCheck
+{
+    # check that csrf logic has been defined
+    if (Test-Empty $PodeContext.Server.Cookies.Csrf) {
+        throw 'CSRF middleware has not been defined'
+    }
+
+    # return scriptblock for the csrf check middleware
+    return {
+        param($e)
 
         # if there's not a secret, generate and store it
         $secret = New-PodeCsrfSecret
