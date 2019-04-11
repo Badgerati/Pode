@@ -336,6 +336,12 @@ Describe 'Listen' {
             Listen -IP '127.0.0.1:80' -Type 'TCP'
             { Listen -IP 'pode.foo.com:80' -Type 'TCP' } | Should Throw 'already been defined'
         }
+
+        It 'Throws an error for not running as admin' {
+            Mock Test-IsAdminUser { return $false }
+            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            { Listen -IP 'foo.com' -Type 'HTTP' } | Should Throw 'Must be running with admin'
+        }
     }
 }
 

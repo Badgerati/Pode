@@ -186,6 +186,47 @@ function Test-IsAdminUser
 
 function New-PodeSelfSignedCertificate
 {
+    # generate the cert -- has to call "powershell.exe" for ps-core on windows
+    $cert = (PowerShell.exe -NoProfile -Command {
+        $expire = (Get-Date).AddYears(1)
+
+        $c = New-SelfSignedCertificate -DnsName 'localhost' -CertStoreLocation 'Cert:\LocalMachine\My' -NotAfter $expire `
+                -KeyAlgorithm RSA -HashAlgorithm SHA256 -KeyLength 4096 -Subject 'CN=localhost';
+
+        if ($null -eq $c.Thumbprint) {
+            return $c
+        }
+
+        return $c.Thumbprint
+    })
+
+    if ($LASTEXITCODE -ne 0 -or !$?) {
+        throw "Failed to generate self-signed certificte:`n$($cert)"
+    }
+
+    return $cert
+}
+
+function Get-PodeCertificate
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Certificate
+    )
+
+    # ensure the certificate exists, and get its thumbprint
+    $cert = (Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -imatch [regex]::Escape($Certificate) })
+    if (Test-Empty $cert) {
+        throw "Failed to find the $($Certificate) certificate at LocalMachine\My"
+    }
+
+    $cert = @($cert)[0].Thumbprint
+    return $cert
+}
+
+function Set-PodeCertificate
+{
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
@@ -199,7 +240,11 @@ function New-PodeSelfSignedCertificate
 
         [Parameter()]
         [string]
-        $Certificate
+        $Certificate,
+
+        [Parameter()]
+        [string]
+        $Thumbprint
     )
 
     $addrport = "$($Address):$($Port)"
@@ -220,47 +265,30 @@ function New-PodeSelfSignedCertificate
         return
     }
 
-    # ensure a cert has been supplied
-    if (Test-Empty $Certificate) {
-        throw "A certificate is required for ssl connections, either 'self' or '*.example.com' can be supplied to the 'listen' function"
+    # ensure a cert, or thumbprint, has been supplied
+    if ((Test-Empty $Certificate) -and (Test-Empty $Thumbprint)) {
+        throw "A certificate name, or thumbprint, is required for ssl connections. For the name, either 'self' or '*.example.com' can be supplied to the 'listen' function"
     }
 
-    # generate a self-signed cert
-    if (@('self', 'self-signed') -icontains $Certificate)
-    {
-        Write-Host "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
-
-        # generate the cert -- has to call "powershell.exe" for ps-core on windows
-        $cert = (PowerShell.exe -NoProfile -Command {
-            $expire = (Get-Date).AddYears(1)
-
-            $c = New-SelfSignedCertificate -DnsName 'localhost' -CertStoreLocation 'Cert:\LocalMachine\My' -NotAfter $expire `
-                    -KeyAlgorithm RSA -HashAlgorithm SHA256 -KeyLength 4096 -Subject 'CN=localhost';
-
-            if ($null -eq $c.Thumbprint) {
-                return $c
-            }
-
-            return $c.Thumbprint
-        })
-
-        if ($LASTEXITCODE -ne 0 -or !$?) {
-            throw "Failed to generate self-signed certificte:`n$($cert)"
-        }
+    # use the cert specified from the thumbprint
+    if (!(Test-Empty $Thumbprint)) {
+        $cert = $Thumbprint
     }
 
-    # ensure a given cert exists for binding
+    # otherwise, generate/find a certificate
     else
     {
-        Write-Host "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
-
-        # ensure the certificate exists, and get its thumbprint
-        $cert = (Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -imatch [regex]::Escape($Certificate) })
-        if (Test-Empty $cert) {
-            throw "Failed to find the $($Certificate) certificate at LocalMachine\My"
+        # generate a self-signed cert
+        if (@('self', 'self-signed') -icontains $Certificate) {
+            Write-Host "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
+            $cert = (New-PodeSelfSignedCertificate)
         }
 
-        $cert = ($cert)[0].Thumbprint
+        # ensure a given cert exists for binding
+        else {
+            Write-Host "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
+            $cert = (Get-PodeCertificate -Certificate $Certificate)
+        }
     }
 
     # bind the cert to the ip:port or hostname:port
