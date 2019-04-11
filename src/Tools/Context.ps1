@@ -395,9 +395,14 @@ function Listen
         $Type,
 
         [Parameter()]
-        [Alias('cert')]
+        [Alias('cert', 'cname')]
         [string]
         $Certificate = $null,
+
+        [Parameter()]
+        [Alias('thumb', 'cthumb')]
+        [string]
+        $Thumbprint = $null,
 
         [Parameter()]
         [Alias('n', 'id')]
@@ -431,6 +436,7 @@ function Listen
         'Protocol' = $Type;
         'Certificate' = @{
             'Name' = $null;
+            'Thumbprint' = $null;
         };
     }
 
@@ -449,6 +455,7 @@ function Listen
     if ($Type -ieq 'https') {
         $obj.Ssl = $true
         $obj.Certificate.Name = $Certificate
+        $obj.Certificate.Thumbprint = $Thumbprint
     }
 
     # if the address is non-local, then check admin privileges

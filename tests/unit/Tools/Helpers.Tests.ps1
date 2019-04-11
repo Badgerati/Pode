@@ -828,3 +828,26 @@ Describe 'ConvertFrom-PodeNameValueToHashTable' {
         $r.colour | Should Be 'blue'
     }
 }
+
+Describe 'Get-PodeCertificate' {
+    It 'Throws error as certificate does not exist' {
+        Mock Get-ChildItem { return $null }
+        { Get-PodeCertificate -Certificate 'name' } | Should Throw 'failed to find'
+    }
+
+    It 'Returns a certificate thumbprint' {
+        Mock Get-ChildItem { return @(@{ 'Subject' = 'name'; 'Thumbprint' = 'some-thumbprint' }) }
+        Get-PodeCertificate -Certificate 'name' | Should Be 'some-thumbprint'
+    }
+}
+
+Describe 'Set-PodeCertificate' {
+    It 'Throws an error for a non-windows machine' {
+        Mock Test-IsWindows { return $false }
+        Mock Write-Host { }
+
+        Set-PodeCertificate -Address 'localhost' -Port 8080 -Certificate 'name' | Out-Null
+
+        Assert-MockCalled Write-Host -Times 1 -Scope It
+    }
+}

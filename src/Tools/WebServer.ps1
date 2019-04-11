@@ -62,7 +62,7 @@ function Start-PodeWebServer
         # if this endpoint is https, generate a self-signed cert or bind an existing one
         if ($_.Ssl) {
             $addr = (iftet $_.IsIPAddress $_.Address $_.HostName)
-            New-PodeSelfSignedCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name
+            Set-PodeCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name -Thumbprint $_.Certificate.Thumbprint
         }
 
         # add endpoint to list
