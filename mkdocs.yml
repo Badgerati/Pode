@@ -41,6 +41,7 @@ nav:
       - Access Rules: Tutorials/Middleware/AccessRules.md
       - Rate Limiting: Tutorials/Middleware/RateLimiting.md
       - Sessions: Tutorials/Middleware/Sessions.md
+      - CSRF: Tutorials/Middleware/CSRF.md
     - Logging:
       - Overview: Tutorials/Logging/Overview.md
       - Terminal: Tutorials/Logging/Terminal.md
@@ -81,6 +82,7 @@ nav:
     - Middleware:
       - Access: Functions/Middleware/Access.md
       - Auth: Functions/Middleware/Auth.md
+      - Csrf: Functions/Middleware/Csrf.md
       - Limit: Functions/Middleware/Limit.md
       - Session: Functions/Middleware/Session.md
 

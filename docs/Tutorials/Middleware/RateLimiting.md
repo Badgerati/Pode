@@ -11,7 +11,7 @@ The make-up of the `limit` function is as follows:
 ```powershell
 limit ip <address|subnet> -limit <int> -seconds <int> [-group]
 
-# or shorthand
+# or with aliases
 limit ip <address|subnet> -l <int> -s <int> [-g]
 ```
 

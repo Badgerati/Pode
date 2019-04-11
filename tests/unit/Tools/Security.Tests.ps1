@@ -421,3 +421,200 @@ Describe 'Add-PodeIPAccess' {
         }
     }
 }
+
+Describe 'Csrf' {
+    It 'Returs main middleware' {
+        Mock Set-PodeCsrfSetup { }
+        Mock Get-PodeCsrfMiddleware { return { write-host 'hello' } }
+        (Csrf -Action Middleware).ToString() | Should Be ({ write-host 'hello' }).ToString()
+    }
+
+    It 'Returs check middleware' {
+        Mock Get-PodeCsrfCheck { return { write-host 'hello' } }
+        (Csrf -Action Check).ToString() | Should Be ({ write-host 'hello' }).ToString()
+    }
+
+    It 'Runs csrf setup' {
+        Mock Set-PodeCsrfSetup { }
+        Csrf -Action Setup
+        Assert-MockCalled Set-PodeCsrfSetup -Times 1 -Scope It
+    }
+
+    It 'Returs a token' {
+        Mock New-PodeCsrfToken { return 'token' }
+        Csrf -Action Token | Should Be 'token'
+    }
+}
+
+Describe 'Get-PodeCsrfToken' {
+    It 'Returns the token from the payload' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        $WebEvent = @{ 'Data' = @{
+            'Key' = 'Token'
+        }}
+
+        Get-PodeCsrfToken | Should Be 'Token'
+    }
+
+    It 'Returns the token from the query string' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        $WebEvent = @{
+            'Data' = @{};
+            'Query' = @{ 'Key' = 'Token' };
+        }
+
+        Get-PodeCsrfToken | Should Be 'Token'
+    }
+
+    It 'Returns the token from the headers' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        $WebEvent = @{
+            'Data' = @{};
+            'Query' = @{};
+            'Request' = @{ 'Headers' = @{ 'Key' = 'Token' } }
+        }
+
+        Get-PodeCsrfToken | Should Be 'Token'
+    }
+
+    It 'Returns no token' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        $WebEvent = @{
+            'Data' = @{};
+            'Query' = @{};
+            'Request' = @{ 'Headers' = @{} }
+        }
+
+        Get-PodeCsrfToken | Should Be $null
+    }
+}
+
+Describe 'Test-PodeCsrfToken' {
+    It 'Returns false for no secret' {
+        Test-PodeCsrfToken -Secret '' -Token 'value' | Should Be $false
+    }
+
+    It 'Returns false for no token' {
+        Test-PodeCsrfToken -Secret 'key' -Token '' | Should Be $false
+    }
+
+    It 'Returns false for no tag on token' {
+        Test-PodeCsrfToken -Secret 'key' -Token 'value' | Should Be $false
+    }
+
+    It 'Returns false for no period in token' {
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value' | Should Be $false
+    }
+
+    It 'Returns false for token mismatch' {
+        Mock New-PodeCsrfToken { return 'value2' }
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should Be $false
+    }
+
+    It 'Returns true for token match' {
+        Mock New-PodeCsrfToken { return 't:value1.signed' }
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should Be $true
+    }
+}
+
+Describe 'New-PodeCsrfSecret' {
+    It 'Returns an existing secret' {
+        Mock Get-PodeCsrfSecret { return 'key' }
+        New-PodeCsrfSecret | Should Be 'key'
+    }
+
+    It 'Returns a new secret' {
+        Mock Get-PodeCsrfSecret { return '' }
+        Mock New-PodeGuid { return 'new-key' }
+        Mock Set-PodeCsrfSecret { }
+        New-PodeCsrfSecret | Should Be 'new-key'
+    }
+}
+
+Describe 'New-PodeCsrfToken' {
+    It 'Throws error for csrf not being configured' {
+        $PodeContext = @{ 'Server' = @{
+            'Cookies' = @{ 'Csrf' = $null }
+        }}
+
+        { New-PodeCsrfToken } | Should Throw 'not been defined'
+    }
+
+    Mock Invoke-PodeSHA256Hash { return "$($Value)" }
+
+    $PodeContext = @{ 'Server' = @{
+        'Cookies' = @{ 'Csrf' = @{ 'key' = 'value' } }
+    }}
+
+    It 'Returns a token for an existing secret/salt' {
+        New-PodeCsrfToken -Secret 'key' -Salt 'salt' | Should Be 't:salt.salt-key'
+    }
+
+    It 'Returns a token for new secret/salt' {
+        Mock New-PodeCsrfSecret { return 'new-key' }
+        Mock New-PodeSalt { return 'new-salt' }
+        New-PodeCsrfToken | Should Be 't:new-salt.new-salt-new-key'
+    }
+}
+
+Describe 'Set-PodeCsrfSecret' {
+    $PodeContext = @{ 'Server' = @{
+        'Cookies' = @{ 'Csrf' = @{ 'Name' = 'pode.csrf' } }
+    }}
+
+    It 'Sets the secret agaisnt the session' {
+        $PodeContext.Server.Cookies.Csrf.Cookie = $false
+        $WebEvent = @{ 'Session' = @{
+             'Data' = @{}
+        } }
+
+        Set-PodeCsrfSecret -Secret 'some-secret'
+
+        $WebEvent.Session.Data['pode.csrf'] | Should Be 'some-secret'
+    }
+
+    It 'Sets the secret agaisnt a cookie' {
+        $PodeContext.Server.Cookies.Csrf.Cookie = $true
+        Mock Set-PodeCookie { }
+
+        Set-PodeCsrfSecret -Secret 'some-secret'
+
+        Assert-MockCalled Set-PodeCookie -Times 1 -Scope It
+    }
+}
+
+Describe 'Get-PodeCsrfSecret' {
+    $PodeContext = @{ 'Server' = @{
+        'Cookies' = @{ 'Csrf' = @{ 'Name' = 'pode.csrf' } }
+    }}
+
+    It 'Gets the secret from the session' {
+        $PodeContext.Server.Cookies.Csrf.Cookie = $false
+        $WebEvent = @{ 'Session' = @{
+             'Data' = @{ 'pode.csrf' = 'some-secret' }
+        } }
+
+        Get-PodeCsrfSecret | Should Be 'some-secret'
+    }
+
+    It 'Gets the secret from a cookie' {
+        $PodeContext.Server.Cookies.Csrf.Cookie = $true
+        Mock Get-PodeCookie { return @{ 'Value' = 'some-secret' } }
+
+        Get-PodeCsrfSecret | Should Be 'some-secret'
+
+        Assert-MockCalled Get-PodeCookie -Times 1 -Scope It
+    }
+}

@@ -18,7 +18,7 @@ The make-up of the `use` action is:
 ```powershell
 auth use <name> -validator <{}|string> [-options @{}] [-parser {}] [-type <string>] [-custom]
 
-# or shorthand:
+# or with aliases:
 auth use <name> -v <{}|string> [-o @{}] [-p {}] [-t <string>] [-c]
 ```
 
@@ -63,7 +63,7 @@ The make-up of the `check` action is:
 ```powershell
 auth check <name> [-options @{}]
 
-# or shorthand:
+# or with aliases:
 auth check <name> [-o @{}]
 ```
 

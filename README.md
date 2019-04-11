@@ -47,7 +47,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Restart the server via file monitoring, or defined periods/times
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
-* Middleware and Sessions on web servers, with Flash message support
+* Middleware and Sessions on web servers, with Flash message and CSRF support
 * Authentication on requests, such as Basic and Windows Active Directory
 * (Windows) Generate/bind self-signed certificates, and signed certificates
 * (Windows) Open the hosted server as a desktop application

@@ -11,7 +11,7 @@ To create a new schedule in your server you use the [`schedule`](../../Functions
 ```powershell
 schedule <name> <cron(s)> <scriptblock> [-start <datetime>] [-end <datetime>] [-limit <int>]
 
-# or shorthand:
+# or with aliases:
 schedule <name> <cron(s)> <scriptblock> [-s <datetime>] [-e <datetime>] [-l <int>]
 ```
 

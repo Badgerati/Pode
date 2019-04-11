@@ -16,22 +16,22 @@ Describe 'Flash' {
         }
 
         It 'Throws error for no key supplied on Add' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
-            { Flash -Action Add -Key '' } | Should Throw 'A Key is required'
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
+            { Flash -Action Add -Key '' } | Should Throw 'empty string'
         }
 
         It 'Throws error for no key supplied on Get' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
-            { Flash -Action Get -Key '' } | Should Throw 'A Key is required'
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
+            { Flash -Action Get -Key '' } | Should Throw 'empty string'
         }
 
         It 'Throws error for no key supplied on Remove' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
-            { Flash -Action Remove -Key '' } | Should Throw 'A Key is required'
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
+            { Flash -Action Remove -Key '' } | Should Throw 'empty string'
         }
 
         It 'Adds a single key and value' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1' -Message 'Value1'
@@ -42,7 +42,7 @@ Describe 'Flash' {
         }
 
         It 'Adds a single key with no value' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1'
@@ -53,7 +53,7 @@ Describe 'Flash' {
         }
 
         It 'Adds two different keys and values' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1' -Message 'Value1'
@@ -66,7 +66,7 @@ Describe 'Flash' {
         }
 
         It 'Adds two values for the same key' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1' -Message 'Value1'
@@ -80,7 +80,7 @@ Describe 'Flash' {
         }
 
         It 'Adds two keys and then Clears them all' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1' -Message 'Value1'
@@ -96,7 +96,7 @@ Describe 'Flash' {
         }
 
         It 'Adds a single key with no value then Get it' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1'
@@ -112,7 +112,7 @@ Describe 'Flash' {
         }
 
         It 'Returns empty array for Get on key that does not exist' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             $result = Flash -Action Get -Key 'Test1'
@@ -120,7 +120,7 @@ Describe 'Flash' {
         }
 
         It 'Returns empty array for Get on key that is empty' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{
                 'Flash' = @{ 'Test1' = @(); }
              } } }
@@ -130,7 +130,7 @@ Describe 'Flash' {
         }
 
         It 'Adds two keys and then Gets one of them' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1' -Message 'Value1'
@@ -147,7 +147,7 @@ Describe 'Flash' {
         }
 
         It 'Adds two values for the same key then Gets it' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1' -Message 'Value1'
@@ -166,7 +166,7 @@ Describe 'Flash' {
         }
 
         It 'Adds two keys and then Remove one of them' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1' -Message 'Value1'
@@ -182,7 +182,7 @@ Describe 'Flash' {
         }
 
         It 'Adds two keys and then retrieves the Keys' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             Flash -Action Add -Key 'Test1' -Message 'Value1'
@@ -202,7 +202,7 @@ Describe 'Flash' {
         }
 
         It 'Returns no keys as none have been added' {
-            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{} } } }
+            $PodeContext = @{ 'Server' = @{ 'Cookies' = @{ 'Session' = @{ 'Secret' = 'Key' } } } }
             $WebEvent = @{ 'Session' = @{ 'Data' = @{ } } }
 
             $result = Flash -Action Keys

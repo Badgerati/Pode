@@ -663,12 +663,6 @@ Describe 'ConvertFrom-PodeRequestContent' {
     }
 }
 
-Describe 'Get-PodeNewGuid' {
-    It 'Returns a valid guid' {
-        (Get-PodeNewGuid) | Should Not Be $null
-    }
-}
-
 Describe 'Test-PodePathIsFile' {
     Context 'Valid values' {
         It 'Returns true for a file' {

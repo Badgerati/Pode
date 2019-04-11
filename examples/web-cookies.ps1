@@ -13,6 +13,9 @@ Server -Threads 2 {
     # set view engine to pode renderer
     engine html
 
+    # set a global cookie secret
+    cookie secrets global 'pi'
+
     # GET request to set/extend a cookie for the date of the request
     route get '/' {
         $cookieName = 'current-date'
@@ -21,7 +24,7 @@ Server -Threads 2 {
             cookie extend $cookieName -ttl 7200 | Out-Null
         }
         else {
-            cookie set $cookieName ([datetime]::UtcNow) -ttl 7200 -s 'pi' | Out-Null
+            cookie set $cookieName ([datetime]::UtcNow) -ttl 7200 -gs | Out-Null
         }
 
         view 'simple'
@@ -37,8 +40,8 @@ Server -Threads 2 {
         $cookieName = 'current-date'
 
         $c1 = cookie get $cookieName
-        $c2 = cookie get $cookieName -s 'pi'
-        $ch = cookie check $cookieName -s 'pi'
+        $c2 = cookie get $cookieName -gs
+        $ch = cookie check $cookieName -gs
 
         json @{
             'SignedValue' = $c1.Value;

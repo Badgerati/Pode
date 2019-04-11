@@ -6,7 +6,7 @@ The age of the session-cookie can be specified, as well as whether to extend the
 
 ## Usage
 
-To setup and configure the using sessions in Pode, you can use the [`session`](../../../Functions/Middleware/Session) function. This function will return valid middleware that can be supplied to the [`middleware`](../../../Functions/Core/Middleware) function.
+To setup and configure using sessions in Pode, you can use the [`session`](../../../Functions/Middleware/Session) function. This function will return valid middleware that can be supplied to the [`middleware`](../../../Functions/Core/Middleware) function.
 
 To use the `session` function you must supply a `hashtable` that defines options to configure sessions, and the way they work.
 

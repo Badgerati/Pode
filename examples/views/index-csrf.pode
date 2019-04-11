@@ -1,0 +1,24 @@
+<html>
+    <head>
+        <title>CSRF Example Page</title>
+    </head>
+    <body>
+
+        <h1>Example form using a CSRF token</h1>
+        <p>Clicking submit will just reload the page</p>
+        <form action='/token' method='POST'>
+            <input type='hidden' name='pode.csrf' value='$($data.csrfToken)' />
+            <input type='text' name='message' placeholder='Enter any random text' />
+            <input type='submit' value='Submit' />
+        </form>
+
+
+        <h1>Example form not using a CSRF token</h1>
+        <p>Clicking submit will throw a 403 http error</p>
+        <form action='/token' method='POST'>
+            <input type='text' name='message' placeholder='Enter any random text' />
+            <input type='submit' value='Submit' />
+        </form>
+
+    </body>
+</html>

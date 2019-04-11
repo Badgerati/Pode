@@ -808,7 +808,7 @@ function New-PodePSDrive
 
     # if no name is passed, used a randomly generated one
     if ([string]::IsNullOrWhiteSpace($Name)) {
-        $Name = "PodeDir$(Get-PodeNewGuid)"
+        $Name = "PodeDir$(New-PodeGuid)"
     }
 
     # if the path supplied doesn't exist, error
@@ -1343,11 +1343,6 @@ function ConvertFrom-PodeNameValueToHashTable
     }
 
     return $ht
-}
-
-function Get-PodeNewGuid
-{
-    return ([guid]::NewGuid()).ToString()
 }
 
 function Get-PodeCount
