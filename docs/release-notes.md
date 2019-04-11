@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.28.0
+
+```plain
+### Features
+* #210: New "cookie" function added, to support setting/getting cookies - including signing them
+* #211: Support for CSRF via the new "csrf" function, which generates valid middleware and random tokens
+
+### Enhancements
+* #204: Support on the "import" function to import PSSnapIns
+* #223: Support for using a Thumbprint on the "listen" function instead of Certificate name
+
+### Bugs
+* #206: When disposing/restarting the SMTP server, send a "QUIT" message if still connected
+
+### Clean-Up
+* #209: Rename of internal function to avoid collisions, and change "Get-PodeConfiguration" to "config"
+```
+
 ## v0.27.3
 
 ```plain
