@@ -247,7 +247,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../Functions/Core/Endware/" title="Functions" class="md-tabs__link">
+        <a href="../Functions/Core/Config/" title="Functions" class="md-tabs__link">
           Functions
         </a>
       
@@ -345,6 +345,13 @@
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v0280" title="v0.28.0" class="md-nav__link">
+    v0.28.0
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v0273" title="v0.27.3" class="md-nav__link">
@@ -802,8 +809,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../Tutorials/ImportingModules/" title="Importing Modules" class="md-nav__link">
-      Importing Modules
+    <a href="../Tutorials/ImportingModules/" title="Modules & SnapIns" class="md-nav__link">
+      Modules & SnapIns
     </a>
   </li>
 
@@ -923,6 +930,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Tutorials/Routes/Cookies/" title="Cookies" class="md-nav__link">
+      Cookies
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -991,6 +1010,18 @@
   <li class="md-nav__item">
     <a href="../Tutorials/Middleware/Sessions/" title="Sessions" class="md-nav__link">
       Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Tutorials/Middleware/CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
     </a>
   </li>
 
@@ -1325,6 +1356,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Functions/Core/Config/" title="Config" class="md-nav__link">
+      Config
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Functions/Core/Endware/" title="Endware" class="md-nav__link">
       Endware
     </a>
@@ -1529,6 +1572,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Functions/Middleware/Csrf/" title="Csrf" class="md-nav__link">
+      Csrf
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Functions/Middleware/Limit/" title="Limit" class="md-nav__link">
       Limit
     </a>
@@ -1579,6 +1634,18 @@
   <li class="md-nav__item">
     <a href="../Functions/Response/Attach/" title="Attach" class="md-nav__link">
       Attach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Functions/Response/Cookie/" title="Cookie" class="md-nav__link">
+      Cookie
     </a>
   </li>
 
@@ -1865,18 +1932,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
-      Get-PodeConfiguration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../Functions/Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
@@ -1960,6 +2015,13 @@
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v0280" title="v0.28.0" class="md-nav__link">
+    v0.28.0
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v0273" title="v0.27.3" class="md-nav__link">
@@ -2149,6 +2211,23 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v0280">v0.28.0</h2>
+<div class="codehilite"><pre><span></span><span class="c1">### Features</span>
+<span class="o">*</span> <span class="c1">#210: New &quot;cookie&quot; function added, to support setting/getting cookies - including signing them</span>
+<span class="o">*</span> <span class="c1">#211: Support for CSRF via the new &quot;csrf&quot; function, which generates valid middleware and random tokens</span>
+
+<span class="c1">### Enhancements</span>
+<span class="o">*</span> <span class="c1">#204: Support on the &quot;import&quot; function to import PSSnapIns</span>
+<span class="o">*</span> <span class="c1">#223: Support for using a Thumbprint on the &quot;listen&quot; function instead of Certificate name</span>
+
+<span class="c1">### Bugs</span>
+<span class="o">*</span> <span class="c1">#206: When disposing/restarting the SMTP server, send a &quot;QUIT&quot; message if still connected</span>
+
+<span class="c1">### Clean-Up</span>
+<span class="o">*</span> <span class="c1">#209: Rename of internal function to avoid collisions, and change &quot;Get-PodeConfiguration&quot; to &quot;config&quot;</span>
+</pre></div>
+
+
 <h2 id="v0273">v0.27.3</h2>
 <div class="codehilite"><pre><span></span>### Bugs
 * #217: Binding to hostname throws error

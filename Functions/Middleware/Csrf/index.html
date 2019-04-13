@@ -36,7 +36,7 @@
     
     
       
-        <title>Get-PodeConfiguration - Pode</title>
+        <title>Csrf - Pode</title>
       
     
     
@@ -98,7 +98,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="../../../#get-podeconfiguration" tabindex="1" class="md-skip">
+      <a href="../../../#csrf" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -124,7 +124,7 @@
                 Pode
               </span>
               <span class="md-header-nav__topic">
-                Get-PodeConfiguration
+                Csrf
               </span>
             
           
@@ -249,7 +249,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../Core/Endware/" title="Functions" class="md-tabs__link">
+        <a href="../../Core/Config/" title="Functions" class="md-tabs__link">
           Functions
         </a>
       
@@ -605,8 +605,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Tutorials/ImportingModules/" title="Importing Modules" class="md-nav__link">
-      Importing Modules
+    <a href="../../../Tutorials/ImportingModules/" title="Modules & SnapIns" class="md-nav__link">
+      Modules & SnapIns
     </a>
   </li>
 
@@ -726,6 +726,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Cookies/" title="Cookies" class="md-nav__link">
+      Cookies
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -794,6 +806,18 @@
   <li class="md-nav__item">
     <a href="../../../Tutorials/Middleware/Sessions/" title="Sessions" class="md-nav__link">
       Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Middleware/CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
     </a>
   </li>
 
@@ -1130,6 +1154,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Core/Config/" title="Config" class="md-nav__link">
+      Config
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Core/Endware/" title="Endware" class="md-nav__link">
       Endware
     </a>
@@ -1289,10 +1325,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2" type="checkbox" id="nav-5-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2" type="checkbox" id="nav-5-2" checked>
     
     <label class="md-nav__link" for="nav-5-2">
       Middleware
@@ -1310,7 +1348,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Middleware/Access/" title="Access" class="md-nav__link">
+    <a href="../Access/" title="Access" class="md-nav__link">
       Access
     </a>
   </li>
@@ -1322,7 +1360,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Middleware/Auth/" title="Auth" class="md-nav__link">
+    <a href="../Auth/" title="Auth" class="md-nav__link">
       Auth
     </a>
   </li>
@@ -1332,9 +1370,114 @@
           
           
 
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Csrf
+      </label>
+    
+    <a href="./" title="Csrf" class="md-nav__link md-nav__link--active">
+      Csrf
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#description" title="Description" class="md-nav__link">
+    Description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" title="Examples" class="md-nav__link">
+    Examples
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-1" title="Example 1" class="md-nav__link">
+    Example 1
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-2" title="Example 2" class="md-nav__link">
+    Example 2
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-3" title="Example 3" class="md-nav__link">
+    Example 3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-4" title="Example 4" class="md-nav__link">
+    Example 4
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" title="Parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns" title="Returns" class="md-nav__link">
+    Returns
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
 
   <li class="md-nav__item">
-    <a href="../../Middleware/Limit/" title="Limit" class="md-nav__link">
+    <a href="../Limit/" title="Limit" class="md-nav__link">
       Limit
     </a>
   </li>
@@ -1346,7 +1489,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Middleware/Session/" title="Session" class="md-nav__link">
+    <a href="../Session/" title="Session" class="md-nav__link">
       Session
     </a>
   </li>
@@ -1384,6 +1527,18 @@
   <li class="md-nav__item">
     <a href="../../Response/Attach/" title="Attach" class="md-nav__link">
       Attach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Response/Cookie/" title="Cookie" class="md-nav__link">
+      Cookie
     </a>
   </li>
 
@@ -1637,12 +1792,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-5" type="checkbox" id="nav-5-5" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-5" type="checkbox" id="nav-5-5">
     
     <label class="md-nav__link" for="nav-5-5">
       Helpers
@@ -1660,7 +1813,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Coalesce/" title="Coalesce" class="md-nav__link">
+    <a href="../../Helpers/Coalesce/" title="Coalesce" class="md-nav__link">
       Coalesce
     </a>
   </li>
@@ -1670,86 +1823,9 @@
           
           
 
-  
-
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Get-PodeConfiguration
-      </label>
-    
-    <a href="./" title="Get-PodeConfiguration" class="md-nav__link md-nav__link--active">
-      Get-PodeConfiguration
-    </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#description" title="Description" class="md-nav__link">
-    Description
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#examples" title="Examples" class="md-nav__link">
-    Examples
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example-1" title="Example 1" class="md-nav__link">
-    Example 1
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#example-2" title="Example 2" class="md-nav__link">
-    Example 2
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
-  </li>
-
-        
-          
-          
-          
-
 
   <li class="md-nav__item">
-    <a href="../Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
+    <a href="../../Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
   </li>
@@ -1761,7 +1837,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Test-Empty/" title="Test-Empty" class="md-nav__link">
+    <a href="../../Helpers/Test-Empty/" title="Test-Empty" class="md-nav__link">
       Test-Empty
     </a>
   </li>
@@ -1773,7 +1849,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Test-IsPSCore/" title="Test-IsPSCore" class="md-nav__link">
+    <a href="../../Helpers/Test-IsPSCore/" title="Test-IsPSCore" class="md-nav__link">
       Test-IsPSCore
     </a>
   </li>
@@ -1785,7 +1861,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Test-IsUnix/" title="Test-IsUnix" class="md-nav__link">
+    <a href="../../Helpers/Test-IsUnix/" title="Test-IsUnix" class="md-nav__link">
       Test-IsUnix
     </a>
   </li>
@@ -1797,7 +1873,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Test-IsWindows/" title="Test-IsWindows" class="md-nav__link">
+    <a href="../../Helpers/Test-IsWindows/" title="Test-IsWindows" class="md-nav__link">
       Test-IsWindows
     </a>
   </li>
@@ -1862,8 +1938,36 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-3" title="Example 3" class="md-nav__link">
+    Example 3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-4" title="Example 4" class="md-nav__link">
+    Example 4
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" title="Parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns" title="Returns" class="md-nav__link">
+    Returns
+  </a>
   
 </li>
       
@@ -1883,53 +1987,140 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Functions/Helpers/Get-PodeConfiguration.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Functions/Middleware/Csrf.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="get-podeconfiguration">Get-PodeConfiguration</h1>
+                <h1 id="csrf">Csrf</h1>
 <h2 id="description">Description</h2>
-<p>The <code>Get-PodeConfiguration</code> function returns the loaded contents of the <code>pode.json</code> (or <code>pode.ENV.json</code>) configuration file.</p>
-<p>If no configuration file exists, then an empty hashtable will be returned.</p>
+<p>The <code>csrf</code> function allows you to setup CSRF validation, create middleware/check actions, and generate a token for use in webpages. If a route fails CSRF validation then a 403 status is returned.</p>
+<p>For the CSRF middleware, there are two different actions: <code>middleware</code> and <code>check</code>:</p>
+<ul>
+<li>
+<p>The <code>middleware</code> action will return a valid <code>scriptblock</code> for use with the <a href="../../Core/Middleware"><code>middleware</code></a> function. This is the main middleware that will apply to all routes that aren't set to have their HTTP methods be ignored.</p>
+</li>
+<li>
+<p>The <code>check</code> action will also return a valid <code>scriptblock</code> for use with the <a href="../../Core/Middleware"><code>middleware</code></a> function. However, this middleware will run the validation for every route, regardless of the HTTP methods being ignored. This action is mostly designed if you are ignoring all <code>GET</code> methods, but want validation on one of them. (To use the <code>check</code> action you need to first use the <code>setup</code> action - unless you've already run the <code>middleware</code> action).</p>
+</li>
+</ul>
+<p>To generate a new token, you can use the <code>token</code> action. This returns a token that you can use in your webpages - such as hidden inputs on forms, or in meta tags.</p>
+<p>To configure CSRF middleware - to use cookies, or ignore methods - you can either directly use the <code>setup</code> action, or use the <code>middleware</code> action.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>When setting the CSRF token in a hidden form input, the input <em>must</em> have a name of <code>pode.csrf</code>. The same applies to when sending the token via AJAX requests - in the query string, payload or header, the token should be named as <code>pode.csrf</code>.</p>
+</div>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
-<p>The following example load the <code>pode.json</code> file, and bind onto the port number (80) in the configuration:</p>
-<p><em>pode.json</em></p>
-<div class="codehilite"><pre><span></span><span class="p">{</span>
-    <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="mi">80</span>
-<span class="p">}</span>
-</pre></div>
+<p>The following example will setup CSRF middleware, along with session middleware. The GET route will generate a token for the <code>view</code>, which will be validated on the POST route:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">session</span> <span class="p">@{</span> <span class="s1">&#39;secret&#39;</span> <span class="p">=</span> <span class="s1">&#39;vegeta&#39;</span> <span class="p">})</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">middleware</span><span class="p">)</span>
 
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
+        <span class="n">view</span> <span class="s1">&#39;index&#39;</span> <span class="p">@{</span> <span class="s1">&#39;token&#39;</span> <span class="p">=</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">token</span><span class="p">)</span> <span class="p">}</span>
+    <span class="p">}</span>
 
-<p><em>server.ps1</em></p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="nv">$port</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-PodeConfiguration</span><span class="p">).</span><span class="n">port</span>
-    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="nv">$port</span> <span class="n">http</span>
+    <span class="n">route</span> <span class="n">post</span> <span class="s1">&#39;/login&#39;</span> <span class="p">{</span>
+        <span class="c"># the csrf token is required to use this route</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <h3 id="example-2">Example 2</h3>
-<p>The following example has a <code>pode.json</code> and <code>pode.dev.json</code>. When the you set <code>$env:PODE_ENVIRONMENT = 'dev'</code>, then Pode will automatically load the <code>pode.dev.json</code> file. When using <code>Get-PodeConfiguration</code> for the port number, the dev one of 8080 will be used:</p>
-<p><em>pode.json</em></p>
-<div class="codehilite"><pre><span></span><span class="p">{</span>
-    <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="mi">80</span>
+<p>The following example will setup CSRF middleware to use cookies, with a secret key for signing, instead of using sessions. Similar to the above example: the GET route will generate a token for the <code>view</code>, which will be validated on the POST route:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">middleware</span> <span class="n">-c</span> <span class="n">-s</span> <span class="s1">&#39;goku&#39;</span><span class="p">)</span>
+
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
+        <span class="n">view</span> <span class="s1">&#39;index&#39;</span> <span class="p">@{</span> <span class="s1">&#39;token&#39;</span> <span class="p">=</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">token</span><span class="p">)</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="n">route</span> <span class="n">post</span> <span class="s1">&#39;/login&#39;</span> <span class="p">{</span>
+        <span class="c"># the csrf token is required to use this route</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<p><em>pode.dev.json</em></p>
-<div class="codehilite"><pre><span></span><span class="p">{</span>
-    <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="mi">8080</span>
+<h3 id="example-3">Example 3</h3>
+<p>The following example will setup CSRF, and then do explicit checks on certain routes - regardless of what HTTP methods CSRF is setup to ignore. Here, the first GET route will render, but the other GET and POST routes will need to pass CSRF validation:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">csrf</span> <span class="n">setup</span> <span class="n">-c</span> <span class="n">-s</span> <span class="s1">&#39;broly&#39;</span>
+
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
+        <span class="n">view</span> <span class="s1">&#39;index&#39;</span> <span class="p">@{</span> <span class="s1">&#39;token&#39;</span> <span class="p">=</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">token</span><span class="p">)</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/messages&#39;</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">check</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c"># the csrf token is required to use this route</span>
+    <span class="p">}</span>
+
+    <span class="n">route</span> <span class="n">post</span> <span class="s1">&#39;/login&#39;</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">check</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c"># the csrf token is required to use this route</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<p><em>server.ps1</em></p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="nv">$port</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-PodeConfiguration</span><span class="p">).</span><span class="n">port</span>
-    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="nv">$port</span> <span class="n">http</span>
+<h3 id="example-4">Example 4</h3>
+<p>The following example will setup CSRF middleware to only ignore routes on GET requests:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">middleware</span> <span class="n">-i</span> <span class="p">@(</span><span class="s1">&#39;GET&#39;</span><span class="p">))</span>
 <span class="p">}</span>
 </pre></div>
+
+
+<h2 id="parameters">Parameters</h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Action</td>
+<td>string</td>
+<td>true</td>
+<td>The action to perform (Values: Check, Middleware, Setup, Token)</td>
+<td>null</td>
+</tr>
+<tr>
+<td>IgnoreMethods</td>
+<td>string[]</td>
+<td>false</td>
+<td>An array of methods that CSRF validation should ignore (unless explicitly using the <code>check</code> action)</td>
+<td>GET, HEAD, OPTIONS, TRACE, STATIC</td>
+</tr>
+<tr>
+<td>Secret</td>
+<td>string</td>
+<td>false</td>
+<td>Only for cookies, allows you to specify a secret key to sign the cookie. If not supplied, a global cookie secret needs to be configured</td>
+<td>null</td>
+</tr>
+<tr>
+<td>Cookie</td>
+<td>switch</td>
+<td>false</td>
+<td>If true, CSRF will use cookies instead of sessions</td>
+<td>false</td>
+</tr>
+</tbody>
+</table>
+<h2 id="returns">Returns</h2>
+<ul>
+<li>
+<p>The <code>middleware</code> and <code>check</code> action returns a valid middleware <code>scriptblock</code> value.</p>
+</li>
+<li>
+<p>The <code>token</code> action returns a secure random CSRF token as a <code>string</code> value.</p>
+</li>
+</ul>
                 
                   
                 
@@ -1950,7 +2141,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../Coalesce/" title="Coalesce" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../Auth/" title="Auth" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1959,19 +2150,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Coalesce
+                Auth
               </span>
             </div>
           </a>
         
         
-          <a href="../Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../Limit/" title="Limit" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Invoke-ScriptBlock
+                Limit
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

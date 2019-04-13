@@ -249,7 +249,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../../Functions/Core/Endware/" title="Functions" class="md-tabs__link">
+        <a href="../../../Functions/Core/Config/" title="Functions" class="md-tabs__link">
           Functions
         </a>
       
@@ -607,8 +607,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../ImportingModules/" title="Importing Modules" class="md-nav__link">
-      Importing Modules
+    <a href="../../ImportingModules/" title="Modules & SnapIns" class="md-nav__link">
+      Modules & SnapIns
     </a>
   </li>
 
@@ -789,6 +789,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Cookies/" title="Cookies" class="md-nav__link">
+      Cookies
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -857,6 +869,18 @@
   <li class="md-nav__item">
     <a href="../../Middleware/Sessions/" title="Sessions" class="md-nav__link">
       Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Middleware/CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
     </a>
   </li>
 
@@ -1191,6 +1215,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Core/Config/" title="Config" class="md-nav__link">
+      Config
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Core/Endware/" title="Endware" class="md-nav__link">
       Endware
     </a>
@@ -1395,6 +1431,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Csrf/" title="Csrf" class="md-nav__link">
+      Csrf
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Middleware/Limit/" title="Limit" class="md-nav__link">
       Limit
     </a>
@@ -1445,6 +1493,18 @@
   <li class="md-nav__item">
     <a href="../../../Functions/Response/Attach/" title="Attach" class="md-nav__link">
       Attach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Response/Cookie/" title="Cookie" class="md-nav__link">
+      Cookie
     </a>
   </li>
 
@@ -1731,18 +1791,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
-      Get-PodeConfiguration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../../../Functions/Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
@@ -1888,7 +1936,7 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 <div class="codehilite"><pre><span></span><span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-endpoint</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-listenName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
 <span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-endpoint</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-listenName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
 
-<span class="c"># or shorthand:</span>
+<span class="c"># or with aliases:</span>
 <span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ln</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-rm</span><span class="p">]</span>
 <span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ln</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-rm</span><span class="p">]</span>
 </pre></div>

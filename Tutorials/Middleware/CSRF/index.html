@@ -36,7 +36,7 @@
     
     
       
-        <title>Custom - Pode</title>
+        <title>CSRF - Pode</title>
       
     
     
@@ -98,7 +98,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="../../../#custom-authentication" tabindex="1" class="md-skip">
+      <a href="../../../#csrf" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -124,7 +124,7 @@
                 Pode
               </span>
               <span class="md-header-nav__topic">
-                Custom
+                CSRF
               </span>
             
           
@@ -749,10 +749,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-11" type="checkbox" id="nav-4-11" checked>
     
     <label class="md-nav__link" for="nav-4-11">
       Middleware
@@ -770,7 +772,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Middleware/Overview/" title="Overview" class="md-nav__link">
+    <a href="../Overview/" title="Overview" class="md-nav__link">
       Overview
     </a>
   </li>
@@ -782,7 +784,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Middleware/AccessRules/" title="Access Rules" class="md-nav__link">
+    <a href="../AccessRules/" title="Access Rules" class="md-nav__link">
       Access Rules
     </a>
   </li>
@@ -794,7 +796,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Middleware/RateLimiting/" title="Rate Limiting" class="md-nav__link">
+    <a href="../RateLimiting/" title="Rate Limiting" class="md-nav__link">
       Rate Limiting
     </a>
   </li>
@@ -806,7 +808,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Middleware/Sessions/" title="Sessions" class="md-nav__link">
+    <a href="../Sessions/" title="Sessions" class="md-nav__link">
       Sessions
     </a>
   </li>
@@ -816,11 +818,97 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../../Middleware/CSRF/" title="CSRF" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        CSRF
+      </label>
+    
+    <a href="./" title="CSRF" class="md-nav__link md-nav__link--active">
       CSRF
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" title="Usage" class="md-nav__link">
+    Usage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#actions" title="Actions" class="md-nav__link">
+    Actions
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#middleware" title="Middleware" class="md-nav__link">
+    Middleware
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup" title="Setup" class="md-nav__link">
+    Setup
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check" title="Check" class="md-nav__link">
+    Check
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tokens" title="Tokens" class="md-nav__link">
+    Tokens
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" title="Example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -905,12 +993,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13" type="checkbox" id="nav-4-13" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13" type="checkbox" id="nav-4-13">
     
     <label class="md-nav__link" for="nav-4-13">
       Authentication
@@ -928,7 +1014,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Overview/" title="Overview" class="md-nav__link">
+    <a href="../../Authentication/Overview/" title="Overview" class="md-nav__link">
       Overview
     </a>
   </li>
@@ -940,7 +1026,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Validators/" title="Validators" class="md-nav__link">
+    <a href="../../Authentication/Validators/" title="Validators" class="md-nav__link">
       Validators
     </a>
   </li>
@@ -952,7 +1038,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Basic/" title="Basic" class="md-nav__link">
+    <a href="../../Authentication/Basic/" title="Basic" class="md-nav__link">
       Basic
     </a>
   </li>
@@ -964,7 +1050,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../Form/" title="Form" class="md-nav__link">
+    <a href="../../Authentication/Form/" title="Form" class="md-nav__link">
       Form
     </a>
   </li>
@@ -974,70 +1060,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Custom
-      </label>
-    
-    <a href="./" title="Custom" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../../Authentication/Custom/" title="Custom" class="md-nav__link">
       Custom
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#setup-and-parsing" title="Setup and Parsing" class="md-nav__link">
-    Setup and Parsing
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validating" title="Validating" class="md-nav__link">
-    Validating
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#full-example" title="Full Example" class="md-nav__link">
-    Full Example
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#use-options" title="Use Options" class="md-nav__link">
-    Use Options
-  </a>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
         
@@ -1876,29 +1903,56 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#setup-and-parsing" title="Setup and Parsing" class="md-nav__link">
-    Setup and Parsing
+  <a href="#usage" title="Usage" class="md-nav__link">
+    Usage
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#validating" title="Validating" class="md-nav__link">
-    Validating
+  <a href="#actions" title="Actions" class="md-nav__link">
+    Actions
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#middleware" title="Middleware" class="md-nav__link">
+    Middleware
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup" title="Setup" class="md-nav__link">
+    Setup
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check" title="Check" class="md-nav__link">
+    Check
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tokens" title="Tokens" class="md-nav__link">
+    Tokens
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#full-example" title="Full Example" class="md-nav__link">
-    Full Example
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#use-options" title="Use Options" class="md-nav__link">
-    Use Options
+  <a href="#example" title="Example" class="md-nav__link">
+    Example
   </a>
   
 </li>
@@ -1919,133 +1973,120 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Tutorials/Authentication/Custom.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Tutorials/Middleware/CSRF.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="custom-authentication">Custom Authentication</h1>
-<p>Custom authentication works much like the inbuilt types, but allows you to specify your own parsing logic, as well as any custom options that might be required.</p>
-<h2 id="setup-and-parsing">Setup and Parsing</h2>
-<p>To setup and start using Custom authentication in Pode you can set <code>auth use -c &lt;name&gt;</code> in you server script. The <code>&lt;name&gt;</code> can be anything you want, even the name of an inbuilt method (it will still use your custom logic!).</p>
-<p>Let's say we wanted something similar to <a href="../Form"><code>Form</code></a> authentication but it requires a third piece of information: <code>ClientName</code>. To setup Custom authentication for this method, you'll need to specify the parsing scriptblock under <code>-p</code>, as well as the validator script too.</p>
-<p>The parsing script will be passed the current web event (containing the <code>Request</code>/<code>Response</code> objects, much like a <code>route</code>). In this script you can parse the request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either a <code>hashtable</code> or an <code>array</code>; this data will then <code>splatted</code> onto the validator scriptblock (<a href="../../../Functions/Helpers/Invoke-ScriptBlock">info</a>):</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="c"># here we&#39;re calling the custom method &quot;client&quot;</span>
-    <span class="n">auth</span> <span class="n">use</span> <span class="n">-c</span> <span class="n">client</span> <span class="n">-p</span> <span class="p">{</span>
-        <span class="c"># the current web event, and auth method options supplied</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">)</span>
+                <h1 id="csrf">CSRF</h1>
+<p>Pode has inbuilt support for CSRF middleware validation and tokens on web requests, where the secret to generate/validate the token can be stored in either sessions or signed cookies. When configured, the middleware will check for, and validate, a CSRF token the on a web request for valid routes - with support to ignore specific HTTP methods. If a route fails CSRF validation, then Pode will return a 403 status code.</p>
+<h2 id="usage">Usage</h2>
+<p>To setup and configure using CSRF in Pode, you can use the <a href="../../../Functions/Middleware/Csrf"><code>csrf</code></a> function. This function allows you to generate CSRF tokens, as well as two methods of returning valid middleware that can be supplied to the <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> function - or be used on <code>routes</code>.</p>
+<p>The make-up of the <code>csrf</code> function is as follows:</p>
+<div class="codehilite"><pre><span></span><span class="n">csrf</span> <span class="p">&lt;</span><span class="n">action</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-ignoreMethods</span> <span class="p">@()]</span> <span class="p">[</span><span class="n">-secret</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-cookie</span><span class="p">]</span>
 
-        <span class="c"># get client/user/pass field names to get from payload</span>
-        <span class="nv">$clientField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">ClientField</span> <span class="s1">&#39;client&#39;</span><span class="p">)</span>
-        <span class="nv">$userField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">UsernameField</span> <span class="s1">&#39;username&#39;</span><span class="p">)</span>
-        <span class="nv">$passField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">PasswordField</span> <span class="s1">&#39;password&#39;</span><span class="p">)</span>
-
-        <span class="c"># get the client/user/pass from the post data</span>
-        <span class="nv">$client</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$clientField</span>
-        <span class="nv">$username</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$userField</span>
-        <span class="nv">$password</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$passField</span>
-
-        <span class="c"># return the data, to be passed to the validator script</span>
-        <span class="k">return</span> <span class="p">@(</span><span class="nv">$client</span><span class="p">,</span> <span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
-    <span class="p">}</span> <span class="p">`</span>
-    <span class="n">-v</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$client</span><span class="p">,</span> <span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
-
-        <span class="c"># check if the client is valid</span>
-
-        <span class="k">return</span>  <span class="p">@{</span> <span class="s1">&#39;user&#39;</span> <span class="p">=</span> <span class="nv">$user</span> <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+<span class="c"># or with aliases:</span>
+<span class="n">csrf</span> <span class="p">&lt;</span><span class="n">action</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-i</span> <span class="p">@()]</span> <span class="p">[</span><span class="n">-s</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-c</span><span class="p">]</span>
 </pre></div>
 
 
-<h2 id="validating">Validating</h2>
-<p>Once configured you can start using the Custom authentication to validate incoming requests. You can either configure the validation to happen on every <code>route</code> as global <code>middleware</code>, or as custom <code>route</code> middleware.</p>
-<p>The following will use Custom authentication to validate every request on every <code>route</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">middleware</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">client</span><span class="p">)</span>
-<span class="p">}</span>
+<p>The valid actions for the function are <code>middleware</code>, <code>check</code>, <code>setup</code> and <code>token</code>; each of which are described below.</p>
+<p>The <code>-IgnoreMethods</code> array can either be empty, to run validation on every route, or can be formed of the following HTTP methods: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, STATIC.</p>
+<p>The <code>-Secret</code> is used for signing the cookie that might be used, and is only required when <code>-Cookie</code> is also supplied.</p>
+<h2 id="actions">Actions</h2>
+<h3 id="middleware">Middleware</h3>
+<p>Using the <code>middleware</code> action on the <a href="../../../Functions/Middleware/Csrf"><code>csrf</code></a> function allows you to configure how CSRF will work in Pode, as well as returning a valid <code>scriptblock</code> that can be used with the <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> function. You can also configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.</p>
+<p>The below will setup default CSRF middleware, which will use sessions (so session middleware is required), and will ignore the default HTTP methods of GET, HEAD, OPTIONS, TRACE, STATIC:</p>
+<div class="codehilite"><pre><span></span><span class="n">middleware</span> <span class="p">(</span><span class="n">session</span> <span class="p">@{</span> <span class="s1">&#39;secret&#39;</span> <span class="p">=</span> <span class="s1">&#39;vegeta&#39;</span> <span class="p">})</span>
+<span class="n">middleware</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">middleware</span><span class="p">)</span>
 </pre></div>
 
 
-<p>Whereas the following example will use Custom authentication to only validate requests on specific a <code>route</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/info&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">client</span><span class="p">)</span> <span class="p">{</span>
+<p>Now, you can use the <code>csrf</code> function with the <code>check</code> and <code>token</code> actions.</p>
+<h3 id="setup">Setup</h3>
+<p>Similar to the <code>middleware</code> action, the <code>setup</code> action on the <a href="../../../Functions/Middleware/Csrf"><code>csrf</code></a> function also allows you to configure how CSRF will work in Pode. You can configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.</p>
+<p>Below, we'll setup CSRF to work on cookies, and only ignore GET routes:</p>
+<div class="codehilite"><pre><span></span><span class="n">csrf</span> <span class="n">setup</span> <span class="n">-i</span> <span class="p">@(</span><span class="s1">&#39;GET&#39;</span><span class="p">)</span> <span class="n">-c</span> <span class="n">-s</span> <span class="s1">&#39;secret-key&#39;</span>
+</pre></div>
+
+
+<p>Now, you can use the <code>csrf</code> function with the <code>check</code> and <code>token</code> actions.</p>
+<h3 id="check">Check</h3>
+<p>The <code>check</code> action is similar to the <code>middleware</code> action, but is mostly designed so you can use it on <code>routes</code>. By default the CSRF middleware will ignore GET routes, however the <code>check</code> middleware skips this method validation - meaning you could use it on a GET route and it will require a valid CSRF token.</p>
+<p>Unlike the <code>middleware</code> action however, you cannot configure HTTP methods to ignore or whether to to sessions/cookies. Therefore, in order to use this action you are required to use the <code>setup</code> action first (or the <code>middleware</code> action).</p>
+<p>The below will run CSRF validation on the GET route, even though the setup is configured to ignore GET routes:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">csrf</span> <span class="n">setup</span>
+
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/messages&#39;</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">check</span><span class="p">)</span> <span class="p">{</span>
         <span class="c"># logic</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<h2 id="full-example">Full Example</h2>
-<p>The following full example of Custom authentication will setup and configure authentication, validate that a users client/username/password is valid, and then validate on a specific <code>route</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+<h3 id="tokens">Tokens</h3>
+<p>The <a href="../../../Functions/Middleware/Csrf"><code>csrf</code></a> function allows you to generate tokens using the <code>token</code> action. It will randomly generate a token that you can use in your webpages, such as in hidden form inputs or meta elements for AJAX requests. The token itself is formed using a secure random secret key, and a random salt.</p>
+<p>To generate the token, you can use the following command - but only after you've used either the <code>setup</code> or <code>middleware</code> actions to configure CSRF:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">middleware</span><span class="p">)</span>
 
-    <span class="c"># here we&#39;re calling the custom method &quot;client&quot;</span>
-    <span class="n">auth</span> <span class="n">use</span> <span class="n">-c</span> <span class="n">client</span> <span class="n">-p</span> <span class="p">{</span>
-        <span class="c"># the current web event, and auth method options supplied</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">)</span>
-
-        <span class="c"># get client/user/pass field names to get from payload</span>
-        <span class="nv">$clientField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">ClientField</span> <span class="s1">&#39;client&#39;</span><span class="p">)</span>
-        <span class="nv">$userField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">UsernameField</span> <span class="s1">&#39;username&#39;</span><span class="p">)</span>
-        <span class="nv">$passField</span> <span class="p">=</span> <span class="p">(</span><span class="n">coalesce</span> <span class="nv">$opts</span><span class="p">.</span><span class="n">PasswordField</span> <span class="s1">&#39;password&#39;</span><span class="p">)</span>
-
-        <span class="c"># get the client/user/pass from the post data</span>
-        <span class="nv">$client</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$clientField</span>
-        <span class="nv">$username</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$userField</span>
-        <span class="nv">$password</span> <span class="p">=</span> <span class="nv">$event</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="nv">$passField</span>
-
-        <span class="c"># return the data, to be passed to the validator script</span>
-        <span class="k">return</span> <span class="p">@(</span><span class="nv">$client</span><span class="p">,</span> <span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
-    <span class="p">}</span> <span class="p">`</span>
-    <span class="n">-v</span> <span class="p">{</span>
-        <span class="k">param</span><span class="p">(</span><span class="nv">$client</span><span class="p">,</span> <span class="nv">$username</span><span class="p">,</span> <span class="nv">$password</span><span class="p">)</span>
-
-        <span class="c"># check if the client is valid</span>
-
-        <span class="k">return</span>  <span class="p">@{</span> <span class="s1">&#39;user&#39;</span> <span class="p">=</span> <span class="nv">$user</span> <span class="p">}</span>
-    <span class="p">}</span>
-
-    <span class="c"># check the request on this route against the authentication</span>
-    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/cpu&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">client</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">json</span> <span class="p">@{</span> <span class="s1">&#39;cpu&#39;</span> <span class="p">=</span> <span class="n">82</span> <span class="p">}</span>
-    <span class="p">}</span>
-
-    <span class="c"># this route will not be validated against the authentication</span>
-    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/memory&#39;</span> <span class="p">{</span>
-        <span class="n">json</span> <span class="p">@{</span> <span class="s1">&#39;memory&#39;</span> <span class="p">=</span> <span class="n">14</span> <span class="p">}</span>
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
+        <span class="n">view</span> <span class="s1">&#39;login&#39;</span> <span class="p">@{</span> <span class="s1">&#39;token&#39;</span> <span class="p">=</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">token</span><span class="p">)</span> <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<p>Below is an example HTML page that would POST the client/username/password to the server above:</p>
-<div class="codehilite"><pre><span></span><span class="p">&lt;</span><span class="nt">form</span> <span class="na">action</span><span class="o">=</span><span class="s">&quot;/login&quot;</span> <span class="na">method</span><span class="o">=</span><span class="s">&quot;post&quot;</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>Client:<span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="na">name</span><span class="o">=</span><span class="s">&quot;client&quot;</span><span class="p">/&gt;</span>
-    <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>Username:<span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span> <span class="na">name</span><span class="o">=</span><span class="s">&quot;username&quot;</span><span class="p">/&gt;</span>
-    <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>Password:<span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span> <span class="na">name</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="p">/&gt;</span>
-    <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span> <span class="na">value</span><span class="o">=</span><span class="s">&quot;Login&quot;</span><span class="p">/&gt;</span>
-    <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-<span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<p>This will return a token as a <code>string</code> value. When you set this token in a hidden form input, the name of the input <em>must</em> be <code>pode.csrf</code>. The same applies to when sending the token via AJAX requests - in the query string, payload or header, the token should be named as <code>pode.csrf</code>.</p>
+<h2 id="example">Example</h2>
+<p>The following example will configure CSRF as default middleware, and supply a token for the <code>&lt;form&gt;</code> in the index page. The POST route will require the token to be supplied, otherwise a 403 status code will be returned.</p>
+<p><em>server.ps1</em></p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">listen</span> <span class="n">localhost</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+    <span class="n">engine</span> <span class="n">pode</span>
+
+    <span class="c"># setup session and csrf middleware</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">session</span> <span class="p">@{</span> <span class="s1">&#39;secret&#39;</span> <span class="p">=</span> <span class="s1">&#39;schwifty&#39;</span> <span class="p">})</span>
+    <span class="n">middleware</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">middleware</span><span class="p">)</span>
+
+    <span class="c"># this route will work, as GET methods are ignored by CSRF by default</span>
+    <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
+        <span class="nv">$token</span> <span class="p">=</span> <span class="p">(</span><span class="n">csrf</span> <span class="n">token</span><span class="p">)</span>
+        <span class="n">view</span> <span class="s1">&#39;index&#39;</span> <span class="n">-fm</span> <span class="p">@{</span> <span class="s1">&#39;csrfToken&#39;</span> <span class="p">=</span> <span class="nv">$token</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c"># POST route for form which will require the csrf token from above</span>
+    <span class="n">route</span> <span class="n">post</span> <span class="s1">&#39;/token&#39;</span> <span class="p">{</span>
+        <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
+        <span class="n">flash</span> <span class="n">add</span> <span class="s1">&#39;message&#39;</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Data</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span>
+        <span class="n">redirect</span> <span class="s1">&#39;/&#39;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 
 
-<h2 id="use-options">Use Options</h2>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>There are no <code>use</code> options for custom types, unless you define your own.</p>
-</div>
+<p><em>index.pode</em></p>
+<div class="codehilite"><pre><span></span><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>CSRF Example Page<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>Example form using a CSRF token<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>Clicking submit will just reload the page with your message<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+
+        <span class="p">&lt;</span><span class="nt">form</span> <span class="na">action</span><span class="o">=</span><span class="s">&#39;/token&#39;</span> <span class="na">method</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">&gt;</span>
+            <span class="c">&lt;!-- the hidden input for the CSRF token needs to have the name &#39;pode.csrf&#39; --&gt;</span>
+            <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&#39;hidden&#39;</span> <span class="na">name</span><span class="o">=</span><span class="s">&#39;pode.csrf&#39;</span> <span class="na">value</span><span class="o">=</span><span class="s">&#39;$($data.csrfToken)&#39;</span> <span class="p">/&gt;</span>
+            <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&#39;text&#39;</span> <span class="na">name</span><span class="o">=</span><span class="s">&#39;message&#39;</span> <span class="na">placeholder</span><span class="o">=</span><span class="s">&#39;Enter any random text&#39;</span> <span class="p">/&gt;</span>
+            <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&#39;submit&#39;</span> <span class="na">value</span><span class="o">=</span><span class="s">&#39;Submit&#39;</span> <span class="p">/&gt;</span>
+        <span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+
+        <span class="c">&lt;!-- on the page reload, display your message --&gt;</span>
+        $(if ($data.flash[&#39;message&#39;]) {
+            &quot;<span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>$($data.flash[&#39;message&#39;])<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>&quot;
+        })
+    <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</pre></div>
                 
                   
                 
@@ -2066,7 +2107,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../Form/" title="Form" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../Sessions/" title="Sessions" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -2075,19 +2116,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Form
+                Sessions
               </span>
             </div>
           </a>
         
         
-          <a href="../../ViewEngines/Pode/" title="Pode" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../../Logging/Overview/" title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Pode
+                Overview
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

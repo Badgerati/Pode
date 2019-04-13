@@ -249,7 +249,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../Endware/" title="Functions" class="md-tabs__link md-tabs__link--active">
+        <a href="../Config/" title="Functions" class="md-tabs__link md-tabs__link--active">
           Functions
         </a>
       
@@ -605,8 +605,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Tutorials/ImportingModules/" title="Importing Modules" class="md-nav__link">
-      Importing Modules
+    <a href="../../../Tutorials/ImportingModules/" title="Modules & SnapIns" class="md-nav__link">
+      Modules & SnapIns
     </a>
   </li>
 
@@ -726,6 +726,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Cookies/" title="Cookies" class="md-nav__link">
+      Cookies
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -794,6 +806,18 @@
   <li class="md-nav__item">
     <a href="../../../Tutorials/Middleware/Sessions/" title="Sessions" class="md-nav__link">
       Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Middleware/CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
     </a>
   </li>
 
@@ -1132,6 +1156,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Config/" title="Config" class="md-nav__link">
+      Config
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Endware/" title="Endware" class="md-nav__link">
       Endware
     </a>
@@ -1436,6 +1472,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Middleware/Csrf/" title="Csrf" class="md-nav__link">
+      Csrf
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Middleware/Limit/" title="Limit" class="md-nav__link">
       Limit
     </a>
@@ -1486,6 +1534,18 @@
   <li class="md-nav__item">
     <a href="../../Response/Attach/" title="Attach" class="md-nav__link">
       Attach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Response/Cookie/" title="Cookie" class="md-nav__link">
+      Cookie
     </a>
   </li>
 
@@ -1772,18 +1832,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
-      Get-PodeConfiguration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../../Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
@@ -1958,16 +2006,16 @@
                 
                 <h1 id="listen">Listen</h1>
 <h2 id="description">Description</h2>
-<p>The <code>listen</code> function allows you to specify the IP/Host, Port and Protocol for endpoints that your <code>Server</code> will listen on. If the protocol is <code>https</code> then you can also specify a certificate to bind, even having Pode create a self-signed certificate for you.</p>
+<p>The <code>listen</code> function allows you to specify the IP/Hostname, Port and Protocol for endpoints that your <a href="../Server"><code>server</code></a> will listen on. If the protocol is <code>https</code> then you can also specify a certificate name or thumbprint to bind against the IP/Hostname - even having Pode create a self-signed certificate for you.</p>
 <p>The <code>listen</code> function will check for administrator privileges on Windows, unless the endpoint you're attempting to listen on is a localhost one.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You can specify multiple endpoints to listen on for HTTP/HTTPS endpoints however, you can only supply a single endpoint for SMTP/TCP</p>
+<p>You can specify multiple endpoints to listen on for HTTP/HTTPS however, you can only supply a single endpoint for SMTP/TCP.</p>
 </div>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
 <p>The following example will listen on every IP over port 8080 for HTTP requests:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 <span class="p">}</span>
 </pre></div>
@@ -1975,7 +2023,7 @@
 
 <h3 id="example-2">Example 2</h3>
 <p>The following example will listen on localhost over port 25 for SMTP requests (this will not require administrator privileges):</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="n">127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span><span class="err">:</span><span class="n">25</span> <span class="n">smtp</span>
 <span class="p">}</span>
 </pre></div>
@@ -1983,7 +2031,7 @@
 
 <h3 id="example-3">Example 3</h3>
 <p>The following example will listen on a specific IP address over port 8443 for HTTPS requests; it will also inform Pode to create and bind a self-signed certificate to the IP:Port:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="n">10</span><span class="p">.</span><span class="n">10</span><span class="p">.</span><span class="n">1</span><span class="p">.</span><span class="n">4</span><span class="err">:</span><span class="n">8443</span> <span class="n">https</span> <span class="n">-cert</span> <span class="n">self</span>
 <span class="p">}</span>
 </pre></div>
@@ -1991,23 +2039,23 @@
 
 <h3 id="example-4">Example 4</h3>
 <p>The following example will listen on a specific host name over port 8080 for HTTP requests:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="n">pode</span><span class="p">.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <h3 id="example-5">Example 5</h3>
-<p>The following example will listen on a wildcard endpoint over port 8080 for HTTP requests:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">listen</span> <span class="p">*.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+<p>The following example will listen on a wildcard endpoint over port 8443 for HTTPS requests, binding a certificate to the endpoint using a thumbprint:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">listen</span> <span class="p">*.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8443</span> <span class="n">https</span> <span class="n">-cthumb</span> <span class="s1">&#39;2A9467F7D3940243D6C07DE61E7FCCE292&#39;</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <h3 id="example-6">Example 6</h3>
 <p>The following example will listen on multiple endpoints for HTTP (Note, you can specify a combination of HTTP/HTTPS endpoints):</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="n">pode</span><span class="p">.</span><span class="n">foo</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
     <span class="n">listen</span> <span class="n">pode</span><span class="p">.</span><span class="n">bar</span><span class="p">.</span><span class="n">com</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 <span class="p">}</span>
@@ -2030,22 +2078,29 @@
 <td>IPPort</td>
 <td>string</td>
 <td>true</td>
-<td>The IP/Host:Port combination for an endpoint that the server should listen on</td>
+<td>The IP/Hostname:Port combination for an endpoint that the server should listen on</td>
 <td>null</td>
 </tr>
 <tr>
 <td>Type</td>
 <td>string</td>
 <td>true</td>
-<td>The protocol of the endpoint the server should use: HTTP, HTTPS, SMTP, TCP</td>
+<td>The protocol of the endpoint the server should use (Values: HTTP, HTTPS, SMTP, TCP)</td>
 <td>null</td>
 </tr>
 <tr>
-<td>Cert</td>
+<td>Certificate</td>
 <td>string</td>
 <td>false</td>
-<td>The certificate to bind to the endpoint. If the certificate is <code>self</code> then Pode will create a self-signed certificate. If the certificate is <code>*.example.com</code> then it must be installed to <code>Cert:/LocalMachine/My</code></td>
+<td>The certificate name to find and bind to an HTTPS endpoint. If the certificate name passed is <code>self</code> then Pode will create a self-signed certificate. If the certificate name is <code>*.example.com</code> then it must be installed to <code>Cert:/LocalMachine/My</code></td>
 <td>empty</td>
+</tr>
+<tr>
+<td>Thumbprint</td>
+<td>string</td>
+<td>false</td>
+<td>The certificate thumbprint to bind to an HTTPS endpoint. If both a certificate name and thumbprint are supplied, then the thumbprint takes priority</td>
+<td>null</td>
 </tr>
 <tr>
 <td>Name</td>

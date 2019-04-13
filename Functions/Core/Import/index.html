@@ -249,7 +249,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../Endware/" title="Functions" class="md-tabs__link md-tabs__link--active">
+        <a href="../Config/" title="Functions" class="md-tabs__link md-tabs__link--active">
           Functions
         </a>
       
@@ -605,8 +605,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Tutorials/ImportingModules/" title="Importing Modules" class="md-nav__link">
-      Importing Modules
+    <a href="../../../Tutorials/ImportingModules/" title="Modules & SnapIns" class="md-nav__link">
+      Modules & SnapIns
     </a>
   </li>
 
@@ -726,6 +726,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Cookies/" title="Cookies" class="md-nav__link">
+      Cookies
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -794,6 +806,18 @@
   <li class="md-nav__item">
     <a href="../../../Tutorials/Middleware/Sessions/" title="Sessions" class="md-nav__link">
       Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Middleware/CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
     </a>
   </li>
 
@@ -1132,6 +1156,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Config/" title="Config" class="md-nav__link">
+      Config
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Endware/" title="Endware" class="md-nav__link">
       Endware
     </a>
@@ -1231,6 +1267,13 @@
           <li class="md-nav__item">
   <a href="#example-2" title="Example 2" class="md-nav__link">
     Example 2
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-3" title="Example 3" class="md-nav__link">
+    Example 3
   </a>
   
 </li>
@@ -1408,6 +1451,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Middleware/Csrf/" title="Csrf" class="md-nav__link">
+      Csrf
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Middleware/Limit/" title="Limit" class="md-nav__link">
       Limit
     </a>
@@ -1458,6 +1513,18 @@
   <li class="md-nav__item">
     <a href="../../Response/Attach/" title="Attach" class="md-nav__link">
       Attach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Response/Cookie/" title="Cookie" class="md-nav__link">
+      Cookie
     </a>
   </li>
 
@@ -1744,18 +1811,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
-      Get-PodeConfiguration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../../Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
@@ -1869,6 +1924,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-3" title="Example 3" class="md-nav__link">
+    Example 3
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1902,8 +1964,9 @@
                 
                 <h1 id="import">Import</h1>
 <h2 id="description">Description</h2>
-<p>The <code>import</code> function lets you declare paths to PowerShell Modules (<code>.psm1</code>/<code>.psd1</code>) that need to be imported into each runspace - you can also specify the name of a module you already have installed. Because Pode runs most things in isolated runspaces, importing and using external modules in Pode can be quite bothersome, with <code>import</code> Pode will handle importing your modules into all runspaces for you.</p>
+<p>The <code>import</code> function lets you declare names/paths to PowerShell Modules (<code>.psm1</code>/<code>.psd1</code>) that need to be imported into each runspace - you can also specify the name of a module you already have installed. Because Pode runs most things in isolated runspaces, importing and using external modules in Pode can be quite bothersome, with <code>import</code> Pode will handle importing your modules into all runspaces for you.</p>
 <p>If a module name is used rather than a raw path, then Pode will check you're server's <a href="../../../Getting-Started/LocalModules"><code>ps_modules</code></a> directory first, and then check your globally installed modules.</p>
+<p>Using the <code>-SnapIn</code> flag, Pode will treat the name supplied to <code>import</code> as a snap-in rather than a module - this is only supported on Windows PowerShell.</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
 <p>The following example will import the specified module file into each of the runspaces that Pode creates. This way you'll be able to use each of the functions declared within  the module in <code>routes</code>, <code>timers</code>, <code>schedules</code>, <code>loggers</code>, <code>handlers</code>, etc. (basically, everything):</p>
@@ -1917,6 +1980,14 @@
 <p>The following example will import the <code>EPS</code> module, for views, into each of the runspaces:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="n">import</span> <span class="n">eps</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="example-3">Example 3</h3>
+<p>The following example will import the <code>WDeploySnapin3.0</code> snap-in into each of the runspaces:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+    <span class="n">import</span> <span class="n">-snapin</span> <span class="s1">&#39;WDeploySnapin3.0&#39;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -1945,6 +2016,13 @@
 <td>switch</td>
 <td>false</td>
 <td>If true, the module will be imported immediately into the current scope</td>
+<td>false</td>
+</tr>
+<tr>
+<td>SnapIn</td>
+<td>switch</td>
+<td>false</td>
+<td>If true, Pode will treat the name/path as a snap-in rather than a module</td>
 <td>false</td>
 </tr>
 </tbody>

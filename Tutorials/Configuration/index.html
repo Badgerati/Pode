@@ -249,7 +249,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../Functions/Core/Endware/" title="Functions" class="md-tabs__link">
+        <a href="../../Functions/Core/Config/" title="Functions" class="md-tabs__link">
           Functions
         </a>
       
@@ -607,8 +607,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../ImportingModules/" title="Importing Modules" class="md-nav__link">
-      Importing Modules
+    <a href="../ImportingModules/" title="Modules & SnapIns" class="md-nav__link">
+      Modules & SnapIns
     </a>
   </li>
 
@@ -780,6 +780,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Routes/Cookies/" title="Cookies" class="md-nav__link">
+      Cookies
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -848,6 +860,18 @@
   <li class="md-nav__item">
     <a href="../Middleware/Sessions/" title="Sessions" class="md-nav__link">
       Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Middleware/CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
     </a>
   </li>
 
@@ -1182,6 +1206,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Core/Config/" title="Config" class="md-nav__link">
+      Config
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Core/Endware/" title="Endware" class="md-nav__link">
       Endware
     </a>
@@ -1386,6 +1422,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Middleware/Csrf/" title="Csrf" class="md-nav__link">
+      Csrf
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Middleware/Limit/" title="Limit" class="md-nav__link">
       Limit
     </a>
@@ -1436,6 +1484,18 @@
   <li class="md-nav__item">
     <a href="../../Functions/Response/Attach/" title="Attach" class="md-nav__link">
       Attach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Response/Cookie/" title="Cookie" class="md-nav__link">
+      Cookie
     </a>
   </li>
 
@@ -1722,18 +1782,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../../Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
-      Get-PodeConfiguration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../../Functions/Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
@@ -1880,7 +1928,7 @@
 <p>After this, you can put whatever else you want into the configuration file.</p>
 <h2 id="usage">Usage</h2>
 <p>The configuration file is automatically loaded when you start your server. Pode will look in the root directory of your server for a <code>pode.json</code> file, and if found it will be loaded internally.</p>
-<p>Within your scripts you can use the <a href="../../Functions/Helpers/Get-PodeConfiguration"><code>Get-PodeConfiguration</code></a> function, which will return the contents of the file.</p>
+<p>Within your scripts you can use the <a href="../../Functions/Core/Config"><code>config</code></a> function, which will return the contents of the relevant config file.</p>
 <p>For example, say you have the following <code>pode.json</code>:</p>
 <div class="codehilite"><pre><span></span><span class="p">{</span>
     <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="mi">8080</span>
@@ -1890,7 +1938,7 @@
 
 <p>Then you can get and use the port number via:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="nv">$port</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-PodeConfiguration</span><span class="p">).</span><span class="n">port</span>
+    <span class="nv">$port</span> <span class="p">=</span> <span class="p">(</span><span class="n">config</span><span class="p">).</span><span class="n">port</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="nv">$port</span> <span class="n">http</span>
 <span class="p">}</span>
 </pre></div>
@@ -1919,7 +1967,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../ImportingModules/" title="Importing Modules" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../ImportingModules/" title="Modules & SnapIns" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1928,7 +1976,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Importing Modules
+                Modules & SnapIns
               </span>
             </div>
           </a>

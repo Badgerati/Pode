@@ -247,7 +247,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="Functions/Core/Endware/" title="Functions" class="md-tabs__link">
+        <a href="Functions/Core/Config/" title="Functions" class="md-tabs__link">
           Functions
         </a>
       
@@ -648,8 +648,8 @@
 
 
   <li class="md-nav__item">
-    <a href="Tutorials/ImportingModules/" title="Importing Modules" class="md-nav__link">
-      Importing Modules
+    <a href="Tutorials/ImportingModules/" title="Modules & SnapIns" class="md-nav__link">
+      Modules & SnapIns
     </a>
   </li>
 
@@ -769,6 +769,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="Tutorials/Routes/Cookies/" title="Cookies" class="md-nav__link">
+      Cookies
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -837,6 +849,18 @@
   <li class="md-nav__item">
     <a href="Tutorials/Middleware/Sessions/" title="Sessions" class="md-nav__link">
       Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="Tutorials/Middleware/CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
     </a>
   </li>
 
@@ -1171,6 +1195,18 @@
 
 
   <li class="md-nav__item">
+    <a href="Functions/Core/Config/" title="Config" class="md-nav__link">
+      Config
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="Functions/Core/Endware/" title="Endware" class="md-nav__link">
       Endware
     </a>
@@ -1375,6 +1411,18 @@
 
 
   <li class="md-nav__item">
+    <a href="Functions/Middleware/Csrf/" title="Csrf" class="md-nav__link">
+      Csrf
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="Functions/Middleware/Limit/" title="Limit" class="md-nav__link">
       Limit
     </a>
@@ -1425,6 +1473,18 @@
   <li class="md-nav__item">
     <a href="Functions/Response/Attach/" title="Attach" class="md-nav__link">
       Attach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="Functions/Response/Cookie/" title="Cookie" class="md-nav__link">
+      Cookie
     </a>
   </li>
 
@@ -1711,18 +1771,6 @@
 
 
   <li class="md-nav__item">
-    <a href="Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
-      Get-PodeConfiguration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="Functions/Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
@@ -1844,6 +1892,7 @@
 <p><a href="https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt"><img alt="MIT licensed" src="https://img.shields.io/badge/license-MIT-blue.svg" /></a>
 <a href="https://ci.appveyor.com/project/Badgerati/pode/branch/develop"><img alt="AppVeyor" src="https://img.shields.io/appveyor/ci/Badgerati/Pode/develop.svg?label=AppVeyor" /></a>
 <a href="https://travis-ci.org/Badgerati/Pode"><img alt="Travis CI" src="https://img.shields.io/travis/Badgerati/Pode/develop.svg?label=Travis%20CI" /></a>
+<a href="https://coveralls.io/github/Badgerati/Pode?branch=develop"><img alt="Code Coverage" src="https://coveralls.io/repos/github/Badgerati/Pode/badge.svg?branch=develop" /></a>
 <a href="https://gitter.im/Badgerati/Pode?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge"><img alt="Gitter" src="https://badges.gitter.im/Badgerati/Pode.svg" /></a></p>
 <p>Pode is a Cross-Platform PowerShell framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers. It also allows you to render dynamic files using <code>.pode</code> files, which is effectively embedded PowerShell, or other Third-Party template engines. Pode also has support for middleware, sessions, and authentication; as well as access and rate limiting features.</p>
 <p><a href="./Getting-Started/Installation"><img alt="GetStarted" src="https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&amp;style=for-the-badge" /></a>
@@ -1864,7 +1913,7 @@
 <li>Restart the server via file monitoring, or defined periods/times</li>
 <li>Ability to allow/deny requests from certain IP addresses and subnets</li>
 <li>Basic rate limiting for IP addresses and subnets</li>
-<li>Middleware and Sessions on web servers, with Flash message support</li>
+<li>Middleware and Sessions on web servers, with Flash message and CSRF support</li>
 <li>Authentication on requests, such as Basic and Windows Active Directory</li>
 <li>(Windows) Generate/bind self-signed certificates, and signed certificates</li>
 <li>(Windows) Open the hosted server as a desktop application</li>

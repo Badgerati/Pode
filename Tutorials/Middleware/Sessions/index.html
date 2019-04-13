@@ -249,7 +249,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../../Functions/Core/Endware/" title="Functions" class="md-tabs__link">
+        <a href="../../../Functions/Core/Config/" title="Functions" class="md-tabs__link">
           Functions
         </a>
       
@@ -607,8 +607,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../ImportingModules/" title="Importing Modules" class="md-nav__link">
-      Importing Modules
+    <a href="../../ImportingModules/" title="Modules & SnapIns" class="md-nav__link">
+      Modules & SnapIns
     </a>
   </li>
 
@@ -724,6 +724,18 @@
   <li class="md-nav__item">
     <a href="../../Routes/FlashMessages/" title="Flash Messages" class="md-nav__link">
       Flash Messages
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Routes/Cookies/" title="Cookies" class="md-nav__link">
+      Cookies
     </a>
   </li>
 
@@ -877,6 +889,18 @@
   
 </nav>
     
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
+    </a>
   </li>
 
         
@@ -1210,6 +1234,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Core/Config/" title="Config" class="md-nav__link">
+      Config
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Core/Endware/" title="Endware" class="md-nav__link">
       Endware
     </a>
@@ -1414,6 +1450,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Csrf/" title="Csrf" class="md-nav__link">
+      Csrf
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Middleware/Limit/" title="Limit" class="md-nav__link">
       Limit
     </a>
@@ -1464,6 +1512,18 @@
   <li class="md-nav__item">
     <a href="../../../Functions/Response/Attach/" title="Attach" class="md-nav__link">
       Attach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Response/Cookie/" title="Cookie" class="md-nav__link">
+      Cookie
     </a>
   </li>
 
@@ -1750,18 +1810,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../../../Functions/Helpers/Get-PodeConfiguration/" title="Get-PodeConfiguration" class="md-nav__link">
-      Get-PodeConfiguration
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../../../Functions/Helpers/Invoke-ScriptBlock/" title="Invoke-ScriptBlock" class="md-nav__link">
       Invoke-ScriptBlock
     </a>
@@ -1916,7 +1964,7 @@
 <p>Session <code>middleware</code> is supported on web requests and responses, in the form of signed-cookies and server-side data storage. When configured, the middleware will check for a session-cookie on the request; if a cookie is not found on the request, or the session is not in the store, then a new session is created and attached to the response. If there is a session, then the appropriate data is loaded from the store.</p>
 <p>The age of the session-cookie can be specified, as well as whether to extend the duration each time on each request. A secret-key to sign cookies can be supplied, as well as the ability to specify custom data stores - the default is in-mem, custom could be anything like redis/mongo.</p>
 <h2 id="usage">Usage</h2>
-<p>To setup and configure the using sessions in Pode, you can use the <a href="../../../Functions/Middleware/Session"><code>session</code></a> function. This function will return valid middleware that can be supplied to the <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> function.</p>
+<p>To setup and configure using sessions in Pode, you can use the <a href="../../../Functions/Middleware/Session"><code>session</code></a> function. This function will return valid middleware that can be supplied to the <a href="../../../Functions/Core/Middleware"><code>middleware</code></a> function.</p>
 <p>To use the <code>session</code> function you must supply a <code>hashtable</code> that defines options to configure sessions, and the way they work.</p>
 <p>The following is an example of how to setup session middleware, with a <code>hashtable</code> that defines all possible options that could be supplied:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
@@ -2006,13 +2054,13 @@
           </a>
         
         
-          <a href="../../Logging/Overview/" title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../CSRF/" title="CSRF" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Overview
+                CSRF
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
