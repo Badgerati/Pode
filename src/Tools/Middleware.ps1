@@ -95,7 +95,7 @@ function Get-PodeAccessMiddleware
         param($s)
 
         # ensure the request IP address is allowed
-        if (!(Test-IPAccess -IP $s.Request.RemoteEndPoint.Address)) {
+        if (!(Test-PodeIPAccess -IP $s.Request.RemoteEndPoint.Address)) {
             status 403
             return $false
         }
@@ -111,7 +111,7 @@ function Get-PodeLimitMiddleware
         param($s)
 
         # ensure the request IP address has not hit a rate limit
-        if (!(Test-IPLimit -IP $s.Request.RemoteEndPoint.Address)) {
+        if (!(Test-PodeIPLimit -IP $s.Request.RemoteEndPoint.Address)) {
             status 429
             return $false
         }
@@ -148,7 +148,7 @@ function Get-PodePublicMiddleware
         }
 
         # write the file to the response
-        Write-ToResponseFromFile -Path $path -Cache:$caching
+        Write-PodeValueToResponseFromFile -Path $path -Cache:$caching
 
         # static content found, stop
         return $false
@@ -187,7 +187,7 @@ function Get-PodeBodyMiddleware
 
         try {
             # attempt to parse that data
-            $result = ConvertFrom-RequestContent -Request $e.Request
+            $result = ConvertFrom-PodeRequestContent -Request $e.Request
 
             # set session data
             $e.Data = $result.Data
@@ -210,7 +210,7 @@ function Get-PodeQueryMiddleware
 
         try {
             # set the query string from the request
-            $s.Query = (ConvertFrom-NameValueToHashTable -Collection $s.Request.QueryString)
+            $s.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $s.Request.QueryString)
             return $true
         }
         catch {

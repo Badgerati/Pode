@@ -10,9 +10,9 @@ function Get-PodeSchedule
     return $PodeContext.Schedules[$Name]
 }
 
-function Start-ScheduleRunspace
+function Start-PodeScheduleRunspace
 {
-    if ((Get-Count $PodeContext.Schedules) -eq 0) {
+    if ((Get-PodeCount $PodeContext.Schedules) -eq 0) {
         return
     }
 
@@ -30,7 +30,7 @@ function Start-ScheduleRunspace
                 Where-Object {
                     ($null -eq $_.StartTime -or $_.StartTime -le $_now) -and
                     ($null -eq $_.EndTime -or $_.EndTime -ge $_now) -and
-                    (Test-CronExpressions -Expressions $_.Crons -DateTime $_now)
+                    (Test-PodeCronExpressions -Expressions $_.Crons -DateTime $_now)
                 } | ForEach-Object {
 
                 # increment total number of triggers for the schedule
@@ -54,7 +54,7 @@ function Start-ScheduleRunspace
                 }
 
                 # reset the cron if it's random
-                $_.Crons = Reset-RandomCronExpressions -Expressions $_.Crons
+                $_.Crons = Reset-PodeRandomCronExpressions -Expressions $_.Crons
             }
 
             # add any schedules to remove that have exceeded their end time
@@ -135,7 +135,7 @@ function Schedule
         'Name' = $Name;
         'StartTime' = $StartTime;
         'EndTime' = $EndTime;
-        'Crons' = (ConvertFrom-CronExpressions -Expressions @($Cron));
+        'Crons' = (ConvertFrom-PodeCronExpressions -Expressions @($Cron));
         'Limit' = $Limit;
         'Count' = 0;
         'Countable' = ($Limit -gt 0);

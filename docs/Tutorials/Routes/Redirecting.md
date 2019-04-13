@@ -12,7 +12,7 @@ The make-up of the `redirect` function is as follows:
 redirect [-port <int>] [-protocol <http|https>] [-endpoint <string>] [-moved]
 redirect [-url <string>] [-moved]
 
-# or shorthand:
+# or with aliases:
 redirect [-p <int>] [-pr <http|https>] [-e <string>] [-m]
 redirect [-u <string>] [-m]
 ```

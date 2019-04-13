@@ -2,98 +2,72 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit[\\/]', '/src/'
 Get-ChildItem "$($src)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
-Describe 'Invoke-HMACSHA256Hash' {
+Describe 'Invoke-PodeHMACSHA256Hash' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Invoke-HMACSHA256Hash -Value $null -Secret 'key' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeHMACSHA256Hash -Value $null -Secret 'key' } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws empty value error' {
-            { Invoke-HMACSHA256Hash -Value '' -Secret 'key' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeHMACSHA256Hash -Value '' -Secret 'key' } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws null secret error' {
-            { Invoke-HMACSHA256Hash -Value 'value' -Secret $null } | Should Throw 'argument is null or empty'
+            { Invoke-PodeHMACSHA256Hash -Value 'value' -Secret $null } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws empty secret error' {
-            { Invoke-HMACSHA256Hash -Value 'value' -Secret '' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeHMACSHA256Hash -Value 'value' -Secret '' } | Should Throw 'argument is null or empty'
         }
     }
 
     Context 'Valid parameters' {
         It 'Returns encrypted data' {
-            Invoke-HMACSHA256Hash -Value 'value' -Secret 'key' | Should Be 'kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE='
+            Invoke-PodeHMACSHA256Hash -Value 'value' -Secret 'key' | Should Be 'kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE='
         }
     }
 }
 
-Describe 'Invoke-SHA256Hash' {
+Describe 'Invoke-PodeSHA256Hash' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Invoke-SHA256Hash -Value $null } | Should Throw 'argument is null or empty'
+            { Invoke-PodeSHA256Hash -Value $null } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws empty value error' {
-            { Invoke-SHA256Hash -Value '' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeSHA256Hash -Value '' } | Should Throw 'argument is null or empty'
         }
     }
 
     Context 'Valid parameters' {
         It 'Returns encrypted data' {
-            Invoke-SHA256Hash -Value 'value' | Should Be 'zUJATVKtVcz6mspK3IKKpYAK2dOFoGcfvL9yQRgyBhk='
+            Invoke-PodeSHA256Hash -Value 'value' | Should Be 'zUJATVKtVcz6mspK3IKKpYAK2dOFoGcfvL9yQRgyBhk='
         }
     }
 }
 
-Describe 'Invoke-CookieSign' {
-    Context 'Invalid parameters supplied' {
-        It 'Throws null value error' {
-            { Invoke-CookieSign -Value $null -Secret 'key' } | Should Throw 'argument is null or empty'
-        }
-
-        It 'Throws empty value error' {
-            { Invoke-CookieSign -Value '' -Secret 'key' } | Should Throw 'argument is null or empty'
-        }
-
-        It 'Throws null secret error' {
-            { Invoke-CookieSign -Value 'value' -Secret $null } | Should Throw 'argument is null or empty'
-        }
-
-        It 'Throws empty secret error' {
-            { Invoke-CookieSign -Value 'value' -Secret '' } | Should Throw 'argument is null or empty'
-        }
+Describe 'New-PodeGuid' {
+    It 'Returns a valid guid' {
+        (New-PodeGuid) | Should Not Be $null
     }
 
-    Context 'Valid parameters' {
-        It 'Returns signed encrypted data' {
-            Invoke-CookieSign -Value 'value' -Secret 'key' | Should Be 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE='
-        }
+    It 'Returns a secure guid' {
+        Mock Get-PodeRandomBytes { return @(10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10) }
+        New-PodeGuid -Secure -Length 16 | Should Be '0a0a0a0a-0a0a-0a0a-0a0a-0a0a0a0a0a0a'
     }
 }
 
-Describe 'Invoke-CookieUnsign' {
-    Context 'Invalid parameters supplied' {
-        It 'Throws null value error' {
-            { Invoke-CookieUnsign -Signature $null -Secret 'key' } | Should Throw 'argument is null or empty'
-        }
-
-        It 'Throws empty value error' {
-            { Invoke-CookieUnsign -Signature '' -Secret 'key' } | Should Throw 'argument is null or empty'
-        }
-
-        It 'Throws null secret error' {
-            { Invoke-CookieUnsign -Signature 'value' -Secret $null } | Should Throw 'argument is null or empty'
-        }
-
-        It 'Throws empty secret error' {
-            { Invoke-CookieUnsign -Signature 'value' -Secret '' } | Should Throw 'argument is null or empty'
-        }
+Describe 'Get-PodeRandomBytes' {
+    It 'Returns an array of bytes' {
+        $b = (Get-PodeRandomBytes -Length 16)
+        $b | Should Not Be $null
+        $b.Length | Should Be 16
     }
+}
 
-    Context 'Valid parameters' {
-        It 'Returns signed encrypted data' {
-            Invoke-CookieUnsign -Signature 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=' -Secret 'key' | Should Be 'value'
-        }
+Describe 'New-PodeSalt' {
+    It 'Returns a salt' {
+        Mock Get-PodeRandomBytes { return @(10, 10, 10) }
+        New-PodeSalt -Length 3 | Should Be 'CgoK'
     }
 }

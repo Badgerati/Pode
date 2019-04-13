@@ -1,4 +1,4 @@
-function Invoke-HMACSHA256Hash
+function Invoke-PodeHMACSHA256Hash
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -16,7 +16,7 @@ function Invoke-HMACSHA256Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function Invoke-SHA256Hash
+function Invoke-PodeSHA256Hash
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -29,49 +29,51 @@ function Invoke-SHA256Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function Invoke-CookieSign
+function Get-PodeRandomBytes
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Value,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Secret
+        [Parameter()]
+        [int]
+        $Length = 16
     )
 
-    return "s:$($Value).$(Invoke-HMACSHA256Hash -Value $Value -Secret $Secret)"
+    return (stream ([System.Security.Cryptography.RandomNumberGenerator]::Create()) {
+        param($p)
+        $bytes = [byte[]]::new($Length)
+        $p.GetBytes($bytes)
+        return $bytes
+    })
 }
 
-function Invoke-CookieUnsign
+function New-PodeSalt
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Signature,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Secret
+        [Parameter()]
+        [int]
+        $Length = 8
     )
 
-    if (!$Signature.StartsWith('s:')) {
-        return $null
+    $bytes = [byte[]](Get-PodeRandomBytes -Length $Length)
+    return [System.Convert]::ToBase64String($bytes)
+}
+
+function New-PodeGuid
+{
+    param (
+        [Parameter()]
+        [int]
+        $Length = 16,
+
+        [switch]
+        $Secure
+    )
+
+    # generate a cryptographically secure guid
+    if ($Secure) {
+        $bytes = [byte[]](Get-PodeRandomBytes -Length $Length)
+        return ([guid]::new($bytes)).ToString()
     }
 
-    $Signature = $Signature.Substring(2)
-    $periodIndex = $Signature.LastIndexOf('.')
-    $value = $Signature.Substring(0, $periodIndex)
-    $sig = $Signature.Substring($periodIndex + 1)
-
-    if ((Invoke-HMACSHA256Hash -Value $value -Secret $Secret) -ne $sig) {
-        return $null
-    }
-
-    return $value
+    # return a normal guid
+    return ([guid]::NewGuid()).ToString()
 }

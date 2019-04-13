@@ -1,4 +1,4 @@
-function Start-SmtpServer
+function Start-PodeSmtpServer
 {
     # ensure we have smtp handlers
     if ($null -eq (Get-PodeTcpHandler -Type 'SMTP')) {
@@ -13,9 +13,9 @@ function Start-SmtpServer
 
     # get the IP address for the server
     $ipAddress = $PodeContext.Server.Endpoints[0].Address
-    if (Test-Hostname -Hostname $ipAddress) {
-        $ipAddress = (Get-IPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
-        $ipAddress = (Get-IPAddress $ipAddress)
+    if (Test-PodeHostname -Hostname $ipAddress) {
+        $ipAddress = (Get-PodeIPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
+        $ipAddress = (Get-PodeIPAddress $ipAddress)
     }
 
     try
@@ -34,9 +34,6 @@ function Start-SmtpServer
 
         throw $_.Exception
     }
-
-    # state where we're running
-    Write-Host "Listening on smtp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
 
     # script for listening out of for incoming requests
     $listenScript = {
@@ -70,17 +67,16 @@ function Start-SmtpServer
             while ($true)
             {
                 try { $msg = (tcp read) }
-                catch { break }
+                catch {
+                    $Error[0] | Out-Default
+                    break
+                }
 
                 try {
                     if (!(Test-Empty $msg)) {
                         if ($msg.StartsWith('QUIT')) {
                             tcp write '221 Bye'
-
-                            if ($null -ne $TcpEvent.Client -and $TcpEvent.Client.Connected) {
-                                dispose $TcpEvent.Client -Close
-                            }
-
+                            Close-PodeTcpConnection
                             break
                         }
 
@@ -90,12 +86,12 @@ function Start-SmtpServer
 
                         if ($msg.StartsWith('RCPT TO')) {
                             tcp write '250 OK'
-                            $rcpt_tos += (Get-SmtpEmail $msg)
+                            $rcpt_tos += (Get-PodeSmtpEmail $msg)
                         }
 
                         if ($msg.StartsWith('MAIL FROM')) {
                             tcp write '250 OK'
-                            $mail_from = (Get-SmtpEmail $msg)
+                            $mail_from = (Get-PodeSmtpEmail $msg)
                         }
 
                         if ($msg.StartsWith('DATA'))
@@ -108,7 +104,7 @@ function Start-SmtpServer
                             $SmtpEvent.From = $mail_from
                             $SmtpEvent.To = $rcpt_tos
                             $SmtpEvent.Data = $data
-                            $SmtpEvent.Headers = (Get-SmtpHeadersFromData $data)
+                            $SmtpEvent.Headers = (Get-PodeSmtpHeadersFromData $data)
                             $SmtpEvent.Lockable = $PodeContext.Lockable
 
                             # set the subject/priority/content-types
@@ -118,7 +114,7 @@ function Start-SmtpServer
                             $SmtpEvent.ContentEncoding = $SmtpEvent.Headers['Content-Transfer-Encoding']
 
                             # set the email body
-                            $SmtpEvent.Body = (Get-SmtpBody -Data $data -ContentType $SmtpEvent.ContentType -ContentEncoding $SmtpEvent.ContentEncoding)
+                            $SmtpEvent.Body = (Get-PodeSmtpBody -Data $data -ContentType $SmtpEvent.ContentType -ContentEncoding $SmtpEvent.ContentEncoding)
 
                             # call user handlers for processing smtp data
                             Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
@@ -129,6 +125,7 @@ function Start-SmtpServer
                     }
                 }
                 catch [exception] {
+                    $Error[0] | Out-Default
                     throw $_.exception
                 }
             }
@@ -142,11 +139,11 @@ function Start-SmtpServer
                 $client = (await $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
-                $ip = (ConvertTo-IPAddress -Endpoint $client.Client.RemoteEndPoint)
+                $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
 
                 # ensure the request ip is allowed
-                if (!(Test-IPAccess -IP $ip) -or !(Test-IPLimit -IP $ip)) {
-                    dispose $client -Close
+                if (!(Test-PodeIPAccess -IP $ip) -or !(Test-PodeIPLimit -IP $ip)) {
+                    Close-PodeTcpConnection -Quit
                 }
 
                 # deal with smtp call
@@ -158,13 +155,13 @@ function Start-SmtpServer
                     }
 
                     Invoke-ScriptBlock -ScriptBlock $process
+
+                    Close-PodeTcpConnection -Quit
                 }
             }
         }
         catch [System.OperationCanceledException] {
-            if ($null -ne $TcpEvent.Client) {
-                dispose $TcpEvent.Client -Close
-            }
+            Close-PodeTcpConnection -Quit
         }
         catch {
             $Error[0] | Out-Default
@@ -206,10 +203,13 @@ function Start-SmtpServer
     }
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+
+    # state where we're running
+    Write-Host "Listening on smtp://$($PodeContext.Server.Endpoints[0].HostName):$($port) [$($PodeContext.Threads) thread(s)]" -ForegroundColor Yellow
 }
 
 
-function Get-SmtpEmail
+function Get-PodeSmtpEmail
 {
     param (
         [Parameter()]
@@ -225,7 +225,7 @@ function Get-SmtpEmail
     return [string]::Empty
 }
 
-function Get-SmtpBody
+function Get-PodeSmtpBody
 {
     param (
         [Parameter()]
@@ -285,7 +285,7 @@ function Get-SmtpBody
     return $body
 }
 
-function Get-SmtpHeadersFromData
+function Get-PodeSmtpHeadersFromData
 {
     param (
         [Parameter()]

@@ -13,6 +13,11 @@ function Test-IsWindows
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
 
+function Test-IsAppVeyor
+{
+    return (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID))
+}
+
 function Test-Command($cmd)
 {
     $path = $null
@@ -97,9 +102,19 @@ task PackDeps -If (Test-IsWindows) ChocoDeps, {
 
 # Synopsis: Install dependencies for running tests
 task TestDeps {
+    # install pester
     if (((Get-Module -ListAvailable Pester) | Where-Object { $_.Version -ieq '4.4.2' }) -eq $null) {
         Write-Host 'Installing Pester'
         Install-Module -Name Pester -Scope CurrentUser -RequiredVersion '4.4.2' -Force -SkipPublisherCheck
+    }
+
+    # install coveralls
+    if (Test-IsAppVeyor)
+    {
+        if (((Get-Module -ListAvailable coveralls) | Where-Object { $_.Version -ieq '1.0.25' }) -eq $null) {
+            Write-Host 'Installing Coveralls'
+            Install-Module -Name coveralls -Scope CurrentUser -RequiredVersion '1.0.25' -Force -SkipPublisherCheck
+        }
     }
 }
 
@@ -145,8 +160,16 @@ task Test TestDeps, {
     }
 
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
-    $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -PassThru
-}, PushAppVeyorTests, CheckFailedTests
+
+    # if appveyor, run code coverage
+    if (Test-IsAppVeyor) {
+        $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
+        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
+    }
+    else {
+        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -PassThru
+    }
+}, PushAppVeyorTests, PushCodeCoverage, CheckFailedTests
 
 # Synopsis: Check if any of the tests failed
 task CheckFailedTests {
@@ -156,10 +179,16 @@ task CheckFailedTests {
 }
 
 # Synopsis: If AppVeyor, push result artifacts
-task PushAppVeyorTests -If (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID)) {
+task PushAppVeyorTests -If (Test-IsAppVeyor) {
     $url = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
     (New-Object 'System.Net.WebClient').UploadFile($url, $TestResultFile)
     Push-AppveyorArtifact $TestResultFile
+}
+
+# Synopsis: If AppyVeyor, push code coverage stats
+task PushCodeCoverage -If (Test-IsAppVeyor) {
+    $coverage = Format-Coverage -PesterResults $Script:TestStatus -CoverallsApiToken $env:PODE_COVERALLS_TOKEN -RootFolder $pwd -BranchName $ENV:APPVEYOR_REPO_BRANCH
+    Publish-Coverage -Coverage $coverage
 }
 
 

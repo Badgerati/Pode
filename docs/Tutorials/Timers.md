@@ -12,7 +12,7 @@ To create a new timer in your server you use the [`timer`](../../Functions/Core/
 ```powershell
 timer <name> <interval> <scriptblock> [-skip <int>] [-limit <int>]
 
-# or shorthand:
+# or with aliases:
 timer <name> <interval> <scriptblock> [-s <int>] [-l <int>]
 ```
 

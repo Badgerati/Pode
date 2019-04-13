@@ -1,5 +1,5 @@
 # write data to main http response
-function Write-ToResponse
+function Write-PodeValueToResponse
 {
     param (
         [Parameter()]
@@ -39,7 +39,7 @@ function Write-ToResponse
 
     # write the content to the response
     if ($Value.GetType().Name -ieq 'string') {
-        $Value = ConvertFrom-ValueToBytes -Value $Value
+        $Value = ConvertFrom-PodeValueToBytes -Value $Value
     }
 
     $res.ContentLength64 = $Value.Length
@@ -51,7 +51,7 @@ function Write-ToResponse
         $ms.Close()
     }
     catch {
-        if ((Test-ValidNetworkFailure $_.Exception)) {
+        if ((Test-PodeValidNetworkFailure $_.Exception)) {
             return
         }
 
@@ -60,7 +60,7 @@ function Write-ToResponse
     }
 }
 
-function Write-ToResponseFromFile
+function Write-PodeValueToResponseFromFile
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -77,7 +77,7 @@ function Write-ToResponseFromFile
     }
 
     # are we dealing with a dynamic file for the view engine? (ignore html)
-    $mainExt = Get-FileExtension -Path $Path -TrimPeriod
+    $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
 
     # this is a static file
     if ((Test-Empty $mainExt) -or ($mainExt -ieq 'html') -or ($mainExt -ine $PodeContext.Server.ViewEngine.Extension)) {
@@ -88,7 +88,7 @@ function Write-ToResponseFromFile
             $content = (Get-Content -Path $Path -Raw -Encoding byte)
         }
 
-        Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
+        Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
         return
     }
 
@@ -96,10 +96,10 @@ function Write-ToResponseFromFile
     $content = Get-PodeFileContentUsingViewEngine -Path $Path
 
     # get the sub-file extension, if empty, use original
-    $subExt = Get-FileExtension -Path (Get-FileName -Path $Path -WithoutExtension) -TrimPeriod
+    $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
     $subExt = (coalesce $subExt $mainExt)
 
-    Write-ToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
+    Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
 }
 
 function Attach
@@ -120,8 +120,8 @@ function Attach
         return
     }
 
-    $filename = Get-FileName -Path $Path
-    $ext = Get-FileExtension -Path $Path -TrimPeriod
+    $filename = Get-PodeFileName -Path $Path
+    $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
 
     # open up the file as a stream
     $fs = (Get-Item $Path).OpenRead()
@@ -176,7 +176,7 @@ function Save
     }
 
     # if the path is a directory, add the filename
-    if (Test-PathIsDirectory -Path $Path) {
+    if (Test-PodePathIsDirectory -Path $Path) {
         $Path = Join-Path $Path $fileName
     }
 
@@ -304,17 +304,17 @@ function Json
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Raw -Encoding utf8
+            $Value = Get-PodeFileContent -Path $Value
         }
     }
     elseif (Test-Empty $Value) {
         $Value = '{}'
     }
-    elseif ((Get-Type $Value).Name -ine 'string') {
+    elseif ((Get-PodeType $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
-    Write-ToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
+    Write-PodeValueToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
 }
 
 function Csv
@@ -334,13 +334,13 @@ function Csv
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Raw -Encoding utf8
+            $Value = Get-PodeFileContent -Path $Value
         }
     }
     elseif (Test-Empty $Value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-Type $Value).Name -ine 'string') {
+    elseif ((Get-PodeType $Value).Name -ine 'string') {
         $Value = ($Value | ForEach-Object {
             New-Object psobject -Property $_
         })
@@ -353,7 +353,7 @@ function Csv
         }
     }
 
-    Write-ToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
+    Write-PodeValueToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
 }
 
 function Xml
@@ -373,13 +373,13 @@ function Xml
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Raw -Encoding utf8
+            $Value = Get-PodeFileContent -Path $Value
         }
     }
     elseif (Test-Empty $value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-Type $Value).Name -ine 'string') {
+    elseif ((Get-PodeType $Value).Name -ine 'string') {
         $Value = ($value | ForEach-Object {
             New-Object psobject -Property $_
         })
@@ -387,7 +387,7 @@ function Xml
         $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
     }
 
-    Write-ToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
+    Write-PodeValueToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
 }
 
 function Html
@@ -407,17 +407,17 @@ function Html
             return
         }
         else {
-            $Value = Get-Content -Path $Value -Raw -Encoding utf8
+            $Value = Get-PodeFileContent -Path $Value
         }
     }
     elseif (Test-Empty $value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-Type $Value).Name -ine 'string') {
+    elseif ((Get-PodeType $Value).Name -ine 'string') {
         $Value = ($Value | ConvertTo-Html)
     }
 
-    Write-ToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
+    Write-PodeValueToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
 }
 
 # include helper to import the content of a view into another view
@@ -441,7 +441,7 @@ function Include
     }
 
     # add view engine extension
-    $ext = Get-FileExtension -Path $Path
+    $ext = Get-PodeFileExtension -Path $Path
     if (Test-Empty $ext) {
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
@@ -505,7 +505,7 @@ function Show-PodeErrorPage
 
     # is exception trace showing enabled?
     $ex = $null
-    if (($null -ne $Exception) -and ([bool](Get-PodeConfiguration).web.errorPages.showExceptions)) {
+    if (($null -ne $Exception) -and ([bool](config).web.errorPages.showExceptions)) {
         $ex = @{
             'Message' = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message);
             'StackTrace' = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace);
@@ -567,7 +567,7 @@ function View
     }
 
     # add view engine extension
-    $ext = Get-FileExtension -Path $Path
+    $ext = Get-PodeFileExtension -Path $Path
     if (Test-Empty $ext) {
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
@@ -582,6 +582,29 @@ function View
 
     # run any engine logic and render it
     html -Value (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
+}
+
+function Close-PodeTcpConnection
+{
+    param (
+        [Parameter()]
+        $Client,
+
+        [switch]
+        $Quit
+    )
+
+    if ($null -eq $Client) {
+        $Client = $TcpEvent.Client
+    }
+
+    if ($null -ne $Client) {
+        if ($Quit -and $Client.Connected) {
+            tcp write '221 Bye'
+        }
+
+        dispose $Client -Close
+    }
 }
 
 function Tcp

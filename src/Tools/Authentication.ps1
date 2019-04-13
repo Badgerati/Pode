@@ -47,7 +47,7 @@ function Auth
 
         # is the validator a string/scriptblock?
         $vTypes = @('string', 'scriptblock')
-        if ($vTypes -inotcontains (Get-Type $Validator).Name) {
+        if ($vTypes -inotcontains (Get-PodeType $Validator).Name) {
             throw "Authentication method '$($Name)' has an invalid validator supplied, should be one of: $($vTypes -join ', ')"
         }
 
@@ -65,16 +65,16 @@ function Auth
     switch ($Action.ToLowerInvariant())
     {
         'use' {
-            Invoke-AuthUse -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Options $Options -Custom:$Custom
+            Invoke-PodeAuthUse -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Options $Options -Custom:$Custom
         }
 
         'check' {
-            return (Invoke-AuthCheck -Name $Name -Options $Options)
+            return (Invoke-PodeAuthCheck -Name $Name -Options $Options)
         }
     }
 }
 
-function Invoke-AuthUse
+function Invoke-PodeAuthUse
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -132,7 +132,7 @@ function Invoke-AuthUse
     $PodeContext.Server.Authentications[$AuthData.Name] = $obj
 }
 
-function Invoke-AuthCheck
+function Invoke-PodeAuthCheck
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -177,7 +177,7 @@ function Invoke-AuthCheck
         # check if the login flag is set, in which case just return
         if ($e.Middleware.Options.Login -eq $true) {
             if (!(Test-Empty $e.Session.Data.Auth)) {
-                Remove-PodeSessionCookie -Response $e.Response -Session $e.Session
+                Remove-PodeSessionCookie -Session $e.Session
             }
 
             return $true
@@ -257,7 +257,7 @@ function Get-PodeAuthMethod
     }
 
     # if the validator is a string - check and get an inbuilt validator
-    if ((Get-Type $Validator).Name -ieq 'string') {
+    if ((Get-PodeType $Validator).Name -ieq 'string') {
         $Validator = (Get-PodeAuthValidator -Validator $Validator)
     }
 
@@ -327,7 +327,7 @@ function Remove-PodeAuth
     }
 
     # Delete the session (remove from store, blank it, and remove from Response)
-    Remove-PodeSessionCookie -Response $Event.Response -Session $Event.Session
+    Remove-PodeSessionCookie -Session $Event.Session
 }
 
 function Set-PodeAuthStatus

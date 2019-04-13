@@ -1,4 +1,4 @@
-function Start-ServiceServer
+function Start-PodeServiceServer
 {
     # ensure we have svc handler
     if ($null -eq (Get-PodeTcpHandler -Type 'Service')) {

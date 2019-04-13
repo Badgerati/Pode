@@ -25,7 +25,7 @@ nav:
     - Timers: Tutorials/Timers.md
     - Schedules: Tutorials/Schedules.md
     - Shared State: Tutorials/SharedState.md
-    - Importing Modules: Tutorials/ImportingModules.md
+    - Modules & SnapIns: Tutorials/ImportingModules.md
     - Configuration: Tutorials/Configuration.md
     - Web & Routes:
       - Overview: Tutorials/Routes/Overview.md
@@ -35,11 +35,13 @@ nav:
       - Static Content: Tutorials/Routes/StaticContent.md
       - Login Page: Tutorials/Routes/LoginPage.md
       - Flash Messages: Tutorials/Routes/FlashMessages.md
+      - Cookies: Tutorials/Routes/Cookies.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md
       - Access Rules: Tutorials/Middleware/AccessRules.md
       - Rate Limiting: Tutorials/Middleware/RateLimiting.md
       - Sessions: Tutorials/Middleware/Sessions.md
+      - CSRF: Tutorials/Middleware/CSRF.md
     - Logging:
       - Overview: Tutorials/Logging/Overview.md
       - Terminal: Tutorials/Logging/Terminal.md
@@ -62,6 +64,7 @@ nav:
 
   - Functions:
     - Core:
+      - Config: Functions/Core/Config.md
       - Endware: Functions/Core/Endware.md
       - Engine: Functions/Core/Engine.md
       - Gui: Functions/Core/Gui.md
@@ -79,11 +82,13 @@ nav:
     - Middleware:
       - Access: Functions/Middleware/Access.md
       - Auth: Functions/Middleware/Auth.md
+      - Csrf: Functions/Middleware/Csrf.md
       - Limit: Functions/Middleware/Limit.md
       - Session: Functions/Middleware/Session.md
 
     - Response:
       - Attach: Functions/Response/Attach.md
+      - Cookie: Functions/Response/Cookie.md
       - Csv: Functions/Response/Csv.md
       - Html: Functions/Response/Html.md
       - Json: Functions/Response/Json.md
@@ -107,7 +112,6 @@ nav:
 
     - Helpers:
       - Coalesce: Functions/Helpers/Coalesce.md
-      - Get-PodeConfiguration: Functions/Helpers/Get-PodeConfiguration.md
       - Invoke-ScriptBlock: Functions/Helpers/Invoke-ScriptBlock.md
       - Test-Empty: Functions/Helpers/Test-Empty.md
       - Test-IsPSCore: Functions/Helpers/Test-IsPSCore.md

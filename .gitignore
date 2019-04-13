@@ -5,6 +5,9 @@
 pode_modules/
 ps_modules/
 
+# Code Runner
+tempCodeRunnerFile.ps1
+
 # User-specific files
 *.suo
 *.user

@@ -27,7 +27,7 @@ function Engine
     $PodeContext.Server.ViewEngine.Script = $ScriptBlock
 }
 
-function Start-WebServer
+function Start-PodeWebServer
 {
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
@@ -62,7 +62,7 @@ function Start-WebServer
         # if this endpoint is https, generate a self-signed cert or bind an existing one
         if ($_.Ssl) {
             $addr = (iftet $_.IsIPAddress $_.Address $_.HostName)
-            New-PodeSelfSignedCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name
+            Set-PodeCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name -Thumbprint $_.Certificate.Thumbprint
         }
 
         # add endpoint to list
@@ -96,13 +96,6 @@ function Start-WebServer
         }
 
         throw $_.Exception
-    }
-
-    # state where we're running
-    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
-
-    $endpoints | ForEach-Object {
-        Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
     }
 
     # script for listening out for incoming requests
@@ -216,4 +209,11 @@ function Start-WebServer
     }
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+
+    # state where we're running
+    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
+
+    $endpoints | ForEach-Object {
+        Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
+    }
 }

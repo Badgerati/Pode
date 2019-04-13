@@ -20,7 +20,7 @@ The make-up of the `status` function is as follows:
 ```powershell
 status <int> [-description <string>] [-exception <exception>]
 
-# or shorthand
+# or with aliases:
 status <int> [-d <string>] [-e <exception>]
 ```
 
