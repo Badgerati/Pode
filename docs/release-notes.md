@@ -1,5 +1,12 @@
 # Release Notes
 
+## v0.28.1
+
+```plain
+### Bugs
+* #226: Adds the "gui" function to export list
+```
+
 ## v0.28.0
 
 ```plain
