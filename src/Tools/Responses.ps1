@@ -1,4 +1,4 @@
-# write data to main http response
+# write data to http response stream
 function Write-PodeValueToResponse
 {
     param (
@@ -6,6 +6,7 @@ function Write-PodeValueToResponse
         $Value,
 
         [Parameter()]
+        [Alias('type')]
         [string]
         $ContentType = $null,
 
@@ -200,7 +201,11 @@ function Status
 
         [Parameter()]
         [Alias('e')]
-        $Exception
+        $Exception,
+
+        [switch]
+        [Alias('nopage')]
+        $NoErrorPage
     )
 
     # set the code
@@ -216,7 +221,7 @@ function Status
     }
 
     # if the status code is >=400 then attempt to load error page
-    if ($Code -ge 400) {
+    if (!$NoErrorPage -and ($Code -ge 400)) {
         Show-PodeErrorPage -Code $Code -Description $Description -Exception $Exception
     }
 }
@@ -473,39 +478,23 @@ function Show-PodeErrorPage
         $Exception
     )
 
-    # get the custom errors path
-    $customErrPath = $PodeContext.Server.InbuiltDrives['errors']
+    # attempt to get a custom error page for the appropriate content type
+    $contentType = (Get-PodeContentTypeAndBoundary -ContentType $WebEvent.Request.ContentType).ContentType
+    $errorPage = (Get-PodeErrorPage -Code $Code -ContentType $contentType)
 
-    # the actual error page path
-    $errPagePath = [string]::Empty
-
-    # if their is a custom error page, use it
-    if (!(Test-Empty $customErrPath)) {
-        $statusPage = (Join-Path $customErrPath "$($Code).*" -Resolve -ErrorAction Ignore)
-        $defaultPage = (Join-Path $customErrPath "default.*" -Resolve -ErrorAction Ignore)
-
-        # use the status page or the default page?
-        if ((Test-PodePath -Path $statusPage -NoStatus)) {
-            $errPagePath = $statusPage
-        }
-        elseif ((Test-PodePath -Path $defaultPage -NoStatus)) {
-            $errPagePath = $defaultPage
-        }
+    # if no page found, attempt with no content type
+    if (Test-Empty $errorPage) {
+        $errorPage = (Get-PodeErrorPage -Code $Code)
     }
 
-    # if we haven't found a custom page, use the inbuilt pode one
-    if (Test-Empty $errPagePath) {
-        $errPagePath = Join-PodePaths @((Get-PodeModuleRootPath), 'Misc', 'default-error-page.pode')
-    }
-
-    # if there's still no error path, return
-    if (!(Test-PodePath $errPagePath -NoStatus)) {
+    # if still none found, return
+    if (Test-Empty $errorPage) {
         return
     }
 
-    # is exception trace showing enabled?
+    # is exception trace showing enabled, if so, build the object
     $ex = $null
-    if (($null -ne $Exception) -and ([bool](config).web.errorPages.showExceptions)) {
+    if (!(Test-Empty $Exception) -and ([bool](config).web.errorPages.showExceptions)) {
         $ex = @{
             'Message' = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message);
             'StackTrace' = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace);
@@ -514,17 +503,31 @@ function Show-PodeErrorPage
         }
     }
 
-    # run any engine logic and render it
-    $content = Get-PodeFileContentUsingViewEngine -Path $errPagePath -Data @{
-        'Url' = ($WebEvent.Protocol + '://' + $WebEvent.Endpoint + $WebEvent.Path);
+    # run any engine logic to generate the file and render/return it
+    $content = Get-PodeFileContentUsingViewEngine -Path $errorPage.Path -Data @{
+        'Url' = (Get-PodeUrl);
         'Status' = @{
             'Code' = $Code;
             'Description' = $Description;
         };
         'Exception' = $ex;
+        'ContentType' = $contentType;
     }
 
-    html -Value $content
+    # generate the content as the appropriate content type
+    switch ($errorPage.Type.ToLowerInvariant()) {
+        'json' {
+            json $content
+        }
+
+        'xml' {
+            xml $content
+        }
+
+        default {
+            html $content
+        }
+    }
 }
 
 function View

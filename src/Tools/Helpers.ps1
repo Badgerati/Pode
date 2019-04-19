@@ -1582,3 +1582,68 @@ function Get-PodeModuleRootPath
 {
     return (Split-Path -Parent -Path $PodeContext.Server.PodeModulePath)
 }
+
+function Get-PodeUrl
+{
+    return "$($WebEvent.Protocol)://$($WebEvent.Endpoint)$($WebEvent.Path)"
+}
+
+function Get-PodeErrorPage
+{
+    param (
+        [Parameter()]
+        [int]
+        $Code,
+
+        [Parameter()]
+        [string]
+        $ContentType
+    )
+
+    # get the custom errors path
+    $customErrPath = $PodeContext.Server.InbuiltDrives['errors']
+
+    # the path found to the error page
+    $errPagePath = [string]::Empty
+    $errPageType = [string]::Empty
+
+    # get error page type based on content type
+    switch ($ContentType) {
+        { $_ -ilike '*/json' } {
+            $errPageType = 'json'
+        }
+
+        { $_ -ilike '*/xml' } {
+            $errPageType = 'xml'
+        }
+    }
+
+    # if their is a custom error path, use it to try and find an error page
+    if (!(Test-Empty $customErrPath)) {
+        $statusPage = (Join-Path $customErrPath "$($Code).$($errPageType)*" -Resolve -ErrorAction Ignore)
+        $defaultPage = (Join-Path $customErrPath "default.$($errPageType)*" -Resolve -ErrorAction Ignore)
+
+        # use the status-code page or a default page?
+        if ((Test-PodePath -Path $statusPage -NoStatus)) {
+            $errPagePath = $statusPage
+        }
+        elseif ((Test-PodePath -Path $defaultPage -NoStatus)) {
+            $errPagePath = $defaultPage
+        }
+    }
+
+    # if we haven't found a custom page, use the inbuilt pode error page
+    if (Test-Empty $errPagePath) {
+        $errPagePath = Join-PodePaths @((Get-PodeModuleRootPath), 'Misc', "default-error-page.$($errPageType)pode")
+    }
+
+    # if there's still no error page path, return null
+    if (!(Test-PodePath $errPagePath -NoStatus)) {
+        return $null
+    }
+
+    return @{
+        'Path' = $errPagePath;
+        'Type' = $errPageType;
+    }
+}

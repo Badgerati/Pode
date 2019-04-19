@@ -851,3 +851,15 @@ Describe 'Set-PodeCertificate' {
         Assert-MockCalled Write-Host -Times 1 -Scope It
     }
 }
+
+Describe 'Get-PodeUrl' {
+    It 'Returns a url from the web event' {
+        $WebEvent = @{
+            'Protocol' = 'http';
+            'Endpoint' = 'foo.com/';
+            'Path' = 'about'
+        }
+
+        Get-PodeUrl | Should Be 'http://foo.com/about'
+    }
+}
