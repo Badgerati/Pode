@@ -1610,18 +1610,18 @@ function Get-PodeErrorPage
     # get error page type based on content type
     switch ($ContentType) {
         { $_ -ilike '*/json' } {
-            $errPageType = 'json'
+            $errPageType = '.json'
         }
 
         { $_ -ilike '*/xml' } {
-            $errPageType = 'xml'
+            $errPageType = '.xml'
         }
     }
 
     # if their is a custom error path, use it to try and find an error page
     if (!(Test-Empty $customErrPath)) {
-        $statusPage = (Join-Path $customErrPath "$($Code).$($errPageType)*" -Resolve -ErrorAction Ignore)
-        $defaultPage = (Join-Path $customErrPath "default.$($errPageType)*" -Resolve -ErrorAction Ignore)
+        $statusPage = (Join-Path $customErrPath "$($Code)$($errPageType).*" -Resolve -ErrorAction Ignore)
+        $defaultPage = (Join-Path $customErrPath "default$($errPageType).*" -Resolve -ErrorAction Ignore)
 
         # use the status-code page or a default page?
         if ((Test-PodePath -Path $statusPage -NoStatus)) {
@@ -1634,7 +1634,7 @@ function Get-PodeErrorPage
 
     # if we haven't found a custom page, use the inbuilt pode error page
     if (Test-Empty $errPagePath) {
-        $errPagePath = Join-PodePaths @((Get-PodeModuleRootPath), 'Misc', "default-error-page.$($errPageType)pode")
+        $errPagePath = Join-PodePaths @((Get-PodeModuleRootPath), 'Misc', "default-error-page$($errPageType).pode")
     }
 
     # if there's still no error page path, return null
@@ -1644,6 +1644,6 @@ function Get-PodeErrorPage
 
     return @{
         'Path' = $errPagePath;
-        'Type' = $errPageType;
+        'Type' = $errPageType.Trim('.');
     }
 }
