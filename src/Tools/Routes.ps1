@@ -48,6 +48,7 @@ function Get-PodeRoute
             'Middleware' = $found.Middleware;
             'Protocol' = $found.Protocol;
             'Endpoint' = $found.Endpoint;
+            'ContentType' = $found.ContentType;
             'Parameters' = $null;
         }
     }
@@ -84,6 +85,7 @@ function Get-PodeRoute
                 'Middleware' = $found.Middleware;
                 'Protocol' = $found.Protocol;
                 'Endpoint' = $found.Endpoint;
+                'ContentType' = $found.ContentType;
                 'Parameters' = $Matches;
             }
         }
@@ -212,6 +214,11 @@ function Route
         [string]
         $ListenName,
 
+        [Parameter()]
+        [Alias('type', 'ct')]
+        [string]
+        $ContentType,
+
         [switch]
         [Alias('rm')]
         $Remove
@@ -247,14 +254,16 @@ function Route
 
     # add a new dynamic or static route
     if ($HttpMethod -ieq 'static') {
-        Add-PodeStaticRoute -Route $Route -Path ([string](@($Middleware))[0]) -Protocol $Protocol -Endpoint $Endpoint -Defaults $Defaults
+        Add-PodeStaticRoute -Route $Route -Path ([string](@($Middleware))[0]) -Protocol $Protocol `
+            -Endpoint $Endpoint -Defaults $Defaults
     }
     else {
         if ((Get-PodeCount $Defaults) -gt 0) {
             throw "[$($HttpMethod)] $($Route) has default static files defined, which is only for [STATIC] routes"
         }
 
-        Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock -Protocol $Protocol -Endpoint $Endpoint
+        Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock `
+            -Protocol $Protocol -Endpoint $Endpoint -ContentType $ContentType
     }
 }
 
@@ -333,7 +342,11 @@ function Add-PodeRoute
 
         [Parameter()]
         [string]
-        $Endpoint
+        $Endpoint,
+
+        [Parameter()]
+        [string]
+        $ContentType
     )
 
     # if middleware and scriptblock are null, error
@@ -409,12 +422,27 @@ function Add-PodeRoute
         }
     }
 
+    # workout a default content type for the route
+    if ((Test-Empty $ContentType) -and !(Test-Empty $PodeContext.Server.Web)) {
+        $ContentType = $PodeContext.Server.Web.ContentType.Default
+
+        # find type by pattern
+        $matched = ($PodeContext.Server.Web.ContentType.Routes.Keys | Where-Object {
+            $Route -imatch "$($_)"
+        } | Select-Object -First 1)
+
+        if (!(Test-Empty $matched)) {
+            $ContentType = $PodeContext.Server.Web.ContentType.Routes[$matched]
+        }
+    }
+
     # add the route logic
     $PodeContext.Server.Routes[$HttpMethod][$Route] += @(@{
         'Logic' = $ScriptBlock;
         'Middleware' = $Middleware;
         'Protocol' = $Protocol;
         'Endpoint' = $Endpoint.Trim();
+        'ContentType' = $ContentType;
     })
 }
 

@@ -133,6 +133,7 @@ function Start-PodeWebServer
                     $WebEvent.Method = $request.HttpMethod.ToLowerInvariant()
                     $WebEvent.Protocol = $request.Url.Scheme
                     $WebEvent.Endpoint = $request.Url.Authority
+                    $WebEvent.ContentType = $request.ContentType
 
                     # add logging endware for post-request
                     Add-PodeLogEndware -WebEvent $WebEvent
