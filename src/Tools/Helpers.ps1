@@ -1529,7 +1529,7 @@ function Convert-PodePathPatternToRegex
 
     $Path = $Path -ireplace '\*', '.*?'
 
-    if (!$NotStrict) {
+    if ($NotStrict) {
         return $Path
     }
 
@@ -1568,13 +1568,13 @@ function Convert-PodePathPatternsToRegex
     })
 
     # join them all together
-    $joined = "$($Paths -join '|')"
+    $joined = "($($Paths -join '|'))"
 
-    if (!$NotStrict) {
-        return $joined
+    if ($NotStrict) {
+        return "$($joined)"
     }
 
-    return "^($($joined))$"
+    return "^$($joined)$"
 }
 
 function Get-PodeModulePath

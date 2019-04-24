@@ -847,3 +847,39 @@ Describe 'Set-PodeCertificate' {
         Assert-MockCalled Write-Host -Times 1 -Scope It
     }
 }
+
+Describe 'Convert-PodePathPatternToRegex' {
+    It 'Convert a path to regex' {
+        Convert-PodePathPatternToRegex -Path '/api*' | Should Be '^[\\/]api.*?$'
+    }
+
+    It 'Convert a path to regex non-strict' {
+        Convert-PodePathPatternToRegex -Path '/api*' -NotStrict | Should Be '[\\/]api.*?'
+    }
+
+    It 'Convert a path to regex, but not slashes' {
+        Convert-PodePathPatternToRegex -Path '/api*' -NotSlashes | Should Be '^/api.*?$'
+    }
+
+    It 'Convert a path to regex, but not slashes and non-strict' {
+        Convert-PodePathPatternToRegex -Path '/api*' -NotSlashes -NotStrict | Should Be '/api.*?'
+    }
+}
+
+Describe 'Convert-PodePathPatternsToRegex' {
+    It 'Convert paths to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') | Should Be '^([\\/]api.*?|[\\/]users.*?)$'
+    }
+
+    It 'Convert paths to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotStrict | Should Be '([\\/]api.*?|[\\/]users.*?)'
+    }
+
+    It 'Convert paths to regex, but not slashes' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotSlashes | Should Be '^(/api.*?|/users.*?)$'
+    }
+
+    It 'Convert paths to regex, but not slashes and non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotSlashes -NotStrict | Should Be '(/api.*?|/users.*?)'
+    }
+}
