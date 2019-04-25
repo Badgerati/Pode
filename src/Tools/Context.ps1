@@ -316,6 +316,7 @@ function Set-PodeWebConfiguration
         $Context
     )
 
+    # setup the main web config
     $Context.Server.Web = @{
         'Static' = @{
             'Defaults' = $Configuration.web.static.defaults;
@@ -325,6 +326,23 @@ function Set-PodeWebConfiguration
                 'Include' = (Convert-PodePathPatternsToRegex -Paths @($Configuration.web.static.cache.include) -NotSlashes);
                 'Exclude' = (Convert-PodePathPatternsToRegex -Paths @($Configuration.web.static.cache.exclude) -NotSlashes);
             }
+        };
+        'ErrorPages' = @{
+            'ShowExceptions' = [bool]$Configuration.web.errorPages.showExceptions;
+        };
+        'ContentType' = @{
+            'Default' = $Configuration.web.contentType.default;
+            'Routes' = @{};
+        };
+    }
+
+    # setup content type route patterns
+    if ($null -ne $Configuration.web.contentType.routes) {
+        $Configuration.web.contentType.routes.psobject.properties.name | ForEach-Object {
+            $_pattern = $_
+            $_type = $Configuration.web.contentType.routes.$_pattern
+            $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
+            $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
         }
     }
 }

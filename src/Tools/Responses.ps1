@@ -494,7 +494,7 @@ function Show-PodeErrorPage
 
     # is exception trace showing enabled, if so, build the object
     $ex = $null
-    if (!(Test-Empty $Exception) -and ([bool](config).web.errorPages.showExceptions)) {
+    if (!(Test-Empty $Exception) -and $PodeContext.Server.Web.ErrorPages.ShowExceptions) {
         $ex = @{
             'Message' = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message);
             'StackTrace' = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace);

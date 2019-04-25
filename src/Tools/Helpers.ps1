@@ -1210,11 +1210,15 @@ function ConvertFrom-PodeRequestContent
 {
     param (
         [Parameter()]
-        $Request
+        $Request,
+
+        [Parameter()]
+        [string]
+        $ContentType
     )
 
     # get the requests content type and boundary
-    $MetaData = Get-PodeContentTypeAndBoundary -ContentType $Request.ContentType
+    $MetaData = Get-PodeContentTypeAndBoundary -ContentType $ContentType
     $Encoding = $Request.ContentEncoding
 
     # result object for data/files
@@ -1241,7 +1245,12 @@ function ConvertFrom-PodeRequestContent
     # run action for the content type
     switch ($MetaData.ContentType) {
         { $_ -ilike '*/json' } {
-            $Result.Data = ($Content | ConvertFrom-Json)
+            if (Test-IsPSCore) {
+                $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
+            }
+            else {
+                $Result.Data = ($Content | ConvertFrom-Json)
+            }
         }
 
         { $_ -ilike '*/xml' } {
@@ -1499,12 +1508,31 @@ function Convert-PodePathPatternToRegex
     param (
         [Parameter()]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $NotSlashes,
+
+        [switch]
+        $NotStrict
     )
 
     $Path = $Path -ireplace '\.', '\.'
-    $Path = $Path -ireplace '[\\/]', '[\\/]'
+
+    if (!$NotSlashes) {
+        if ($Path -match '[\\/]\*$') {
+            $Path = $Path -replace '[\\/]\*$', '/{0,1}*'
+        }
+
+        $Path = $Path -ireplace '[\\/]', '[\\/]'
+    }
+
     $Path = $Path -ireplace '\*', '.*?'
+
+    if ($NotStrict) {
+        return $Path
+    }
+
     return "^$($Path)$"
 }
 
@@ -1516,7 +1544,10 @@ function Convert-PodePathPatternsToRegex
         $Paths,
 
         [switch]
-        $NotSlashes
+        $NotSlashes,
+
+        [switch]
+        $NotStrict
     )
 
     # remove any empty entries
@@ -1532,22 +1563,18 @@ function Convert-PodePathPatternsToRegex
     # replace certain chars
     $Paths = @($Paths | ForEach-Object {
         if (!(Test-Empty $_)) {
-            $tmp = $_ -ireplace '\.', '\.'
-
-            if (!$NotSlashes) {
-                if ($tmp -match '[\\/]\*$') {
-                    $tmp = $tmp -replace '[\\/]\*$', '/{0,1}*'
-                }
-
-                $tmp = $tmp -ireplace '[\\/]', '[\\/]'
-            }
-
-            $tmp -ireplace '\*', '.*?'
+            Convert-PodePathPatternToRegex -Path $_ -NotStrict -NotSlashes:$NotSlashes
         }
     })
 
     # join them all together
-    return "^($($Paths -join '|'))$"
+    $joined = "($($Paths -join '|'))"
+
+    if ($NotStrict) {
+        return "$($joined)"
+    }
+
+    return "^$($joined)$"
 }
 
 function Get-PodeModulePath

@@ -345,6 +345,27 @@ Describe 'Get-PodeRouteValidateMiddleware' {
         }) | Should Be $true
     }
 
+    It 'Returns a ScriptBlock and invokes it as true, overriding the content type' {
+        $WebEvent = @{ 'Parameters' = @{}; 'ContentType' = 'text/plain' }
+
+        $r = Get-PodeRouteValidateMiddleware
+        $r.Name | Should Be '@route-valid'
+        $r.Logic | Should Not Be $null
+
+        Mock Get-PodeRoute { return @{
+            'Parameters' = @{};
+            'Logic' = { Write-Host 'hello' };
+            'ContentType' = 'application/json';
+        } }
+
+        (. $r.Logic @{
+            'Method' = 'GET';
+            'Path' = '/';
+        }) | Should Be $true
+
+        $WebEvent.ContentType | Should Be 'application/json'
+    }
+
     It 'Returns a ScriptBlock and invokes it as false' {
         $r = Get-PodeRouteValidateMiddleware
         $r.Name | Should Be '@route-valid'
