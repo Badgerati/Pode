@@ -11,6 +11,9 @@ Routes can also be bound against a specific protocol or endpoint. This allows yo
 !!! info
     The scriptblock supplied for the main route logic is invoked with a single parameter for the current web event. This parameter will contain the `Request` and `Response` objects; `Data` (from POST requests), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
+!!! tip
+    You can force a content type for a route's payload by using the `-ContentType` parameter. By setting it, Pode will attempt to parse any request payload as that content type - regardless of what might be set on the request.
+
 ## Examples
 
 ### Example 1
@@ -205,6 +208,7 @@ Server {
 | Protocol | string | false | The protocol to bind the route against (Values: Empty, HTTP, HTTPS) | empty |
 | Endpoint | string | false | The endpoint to bind the route against - this will typically be the endpoint used in your `listen` function | empty |
 | ListenName | string | false | The name of a [`listen`](../Listen) endpoint to bind the route against. This can be use instead of `-Protocol` and `-Endpoint`, but if used with them, will override their values | empty |
+| ContentType | string | false | If supplied, Pode will attempt to parse any request payload as the supplied content type - regardless of what might be set on the request. (eg: `application/json`) | empty |
 | Remove | switch | false | When passed, will remove a defined route | false |
 
 !!! tip

@@ -200,6 +200,63 @@ Describe 'Route' {
             $routes['/users'].Length | Should Be 1
             $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
             $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].ContentType | Should Be ([string]::Empty)
+        }
+
+        It 'Adds route with simple url with content type' {
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' -ContentType 'application/json' { Write-Host 'hello' }
+
+            $routes = $PodeContext.Server.Routes['get']
+            $routes | Should Not be $null
+            $routes.ContainsKey('/users') | Should Be $true
+            $routes['/users'] | Should Not Be $null
+            $routes['/users'].Length | Should Be 1
+            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].ContentType | Should Be 'application/json'
+        }
+
+        It 'Adds route with simple url with default content type' {
+            $PodeContext.Server = @{
+                'Routes' = @{ 'GET' = @{}; };
+                'Web' = @{ 'ContentType' = @{
+                    'Default' = 'application/xml';
+                    'Routes' = @{};
+                } };
+            }
+
+            Route -HttpMethod GET -Route '/users' { Write-Host 'hello' }
+
+            $routes = $PodeContext.Server.Routes['get']
+            $routes | Should Not be $null
+            $routes.ContainsKey('/users') | Should Be $true
+            $routes['/users'] | Should Not Be $null
+            $routes['/users'].Length | Should Be 1
+            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].ContentType | Should Be 'application/xml'
+        }
+
+        It 'Adds route with simple url with route pattern content type' {
+            $PodeContext.Server = @{
+                'Routes' = @{ 'GET' = @{}; };
+                'Web' = @{ 'ContentType' = @{
+                    'Default' = 'application/xml';
+                    'Routes' = @{ '/users' = 'text/plain' };
+                } };
+            }
+
+            Route -HttpMethod GET -Route '/users' { Write-Host 'hello' }
+
+            $routes = $PodeContext.Server.Routes['get']
+            $routes | Should Not be $null
+            $routes.ContainsKey('/users') | Should Be $true
+            $routes['/users'] | Should Not Be $null
+            $routes['/users'].Length | Should Be 1
+            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].ContentType | Should Be 'text/plain'
         }
 
         It 'Adds route with full endpoint' {

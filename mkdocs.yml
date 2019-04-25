@@ -35,6 +35,7 @@ nav:
       - Static Content: Tutorials/Routes/StaticContent.md
       - Login Page: Tutorials/Routes/LoginPage.md
       - Flash Messages: Tutorials/Routes/FlashMessages.md
+      - Content Types: Tutorials/Routes/ContentTypes.md
       - Cookies: Tutorials/Routes/Cookies.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md

@@ -174,6 +174,11 @@ function Get-PodeRouteValidateMiddleware
             # set the route parameters
             $WebEvent.Parameters = $route.Parameters
 
+            # override the content type from the route if it's not empty
+            if (!(Test-Empty $route.ContentType)) {
+                $WebEvent.ContentType = $route.ContentType
+            }
+
             # route exists
             return $true
         }
@@ -187,7 +192,7 @@ function Get-PodeBodyMiddleware
 
         try {
             # attempt to parse that data
-            $result = ConvertFrom-PodeRequestContent -Request $e.Request
+            $result = ConvertFrom-PodeRequestContent -Request $e.Request -ContentType $e.ContentType
 
             # set session data
             $e.Data = $result.Data

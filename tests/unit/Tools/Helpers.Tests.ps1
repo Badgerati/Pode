@@ -615,10 +615,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $value = '<root><value>test</value></root>'
             Mock Read-PodeStreamToEnd { return $value }
 
-            $result = ConvertFrom-PodeRequestContent @{
-                'ContentType' = 'text/xml';
+            $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
-            }
+            } -ContentType 'text/xml'
 
             $result.Data | Should Not Be $null
             $result.Data.root | Should Not Be $null
@@ -629,10 +628,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $value = '{ "value": "test" }'
             Mock Read-PodeStreamToEnd { return $value }
 
-            $result = ConvertFrom-PodeRequestContent @{
-                'ContentType' = 'application/json';
+            $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
-            }
+            } -ContentType 'application/json'
 
             $result.Data | Should Not Be $null
             $result.Data.value | Should Be 'test'
@@ -642,10 +640,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $value = "value`ntest"
             Mock Read-PodeStreamToEnd { return $value }
 
-            $result = ConvertFrom-PodeRequestContent @{
-                'ContentType' = 'text/csv';
+            $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
-            }
+            } -ContentType 'text/csv'
 
             $result | Should Not Be $null
             $result.Data[0].value | Should Be 'test'
@@ -655,10 +652,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $value = "test"
             Mock Read-PodeStreamToEnd { return $value }
             
-            (ConvertFrom-PodeRequestContent @{
-                'ContentType' = 'text/custom';
+            (ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
-            }).Data | Should Be 'test'
+            } -ContentType 'text/custom').Data | Should Be 'test'
         }
     }
 }
@@ -849,5 +845,41 @@ Describe 'Set-PodeCertificate' {
         Set-PodeCertificate -Address 'localhost' -Port 8080 -Certificate 'name' | Out-Null
 
         Assert-MockCalled Write-Host -Times 1 -Scope It
+    }
+}
+
+Describe 'Convert-PodePathPatternToRegex' {
+    It 'Convert a path to regex' {
+        Convert-PodePathPatternToRegex -Path '/api*' | Should Be '^[\\/]api.*?$'
+    }
+
+    It 'Convert a path to regex non-strict' {
+        Convert-PodePathPatternToRegex -Path '/api*' -NotStrict | Should Be '[\\/]api.*?'
+    }
+
+    It 'Convert a path to regex, but not slashes' {
+        Convert-PodePathPatternToRegex -Path '/api*' -NotSlashes | Should Be '^/api.*?$'
+    }
+
+    It 'Convert a path to regex, but not slashes and non-strict' {
+        Convert-PodePathPatternToRegex -Path '/api*' -NotSlashes -NotStrict | Should Be '/api.*?'
+    }
+}
+
+Describe 'Convert-PodePathPatternsToRegex' {
+    It 'Convert paths to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') | Should Be '^([\\/]api.*?|[\\/]users.*?)$'
+    }
+
+    It 'Convert paths to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotStrict | Should Be '([\\/]api.*?|[\\/]users.*?)'
+    }
+
+    It 'Convert paths to regex, but not slashes' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotSlashes | Should Be '^(/api.*?|/users.*?)$'
+    }
+
+    It 'Convert paths to regex, but not slashes and non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotSlashes -NotStrict | Should Be '(/api.*?|/users.*?)'
     }
 }
