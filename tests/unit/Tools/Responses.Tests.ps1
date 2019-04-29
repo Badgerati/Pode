@@ -178,8 +178,8 @@ Describe 'Redirect' {
 }
 
 Describe 'Json' {
-    Mock Write-PodeValueToResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'application/json; charset=utf-8'
+    Mock Text { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
+    $_ContentType = 'application/json'
 
     It 'Returns an empty value for an empty value' {
         $r = Json -Value ([string]::Empty)
@@ -216,8 +216,8 @@ Describe 'Json' {
 }
 
 Describe 'Csv' {
-    Mock Write-PodeValueToResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'text/csv; charset=utf-8'
+    Mock Text { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
+    $_ContentType = 'text/csv'
 
     It 'Returns an empty value for an empty value' {
         $r = Csv -Value ([string]::Empty)
@@ -254,8 +254,8 @@ Describe 'Csv' {
 }
 
 Describe 'Xml' {
-    Mock Write-PodeValueToResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'application/xml; charset=utf-8'
+    Mock Text { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
+    $_ContentType = 'application/xml'
 
     It 'Returns an empty value for an empty value' {
         $r = Xml -Value ([string]::Empty)
@@ -292,8 +292,8 @@ Describe 'Xml' {
 }
 
 Describe 'Html' {
-    Mock Write-PodeValueToResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'text/html; charset=utf-8'
+    Mock Text { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
+    $_ContentType = 'text/html'
 
     It 'Returns an empty value for an empty value' {
         $r = Html -Value ([string]::Empty)

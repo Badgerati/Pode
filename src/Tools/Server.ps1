@@ -232,6 +232,7 @@ function Restart-PodeServer
             'Engine' = 'html';
             'Extension' = 'html';
             'Script' = $null;
+            'IsDynamic' = $fasle;
         }
 
         # clear up cookie sessions

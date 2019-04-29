@@ -19,7 +19,7 @@ route <method> <route> [<middleware>] <scriptblock> [-protocol <string>] [-endpo
 route static <route> <path> [<defaults>] [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove]
 
 # or with aliases:
-route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-ln <string>] [-type <string>] [-rm]
+route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-ln <string>] [-ctype <string>] [-rm]
 route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-ln <string>] [-rm]
 ```
 

@@ -17,9 +17,7 @@ function Get-PodeContentType
         $Extension = ".$($Extension)"
     }
 
-    <#
     # Sourced from https://github.com/samuelneff/MimeTypeMap
-    #>
     switch ($Extension.ToLowerInvariant())
     {
         '.323' { return 'text/h323' }
@@ -57,7 +55,7 @@ function Get-PodeContentType
         '.air' { return 'application/vnd.adobe.air-application-installer-package+zip' }
         '.amc' { return 'application/mpeg' }
         '.anx' { return 'application/annodex' }
-        '.apk' { return 'application/vnd.android.package-archive'  }
+        '.apk' { return 'application/vnd.android.package-archive' }
         '.application' { return 'application/x-ms-application' }
         '.art' { return 'image/x-jg' }
         '.asa' { return 'application/xml' }
@@ -147,7 +145,7 @@ function Get-PodeContentType
         '.dwf' { return 'drawing/x-dwf' }
         '.dwg' { return 'application/acad' }
         '.dwp' { return 'application/octet-stream' }
-        '.dxf' { return 'application/x-dxf'  }
+        '.dxf' { return 'application/x-dxf' }
         '.dxr' { return 'application/x-director' }
         '.eml' { return 'message/rfc822' }
         '.emz' { return 'application/octet-stream' }
@@ -437,7 +435,7 @@ function Get-PodeContentType
         '.rqy' { return 'text/x-ms-rqy' }
         '.rtf' { return 'application/rtf' }
         '.rtx' { return 'text/richtext' }
-        '.rvt' { return 'application/octet-stream'  }
+        '.rvt' { return 'application/octet-stream' }
         '.ruleset' { return 'application/xml' }
         '.s' { return 'text/plain' }
         '.safariextz' { return 'application/x-safari-safariextz' }
@@ -459,7 +457,7 @@ function Get-PodeContentType
         '.sit' { return 'application/x-stuffit' }
         '.sitemap' { return 'application/xml' }
         '.skin' { return 'application/xml' }
-        '.skp' { return 'application/x-koan'  }
+        '.skp' { return 'application/x-koan' }
         '.sldm' { return 'application/vnd.ms-powerpoint.slide.macroEnabled.12' }
         '.sldx' { return 'application/vnd.openxmlformats-officedocument.presentationml.slide' }
         '.slk' { return 'application/vnd.ms-excel' }
@@ -616,8 +614,8 @@ function Get-PodeContentType
         '.xltm' { return 'application/vnd.ms-excel.template.macroEnabled.12' }
         '.xltx' { return 'application/vnd.openxmlformats-officedocument.spreadsheetml.template' }
         '.xlw' { return 'application/vnd.ms-excel' }
-        '.xml' { return 'text/xml' }
-        '.xmp' { return 'application/octet-stream'  }
+        '.xml' { return 'application/xml' }
+        '.xmp' { return 'application/octet-stream' }
         '.xmta' { return 'application/xml' }
         '.xof' { return 'x-world/x-vrml' }
         '.xoml' { return 'text/plain' }
@@ -634,6 +632,8 @@ function Get-PodeContentType
         '.xspf' { return 'application/xspf+xml' }
         '.xtp' { return 'application/octet-stream' }
         '.xwd' { return 'image/x-xwindowdump' }
+        '.yaml' { return 'application/x-yaml' }
+        '.yml' { return 'application/x-yaml' }
         '.z' { return 'application/x-compress' }
         '.zip' { return 'application/zip' }
         default { return (iftet $DefaultIsNull $null 'text/plain') }

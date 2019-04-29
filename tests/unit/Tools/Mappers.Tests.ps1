@@ -637,7 +637,7 @@ Describe 'Get-PodeContentType' {
             '.xltm' = 'application/vnd.ms-excel.template.macroEnabled.12';
             '.xltx' = 'application/vnd.openxmlformats-officedocument.spreadsheetml.template';
             '.xlw' = 'application/vnd.ms-excel';
-            '.xml' = 'text/xml';
+            '.xml' = 'application/xml';
             '.xmp' = 'application/octet-stream' ;
             '.xmta' = 'application/xml';
             '.xof' = 'x-world/x-vrml';
@@ -655,6 +655,8 @@ Describe 'Get-PodeContentType' {
             '.xspf' = 'application/xspf+xml';
             '.xtp' = 'application/octet-stream';
             '.xwd' = 'image/x-xwindowdump';
+            '.yaml' = 'application/x-yaml';
+            '.yml' = 'application/x-yaml';
             '.z' = 'application/x-compress';
             '.zip' = 'application/zip';
         }

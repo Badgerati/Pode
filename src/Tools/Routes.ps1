@@ -49,6 +49,7 @@ function Get-PodeRoute
             'Protocol' = $found.Protocol;
             'Endpoint' = $found.Endpoint;
             'ContentType' = $found.ContentType;
+            'ErrorType' = $found.ErrorType;
             'Parameters' = $null;
         }
     }
@@ -86,6 +87,7 @@ function Get-PodeRoute
                 'Protocol' = $found.Protocol;
                 'Endpoint' = $found.Endpoint;
                 'ContentType' = $found.ContentType;
+                'ErrorType' = $found.ErrorType;
                 'Parameters' = $Matches;
             }
         }
@@ -215,9 +217,14 @@ function Route
         $ListenName,
 
         [Parameter()]
-        [Alias('type', 'ct')]
+        [Alias('ctype', 'ct')]
         [string]
         $ContentType,
+
+        [Parameter()]
+        [Alias('etype', 'et')]
+        [string]
+        $ErrorType,
 
         [switch]
         [Alias('rm')]
@@ -263,7 +270,7 @@ function Route
         }
 
         Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock `
-            -Protocol $Protocol -Endpoint $Endpoint -ContentType $ContentType
+            -Protocol $Protocol -Endpoint $Endpoint -ContentType $ContentType -ErrorType $ErrorType
     }
 }
 
@@ -346,7 +353,11 @@ function Add-PodeRoute
 
         [Parameter()]
         [string]
-        $ContentType
+        $ContentType,
+
+        [Parameter()]
+        [string]
+        $ErrorType
     )
 
     # if middleware and scriptblock are null, error
@@ -428,7 +439,7 @@ function Add-PodeRoute
 
         # find type by pattern
         $matched = ($PodeContext.Server.Web.ContentType.Routes.Keys | Where-Object {
-            $Route -imatch "$($_)"
+            $Route -imatch $_
         } | Select-Object -First 1)
 
         if (!(Test-Empty $matched)) {
@@ -443,6 +454,7 @@ function Add-PodeRoute
         'Protocol' = $Protocol;
         'Endpoint' = $Endpoint.Trim();
         'ContentType' = $ContentType;
+        'ErrorType' = $ErrorType;
     })
 }
 

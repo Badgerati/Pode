@@ -15,7 +15,7 @@ Server {
     }
 
     # can be hit by sending a POST request to "localhost:8086/api/test"
-    route post '/api/test' -type 'application/json' {
+    route post '/api/test' -ctype 'application/json' {
         param($e)
         json @{ 'hello' = 'world'; 'name' = $e.Data['name']; }
     }

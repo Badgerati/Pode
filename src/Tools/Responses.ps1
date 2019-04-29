@@ -1,16 +1,18 @@
-# write data to http response stream
-function Write-PodeValueToResponse
+# write data to http response stream, using a specific content-type
+function Text
 {
     param (
         [Parameter()]
+        [Alias('v')]
         $Value,
 
         [Parameter()]
-        [Alias('type')]
+        [Alias('ctype', 'ct')]
         [string]
         $ContentType = $null,
 
         [switch]
+        [Alias('c')]
         $Cache
     )
 
@@ -33,12 +35,16 @@ function Write-PodeValueToResponse
         $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($age).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
     }
 
-    # specify the content-type if supplied
+    # specify the content-type if supplied (adding utf-8 if missing)
     if (!(Test-Empty $ContentType)) {
+        if ($ContentType -inotcontains 'charset=utf-8') {
+            $ContentType = "$($ContentType); charset=utf-8"
+        }
+
         $res.ContentType = $ContentType
     }
 
-    # write the content to the response
+    # write the content to the response stream
     if ($Value.GetType().Name -ieq 'string') {
         $Value = ConvertFrom-PodeValueToBytes -Value $Value
     }
@@ -61,14 +67,26 @@ function Write-PodeValueToResponse
     }
 }
 
-function Write-PodeValueToResponseFromFile
+function File
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('p')]
+        [string]
         $Path,
 
+        [Parameter()]
+        [Alias('d')]
+        $Data = @{},
+
+        [Parameter()]
+        [Alias('ctype', 'ct')]
+        [string]
+        $ContentType = $null,
+
         [switch]
+        [Alias('c')]
         $Cache
     )
 
@@ -89,18 +107,21 @@ function Write-PodeValueToResponseFromFile
             $content = (Get-Content -Path $Path -Raw -Encoding byte)
         }
 
-        Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
-        return
+        $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $mainExt))
+        Text -Value $content -ContentType $ContentType -Cache:$Cache
     }
 
     # generate dynamic content
-    $content = Get-PodeFileContentUsingViewEngine -Path $Path
+    else {
+        $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
 
-    # get the sub-file extension, if empty, use original
-    $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
-    $subExt = (coalesce $subExt $mainExt)
+        # get the sub-file extension, if empty, use original
+        $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
+        $subExt = (coalesce $subExt $mainExt)
 
-    Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
+        $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $subExt))
+        Text -Value $content -ContentType $ContentType
+    }
 }
 
 function Attach
@@ -203,6 +224,11 @@ function Status
         [Alias('e')]
         $Exception,
 
+        [Parameter()]
+        [Alias('ctype', 'ct')]
+        [string]
+        $ContentType = $null,
+
         [switch]
         [Alias('nopage')]
         $NoErrorPage
@@ -222,7 +248,7 @@ function Status
 
     # if the status code is >=400 then attempt to load error page
     if (!$NoErrorPage -and ($Code -ge 400)) {
-        Show-PodeErrorPage -Code $Code -Description $Description -Exception $Exception
+        Show-PodeErrorPage -Code $Code -Description $Description -Exception $Exception -ContentType $ContentType
     }
 }
 
@@ -297,6 +323,7 @@ function Json
 {
     param (
         [Parameter()]
+        [Alias('v')]
         $Value,
 
         [switch]
@@ -319,14 +346,14 @@ function Json
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
-    Write-PodeValueToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
+    Text -Value $Value -ContentType 'application/json'
 }
 
 function Csv
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Alias('v')]
         $Value,
 
         [switch]
@@ -358,14 +385,14 @@ function Csv
         }
     }
 
-    Write-PodeValueToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
+    Text -Value $Value -ContentType 'text/csv'
 }
 
 function Xml
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Alias('v')]
         $Value,
 
         [switch]
@@ -392,14 +419,14 @@ function Xml
         $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
     }
 
-    Write-PodeValueToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
+    Text -Value $Value -ContentType 'application/xml'
 }
 
 function Html
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Alias('v')]
         $Value,
 
         [switch]
@@ -422,7 +449,7 @@ function Html
         $Value = ($Value | ConvertTo-Html)
     }
 
-    Write-PodeValueToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
+    Text -Value $Value -ContentType 'text/html'
 }
 
 # include helper to import the content of a view into another view
@@ -475,24 +502,22 @@ function Show-PodeErrorPage
         $Description,
 
         [Parameter()]
-        $Exception
+        $Exception,
+
+        [Parameter()]
+        [string]
+        $ContentType
     )
 
-    # attempt to get a custom error page for the appropriate content type
-    $contentType = (Get-PodeContentTypeAndBoundary -ContentType $WebEvent.Request.ContentType).ContentType
-    $errorPage = (Get-PodeErrorPage -Code $Code -ContentType $contentType)
+    # error page info
+    $errorPage = Find-PodeErrorPage -Code $Code -ContentType $ContentType
 
-    # if no page found, attempt with no content type
-    if (Test-Empty $errorPage) {
-        $errorPage = (Get-PodeErrorPage -Code $Code)
-    }
-
-    # if still none found, return
+    # if no page found, return
     if (Test-Empty $errorPage) {
         return
     }
 
-    # is exception trace showing enabled, if so, build the object
+    # if exception trace showing enabled then build the exception details object
     $ex = $null
     if (!(Test-Empty $Exception) -and $PodeContext.Server.Web.ErrorPages.ShowExceptions) {
         $ex = @{
@@ -503,31 +528,19 @@ function Show-PodeErrorPage
         }
     }
 
-    # run any engine logic to generate the file and render/return it
-    $content = Get-PodeFileContentUsingViewEngine -Path $errorPage.Path -Data @{
+    # setup the data object for dynamic pages
+    $data = @{
         'Url' = (Get-PodeUrl);
         'Status' = @{
             'Code' = $Code;
             'Description' = $Description;
         };
         'Exception' = $ex;
-        'ContentType' = $contentType;
+        'ContentType' = $errorPage.ContentType;
     }
 
-    # generate the content as the appropriate content type
-    switch ($errorPage.Type.ToLowerInvariant()) {
-        'json' {
-            json $content
-        }
-
-        'xml' {
-            xml $content
-        }
-
-        default {
-            html $content
-        }
-    }
+    # write the error page to the stream
+    File -Path $errorPage.Path -Data $data -ContentType $errorPage.ContentType
 }
 
 function View
@@ -561,8 +574,8 @@ function View
     if ($FlashMessages -and !(Test-Empty $WebEvent.Session.Data.Flash)) {
         $Data['flash'] = @{}
 
-        (flash keys) | Foreach-Object {
-            $Data.flash[$_] = (flash get $_)
+        foreach ($key in (flash keys)) {
+            $Data.flash[$key] = (flash get $key)
         }
     }
     elseif (Test-Empty $Data['flash']) {

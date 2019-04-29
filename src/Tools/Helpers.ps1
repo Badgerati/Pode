@@ -1028,8 +1028,8 @@ function Join-PodePaths
 
     # if there are any more, add them on
     if ($Paths.Length -gt 2) {
-        $Paths[2..($Paths.Length - 1)] | ForEach-Object {
-            $_path = Join-Path $_path $_
+        foreach ($p in $Paths[2..($Paths.Length - 1)]) {
+            $_path = Join-Path $_path $p
         }
     }
 
@@ -1375,8 +1375,8 @@ function ConvertFrom-PodeNameValueToHashTable
     }
 
     $ht = @{}
-    $Collection.Keys | ForEach-Object {
-        $ht[$_] = $Collection[$_]
+    foreach ($key in $Collection.Keys) {
+        $ht[$key] = $Collection[$key]
     }
 
     return $ht
@@ -1615,7 +1615,114 @@ function Get-PodeUrl
     return "$($WebEvent.Protocol)://$($WebEvent.Endpoint)$($WebEvent.Path)"
 }
 
+function Find-PodeErrorPage
+{
+    param (
+        [Parameter()]
+        [int]
+        $Code,
+
+        [Parameter()]
+        [string]
+        $ContentType
+    )
+
+    # if a defined content type is supplied, attempt to find an error page for that first
+    if (!(Test-Empty $ContentType)) {
+        $path = Get-PodeErrorPage -Code $Code -ContentType $ContentType
+        if (!(Test-Empty $path)) {
+            return @{ 'Path' = $path; 'ContentType' = $ContentType }
+        }
+    }
+
+    # if a defined route error page content type is supplied, attempt to find an error page for that
+    if (!(Test-Empty $WebEvent.ErrorType)) {
+        $path = Get-PodeErrorPage -Code $Code -ContentType $WebEvent.ErrorType
+        if (!(Test-Empty $path)) {
+            return @{ 'Path' = $path; 'ContentType' = $WebEvent.ErrorType }
+        }
+    }
+
+    # if route patterns have been defined, see if an error content type matches and attempt that
+    if (!(Test-Empty $PodeContext.Server.Web.ErrorPages.Routes)) {
+        # find type by pattern
+        $matched = ($PodeContext.Server.Web.ErrorPages.Routes.Keys | Where-Object {
+            $WebEvent.Path -imatch $_
+        } | Select-Object -First 1)
+
+        # if we have a match, see if a page exists
+        if (!(Test-Empty $matched)) {
+            $type = $PodeContext.Server.Web.ErrorPages.Routes[$matched]
+            $path = Get-PodeErrorPage -Code $Code -ContentType $type
+            if (!(Test-Empty $path)) {
+                return @{ 'Path' = $path; 'ContentType' = $type }
+            }
+        }
+    }
+
+    # if we're using strict typing, attempt that
+    if ($PodeContext.Server.Web.ErrorPages.StrictContentType) {
+        $path = Get-PodeErrorPage -Code $Code -ContentType $WebEvent.ContentType
+        if (!(Test-Empty $path)) {
+            return @{ 'Path' = $path; 'ContentType' = $WebEvent.ContentType }
+        }
+    }
+
+    # if we have a default defined, attempt that
+    if (!(Test-Empty $PodeContext.Server.Web.ErrorPages.Default)) {
+        $path = Get-PodeErrorPage -Code $Code -ContentType $PodeContext.Server.Web.ErrorPages.Default
+        if (!(Test-Empty $path)) {
+            return @{ 'Path' = $path; 'ContentType' = $PodeContext.Server.Web.ErrorPages.Default }
+        }
+    }
+
+    # if there's still no error page, use default HTML logic
+    $type = Get-PodeContentType -Extension 'html'
+    $path = (Get-PodeErrorPage -Code $Code -ContentType $type)
+
+    if (!(Test-Empty $path)) {
+        return @{ 'Path' = $path; 'ContentType' = $type }
+    }
+
+    return $null
+}
+
 function Get-PodeErrorPage
+{
+    param (
+        [Parameter()]
+        [int]
+        $Code,
+
+        [Parameter()]
+        [string]
+        $ContentType
+    )
+
+    # parse the passed content type
+    $ContentType = (Get-PodeContentTypeAndBoundary -ContentType $ContentType).ContentType
+
+    # object for the page path
+    $path = $null
+
+    # attempt to find a custom error page
+    $path = Find-PodeCustomErrorPage -Code $Code -ContentType $ContentType
+
+    # if there's no custom page found, attempt to find an inbuilt page
+    if (Test-Empty $path) {
+        $podeRoot = Join-Path (Get-PodeModuleRootPath) 'Misc'
+        $path = Find-PodeFileForContentType -Path $podeRoot -Name 'default-error-page' -ContentType $ContentType -Engine 'pode'
+    }
+
+    # if there's no path found, or it's inaccessible, return null
+    if (!(Test-PodePath $path -NoStatus)) {
+        return $null
+    }
+
+    return $path
+}
+
+function Find-PodeCustomErrorPage
 {
     param (
         [Parameter()]
@@ -1630,47 +1737,104 @@ function Get-PodeErrorPage
     # get the custom errors path
     $customErrPath = $PodeContext.Server.InbuiltDrives['errors']
 
-    # the path found to the error page
-    $errPagePath = [string]::Empty
-    $errPageType = [string]::Empty
-
-    # get error page type based on content type
-    switch ($ContentType) {
-        { $_ -ilike '*/json' } {
-            $errPageType = '.json'
-        }
-
-        { $_ -ilike '*/xml' } {
-            $errPageType = '.xml'
-        }
-    }
-
-    # if their is a custom error path, use it to try and find an error page
-    if (!(Test-Empty $customErrPath)) {
-        $statusPage = (Join-Path $customErrPath "$($Code)$($errPageType).*" -Resolve -ErrorAction Ignore)
-        $defaultPage = (Join-Path $customErrPath "default$($errPageType).*" -Resolve -ErrorAction Ignore)
-
-        # use the status-code page or a default page?
-        if ((Test-PodePath -Path $statusPage -NoStatus)) {
-            $errPagePath = $statusPage
-        }
-        elseif ((Test-PodePath -Path $defaultPage -NoStatus)) {
-            $errPagePath = $defaultPage
-        }
-    }
-
-    # if we haven't found a custom page, use the inbuilt pode error page
-    if (Test-Empty $errPagePath) {
-        $errPagePath = Join-PodePaths @((Get-PodeModuleRootPath), 'Misc', "default-error-page$($errPageType).pode")
-    }
-
-    # if there's still no error page path, return null
-    if (!(Test-PodePath $errPagePath -NoStatus)) {
+    # if there's no custom error path, return
+    if (Test-Empty $customErrPath) {
         return $null
     }
 
-    return @{
-        'Path' = $errPagePath;
-        'Type' = $errPageType.Trim('.');
+    # retrieve a status code page
+    $path = (Find-PodeFileForContentType -Path $customErrPath -Name "$($Code)" -ContentType $ContentType)
+    if (!(Test-Empty $path)) {
+        return $path
     }
+
+    # retrieve default page
+    $path = (Find-PodeFileForContentType -Path $customErrPath -Name 'default' -ContentType $ContentType)
+    if (!(Test-Empty $path)) {
+        return $path
+    }
+
+    # no file was found
+    return $null
+}
+
+function Find-PodeFileForContentType
+{
+    param (
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [string]
+        $Engine = $null
+    )
+
+    # get all files at the path that start with the name
+    $files = @(Get-ChildItem -Path (Join-Path $Path "$($Name).*"))
+
+    # if there are no files, return
+    if (Test-Empty $files) {
+        return $null
+    }
+
+    # filter the files by the view engine extension (but only if the current engine is dynamic - non-html)
+    if ((Test-Empty $Engine) -and $PodeContext.Server.ViewEngine.IsDynamic) {
+        $Engine = $PodeContext.Server.ViewEngine.Extension
+    }
+
+    if (!(Test-Empty $Engine)) {
+        $engineFiles = @($files | Where-Object { $_.Name -imatch "\.$($Engine)$" })
+        $files = @($files | Where-Object { $_.Name -inotmatch "\.$($Engine)$" })
+    }
+
+    # only attempt these formats if we have a files for the view engine
+    if (!(Test-Empty $engineFiles))
+    {
+        # get files of the format '<name>.<type>.<engine>'
+        $file = ($engineFiles | Where-Object {
+            if ($_.Name -imatch "^$($Name)\.(?<ext>.*?)\.$($engine)$") {
+                return ($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext']))
+            }
+        } | Select-Object -First 1)
+
+        if (!(Test-Empty $file)) {
+            return $file.FullName
+        }
+
+        # get files of the format '<name>.<engine>'
+        $file = ($engineFiles | Where-Object {
+            return ($_.Name -imatch "^$($Name)\.$($engine)$")
+        } | Select-Object -First 1)
+
+        if (!(Test-Empty $file)) {
+            return $file.FullName
+        }
+    }
+
+    # only attempt static files if we still have files after any engine filtering
+    if (!(Test-Empty $files))
+    {
+        # get files of the format '<name>.<type>'
+        $file = ($files | Where-Object {
+            if ($_.Name -imatch "^$($Name)\.(?<ext>.*?)$") {
+                return ($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext']))
+            }
+        } | Select-Object -First 1)
+
+        if (!(Test-Empty $file)) {
+            return $file.FullName
+        }
+    }
+
+    # no file was found
+    return $null
 }

@@ -14,11 +14,11 @@ For example, if you have two routes you can force one to only parse JSON and the
 server {
     listen *:8080 http
 
-    route get '/api/json' -type 'application/json' {
+    route get '/api/json' -ctype 'application/json' {
         json @{}
     }
 
-    route get '/api/xml' -type 'application/xml' {
+    route get '/api/xml' -ctype 'application/xml' {
         xml @{}
     }
 }

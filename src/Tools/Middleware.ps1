@@ -148,7 +148,7 @@ function Get-PodePublicMiddleware
         }
 
         # write the file to the response
-        Write-PodeValueToResponseFromFile -Path $path -Cache:$caching
+        File -Path $path -Cache:$caching
 
         # static content found, stop
         return $false
@@ -178,6 +178,9 @@ function Get-PodeRouteValidateMiddleware
             if (!(Test-Empty $route.ContentType)) {
                 $WebEvent.ContentType = $route.ContentType
             }
+
+            # set the content type for any pages for the route if it's not empty
+            $WebEvent.ErrorType = $route.ErrorType
 
             # route exists
             return $true
