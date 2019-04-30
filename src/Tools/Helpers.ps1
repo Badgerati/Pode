@@ -1661,7 +1661,7 @@ function Find-PodeErrorPage
     }
 
     # if we're using strict typing, attempt that
-    if ($PodeContext.Server.Web.ErrorPages.StrictContentType) {
+    if ($PodeContext.Server.Web.ErrorPages.StrictContentTyping) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $WebEvent.ContentType
         if (!(Test-Empty $path)) {
             return @{ 'Path' = $path; 'ContentType' = $WebEvent.ContentType }

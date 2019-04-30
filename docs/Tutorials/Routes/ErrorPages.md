@@ -1,6 +1,6 @@
 # Error Pages and Status Codes
 
-During web requests, Pode has some default status codes that can be returned:
+During web requests, Pode has some default status codes that can be returned throughout a request's lifecycle:
 
 * `200` on success
 * `400` when the query string or payload are invalid
@@ -9,19 +9,28 @@ During web requests, Pode has some default status codes that can be returned:
 * `429` if the rate limit is reached
 * `500` for a complete failure
 
-When viewed through a browser, status codes that are 400+ will be rendered as an error page. Pode itself has an inbuilt error page, but you can override this page using custom error pages ([described below](#error-pages)). These pages are supplied the status code, description and URL that triggered the error. They're also supplied details of any exception supplied to the `status` function, which can be rendered [if enabled](#exceptions) via the `pode.json` configuration file.
+Status codes that are 400+ will be rendered as an error page, unless the `-NoErrorPage` switch is passed to the `status` function. Pode itself has inbuilt error pages (HTML, JSON, and XML), but you can override these pages using custom error pages ([described below](#error-pages)).
+
+If the error page being generated is dynamic, then the following `$data` is supplied and can be used the same as in views:
+
+* The HTTP status code
+* A description for the status
+* The URL that threw the error
+* The content-type of the error page being generated
+
+They're also supplied details of any exception passed to the `status` function, which can be rendered [if enabled](#exceptions) via the `pode.json` configuration file.
 
 ## Status Codes
 
-The [`status`](../../../Functions/Response/Status) function allows you to set your own status code on the response, as well as a custom description. If the status code was triggered by an exception occurring, then you can also supply this to `status` so it can be rendered on the [error page](#error-pages).
+The [`status`](../../../Functions/Response/Status) function allows you to set your own status code on the response, as well as a custom description. If the status code was triggered by an exception being thrown, then you can also supply this so it can be rendered on any [error pages](#error-pages).
 
 The make-up of the `status` function is as follows:
 
 ```powershell
-status <int> [-description <string>] [-exception <exception>]
+status <int> [-description <string>] [-exception <exception>] [-contentType <string>] [-noErrorPage]
 
 # or with aliases:
-status <int> [-d <string>] [-e <exception>]
+status <int> [-d <string>] [-e <exception>] [-ctype <string>] [-nopage]
 ```
 
 The following example will set the status code of the response to be `418`:
@@ -36,7 +45,7 @@ Server {
 }
 ```
 
-Where as this example will return a `500` with a custom description, and the exception that caused the error:
+Where as this example will set the status code to `500` with a custom description, and the exception that caused the error:
 
 ```powershell
 Server {
@@ -55,25 +64,44 @@ Server {
 
 ## Error Pages
 
-When a response is returned with a status code of 400+, then Pode will render these as styled error pages. By default, Pode has an inbuilt error page that will be used (this shows the status code, description, the URL and if enabled the exception message/stacktrace).
+When a response is returned with a status code of 400+, then Pode will attempt to render these as styled error pages. By default, Pode has inbuilt error pages that will be used (these show the status code, description, the URL, and if enabled the exception message/stacktrace).
+
+The inbuilt error pages are of types HTML, JSON, and XML. By default Pode will always attempt to use the HTML error pages however, if you set, say [strict content typing](#strict-typing), then Pode will also attempt to use the JSON/XML error pages if the request's content type header is set appropriately.
 
 ### Custom
 
-However, Pode also supports custom error pages, so you can stylise your own!
+In Pode you can use custom error pages, so you can stylise your own rather than using the inbuilt ones that come with Pode.
 
-To use your own custom error pages you place the pages within an `/errors` directory at the root of your server (similar to `/views` and `/public`). These pages should be called the name of the status code, plus a relevant extension: `<code>.<ext>`. Or, you can use `default.<ext>` as a catch-all for all status codes:
+To use your own custom error pages you have to place them within an `/errors` directory, at the root of your server (similar to `/views` and `/public`).
+
+These pages should be called the name of a status code, the content type of the page, and an optional view engine extension:
+
+```plain
+<code>.<type>[.<engine>]    # ie: 400.html, or 404.json.pode
+```
+
+Or, you can use a default error page which will be used for any status code that doesn't have a specific page define:
+
+```plain
+default.<type>[.<engine>]   # ie: default.html, or default.json.pode
+```
+
+An example file structure for `/errors` is as follows:
 
 ```plain
 /errors
     default.html
     404.html
-    500.html
+    404.json
+    500.html.pode
 ```
 
-!!! Important
-    The extension used will determine the view engine that will be used to render the error pages, such as `html` or `pode`.
+By default Pode will always generate error pages as HTML, unless you enable strict content typing or routes patterns ([detailed later](#content-types)).
 
-If you're using a dynamic view engine to render the error pages, then like `views`, there will be a `$data` variable that you can use within the view file. The `$data` variable will have the following structure:
+!!! important
+    To use error pages with a view engine (such as `.pode`), you need to set the [`view engine`](../../../Functions/Core/Engine) in your server.
+
+If you're using a dynamic view engine to render the error pages, then like [`views`](../../ViewEngines/Pode), there will be a `$data` variable that you can use within the error page file. The `$data` variable will have the following structure:
 
 ```powershell
 @{
@@ -88,15 +116,16 @@ If you're using a dynamic view engine to render the error pages, then like `view
         'Line' = [string];
         'Category' = [string];
     };
+    'ContentType' = [string];
 }
 ```
 
-!!! Note
-    If you've disabled the showing of exceptions, then the `Exception` value will be `$null`
+!!! note
+    If you've disabled the showing of exceptions, then the `Exception` property will be `$null`.
 
 ### Exceptions
 
-Above you'll see that the exception supplied to `status` will also be supplied to any dynamic error pages. By default, this is disabled, but you can enable the viewing of exceptions on the error page by using the `pode.json` configuration file:
+Above you'll see that the exception supplied to `status` will also be supplied to any dynamic error pages. By default this is disabled, but you can enable the viewing of exceptions on the error page by using the `pode.json` configuration file:
 
 ```json
 {
@@ -108,11 +137,81 @@ Above you'll see that the exception supplied to `status` will also be supplied t
 }
 ```
 
-Once set to `true`, any available exception details for status codes will be available to error pages.
+Once set to `true`, any available exception details for status codes will be available to error pages - a useful setting to have in a [`pode.dev.json`](../../Configuration#environments) file.
 
-### Example
+## Content Types
 
-The following is a simple example `default.pode` dynamic error page, which will render the status code and description - and if available, the exception message and stacktrace:
+Using the `pode.json` configuration file, you can define which file content types to attempt when generating error pages for routes. You can either:
+
+* Define a [default](#default) content type that will apply to every route, or
+* Enable [strict](#strict-typing) content typing to use a route/request's content type, or
+* Define [patterns](#route-patterns) to match multiple route paths to set content types on mass
+
+### Default
+
+To define a default content type for everything, you can use the following configuration. With this, any error thrown in any route will attempt to render an HTML error page:
+
+```json
+{
+    "web": {
+        "errorPages": {
+            "default": "text/html"
+        }
+    }
+}
+```
+
+### Route Patterns
+
+You can define patterns to match multiple route paths, and any route that matches, when an error page is being generated, will attempt to generate an error page for the content type set.
+
+For example, the following configuration in your `pode.json` file would bind all `/api` routes to `application/json` error pages, and then all `/status` routes to `text/xml` error pages:
+
+```json
+{
+    "web": {
+        "errorPages": {
+            "routes": {
+                "/api/*": "application/json",
+                "/status/*": "text/xml"
+            }
+        }
+    }
+}
+```
+
+### Strict Typing
+
+You can enable strict content typing in the `pode.json` file. When enabled, Pode will attempt to generate an error page that matches the route/request's content type.
+
+For example: if the request's `Content-Type` header is set to `application/json` (or you're using [route content types](../ContentTypes)), and you have strict content typing enabled, then Pode will attempt to use a JSON error page.
+
+To enable strict content typing, you can use the following:
+
+```json
+{
+    "web": {
+        "errorPages": {
+            "strictContentTyping": true
+        }
+    }
+}
+```
+
+### Precedence
+
+The content type that will used, when attempting to generate an error page, will be determined by the following order:
+
+1. A content type is supplied directly to the `status` function (via `-ContentType`).
+2. An error page content type is supplied directly to the `route` function (via `-ErrorType`).
+3. The route matches a pattern defined in the configuration file.
+4. Strict content typing is enabled in the configuration file.
+5. A default error page content type is defined in the configuration file.
+6. use the default of HTML.
+
+## Example Page
+
+The following is a simple `default.html.pode` dynamic error page example, which will render the status code and description - and if available, the exception message and stacktrace:
 
 ```html
 <html>

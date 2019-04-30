@@ -221,7 +221,7 @@ Describe 'Route' {
             $PodeContext.Server = @{
                 'Routes' = @{ 'GET' = @{}; };
                 'Web' = @{ 'ContentType' = @{
-                    'Default' = 'application/xml';
+                    'Default' = 'text/xml';
                     'Routes' = @{};
                 } };
             }
@@ -235,14 +235,14 @@ Describe 'Route' {
             $routes['/users'].Length | Should Be 1
             $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
             $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].ContentType | Should Be 'application/xml'
+            $routes['/users'][0].ContentType | Should Be 'text/xml'
         }
 
         It 'Adds route with simple url with route pattern content type' {
             $PodeContext.Server = @{
                 'Routes' = @{ 'GET' = @{}; };
                 'Web' = @{ 'ContentType' = @{
-                    'Default' = 'application/xml';
+                    'Default' = 'text/xml';
                     'Routes' = @{ '/users' = 'text/plain' };
                 } };
             }

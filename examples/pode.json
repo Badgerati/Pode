@@ -15,10 +15,10 @@
         },
         "errorPages": {
             "showExceptions": true,
-            "strictContentType": true,
-            "default": "application/xml",
+            "strictContentTyping": true,
+            "default": "application/html",
             "routes": {
-                "/john": "application/x-yaml"
+                "/john": "application/json"
             }
         }
     }

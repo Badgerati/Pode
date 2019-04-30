@@ -614,7 +614,7 @@ function Get-PodeContentType
         '.xltm' { return 'application/vnd.ms-excel.template.macroEnabled.12' }
         '.xltx' { return 'application/vnd.openxmlformats-officedocument.spreadsheetml.template' }
         '.xlw' { return 'application/vnd.ms-excel' }
-        '.xml' { return 'application/xml' }
+        '.xml' { return 'text/xml' }
         '.xmp' { return 'application/octet-stream' }
         '.xmta' { return 'application/xml' }
         '.xof' { return 'x-world/x-vrml' }

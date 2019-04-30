@@ -21,9 +21,14 @@ function Text
         return
     }
 
-    $res = $WebEvent.Response
+    # if the value isn't a string/byte[] then error
+    $valueType = $Value.GetType().Name
+    if (@('string', 'byte[]') -inotcontains $valueType) {
+        throw "Value to write to stream must be a String or Byte[], but got: $($valueType)"
+    }
 
     # if the response stream isn't writable, return
+    $res = $WebEvent.Response
     if (($null -eq $res) -or ($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite) {
         return
     }
@@ -37,18 +42,20 @@ function Text
 
     # specify the content-type if supplied (adding utf-8 if missing)
     if (!(Test-Empty $ContentType)) {
-        if ($ContentType -inotcontains 'charset=utf-8') {
-            $ContentType = "$($ContentType); charset=utf-8"
+        $charset = 'charset=utf-8'
+        if ($ContentType -inotcontains $charset) {
+            $ContentType = "$($ContentType); $($charset)"
         }
 
         $res.ContentType = $ContentType
     }
 
-    # write the content to the response stream
-    if ($Value.GetType().Name -ieq 'string') {
+    # convert string to bytes
+    if ($valueType -ieq 'string') {
         $Value = ConvertFrom-PodeValueToBytes -Value $Value
     }
 
+    # write the content to the response stream
     $res.ContentLength64 = $Value.Length
 
     try {
@@ -98,8 +105,20 @@ function File
     # are we dealing with a dynamic file for the view engine? (ignore html)
     $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
 
+    # generate dynamic content
+    if (!(Test-Empty $mainExt) -and (($mainExt -ieq 'pode') -or ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension))) {
+        $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
+
+        # get the sub-file extension, if empty, use original
+        $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
+        $subExt = (coalesce $subExt $mainExt)
+
+        $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $subExt))
+        Text -Value $content -ContentType $ContentType
+    }
+
     # this is a static file
-    if ((Test-Empty $mainExt) -or ($mainExt -ieq 'html') -or ($mainExt -ine $PodeContext.Server.ViewEngine.Extension)) {
+    else {
         if (Test-IsPSCore) {
             $content = (Get-Content -Path $Path -Raw -AsByteStream)
         }
@@ -109,18 +128,6 @@ function File
 
         $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $mainExt))
         Text -Value $content -ContentType $ContentType -Cache:$Cache
-    }
-
-    # generate dynamic content
-    else {
-        $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
-
-        # get the sub-file extension, if empty, use original
-        $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
-        $subExt = (coalesce $subExt $mainExt)
-
-        $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $subExt))
-        Text -Value $content -ContentType $ContentType
     }
 }
 
@@ -419,7 +426,7 @@ function Xml
         $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
     }
 
-    Text -Value $Value -ContentType 'application/xml'
+    Text -Value $Value -ContentType 'text/xml'
 }
 
 function Html

@@ -330,7 +330,7 @@ function Set-PodeWebConfiguration
         };
         'ErrorPages' = @{
             'ShowExceptions' = [bool]$Configuration.web.errorPages.showExceptions;
-            'StrictContentType' = [bool]$Configuration.web.errorPages.strictContentType;
+            'StrictContentTyping' = [bool]$Configuration.web.errorPages.strictContentTyping;
             'Default' = $Configuration.web.errorPages.default;
             'Routes' = @{};
         };

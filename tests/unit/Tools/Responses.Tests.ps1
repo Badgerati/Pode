@@ -255,7 +255,7 @@ Describe 'Csv' {
 
 Describe 'Xml' {
     Mock Text { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'application/xml'
+    $_ContentType = 'text/xml'
 
     It 'Returns an empty value for an empty value' {
         $r = Xml -Value ([string]::Empty)

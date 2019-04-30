@@ -637,7 +637,7 @@ Describe 'Get-PodeContentType' {
             '.xltm' = 'application/vnd.ms-excel.template.macroEnabled.12';
             '.xltx' = 'application/vnd.openxmlformats-officedocument.spreadsheetml.template';
             '.xlw' = 'application/vnd.ms-excel';
-            '.xml' = 'application/xml';
+            '.xml' = 'text/xml';
             '.xmp' = 'application/octet-stream' ;
             '.xmta' = 'application/xml';
             '.xof' = 'x-world/x-vrml';
