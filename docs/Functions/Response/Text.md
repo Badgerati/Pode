@@ -26,4 +26,5 @@ Server {
 | ---- | ---- | -------- | ----------- | ------- |
 | Value | byte[]/string | true | The value to write to the current web response | null |
 | ContentType | string | false | The content type of the value (ie: `application/json`) | null |
+| MaxAge | int | false | If caching, this is a value in seconds, that defines how long to cache the response | 3600 |
 | Cache | switch | false | If passed, Pode will set caching headers to tell a browser to cache the response | false |

@@ -43,4 +43,5 @@ Server {
 | Path | string | true | A path to a file to write to the current web response | null |
 | Data | hashtable | false | A hashtable of dynamic data that will be supplied to `.pode`, and other third-party template engine, files | `@{}` |
 | ContentType | string | false | The content type of the file (ie: `application/json`) | null |
+| MaxAge | int | false | If caching, this is a value in seconds, that defines how long to cache the response | 3600 |
 | Cache | switch | false | If passed, Pode will set caching headers to tell a browser to cache the file | false |

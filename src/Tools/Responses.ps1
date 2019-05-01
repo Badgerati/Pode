@@ -11,6 +11,10 @@ function Text
         [string]
         $ContentType = $null,
 
+        [Parameter()]
+        [int]
+        $MaxAge = 3600,
+
         [switch]
         [Alias('c')]
         $Cache
@@ -35,9 +39,8 @@ function Text
 
     # set a cache value
     if ($Cache) {
-        $age = $PodeContext.Server.Web.Static.Cache.MaxAge
-        $res.AddHeader('Cache-Control', "max-age=$($age), must-revalidate")
-        $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($age).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
+        $res.AddHeader('Cache-Control', "max-age=$($MaxAge), must-revalidate")
+        $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
     }
 
     # specify the content-type if supplied (adding utf-8 if missing)
@@ -92,6 +95,10 @@ function File
         [string]
         $ContentType = $null,
 
+        [Parameter()]
+        [int]
+        $MaxAge = 3600,
+
         [switch]
         [Alias('c')]
         $Cache
@@ -127,7 +134,7 @@ function File
         }
 
         $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $mainExt))
-        Text -Value $content -ContentType $ContentType -Cache:$Cache
+        Text -Value $content -ContentType $ContentType -MaxAge $MaxAge -Cache:$Cache
     }
 }
 

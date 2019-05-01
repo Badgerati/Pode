@@ -148,7 +148,7 @@ function Get-PodePublicMiddleware
         }
 
         # write the file to the response
-        File -Path $path -Cache:$caching
+        File -Path $path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
 
         # static content found, stop
         return $false
