@@ -1660,8 +1660,8 @@ function Find-PodeErrorPage
         }
     }
 
-    # if we're using strict typing, attempt that
-    if ($PodeContext.Server.Web.ErrorPages.StrictContentTyping) {
+    # if we're using strict typing, attempt that, if we have a content type
+    if ($PodeContext.Server.Web.ErrorPages.StrictContentTyping -and !(Test-Empty $WebEvent.ContentType)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $WebEvent.ContentType
         if (!(Test-Empty $path)) {
             return @{ 'Path' = $path; 'ContentType' = $WebEvent.ContentType }
@@ -1791,10 +1791,13 @@ function Find-PodeFileForContentType
         $Engine = $PodeContext.Server.ViewEngine.Extension
     }
 
-    if (!(Test-Empty $Engine)) {
-        $engineFiles = @($files | Where-Object { $_.Name -imatch "\.$($Engine)$" })
-        $files = @($files | Where-Object { $_.Name -inotmatch "\.$($Engine)$" })
+    $Engine = (coalesce $Engine 'pode')
+    if ($Engine -ine 'pode') {
+        $Engine = "($($Engine)|pode)"
     }
+
+    $engineFiles = @($files | Where-Object { $_.Name -imatch "\.$($Engine)$" })
+    $files = @($files | Where-Object { $_.Name -inotmatch "\.$($Engine)$" })
 
     # only attempt these formats if we have a files for the view engine
     if (!(Test-Empty $engineFiles))
