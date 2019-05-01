@@ -895,3 +895,15 @@ Describe 'Convert-PodePathPatternsToRegex' {
         Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotSlashes -NotStrict | Should Be '(/api.*?|/users.*?)'
     }
 }
+
+Describe 'ConvertFrom-PodeFile' {
+    It 'Generates dynamic content' {
+        $content = 'Value = $(1+1)'
+        ConvertFrom-PodeFile -Content $content | Should Be 'Value = 2'
+    }
+
+    It 'Generates dynamic content, using parameters' {
+        $content = 'Value = $($data["number"])'
+        ConvertFrom-PodeFile -Content $content -Data @{ 'number' = 3 } | Should Be 'Value = 3'
+    }
+}

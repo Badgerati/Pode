@@ -328,3 +328,164 @@ Describe 'Html' {
         $r.ContentType | Should Be $_ContentType
     }
 }
+
+Describe 'Text' {
+    It 'Does nothing for no value' {
+        Text -Value $null | Out-Null
+    }
+
+    It 'Throws an error when value is invalid type' {
+        { Text -Value 3 } | Should Throw 'must be a String or Byte[]'
+    }
+
+    It 'Does nothing when we have no response' {
+        Text -Value 'value' | Out-Null
+    }
+}
+
+Describe 'File' {
+    It 'Does nothing when the file does not exist' {
+        Mock Test-PodePath { return $false }
+        File -Path './path' | Out-Null
+        Assert-MockCalled Test-PodePath -Times 1 -Scope It
+    }
+
+    Mock Test-PodePath { return $true }
+
+    It 'Loads the contents of a dynamic file' {
+        Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
+        Mock Text { return $Value }
+
+        File -Path './path/file.pode' | Should Be 'file contents'
+
+        Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
+    }
+
+    It 'Loads the contents of a static file' {
+        Mock Get-Content { return 'file contents' }
+        Mock Text { return $Value }
+
+        File -Path './path/file.pode' | Should Be 'file contents'
+
+        Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
+    }
+}
+
+Describe 'Include' {
+    $PodeContext = @{
+        'Server' = @{
+            'InbuiltDrives' = @{ 'views' = '.' }
+            'ViewEngine' = @{ 'Extension' = 'pode' }
+        }
+    }
+
+    It 'Throws an error for a path that does not exist' {
+        Mock Test-PodePath { return $false }
+        { Include -Path 'sub-view.pode' } | Should Throw 'File not found'
+    }
+
+    Mock Test-PodePath { return $true }
+    Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
+
+    It 'Returns file contents, and appends view engine' {
+        Include -Path 'sub-view' | Should Be 'file contents'
+    }
+
+    It 'Returns file contents' {
+        Include -Path 'sub-view.pode' | Should Be 'file contents'
+    }
+}
+
+Describe 'Close-PodeTcpConnection' {
+    It 'Disposes a passes client' {
+        Mock Dispose { }
+
+        try {
+            $_client = New-Object System.IO.MemoryStream
+            Close-PodeTcpConnection -Client $_client
+        }
+        finally {
+            $_client.Dispose()
+        }
+
+        Assert-MockCalled Dispose -Times 1 -Scope It
+    }
+
+    It 'Disposes and Quits a passes client' {
+        Mock Dispose { }
+        Mock Tcp { }
+
+        try {
+            $_client = New-Object System.IO.MemoryStream
+            $_client | Add-Member -MemberType NoteProperty -Name Connected -Value $true -Force
+            Close-PodeTcpConnection -Client $_client -Quit
+        }
+        finally {
+            $_client.Dispose()
+        }
+
+        Assert-MockCalled Tcp -Times 1 -Scope It
+        Assert-MockCalled Dispose -Times 1 -Scope It
+    }
+
+    It 'Disposes a stored client' {
+        Mock Dispose { }
+
+        try {
+            $TcpEvent = @{ 'Client' = New-Object System.IO.MemoryStream }
+            Close-PodeTcpConnection
+        }
+        finally {
+            $TcpEvent.Client.Dispose()
+        }
+
+        Assert-MockCalled Dispose -Times 1 -Scope It
+    }
+}
+
+Describe 'Show-PodeErrorPage' {
+    Mock File { return $Data }
+
+    It 'Does nothing when it cannot find a page' {
+        Mock Find-PodeErrorPage { return $null }
+        Show-PodeErrorPage -Code 404 | Out-Null
+        Assert-MockCalled File -Times 0 -Scope It
+    }
+
+    Mock Find-PodeErrorPage { return @{ 'Path' = './path'; 'ContentType' = 'json' } }
+    Mock Get-PodeUrl { return 'url' }
+
+    It 'Renders a page with no exception' {
+        $d = Show-PodeErrorPage -Code 404
+
+        Assert-MockCalled File -Times 1 -Scope It
+        $d.Url | Should Be 'url'
+        $d.Exception | Should Be $null
+        $d.ContentType | Should Be 'json'
+        $d.Status.Code | Should Be 404
+    }
+
+    It 'Renders a page with exception' {
+        $PodeContext = @{ 'Server' = @{ 'Web' = @{
+            'ErrorPages' = @{ 'ShowExceptions' = $true }
+        } } }
+
+        try {
+            $v = $null
+            $v.Add()
+        }
+        catch { $e = $_ }
+
+        $d = Show-PodeErrorPage -Code 404 -Exception $e
+
+        Assert-MockCalled File -Times 1 -Scope It
+        $d.Url | Should Be 'url'
+        $d.Exception | Should Not Be $null
+        $d.Exception.Message | Should Match 'cannot call a method'
+        $d.Exception.Category | Should Match 'InvalidOperation'
+        $d.Exception.StackTrace | Should Match 'Responses.Tests.ps1'
+        $d.Exception.Line | Should Match 'Responses.Tests.ps1'
+        $d.ContentType | Should Be 'json'
+        $d.Status.Code | Should Be 404
+    }
+}
