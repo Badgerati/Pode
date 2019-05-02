@@ -213,12 +213,12 @@ The content type that will used, when attempting to generate an error page, will
 
 The error page file that will used will be determined by the following order. This order will be done for each step that matches in the above [type precedence](#type-precedence):
 
-1. `<code>.<type>.<engine>`     - ie: `404.json.pode`
-2. `<code>.<engine>`            - ie: `404.pode`
-3. `<code>.<type>`              - ie: `404.json`
-4. `default.<type>.<engine>`    - ie: `default.json.pode`
-5. `default.<engine>`           - ie: `default.pode`
-6. `default.<type>`             - ie: `default.json`
+1. `<code>.<type>`              - ie: `404.json`
+2. `<code>.<type>.<engine>`     - ie: `404.json.pode`
+3. `<code>.<engine>`            - ie: `404.pode`
+4. `default.<type>`             - ie: `default.json`
+5. `default.<type>.<engine>`    - ie: `default.json.pode`
+6. `default.<engine>`           - ie: `default.pode`
 7. Inbuilt pages
 
 ## Example Page

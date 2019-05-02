@@ -1799,6 +1799,21 @@ function Find-PodeFileForContentType
     $engineFiles = @($files | Where-Object { $_.Name -imatch "\.$($Engine)$" })
     $files = @($files | Where-Object { $_.Name -inotmatch "\.$($Engine)$" })
 
+    # only attempt static files if we still have files after any engine filtering
+    if (!(Test-Empty $files))
+    {
+        # get files of the format '<name>.<type>'
+        $file = ($files | Where-Object {
+            if ($_.Name -imatch "^$($Name)\.(?<ext>.*?)$") {
+                return ($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext']))
+            }
+        } | Select-Object -First 1)
+
+        if (!(Test-Empty $file)) {
+            return $file.FullName
+        }
+    }
+
     # only attempt these formats if we have a files for the view engine
     if (!(Test-Empty $engineFiles))
     {
@@ -1816,21 +1831,6 @@ function Find-PodeFileForContentType
         # get files of the format '<name>.<engine>'
         $file = ($engineFiles | Where-Object {
             return ($_.Name -imatch "^$($Name)\.$($engine)$")
-        } | Select-Object -First 1)
-
-        if (!(Test-Empty $file)) {
-            return $file.FullName
-        }
-    }
-
-    # only attempt static files if we still have files after any engine filtering
-    if (!(Test-Empty $files))
-    {
-        # get files of the format '<name>.<type>'
-        $file = ($files | Where-Object {
-            if ($_.Name -imatch "^$($Name)\.(?<ext>.*?)$") {
-                return ($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext']))
-            }
         } | Select-Object -First 1)
 
         if (!(Test-Empty $file)) {
