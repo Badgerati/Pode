@@ -80,7 +80,7 @@ These pages should be called the name of a status code, the content type of the 
 <code>.<type>[.<engine>]    # ie: 400.html, or 404.json.pode
 ```
 
-Or, you can use a default error page which will be used for any status code that doesn't have a specific page define:
+Or, you can use a default error page which will be used for any status codes that doesn't have a specific page define:
 
 ```plain
 default.<type>[.<engine>]   # ie: default.html, or default.json.pode
@@ -100,6 +100,8 @@ By default Pode will always generate error pages as HTML, unless you enable stri
 
 !!! important
     To use error pages with a view engine (such as `.pode`), you need to set the [`view engine`](../../../Functions/Core/Engine) in your server.
+
+#### Dynamic Data
 
 If you're using a dynamic view engine to render the error pages, then like [`views`](../../ViewEngines/Pode), there will be a `$data` variable that you can use within the error page file. The `$data` variable will have the following structure:
 
@@ -139,7 +141,7 @@ Above you'll see that the exception supplied to `status` will also be supplied t
 
 Once set to `true`, any available exception details for status codes will be available to error pages - a useful setting to have in a [`pode.dev.json`](../../Configuration#environments) file.
 
-## Content Types
+### Content Types
 
 Using the `pode.json` configuration file, you can define which file content types to attempt when generating error pages for routes. You can either:
 
@@ -147,7 +149,7 @@ Using the `pode.json` configuration file, you can define which file content type
 * Enable [strict](#strict-typing) content typing to use a route/request's content type, or
 * Define [patterns](#route-patterns) to match multiple route paths to set content types on mass
 
-### Default
+#### Default
 
 To define a default content type for everything, you can use the following configuration. With this, any error thrown in any route will attempt to render an HTML error page:
 
@@ -161,7 +163,7 @@ To define a default content type for everything, you can use the following confi
 }
 ```
 
-### Route Patterns
+#### Route Patterns
 
 You can define patterns to match multiple route paths, and any route that matches, when an error page is being generated, will attempt to generate an error page for the content type set.
 
@@ -180,7 +182,7 @@ For example, the following configuration in your `pode.json` file would bind all
 }
 ```
 
-### Strict Typing
+#### Strict Typing
 
 You can enable strict content typing in the `pode.json` file. When enabled, Pode will attempt to generate an error page that matches the route/request's content type.
 

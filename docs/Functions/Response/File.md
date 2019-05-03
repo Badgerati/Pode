@@ -4,7 +4,7 @@
 
 The `file` function writes the contents of a file to the web response. For dynamic files that have the same extension as the view engine, you can also supply data that can be passed to them. You can also set whether or not to inform the browser to cache the file.
 
-The content type for the response, by default, is determined by the file's extension. However, you can also pass a content type to set on the response - overriding the default behaviour.
+The content type for the response, by default, is determined by the file's extension. However, you can also pass a content type this function to use on the response - overriding the default behaviour.
 
 ## Examples
 
@@ -29,6 +29,7 @@ The following example will write a dynamic text file to the response stream, sup
 ```powershell
 Server {
     listen *:8080 http
+    engine pode
 
     route get '/data' {
         file './path/file.txt.pode' -d @{ 'date' = [datetime]::UtcNow }

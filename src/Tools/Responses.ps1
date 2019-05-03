@@ -12,6 +12,7 @@ function Text
         $ContentType = $null,
 
         [Parameter()]
+        [Alias('a')]
         [int]
         $MaxAge = 3600,
 
@@ -96,6 +97,7 @@ function File
         $ContentType = $null,
 
         [Parameter()]
+        [Alias('a')]
         [int]
         $MaxAge = 3600,
 
