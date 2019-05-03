@@ -118,3 +118,74 @@ Describe 'Get-PodeServerType' {
         }
     }
 }
+
+Describe 'Restart-PodeServer' {
+    Mock Write-Host { }
+    Mock Close-PodeRunspaces { }
+    Mock Remove-PodePSDrives { }
+    Mock Open-PodeConfiguration { return $null }
+    Mock Start-PodeServer { }
+    Mock Out-Default { }
+    Mock Dispose { }
+
+    It 'Resetting the server values' {
+        $PodeContext = @{
+            'Tokens' = @{
+                'Cancellation' = New-Object System.Threading.CancellationTokenSource;
+                'Restart' = New-Object System.Threading.CancellationTokenSource;
+            };
+            'Server' = @{
+                'Routes' =@{
+                    'GET' = @{ 'key' = 'value' };
+                    'POST' = @{ 'key' = 'value' };
+                };
+                'Handlers' = @{
+                    'TCP' = @{ };
+                };
+                'Logging' = @{
+                    'Methods' = @{ 'key' = 'value' };
+                };
+                'Middleware' = @{ 'key' = 'value' };
+                'Endware' = @{ 'key' = 'value' };
+                'ViewEngine' = @{
+                    'Engine' = 'pode';
+                    'Extension' = 'pode';
+                    'Script' = $null;
+                    'IsDynamic' = $true;
+                };
+                'Cookies' = @{
+                    'Session' = @{ 'key' = 'value' };
+                };
+                'Authentications' = @{ 'key' = 'value' };
+                'State' = @{ 'key' = 'value' };
+                'Configuration' = @{ 'key' = 'value' };
+            };
+            'Timers' = @{ 'key' = 'value' }
+            'Schedules' = @{ 'key' = 'value' };
+        }
+
+        Restart-PodeServer | Out-Null
+
+        $PodeContext.Server.Routes['GET'].Count | Should Be 0
+        $PodeContext.Server.Logging.Methods.Count | Should Be 0
+        $PodeContext.Server.Middleware.Count | Should Be 0
+        $PodeContext.Server.Endware.Count | Should Be 0
+        $PodeContext.Server.Cookies.Session.Count | Should Be 0
+        $PodeContext.Server.Authentications.Count | Should Be 0
+        $PodeContext.Server.State.Count | Should Be 0
+        $PodeContext.Server.Configuration | Should Be $null
+
+        $PodeContext.Timers.Count | Should Be 0
+        $PodeContext.Schedules.Count | Should Be 0
+
+        $PodeContext.Server.ViewEngine.Engine | Should Be 'html'
+        $PodeContext.Server.ViewEngine.Extension | Should Be 'html'
+        $PodeContext.Server.ViewEngine.Script | Should Be $null
+        $PodeContext.Server.ViewEngine.IsDynamic | Should Be $false
+    }
+
+    It 'Catches exception and throws it' {
+        Mock Write-Host { throw 'some error' }
+        { Restart-PodeServer } | Should Throw 'some error'
+    }
+}

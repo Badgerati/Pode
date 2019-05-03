@@ -348,9 +348,9 @@ function Set-PodeSessionCookieInMemClearDown
 
         # remove sessions that have expired
         $now = [DateTime]::UtcNow
-        $store.Memory.Keys | ForEach-Object {
-            if ($store.Memory[$_].Expiry -lt $now) {
-                $store.Memory.Remove($_)
+        foreach ($key in $store.Memory.Keys) {
+            if ($store.Memory[$key].Expiry -lt $now) {
+                $store.Memory.Remove($key)
             }
         }
     }

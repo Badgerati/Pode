@@ -1,0 +1,19 @@
+<Error>
+    <Status>
+        <Code>$($data.status.code)</Code>
+        <Description>$($data.status.description)</Description>
+    </Status>
+    <Url>$($data.url)</Url>
+    <Exception>
+        $(
+            if ($data.exception) {
+                "
+                <Message>$($data.exception.message)</Message>
+                <StackTrace>$($data.exception.stacktrace)</StackTrace>
+                <Line>$($data.exception.line)</Line>
+                <Category>$($data.exception.category)</Category>
+                "
+            }
+        )
+    </Exception>
+</Error>

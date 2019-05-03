@@ -209,6 +209,7 @@ Server {
 | Endpoint | string | false | The endpoint to bind the route against - this will typically be the endpoint used in your `listen` function | empty |
 | ListenName | string | false | The name of a [`listen`](../Listen) endpoint to bind the route against. This can be use instead of `-Protocol` and `-Endpoint`, but if used with them, will override their values | empty |
 | ContentType | string | false | If supplied, Pode will attempt to parse any request payload as the supplied content type - regardless of what might be set on the request. (eg: `application/json`) | empty |
+| ErrorType | string | false | If supplied, When an error occurs in the route, Pode will attempt to render an error page using the supplied content type. (eg: `application/json`) | empty |
 | Remove | switch | false | When passed, will remove a defined route | false |
 
 !!! tip

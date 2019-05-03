@@ -14,7 +14,12 @@
             }
         },
         "errorPages": {
-            "showExceptions": true
+            "showExceptions": true,
+            "strictContentTyping": true,
+            "default": "application/html",
+            "routes": {
+                "/john": "application/json"
+            }
         }
     }
 }

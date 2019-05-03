@@ -14,11 +14,11 @@ For example, if you have two routes you can force one to only parse JSON and the
 server {
     listen *:8080 http
 
-    route get '/api/json' -type 'application/json' {
+    route get '/api/json' -ctype 'application/json' {
         json @{}
     }
 
-    route get '/api/xml' -type 'application/xml' {
+    route get '/api/xml' -ctype 'text/xml' {
         xml @{}
     }
 }
@@ -26,7 +26,7 @@ server {
 
 If the `/api/json` endpoint is supplied an XML payload then the parsing will fail.
 
-## Config
+## Configuration
 
 Using the `pode.json` configuration file, you can define a default content type to use for every route, or you can define patterns to match multiple route paths to set content types on mass.
 
@@ -44,11 +44,11 @@ To define a default content type for everything, you can use the following confi
 }
 ```
 
-### Patterns
+### Route Patterns
 
 You can define patterns to match multiple route paths, and any route that matches (when created) will have the appropriate content type set.
 
-For example, the following configuration would bind all `/api` routes to `application/json`, and then all `/status` routes to `application/xml`:
+For example, the following configuration in your `pode.json` would bind all `/api` routes to `application/json`, and then all `/status` routes to `text/xml`:
 
 ```json
 {
@@ -56,7 +56,7 @@ For example, the following configuration would bind all `/api` routes to `applic
         "contentType": {
             "routes": {
                 "/api/*": "application/json",
-                "/status/*": "application/xml"
+                "/status/*": "text/xml"
             }
         }
     }

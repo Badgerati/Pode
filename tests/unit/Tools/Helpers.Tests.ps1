@@ -848,6 +848,18 @@ Describe 'Set-PodeCertificate' {
     }
 }
 
+Describe 'Get-PodeUrl' {
+    It 'Returns a url from the web event' {
+        $WebEvent = @{
+            'Protocol' = 'http';
+            'Endpoint' = 'foo.com/';
+            'Path' = 'about'
+        }
+
+        Get-PodeUrl | Should Be 'http://foo.com/about'
+    }
+}
+
 Describe 'Convert-PodePathPatternToRegex' {
     It 'Convert a path to regex' {
         Convert-PodePathPatternToRegex -Path '/api*' | Should Be '^[\\/]api.*?$'
@@ -881,5 +893,17 @@ Describe 'Convert-PodePathPatternsToRegex' {
 
     It 'Convert paths to regex, but not slashes and non-strict' {
         Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotSlashes -NotStrict | Should Be '(/api.*?|/users.*?)'
+    }
+}
+
+Describe 'ConvertFrom-PodeFile' {
+    It 'Generates dynamic content' {
+        $content = 'Value = $(1+1)'
+        ConvertFrom-PodeFile -Content $content | Should Be 'Value = 2'
+    }
+
+    It 'Generates dynamic content, using parameters' {
+        $content = 'Value = $($data["number"])'
+        ConvertFrom-PodeFile -Content $content -Data @{ 'number' = 3 } | Should Be 'Value = 3'
     }
 }

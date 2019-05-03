@@ -1,0 +1,4 @@
+$(
+    $data.Remove('ContentType');
+    $data | ConvertTo-Json;
+)

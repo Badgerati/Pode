@@ -1,15 +1,23 @@
-# write data to main http response
-function Write-PodeValueToResponse
+# write data to http response stream, using a specific content-type
+function Text
 {
     param (
         [Parameter()]
+        [Alias('v')]
         $Value,
 
         [Parameter()]
+        [Alias('ctype', 'ct')]
         [string]
         $ContentType = $null,
 
+        [Parameter()]
+        [Alias('a')]
+        [int]
+        $MaxAge = 3600,
+
         [switch]
+        [Alias('c')]
         $Cache
     )
 
@@ -18,30 +26,40 @@ function Write-PodeValueToResponse
         return
     }
 
-    $res = $WebEvent.Response
+    # if the value isn't a string/byte[] then error
+    $valueType = $Value.GetType().Name
+    if (@('string', 'byte[]') -inotcontains $valueType) {
+        throw "Value to write to stream must be a String or Byte[], but got: $($valueType)"
+    }
 
     # if the response stream isn't writable, return
+    $res = $WebEvent.Response
     if (($null -eq $res) -or ($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite) {
         return
     }
 
     # set a cache value
     if ($Cache) {
-        $age = $PodeContext.Server.Web.Static.Cache.MaxAge
-        $res.AddHeader('Cache-Control', "max-age=$($age), must-revalidate")
-        $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($age).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
+        $res.AddHeader('Cache-Control', "max-age=$($MaxAge), must-revalidate")
+        $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
     }
 
-    # specify the content-type if supplied
+    # specify the content-type if supplied (adding utf-8 if missing)
     if (!(Test-Empty $ContentType)) {
+        $charset = 'charset=utf-8'
+        if ($ContentType -inotcontains $charset) {
+            $ContentType = "$($ContentType); $($charset)"
+        }
+
         $res.ContentType = $ContentType
     }
 
-    # write the content to the response
-    if ($Value.GetType().Name -ieq 'string') {
+    # convert string to bytes
+    if ($valueType -ieq 'string') {
         $Value = ConvertFrom-PodeValueToBytes -Value $Value
     }
 
+    # write the content to the response stream
     $res.ContentLength64 = $Value.Length
 
     try {
@@ -60,14 +78,31 @@ function Write-PodeValueToResponse
     }
 }
 
-function Write-PodeValueToResponseFromFile
+function File
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
+        [Alias('p')]
+        [string]
         $Path,
 
+        [Parameter()]
+        [Alias('d')]
+        $Data = @{},
+
+        [Parameter()]
+        [Alias('ctype', 'ct')]
+        [string]
+        $ContentType = $null,
+
+        [Parameter()]
+        [Alias('a')]
+        [int]
+        $MaxAge = 3600,
+
         [switch]
+        [Alias('c')]
         $Cache
     )
 
@@ -79,8 +114,20 @@ function Write-PodeValueToResponseFromFile
     # are we dealing with a dynamic file for the view engine? (ignore html)
     $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
 
+    # generate dynamic content
+    if (!(Test-Empty $mainExt) -and (($mainExt -ieq 'pode') -or ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension))) {
+        $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
+
+        # get the sub-file extension, if empty, use original
+        $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
+        $subExt = (coalesce $subExt $mainExt)
+
+        $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $subExt))
+        Text -Value $content -ContentType $ContentType
+    }
+
     # this is a static file
-    if ((Test-Empty $mainExt) -or ($mainExt -ieq 'html') -or ($mainExt -ine $PodeContext.Server.ViewEngine.Extension)) {
+    else {
         if (Test-IsPSCore) {
             $content = (Get-Content -Path $Path -Raw -AsByteStream)
         }
@@ -88,18 +135,9 @@ function Write-PodeValueToResponseFromFile
             $content = (Get-Content -Path $Path -Raw -Encoding byte)
         }
 
-        Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $mainExt) -Cache:$Cache
-        return
+        $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $mainExt))
+        Text -Value $content -ContentType $ContentType -MaxAge $MaxAge -Cache:$Cache
     }
-
-    # generate dynamic content
-    $content = Get-PodeFileContentUsingViewEngine -Path $Path
-
-    # get the sub-file extension, if empty, use original
-    $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
-    $subExt = (coalesce $subExt $mainExt)
-
-    Write-PodeValueToResponse -Value $content -ContentType (Get-PodeContentType -Extension $subExt)
 }
 
 function Attach
@@ -200,7 +238,16 @@ function Status
 
         [Parameter()]
         [Alias('e')]
-        $Exception
+        $Exception,
+
+        [Parameter()]
+        [Alias('ctype', 'ct')]
+        [string]
+        $ContentType = $null,
+
+        [switch]
+        [Alias('nopage')]
+        $NoErrorPage
     )
 
     # set the code
@@ -216,8 +263,8 @@ function Status
     }
 
     # if the status code is >=400 then attempt to load error page
-    if ($Code -ge 400) {
-        Show-PodeErrorPage -Code $Code -Description $Description -Exception $Exception
+    if (!$NoErrorPage -and ($Code -ge 400)) {
+        Show-PodeErrorPage -Code $Code -Description $Description -Exception $Exception -ContentType $ContentType
     }
 }
 
@@ -292,6 +339,7 @@ function Json
 {
     param (
         [Parameter()]
+        [Alias('v')]
         $Value,
 
         [switch]
@@ -314,14 +362,14 @@ function Json
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
-    Write-PodeValueToResponse -Value $Value -ContentType 'application/json; charset=utf-8'
+    Text -Value $Value -ContentType 'application/json'
 }
 
 function Csv
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Alias('v')]
         $Value,
 
         [switch]
@@ -353,14 +401,14 @@ function Csv
         }
     }
 
-    Write-PodeValueToResponse -Value $Value -ContentType 'text/csv; charset=utf-8'
+    Text -Value $Value -ContentType 'text/csv'
 }
 
 function Xml
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Alias('v')]
         $Value,
 
         [switch]
@@ -387,14 +435,14 @@ function Xml
         $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
     }
 
-    Write-PodeValueToResponse -Value $Value -ContentType 'application/xml; charset=utf-8'
+    Text -Value $Value -ContentType 'text/xml'
 }
 
 function Html
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Alias('v')]
         $Value,
 
         [switch]
@@ -417,7 +465,7 @@ function Html
         $Value = ($Value | ConvertTo-Html)
     }
 
-    Write-PodeValueToResponse -Value $Value -ContentType 'text/html; charset=utf-8'
+    Text -Value $Value -ContentType 'text/html'
 }
 
 # include helper to import the content of a view into another view
@@ -470,42 +518,24 @@ function Show-PodeErrorPage
         $Description,
 
         [Parameter()]
-        $Exception
+        $Exception,
+
+        [Parameter()]
+        [string]
+        $ContentType
     )
 
-    # get the custom errors path
-    $customErrPath = $PodeContext.Server.InbuiltDrives['errors']
+    # error page info
+    $errorPage = Find-PodeErrorPage -Code $Code -ContentType $ContentType
 
-    # the actual error page path
-    $errPagePath = [string]::Empty
-
-    # if their is a custom error page, use it
-    if (!(Test-Empty $customErrPath)) {
-        $statusPage = (Join-Path $customErrPath "$($Code).*" -Resolve -ErrorAction Ignore)
-        $defaultPage = (Join-Path $customErrPath "default.*" -Resolve -ErrorAction Ignore)
-
-        # use the status page or the default page?
-        if ((Test-PodePath -Path $statusPage -NoStatus)) {
-            $errPagePath = $statusPage
-        }
-        elseif ((Test-PodePath -Path $defaultPage -NoStatus)) {
-            $errPagePath = $defaultPage
-        }
-    }
-
-    # if we haven't found a custom page, use the inbuilt pode one
-    if (Test-Empty $errPagePath) {
-        $errPagePath = Join-PodePaths @((Get-PodeModuleRootPath), 'Misc', 'default-error-page.pode')
-    }
-
-    # if there's still no error path, return
-    if (!(Test-PodePath $errPagePath -NoStatus)) {
+    # if no page found, return
+    if (Test-Empty $errorPage) {
         return
     }
 
-    # is exception trace showing enabled?
+    # if exception trace showing enabled then build the exception details object
     $ex = $null
-    if (($null -ne $Exception) -and $PodeContext.Server.Web.ErrorPages.ShowExceptions) {
+    if (!(Test-Empty $Exception) -and $PodeContext.Server.Web.ErrorPages.ShowExceptions) {
         $ex = @{
             'Message' = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message);
             'StackTrace' = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace);
@@ -514,17 +544,19 @@ function Show-PodeErrorPage
         }
     }
 
-    # run any engine logic and render it
-    $content = Get-PodeFileContentUsingViewEngine -Path $errPagePath -Data @{
-        'Url' = ($WebEvent.Protocol + '://' + $WebEvent.Endpoint + $WebEvent.Path);
+    # setup the data object for dynamic pages
+    $data = @{
+        'Url' = (Get-PodeUrl);
         'Status' = @{
             'Code' = $Code;
             'Description' = $Description;
         };
         'Exception' = $ex;
+        'ContentType' = $errorPage.ContentType;
     }
 
-    html -Value $content
+    # write the error page to the stream
+    File -Path $errorPage.Path -Data $data -ContentType $errorPage.ContentType
 }
 
 function View
@@ -558,8 +590,8 @@ function View
     if ($FlashMessages -and !(Test-Empty $WebEvent.Session.Data.Flash)) {
         $Data['flash'] = @{}
 
-        (flash keys) | Foreach-Object {
-            $Data.flash[$_] = (flash get $_)
+        foreach ($key in (flash keys)) {
+            $Data.flash[$key] = (flash get $key)
         }
     }
     elseif (Test-Empty $Data['flash']) {

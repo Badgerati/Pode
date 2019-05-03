@@ -471,7 +471,7 @@ Describe 'Get-PodePublicMiddleware' {
         }}
 
         Mock Get-PodeStaticRoutePath { return '/' }
-        Mock Write-PodeValueToResponseFromFile { }
+        Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
@@ -492,7 +492,7 @@ Describe 'Get-PodePublicMiddleware' {
         }}
 
         Mock Get-PodeStaticRoutePath { return '/' }
-        Mock Write-PodeValueToResponseFromFile { }
+        Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
@@ -513,7 +513,7 @@ Describe 'Get-PodePublicMiddleware' {
         }}
 
         Mock Get-PodeStaticRoutePath { return '/' }
-        Mock Write-PodeValueToResponseFromFile { }
+        Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
@@ -533,7 +533,7 @@ Describe 'Get-PodePublicMiddleware' {
         }}
 
         Mock Get-PodeStaticRoutePath { return '/' }
-        Mock Write-PodeValueToResponseFromFile { }
+        Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false

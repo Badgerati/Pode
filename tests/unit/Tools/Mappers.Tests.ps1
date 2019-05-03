@@ -655,6 +655,8 @@ Describe 'Get-PodeContentType' {
             '.xspf' = 'application/xspf+xml';
             '.xtp' = 'application/octet-stream';
             '.xwd' = 'image/x-xwindowdump';
+            '.yaml' = 'application/x-yaml';
+            '.yml' = 'application/x-yaml';
             '.z' = 'application/x-compress';
             '.zip' = 'application/zip';
         }

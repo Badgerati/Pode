@@ -91,10 +91,12 @@ nav:
       - Attach: Functions/Response/Attach.md
       - Cookie: Functions/Response/Cookie.md
       - Csv: Functions/Response/Csv.md
+      - File: Functions/Response/File.md
       - Html: Functions/Response/Html.md
       - Json: Functions/Response/Json.md
       - Redirect: Functions/Response/Redirect.md
       - Status: Functions/Response/Status.md
+      - Text: Functions/Response/Text.md
       - View: Functions/Response/View.md
       - Xml: Functions/Response/Xml.md
 

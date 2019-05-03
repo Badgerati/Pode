@@ -114,6 +114,7 @@ function New-PodeContext
         'Engine' = 'html';
         'Extension' = 'html';
         'Script' = $null;
+        'IsDynamic' = $false;
     }
 
     # routes for pages and api
@@ -329,6 +330,9 @@ function Set-PodeWebConfiguration
         };
         'ErrorPages' = @{
             'ShowExceptions' = [bool]$Configuration.web.errorPages.showExceptions;
+            'StrictContentTyping' = [bool]$Configuration.web.errorPages.strictContentTyping;
+            'Default' = $Configuration.web.errorPages.default;
+            'Routes' = @{};
         };
         'ContentType' = @{
             'Default' = $Configuration.web.contentType.default;
@@ -336,13 +340,23 @@ function Set-PodeWebConfiguration
         };
     }
 
-    # setup content type route patterns
+    # setup content type route patterns for forced content types
     if ($null -ne $Configuration.web.contentType.routes) {
         $Configuration.web.contentType.routes.psobject.properties.name | ForEach-Object {
             $_pattern = $_
             $_type = $Configuration.web.contentType.routes.$_pattern
             $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
             $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
+        }
+    }
+
+    # setup content type route patterns for error pages
+    if ($null -ne $Configuration.web.errorPages.routes) {
+        $Configuration.web.errorPages.routes.psobject.properties.name | ForEach-Object {
+            $_pattern = $_
+            $_type = $Configuration.web.errorPages.routes.$_pattern
+            $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
+            $Context.Server.Web.ErrorPages.Routes[$_pattern] = $_type
         }
     }
 }
