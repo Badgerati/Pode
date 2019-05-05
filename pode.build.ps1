@@ -4,6 +4,12 @@ param (
 )
 
 <#
+# Dependency Versions
+#>
+
+$PesterVersion = '4.8.0'
+
+<#
 # Helper Functions
 #>
 
@@ -103,9 +109,9 @@ task PackDeps -If (Test-IsWindows) ChocoDeps, {
 # Synopsis: Install dependencies for running tests
 task TestDeps {
     # install pester
-    if (((Get-Module -ListAvailable Pester) | Where-Object { $_.Version -ieq '4.8.0' }) -eq $null) {
+    if (((Get-Module -ListAvailable Pester) | Where-Object { $_.Version -ieq $PesterVersion }) -eq $null) {
         Write-Host 'Installing Pester'
-        Install-Module -Name Pester -Scope CurrentUser -RequiredVersion '4.8.0' -Force -SkipPublisherCheck
+        Install-Module -Name Pester -Scope CurrentUser -RequiredVersion $PesterVersion -Force -SkipPublisherCheck
     }
 
     # install coveralls
@@ -155,8 +161,8 @@ task Pack -If (Test-IsWindows) 7Zip, ChocoPack
 # Synopsis: Run the tests
 task Test TestDeps, {
     $p = (Get-Command Invoke-Pester)
-    if ($null -eq $p -or $p.Version -ine '4.8.0') {
-        Import-Module Pester -Force -RequiredVersion '4.8.0'
+    if ($null -eq $p -or $p.Version -ine $PesterVersion) {
+        Import-Module Pester -Force -RequiredVersion $PesterVersion
     }
 
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
