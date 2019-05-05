@@ -10,7 +10,7 @@ skip_tags: true
 configuration: Release
 
 install:
-  - ps: Install-Module -Name InvokeBuild -RequiredVersion '5.4.1' -Force
+  - ps: Install-Module -Name InvokeBuild -RequiredVersion '5.5.1' -Force
 
 build: off
 

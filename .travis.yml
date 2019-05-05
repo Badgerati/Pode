@@ -19,7 +19,7 @@ matrix:
   fast_finish: true
 
 install:
-  - pwsh -c "Install-Module -Name InvokeBuild -RequiredVersion '5.4.1' -Scope CurrentUser -Force"
+  - pwsh -c "Install-Module -Name InvokeBuild -RequiredVersion '5.5.1' -Scope CurrentUser -Force"
 
 script:
   - pwsh -c "Invoke-Build Test"
