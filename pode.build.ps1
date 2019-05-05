@@ -8,6 +8,11 @@ param (
 #>
 
 $PesterVersion = '4.8.0'
+$MkDocsVersion = '1.0.4'
+$CoverallsVersion = '1.0.25'
+$7ZipVersion = '18.5.0.20180730'
+$ChecksumVersion = '0.2.0'
+$MkDocsThemeVersion = '4.2.0'
 
 <#
 # Helper Functions
@@ -98,11 +103,11 @@ task ChocoDeps -If (Test-IsWindows) {
 # Synopsis: Install dependencies for packaging
 task PackDeps -If (Test-IsWindows) ChocoDeps, {
     if (!(Test-Command 'checksum')) {
-        Invoke-Install 'checksum' '0.2.0'
+        Invoke-Install 'checksum' $ChecksumVersion
     }
 
     if (!(Test-Command '7z')) {
-        Invoke-Install '7zip' '18.5.0.20180730'
+        Invoke-Install '7zip' $7ZipVersion
     }
 }
 
@@ -117,9 +122,9 @@ task TestDeps {
     # install coveralls
     if (Test-IsAppVeyor)
     {
-        if (((Get-Module -ListAvailable coveralls) | Where-Object { $_.Version -ieq '1.0.25' }) -eq $null) {
+        if (((Get-Module -ListAvailable coveralls) | Where-Object { $_.Version -ieq $CoverallsVersion }) -eq $null) {
             Write-Host 'Installing Coveralls'
-            Install-Module -Name coveralls -Scope CurrentUser -RequiredVersion '1.0.25' -Force -SkipPublisherCheck
+            Install-Module -Name coveralls -Scope CurrentUser -RequiredVersion $CoverallsVersion -Force -SkipPublisherCheck
         }
     }
 }
@@ -127,11 +132,12 @@ task TestDeps {
 # Synopsis: Install dependencies for documentation
 task DocsDeps ChocoDeps, {
     if (!(Test-Command 'mkdocs')) {
-        Invoke-Install 'mkdocs' '1.0.4'
+        Invoke-Install 'mkdocs' $MkDocsVersion
     }
 
-    if ((pip list --format json --disable-pip-version-check | ConvertFrom-Json).name -inotcontains 'mkdocs-material') {
-        pip install mkdocs-material --disable-pip-version-check
+    $_installed = (pip list --format json --disable-pip-version-check | ConvertFrom-Json)
+    if (($_installed | Where-Object { $_.name -ieq 'mkdocs-material' -and $_.version -ieq $MkDocsThemeVersion } | Measure-Object).Count -eq 0) {
+        pip install "mkdocs-material==$($MkDocsThemeVersion)" --force-reinstall --disable-pip-version-check
     }
 }
 
