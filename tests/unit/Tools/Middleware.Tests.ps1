@@ -451,7 +451,7 @@ Describe 'Get-PodePublicMiddleware' {
         $r.Name | Should Be '@public'
         $r.Logic | Should Not Be $null
 
-        Mock Get-PodeStaticRoutePath { return $null }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = $null } }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $true
@@ -470,7 +470,7 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
         Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
@@ -491,7 +491,7 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
         Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
@@ -512,7 +512,7 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
         Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
@@ -532,7 +532,7 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
         Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';

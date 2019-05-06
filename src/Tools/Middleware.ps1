@@ -127,8 +127,8 @@ function Get-PodePublicMiddleware
         param($e)
 
         # get the static file path
-        $path = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
-        if ($null -eq $path) {
+        $info = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+        if (Test-Empty $info.Path) {
             return $true
         }
 
@@ -147,8 +147,13 @@ function Get-PodePublicMiddleware
             }
         }
 
-        # write the file to the response
-        File -Path $path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
+        # write, or attach, the file to the response
+        if ($info.Download) {
+            Attach -Path $info.Path -Literal
+        }
+        else {
+            File -Path $info.Path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
+        }
 
         # static content found, stop
         return $false
