@@ -27,17 +27,35 @@ Install-Module -Name Pode
 [![Docker](https://img.shields.io/docker/stars/badgerati/pode.svg?label=Stars)](https://hub.docker.com/r/badgerati/pode/)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Pulls)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode can run on *nix environments, therefore it only makes sense for there to be a Docker container for you to use! The container uses PowerShell Core on an Ubuntu Xenial container. To pull down the Pode container you can do:
+Pode can run on *nix environments, therefore it only makes sense for there to be Docker images for you to use! The images use PowerShell Core on either an Ubuntu Xenial image (default), or an ARM32 image (for Raspberry Pis).
+
+* To pull down the default Pode image you can do:
 
 ```powershell
-docker pull badgerati/pode
+# for latest
+docker pull badgerati/pode:latest
+
+# or the following for a specific version:
+docker pull badgerati/pode:0.29.0
+```
+
+* To pull down the ARM32 Pode image you can do:
+
+```powershell
+# for latest
+docker pull badgerati/pode:latest-arm32
+
+# or the following for a specific version:
+docker pull badgerati/pode:0.29.0-arm32
 ```
 
 Once pulled, you can [view here](../Docker) on how to use the image.
 
 ## Using the Module
 
-After you have installed the module, you can then import it into your server scripts:
+After you have installed the module all functions should be readily available to you. In the case of the Docker images, the module is pre-installed for you.
+
+If you have any issues then you can try and import the module into your server scripts:
 
 ```powershell
 Import-Module Pode
