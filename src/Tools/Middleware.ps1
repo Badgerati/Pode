@@ -149,7 +149,7 @@ function Get-PodePublicMiddleware
 
         # write, or attach, the file to the response
         if ($info.Download) {
-            Attach -Path $info.Path -Literal
+            Attach -Path $e.Path
         }
         else {
             File -Path $info.Path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching

@@ -146,17 +146,11 @@ function Attach
         [Parameter(Mandatory=$true)]
         [Alias('p')]
         [string]
-        $Path,
-
-        [switch]
-        [Alias('l')]
-        $Literal
+        $Path
     )
 
     # only attach files from public/static-route directories when path is relative
-    if (!$Literal) {
-        $Path = (Get-PodeStaticRoutePath -Route $Path).Path
-    }
+    $Path = (Get-PodeStaticRoutePath -Route $Path).Path
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {

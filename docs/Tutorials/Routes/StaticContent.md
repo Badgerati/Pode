@@ -21,6 +21,10 @@ The following request will retrieve an image from the `./content/assets/images` 
 Invoke-WebRequest -Uri 'http://localhost:8080/assets/images/icon.png' -Method Get
 ```
 
+## Downloadable
+
+TODO: Finish
+
 ## Default Pages
 
 For static content, Pode also supports returning default pages when a root static content directory is requested. The inbuilt default pages are:

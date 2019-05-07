@@ -277,14 +277,21 @@ function Route
 
     # add a new dynamic or static route
     if ($HttpMethod -ieq 'static') {
-        Add-PodeStaticRoute -Route $Route -Path ([string](@($Middleware))[0]) -Protocol $Protocol `
+        Add-PodeStaticRoute -Route $Route -Source ([string](@($Middleware))[0]) -Protocol $Protocol `
             -Endpoint $Endpoint -Defaults $Defaults -DownloadOnly:$DownloadOnly
     }
     else {
+        # error if defaults are defined
         if ((Get-PodeCount $Defaults) -gt 0) {
             throw "[$($HttpMethod)] $($Route) has default static files defined, which is only for [STATIC] routes"
         }
 
+        # error if download only passed
+        if ($DownloadOnly) {
+            throw "[$($HttpMethod)] $($Route) is flagged as DownloadOnly, which is only for [STATIC] routes"
+        }
+
+        # add the route
         Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock `
             -Protocol $Protocol -Endpoint $Endpoint -ContentType $ContentType -ErrorType $ErrorType
     }
@@ -483,7 +490,7 @@ function Add-PodeStaticRoute
 
         [Parameter(Mandatory=$true)]
         [string]
-        $Path,
+        $Source,
 
         [Parameter()]
         [string[]]
@@ -513,17 +520,17 @@ function Add-PodeStaticRoute
     }
 
     # if static, ensure the path exists at server root
-    if (Test-Empty $Path) {
+    if (Test-Empty $Source) {
         throw "No path supplied for $($HttpMethod) definition"
     }
 
-    $Path = (Join-PodeServerRoot $Path)
-    if (!(Test-Path $Path)) {
-        throw "Folder supplied for $($HttpMethod) route does not exist: $($Path)"
+    $Source = (Join-PodeServerRoot $Source)
+    if (!(Test-Path $Source)) {
+        throw "Source folder supplied for $($HttpMethod) route does not exist: $($Source)"
     }
 
     # setup a temp drive for the path
-    $Path = New-PodePSDrive -Path $Path
+    $Source = New-PodePSDrive -Path $Source
 
     # ensure the route has appropriate slashes
     $Route = Update-PodeRouteSlashes -Route $Route -Static
@@ -538,7 +545,7 @@ function Add-PodeStaticRoute
 
     # add the route path
     $PodeContext.Server.Routes[$HttpMethod][$Route] += @(@{
-        'Path' = $Path;
+        'Path' = $Source;
         'Defaults' = $Defaults;
         'Protocol' = $Protocol;
         'Endpoint' = $Endpoint.Trim();

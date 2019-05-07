@@ -17,12 +17,12 @@ To setup and use routes in Pode you should use the [`route`](../../../Function/C
 ```powershell
 route <method> <route> [<middleware>] <scriptblock> [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-contentType <string>] [-errorType <string>] [-remove]
 
-route static <route> <path> [<defaults>] [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove]
+route static <route> <path> [<defaults>] [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove] [-downloadOnly]
 
 # or with aliases:
 route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-ln <string>] [-ctype <string>] [-etype <string>] [-rm]
 
-route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-ln <string>] [-rm]
+route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-ln <string>] [-rm] [-do]
 ```
 
 For example, let's say you want a basic `GET /ping` endpoint to just return `pong` as a JSON response:
