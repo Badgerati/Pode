@@ -255,7 +255,7 @@ function Route
         # ensure it exists
         $found = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $ListenName } | Select-Object -First 1)
         if ($null -eq $found) {
-            throw "Listen endpoint with name '$($Name)' does not exist"
+            throw "Listen endpoint with name '$($ListenName)' does not exist"
         }
 
         # override and set the protocol and endpoint

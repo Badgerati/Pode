@@ -457,6 +457,24 @@ Describe 'Get-PodePublicMiddleware' {
         }) | Should Be $true
     }
 
+    It 'Returns a ScriptBlock, invokes false for static path, flagged as download' {
+        $r = Get-PodePublicMiddleware
+        $r.Name | Should Be '@public'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{
+            'Web' = @{ 'Static' = @{ } }
+        }}
+
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/'; 'Download' = $true } }
+        Mock Attach { }
+        (. $r.Logic @{
+            'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
+        }) | Should Be $false
+
+        Assert-MockCalled Attach -Times 1 -Scope It
+    }
+
     It 'Returns a ScriptBlock, invokes false for static path, with no caching' {
         $r = Get-PodePublicMiddleware
         $r.Name | Should Be '@public'
@@ -475,6 +493,8 @@ Describe 'Get-PodePublicMiddleware' {
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
+
+        Assert-MockCalled File -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching from exclude' {
@@ -496,6 +516,8 @@ Describe 'Get-PodePublicMiddleware' {
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
+
+        Assert-MockCalled File -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching from include' {
@@ -517,6 +539,8 @@ Describe 'Get-PodePublicMiddleware' {
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
+
+        Assert-MockCalled File -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with caching' {
@@ -537,5 +561,7 @@ Describe 'Get-PodePublicMiddleware' {
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
+
+        Assert-MockCalled File -Times 1 -Scope It
     }
 }

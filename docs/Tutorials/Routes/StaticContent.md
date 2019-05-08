@@ -6,10 +6,10 @@ Caching is also supported on static content.
 
 ## Static Routes
 
-The following is an example of using the `route` function to define routes to static content directories; this tells Pode where to get static files from for certain routes. This example will define a static route for `/assets`, and will point to the route at the internal directory `./content/assets`:
+The following is an example of using the `route` function to define routes to static content directories; this tells Pode where to get static files from for certain routes. This example will define a static route for `/assets`, and will point to the route at the internal directory path of `./content/assets`:
 
 ```powershell
-Server {
+server {
     listen *:8080 http
     route static '/assets' './content/assets'
 }
@@ -20,10 +20,6 @@ The following request will retrieve an image from the `./content/assets/images` 
 ```powershell
 Invoke-WebRequest -Uri 'http://localhost:8080/assets/images/icon.png' -Method Get
 ```
-
-## Downloadable
-
-TODO: Finish
 
 ## Default Pages
 
@@ -94,6 +90,19 @@ If you wish to set a max cache time of 30mins, then you would use the `maxAge` p
     }
 }
 ```
+
+## Downloadable
+
+Normally content accessed on a static route is rendered on the browser, but you can set the route to flag the files for downloading instead. If you add the `-DownloadOnly` (`-do`) switch to the static `route`, then accessing files on this route in a browser will cause them to be downloaded instead of rendered:
+
+```powershell
+server {
+    listen *:8080 http
+    route static '/assets' './content/assets' -do
+}
+```
+
+When a static route is set as downloadable, then `-Defaults` and caching are not used.
 
 ### Include/Exclude
 

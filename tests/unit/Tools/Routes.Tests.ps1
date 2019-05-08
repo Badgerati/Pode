@@ -189,6 +189,21 @@ Describe 'Route' {
             { Route -HttpMethod GET -Route '/' -Protocol 'https' -Endpoint 'pode.foo.com' {} } | Should Throw 'already defined for'
         }
 
+        It 'Throws error when setting defaults on GET route' {
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' { Write-Host 'hello' } -Defaults @('index.html') } | Should Throw 'default static files defined'
+        }
+
+        It 'Throws error when setting DownloadOnly on GET route' {
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' { Write-Host 'hello' } -DownloadOnly } | Should Throw 'flagged as DownloadOnly'
+        }
+
+        It 'Throws error on GET route for endpoint name not existing' {
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            { Route -HttpMethod GET -Route '/users' { Write-Host 'hello' } -ListenName 'test' } | Should Throw 'does not exist'
+        }
+
         It 'Adds route with simple url' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
             Route -HttpMethod GET -Route '/users' { Write-Host 'hello' }

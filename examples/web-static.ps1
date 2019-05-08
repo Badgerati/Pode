@@ -21,6 +21,7 @@ Server -Threads 2 {
 
     # STATIC asset folder route
     route static '/assets' './assets' -d @('index.html')
+    route static '/assets/download' './assets' -do
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
