@@ -77,6 +77,7 @@ function Get-PodeRoute
                 'Defaults' = $found.Defaults;
                 'Protocol' = $found.Protocol;
                 'Endpoint' = $found.Endpoint;
+                'Download' = $found.Download;
                 'File' = $Matches['file'];
             }
         }
@@ -113,11 +114,19 @@ function Get-PodeStaticRoutePath
 
     # attempt to get a static route for the path
     $found = Get-PodeRoute -HttpMethod 'static' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+    $path = $null
+    $download = $false
 
     # if we have a defined static route, use that
     if ($null -ne $found) {
+        # is the found route set as download only?
+        if ($found.Download) {
+            $download = $true
+            $path = (Join-Path $found.Path (coalesce $found.File ([string]::Empty)))
+        }
+
         # if there's no file, we need to check defaults
-        if (!(Test-PodePathIsFile $found.File) -and (Get-PodeCount @($found.Defaults)) -gt 0)
+        elseif (!(Test-PodePathIsFile $found.File) -and (Get-PodeCount @($found.Defaults)) -gt 0)
         {
             $found.File = (coalesce $found.File ([string]::Empty))
 
@@ -134,16 +143,19 @@ function Get-PodeStaticRoutePath
             }
         }
 
-        return (Join-Path $found.Path $found.File)
+        $path = (Join-Path $found.Path $found.File)
     }
 
     # else, use the public static directory (but only if path is a file, and a public dir is present)
-    if ((Test-PodePathIsFile $Route) -and !(Test-Empty $PodeContext.Server.InbuiltDrives['public'])) {
-        return (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
+    elseif ((Test-PodePathIsFile $Route) -and !(Test-Empty $PodeContext.Server.InbuiltDrives['public'])) {
+        $path = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
     }
 
-    # otherwise, just return null
-    return $null
+    # return the route details
+    return @{
+        'Path' = $path;
+        'Download' = $download;
+    }
 }
 
 function Get-PodeRouteByUrl
@@ -228,7 +240,11 @@ function Route
 
         [switch]
         [Alias('rm')]
-        $Remove
+        $Remove,
+
+        [switch]
+        [Alias('do')]
+        $DownloadOnly
     )
 
     # uppercase the method
@@ -239,7 +255,7 @@ function Route
         # ensure it exists
         $found = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $ListenName } | Select-Object -First 1)
         if ($null -eq $found) {
-            throw "Listen endpoint with name '$($Name)' does not exist"
+            throw "Listen endpoint with name '$($ListenName)' does not exist"
         }
 
         # override and set the protocol and endpoint
@@ -261,14 +277,21 @@ function Route
 
     # add a new dynamic or static route
     if ($HttpMethod -ieq 'static') {
-        Add-PodeStaticRoute -Route $Route -Path ([string](@($Middleware))[0]) -Protocol $Protocol `
-            -Endpoint $Endpoint -Defaults $Defaults
+        Add-PodeStaticRoute -Route $Route -Source ([string](@($Middleware))[0]) -Protocol $Protocol `
+            -Endpoint $Endpoint -Defaults $Defaults -DownloadOnly:$DownloadOnly
     }
     else {
+        # error if defaults are defined
         if ((Get-PodeCount $Defaults) -gt 0) {
             throw "[$($HttpMethod)] $($Route) has default static files defined, which is only for [STATIC] routes"
         }
 
+        # error if download only passed
+        if ($DownloadOnly) {
+            throw "[$($HttpMethod)] $($Route) is flagged as DownloadOnly, which is only for [STATIC] routes"
+        }
+
+        # add the route
         Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock `
             -Protocol $Protocol -Endpoint $Endpoint -ContentType $ContentType -ErrorType $ErrorType
     }
@@ -467,7 +490,7 @@ function Add-PodeStaticRoute
 
         [Parameter(Mandatory=$true)]
         [string]
-        $Path,
+        $Source,
 
         [Parameter()]
         [string[]]
@@ -479,7 +502,10 @@ function Add-PodeStaticRoute
 
         [Parameter()]
         [string]
-        $Endpoint
+        $Endpoint,
+
+        [switch]
+        $DownloadOnly
     )
 
     # store the route method
@@ -494,17 +520,17 @@ function Add-PodeStaticRoute
     }
 
     # if static, ensure the path exists at server root
-    if (Test-Empty $Path) {
+    if (Test-Empty $Source) {
         throw "No path supplied for $($HttpMethod) definition"
     }
 
-    $Path = (Join-PodeServerRoot $Path)
-    if (!(Test-Path $Path)) {
-        throw "Folder supplied for $($HttpMethod) route does not exist: $($Path)"
+    $Source = (Join-PodeServerRoot $Source)
+    if (!(Test-Path $Source)) {
+        throw "Source folder supplied for $($HttpMethod) route does not exist: $($Source)"
     }
 
     # setup a temp drive for the path
-    $Path = New-PodePSDrive -Path $Path
+    $Source = New-PodePSDrive -Path $Source
 
     # ensure the route has appropriate slashes
     $Route = Update-PodeRouteSlashes -Route $Route -Static
@@ -519,10 +545,11 @@ function Add-PodeStaticRoute
 
     # add the route path
     $PodeContext.Server.Routes[$HttpMethod][$Route] += @(@{
-        'Path' = $Path;
+        'Path' = $Source;
         'Defaults' = $Defaults;
         'Protocol' = $Protocol;
         'Endpoint' = $Endpoint.Trim();
+        'Download' = $DownloadOnly;
     })
 }
 

@@ -204,13 +204,14 @@ Server {
 | Route | string | true | The route path to listen on, the root path is `/`. The path can also contain parameters such as `/:userId` | empty |
 | Middleware | object[] | false | Custom middleware for the `route` that will be invoked before the main logic is invoked - such as authentication. For non-static routes this is an array of `scriptblocks`, but for a static route this is the path to the static content directory | null |
 | ScriptBlock | scriptblock | true | The main route logic that will be invoked when the route endpoint is hit | null |
-| Defaults | string[] | false | For static routes only, this is an array of default pages that could be displayed when the static directory is called | ['index.html', 'index.htm', 'default.html', 'default.htm'] |
+| Defaults | string[] | false | For static routes only. This is an array of default pages that could be displayed when the static directory is called | ['index.html', 'index.htm', 'default.html', 'default.htm'] |
 | Protocol | string | false | The protocol to bind the route against (Values: Empty, HTTP, HTTPS) | empty |
 | Endpoint | string | false | The endpoint to bind the route against - this will typically be the endpoint used in your `listen` function | empty |
 | ListenName | string | false | The name of a [`listen`](../Listen) endpoint to bind the route against. This can be use instead of `-Protocol` and `-Endpoint`, but if used with them, will override their values | empty |
 | ContentType | string | false | If supplied, Pode will attempt to parse any request payload as the supplied content type - regardless of what might be set on the request. (eg: `application/json`) | empty |
 | ErrorType | string | false | If supplied, When an error occurs in the route, Pode will attempt to render an error page using the supplied content type. (eg: `application/json`) | empty |
 | Remove | switch | false | When passed, will remove a defined route | false |
+| DownloadOnly | switch | false | For static routes only. If passed, will cause all files in the static directory to be attached for downloading rather than rendered | false |
 
 !!! tip
     The special `*` method allows you to bind a route against every HTTP method. This method takes priority over the other methods; if you have a route for `/` against `GET` and `*`, then the `*` method will be used.

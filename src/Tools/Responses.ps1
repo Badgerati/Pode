@@ -144,14 +144,13 @@ function Attach
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
         [Alias('p')]
         [string]
         $Path
     )
 
-    # only attach files from public/static-route directories
-    $Path = Get-PodeStaticRoutePath -Route $Path
+    # only attach files from public/static-route directories when path is relative
+    $Path = (Get-PodeStaticRoutePath -Route $Path).Path
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
@@ -161,24 +160,27 @@ function Attach
     $filename = Get-PodeFileName -Path $Path
     $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
 
-    # open up the file as a stream
-    $fs = (Get-Item $Path).OpenRead()
+    try {
+        # open up the file as a stream
+        $fs = (Get-Item $Path).OpenRead()
 
-    # setup the response details and headers
-    $WebEvent.Response.ContentLength64 = $fs.Length
-    $WebEvent.Response.SendChunked = $false
-    $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
-    $WebEvent.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
+        # setup the response details and headers
+        $WebEvent.Response.ContentLength64 = $fs.Length
+        $WebEvent.Response.SendChunked = $false
+        $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
+        $WebEvent.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
 
-    # set file as an attachment on the response
-    $buffer = [byte[]]::new(64 * 1024)
-    $read = 0
+        # set file as an attachment on the response
+        $buffer = [byte[]]::new(64 * 1024)
+        $read = 0
 
-    while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-        $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+        while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+        }
     }
-
-    dispose $fs
+    finally {
+        dispose $fs
+    }
 }
 
 function Save

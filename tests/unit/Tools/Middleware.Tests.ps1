@@ -451,10 +451,28 @@ Describe 'Get-PodePublicMiddleware' {
         $r.Name | Should Be '@public'
         $r.Logic | Should Not Be $null
 
-        Mock Get-PodeStaticRoutePath { return $null }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = $null } }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $true
+    }
+
+    It 'Returns a ScriptBlock, invokes false for static path, flagged as download' {
+        $r = Get-PodePublicMiddleware
+        $r.Name | Should Be '@public'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{
+            'Web' = @{ 'Static' = @{ } }
+        }}
+
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/'; 'Download' = $true } }
+        Mock Attach { }
+        (. $r.Logic @{
+            'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
+        }) | Should Be $false
+
+        Assert-MockCalled Attach -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching' {
@@ -470,11 +488,13 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
         Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
+
+        Assert-MockCalled File -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching from exclude' {
@@ -491,11 +511,13 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
         Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
+
+        Assert-MockCalled File -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching from include' {
@@ -512,11 +534,13 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
         Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
+
+        Assert-MockCalled File -Times 1 -Scope It
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with caching' {
@@ -532,10 +556,12 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return '/' }
+        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
         Mock File { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $false
+
+        Assert-MockCalled File -Times 1 -Scope It
     }
 }
