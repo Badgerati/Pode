@@ -1841,3 +1841,53 @@ function Find-PodeFileForContentType
     # no file was found
     return $null
 }
+
+function Test-PodeRelativePath
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+
+    if (@('.', '..') -contains $Path) {
+        return $true
+    }
+
+    return ($Path -match '^\.{1,2}[\\/]')
+}
+
+function Get-PodeRelativePath
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $RootPath,
+
+        [switch]
+        $JoinRoot,
+
+        [switch]
+        $Resolve
+    )
+
+    # if the path is relative, join to root if flagged
+    if ($JoinRoot -and (Test-PodeRelativePath -Path $Path)) {
+        if (Test-Empty $RootPath) {
+            $RootPath = $PodeContext.Server.Root
+        }
+
+        $Path = Join-Path $RootPath $Path
+    }
+
+    # if flagged, resolve the path
+    if ($Resolve) {
+        $Path = (Resolve-Path -Path $Path -ErrorAction Ignore).Path
+    }
+
+    return $Path
+}
