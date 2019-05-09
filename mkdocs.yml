@@ -62,6 +62,7 @@ nav:
       - Cron Expressions: Tutorials/Misc/CronExpressions.md
       - Desktop Application: Tutorials/Misc/DesktopApp.md
       - Uploading Files: Tutorials/Misc/UploadFiles.md
+      - Server Root: Tutorials/Misc/ServerRoot.md
 
   - Functions:
     - Core:
