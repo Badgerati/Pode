@@ -71,3 +71,9 @@ docker pull badgerati/pode
 ## Contributing
 
 Pull Requests, Bug Reports and Feature Requests are welcome!
+
+To run the tests, run the following command from the root of the repo:
+
+```powershell
+Invoke-Build Test
+```
