@@ -25,6 +25,7 @@ function Engine
     $PodeContext.Server.ViewEngine.Engine = $Engine.ToLowerInvariant()
     $PodeContext.Server.ViewEngine.Extension = $Extension
     $PodeContext.Server.ViewEngine.Script = $ScriptBlock
+    $PodeContext.Server.ViewEngine.IsDynamic = ($Engine -ine 'html')
 }
 
 function Start-PodeWebServer
@@ -133,6 +134,11 @@ function Start-PodeWebServer
                     $WebEvent.Method = $request.HttpMethod.ToLowerInvariant()
                     $WebEvent.Protocol = $request.Url.Scheme
                     $WebEvent.Endpoint = $request.Url.Authority
+                    $WebEvent.ContentType = $request.ContentType
+                    $WebEvent.ErrorType = $null
+
+                    # set pode in server response header
+                    $response.AddHeader('Server', 'Pode - ')
 
                     # add logging endware for post-request
                     Add-PodeLogEndware -WebEvent $WebEvent

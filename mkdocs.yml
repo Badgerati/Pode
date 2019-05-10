@@ -35,6 +35,7 @@ nav:
       - Static Content: Tutorials/Routes/StaticContent.md
       - Login Page: Tutorials/Routes/LoginPage.md
       - Flash Messages: Tutorials/Routes/FlashMessages.md
+      - Content Types: Tutorials/Routes/ContentTypes.md
       - Cookies: Tutorials/Routes/Cookies.md
     - Middleware:
       - Overview: Tutorials/Middleware/Overview.md
@@ -61,6 +62,7 @@ nav:
       - Cron Expressions: Tutorials/Misc/CronExpressions.md
       - Desktop Application: Tutorials/Misc/DesktopApp.md
       - Uploading Files: Tutorials/Misc/UploadFiles.md
+      - Server Root: Tutorials/Misc/ServerRoot.md
 
   - Functions:
     - Core:
@@ -90,10 +92,12 @@ nav:
       - Attach: Functions/Response/Attach.md
       - Cookie: Functions/Response/Cookie.md
       - Csv: Functions/Response/Csv.md
+      - File: Functions/Response/File.md
       - Html: Functions/Response/Html.md
       - Json: Functions/Response/Json.md
       - Redirect: Functions/Response/Redirect.md
       - Status: Functions/Response/Status.md
+      - Text: Functions/Response/Text.md
       - View: Functions/Response/View.md
       - Xml: Functions/Response/Xml.md
 

@@ -9,22 +9,21 @@ Server {
 
     listen *:8086 http
 
-    # can be hit by sending a POST request to "localhost:8086/api/test"
-    route 'post' '/api/test' {
-        param($session)
+    # can be hit by sending a GET request to "localhost:8086/api/test"
+    route get '/api/test' {
         json @{ 'hello' = 'world'; }
     }
 
-    # can be hit by sending a GET request to "localhost:8086/api/test"
-    route 'get' '/api/test' {
-        param($session)
-        json @{ 'hello' = 'world'; }
+    # can be hit by sending a POST request to "localhost:8086/api/test"
+    route post '/api/test' -ctype 'application/json' {
+        param($e)
+        json @{ 'hello' = 'world'; 'name' = $e.Data['name']; }
     }
 
     # returns details for an example user
-    route 'get' '/api/users/:userId' {
-        param($session)
-        $user = Get-DummyUser -UserId $session.Parameters['userId']
+    route get '/api/users/:userId' {
+        param($e)
+        $user = Get-DummyUser -UserId $e.Parameters['userId']
         json @{ 'user' = $user; }
     }
 

@@ -127,8 +127,8 @@ function Get-PodePublicMiddleware
         param($e)
 
         # get the static file path
-        $path = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
-        if ($null -eq $path) {
+        $info = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+        if (Test-Empty $info.Path) {
             return $true
         }
 
@@ -147,8 +147,13 @@ function Get-PodePublicMiddleware
             }
         }
 
-        # write the file to the response
-        Write-PodeValueToResponseFromFile -Path $path -Cache:$caching
+        # write, or attach, the file to the response
+        if ($info.Download) {
+            Attach -Path $e.Path
+        }
+        else {
+            File -Path $info.Path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
+        }
 
         # static content found, stop
         return $false
@@ -174,6 +179,14 @@ function Get-PodeRouteValidateMiddleware
             # set the route parameters
             $WebEvent.Parameters = $route.Parameters
 
+            # override the content type from the route if it's not empty
+            if (!(Test-Empty $route.ContentType)) {
+                $WebEvent.ContentType = $route.ContentType
+            }
+
+            # set the content type for any pages for the route if it's not empty
+            $WebEvent.ErrorType = $route.ErrorType
+
             # route exists
             return $true
         }
@@ -187,7 +200,7 @@ function Get-PodeBodyMiddleware
 
         try {
             # attempt to parse that data
-            $result = ConvertFrom-PodeRequestContent -Request $e.Request
+            $result = ConvertFrom-PodeRequestContent -Request $e.Request -ContentType $e.ContentType
 
             # set session data
             $e.Data = $result.Data

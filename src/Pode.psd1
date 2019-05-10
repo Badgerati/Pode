@@ -77,7 +77,9 @@
         'Config',
         'Cookie',
         'Csrf',
-        'Gui'
+        'Gui',
+        'Text',
+        'File'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
@@ -88,7 +90,7 @@
             Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
                 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform', 'access-control',
                 'file-monitoring', 'multithreaded', 'rate-limiting', 'cron', 'schedule', 'middleware', 'session',
-                'authentication', 'active-directory', 'caching', 'csrf')
+                'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

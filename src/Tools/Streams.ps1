@@ -127,7 +127,7 @@ function ConvertFrom-PodeValueToBytes
         $Encoding = [System.Text.Encoding]::UTF8
     )
 
-    if ((Get-PodeType $Value).Name -ieq 'string') {
+    if ($Value.GetType().Name -ieq 'string') {
         $Value = $Encoding.GetBytes($Value)
     }
 

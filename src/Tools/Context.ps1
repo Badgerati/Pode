@@ -54,13 +54,23 @@ function New-PodeContext
 
     # set the server name, logic and root
     $ctx.Server.Name = $Name
-    $ctx.Server.Root = $ServerRoot
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
 
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
+
+    # configure the server's root path
+    $ctx.Server.Root = $ServerRoot
+    if (!(Test-Empty $ctx.Server.Configuration.server.root)) {
+        $_path = Get-PodeRelativePath -Path $ctx.Server.Configuration.server.root -RootPath $ctx.Server.Root -JoinRoot
+        $ctx.Server.Root = (Resolve-Path -Path $_path -ErrorAction Ignore).Path
+
+        if (!(Test-PodePath $ctx.Server.Root -NoStatus)) {
+            throw "The server root path does not exist: $($_path)"
+        }
+    }
 
     # setup file monitoring details (code has priority over config)
     if (!(Test-Empty $ctx.Server.Configuration)) {
@@ -114,6 +124,7 @@ function New-PodeContext
         'Engine' = 'html';
         'Extension' = 'html';
         'Script' = $null;
+        'IsDynamic' = $false;
     }
 
     # routes for pages and api
@@ -316,6 +327,7 @@ function Set-PodeWebConfiguration
         $Context
     )
 
+    # setup the main web config
     $Context.Server.Web = @{
         'Static' = @{
             'Defaults' = $Configuration.web.static.defaults;
@@ -325,6 +337,36 @@ function Set-PodeWebConfiguration
                 'Include' = (Convert-PodePathPatternsToRegex -Paths @($Configuration.web.static.cache.include) -NotSlashes);
                 'Exclude' = (Convert-PodePathPatternsToRegex -Paths @($Configuration.web.static.cache.exclude) -NotSlashes);
             }
+        };
+        'ErrorPages' = @{
+            'ShowExceptions' = [bool]$Configuration.web.errorPages.showExceptions;
+            'StrictContentTyping' = [bool]$Configuration.web.errorPages.strictContentTyping;
+            'Default' = $Configuration.web.errorPages.default;
+            'Routes' = @{};
+        };
+        'ContentType' = @{
+            'Default' = $Configuration.web.contentType.default;
+            'Routes' = @{};
+        };
+    }
+
+    # setup content type route patterns for forced content types
+    if ($null -ne $Configuration.web.contentType.routes) {
+        $Configuration.web.contentType.routes.psobject.properties.name | ForEach-Object {
+            $_pattern = $_
+            $_type = $Configuration.web.contentType.routes.$_pattern
+            $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
+            $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
+        }
+    }
+
+    # setup content type route patterns for error pages
+    if ($null -ne $Configuration.web.errorPages.routes) {
+        $Configuration.web.errorPages.routes.psobject.properties.name | ForEach-Object {
+            $_pattern = $_
+            $_type = $Configuration.web.errorPages.routes.$_pattern
+            $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
+            $Context.Server.Web.ErrorPages.Routes[$_pattern] = $_type
         }
     }
 }
@@ -538,13 +580,7 @@ function Import
     else
     {
         # if path is '.', replace with server root
-        if ($Path -match '^\.[\\/]{0,1}') {
-            $Path = $Path -replace '^\.[\\/]{0,1}', ''
-            $Path = Join-Path $PodeContext.Server.Root $Path
-        }
-
-        # check to see if a raw path to a module was supplied
-        $_path = Resolve-Path -Path $Path -ErrorAction Ignore
+        $_path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
 
         # if the resolved path is empty, then it's a module name that was supplied
         if ([string]::IsNullOrWhiteSpace($_path)) {
@@ -591,13 +627,7 @@ function Load
     )
 
     # if path is '.', replace with server root
-    if ($Path -match '^\.[\\/]{0,1}') {
-        $Path = $Path -replace '^\.[\\/]{0,1}', ''
-        $Path = Join-Path $PodeContext.Server.Root $Path
-    }
-
-    # check to see if a raw path to a script was supplied
-    $_path = Resolve-Path -Path $Path -ErrorAction Ignore
+    $_path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
 
     # check if the path exists
     if (!(Test-PodePath $_path -NoStatus)) {

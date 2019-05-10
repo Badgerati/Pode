@@ -357,7 +357,7 @@ Describe 'Script' {
     }
 
     Context 'Valid parameters supplied' {
-        Mock 'Resolve-Path' { return 'c:/some/file.txt' }
+        Mock 'Resolve-Path' { return @{ 'Path' = 'c:/some/file.txt' } }
         Mock 'Test-PodePath' { return $true }
 
         It 'Returns null for no shared state in context' {
@@ -384,7 +384,7 @@ Describe 'Import' {
     }
 
     Context 'Valid parameters supplied' {
-        Mock 'Resolve-Path' { return 'c:/some/file.txt' }
+        Mock 'Resolve-Path' { return @{ 'Path' = 'c:/some/file.txt' } }
         Mock 'Test-PodePath' { return $true }
 
         It 'Returns null for no shared state in context' {

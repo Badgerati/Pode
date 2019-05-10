@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/powershell:6.2.0-ubuntu-16.04
+FROM badgerati/ps-core:6.2.0-arm32
 LABEL maintainer="Matthew Kelly (Badgerati)"
 RUN mkdir -p /usr/local/share/powershell/Modules/Pode
 COPY ./src/ /usr/local/share/powershell/Modules/Pode
