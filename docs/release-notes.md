@@ -7,6 +7,7 @@
 * #216: Multi-content-type support on Error Pages
 * #232: Support for setting/forcing default content types on routes
 * #243: Support on Static Routes to flag them as "Download Only"
+* #248: Ability to alter the server's root path
 
 ### Packaging
 * #227: Docker images updated to PowerShell Core v6.2.0
