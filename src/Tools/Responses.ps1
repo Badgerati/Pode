@@ -199,10 +199,7 @@ function Save
     )
 
     # if path is '.', replace with server root
-    if ($Path -match '^\.[\\/]{0,1}') {
-        $Path = $Path -replace '^\.[\\/]{0,1}', ''
-        $Path = Join-Path $PodeContext.Server.Root $Path
-    }
+    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # ensure the parameter name exists in data
     $fileName = $WebEvent.Data[$Name]
