@@ -403,20 +403,33 @@ function Get-PodeAuthValidator
             return {
                 param($username, $password, $options)
 
-                $fqdn = $options.Fqdn
-                if (Test-Empty $fqdn) {
-                    $fqdn = $env:USERDNSDOMAIN
+                # validate and retrieve the AD user
+                $result = Get-PodeAuthADUser -FQDN $options.Fqdn -Username $username -Password $password
+
+                # if there's a message, fail and return
+                if (!(Test-Empty $result.Message)) {
+                    return $result
                 }
 
-                $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($fqdn)", "$($username)", "$($password)")
-                if (Test-Empty $ad.distinguishedName) {
-                    return @{ 'Message' = 'Invalid credentials supplied' }
+                # if there's no user, then, err, oops
+                if (Test-Empty $result.User) {
+                    return @{ 'Message' = 'An unexpected error occured' }
                 }
 
-                return @{ 'User' = @{
-                    'Username' = $ad.psbase.username;
-                    'FQDN' = $fqdn;
-                } }
+                # if there are no groups, return the user
+                if (Test-Empty $options.Groups) {
+                    return $result
+                }
+
+                # validate the user in groups
+                foreach ($group in $options.Groups) {
+                    if ($group -in $result.User.Groups) {
+                        return $result
+                    }
+                }
+
+                # else, they shall not pass!
+                return @{ 'Message' = 'Authorisation denied' }
             }
         }
 
@@ -424,6 +437,56 @@ function Get-PodeAuthValidator
             throw "An inbuilt validator does not exist for '$($Validator)'"
         }
     }
+}
+
+function Get-PodeAuthADUser
+{
+    param (
+        [Parameter()]
+        [string]
+        $FQDN,
+
+        [Parameter()]
+        [string]
+        $Username,
+
+        [Parameter()]
+        [string]
+        $Password
+    )
+
+    # setup the dns domain
+    if (Test-Empty $FQDN) {
+        $FQDN = $env:USERDNSDOMAIN
+    }
+
+    # validate the user's AD creds
+    $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($FQDN)", "$($Username)", "$($Password)")
+    if (Test-Empty $ad.distinguishedName) {
+        return @{ 'Message' = 'Invalid credentials supplied' }
+    }
+
+    # generate query to find user
+    $query = New-Object System.DirectoryServices.DirectorySearcher $ad
+    $query.filter ="(&(objectCategory=person)(samaccountname=$($Username)))"
+
+    $user = $query.FindOne().Properties
+    if (Test-Empty $user) {
+        return @{ 'Message' = 'User not found in Active Directory' }
+    }
+
+    # get the users groups
+    $groups = @($user.memberof | ForEach-Object {
+        if ($_ -imatch '^CN=(?<group>.+?),') { $Matches['group'] }
+    })
+
+    # return the user
+    return @{ 'User' = @{
+        'Username' = $Username;
+        'Name' = ($user.name | Select-Object -First 1);
+        'FQDN' = $FQDN;
+        'Groups' = $groups;
+    } }
 }
 
 function Get-PodeAuthBasic
