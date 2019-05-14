@@ -31,7 +31,11 @@ Server -Threads 2 {
     })
 
     # setup form auth against windows AD (<form> in HTML)
-    auth use login -t form -v 'windows-ad' -o @{ 'fqdn' = '<domain>'; 'groups' = @('<group>') }
+    auth use login -t form -v 'windows-ad' -o @{
+        'fqdn' = '<domain>';
+        'groups' = @('<group>');
+        'users' = @('<user>');
+    }
 
     # home page:
     # redirects to login page if not authenticated

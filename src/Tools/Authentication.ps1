@@ -416,20 +416,25 @@ function Get-PodeAuthValidator
                     return @{ 'Message' = 'An unexpected error occured' }
                 }
 
-                # if there are no groups, return the user
+                # if there are no groups supplied, return the user
                 if (Test-Empty $options.Groups) {
+                    return $result
+                }
+
+                # before checking supplied groups, is the user in a list of valid supplied users?
+                if (!(Test-Empty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
                     return $result
                 }
 
                 # validate the user in groups
                 foreach ($group in $options.Groups) {
-                    if ($group -in $result.User.Groups) {
+                    if (@($result.User.Groups) -icontains $group) {
                         return $result
                     }
                 }
 
                 # else, they shall not pass!
-                return @{ 'Message' = 'Authorisation denied' }
+                return @{ 'Message' = 'You are not authorised to access this website' }
             }
         }
 
