@@ -406,7 +406,7 @@ function Get-PodeAuthValidator
                 # validate and retrieve the AD user
                 $result = Get-PodeAuthADUser -FQDN $options.Fqdn -Username $username -Password $password
 
-                # if there's a message, fail and return
+                # if there's a message, fail and return the message
                 if (!(Test-Empty $result.Message)) {
                     return $result
                 }
@@ -416,20 +416,22 @@ function Get-PodeAuthValidator
                     return @{ 'Message' = 'An unexpected error occured' }
                 }
 
-                # if there are no groups supplied, return the user
-                if (Test-Empty $options.Groups) {
+                # if there are no groups/users supplied, return the user
+                if ((Test-Empty $options.Users) -and (Test-Empty $options.Groups)){
                     return $result
                 }
 
-                # before checking supplied groups, is the user in a list of valid supplied users?
+                # before checking supplied groups, is the user in the supplied list of authorised users?
                 if (!(Test-Empty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
                     return $result
                 }
 
-                # validate the user in groups
-                foreach ($group in $options.Groups) {
-                    if (@($result.User.Groups) -icontains $group) {
-                        return $result
+                # if there are groups supplied, check the user is a member of one
+                if (!(Test-Empty $options.Groups)) {
+                    foreach ($group in $options.Groups) {
+                        if (@($result.User.Groups) -icontains $group) {
+                            return $result
+                        }
                     }
                 }
 
@@ -496,8 +498,10 @@ function Get-PodeAuthADUser
         } }
     }
     finally {
-        dispose $query
-        dispose $ad -Close
+        if (!(Test-Empty $ad.distinguishedName)) {
+            dispose $query
+            dispose $ad -Close
+        }
     }
 }
 
