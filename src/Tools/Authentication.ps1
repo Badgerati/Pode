@@ -460,38 +460,45 @@ function Get-PodeAuthADUser
         $Password
     )
 
-    # setup the dns domain
-    if (Test-Empty $FQDN) {
-        $FQDN = $env:USERDNSDOMAIN
+    try
+    {
+        # setup the dns domain
+        if (Test-Empty $FQDN) {
+            $FQDN = $env:USERDNSDOMAIN
+        }
+
+        # validate the user's AD creds
+        $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($FQDN)", "$($Username)", "$($Password)")
+        if (Test-Empty $ad.distinguishedName) {
+            return @{ 'Message' = 'Invalid credentials supplied' }
+        }
+
+        # generate query to find user
+        $query = New-Object System.DirectoryServices.DirectorySearcher $ad
+        $query.filter = "(&(objectCategory=person)(samaccountname=$($Username)))"
+
+        $user = $query.FindOne().Properties
+        if (Test-Empty $user) {
+            return @{ 'Message' = 'User not found in Active Directory' }
+        }
+
+        # get the users groups
+        $groups = @($user.memberof | ForEach-Object {
+            if ($_ -imatch '^CN=(?<group>.+?),') { $Matches['group'] }
+        })
+
+        # return the user
+        return @{ 'User' = @{
+            'Username' = $Username;
+            'Name' = ($user.name | Select-Object -First 1);
+            'FQDN' = $FQDN;
+            'Groups' = $groups;
+        } }
     }
-
-    # validate the user's AD creds
-    $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($FQDN)", "$($Username)", "$($Password)")
-    if (Test-Empty $ad.distinguishedName) {
-        return @{ 'Message' = 'Invalid credentials supplied' }
+    finally {
+        dispose $query
+        dispose $ad -Close
     }
-
-    # generate query to find user
-    $query = New-Object System.DirectoryServices.DirectorySearcher $ad
-    $query.filter ="(&(objectCategory=person)(samaccountname=$($Username)))"
-
-    $user = $query.FindOne().Properties
-    if (Test-Empty $user) {
-        return @{ 'Message' = 'User not found in Active Directory' }
-    }
-
-    # get the users groups
-    $groups = @($user.memberof | ForEach-Object {
-        if ($_ -imatch '^CN=(?<group>.+?),') { $Matches['group'] }
-    })
-
-    # return the user
-    return @{ 'User' = @{
-        'Username' = $Username;
-        'Name' = ($user.name | Select-Object -First 1);
-        'FQDN' = $FQDN;
-        'Groups' = $groups;
-    } }
 }
 
 function Get-PodeAuthBasic

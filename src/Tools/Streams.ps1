@@ -269,7 +269,7 @@ function Dispose
         $CheckNetwork
     )
 
-    if ($InputObject -eq $null) {
+    if ($null -eq $InputObject) {
         return
     }
 

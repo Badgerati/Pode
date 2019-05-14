@@ -128,12 +128,12 @@ route get '/' (auth check form) {
 
 ## Inbuilt Validators
 
-Overtime Pode will start to support some [inbuilt validators](../Validators) for authentication - such as Windows Active Directory. More information can be found on the [validators](../Validators) page, but to use an inbuilt script you just need to specify the name.
+Overtime Pode will start to support inbuilt validators for authentication - such as [Windows Active Directory](../Validators/WindowsAD). More information can be found in the validators section, but to use an inbuilt validator you just need to specify the name to the `auth` function.
 
-For example, the below would use the inbuilt validator script for Windows AD:
+For example, the below would use the inbuilt validator for Windows AD:
 
 ```powershell
-Server {
-    auth use basic -v 'windows-ad'
+server {
+    auth use login -t basic -v 'windows-ad'
 }
 ```
