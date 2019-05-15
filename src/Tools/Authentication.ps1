@@ -531,18 +531,28 @@ function Get-PodeAuthADGroups
 
     # get the groups for the category
     $Query.filter = "(&(objectCategory=$($CategoryType))(samaccountname=$($CategoryName)))"
-    $groups = @($Query.FindOne().Properties.memberof | ForEach-Object {
-        if ($_ -imatch '^CN=(?<group>.+?),') { $Matches['group'] }
-    })
 
-    foreach ($group in $groups) {
-        # don't both if we've already looked up the group
+    $groups = @{}
+    foreach ($member in $Query.FindOne().Properties.memberof) {
+        if ($member -imatch '^CN=(?<group>.+?),') {
+            $g = $Matches['group']
+            $groups[$g] = ($member -imatch '=builtin,')
+        }
+    }
+
+    foreach ($group in $groups.Keys) {
+        # don't bother if we've already looked up the group
         if ($GroupsFound.ContainsKey($group)) {
             continue
         }
 
         # add group to checked groups
         $GroupsFound[$group] = $true
+
+        # don't bother if it's inbuilt
+        if ($groups[$group]) {
+            continue
+        }
 
         # get the groups
         Get-PodeAuthADGroups -Query $Query -CategoryName $group -CategoryType 'group' -GroupsFound $GroupsFound
