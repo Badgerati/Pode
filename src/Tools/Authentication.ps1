@@ -475,7 +475,7 @@ function Get-PodeAuthADUser
             return @{ 'Message' = 'Invalid credentials supplied' }
         }
 
-        # generate query to find user
+        # generate query to find user/groups
         $query = New-Object System.DirectoryServices.DirectorySearcher $ad
         $query.filter = "(&(objectCategory=person)(samaccountname=$($Username)))"
 
@@ -485,9 +485,7 @@ function Get-PodeAuthADUser
         }
 
         # get the users groups
-        $groups = @($user.memberof | ForEach-Object {
-            if ($_ -imatch '^CN=(?<group>.+?),') { $Matches['group'] }
-        })
+        $groups = Get-PodeAuthADGroups -Query $query -CategoryName $Username -CategoryType 'person'
 
         # return the user
         return @{ 'User' = @{
@@ -502,6 +500,56 @@ function Get-PodeAuthADUser
             dispose $query
             dispose $ad -Close
         }
+    }
+}
+
+function Get-PodeAuthADGroups
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [System.DirectoryServices.DirectorySearcher]
+        $Query,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $CategoryName,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('group', 'person')]
+        [string]
+        $CategoryType,
+
+        [Parameter()]
+        [hashtable]
+        $GroupsFound = $null
+    )
+
+    # setup found groups
+    if ($null -eq $GroupsFound) {
+        $GroupsFound = @{}
+    }
+
+    # get the groups for the category
+    $Query.filter = "(&(objectCategory=$($CategoryType))(samaccountname=$($CategoryName)))"
+    $groups = @($Query.FindOne().Properties.memberof | ForEach-Object {
+        if ($_ -imatch '^CN=(?<group>.+?),') { $Matches['group'] }
+    })
+
+    foreach ($group in $groups) {
+        # don't both if we've already looked up the group
+        if ($GroupsFound.ContainsKey($group)) {
+            continue
+        }
+
+        # add group to checked groups
+        $GroupsFound[$group] = $true
+
+        # get the groups
+        Get-PodeAuthADGroups -Query $Query -CategoryName $group -CategoryType 'group' -GroupsFound $GroupsFound
+    }
+
+    if ($CategoryType -ieq 'person') {
+        return $GroupsFound.Keys
     }
 }
 
