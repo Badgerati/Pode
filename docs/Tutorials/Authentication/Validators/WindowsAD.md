@@ -22,7 +22,7 @@ The User object returned, and accessible on `routes` and other functions via `$e
 | Username | string | The username of the user |
 | Name | string | The user's fullname in AD |
 | FQDN | string | The DNS domain of the AD |
-| Groups | string[] | The groups that the user is a member of in AD |
+| Groups | string[] | The groups that the user is a member of in AD, both directly and recursively |
 
 Such as:
 
