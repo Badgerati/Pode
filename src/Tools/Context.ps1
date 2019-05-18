@@ -598,17 +598,10 @@ function Import
 
         # else, we have a path, if it's a directory/wildcard then loop over all files
         else {
-            # if it's a directory, add wildcard for scripts/modules
-            if (Test-PodePathIsDirectory -Path $_path) {
-                $Path = (Join-Path $Path '*.ps*1')
-            }
-
-            # if path has a *, assume wildcard
-            if ($Path.Contains('*')) {
-                $_path = Get-PodeRelativePath -Path $Path -JoinRoot
-
-                Get-ChildItem $_path -Recurse -Force | ForEach-Object {
-                    import -Path $_.FullName -Now:$Now
+            $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps*1'
+            if (!(Test-Empty $_paths)) {
+                $_paths | ForEach-Object {
+                    import -Path $_ -Now:$Now
                 }
 
                 return
@@ -650,17 +643,10 @@ function Load
 
     # we have a path, if it's a directory/wildcard then loop over all files
     if (!(Test-Empty $_path)) {
-        # if it's a directory, add wildcard for scripts
-        if (Test-PodePathIsDirectory -Path $_path) {
-            $Path = (Join-Path $Path '*.ps1')
-        }
-
-        # if path has a *, assume wildcard
-        if ($Path.Contains('*')) {
-            $_path = Get-PodeRelativePath -Path $Path -JoinRoot
-
-            Get-ChildItem $_path -Recurse -Force | ForEach-Object {
-                load -Path $_.FullName
+        $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps1'
+        if (!(Test-Empty $_paths)) {
+            $_paths | ForEach-Object {
+                load -Path $_
             }
 
             return
