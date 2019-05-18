@@ -668,7 +668,21 @@ Describe 'Test-PodePathIsFile' {
         It 'Returns false for a directory' {
             Test-PodePathIsFile -Path './some/path/folder' | Should Be $false
         }
+
+        It 'Returns false for a wildcard' {
+            Test-PodePathIsFile -Path './some/path/*' -FailOnWildcard | Should Be $false
+        }
     }
+}
+
+Describe 'Test-PodePathIsWildcard' {
+        It 'Returns true for a wildcard' {
+            Test-PodePathIsWildcard -Path './some/path/*' | Should Be $true
+        }
+
+        It 'Returns false for no wildcard' {
+            Test-PodePathIsWildcard -Path './some/path/folder' | Should Be $false
+        }
 }
 
 Describe 'Test-PodePathIsDirectory' {
@@ -689,6 +703,10 @@ Describe 'Test-PodePathIsDirectory' {
 
         It 'Returns false for a file' {
             Test-PodePathIsDirectory -Path './some/path/file.txt' | Should Be $false
+        }
+
+        It 'Returns false for a wildcard' {
+            Test-PodePathIsDirectory -Path './some/path/*' -FailOnWildcard | Should Be $false
         }
     }
 }

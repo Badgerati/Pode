@@ -144,7 +144,21 @@ Describe 'Route' {
         }
 
         It 'Throws null logic and middleware error' {
-            { Route -HttpMethod GET -Route '/' -Middleware $null -ScriptBlock $null } | Should Throw 'no logic defined'
+            { Route -HttpMethod GET -Route '/' -Middleware $null -ScriptBlock $null } | Should Throw 'no scriptblock defined'
+        }
+
+        It 'Throws error when scriptblock and file path supplied' {
+            { Route -HttpMethod GET -Route '/' -ScriptBlock { write-host 'hi' } -FilePath './path' } | Should Throw 'has both a scriptblock and a filepath'
+        }
+
+        It 'Throws error when file path is a directory' {
+            Mock Test-PodePath { return $true }
+            { Route -HttpMethod GET -Route '/' -FilePath './path' } | Should Throw 'cannot have a wildcard or directory'
+        }
+
+        It 'Throws error when file path is a wildcard' {
+            Mock Test-PodePath { return $true }
+            { Route -HttpMethod GET -Route '/' -FilePath './path/*' } | Should Throw 'cannot have a wildcard or directory'
         }
     }
 
@@ -217,6 +231,25 @@ Describe 'Route' {
             $routes['/users'][0].Middleware | Should Be $null
             $routes['/users'][0].ContentType | Should Be ([string]::Empty)
         }
+
+        It 'Adds route with simple url and scriptblock from file path' {
+            Mock Test-PodePath { return $true }
+            Mock Load { return { Write-Host 'bye' } }
+
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+            Route -HttpMethod GET -Route '/users' -FilePath './path/route.ps1'
+
+            $routes = $PodeContext.Server.Routes['get']
+            $routes | Should Not be $null
+            $routes.ContainsKey('/users') | Should Be $true
+            $routes['/users'] | Should Not Be $null
+            $routes['/users'].Length | Should Be 1
+            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'bye' }).ToString()
+            $routes['/users'][0].Middleware | Should Be $null
+            $routes['/users'][0].ContentType | Should Be ([string]::Empty)
+        }
+
+        Mock Test-PodePath { return $false }
 
         It 'Adds route with simple url with content type' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
