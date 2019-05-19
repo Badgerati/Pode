@@ -436,11 +436,6 @@ function Add-PodeRoute
         }
     }
 
-    # if we have a file path supplied, load that path as a scriptblock
-    if (Test-PodePath -Path $FilePath -NoStatus -FailOnDirectory) {
-        $ScriptBlock = [scriptblock](load $FilePath)
-    }
-
     # if middleware is set, but there is no scriptblock, set the middleware as the scriptblock
     if (!(Test-Empty $Middleware) -and ($null -eq $ScriptBlock)) {
         # if multiple middleware, error
