@@ -15,12 +15,12 @@ Routes can also be bound against a specific protocol or endpoint. This allows yo
 To setup and use routes in Pode you should use the [`route`](../../../Function/Core/Route) function. The general make-up of the `route` function is as follows - the former is for HTTP requests, where as the latter is for static content:
 
 ```powershell
-route <method> <route> [<middleware>] <scriptblock> [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-contentType <string>] [-errorType <string>] [-remove]
+route <method> <route> [<middleware>] <scriptblock> [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-contentType <string>] [-errorType <string>] [-filePath <string>] [-remove]
 
 route static <route> <path> [<defaults>] [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove] [-downloadOnly]
 
 # or with aliases:
-route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-ln <string>] [-ctype <string>] [-etype <string>] [-rm]
+route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-ln <string>] [-ctype <string>] [-etype <string>] [-fp <string>] [-rm]
 
 route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-ln <string>] [-rm] [-do]
 ```
@@ -28,7 +28,7 @@ route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-ln <strin
 For example, let's say you want a basic `GET /ping` endpoint to just return `pong` as a JSON response:
 
 ```powershell
-Server {
+server {
     listen *:8080 http
 
     route get '/ping' {
@@ -52,7 +52,7 @@ The scriptblock for the route will be supplied with a single argument that conta
 The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` hashtable on the supplied web-session to a route's logic. This example will get the `userId` and "find" user, returning the users data:
 
 ```powershell
-Server {
+server {
     listen *:8080 http
 
     route post '/users' {
@@ -84,7 +84,7 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
 The following is an example of using data from a request's query string. To retrieve values from the query string you can use the `.Query` hashtable on the supplied web-session to a route's logic. This example will return a user based on the `userId` supplied:
 
 ```powershell
-Server {
+server {
     listen *:8080 http
 
     route get '/users' {
@@ -113,7 +113,7 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users?userId=12345' -Method Get
 The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the `.Parameters` hashtable on the supplied web-session to a route's logic. This example will get the `:userId` and "find" user, returning the users data:
 
 ```powershell
-Server {
+server {
     listen *:8080 http
 
     route get '/users/:userId' {

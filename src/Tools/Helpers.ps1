@@ -171,7 +171,7 @@ function Test-IsAdminUser
 
     try {
         $principal = New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
-        if ($principal -eq $null) {
+        if ($null -eq $principal) {
             return $false
         }
 
@@ -1467,6 +1467,28 @@ function Test-PodePathIsFile
     param (
         [Parameter()]
         [string]
+        $Path,
+
+        [switch]
+        $FailOnWildcard
+    )
+
+    if (Test-Empty $Path) {
+        return $false
+    }
+
+    if ($FailOnWildcard -and (Test-PodePathIsWildcard $Path)) {
+        return $false
+    }
+
+    return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
+}
+
+function Test-PodePathIsWildcard
+{
+    param (
+        [Parameter()]
+        [string]
         $Path
     )
 
@@ -1474,7 +1496,7 @@ function Test-PodePathIsFile
         return $false
     }
 
-    return (![string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
+    return $Path.Contains('*')
 }
 
 function Test-PodePathIsDirectory
@@ -1483,8 +1505,15 @@ function Test-PodePathIsDirectory
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $FailOnWildcard
     )
+
+    if ($FailOnWildcard -and (Test-PodePathIsWildcard $Path)) {
+        return $false
+    }
 
     return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
