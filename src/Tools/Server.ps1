@@ -42,6 +42,11 @@ function Server
         [string[]]
         $FileMonitorInclude,
 
+        [Parameter()]
+        [Alias('rp')]
+        [string]
+        $RootPath,
+
         [switch]
         $Smtp,
 
@@ -84,11 +89,16 @@ function Server
         # get the current server type
         $serverType = Get-PodeServerType -Port $Port -Interval $Interval -Smtp:$Smtp -Tcp:$Tcp -Https:$Https
 
+        # configure the server's root path
+        if (!(Test-Empty $RootPath)) {
+            $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
+        }
+
         # create main context object
         $PodeContext = New-PodeContext -ScriptBlock $ScriptBlock `
             -Threads $Threads `
             -Interval $Interval `
-            -ServerRoot $MyInvocation.PSScriptRoot `
+            -ServerRoot (coalesce $RootPath $MyInvocation.PSScriptRoot) `
             -FileMonitorExclude $FileMonitorExclude `
             -FileMonitorInclude $FileMonitorInclude `
             -DisableLogging:$DisableLogging `

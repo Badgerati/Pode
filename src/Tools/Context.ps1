@@ -64,12 +64,7 @@ function New-PodeContext
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
     if (!(Test-Empty $ctx.Server.Configuration.server.root)) {
-        $_path = Get-PodeRelativePath -Path $ctx.Server.Configuration.server.root -RootPath $ctx.Server.Root -JoinRoot
-        $ctx.Server.Root = (Resolve-Path -Path $_path -ErrorAction Ignore).Path
-
-        if (!(Test-PodePath $ctx.Server.Root -NoStatus)) {
-            throw "The server root path does not exist: $($_path)"
-        }
+        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.server.root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
     # setup file monitoring details (code has priority over config)
@@ -615,7 +610,7 @@ function Import
 
         # check if the path exists
         if (!(Test-PodePath $_path -NoStatus)) {
-            throw "The module path does not exist: $($_path)"
+            throw "The module path does not exist: $(coalesce $_path $Path)"
         }
 
         # import the module into the runspace state
@@ -655,7 +650,7 @@ function Load
 
     # check if the path exists
     if (!(Test-PodePath $_path -NoStatus)) {
-        throw "The script path does not exist: $($_path)"
+        throw "The script path does not exist: $(coalesce $_path $Path)"
     }
 
     # dot-source the script

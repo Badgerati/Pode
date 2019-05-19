@@ -1871,7 +1871,7 @@ function Find-PodeFileForContentType
     return $null
 }
 
-function Test-PodeRelativePath
+function Test-PodePathIsRelative
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -1901,11 +1901,14 @@ function Get-PodeRelativePath
         $JoinRoot,
 
         [switch]
-        $Resolve
+        $Resolve,
+
+        [switch]
+        $TestPath
     )
 
     # if the path is relative, join to root if flagged
-    if ($JoinRoot -and (Test-PodeRelativePath -Path $Path)) {
+    if ($JoinRoot -and (Test-PodePathIsRelative -Path $Path)) {
         if (Test-Empty $RootPath) {
             $RootPath = $PodeContext.Server.Root
         }
@@ -1915,7 +1918,13 @@ function Get-PodeRelativePath
 
     # if flagged, resolve the path
     if ($Resolve) {
+        $_rawPath = $Path
         $Path = (Resolve-Path -Path $Path -ErrorAction Ignore).Path
+    }
+
+    # if flagged, test the path and throw error if it doesn't exist
+    if ($TestPath -and !(Test-PodePath $Path -NoStatus)) {
+        throw "The path does not exist: $(coalesce $Path $_rawPath)"
     }
 
     return $Path
