@@ -1939,7 +1939,7 @@ function Get-PodeWildcardFiles
     }
 
     # if path has a *, assume wildcard
-    if ($Path.Contains('*')) {
+    if (Test-PodePathIsWildcard -Path $Path) {
         $Path = Get-PodeRelativePath -Path $Path -JoinRoot
         return @((Get-ChildItem $Path -Recurse -Force).FullName)
     }
