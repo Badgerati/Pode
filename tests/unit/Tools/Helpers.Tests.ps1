@@ -1008,3 +1008,27 @@ Describe 'Get-PodeRelativePath' {
         Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should Be 'e:/path'
     }
 }
+
+Describe 'Get-PodeWildcardFiles' {
+    Mock Get-PodeRelativePath { return $Path }
+    Mock Get-ChildItem {
+        $ext = [System.IO.Path]::GetExtension($Path)
+        return @(@{ 'FullName' = "./file1$($ext)" })
+    }
+
+    It 'Get files after adding a wildcard to a directory' {
+        $result = @(Get-PodeWildcardFiles -Path './path' -Wildcard '*.ps1')
+        $result.Length | Should Be 1
+        $result[0] | Should Be './file1.ps1'
+    }
+
+    It 'Get files for wildcard path' {
+        $result = @(Get-PodeWildcardFiles -Path './path/*.png')
+        $result.Length | Should Be 1
+        $result[0] | Should Be './file1.png'
+    }
+
+    It 'Returns null for non-wildcard path' {
+        Get-PodeWildcardFiles -Path './some/path/file.txt' | Should Be $null
+    }
+}

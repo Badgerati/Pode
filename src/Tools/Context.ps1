@@ -583,7 +583,7 @@ function Import
         $_path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
 
         # if the resolved path is empty, then it's a module name that was supplied
-        if ([string]::IsNullOrWhiteSpace($_path)) {
+        if (Test-Empty $_path) {
             # check to see if module is in ps_modules
             $_psModulePath = Join-PodeServerRoot -Folder (Join-PodePaths @('ps_modules', $Path))
             if (Test-Path $_psModulePath) {
@@ -596,8 +596,20 @@ function Import
             }
         }
 
+        # else, we have a path, if it's a directory/wildcard then loop over all files
+        else {
+            $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps*1'
+            if (!(Test-Empty $_paths)) {
+                $_paths | ForEach-Object {
+                    import -Path $_ -Now:$Now
+                }
+
+                return
+            }
+        }
+
         # if it's still empty, error
-        if ([string]::IsNullOrWhiteSpace($_path)) {
+        if (Test-Empty $_path) {
             throw "Failed to import module: $($Path)"
         }
 
@@ -628,6 +640,18 @@ function Load
 
     # if path is '.', replace with server root
     $_path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
+
+    # we have a path, if it's a directory/wildcard then loop over all files
+    if (!(Test-Empty $_path)) {
+        $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps1'
+        if (!(Test-Empty $_paths)) {
+            $_paths | ForEach-Object {
+                load -Path $_
+            }
+
+            return
+        }
+    }
 
     # check if the path exists
     if (!(Test-PodePath $_path -NoStatus)) {
