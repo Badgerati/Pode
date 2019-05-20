@@ -403,26 +403,163 @@ function Get-PodeAuthValidator
             return {
                 param($username, $password, $options)
 
-                $fqdn = $options.Fqdn
-                if (Test-Empty $fqdn) {
-                    $fqdn = $env:USERDNSDOMAIN
+                # validate and retrieve the AD user
+                $result = Get-PodeAuthADUser -FQDN $options.Fqdn -Username $username -Password $password
+
+                # if there's a message, fail and return the message
+                if (!(Test-Empty $result.Message)) {
+                    return $result
                 }
 
-                $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($fqdn)", "$($username)", "$($password)")
-                if (Test-Empty $ad.distinguishedName) {
-                    return @{ 'Message' = 'Invalid credentials supplied' }
+                # if there's no user, then, err, oops
+                if (Test-Empty $result.User) {
+                    return @{ 'Message' = 'An unexpected error occured' }
                 }
 
-                return @{ 'User' = @{
-                    'Username' = $ad.psbase.username;
-                    'FQDN' = $fqdn;
-                } }
+                # if there are no groups/users supplied, return the user
+                if ((Test-Empty $options.Users) -and (Test-Empty $options.Groups)){
+                    return $result
+                }
+
+                # before checking supplied groups, is the user in the supplied list of authorised users?
+                if (!(Test-Empty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
+                    return $result
+                }
+
+                # if there are groups supplied, check the user is a member of one
+                if (!(Test-Empty $options.Groups)) {
+                    foreach ($group in $options.Groups) {
+                        if (@($result.User.Groups) -icontains $group) {
+                            return $result
+                        }
+                    }
+                }
+
+                # else, they shall not pass!
+                return @{ 'Message' = 'You are not authorised to access this website' }
             }
         }
 
         default {
             throw "An inbuilt validator does not exist for '$($Validator)'"
         }
+    }
+}
+
+function Get-PodeAuthADUser
+{
+    param (
+        [Parameter()]
+        [string]
+        $FQDN,
+
+        [Parameter()]
+        [string]
+        $Username,
+
+        [Parameter()]
+        [string]
+        $Password
+    )
+
+    try
+    {
+        # setup the dns domain
+        if (Test-Empty $FQDN) {
+            $FQDN = $env:USERDNSDOMAIN
+        }
+
+        # validate the user's AD creds
+        $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($FQDN)", "$($Username)", "$($Password)")
+        if (Test-Empty $ad.distinguishedName) {
+            return @{ 'Message' = 'Invalid credentials supplied' }
+        }
+
+        # generate query to find user/groups
+        $query = New-Object System.DirectoryServices.DirectorySearcher $ad
+        $query.filter = "(&(objectCategory=person)(samaccountname=$($Username)))"
+
+        $user = $query.FindOne().Properties
+        if (Test-Empty $user) {
+            return @{ 'Message' = 'User not found in Active Directory' }
+        }
+
+        # get the users groups
+        $groups = Get-PodeAuthADGroups -Query $query -CategoryName $Username -CategoryType 'person'
+
+        # return the user
+        return @{ 'User' = @{
+            'Username' = $Username;
+            'Name' = ($user.name | Select-Object -First 1);
+            'FQDN' = $FQDN;
+            'Groups' = $groups;
+        } }
+    }
+    finally {
+        if (!(Test-Empty $ad.distinguishedName)) {
+            dispose $query
+            dispose $ad -Close
+        }
+    }
+}
+
+function Get-PodeAuthADGroups
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [System.DirectoryServices.DirectorySearcher]
+        $Query,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $CategoryName,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('group', 'person')]
+        [string]
+        $CategoryType,
+
+        [Parameter()]
+        [hashtable]
+        $GroupsFound = $null
+    )
+
+    # setup found groups
+    if ($null -eq $GroupsFound) {
+        $GroupsFound = @{}
+    }
+
+    # get the groups for the category
+    $Query.filter = "(&(objectCategory=$($CategoryType))(samaccountname=$($CategoryName)))"
+
+    $groups = @{}
+    foreach ($member in $Query.FindOne().Properties.memberof) {
+        if ($member -imatch '^CN=(?<group>.+?),') {
+            $g = $Matches['group']
+            $groups[$g] = ($member -imatch '=builtin,')
+        }
+    }
+
+    foreach ($group in $groups.Keys) {
+        # don't bother if we've already looked up the group
+        if ($GroupsFound.ContainsKey($group)) {
+            continue
+        }
+
+        # add group to checked groups
+        $GroupsFound[$group] = $true
+
+        # don't bother if it's inbuilt
+        if ($groups[$group]) {
+            continue
+        }
+
+        # get the groups
+        Get-PodeAuthADGroups -Query $Query -CategoryName $group -CategoryType 'group' -GroupsFound $GroupsFound
+    }
+
+    if ($CategoryType -ieq 'person') {
+        return $GroupsFound.Keys
     }
 }
 

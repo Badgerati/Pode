@@ -31,7 +31,11 @@ Server -Threads 2 {
     })
 
     # setup form auth against windows AD (<form> in HTML)
-    auth use login -t form -v 'windows-ad' -o @{ 'fqdn' = '<domain>' }
+    auth use login -t form -v 'windows-ad' -o @{
+        'fqdn' = '<domain>';
+        'groups' = @('<group>');
+        'users' = @('<user>');
+    }
 
     # home page:
     # redirects to login page if not authenticated
@@ -52,7 +56,7 @@ Server -Threads 2 {
     # checking user authetication (to prevent a 401 status)
     route 'get' '/login' (auth check login -o @{ 'login' = $true; 'successUrl' = '/' }) {
         param($e)
-        view 'auth-login'
+        view -fm 'auth-login'
     }
 
     # login check:
@@ -61,6 +65,7 @@ Server -Threads 2 {
     route 'post' '/login' (auth check login -o @{
         'failureUrl' = '/login';
         'successUrl' = '/';
+        'failureFlash' = $true;
     }) {}
 
     # logout check:
