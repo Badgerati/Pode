@@ -926,29 +926,29 @@ Describe 'ConvertFrom-PodeFile' {
     }
 }
 
-Describe 'Test-PodeRelativePath' {
+Describe 'Test-PodePathIsRelative' {
     It 'Returns true for .' {
-        Test-PodeRelativePath -Path '.' | Should Be $true
+        Test-PodePathIsRelative -Path '.' | Should Be $true
     }
 
     It 'Returns true for ..' {
-        Test-PodeRelativePath -Path '..' | Should Be $true
+        Test-PodePathIsRelative -Path '..' | Should Be $true
     }
 
     It 'Returns true for relative file' {
-        Test-PodeRelativePath -Path './file.txt' | Should Be $true
+        Test-PodePathIsRelative -Path './file.txt' | Should Be $true
     }
 
     It 'Returns true for relative folder' {
-        Test-PodeRelativePath -Path '../folder' | Should Be $true
+        Test-PodePathIsRelative -Path '../folder' | Should Be $true
     }
 
     It 'Returns false for literal windows path' {
-        Test-PodeRelativePath -Path 'c:/path' | Should Be $false
+        Test-PodePathIsRelative -Path 'c:/path' | Should Be $false
     }
 
     It 'Returns false for literal nix path' {
-        Test-PodeRelativePath -Path '/path' | Should Be $false
+        Test-PodePathIsRelative -Path '/path' | Should Be $false
     }
 }
 
@@ -956,56 +956,62 @@ Describe 'Get-PodeRelativePath' {
     $PodeContext = @{ 'Server' = @{ 'Root' = 'c:/' } }
 
     It 'Returns back a literal path' {
-        Mock Test-PodeRelativePath { return $false }
+        Mock Test-PodePathIsRelative { return $false }
         Get-PodeRelativePath -Path 'c:/path' | Should Be 'c:/path'
     }
 
     It 'Returns null for non-existent literal path when resolving' {
-        Mock Test-PodeRelativePath { return $false }
+        Mock Test-PodePathIsRelative { return $false }
         Mock Resolve-Path { return $null }
         Get-PodeRelativePath -Path 'c:/path' -Resolve | Should Be ([string]::Empty)
     }
 
     It 'Returns path for literal path when resolving' {
-        Mock Test-PodeRelativePath { return $false }
+        Mock Test-PodePathIsRelative { return $false }
         Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
         Get-PodeRelativePath -Path 'c:/path' -Resolve | Should Be 'c:/path'
     }
 
     It 'Returns back a relative path' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Get-PodeRelativePath -Path './path' | Should Be './path'
     }
 
     It 'Returns null for a non-existent relative path when resolving' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Resolve-Path { return $null }
         Get-PodeRelativePath -Path './path' -Resolve | Should Be ([string]::Empty)
     }
 
     It 'Returns path for a relative path when resolving' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
         Get-PodeRelativePath -Path './path' -Resolve | Should Be 'c:/path'
     }
 
     It 'Returns path for a relative path joined to default root' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Join-Path { return 'c:/path' }
         Get-PodeRelativePath -Path './path' -JoinRoot | Should Be 'c:/path'
     }
 
     It 'Returns resolved path for a relative path joined to default root when resolving' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Join-Path { return 'c:/path' }
         Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
         Get-PodeRelativePath -Path './path' -JoinRoot -Resolve | Should Be 'c:/path'
     }
 
     It 'Returns path for a relative path joined to passed root' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Join-Path { return 'e:/path' }
         Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should Be 'e:/path'
+    }
+
+    It 'Throws error for path ot existing' {
+        Mock Test-PodePathIsRelative { return $false }
+        Mock Test-PodePath { return $false }
+        { Get-PodeRelativePath -Path './path' -TestPath } | Should Throw 'The path does not exist'
     }
 }
 
