@@ -464,15 +464,23 @@ function Get-PodeIPAddressesForHostname
     switch ($Type.ToLowerInvariant())
     {
         'ipv4' {
-            $ips = @(($ips | Where-Object { $_.AddressFamily -ieq 'InterNetwork' }))
+            $ips = @(foreach ($ip in $ips) {
+                if ($ip.AddressFamily -ieq 'InterNetwork') {
+                    $ip
+                }
+            })
         }
 
         'ipv6' {
-            $ips = @(($ips | Where-Object { $_.AddressFamily -ieq 'InterNetworkV6' }))
+            $ips = @(foreach ($ip in $ips) {
+                if ($ip.AddressFamily -ieq 'InterNetworkV6') {
+                    $ip
+                }
+            })
         }
     }
 
-    return @(($ips | Select-Object -ExpandProperty IPAddressToString))
+    return (@($ips)).IPAddressToString
 }
 
 function Test-PodeIPAddressLocal
@@ -550,8 +558,8 @@ function Test-PodeIPAddressInRange
 
     $valid = $true
 
-    0..3 | ForEach-Object {
-        if ($valid -and (($IP.Bytes[$_] -lt $LowerIP.Bytes[$_]) -or ($IP.Bytes[$_] -gt $UpperIP.Bytes[$_]))) {
+    foreach ($i in 0..3) {
+        if ($valid -and (($IP.Bytes[$i] -lt $LowerIP.Bytes[$i]) -or ($IP.Bytes[$i] -gt $UpperIP.Bytes[$i]))) {
             $valid = $false
         }
     }
@@ -607,18 +615,24 @@ function Get-PodeSubnetRange
     }
 
     # covert netmask to bytes
-    0..3 | ForEach-Object {
-        $network[$_] = [Convert]::ToByte($network[$_], 2)
+    foreach ($i in 0..3) {
+        $network[$i] = [Convert]::ToByte($network[$i], 2)
     }
 
     # calculate the bottom range
-    $bottom = @(0..3 | ForEach-Object { [byte]([byte]$network[$_] -band [byte]$ip_parts[$_]) })
+    $bottom = @(foreach ($i in 0..3) {
+        [byte]([byte]$network[$i] -band [byte]$ip_parts[$i])
+    })
 
     # calculate the range
-    $range = @(0..3 | ForEach-Object { 256 + (-bnot [byte]$network[$_]) })
+    $range = @(foreach ($i in 0..3) {
+        256 + (-bnot [byte]$network[$i])
+    })
 
     # calculate the top range
-    $top = @(0..3 | ForEach-Object { [byte]([byte]$ip_parts[$_] + [byte]$range[$_]) })
+    $top = @(foreach ($i in 0..3) {
+        [byte]([byte]$ip_parts[$i] + [byte]$range[$i])
+    })
 
     return @{
         'Lower' = ($bottom -join '.');
@@ -1203,7 +1217,13 @@ function Test-PodeValidNetworkFailure
         '*broken pipe*'
     )
 
-    return (($msgs | Where-Object { $Exception.Message -ilike $_ } | Measure-Object).Count -gt 0)
+    $match = @(foreach ($msg in $msgs) {
+        if ($Exception.Message -ilike $msg) {
+            $msg
+        }
+    })[0]
+
+    return ($null -ne $match)
 }
 
 function ConvertFrom-PodeRequestContent
@@ -1288,10 +1308,10 @@ function ConvertFrom-PodeRequestContent
                 $fields = @{}
                 $disp = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+1] -Encoding $Encoding -RemoveNewLine
 
-                @($disp -isplit ';') | ForEach-Object {
-                    $atoms = @($_ -isplit '=')
+                foreach ($line in @($disp -isplit ';')) {
+                    $atoms = @($line -isplit '=')
                     if ($atoms.Length -eq 2) {
-                        $fields.Add($atoms[0].Trim(), $atoms[1].Trim(' "'))
+                        $fields[$atoms[0].Trim()] = $atoms[1].Trim(' "')
                     }
                 }
 
@@ -1314,8 +1334,8 @@ function ConvertFrom-PodeRequestContent
                         })
 
                         $bytes = @()
-                        $Lines[($bIndex+4)..($boundaryIndexes[$i+1]-1)] | ForEach-Object {
-                            $bytes += $_
+                        foreach ($b in ($Lines[($bIndex+4)..($boundaryIndexes[$i+1]-1)])) {
+                            $bytes += $b
                         }
 
                         $Result.Files[$fields.filename].Bytes = (Remove-PodeNewLineBytesFromArray $bytes $Encoding)
@@ -1611,7 +1631,7 @@ function Get-PodeModulePath
     # if there's 1 module imported already, use that
     $importedModule = @(Get-Module -Name Pode)
     if (($importedModule | Measure-Object).Count -eq 1) {
-        return ($importedModule | Select-Object -First 1).Path
+        return (@($importedModule)[0]).Path
     }
 
     # if there's none or more, attempt to get the module used for 'engine'
@@ -1625,13 +1645,11 @@ function Get-PodeModulePath
 
     # if there were multiple to begin with, use the newest version
     if (($importedModule | Measure-Object).Count -gt 1) {
-        return ($importedModule | Sort-Object -Property Version | Select-Object -Last 1).Path
+        return (@($importedModule | Sort-Object -Property Version)[-1]).Path
     }
 
     # otherwise there were none, use the latest installed
-    return (Get-Module -ListAvailable -Name Pode |
-        Sort-Object -Property Version |
-        Select-Object -Last 1).Path
+    return (@(Get-Module -ListAvailable -Name Pode | Sort-Object -Property Version)[-1]).Path
 }
 
 function Get-PodeModuleRootPath
@@ -1675,9 +1693,11 @@ function Find-PodeErrorPage
     # if route patterns have been defined, see if an error content type matches and attempt that
     if (!(Test-Empty $PodeContext.Server.Web.ErrorPages.Routes)) {
         # find type by pattern
-        $matched = ($PodeContext.Server.Web.ErrorPages.Routes.Keys | Where-Object {
-            $WebEvent.Path -imatch $_
-        } | Select-Object -First 1)
+        $matched = @(foreach ($key in $PodeContext.Server.Web.ErrorPages.Routes.Keys) {
+            if ($WebEvent.Path -imatch $key) {
+                $key
+            }
+        })[0]
 
         # if we have a match, see if a page exists
         if (!(Test-Empty $matched)) {
@@ -1825,18 +1845,29 @@ function Find-PodeFileForContentType
         $Engine = "($($Engine)|pode)"
     }
 
-    $engineFiles = @($files | Where-Object { $_.Name -imatch "\.$($Engine)$" })
-    $files = @($files | Where-Object { $_.Name -inotmatch "\.$($Engine)$" })
+    $engineFiles = @(foreach ($file in $files) {
+        if ($file.Name -imatch "\.$($Engine)$") {
+            $file
+        }
+    })
+
+    $files = @(foreach ($file in $files) {
+        if ($file.Name -inotmatch "\.$($Engine)$") {
+            $file
+        }
+    })
 
     # only attempt static files if we still have files after any engine filtering
     if (!(Test-Empty $files))
     {
         # get files of the format '<name>.<type>'
-        $file = ($files | Where-Object {
-            if ($_.Name -imatch "^$($Name)\.(?<ext>.*?)$") {
-                return ($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext']))
+        $file = @(foreach ($f in $files) {
+            if ($f.Name -imatch "^$($Name)\.(?<ext>.*?)$") {
+                if (($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext']))) {
+                    $f
+                }
             }
-        } | Select-Object -First 1)
+        })[0]
 
         if (!(Test-Empty $file)) {
             return $file.FullName
@@ -1847,20 +1878,24 @@ function Find-PodeFileForContentType
     if (!(Test-Empty $engineFiles))
     {
         # get files of the format '<name>.<type>.<engine>'
-        $file = ($engineFiles | Where-Object {
-            if ($_.Name -imatch "^$($Name)\.(?<ext>.*?)\.$($engine)$") {
-                return ($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext']))
+        $file = @(foreach ($f in $engineFiles) {
+            if ($f.Name -imatch "^$($Name)\.(?<ext>.*?)\.$($engine)$") {
+                if ($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext'])) {
+                    $f
+                }
             }
-        } | Select-Object -First 1)
+        })[0]
 
         if (!(Test-Empty $file)) {
             return $file.FullName
         }
 
         # get files of the format '<name>.<engine>'
-        $file = ($engineFiles | Where-Object {
-            return ($_.Name -imatch "^$($Name)\.$($engine)$")
-        } | Select-Object -First 1)
+        $file = @(foreach ($f in $engineFiles) {
+            if ($f.Name -imatch "^$($Name)\.$($engine)$") {
+                $f
+            }
+        })[0]
 
         if (!(Test-Empty $file)) {
             return $file.FullName

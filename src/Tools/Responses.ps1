@@ -388,8 +388,8 @@ function Csv
         $Value = [string]::Empty
     }
     elseif ((Get-PodeType $Value).Name -ine 'string') {
-        $Value = ($Value | ForEach-Object {
-            New-Object psobject -Property $_
+        $Value = @(foreach ($v in $Value) {
+            New-Object psobject -Property $v
         })
 
         if (Test-IsPSCore) {
@@ -427,8 +427,8 @@ function Xml
         $Value = [string]::Empty
     }
     elseif ((Get-PodeType $Value).Name -ine 'string') {
-        $Value = ($value | ForEach-Object {
-            New-Object psobject -Property $_
+        $Value = @(foreach ($v in $Value) {
+            New-Object psobject -Property $v
         })
 
         $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)

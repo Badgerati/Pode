@@ -21,11 +21,10 @@ function Invoke-PodeMiddleware
     # filter the middleware down by route (retaining order)
     if (!(Test-Empty $Route))
     {
-        $Middleware = @($Middleware | Where-Object {
-            (Test-Empty $_.Route) -or
-            ($_.Route -ieq '/') -or
-            ($_.Route -ieq $Route) -or
-            ($Route -imatch "^$($_.Route)$")
+        $Middleware = @(foreach ($mware in $Middleware) {
+            if ((Test-Empty $mware.Route) -or ($mware.Route -ieq '/') -or ($mware.Route -ieq $Route) -or ($Route -imatch "^$($mware.Route)$")) {
+                $mware
+            }
         })
     }
 

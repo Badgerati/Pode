@@ -168,8 +168,8 @@ function Get-PodeNewLineBytes
     )
 
     return @{
-        'NewLine' = ($Encoding.GetBytes("`n") | Select-Object -First 1);
-        'Return' = ($Encoding.GetBytes("`r") | Select-Object -First 1);
+        'NewLine' = @($Encoding.GetBytes("`n"))[0];
+        'Return' = @($Encoding.GetBytes("`r"))[0];
     }
 }
 
