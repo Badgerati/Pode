@@ -149,7 +149,7 @@ function Get-PodeStaticRoutePath
     }
 
     # else, use the public static directory (but only if path is a file, and a public dir is present)
-    elseif ((Test-PodePathIsFile $Route) -and !(Test-Empty $PodeContext.Server.InbuiltDrives['public'])) {
+    elseif ((Test-PodePathIsFile $Route) -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public'])) {
         $path = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
     }
 
@@ -179,8 +179,8 @@ function Get-PodeRouteByUrl
     # get the value routes
     $rs = @(foreach ($route in $Routes) {
         if (
-            (($route.Protocol -ieq $Protocol) -or (Test-Empty $route.Protocol)) -and
-            ((Test-Empty $route.Endpoint) -or ($Endpoint -ilike $route.Endpoint))
+            (($route.Protocol -ieq $Protocol) -or [string]::IsNullOrWhiteSpace($route.Protocol)) -and
+            ([string]::IsNullOrWhiteSpace($route.Endpoint) -or ($Endpoint -ilike $route.Endpoint))
         ) {
             $route
         }
