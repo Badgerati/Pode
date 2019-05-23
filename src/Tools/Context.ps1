@@ -216,8 +216,8 @@ function New-PodeRunspaceState
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null)
     )
 
-    $variables | ForEach-Object {
-        $state.Variables.Add($_)
+    foreach ($var in $variables) {
+        $state.Variables.Add($var)
     }
 
     $PodeContext.RunspaceState = $state
@@ -595,8 +595,8 @@ function Import
         else {
             $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps*1'
             if (!(Test-Empty $_paths)) {
-                $_paths | ForEach-Object {
-                    import -Path $_ -Now:$Now
+                foreach ($_path in $_paths) {
+                    import -Path $_path -Now:$Now
                 }
 
                 return
@@ -640,8 +640,8 @@ function Load
     if (!(Test-Empty $_path)) {
         $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps1'
         if (!(Test-Empty $_paths)) {
-            $_paths | ForEach-Object {
-                load -Path $_
+            foreach ($_path in $_paths) {
+                load -Path $_path
             }
 
             return

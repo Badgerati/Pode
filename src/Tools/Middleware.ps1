@@ -14,18 +14,17 @@ function Invoke-PodeMiddleware
     )
 
     # if there's no middleware, do nothing
-    if (Test-Empty $Middleware) {
+    if ($null -eq $Middleware -or $Middleware.Length -eq 0) {
         return $true
     }
 
     # filter the middleware down by route (retaining order)
-    if (!(Test-Empty $Route))
+    if (![string]::IsNullOrWhiteSpace($Route))
     {
-        $Middleware = @($Middleware | Where-Object {
-            (Test-Empty $_.Route) -or
-            ($_.Route -ieq '/') -or
-            ($_.Route -ieq $Route) -or
-            ($Route -imatch "^$($_.Route)$")
+        $Middleware = @(foreach ($mware in $Middleware) {
+            if ([string]::IsNullOrWhiteSpace($mware.Route) -or ($mware.Route -ieq '/') -or ($mware.Route -ieq $Route) -or ($Route -imatch "^$($mware.Route)$")) {
+                $mware
+            }
         })
     }
 
@@ -128,7 +127,7 @@ function Get-PodePublicMiddleware
 
         # get the static file path
         $info = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
-        if (Test-Empty $info.Path) {
+        if ([string]::IsNullOrWhiteSpace($info.Path)) {
             return $true
         }
 
@@ -180,7 +179,7 @@ function Get-PodeRouteValidateMiddleware
             $WebEvent.Parameters = $route.Parameters
 
             # override the content type from the route if it's not empty
-            if (!(Test-Empty $route.ContentType)) {
+            if (![string]::IsNullOrWhiteSpace($route.ContentType)) {
                 $WebEvent.ContentType = $route.ContentType
             }
 

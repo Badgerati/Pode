@@ -490,7 +490,7 @@ function Get-PodeAuthADUser
         # return the user
         return @{ 'User' = @{
             'Username' = $Username;
-            'Name' = ($user.name | Select-Object -First 1);
+            'Name' = @($user.name)[0];
             'FQDN' = $FQDN;
             'Groups' = $groups;
         } }

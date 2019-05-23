@@ -28,8 +28,17 @@ function Test-PodeIPLimit
     # is the ip active? (get a direct match, then try grouped subnets)
     $_active_ip = $active[$IP.String]
     if ($null -eq $_active_ip) {
-        $_groups = ($active.Keys | Where-Object { $active[$_].Rule.Grouped } | ForEach-Object { $active[$_] })
-        $_active_ip = ($_groups | Where-Object { Test-PodeIPAddressInRange -IP $IP -LowerIP $_.Rule.Lower -UpperIP $_.Rule.Upper } | Select-Object -First 1)
+        $_groups = @(foreach ($key in $active.Keys) {
+            if ($active[$key].Rule.Grouped) {
+                $active[$key]
+            }
+        })
+
+        $_active_ip = @(foreach ($_group in $_groups) {
+            if (Test-PodeIPAddressInRange -IP $IP -LowerIP $_group.Rule.Lower -UpperIP $_group.Rule.Upper) {
+                $_group
+            }
+        })[0]
     }
 
     # the ip is active, or part of a grouped subnet
@@ -58,7 +67,11 @@ function Test-PodeIPLimit
     # the ip isn't active
     else {
         # get the ip's rule
-        $_rule_ip = ($rules.Values | Where-Object { Test-PodeIPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Select-Object -First 1)
+        $_rule_ip = @(foreach ($rule in $rules.Values) {
+            if (Test-PodeIPAddressInRange -IP $IP -LowerIP $rule.Lower -UpperIP $rule.Upper) {
+                $rule
+            }
+        })[0]
 
         # if ip not in rules, it's valid
         # (add to active list as always allowed - saves running where search everytime)
@@ -116,13 +129,29 @@ function Test-PodeIPAccess
     }
 
     # if value in allow, it's allowed
-    if (!$alEmpty -and ($allow.Values | Where-Object { Test-PodeIPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Measure-Object).Count -gt 0) {
-        return $true
+    if (!$alEmpty) {
+        $match = @(foreach ($value in $allow.Values) {
+            if (Test-PodeIPAddressInRange -IP $IP -LowerIP $value.Lower -UpperIP $value.Upper) {
+                $value
+            }
+        })[0]
+
+        if ($null -ne $match) {
+            return $true
+        }
     }
 
     # if value in deny, it's disallowed
-    if (!$dnEmpty -and ($deny.Values | Where-Object { Test-PodeIPAddressInRange -IP $IP -LowerIP $_.Lower -UpperIP $_.Upper } | Measure-Object).Count -gt 0) {
-        return $false
+    if (!$dnEmpty) {
+        $match = @(foreach ($value in $deny.Values) {
+            if (Test-PodeIPAddressInRange -IP $IP -LowerIP $value.Lower -UpperIP $value.Upper) {
+                $value
+            }
+        })[0]
+
+        if ($null -ne $match) {
+            return $false
+        }
     }
 
     # if we have an allow, it's disallowed (because it's not in there)

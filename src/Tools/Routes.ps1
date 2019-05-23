@@ -56,9 +56,11 @@ function Get-PodeRoute
 
     # otherwise, attempt to match on regex parameters
     else {
-        $valid = ($method.Keys | Where-Object {
-            $Route -imatch "^$($_)$"
-        } | Select-Object -First 1)
+        $valid = @(foreach ($key in $method.Keys) {
+            if ($Route -imatch "^$($key)$") {
+                $key
+            }
+        })[0]
 
         if ($null -eq $valid) {
             return $null
@@ -147,7 +149,7 @@ function Get-PodeStaticRoutePath
     }
 
     # else, use the public static directory (but only if path is a file, and a public dir is present)
-    elseif ((Test-PodePathIsFile $Route) -and !(Test-Empty $PodeContext.Server.InbuiltDrives['public'])) {
+    elseif ((Test-PodePathIsFile $Route) -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public'])) {
         $path = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
     }
 
@@ -174,13 +176,21 @@ function Get-PodeRouteByUrl
         $Endpoint
     )
 
-    return (@($Routes) |
-        Where-Object {
-            ($_.Protocol -ieq $Protocol -or [string]::IsNullOrEmpty($_.Protocol)) -and
-            ([string]::IsNullOrEmpty($_.Endpoint) -or $Endpoint -ilike $_.Endpoint)
-        } |
-        Sort-Object -Property { $_.Protocol }, { $_.Endpoint } -Descending |
-        Select-Object -First 1)
+    # get the value routes
+    $rs = @(foreach ($route in $Routes) {
+        if (
+            (($route.Protocol -ieq $Protocol) -or [string]::IsNullOrWhiteSpace($route.Protocol)) -and
+            ([string]::IsNullOrWhiteSpace($route.Endpoint) -or ($Endpoint -ilike $route.Endpoint))
+        ) {
+            $route
+        }
+    })
+
+    if ($null -eq $rs[0]) {
+        return $null
+    }
+
+    return @($rs | Sort-Object -Property { $_.Protocol }, { $_.Endpoint } -Descending)[0]
 }
 
 function Route
