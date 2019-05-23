@@ -556,8 +556,9 @@ function Test-PodeIPAddressInRange
     $valid = $true
 
     foreach ($i in 0..3) {
-        if ($valid -and (($IP.Bytes[$i] -lt $LowerIP.Bytes[$i]) -or ($IP.Bytes[$i] -gt $UpperIP.Bytes[$i]))) {
+        if (($IP.Bytes[$i] -lt $LowerIP.Bytes[$i]) -or ($IP.Bytes[$i] -gt $UpperIP.Bytes[$i])) {
             $valid = $false
+            break
         }
     }
 
