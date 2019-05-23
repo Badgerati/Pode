@@ -1023,10 +1023,10 @@ function Join-PodePaths
     )
 
     # remove any empty/null paths
-    $Paths = Remove-PodeEmptyItemsFromArray $Paths
+    $Paths = @(Remove-PodeEmptyItemsFromArray $Paths)
 
     # if there are no paths, return blank
-    if (Test-Empty $Paths) {
+    if ($null -eq $Paths -or $Paths.Length -eq 0) {
         return ([string]::Empty)
     }
 
@@ -1323,7 +1323,7 @@ function ConvertFrom-PodeRequestContent
                 if ($fields.ContainsKey('filename')) {
                     $Result.Data.Add($fields.name, $fields.filename)
 
-                    if (!(Test-Empty $fields.filename)) {
+                    if (![string]::IsNullOrWhiteSpace($fields.filename)) {
                         $type = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
 
                         $Result.Files.Add($fields.filename, @{
@@ -1366,7 +1366,7 @@ function Get-PodeContentTypeAndBoundary
         }
     }
 
-    if (Test-Empty $ContentType) {
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
         return $obj
     }
 
@@ -1673,17 +1673,17 @@ function Find-PodeErrorPage
     )
 
     # if a defined content type is supplied, attempt to find an error page for that first
-    if (!(Test-Empty $ContentType)) {
+    if (![string]::IsNullOrWhiteSpace($ContentType)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $ContentType
-        if (!(Test-Empty $path)) {
+        if (![string]::IsNullOrWhiteSpace($path)) {
             return @{ 'Path' = $path; 'ContentType' = $ContentType }
         }
     }
 
     # if a defined route error page content type is supplied, attempt to find an error page for that
-    if (!(Test-Empty $WebEvent.ErrorType)) {
+    if (![string]::IsNullOrWhiteSpace($WebEvent.ErrorType)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $WebEvent.ErrorType
-        if (!(Test-Empty $path)) {
+        if (![string]::IsNullOrWhiteSpace($path)) {
             return @{ 'Path' = $path; 'ContentType' = $WebEvent.ErrorType }
         }
     }
@@ -1701,16 +1701,16 @@ function Find-PodeErrorPage
         if (!(Test-Empty $matched)) {
             $type = $PodeContext.Server.Web.ErrorPages.Routes[$matched]
             $path = Get-PodeErrorPage -Code $Code -ContentType $type
-            if (!(Test-Empty $path)) {
+            if (![string]::IsNullOrWhiteSpace($path)) {
                 return @{ 'Path' = $path; 'ContentType' = $type }
             }
         }
     }
 
     # if we're using strict typing, attempt that, if we have a content type
-    if ($PodeContext.Server.Web.ErrorPages.StrictContentTyping -and !(Test-Empty $WebEvent.ContentType)) {
+    if ($PodeContext.Server.Web.ErrorPages.StrictContentTyping -and ![string]::IsNullOrWhiteSpace($WebEvent.ContentType)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $WebEvent.ContentType
-        if (!(Test-Empty $path)) {
+        if (![string]::IsNullOrWhiteSpace($path)) {
             return @{ 'Path' = $path; 'ContentType' = $WebEvent.ContentType }
         }
     }
@@ -1718,7 +1718,7 @@ function Find-PodeErrorPage
     # if we have a default defined, attempt that
     if (!(Test-Empty $PodeContext.Server.Web.ErrorPages.Default)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $PodeContext.Server.Web.ErrorPages.Default
-        if (!(Test-Empty $path)) {
+        if (![string]::IsNullOrWhiteSpace($path)) {
             return @{ 'Path' = $path; 'ContentType' = $PodeContext.Server.Web.ErrorPages.Default }
         }
     }
@@ -1727,7 +1727,7 @@ function Find-PodeErrorPage
     $type = Get-PodeContentType -Extension 'html'
     $path = (Get-PodeErrorPage -Code $Code -ContentType $type)
 
-    if (!(Test-Empty $path)) {
+    if (![string]::IsNullOrWhiteSpace($path)) {
         return @{ 'Path' = $path; 'ContentType' = $type }
     }
 
@@ -1756,7 +1756,7 @@ function Get-PodeErrorPage
     $path = Find-PodeCustomErrorPage -Code $Code -ContentType $ContentType
 
     # if there's no custom page found, attempt to find an inbuilt page
-    if (Test-Empty $path) {
+    if ([string]::IsNullOrWhiteSpace($path)) {
         $podeRoot = Join-Path (Get-PodeModuleRootPath) 'Misc'
         $path = Find-PodeFileForContentType -Path $podeRoot -Name 'default-error-page' -ContentType $ContentType -Engine 'pode'
     }
@@ -1785,19 +1785,19 @@ function Find-PodeCustomErrorPage
     $customErrPath = $PodeContext.Server.InbuiltDrives['errors']
 
     # if there's no custom error path, return
-    if (Test-Empty $customErrPath) {
+    if ([string]::IsNullOrWhiteSpace($customErrPath)) {
         return $null
     }
 
     # retrieve a status code page
     $path = (Find-PodeFileForContentType -Path $customErrPath -Name "$($Code)" -ContentType $ContentType)
-    if (!(Test-Empty $path)) {
+    if (![string]::IsNullOrWhiteSpace($path)) {
         return $path
     }
 
     # retrieve default page
     $path = (Find-PodeFileForContentType -Path $customErrPath -Name 'default' -ContentType $ContentType)
-    if (!(Test-Empty $path)) {
+    if (![string]::IsNullOrWhiteSpace($path)) {
         return $path
     }
 
@@ -1829,12 +1829,12 @@ function Find-PodeFileForContentType
     $files = @(Get-ChildItem -Path (Join-Path $Path "$($Name).*"))
 
     # if there are no files, return
-    if (Test-Empty $files) {
+    if ($null -eq $files -or $files.Length -eq 0) {
         return $null
     }
 
     # filter the files by the view engine extension (but only if the current engine is dynamic - non-html)
-    if ((Test-Empty $Engine) -and $PodeContext.Server.ViewEngine.IsDynamic) {
+    if ([string]::IsNullOrWhiteSpace($Engine) -and $PodeContext.Server.ViewEngine.IsDynamic) {
         $Engine = $PodeContext.Server.ViewEngine.Extension
     }
 
@@ -1856,47 +1856,47 @@ function Find-PodeFileForContentType
     })
 
     # only attempt static files if we still have files after any engine filtering
-    if (!(Test-Empty $files))
+    if ($null -ne $files -and $files.Length -gt 0)
     {
         # get files of the format '<name>.<type>'
         $file = @(foreach ($f in $files) {
             if ($f.Name -imatch "^$($Name)\.(?<ext>.*?)$") {
                 if (($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext']))) {
-                    $f
+                    $f.FullName
                 }
             }
         })[0]
 
-        if (!(Test-Empty $file)) {
-            return $file.FullName
+        if (![string]::IsNullOrWhiteSpace($file)) {
+            return $file
         }
     }
 
     # only attempt these formats if we have a files for the view engine
-    if (!(Test-Empty $engineFiles))
+    if ($null -ne $engineFiles -and $engineFiles.Length -gt 0)
     {
         # get files of the format '<name>.<type>.<engine>'
         $file = @(foreach ($f in $engineFiles) {
             if ($f.Name -imatch "^$($Name)\.(?<ext>.*?)\.$($engine)$") {
                 if ($ContentType -ieq (Get-PodeContentType -Extension $Matches['ext'])) {
-                    $f
+                    $f.FullName
                 }
             }
         })[0]
 
-        if (!(Test-Empty $file)) {
-            return $file.FullName
+        if (![string]::IsNullOrWhiteSpace($file)) {
+            return $file
         }
 
         # get files of the format '<name>.<engine>'
         $file = @(foreach ($f in $engineFiles) {
             if ($f.Name -imatch "^$($Name)\.$($engine)$") {
-                $f
+                $f.FullName
             }
         })[0]
 
-        if (!(Test-Empty $file)) {
-            return $file.FullName
+        if (![string]::IsNullOrWhiteSpace($file)) {
+            return $file
         }
     }
 
