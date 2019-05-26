@@ -79,4 +79,6 @@ Server -Threads 2 {
         json @{ 'value' = 'works for every hello route' }
     }
 
+    route get '/script' -fp './modules/route_script.ps1'
+
 } -FileMonitor

@@ -50,7 +50,8 @@ nav:
       - Custom: Tutorials/Logging/Custom.md
     - Authentication:
       - Overview: Tutorials/Authentication/Overview.md
-      - Validators: Tutorials/Authentication/Validators.md
+      - Validators:
+        - Windows AD: Tutorials/Authentication/Validators/WindowsAD.md
       - Basic: Tutorials/Authentication/Basic.md
       - Form: Tutorials/Authentication/Form.md
       - Custom: Tutorials/Authentication/Custom.md

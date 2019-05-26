@@ -56,6 +56,7 @@ Server -FileMonitor {
 | ScriptBlock | scriptblock | true | The main closure that contains the core server logic | null |
 | Interval | int | false | Specifies, in seconds, the time to sleep before looping the ScriptBlock logic | 0 |
 | Threads | int | false | Specifies the number of runspaces used to handle incoming requests | 1 |
+| RootPath | string | false | Specifies a custom root path for the server (can be literal or relative to the invocation path) | null |
 | DisableTermination | switch | false | Toggles the ability to allow using `Ctrl+C` to terminate the server | false |
 | DisableLogging | switch | false | Toggles any logging that has been setup. When `true` all logging is disabled | false |
 | FileMonitor | switch | false | When passed, any file changes will cause the server to restart | false |

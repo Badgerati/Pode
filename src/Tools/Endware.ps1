@@ -10,7 +10,7 @@ function Invoke-PodeEndware
     )
 
     # if there's no endware, do nothing
-    if (Test-Empty $Endware) {
+    if ($null -eq $Endware -or $Endware.Length -eq 0) {
         return
     }
 

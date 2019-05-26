@@ -7,6 +7,6 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # runs the logic once, then exits
 Server {
 
-    load ./modules/script.ps1
+    load ./modules/script1.ps1
 
 }

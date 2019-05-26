@@ -668,7 +668,21 @@ Describe 'Test-PodePathIsFile' {
         It 'Returns false for a directory' {
             Test-PodePathIsFile -Path './some/path/folder' | Should Be $false
         }
+
+        It 'Returns false for a wildcard' {
+            Test-PodePathIsFile -Path './some/path/*' -FailOnWildcard | Should Be $false
+        }
     }
+}
+
+Describe 'Test-PodePathIsWildcard' {
+        It 'Returns true for a wildcard' {
+            Test-PodePathIsWildcard -Path './some/path/*' | Should Be $true
+        }
+
+        It 'Returns false for no wildcard' {
+            Test-PodePathIsWildcard -Path './some/path/folder' | Should Be $false
+        }
 }
 
 Describe 'Test-PodePathIsDirectory' {
@@ -689,6 +703,10 @@ Describe 'Test-PodePathIsDirectory' {
 
         It 'Returns false for a file' {
             Test-PodePathIsDirectory -Path './some/path/file.txt' | Should Be $false
+        }
+
+        It 'Returns false for a wildcard' {
+            Test-PodePathIsDirectory -Path './some/path/*' -FailOnWildcard | Should Be $false
         }
     }
 }
@@ -908,29 +926,29 @@ Describe 'ConvertFrom-PodeFile' {
     }
 }
 
-Describe 'Test-PodeRelativePath' {
+Describe 'Test-PodePathIsRelative' {
     It 'Returns true for .' {
-        Test-PodeRelativePath -Path '.' | Should Be $true
+        Test-PodePathIsRelative -Path '.' | Should Be $true
     }
 
     It 'Returns true for ..' {
-        Test-PodeRelativePath -Path '..' | Should Be $true
+        Test-PodePathIsRelative -Path '..' | Should Be $true
     }
 
     It 'Returns true for relative file' {
-        Test-PodeRelativePath -Path './file.txt' | Should Be $true
+        Test-PodePathIsRelative -Path './file.txt' | Should Be $true
     }
 
     It 'Returns true for relative folder' {
-        Test-PodeRelativePath -Path '../folder' | Should Be $true
+        Test-PodePathIsRelative -Path '../folder' | Should Be $true
     }
 
     It 'Returns false for literal windows path' {
-        Test-PodeRelativePath -Path 'c:/path' | Should Be $false
+        Test-PodePathIsRelative -Path 'c:/path' | Should Be $false
     }
 
     It 'Returns false for literal nix path' {
-        Test-PodeRelativePath -Path '/path' | Should Be $false
+        Test-PodePathIsRelative -Path '/path' | Should Be $false
     }
 }
 
@@ -938,55 +956,85 @@ Describe 'Get-PodeRelativePath' {
     $PodeContext = @{ 'Server' = @{ 'Root' = 'c:/' } }
 
     It 'Returns back a literal path' {
-        Mock Test-PodeRelativePath { return $false }
+        Mock Test-PodePathIsRelative { return $false }
         Get-PodeRelativePath -Path 'c:/path' | Should Be 'c:/path'
     }
 
     It 'Returns null for non-existent literal path when resolving' {
-        Mock Test-PodeRelativePath { return $false }
+        Mock Test-PodePathIsRelative { return $false }
         Mock Resolve-Path { return $null }
         Get-PodeRelativePath -Path 'c:/path' -Resolve | Should Be ([string]::Empty)
     }
 
     It 'Returns path for literal path when resolving' {
-        Mock Test-PodeRelativePath { return $false }
+        Mock Test-PodePathIsRelative { return $false }
         Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
         Get-PodeRelativePath -Path 'c:/path' -Resolve | Should Be 'c:/path'
     }
 
     It 'Returns back a relative path' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Get-PodeRelativePath -Path './path' | Should Be './path'
     }
 
     It 'Returns null for a non-existent relative path when resolving' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Resolve-Path { return $null }
         Get-PodeRelativePath -Path './path' -Resolve | Should Be ([string]::Empty)
     }
 
     It 'Returns path for a relative path when resolving' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
         Get-PodeRelativePath -Path './path' -Resolve | Should Be 'c:/path'
     }
 
     It 'Returns path for a relative path joined to default root' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Join-Path { return 'c:/path' }
         Get-PodeRelativePath -Path './path' -JoinRoot | Should Be 'c:/path'
     }
 
     It 'Returns resolved path for a relative path joined to default root when resolving' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Join-Path { return 'c:/path' }
         Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
         Get-PodeRelativePath -Path './path' -JoinRoot -Resolve | Should Be 'c:/path'
     }
 
     It 'Returns path for a relative path joined to passed root' {
-        Mock Test-PodeRelativePath { return $true }
+        Mock Test-PodePathIsRelative { return $true }
         Mock Join-Path { return 'e:/path' }
         Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should Be 'e:/path'
+    }
+
+    It 'Throws error for path ot existing' {
+        Mock Test-PodePathIsRelative { return $false }
+        Mock Test-PodePath { return $false }
+        { Get-PodeRelativePath -Path './path' -TestPath } | Should Throw 'The path does not exist'
+    }
+}
+
+Describe 'Get-PodeWildcardFiles' {
+    Mock Get-PodeRelativePath { return $Path }
+    Mock Get-ChildItem {
+        $ext = [System.IO.Path]::GetExtension($Path)
+        return @(@{ 'FullName' = "./file1$($ext)" })
+    }
+
+    It 'Get files after adding a wildcard to a directory' {
+        $result = @(Get-PodeWildcardFiles -Path './path' -Wildcard '*.ps1')
+        $result.Length | Should Be 1
+        $result[0] | Should Be './file1.ps1'
+    }
+
+    It 'Get files for wildcard path' {
+        $result = @(Get-PodeWildcardFiles -Path './path/*.png')
+        $result.Length | Should Be 1
+        $result[0] | Should Be './file1.png'
+    }
+
+    It 'Returns null for non-wildcard path' {
+        Get-PodeWildcardFiles -Path './some/path/file.txt' | Should Be $null
     }
 }

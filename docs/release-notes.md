@@ -1,5 +1,21 @@
 # Release Notes
 
+## v0.30.0
+
+```plain
+### Enhancements
+* #245: Support for Windows AD group validation on the inbuilt 'windows-ad' authentication validator
+* #250: Support for bulk importing/loading scripts and modules
+* #251: Support on routes to supply a FilePath to a script that contains the route's scriptblock
+* #252: Support on the server function to supply a custom RootPath
+
+### Performance
+* #258: Performance improvements to all aspects of a web request, reducing response times
+
+### Packaging
+* #261: Docker images updated to PowerShell Core v6.2.1
+```
+
 ## v0.29.0
 
 ```plain

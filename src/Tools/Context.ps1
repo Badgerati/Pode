@@ -64,12 +64,7 @@ function New-PodeContext
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
     if (!(Test-Empty $ctx.Server.Configuration.server.root)) {
-        $_path = Get-PodeRelativePath -Path $ctx.Server.Configuration.server.root -RootPath $ctx.Server.Root -JoinRoot
-        $ctx.Server.Root = (Resolve-Path -Path $_path -ErrorAction Ignore).Path
-
-        if (!(Test-PodePath $ctx.Server.Root -NoStatus)) {
-            throw "The server root path does not exist: $($_path)"
-        }
+        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.server.root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
     # setup file monitoring details (code has priority over config)
@@ -221,8 +216,8 @@ function New-PodeRunspaceState
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null)
     )
 
-    $variables | ForEach-Object {
-        $state.Variables.Add($_)
+    foreach ($var in $variables) {
+        $state.Variables.Add($var)
     }
 
     $PodeContext.RunspaceState = $state
@@ -583,7 +578,7 @@ function Import
         $_path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
 
         # if the resolved path is empty, then it's a module name that was supplied
-        if ([string]::IsNullOrWhiteSpace($_path)) {
+        if (Test-Empty $_path) {
             # check to see if module is in ps_modules
             $_psModulePath = Join-PodeServerRoot -Folder (Join-PodePaths @('ps_modules', $Path))
             if (Test-Path $_psModulePath) {
@@ -596,14 +591,26 @@ function Import
             }
         }
 
+        # else, we have a path, if it's a directory/wildcard then loop over all files
+        else {
+            $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps*1'
+            if (!(Test-Empty $_paths)) {
+                foreach ($_path in $_paths) {
+                    import -Path $_path -Now:$Now
+                }
+
+                return
+            }
+        }
+
         # if it's still empty, error
-        if ([string]::IsNullOrWhiteSpace($_path)) {
+        if (Test-Empty $_path) {
             throw "Failed to import module: $($Path)"
         }
 
         # check if the path exists
         if (!(Test-PodePath $_path -NoStatus)) {
-            throw "The module path does not exist: $($_path)"
+            throw "The module path does not exist: $(coalesce $_path $Path)"
         }
 
         # import the module into the runspace state
@@ -629,9 +636,21 @@ function Load
     # if path is '.', replace with server root
     $_path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
 
+    # we have a path, if it's a directory/wildcard then loop over all files
+    if (!(Test-Empty $_path)) {
+        $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps1'
+        if (!(Test-Empty $_paths)) {
+            foreach ($_path in $_paths) {
+                load -Path $_path
+            }
+
+            return
+        }
+    }
+
     # check if the path exists
     if (!(Test-PodePath $_path -NoStatus)) {
-        throw "The script path does not exist: $($_path)"
+        throw "The script path does not exist: $(coalesce $_path $Path)"
     }
 
     # dot-source the script

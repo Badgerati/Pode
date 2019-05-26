@@ -45,7 +45,7 @@ function Text
     }
 
     # specify the content-type if supplied (adding utf-8 if missing)
-    if (!(Test-Empty $ContentType)) {
+    if (![string]::IsNullOrWhiteSpace($ContentType)) {
         $charset = 'charset=utf-8'
         if ($ContentType -inotcontains $charset) {
             $ContentType = "$($ContentType); $($charset)"
@@ -115,7 +115,7 @@ function File
     $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
 
     # generate dynamic content
-    if (!(Test-Empty $mainExt) -and (($mainExt -ieq 'pode') -or ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension))) {
+    if (![string]::IsNullOrWhiteSpace($mainExt) -and (($mainExt -ieq 'pode') -or ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension))) {
         $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
 
         # get the sub-file extension, if empty, use original
@@ -203,7 +203,7 @@ function Save
 
     # ensure the parameter name exists in data
     $fileName = $WebEvent.Data[$Name]
-    if (Test-Empty $fileName) {
+    if ([string]::IsNullOrWhiteSpace($fileName)) {
         throw "A parameter called '$($Name)' was not supplied in the request"
     }
 
@@ -253,11 +253,11 @@ function Status
     $WebEvent.Response.StatusCode = $Code
 
     # set an appropriate description (mapping if supplied is blank)
-    if (Test-Empty $Description) {
+    if ([string]::IsNullOrWhiteSpace($Description)) {
         $Description = (Get-PodeStatusDescription -StatusCode $Code)
     }
 
-    if (!(Test-Empty $Description)) {
+    if (![string]::IsNullOrWhiteSpace($Description)) {
         $WebEvent.Response.StatusDescription = $Description
     }
 
@@ -388,8 +388,8 @@ function Csv
         $Value = [string]::Empty
     }
     elseif ((Get-PodeType $Value).Name -ine 'string') {
-        $Value = ($Value | ForEach-Object {
-            New-Object psobject -Property $_
+        $Value = @(foreach ($v in $Value) {
+            New-Object psobject -Property $v
         })
 
         if (Test-IsPSCore) {
@@ -427,8 +427,8 @@ function Xml
         $Value = [string]::Empty
     }
     elseif ((Get-PodeType $Value).Name -ine 'string') {
-        $Value = ($value | ForEach-Object {
-            New-Object psobject -Property $_
+        $Value = @(foreach ($v in $Value) {
+            New-Object psobject -Property $v
         })
 
         $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
@@ -599,7 +599,7 @@ function View
 
     # add view engine extension
     $ext = Get-PodeFileExtension -Path $Path
-    if (Test-Empty $ext) {
+    if ([string]::IsNullOrWhiteSpace($ext)) {
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
