@@ -943,10 +943,34 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Validators/" title="Validators" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13-2" type="checkbox" id="nav-4-13-2">
+    
+    <label class="md-nav__link" for="nav-4-13-2">
       Validators
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-13-2">
+        Validators
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Authentication/Validators/WindowsAD/" title="Windows AD" class="md-nav__link">
+      Windows AD
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1294,6 +1318,20 @@
           <li class="md-nav__item">
   <a href="#example-3" title="Example 3" class="md-nav__link">
     Example 3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-4" title="Example 4" class="md-nav__link">
+    Example 4
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-5" title="Example 5" class="md-nav__link">
+    Example 5
   </a>
   
 </li>
@@ -1975,6 +2013,20 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-4" title="Example 4" class="md-nav__link">
+    Example 4
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-5" title="Example 5" class="md-nav__link">
+    Example 5
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2008,13 +2060,14 @@
                 
                 <h1 id="import">Import</h1>
 <h2 id="description">Description</h2>
-<p>The <code>import</code> function lets you declare names/paths to PowerShell Modules (<code>.psm1</code>/<code>.psd1</code>) that need to be imported into each runspace - you can also specify the name of a module you already have installed. Because Pode runs most things in isolated runspaces, importing and using external modules in Pode can be quite bothersome, with <code>import</code> Pode will handle importing your modules into all runspaces for you.</p>
-<p>If a module name is used rather than a raw path, then Pode will check you're server's <a href="../../../Getting-Started/LocalModules"><code>ps_modules</code></a> directory first, and then check your globally installed modules.</p>
+<p>The <code>import</code> function lets you declare names/paths to PowerShell modules/scripts (<code>.psm1</code>/<code>.psd1</code>/<code>.ps1</code>) that need to be imported into each runspace - you can also specify just the name of a specific module you already have installed. Because Pode runs most things in isolated runspaces, importing and using external modules in Pode can be quite bothersome, with <code>import</code> Pode will handle importing your modules into all runspaces for you.</p>
+<p>If a module name is used rather than a raw path, then Pode will check your server's <a href="../../../Getting-Started/LocalModules"><code>ps_modules</code></a> directory first, and then check your globally installed modules.</p>
 <p>Using the <code>-SnapIn</code> flag, Pode will treat the name supplied to <code>import</code> as a snap-in rather than a module - this is only supported on Windows PowerShell.</p>
+<p>You can also use the <code>import</code> function to import multiple modules/scripts into runspaces by using wildcard paths. If you supply a directory path, then by default Pode will attempt to import all <code>*.ps*1</code> files (so typically: <code>.psm1</code>/<code>.psd1</code>/<code>.ps1</code>).</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
 <p>The following example will import the specified module file into each of the runspaces that Pode creates. This way you'll be able to use each of the functions declared within  the module in <code>routes</code>, <code>timers</code>, <code>schedules</code>, <code>loggers</code>, <code>handlers</code>, etc. (basically, everything):</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">import</span> <span class="s1">&#39;./path/to/module.psm1&#39;</span>
 <span class="p">}</span>
 </pre></div>
@@ -2022,7 +2075,7 @@
 
 <h3 id="example-2">Example 2</h3>
 <p>The following example will import the <code>EPS</code> module, for views, into each of the runspaces:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">import</span> <span class="n">eps</span>
 <span class="p">}</span>
 </pre></div>
@@ -2030,8 +2083,24 @@
 
 <h3 id="example-3">Example 3</h3>
 <p>The following example will import the <code>WDeploySnapin3.0</code> snap-in into each of the runspaces:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">import</span> <span class="n">-snapin</span> <span class="s1">&#39;WDeploySnapin3.0&#39;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="example-4">Example 4</h3>
+<p>The following example will import a script into each of the runspaces:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">import</span> <span class="s1">&#39;./path/to/script.ps1&#39;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="example-5">Example 5</h3>
+<p>The following example will import all modules (<code>*.psm1</code>) at the supplied path into each of the runspaces:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">import</span> <span class="s1">&#39;./path/*.psm1&#39;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -2052,21 +2121,21 @@
 <td>Path</td>
 <td>string</td>
 <td>true</td>
-<td>The path to a PowerShell Module (<code>.psm1</code>/<code>.psd1</code>), or the name of an installed mode, that should be imported into the runspaces</td>
+<td>The path to a PowerShell module/script (<code>.psm1</code>/<code>.psd1</code>/<code>.ps1</code>), or the name of an installed mode, that should be imported into the runspaces. You can also supply a directory path to import multiple modules/scripts</td>
 <td>empty</td>
 </tr>
 <tr>
 <td>Now</td>
 <td>switch</td>
 <td>false</td>
-<td>If true, the module will be imported immediately into the current scope</td>
+<td>If true, the module/script will be imported immediately into the current scope</td>
 <td>false</td>
 </tr>
 <tr>
 <td>SnapIn</td>
 <td>switch</td>
 <td>false</td>
-<td>If true, Pode will treat the name/path as a snap-in rather than a module</td>
+<td>If true, Pode will treat the name/path as a snap-in rather than a module/script</td>
 <td>false</td>
 </tr>
 </tbody>

@@ -343,6 +343,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0300" title="v0.30.0" class="md-nav__link">
+    v0.30.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0290" title="v0.29.0" class="md-nav__link">
     v0.29.0
   </a>
@@ -1161,10 +1168,34 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../Tutorials/Authentication/Validators/" title="Validators" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13-2" type="checkbox" id="nav-4-13-2">
+    
+    <label class="md-nav__link" for="nav-4-13-2">
       Validators
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-13-2">
+        Validators
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Tutorials/Authentication/Validators/WindowsAD/" title="Windows AD" class="md-nav__link">
+      Windows AD
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -2075,6 +2106,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0300" title="v0.30.0" class="md-nav__link">
+    v0.30.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0290" title="v0.29.0" class="md-nav__link">
     v0.29.0
   </a>
@@ -2283,6 +2321,21 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v0300">v0.30.0</h2>
+<div class="codehilite"><pre><span></span>### Enhancements
+* #245: Support for Windows AD group validation on the inbuilt &#39;windows-ad&#39; authentication validator
+* #250: Support for bulk importing/loading scripts and modules
+* #251: Support on routes to supply a FilePath to a script that contains the route&#39;s scriptblock
+* #252: Support on the server function to supply a custom RootPath
+
+### Performance
+* #258: Performance improvements to all aspects of a web request, reducing response times
+
+### Packaging
+* #261: Docker images updated to PowerShell Core v6.2.1
+</pre></div>
+
+
 <h2 id="v0290">v0.29.0</h2>
 <div class="codehilite"><pre><span></span>### Enhancements
 * #216: Multi-content-type support on Error Pages

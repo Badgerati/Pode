@@ -945,10 +945,34 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../Authentication/Validators/" title="Validators" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13-2" type="checkbox" id="nav-4-13-2">
+    
+    <label class="md-nav__link" for="nav-4-13-2">
       Validators
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-13-2">
+        Validators
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Authentication/Validators/WindowsAD/" title="Windows AD" class="md-nav__link">
+      Windows AD
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1124,9 +1148,45 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Server Root
+      </label>
+    
     <a href="./" title="Server Root" class="md-nav__link md-nav__link--active">
       Server Root
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#code" title="Code" class="md-nav__link">
+    Code
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" title="Configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -1866,6 +1926,29 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#code" title="Code" class="md-nav__link">
+    Code
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" title="Configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1881,16 +1964,31 @@
                 
                 <h1 id="server-root">Server Root</h1>
 <p>The root path for your server, by default, is always defined by <code>$MyInvocation.PSScriptRoot</code>.</p>
-<p>Normally this is enough, and you'll likely never need to change it however, if you should want to change your server's root path, you can alter it via the <code>pode.json</code> file:</p>
+<p>Normally this is enough, and you'll likely never need to change it however, if you should want to change your server's root path, you can alter it in the following ways.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The path you supply in both cases can be literal, or relative to <code>$MyInvocation.PSScriptRoot</code>. If you supply a literal path it will be used instead of the invocation path.</p>
+</div>
+<h2 id="code">Code</h2>
+<p>The main way to alter the root path of you server is to use the <code>-RootPath</code> parameter on the <code>server</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="n">-RootPath</span> <span class="s1">&#39;../server&#39;</span> <span class="p">{</span>
+    <span class="c"># logic</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>With this, everything from your <code>pode.json</code>, <code>/views</code>, <code>/public</code>, etc will need to be within the <code>../server</code> directory.</p>
+<h2 id="configuration">Configuration</h2>
+<p>The other way to alter the root path is via the <code>pode.json</code> file:</p>
 <div class="codehilite"><pre><span></span><span class="p">{</span>
     <span class="nt">&quot;server&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;root&quot;</span><span class="p">:</span> <span class="s2">&quot;./path&quot;</span>
+        <span class="nt">&quot;root&quot;</span><span class="p">:</span> <span class="s2">&quot;../server&quot;</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<p>The path you supply can be literal, or relative to <code>$MyInvocation.PSScriptRoot</code>. If you supply a literal path it will be used instead of the invocation path.</p>
+<p>In this case, the <code>pode.json</code> file will need to be located at <code>$MyInvocation.PSScriptRoot</code>. Everything else will need to be located in <code>../server</code>.</p>
                 
                   
                 

@@ -1006,10 +1006,34 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../Authentication/Validators/" title="Validators" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13-2" type="checkbox" id="nav-4-13-2">
+    
+    <label class="md-nav__link" for="nav-4-13-2">
       Validators
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-13-2">
+        Validators
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Authentication/Validators/WindowsAD/" title="Windows AD" class="md-nav__link">
+      Windows AD
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1977,19 +2001,19 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 </div>
 <h2 id="usage">Usage</h2>
 <p>To setup and use routes in Pode you should use the <a href="../../../Function/Core/Route"><code>route</code></a> function. The general make-up of the <code>route</code> function is as follows - the former is for HTTP requests, where as the latter is for static content:</p>
-<div class="codehilite"><pre><span></span><span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-endpoint</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-listenName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-contentType</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-errorType</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
+<div class="codehilite"><pre><span></span><span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-endpoint</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-listenName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-contentType</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-errorType</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-filePath</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span>
 
 <span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-protocol</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-endpoint</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-listenName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-remove</span><span class="p">]</span> <span class="p">[</span><span class="n">-downloadOnly</span><span class="p">]</span>
 
 <span class="c"># or with aliases:</span>
-<span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ln</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ctype</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-etype</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-rm</span><span class="p">]</span>
+<span class="n">route</span> <span class="p">&lt;</span><span class="n">method</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">middleware</span><span class="p">&gt;]</span> <span class="p">&lt;</span><span class="n">scriptblock</span><span class="p">&gt;</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ln</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ctype</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-etype</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-fp</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-rm</span><span class="p">]</span>
 
 <span class="n">route</span> <span class="n">static</span> <span class="p">&lt;</span><span class="n">route</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="n">path</span><span class="p">&gt;</span> <span class="p">[&lt;</span><span class="n">defaults</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-p</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-e</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-ln</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;]</span> <span class="p">[</span><span class="n">-rm</span><span class="p">]</span> <span class="p">[</span><span class="n">-do</span><span class="p">]</span>
 </pre></div>
 
 
 <p>For example, let's say you want a basic <code>GET /ping</code> endpoint to just return <code>pong</code> as a JSON response:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/ping&#39;</span> <span class="p">{</span>
@@ -2009,7 +2033,7 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 <p>The scriptblock for the route will be supplied with a single argument that contains information about the current web event. This argument will contain the <code>Request</code> and <code>Response</code> objects, <code>Data</code> (from POST), and the <code>Query</code> (from the query string of the URL), as well as any <code>Parameters</code> from the route itself (eg: <code>/:accountId</code>).</p>
 <h2 id="payloads">Payloads</h2>
 <p>The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the <code>.Data</code> hashtable on the supplied web-session to a route's logic. This example will get the <code>userId</code> and "find" user, returning the users data:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">route</span> <span class="n">post</span> <span class="s1">&#39;/users&#39;</span> <span class="p">{</span>
@@ -2039,7 +2063,7 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 </div>
 <h2 id="query-strings">Query Strings</h2>
 <p>The following is an example of using data from a request's query string. To retrieve values from the query string you can use the <code>.Query</code> hashtable on the supplied web-session to a route's logic. This example will return a user based on the <code>userId</code> supplied:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/users&#39;</span> <span class="p">{</span>
@@ -2065,7 +2089,7 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 
 <h2 id="parameters">Parameters</h2>
 <p>The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the <code>.Parameters</code> hashtable on the supplied web-session to a route's logic. This example will get the <code>:userId</code> and "find" user, returning the users data:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/users/:userId&#39;</span> <span class="p">{</span>

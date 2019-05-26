@@ -943,10 +943,34 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Validators/" title="Validators" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-13-2" type="checkbox" id="nav-4-13-2">
+    
+    <label class="md-nav__link" for="nav-4-13-2">
       Validators
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-13-2">
+        Validators
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Authentication/Validators/WindowsAD/" title="Windows AD" class="md-nav__link">
+      Windows AD
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1304,6 +1328,13 @@
           <li class="md-nav__item">
   <a href="#example-1" title="Example 1" class="md-nav__link">
     Example 1
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-2" title="Example 2" class="md-nav__link">
+    Example 2
   </a>
   
 </li>
@@ -1947,6 +1978,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-2" title="Example 2" class="md-nav__link">
+    Example 2
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1980,12 +2018,21 @@
                 
                 <h1 id="load">Load</h1>
 <h2 id="description">Description</h2>
-<p>The <code>load</code> function can be used to dot-source other PowerShell scripts into your server. While normal dot-sourcing still works as normal in Pode, this function is used to aid relative paths when running your server as a Service (as relative paths may resolve from where the service is running, and not where the server is running).</p>
+<p>The <code>load</code> function can be used to dot-source other PowerShell scripts into your server. While normal dot-sourcing still works as normal in Pode, this function is used to aid relative paths when running your server as a Service or a Module (as relative paths may resolve from where the service/module is running, and not where the Pode server is running).</p>
+<p>You can also use the <code>load</code> function to dot-source multiple scripts by using wildcard paths. If you supply a directory path, then by default Pode will attempt to load all <code>*.ps1</code> files.</p>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
 <p>The following example will run the given PowerShell script, creating any <code>routes</code>, etc., that are needed. Because the path is relative, the server's root path will be automatically added:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">load</span> <span class="s1">&#39;./routes/api.ps1&#39;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="example-2">Example 2</h3>
+<p>The following example will dot-source all <code>*.ps1</code> scripts at the passed directory path:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">load</span> <span class="s1">&#39;./routes/*.ps1&#39;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -2006,7 +2053,7 @@
 <td>Path</td>
 <td>string</td>
 <td>true</td>
-<td>The path to a PowerShell script (<code>.ps1</code>) that needs to be dot-sourced</td>
+<td>The path to a PowerShell script (<code>.ps1</code>), or a directory with many scripts, that need to be dot-sourced</td>
 <td>empty</td>
 </tr>
 </tbody>
