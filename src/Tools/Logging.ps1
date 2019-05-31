@@ -18,6 +18,12 @@ function Add-PodeLogEndware
         $WebEvent
     )
 
+    # don't setup logging if not configured
+    if ($PodeContext.Server.Logging.Disabled -or (Get-PodeCount $PodeContext.Server.Logging.Methods) -eq 0) {
+        return
+    }
+
+    # add the logging endware
     $WebEvent.OnEnd += {
         param($s)
         $obj = New-PodeLogObject -Request $s.Request -Path $s.Path
@@ -199,8 +205,8 @@ function Logger
         $Custom
     )
 
-    # is logging disabled?
-    if ($PodeContext.Server.Logging.Disabled) {
+    # is logging disabled, or serverless?
+    if ($PodeContext.Server.Logging.Disabled -or $PodeContext.Server.IsServerless) {
         Write-Host "Logging has been disabled for $($Name)" -ForegroundColor DarkCyan
         return
     }

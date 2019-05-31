@@ -34,14 +34,20 @@ function Text
 
     # if the response stream isn't writable, return
     $res = $WebEvent.Response
-    if (($null -eq $res) -or ($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite) {
+    if (($null -eq $res) -or (!$PodeContext.Server.IsServerless -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite))) {
         return
     }
 
     # set a cache value
     if ($Cache) {
-        $res.AddHeader('Cache-Control', "max-age=$($MaxAge), must-revalidate")
-        $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
+        if ($PodeContext.Server.IsServerless) {
+            $res.Headers['Cache-Control'] = "max-age=$($MaxAge), must-revalidate"
+            $res.Headers['Expires'] = [datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'")
+        }
+        else {
+            $res.AddHeader('Cache-Control', "max-age=$($MaxAge), must-revalidate")
+            $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
+        }
     }
 
     # specify the content-type if supplied (adding utf-8 if missing)
@@ -54,27 +60,34 @@ function Text
         $res.ContentType = $ContentType
     }
 
-    # convert string to bytes
-    if ($valueType -ieq 'string') {
-        $Value = ConvertFrom-PodeValueToBytes -Value $Value
+    # if we're serverless, set the string as the body
+    if ($PodeContext.Server.IsServerless) {
+        $res.Body = $Value
     }
 
-    # write the content to the response stream
-    $res.ContentLength64 = $Value.Length
-
-    try {
-        $ms = New-Object -TypeName System.IO.MemoryStream
-        $ms.Write($Value, 0, $Value.Length)
-        $ms.WriteTo($res.OutputStream)
-        $ms.Close()
-    }
-    catch {
-        if ((Test-PodeValidNetworkFailure $_.Exception)) {
-            return
+    else {
+        # convert string to bytes
+        if ($valueType -ieq 'string') {
+            $Value = ConvertFrom-PodeValueToBytes -Value $Value
         }
 
-        $_.Exception | Out-Default
-        throw
+        # write the content to the response stream
+        $res.ContentLength64 = $Value.Length
+
+        try {
+            $ms = New-Object -TypeName System.IO.MemoryStream
+            $ms.Write($Value, 0, $Value.Length)
+            $ms.WriteTo($res.OutputStream)
+            $ms.Close()
+        }
+        catch {
+            if ((Test-PodeValidNetworkFailure $_.Exception)) {
+                return
+            }
+
+            $_.Exception | Out-Default
+            throw
+        }
     }
 }
 
@@ -257,7 +270,7 @@ function Status
         $Description = (Get-PodeStatusDescription -StatusCode $Code)
     }
 
-    if (![string]::IsNullOrWhiteSpace($Description)) {
+    if (!$PodeContext.Server.IsServerless -and ![string]::IsNullOrWhiteSpace($Description)) {
         $WebEvent.Response.StatusDescription = $Description
     }
 

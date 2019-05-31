@@ -1,7 +1,7 @@
 function Start-PodeGuiRunspace
 {
-    # do nothing if gui not enabled
-    if (!$PodeContext.Server.Gui.Enabled) {
+    # do nothing if gui not enabled, or running as serverless
+    if (!$PodeContext.Server.Gui.Enabled -or $PodeContext.Server.IsServerless) {
         return
     }
 

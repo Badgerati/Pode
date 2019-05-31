@@ -699,6 +699,10 @@ function Close-PodeRunspaces
         $ClosePool
     )
 
+    if ($PodeContext.Server.IsServerless) {
+        return
+    }
+
     try {
         if (!(Test-Empty $PodeContext.Runspaces)) {
             # sleep for 1s before doing this, to let listeners dispose
@@ -1074,6 +1078,10 @@ function Invoke-ScriptBlock
         $NoNewClosure
     )
 
+    if ($PodeContext.Server.IsServerless) {
+        $NoNewClosure = $true
+    }
+
     if (!$NoNewClosure) {
         $ScriptBlock = ($ScriptBlock).GetNewClosure()
     }
@@ -1252,7 +1260,16 @@ function ConvertFrom-PodeRequestContent
 
     # if the content-type is not multipart/form-data, get the string data
     if ($MetaData.ContentType -ine 'multipart/form-data') {
-        $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+        # get the content based on server type
+        switch ($PodeContext.Server.Type.ToLowerInvariant()) {
+            'aws-lambda' {
+                $Content = $Request.body
+            }
+
+            default {
+                $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+            }
+        }
 
         # if there is no content then do nothing
         if ([string]::IsNullOrWhiteSpace($Content)) {

@@ -88,7 +88,7 @@ function New-PodeContext
         'Include' = (Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude);
     }
 
-    # set the server default type
+    # set the server default type (unless it's server less)
     $ctx.Server.Type = ([string]::Empty)
     if ($Interval -gt 0) {
         $ctx.Server.Type = 'SERVICE'
@@ -225,6 +225,10 @@ function New-PodeRunspaceState
 
 function New-PodeRunspacePools
 {
+    if ($PodeContext.Server.IsServerless) {
+        return
+    }
+
     # setup main runspace pool
     $threadsCounts = @{
         'Default' = 1;
@@ -451,6 +455,11 @@ function Listen
         $Force
     )
 
+    # fail if serverless
+    if ($PodeContext.Server.IsServerless) {
+        throw 'The listen function is not supported in a serverless architecture'
+    }
+
     # parse the endpoint for host/port info
     $_endpoint = Get-PodeEndpointInfo -Endpoint $IPPort
 
@@ -659,8 +668,9 @@ function Load
 
 function New-PodeAutoRestartServer
 {
+    # don't configure if not supplied, or running as serverless
     $config = (config)
-    if ($null -eq $config -or $null -eq $config.server.restart)  {
+    if (($null -eq $config) -or ($null -eq $config.server.restart) -or $PodeContext.Server.IsServerless)  {
         return
     }
 
