@@ -121,9 +121,11 @@ function Start-PodeAwsLambdaServer
             $request = $Data
 
             # setup the response
-            $response = @{}
-            $response.StatusCode = 200
-            $response.Headers = @{}
+            $response = @{
+                'StatusCode' = 200;
+                'Headers' = @{};
+                'Body' = [string]::Empty;
+            }
 
             # reset event data
             $WebEvent = @{}
@@ -135,7 +137,7 @@ function Start-PodeAwsLambdaServer
             $WebEvent.Path = $request.path
             $WebEvent.Method = $request.httpMethod.ToLowerInvariant()
             $WebEvent.Protocol = ($request.headers.'X-Forwarded-Proto')
-            $WebEvent.Endpoint = ($request.Headers.Host)
+            $WebEvent.Endpoint = ($request.Headers.Host -split ':')[0]
             $WebEvent.ContentType = ($request.Headers.'Content-Type')
             $WebEvent.ErrorType = $null
 
@@ -169,10 +171,13 @@ function Start-PodeAwsLambdaServer
         # close and send the response
         if (![string]::IsNullOrWhiteSpace($response.ContentType)) {
             $response.Headers['Content-Type'] = $response.ContentType
-            $response.Remove('ContentType')
         }
 
-        return $response
+        return (@{
+            'statusCode' = $response.StatusCode;
+            'headers' = $response.Headers;
+            'body' = $response.Body;
+        } | ConvertTo-Json -Depth 10 -Compress) 
     }
     catch {
         Write-Host $Error[0]

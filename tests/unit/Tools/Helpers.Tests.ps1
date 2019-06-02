@@ -612,7 +612,9 @@ Describe 'Test-PodeValidNetworkFailure' {
 Describe 'ConvertFrom-PodeRequestContent' {
     Context 'Valid values' {
         It 'Returns xml data' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $value = '<root><value>test</value></root>'
+
             Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
@@ -625,7 +627,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $value = '{ "value": "test" }'
+
             Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
@@ -637,7 +641,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns csv data' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $value = "value`ntest"
+
             Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
@@ -649,7 +655,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns original data' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $value = "test"
+
             Mock Read-PodeStreamToEnd { return $value }
             
             (ConvertFrom-PodeRequestContent -Request @{

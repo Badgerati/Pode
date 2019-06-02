@@ -833,7 +833,7 @@ function Close-Pode
     # remove all of the pode temp drives
     Remove-PodePSDrives
 
-    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
+    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -and !$PodeContext.Server.IsServerless) {
         Write-Host " Done" -ForegroundColor Green
     }
 }

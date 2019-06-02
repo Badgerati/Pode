@@ -9,7 +9,7 @@ function Text
         [Parameter()]
         [Alias('ctype', 'ct')]
         [string]
-        $ContentType = $null,
+        $ContentType = 'text/plain',
 
         [Parameter()]
         [Alias('a')]
@@ -370,7 +370,7 @@ function Json
     elseif (Test-Empty $Value) {
         $Value = '{}'
     }
-    elseif ((Get-PodeType $Value).Name -ine 'string') {
+    elseif ($Value -isnot 'string') {
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
@@ -400,7 +400,7 @@ function Csv
     elseif (Test-Empty $Value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-PodeType $Value).Name -ine 'string') {
+    elseif ($Value -isnot 'string') {
         $Value = @(foreach ($v in $Value) {
             New-Object psobject -Property $v
         })
@@ -439,7 +439,7 @@ function Xml
     elseif (Test-Empty $value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-PodeType $Value).Name -ine 'string') {
+    elseif ($Value -isnot 'string') {
         $Value = @(foreach ($v in $Value) {
             New-Object psobject -Property $v
         })
@@ -473,7 +473,7 @@ function Html
     elseif (Test-Empty $value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-PodeType $Value).Name -ine 'string') {
+    elseif ($Value -isnot 'string') {
         $Value = ($Value | ConvertTo-Html)
     }
 
