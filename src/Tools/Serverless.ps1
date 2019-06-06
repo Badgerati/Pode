@@ -23,6 +23,7 @@ function Start-PodeAzFuncServer
     $inbuilt_middleware = @(
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
+        (Get-PodeBodyMiddleware),
         (Get-PodeCookieMiddleware)
     )
 
@@ -48,16 +49,13 @@ function Start-PodeAzFuncServer
             $WebEvent.Request = $request
             $WebEvent.Lockable = $PodeContext.Lockable
             $WebEvent.Method = $request.Method.ToLowerInvariant()
+            $WebEvent.Query = $request.Query
             $WebEvent.Protocol = ($request.Url -split '://')[0]
             $WebEvent.Endpoint = ((Get-PodeHeader -Name 'host') -split ':')[0]
             $WebEvent.ContentType = (Get-PodeHeader -Name 'content-type')
             $WebEvent.ErrorType = $null
-            $WebEvent.Cookies = $null
+            $WebEvent.Cookies = @{}
             $WebEvent.PendingCookies = @{}
-
-            # event query/body
-            $WebEvent.Query = $request.Query
-            $WebEvent.Data = $request.Body
 
             # set the path, using static content query parameter if passed
             if (![string]::IsNullOrWhiteSpace($request.Query['static-file'])) {
@@ -110,7 +108,7 @@ function Start-PodeAwsLambdaServer
     # setup any inbuilt middleware that works for aws lambda
     $inbuilt_middleware = @(
         (Get-PodePublicMiddleware),
-        (Get-PodeRouteValidateMiddleware)
+        (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
         (Get-PodeCookieMiddleware)
     )
@@ -140,15 +138,13 @@ function Start-PodeAwsLambdaServer
             $WebEvent.Lockable = $PodeContext.Lockable
             $WebEvent.Path = $request.path
             $WebEvent.Method = $request.httpMethod.ToLowerInvariant()
+            $WebEvent.Query = $request.queryStringParameters
             $WebEvent.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
             $WebEvent.Endpoint = ((Get-PodeHeader -Name 'Host') -split ':')[0]
             $WebEvent.ContentType = (Get-PodeHeader -Name 'Content-Type')
             $WebEvent.ErrorType = $null
-            $WebEvent.Cookies = $null
+            $WebEvent.Cookies = @{}
             $WebEvent.PendingCookies = @{}
-
-            # event query/body
-            $WebEvent.Query = $request.queryStringParameters
 
             # set pode in server response header
             Set-PodeServerHeader -Type 'Lambda'

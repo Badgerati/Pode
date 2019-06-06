@@ -243,7 +243,7 @@ function Get-PodeCookieMiddleware
         }
 
         # if cookies already set, return
-        if ($null -ne $e.Cookies) {
+        if ($e.Cookies.Count -gt 0) {
             return $true
         }
 

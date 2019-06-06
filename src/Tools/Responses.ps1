@@ -168,21 +168,38 @@ function Attach
     $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
 
     try {
-        # open up the file as a stream
-        $fs = (Get-Item $Path).OpenRead()
-
-        # setup the response details and headers
-        $WebEvent.Response.ContentLength64 = $fs.Length
-        $WebEvent.Response.SendChunked = $false
+        # setup the content type and disposition
         $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
         Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
-        # set file as an attachment on the response
-        $buffer = [byte[]]::new(64 * 1024)
-        $read = 0
+        # if serverless, get the content raw and return
+        if (Test-PodeIsServerless) {
+            if (Test-IsPSCore) {
+                $content = (Get-Content -Path $Path -Raw -AsByteStream)
+            }
+            else {
+                $content = (Get-Content -Path $Path -Raw -Encoding byte)
+            }
 
-        while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-            $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+            $WebEvent.Response.Body = $content
+        }
+
+        # else if normal, stream the content back
+        else {
+            # setup the response details and headers
+            $WebEvent.Response.ContentLength64 = $fs.Length
+            $WebEvent.Response.SendChunked = $false
+
+            # set file as an attachment on the response
+            $buffer = [byte[]]::new(64 * 1024)
+            $read = 0
+
+            # open up the file as a stream
+            $fs = (Get-Item $Path).OpenRead()
+
+            while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+            }
         }
     }
     finally {
@@ -331,7 +348,8 @@ function Redirect
         $Url = "$($Protocol)://$($Endpoint)$($PortStr)$($uri.PathAndQuery)"
     }
 
-    $WebEvent.Response.RedirectLocation = $Url
+    Set-PodeHeader -Name 'Location' -Value $Url
+    #$WebEvent.Response.RedirectLocation = $Url
 
     if ($Moved) {
         status 301 'Moved'

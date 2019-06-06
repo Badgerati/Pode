@@ -1266,6 +1266,10 @@ function ConvertFrom-PodeRequestContent
                 $Content = $Request.body
             }
 
+            'azure-functions' {
+                $Content = $Request.RawBody
+            }
+
             default {
                 $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
             }
