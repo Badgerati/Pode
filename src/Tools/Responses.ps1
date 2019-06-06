@@ -349,7 +349,6 @@ function Redirect
     }
 
     Set-PodeHeader -Name 'Location' -Value $Url
-    #$WebEvent.Response.RedirectLocation = $Url
 
     if ($Moved) {
         status 301 'Moved'

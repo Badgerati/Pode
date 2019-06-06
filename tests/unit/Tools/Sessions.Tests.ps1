@@ -17,9 +17,7 @@ Describe 'Get-PodeSessionCookie' {
 
     Context 'Valid parameters' {
         It 'Returns no session details for invalid sessionId' {
-            $WebEvent = @{ 'Request' = @{
-                'Cookies' = @{}
-            } }
+            $WebEvent = @{ 'Cookies' = @{} }
 
             $PodeContext = @{
                 'Server' = @{ 'Cookies' = @{ 'Session' = @{
@@ -36,10 +34,8 @@ Describe 'Get-PodeSessionCookie' {
         It 'Returns no session details for invalid signed sessionId' {
             $cookie = [System.Net.Cookie]::new('pode.sid', 's:value.kPv88V5o2uJ29sqh2a7P/f3dxcg+JdZJZT3GTIE=')
 
-            $WebEvent = @{ 'Request' = @{
-                'Cookies' = @{
-                    'pode.sid' = $cookie;
-                }
+            $WebEvent = @{ 'Cookies' = @{
+                'pode.sid' = $cookie;
             } }
 
             $PodeContext = @{
@@ -57,10 +53,8 @@ Describe 'Get-PodeSessionCookie' {
         It 'Returns session details' {
             $cookie = [System.Net.Cookie]::new('pode.sid', 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=')
 
-            $WebEvent = @{ 'Request' = @{
-                'Cookies' = @{
-                    'pode.sid' = $cookie;
-                }
+            $WebEvent = @{ 'Cookies' = @{
+                'pode.sid' = $cookie;
             } }
 
             $PodeContext = @{
@@ -94,7 +88,7 @@ Describe 'Set-PodeSessionCookieDataHash' {
             $Session.Data | Should Not Be $null
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
 
             $Session.DataHash | Should Be $hash
@@ -106,7 +100,7 @@ Describe 'Set-PodeSessionCookieDataHash' {
             $Session.Data | Should Not Be $null
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
 
             $Session.DataHash | Should Be $hash
@@ -136,7 +130,7 @@ Describe 'New-PodeSessionCookie' {
         $session.Cookie.Duration | Should Be 60
 
         $crypto = [System.Security.Cryptography.SHA256]::Create()
-        $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($session.Data| ConvertTo-Json)))
+        $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($session.Data| ConvertTo-Json -Depth 10 -Compress)))
         $hash = [System.Convert]::ToBase64String($hash)
 
         $session.DataHash | Should Be $hash
@@ -167,7 +161,7 @@ Describe 'Test-PodeSessionCookieDataHash' {
             }
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
             $Session.DataHash = $hash
 
