@@ -18,7 +18,7 @@ function Session
     }
 
     # ensure the override generator is a scriptblock
-    if (!(Test-Empty $Options.GenerateId) -and (Get-PodeType $Options.GenerateId).Name -ine 'scriptblock') {
+    if (!(Test-Empty $Options.GenerateId) -and ($Options.GenerateId -isnot 'scriptblock')) {
         throw "Session GenerateId should be a ScriptBlock, but got: $((Get-PodeType $Options.GenerateId).Name)"
     }
 
@@ -224,7 +224,7 @@ function Set-PodeSessionCookieDataHash
     )
 
     $Session.Data = (coalesce $Session.Data @{})
-    $Session.DataHash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json))
+    $Session.DataHash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json -Depth 10 -Compress))
 }
 
 function Test-PodeSessionCookieDataHash
@@ -240,7 +240,7 @@ function Test-PodeSessionCookieDataHash
     }
 
     $Session.Data = (coalesce $Session.Data @{})
-    $hash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json))
+    $hash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json -Depth 10 -Compress))
     return ($Session.DataHash -eq $hash)
 }
 
@@ -339,6 +339,11 @@ function Get-PodeSessionCookieInMemStore
 
 function Set-PodeSessionCookieInMemClearDown
 {
+    # don't setup if serverless - as memory is short lived anyway
+    if (Test-PodeIsServerless) {
+        return
+    }
+
     # cleardown expired inmem session every 10 minutes
     Schedule -Name '__pode_session_inmem_cleanup__' -Cron '0/10 * * * *' -ScriptBlock {
         $store = $PodeContext.Server.Cookies.Session.Store

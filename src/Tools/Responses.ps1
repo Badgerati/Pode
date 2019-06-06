@@ -40,14 +40,8 @@ function Text
 
     # set a cache value
     if ($Cache) {
-        if ($PodeContext.Server.IsServerless) {
-            $res.Headers['Cache-Control'] = "max-age=$($MaxAge), must-revalidate"
-            $res.Headers['Expires'] = [datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'")
-        }
-        else {
-            $res.AddHeader('Cache-Control', "max-age=$($MaxAge), must-revalidate")
-            $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
-        }
+        Set-PodeHeader -Name 'Cache-Control' -Value "max-age=$($MaxAge), must-revalidate"
+        Set-PodeHeader -Name 'Expires' -Value ([datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
     }
 
     # specify the content-type if supplied (adding utf-8 if missing)
@@ -181,7 +175,7 @@ function Attach
         $WebEvent.Response.ContentLength64 = $fs.Length
         $WebEvent.Response.SendChunked = $false
         $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
-        $WebEvent.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
+        Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
         # set file as an attachment on the response
         $buffer = [byte[]]::new(64 * 1024)
@@ -670,6 +664,10 @@ function Tcp
         $Client
     )
 
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'tcp' -ThrowError
+
+    # use the main client if one isn't supplied
     if ($null -eq $Client) {
         $Client = $TcpEvent.Client
     }

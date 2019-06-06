@@ -22,7 +22,8 @@ function Start-PodeAzFuncServer
     # setup any inbuilt middleware that works for azure functions
     $inbuilt_middleware = @(
         (Get-PodePublicMiddleware),
-        (Get-PodeRouteValidateMiddleware)
+        (Get-PodeRouteValidateMiddleware),
+        (Get-PodeCookieMiddleware)
     )
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
@@ -48,9 +49,11 @@ function Start-PodeAzFuncServer
             $WebEvent.Lockable = $PodeContext.Lockable
             $WebEvent.Method = $request.Method.ToLowerInvariant()
             $WebEvent.Protocol = ($request.Url -split '://')[0]
-            $WebEvent.Endpoint = ($request.Headers['host'] -split ':')[0]
-            $WebEvent.ContentType = $request.Headers['content-type']
+            $WebEvent.Endpoint = ((Get-PodeHeader -Name 'host') -split ':')[0]
+            $WebEvent.ContentType = (Get-PodeHeader -Name 'content-type')
             $WebEvent.ErrorType = $null
+            $WebEvent.Cookies = $null
+            $WebEvent.PendingCookies = @{}
 
             # event query/body
             $WebEvent.Query = $request.Query
@@ -65,7 +68,7 @@ function Start-PodeAzFuncServer
             }
 
             # set pode in server response header
-            $response.Headers['Server'] = 'Pode - Kestrel'
+            Set-PodeServerHeader -Type 'Kestrel'
 
             # invoke middleware
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
@@ -108,7 +111,8 @@ function Start-PodeAwsLambdaServer
     $inbuilt_middleware = @(
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware)
-        (Get-PodeBodyMiddleware)
+        (Get-PodeBodyMiddleware),
+        (Get-PodeCookieMiddleware)
     )
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
@@ -136,16 +140,18 @@ function Start-PodeAwsLambdaServer
             $WebEvent.Lockable = $PodeContext.Lockable
             $WebEvent.Path = $request.path
             $WebEvent.Method = $request.httpMethod.ToLowerInvariant()
-            $WebEvent.Protocol = ($request.headers.'X-Forwarded-Proto')
-            $WebEvent.Endpoint = ($request.Headers.Host -split ':')[0]
-            $WebEvent.ContentType = ($request.Headers.'Content-Type')
+            $WebEvent.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
+            $WebEvent.Endpoint = ((Get-PodeHeader -Name 'Host') -split ':')[0]
+            $WebEvent.ContentType = (Get-PodeHeader -Name 'Content-Type')
             $WebEvent.ErrorType = $null
+            $WebEvent.Cookies = $null
+            $WebEvent.PendingCookies = @{}
 
             # event query/body
             $WebEvent.Query = $request.queryStringParameters
 
             # set pode in server response header
-            $response.Headers['Server'] = 'Pode - Lambda'
+            Set-PodeServerHeader -Type 'Lambda'
 
             # invoke middleware
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
@@ -170,7 +176,7 @@ function Start-PodeAwsLambdaServer
 
         # close and send the response
         if (![string]::IsNullOrWhiteSpace($response.ContentType)) {
-            $response.Headers['Content-Type'] = $response.ContentType
+            Set-PodeHeader -Name 'Content-Type' -Value $response.ContentType
         }
 
         return (@{

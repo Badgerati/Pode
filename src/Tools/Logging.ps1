@@ -205,8 +205,11 @@ function Logger
         $Custom
     )
 
-    # is logging disabled, or serverless?
-    if ($PodeContext.Server.Logging.Disabled -or $PodeContext.Server.IsServerless) {
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'logger' -ThrowError
+
+    # is logging disabled?
+    if ($PodeContext.Server.Logging.Disabled) {
         Write-Host "Logging has been disabled for $($Name)" -ForegroundColor DarkCyan
         return
     }

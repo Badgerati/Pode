@@ -581,7 +581,7 @@ function Get-PodeAuthBasic
         param($e, $auth)
 
         # get the auth header
-        $header = $e.Request.Headers['Authorization']
+        $header = (Get-PodeHeader -Name 'Authorization')
         if ($null -eq $header) {
             return @{
                 'User' = $null;

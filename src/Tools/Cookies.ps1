@@ -80,7 +80,7 @@ function Cookie
 
         # set or get cookie secrets
         'secrets' {
-            if (Test-Empty $Value) {
+            if ([string]::IsNullOrWhiteSpace($Value)) {
                 return ($PodeContext.Server.Cookies.Secrets[$Name])
             }
             else {
@@ -98,8 +98,8 @@ function Test-PodeCookieExists
         $Name
     )
 
-    $cookie = $WebEvent.Request.Cookies[$Name]
-    return (!(Test-Empty $cookie) -and !(Test-Empty $cookie.Value))
+    $cookie = $WebEvent.Cookies[$Name]
+    return (($null -ne $cookie) -and ![string]::IsNullOrWhiteSpace($cookie.Value))
 }
 
 function Test-PodeCookieIsSigned
@@ -122,13 +122,13 @@ function Test-PodeCookieIsSigned
         $Secret = (Get-PodeCookieGlobalSecret)
     }
 
-    $cookie = $WebEvent.Request.Cookies[$Name]
-    if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
+    $cookie = $WebEvent.Cookies[$Name]
+    if (($null -eq $cookie) -or [string]::IsNullOrWhiteSpace($cookie.Value)) {
         return $false
     }
 
     $value = (Invoke-PodeCookieUnsign -Signature $cookie.Value -Secret $Secret)
-    return (!(Test-Empty $value))
+    return (![string]::IsNullOrWhiteSpace($value))
 }
 
 function Get-PodeCookie
@@ -155,19 +155,19 @@ function Get-PodeCookie
     }
 
     # get the cookie from the request
-    $cookie = $WebEvent.Request.Cookies[$Name]
+    $cookie = $WebEvent.Cookies[$Name]
     if (!$Raw) {
         $cookie = (ConvertTo-PodeCookie -Cookie $cookie)
     }
 
-    if ((Test-Empty $cookie) -or (Test-Empty $cookie.Value)) {
+    if (($null -eq $cookie) -or [string]::IsNullOrWhiteSpace($cookie.Value)) {
         return $null
     }
 
     # if a secret was supplied, attempt to unsign the cookie
-    if (!(Test-Empty $Secret)) {
+    if (![string]::IsNullOrWhiteSpace($Secret)) {
         $value = (Invoke-PodeCookieUnsign -Signature $cookie.Value -Secret $Secret)
-        if (!(Test-Empty $value)) {
+        if (![string]::IsNullOrWhiteSpace($value)) {
             $cookie.Value = $value
         }
     }
@@ -217,7 +217,7 @@ function Set-PodeCookie
     }
 
     # sign the value if we have a secret
-    if (!(Test-Empty $Secret)) {
+    if (![string]::IsNullOrWhiteSpace($Secret)) {
         $Value = (Invoke-PodeCookieSign -Value $Value -Secret $Secret)
     }
 
@@ -235,7 +235,8 @@ function Set-PodeCookie
     }
 
     # sets the cookie on the the response
-    $WebEvent.Response.AppendCookie($cookie) | Out-Null
+    $WebEvent.PendingCookies[$cookie.Name] = $cookie
+    Add-PodeHeader -Name 'Set-Cookie' -Value (ConvertTo-PodeCookieString -Cookie $cookie)
     return (ConvertTo-PodeCookie -Cookie $cookie)
 }
 
@@ -261,8 +262,8 @@ function Update-PodeCookieExpiry
     )
 
     # get the cookie from the response - if it's not found, get it from the request
-    $cookie = $WebEvent.Response.Cookies[$Name]
-    if (Test-Empty $cookie) {
+    $cookie = $WebEvent.PendingCookies[$Name]
+    if ($null -eq $cookie) {
         $cookie = Get-PodeCookie -Name $Name -Raw
     }
 
@@ -275,7 +276,8 @@ function Update-PodeCookieExpiry
     }
 
     # sets the cookie on the the response
-    $WebEvent.Response.AppendCookie($cookie) | Out-Null
+    $WebEvent.PendingCookies[$cookie.Name] = $cookie
+    Add-PodeHeader -Name 'Set-Cookie' -Value (ConvertTo-PodeCookieString -Cookie $cookie)
     return (ConvertTo-PodeCookie -Cookie $cookie)
 }
 
@@ -288,16 +290,17 @@ function Remove-PodeCookie
     )
 
     # get the cookie from the response - if it's not found, get it from the request
-    $cookie = $WebEvent.Response.Cookies[$Name]
-    if (Test-Empty $cookie) {
+    $cookie = $WebEvent.PendingCookies[$Name]
+    if ($null -eq $cookie) {
         $cookie = Get-PodeCookie -Name $Name -Raw
     }
 
     # remove the cookie from the response, and reset it to expire
-    if (!(Test-Empty $cookie)) {
+    if ($null -ne $cookie) {
         $cookie.Discard = $true
         $cookie.Expires = [DateTime]::UtcNow.AddDays(-2)
-        $WebEvent.Response.AppendCookie($cookie) | Out-Null
+        $WebEvent.PendingCookies[$cookie.Name] = $cookie
+        Add-PodeHeader -Name 'Set-Cookie' -Value (ConvertTo-PodeCookieString -Cookie $cookie)
     }
 }
 
@@ -361,7 +364,7 @@ function ConvertTo-PodeCookie
         $Cookie
     )
 
-    if (Test-Empty $Cookie) {
+    if ($null -eq $Cookie) {
         return @{}
     }
 
@@ -373,7 +376,45 @@ function ConvertTo-PodeCookie
         'Discard' = $Cookie.Discard;
         'HttpOnly' = $Cookie.HttpOnly;
         'Secure' = $Cookie.Secure;
+        'Path' = $Cookie.Path;
         'TimeStamp' = $Cookie.TimeStamp;
         'Signed' = $Cookie.Value.StartsWith('s:');
     }
+}
+
+function ConvertTo-PodeCookieString
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        $Cookie
+    )
+
+    $str = "$($Cookie.Name)=$($Cookie.Value)"
+
+    if ($Cookie.Discard) {
+        $str += '; Discard'
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Cookie.Domain)) {
+        $str += "; Domain=$($Cookie.Domain)"
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Cookie.Path)) {
+        $str += "; Path=$($Cookie.Path)"
+    }
+
+    if ($Cookie.Expires -ne [datetime]::MinValue) {
+        $secs = ($Cookie.Expires.ToLocalTime() - [datetime]::Now).TotalSeconds
+        if ($secs -lt 0) {
+            $secs = 0
+        }
+
+        $str += "; Max-Age=$($secs)"
+    }
+
+    if ($str -eq '=') {
+        return $null
+    }
+
+    return $str
 }

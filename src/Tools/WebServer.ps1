@@ -136,9 +136,11 @@ function Start-PodeWebServer
                     $WebEvent.Endpoint = $request.Url.Authority
                     $WebEvent.ContentType = $request.ContentType
                     $WebEvent.ErrorType = $null
+                    $WebEvent.Cookies = $request.Cookies
+                    $WebEvent.PendingCookies = @{}
 
                     # set pode in server response header
-                    $response.AddHeader('Server', 'Pode - ')
+                    Set-PodeServerHeader
 
                     # add logging endware for post-request
                     Add-PodeLogEndware -WebEvent $WebEvent

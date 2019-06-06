@@ -455,10 +455,8 @@ function Listen
         $Force
     )
 
-    # fail if serverless
-    if ($PodeContext.Server.IsServerless) {
-        throw 'The listen function is not supported in a serverless architecture'
-    }
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'listen' -ThrowError
 
     # parse the endpoint for host/port info
     $_endpoint = Get-PodeEndpointInfo -Endpoint $IPPort

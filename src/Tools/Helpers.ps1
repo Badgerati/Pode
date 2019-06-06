@@ -2005,3 +2005,23 @@ function Get-PodeWildcardFiles
 
     return $null
 }
+
+function Test-PodeIsServerless
+{
+    param (
+        [Parameter()]
+        [string]
+        $FunctionName,
+
+        [switch]
+        $ThrowError
+    )
+
+    if ($PodeContext.Server.IsServerless -and $ThrowError) {
+        throw "The $($FunctionName) function is not supported in a serverless context"
+    }
+
+    if (!$ThrowError) {
+        return $PodeContext.Server.IsServerless
+    }
+}
