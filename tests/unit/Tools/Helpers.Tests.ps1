@@ -807,6 +807,11 @@ Describe 'Invoke-ScriptBlock' {
         Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
     }
 
+    It 'Runs scriptblock unscoped, unsplatted, no-args, force unscoped for serverless' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
+    }
+
     It 'Runs scriptblock unscoped, unsplatted, args' {
         Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Arguments 5 -Return | Should Be 5
     }
@@ -1044,5 +1049,60 @@ Describe 'Get-PodeWildcardFiles' {
 
     It 'Returns null for non-wildcard path' {
         Get-PodeWildcardFiles -Path './some/path/file.txt' | Should Be $null
+    }
+}
+
+Describe 'Test-PodeIsServerless' {
+    It 'Returns true' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        Test-PodeIsServerless | Should Be $true
+    }
+
+    It 'Returns false' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        Test-PodeIsServerless | Should Be $false
+    }
+
+    It 'Throws error if serverless' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        { Test-PodeIsServerless -ThrowError } | Should Throw 'not supported in a serverless'
+    }
+
+    It 'Throws no error if not serverless' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        { Test-PodeIsServerless -ThrowError } | Should Not Throw 'not supported in a serverless'
+    }
+}
+
+Describe 'Close-PodeRunspaces' {
+    It 'Returns and does nothing if serverless' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        Close-PodeRunspaces -ClosePool
+    }
+}
+
+Describe 'Close-Pode' {
+    Mock Close-PodeRunspaces { }
+    Mock Stop-PodeFileMonitor { }
+    Mock Dispose { }
+    Mock Remove-PodePSDrives { }
+    Mock Write-Host { }
+
+    It 'Closes out pode, but with no done flag' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
+        Close-Pode
+        Assert-MockCalled Write-Host -Times 0 -Scope It
+    }
+
+    It 'Closes out pode, but with the done flag' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
+        Close-Pode -Exit
+        Assert-MockCalled Write-Host -Times 1 -Scope It
+    }
+
+    It 'Closes out pode, but with no done flag if serverless' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server'; 'IsServerless' = $true } }
+        Close-Pode -Exit
+        Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 }
