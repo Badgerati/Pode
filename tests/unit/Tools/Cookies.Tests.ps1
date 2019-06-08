@@ -600,3 +600,51 @@ Describe 'ConvertTo-PodeCookie' {
         $r.Secure | Should Be $false
     }
 }
+
+Describe 'ConvertTo-PodeCookieString' {
+    It 'Returns name, value' {
+        $c = [System.Net.Cookie]::new('name', 'value')
+        ConvertTo-PodeCookieString -Cookie $c | Should Be 'name=value'
+    }
+
+    It 'Returns name, value, discard' {
+        $c = [System.Net.Cookie]::new('name', 'value')
+        $c.Discard = $true
+        ConvertTo-PodeCookieString -Cookie $c | Should Be 'name=value; Discard'
+    }
+
+    It 'Returns name, value, httponly' {
+        $c = [System.Net.Cookie]::new('name', 'value')
+        $c.HttpOnly = $true
+        ConvertTo-PodeCookieString -Cookie $c | Should Be 'name=value; HttpOnly'
+    }
+
+    It 'Returns name, value, secure' {
+        $c = [System.Net.Cookie]::new('name', 'value')
+        $c.Secure = $true
+        ConvertTo-PodeCookieString -Cookie $c | Should Be 'name=value; Secure'
+    }
+
+    It 'Returns name, value, domain' {
+        $c = [System.Net.Cookie]::new('name', 'value')
+        $c.Domain = 'random.domain.name'
+        ConvertTo-PodeCookieString -Cookie $c | Should Be 'name=value; Domain=random.domain.name'
+    }
+
+    It 'Returns name, value, path' {
+        $c = [System.Net.Cookie]::new('name', 'value')
+        $c.Path = '/api'
+        ConvertTo-PodeCookieString -Cookie $c | Should Be 'name=value; Path=/api'
+    }
+
+    It 'Returns name, value, max-age' {
+        $c = [System.Net.Cookie]::new('name', 'value')
+        $c.Expires = [datetime]::Now.AddDays(1)
+        ConvertTo-PodeCookieString -Cookie $c | Should Match 'name=value; Max-Age=\d+'
+    }
+
+    It 'Returns null for no name or value' {
+        $c = @{ 'Name' = ''; 'Value' = '' }
+        ConvertTo-PodeCookieString -Cookie $c | Should Be $null
+    }
+}

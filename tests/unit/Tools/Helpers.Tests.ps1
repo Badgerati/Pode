@@ -807,7 +807,7 @@ Describe 'Invoke-ScriptBlock' {
         Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
     }
 
-    It 'Runs scriptblock unscoped, unsplatted, no-args, force unscoped for serverless' {
+    It 'Runs scriptblock unscoped, unsplatted, no-args, force closure for serverless' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
         Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
     }

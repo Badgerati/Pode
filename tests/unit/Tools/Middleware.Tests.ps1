@@ -577,7 +577,7 @@ Describe 'Get-PodeCookieMiddleware' {
         $r.Name | Should Be '@cookie'
         $r.Logic | Should Not Be $null
 
-        Mock Test-PodeIsServerless { return $false }
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
         (. $r.Logic @{}) | Should Be $true
     }
 
@@ -586,7 +586,7 @@ Describe 'Get-PodeCookieMiddleware' {
         $r.Name | Should Be '@cookie'
         $r.Logic | Should Not Be $null
 
-        Mock Test-PodeIsServerless { return $true }
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
         (. $r.Logic @{
             'Cookies' = @{ 'test' = 'value' };
         }) | Should Be $true
@@ -597,7 +597,7 @@ Describe 'Get-PodeCookieMiddleware' {
         $r.Name | Should Be '@cookie'
         $r.Logic | Should Not Be $null
 
-        Mock Test-PodeIsServerless { return $true }
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
         Mock Get-PodeHeader { return $null }
 
         (. $r.Logic @{
@@ -610,7 +610,7 @@ Describe 'Get-PodeCookieMiddleware' {
         $r.Name | Should Be '@cookie'
         $r.Logic | Should Not Be $null
 
-        Mock Test-PodeIsServerless { return $true }
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
         Mock Get-PodeHeader { return 'key1=value1; key2=value2' }
 
         $WebEvent = @{ 'Cookies' = @{} }

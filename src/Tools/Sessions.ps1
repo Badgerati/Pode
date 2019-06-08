@@ -340,7 +340,7 @@ function Get-PodeSessionCookieInMemStore
 function Set-PodeSessionCookieInMemClearDown
 {
     # don't setup if serverless - as memory is short lived anyway
-    if (Test-PodeIsServerless) {
+    if ($PodeContext.Server.IsServerless) {
         return
     }
 

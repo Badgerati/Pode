@@ -238,7 +238,7 @@ function Get-PodeCookieMiddleware
         param($e)
 
         # if it's not serverless, return
-        if (!(Test-PodeIsServerless)) {
+        if (!$PodeContext.Server.IsServerless) {
             return $true
         }
 

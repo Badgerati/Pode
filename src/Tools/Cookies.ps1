@@ -395,6 +395,14 @@ function ConvertTo-PodeCookieString
         $str += '; Discard'
     }
 
+    if ($Cookie.HttpOnly) {
+        $str += '; HttpOnly'
+    }
+
+    if ($Cookie.Secure) {
+        $str += '; Secure'
+    }
+
     if (![string]::IsNullOrWhiteSpace($Cookie.Domain)) {
         $str += "; Domain=$($Cookie.Domain)"
     }
@@ -403,7 +411,7 @@ function ConvertTo-PodeCookieString
         $str += "; Path=$($Cookie.Path)"
     }
 
-    if ($Cookie.Expires -ne [datetime]::MinValue) {
+    if ($null -ne $Cookie.Expires -and $Cookie.Expires -ne [datetime]::MinValue) {
         $secs = ($Cookie.Expires.ToLocalTime() - [datetime]::Now).TotalSeconds
         if ($secs -lt 0) {
             $secs = 0

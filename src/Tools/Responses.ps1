@@ -173,7 +173,7 @@ function Attach
         Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
         # if serverless, get the content raw and return
-        if (Test-PodeIsServerless) {
+        if ($PodeContext.Server.IsServerless) {
             if (Test-IsPSCore) {
                 $content = (Get-Content -Path $Path -Raw -AsByteStream)
             }
