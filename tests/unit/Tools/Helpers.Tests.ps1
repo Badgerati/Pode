@@ -664,6 +664,30 @@ Describe 'ConvertFrom-PodeRequestContent' {
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
             } -ContentType 'text/custom').Data | Should Be 'test'
         }
+
+        It 'Returns json data for azure-functions' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'Azure-Functions' } }
+
+            $result = ConvertFrom-PodeRequestContent -Request @{
+                'ContentEncoding' = [System.Text.Encoding]::UTF8;
+                'RawBody' = '{ "value": "test" }';
+            } -ContentType 'application/json'
+
+            $result.Data | Should Not Be $null
+            $result.Data.value | Should Be 'test'
+        }
+
+        It 'Returns json data for aws-lambda' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'Aws-Lambda' } }
+
+            $result = ConvertFrom-PodeRequestContent -Request @{
+                'ContentEncoding' = [System.Text.Encoding]::UTF8;
+                'body' = '{ "value": "test" }';
+            } -ContentType 'application/json'
+
+            $result.Data | Should Not Be $null
+            $result.Data.value | Should Be 'test'
+        }
     }
 }
 

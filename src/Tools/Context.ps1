@@ -22,6 +22,9 @@ function New-PodeContext
         [string[]]
         $FileMonitorInclude = $null,
 
+        [string]
+        $ServerType,
+
         [switch]
         $DisableLogging,
 
@@ -34,8 +37,11 @@ function New-PodeContext
         $Name = Get-PodeRandomName
     }
 
-    # ensure threads are always >0
-    if ($Threads -le 0) {
+    # are we running in a serverless context
+    $isServerless = (@('azure-functions', 'aws-lambda') -icontains $ServerType)
+
+    # ensure threads are always >0, for to 1 if we're serverless
+    if (($Threads -le 0) -or $isServerless) {
         $Threads = 1
     }
 
@@ -88,10 +94,15 @@ function New-PodeContext
         'Include' = (Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude);
     }
 
-    # set the server default type (unless it's server less)
+    # set the server default type
     $ctx.Server.Type = ([string]::Empty)
     if ($Interval -gt 0) {
         $ctx.Server.Type = 'SERVICE'
+    }
+
+    if ($isServerless) {
+        $ctx.Server.Type = $ServerType.ToUpperInvariant()
+        $ctx.Server.IsServerless = $isServerless
     }
 
     # set the IP address details

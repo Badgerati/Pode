@@ -48,8 +48,13 @@ function Server
         $RootPath,
 
         [Parameter()]
-        [Alias('r')]
+        [Alias('r', 'req')]
         $Request,
+
+        [Parameter()]
+        [ValidateSet('', 'Azure-Functions', 'Aws-Lambda')]
+        [string]
+        $Type,
 
         [switch]
         $Smtp,
@@ -105,12 +110,18 @@ function Server
             -ServerRoot (coalesce $RootPath $MyInvocation.PSScriptRoot) `
             -FileMonitorExclude $FileMonitorExclude `
             -FileMonitorInclude $FileMonitorInclude `
+            -ServerType $Type `
             -DisableLogging:$DisableLogging `
             -FileMonitor:$FileMonitor
 
         # for legacy support, create initial listener from Server parameters
         if (@('http', 'https', 'smtp', 'tcp') -icontains $serverType) {
             listen "$($IP):$($Port)" $serverType
+        }
+
+        # set it so ctrl-c can terminate, unless serverless
+        if (!$PodeContext.Server.IsServerless) {
+            [Console]::TreatControlCAsInput = $true
         }
 
         # start the file monitor for interally restarting
@@ -123,9 +134,6 @@ function Server
         if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -or $PodeContext.Server.IsServerless) {
             return
         }
-
-        # set it so ctrl-c can terminate
-        [Console]::TreatControlCAsInput = $true
 
         # sit here waiting for termination/cancellation, or to restart the server
         while (!(Test-PodeTerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {

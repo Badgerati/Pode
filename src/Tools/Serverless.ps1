@@ -1,17 +1,3 @@
-function Serverless
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('Azure-Functions', 'Aws-Lambda')]
-        [string]
-        $Type
-    )
-
-    $PodeContext.Server.IsServerless = $true
-    $PodeContext.Threads = 1
-    $PodeContext.Server.Type = $Type
-}
-
 function Start-PodeAzFuncServer
 {
     param (
@@ -42,20 +28,22 @@ function Start-PodeAzFuncServer
             $response.Headers = @{}
 
             # reset event data
-            $WebEvent = @{}
-            $WebEvent.OnEnd = @()
-            $WebEvent.Auth = @{}
-            $WebEvent.Response = $response
-            $WebEvent.Request = $request
-            $WebEvent.Lockable = $PodeContext.Lockable
-            $WebEvent.Method = $request.Method.ToLowerInvariant()
-            $WebEvent.Query = $request.Query
-            $WebEvent.Protocol = ($request.Url -split '://')[0]
-            $WebEvent.Endpoint = ((Get-PodeHeader -Name 'host') -split ':')[0]
-            $WebEvent.ContentType = (Get-PodeHeader -Name 'content-type')
-            $WebEvent.ErrorType = $null
-            $WebEvent.Cookies = @{}
-            $WebEvent.PendingCookies = @{}
+            $WebEvent = @{
+                OnEnd = @()
+                Auth = @{}
+                Response = $response
+                Request = $request
+                Lockable = $PodeContext.Lockable
+                Method = $request.Method.ToLowerInvariant()
+                Query = $request.Query
+                Protocol = ($request.Url -split '://')[0]
+                Endpoint = ((Get-PodeHeader -Name 'host') -split ':')[0]
+                ContentType = (Get-PodeHeader -Name 'content-type')
+                ErrorType = $null
+                Cookies = @{}
+                PendingCookies = @{}
+                Path = [string]::Empty
+            }
 
             # set the path, using static content query parameter if passed
             if (![string]::IsNullOrWhiteSpace($request.Query['static-file'])) {
@@ -124,27 +112,28 @@ function Start-PodeAwsLambdaServer
 
             # setup the response
             $response = @{
-                'StatusCode' = 200;
-                'Headers' = @{};
-                'Body' = [string]::Empty;
+                StatusCode = 200
+                Headers = @{}
+                Body = [string]::Empty
             }
 
             # reset event data
-            $WebEvent = @{}
-            $WebEvent.OnEnd = @()
-            $WebEvent.Auth = @{}
-            $WebEvent.Response = $response
-            $WebEvent.Request = $request
-            $WebEvent.Lockable = $PodeContext.Lockable
-            $WebEvent.Path = $request.path
-            $WebEvent.Method = $request.httpMethod.ToLowerInvariant()
-            $WebEvent.Query = $request.queryStringParameters
-            $WebEvent.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
-            $WebEvent.Endpoint = ((Get-PodeHeader -Name 'Host') -split ':')[0]
-            $WebEvent.ContentType = (Get-PodeHeader -Name 'Content-Type')
-            $WebEvent.ErrorType = $null
-            $WebEvent.Cookies = @{}
-            $WebEvent.PendingCookies = @{}
+            $WebEvent = @{
+                OnEnd = @()
+                Auth = @{}
+                Response = $response
+                Request = $request
+                Lockable = $PodeContext.Lockable
+                Path = $request.path
+                Method = $request.httpMethod.ToLowerInvariant()
+                Query = $request.queryStringParameters
+                Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
+                Endpoint = ((Get-PodeHeader -Name 'Host') -split ':')[0]
+                ContentType = (Get-PodeHeader -Name 'Content-Type')
+                ErrorType = $null
+                Cookies = @{}
+                PendingCookies = @{}
+            }
 
             # set pode in server response header
             Set-PodeServerHeader -Type 'Lambda'

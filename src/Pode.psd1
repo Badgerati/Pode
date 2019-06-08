@@ -80,7 +80,6 @@
         'Gui',
         'Text',
         'File',
-        'Serverless',
         'Header'
     )
 
