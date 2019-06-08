@@ -43,7 +43,7 @@ function Server
         $FileMonitorInclude,
 
         [Parameter()]
-        [Alias('rp')]
+        [Alias('rp', 'root')]
         [string]
         $RootPath,
 
