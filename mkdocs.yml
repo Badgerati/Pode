@@ -94,6 +94,7 @@ nav:
       - Cookie: Functions/Response/Cookie.md
       - Csv: Functions/Response/Csv.md
       - File: Functions/Response/File.md
+      - Header: Functions/Response/Header.md
       - Html: Functions/Response/Html.md
       - Json: Functions/Response/Json.md
       - Redirect: Functions/Response/Redirect.md
