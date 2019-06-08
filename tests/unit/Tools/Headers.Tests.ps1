@@ -4,16 +4,13 @@ Get-ChildItem "$($src)/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
 Describe 'Test-PodeHeaderExists' {
     Context 'WebServer' {
-        $serverless = $false
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
 
         It 'Returns true' {
             $WebEvent = @{ 'Request' = @{
                 'Headers' = @{
                     'test' = 'value'
                 }
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Test-PodeHeaderExists -Name 'test' | Should Be $true
@@ -22,9 +19,6 @@ Describe 'Test-PodeHeaderExists' {
         It 'Returns false for no value' {
             $WebEvent = @{ 'Request' = @{
                 'Headers' = @{}
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Test-PodeHeaderExists -Name 'test' | Should Be $false
@@ -33,9 +27,6 @@ Describe 'Test-PodeHeaderExists' {
         It 'Returns false for not existing' {
             $WebEvent = @{ 'Request' = @{
                 'Headers' = @{}
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Test-PodeHeaderExists -Name 'test' | Should Be $false
@@ -43,16 +34,13 @@ Describe 'Test-PodeHeaderExists' {
     }
 
     Context 'Serverless' {
-        $serverless = $true
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
 
         It 'Returns true' {
             $WebEvent = @{ 'Request' = @{
                 'Headers' = @{
                     'test' = 'value'
                 }
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Test-PodeHeaderExists -Name 'test' | Should Be $true
@@ -61,9 +49,6 @@ Describe 'Test-PodeHeaderExists' {
         It 'Returns false for no value' {
             $WebEvent = @{ 'Request' = @{
                 'Headers' = @{}
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Test-PodeHeaderExists -Name 'test' | Should Be $false
@@ -72,9 +57,6 @@ Describe 'Test-PodeHeaderExists' {
         It 'Returns false for not existing' {
             $WebEvent = @{ 'Request' = @{
                 'Headers' = @{}
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Test-PodeHeaderExists -Name 'test' | Should Be $false
@@ -84,16 +66,13 @@ Describe 'Test-PodeHeaderExists' {
 
 Describe 'Get-PodeHeader' {
     Context 'WebServer' {
-        $serverless = $false
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
 
         It 'Returns null for no value' {
             $WebEvent = @{ 'Request' = @{
                 'Headers' = @{
                     'test' = $null
                 }
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Get-PodeHeader -Name 'test' | Should Be $null
@@ -104,9 +83,6 @@ Describe 'Get-PodeHeader' {
                 'Headers' = @{
                     'test' = $null
                 }
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Get-PodeHeader -Name 'test' | Should Be $null
@@ -117,9 +93,6 @@ Describe 'Get-PodeHeader' {
                 'Headers' = @{
                     'test' = 'example'
                 }
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             $h = Get-PodeHeader -Name 'test'
@@ -128,16 +101,13 @@ Describe 'Get-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $serverless = $true
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
 
         It 'Returns null for no value' {
             $WebEvent = @{ 'Request' = @{
                 'Headers' = @{
                     'test' = $null
                 }
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Get-PodeHeader -Name 'test' | Should Be $null
@@ -148,9 +118,6 @@ Describe 'Get-PodeHeader' {
                 'Headers' = @{
                     'test' = $null
                 }
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             Get-PodeHeader -Name 'test' | Should Be $null
@@ -161,9 +128,6 @@ Describe 'Get-PodeHeader' {
                 'Headers' = @{
                     'test' = 'example'
                 }
-            };
-            'Server' =@{
-                'IsServerless' = $serverless
             } }
 
             $h = Get-PodeHeader -Name 'test'
@@ -174,14 +138,11 @@ Describe 'Get-PodeHeader' {
 
 Describe 'Set-PodeHeader' {
     Context 'WebServer' {
-        $serverless = $false
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
 
         It 'Sets a header to response' {
             $script:WebEvent = @{ 'Response' = @{
                 'Headers' = @{}
-            };
-            'Server' = @{
-                'IsServerless' = $serverless
             } }
 
             $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AddHeader' -Value {
@@ -195,14 +156,11 @@ Describe 'Set-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $serverless = $true
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
 
         It 'Sets a header to response' {
             $script:WebEvent = @{ 'Response' = @{
                 'Headers' = @{}
-            };
-            'Server' = @{
-                'IsServerless' = $serverless
             } }
 
             $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AddHeader' -Value {
@@ -234,14 +192,11 @@ Describe 'Set-PodeServerHeader' {
 
 Describe 'Add-PodeHeader' {
     Context 'WebServer' {
-        $serverless = $false
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
 
         It 'Adds a header to response' {
             $script:WebEvent = @{ 'Response' = @{
                 'Headers' = @{}
-            };
-            'Server' = @{
-                'IsServerless' = $serverless
             } }
 
             $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
@@ -255,14 +210,11 @@ Describe 'Add-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $serverless = $true
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
 
         It 'Adds a header to response' {
             $script:WebEvent = @{ 'Response' = @{
                 'Headers' = @{}
-            };
-            'Server' = @{
-                'IsServerless' = $serverless
             } }
 
             $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {

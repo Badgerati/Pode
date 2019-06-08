@@ -78,7 +78,7 @@ function Start-PodeAzFuncServer
         Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
 
         # close and send the response
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]$response)
+        Push-OutputBinding -Name Response -Value $response
     }
     catch {
         Write-Host $Error[0]

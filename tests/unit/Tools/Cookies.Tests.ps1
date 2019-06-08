@@ -353,6 +353,27 @@ Describe 'Update-PodeCookieExpiry' {
         ($WebEvent.PendingCookies['test'].Expires -gt [datetime]::UtcNow.AddSeconds(3000)) | Should Be $true
     }
 
+    It 'Updates the expiry based on TTL, using cookie from request' {
+        Mock Get-PodeCookie { return @{ 'Name' = 'test'; 'Expires' = [datetime]::UtcNow } }
+
+        $script:WebEvent = @{ 'Response' = @{
+            'Headers' = @{}
+        };
+        'PendingCookies' = @{} }
+
+        $script:called = $false
+        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
+            param($n, $v)
+            $script:WebEvent.Response.Headers[$n] = $v
+            $script:called = $true
+        }
+
+        Update-PodeCookieExpiry -Name 'test' -Duration 3600
+        $called | Should Be $true
+
+        ($WebEvent.PendingCookies['test'].Expires -gt [datetime]::UtcNow.AddSeconds(3000)) | Should Be $true
+    }
+
     It 'Updates the expiry based on Expiry' {
         $script:WebEvent = @{ 'Response' = @{
             'Headers' = @{}
@@ -429,6 +450,28 @@ Describe 'Remove-PodeCookie' {
         'PendingCookies' = @{
             'test' = @{ 'Name' = 'test'; 'Discard' = $false; 'Expires' = [datetime]::UtcNow }
         } }
+
+        $script:called = $false
+        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
+            param($n, $v)
+            $script:WebEvent.Response.Headers[$n] = $v
+            $script:called = $true
+        }
+
+        Remove-PodeCookie -Name 'test'
+        $called | Should Be $true
+
+        $WebEvent.PendingCookies['test'].Discard | Should Be $true
+        ($WebEvent.PendingCookies['test'].Expires -lt [datetime]::UtcNow) | Should Be $true
+    }
+
+    It 'Flags the cookie for removal, using a cookie from the request' {
+        Mock Get-PodeCookie { return @{ 'Name' = 'test'; 'Discard' = $false; 'Expires' = [datetime]::UtcNow } }
+
+        $WebEvent = @{ 'Response' = @{
+            'Headers' = @{}
+        };
+        'PendingCookies' = @{} }
 
         $script:called = $false
         $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
@@ -575,6 +618,10 @@ Describe 'Invoke-PodeCookieUnsign' {
 
         It 'Returns null for unsign data with no period' {
             Invoke-PodeCookieUnsign -Signature 's:value' -Secret 'key' | Should Be $null
+        }
+
+        It 'Returns null for invalid signing' {
+            Invoke-PodeCookieUnsign -Signature 's:value.random' -Secret 'key' | Should Be $null
         }
     }
 }
