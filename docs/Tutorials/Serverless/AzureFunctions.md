@@ -1,6 +1,6 @@
 # Azure Functions
 
-Pode has support for being used within Azure HTTP PowerShell Functions, helping you with routing and responses.
+Pode has support for being used within HTTP Azure PowerShell Functions, helping you with routing and responses.
 
 ## Setup
 
@@ -10,7 +10,7 @@ First, you'll need to have the Pode module saved within your Azure Function. At 
 Save-Module -Name Pode -Path ./Modules/ -Force
 ```
 
-With this, the Pode module will be automatically loaded by Azure for you Function.
+With this, the Pode module will be automatically loaded by Azure for your Functions.
 
 ## Usage
 
@@ -47,7 +47,7 @@ Your Function's `function.json` will also need to contain at a minimum the Reque
 
 ### The Server
 
-With the above being done, you Pode `server` can be done as follows:
+With the above being done, your Pode `server` can be created as follows:
 
 ```powershell
 server -req $TriggerMetadata -type 'azure-functions' {
@@ -87,7 +87,7 @@ server -req $TriggerMetadata -type 'azure-functions' {
 
 ### Websites
 
-You can also render websites using Pode as well. Let's say you create a `/www` directory at the root of your project, within here you can place your normal `/views`, `/public` and `/errors` directories - as well as your `pode.json` file.
+You can render websites using Pode as well. Let's say you create a `/www` directory at the root of your project, within here you can place your normal `/views`, `/public` and `/errors` directories - as well as your `pode.json` file.
 
 All you need to do then is reference this directory as the root path for your server:
 
