@@ -58,6 +58,10 @@ nav:
     - View Engines:
       - Pode: Tutorials/ViewEngines/Pode.md
       - Third Party: Tutorials/ViewEngines/ThirdParty.md
+    - Serverless:
+      - Overview: Tutorials/Serverless/Overview.md
+      - Azure Functions: Tutorials/Serverless/AzureFunctions.md
+      - AWS Lambda: Tutorials/Serverless/AwsLambda.md
     - SMTP Server: Tutorials/SmtpServer.md
     - Misc:
       - Cron Expressions: Tutorials/Misc/CronExpressions.md
@@ -94,6 +98,7 @@ nav:
       - Cookie: Functions/Response/Cookie.md
       - Csv: Functions/Response/Csv.md
       - File: Functions/Response/File.md
+      - Header: Functions/Response/Header.md
       - Html: Functions/Response/Html.md
       - Json: Functions/Response/Json.md
       - Redirect: Functions/Response/Redirect.md

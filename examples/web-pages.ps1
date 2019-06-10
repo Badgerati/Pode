@@ -28,7 +28,7 @@ Server -Threads 2 {
     access deny ip all
 
     # log requests to the terminal
-    logger terminal
+    # logger terminal
 
     # set view engine to pode renderer
     engine pode

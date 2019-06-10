@@ -43,9 +43,18 @@ function Server
         $FileMonitorInclude,
 
         [Parameter()]
-        [Alias('rp')]
+        [Alias('rp', 'root')]
         [string]
         $RootPath,
+
+        [Parameter()]
+        [Alias('r', 'req')]
+        $Request,
+
+        [Parameter()]
+        [ValidateSet('', 'Azure-Functions', 'Aws-Lambda')]
+        [string]
+        $Type,
 
         [switch]
         $Smtp,
@@ -86,7 +95,7 @@ function Server
     }
 
     try {
-        # get the current server type
+        # get the current server type for legacy purposes
         $serverType = Get-PodeServerType -Port $Port -Interval $Interval -Smtp:$Smtp -Tcp:$Tcp -Https:$Https
 
         # configure the server's root path
@@ -101,6 +110,7 @@ function Server
             -ServerRoot (coalesce $RootPath $MyInvocation.PSScriptRoot) `
             -FileMonitorExclude $FileMonitorExclude `
             -FileMonitorInclude $FileMonitorInclude `
+            -ServerType $Type `
             -DisableLogging:$DisableLogging `
             -FileMonitor:$FileMonitor
 
@@ -109,17 +119,19 @@ function Server
             listen "$($IP):$($Port)" $serverType
         }
 
-        # set it so ctrl-c can terminate
-        [Console]::TreatControlCAsInput = $true
+        # set it so ctrl-c can terminate, unless serverless
+        if (!$PodeContext.Server.IsServerless) {
+            [Console]::TreatControlCAsInput = $true
+        }
 
         # start the file monitor for interally restarting
         Start-PodeFileMonitor
 
         # start the server
-        Start-PodeServer
+        Start-PodeServer -Request $Request
 
         # at this point, if it's just a one-one off script, return
-        if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
+        if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -or $PodeContext.Server.IsServerless) {
             return
         }
 
@@ -150,11 +162,13 @@ function Server
 
 function Start-PodeServer
 {
+    param (
+        [Parameter()]
+        $Request
+    )
+
     try
     {
-        # create timer/schedules for auto-restarting
-        New-PodeAutoRestartServer
-
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 
@@ -163,8 +177,11 @@ function Start-PodeServer
         Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
         New-PodeRunspacePools
 
+        # create timer/schedules for auto-restarting
+        New-PodeAutoRestartServer
+
         $_type = $PodeContext.Server.Type.ToUpperInvariant()
-        if (![string]::IsNullOrWhiteSpace($_type))
+        if (![string]::IsNullOrWhiteSpace($_type) -and !$PodeContext.Server.IsServerless)
         {
             # start runspace for loggers
             Start-PodeLoggerRunspace
@@ -196,6 +213,14 @@ function Start-PodeServer
 
             'SERVICE' {
                 Start-PodeServiceServer
+            }
+
+            'AZURE-FUNCTIONS' {
+                Start-PodeAzFuncServer -Data $Request
+            }
+
+            'AWS-LAMBDA' {
+                Start-PodeAwsLambdaServer -Data $Request
             }
         }
     }

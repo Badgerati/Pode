@@ -565,3 +565,60 @@ Describe 'Get-PodePublicMiddleware' {
         Assert-MockCalled File -Times 1 -Scope It
     }
 }
+
+Describe 'Get-PodeCookieMiddleware' {
+    Mock Get-PodeInbuiltMiddleware { return @{
+        'Name' = $Name;
+        'Logic' = $ScriptBlock;
+    } }
+
+    It 'Returns a ScriptBlock, invokes true for not being serverless' {
+        $r = Get-PodeCookieMiddleware
+        $r.Name | Should Be '@cookie'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        (. $r.Logic @{}) | Should Be $true
+    }
+
+    It 'Returns a ScriptBlock, invokes true for cookies already being set' {
+        $r = Get-PodeCookieMiddleware
+        $r.Name | Should Be '@cookie'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        (. $r.Logic @{
+            'Cookies' = @{ 'test' = 'value' };
+        }) | Should Be $true
+    }
+
+    It 'Returns a ScriptBlock, invokes true for for no cookies on header' {
+        $r = Get-PodeCookieMiddleware
+        $r.Name | Should Be '@cookie'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        Mock Get-PodeHeader { return $null }
+
+        (. $r.Logic @{
+            'Cookies' = @{};
+        }) | Should Be $true
+    }
+
+    It 'Returns a ScriptBlock, invokes true and parses cookies' {
+        $r = Get-PodeCookieMiddleware
+        $r.Name | Should Be '@cookie'
+        $r.Logic | Should Not Be $null
+
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        Mock Get-PodeHeader { return 'key1=value1; key2=value2' }
+
+        $WebEvent = @{ 'Cookies' = @{} }
+
+        (. $r.Logic $WebEvent) | Should Be $true
+
+        $WebEvent.Cookies.Count | Should Be 2
+        $WebEvent.Cookies['key1'].Value | Should Be 'value1'
+        $WebEvent.Cookies['key2'].Value | Should Be 'value2'
+    }
+}

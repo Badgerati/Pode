@@ -1,6 +1,7 @@
 function Start-PodeFileMonitor
 {
-    if (!$PodeContext.Server.FileMonitor.Enabled) {
+    # don't configure if not supplied, or we're running as serverless
+    if (!$PodeContext.Server.FileMonitor.Enabled -or $PodeContext.Server.IsServerless) {
         return
     }
 
@@ -64,6 +65,10 @@ function Start-PodeFileMonitor
 
 function Stop-PodeFileMonitor
 {
+    if ($PodeContext.Server.IsServerless) {
+        return
+    }
+
     if ($PodeContext.Server.FileMonitor.Enabled) {
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Create) -Force
         Unregister-Event -SourceIdentifier (Get-PodeFileMonitorName Delete) -Force

@@ -23,7 +23,7 @@ If you want to keep processing and proceed to the next middleware/route then `re
 The following example is middleware that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new `Agent` key on the session for later `middleware`/`route` logic:
 
 ```powershell
-Server {
+server {
     middleware {
         # event which contains the Request/Response, and other keys
         param($event)
@@ -49,7 +49,7 @@ Server {
 Where as the following example is middleware that will only be run on requests against the `/api` route. Here, it will run Basic authentication on every API request:
 
 ```powershell
-Server {
+server {
     middleware '/api' (auth check basic)
 }
 ```
@@ -73,7 +73,7 @@ The middleware on a route can either be a single `scriptblock` or an an array of
 The following example defines a `scriptblock` to reject calls that come from a specific IP address on a specific `route`:
 
 ```powershell
-Server {
+server {
     # custom middleware to reject access to a specific IP address
     $reject_ip = {
         # same event object as supplied to global middleware/routes
@@ -105,32 +105,33 @@ Server {
 
 Although you can define your own custom middleware, Pode does have some legacy middleware with a predefined run order. This order of running is as follows:
 
-* Access Rules      - allowing/denying IP addresses (if [`access`](../../../Functions/Core/Access) logic is defined)
-* Rate limiting     - limiting access to IP addresses (if [`limit`](../../../Functions/Core/Limit) logic is defined)
-* Public content    - static content such as images/css/js/html in the `/public` directory (or other defined static paths)
-* Body parsing      - parsing request payload a JSON or XML
-* Querystring       - getting any query string parameters currently on the request URL
-* Custom middleware - runs any defined `middleware` in the order it was created
-* Route middleware  - runs any `route` middleware for the current route being processed
-* Route             - finally, the route itself is processed
-
-!!! note
-    This order will be fully customisable in future releases, which will also remove the overriding logic below.
+| Order | Middleware | Description |
+| ----- | ---------- | ----------- |
+| 1 | **Access Rules** | Allowing/Denying IP addresses (if [`access`](../../../Functions/Core/Access) logic is defined) |
+| 2 | **Rate Limiting** | Limiting access to IP addresses (if [`limit`](../../../Functions/Core/Limit) logic is defined) |
+| 3 | **Public Content** | Static Content such as images/css/js/html in the `/public` directory (or other defined static paths) |
+| 4 | **Body Parsing** | Parsing request payload as JSON, XML, or other types |
+| 5 | **Query String** | Getting any query string parameters currently on the request URL |
+| 6 | **Cookie Parsing** | Parse the cookies from the request's header (this only applies to serverless) |
+| 7 | **Custom Middleware** | Runs any defined `middleware` in the order it was created |
+| 8 | **Route Middleware** | Runs any `route` middleware for the current route being processed |
+| 9 | **Route** | Finally, the route itself is processed |
 
 ## Overriding Inbuilt
 
 Pode has inbuilt middleware as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt middlewares have a defined name, that you can pass to the `middleware` function via the `-Name` parameter:
 
-* Access control    - `@access`
-* Rate limiting     - `@limit`
-* Public content    - `@public`
-* Body parsing      - `@body`
-* Querystring       - `@query`
+* Access Control    - `@access`
+* Rate Limiting     - `@limit`
+* Public Content    - `@public`
+* Body Parsing      - `@body`
+* Query String      - `@query`
+* Cookie Parsing    - `@cookie`
 
 The following example uses rate limiting, and defines `middleware` that will override the inbuilt rate limiting logic:
 
 ```powershell
-Server {
+server {
     # attach to port 8080
     listen *:8080 http
 

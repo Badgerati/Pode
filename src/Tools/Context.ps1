@@ -22,6 +22,9 @@ function New-PodeContext
         [string[]]
         $FileMonitorInclude = $null,
 
+        [string]
+        $ServerType,
+
         [switch]
         $DisableLogging,
 
@@ -34,8 +37,11 @@ function New-PodeContext
         $Name = Get-PodeRandomName
     }
 
-    # ensure threads are always >0
-    if ($Threads -le 0) {
+    # are we running in a serverless context
+    $isServerless = (@('azure-functions', 'aws-lambda') -icontains $ServerType)
+
+    # ensure threads are always >0, for to 1 if we're serverless
+    if (($Threads -le 0) -or $isServerless) {
         $Threads = 1
     }
 
@@ -92,6 +98,11 @@ function New-PodeContext
     $ctx.Server.Type = ([string]::Empty)
     if ($Interval -gt 0) {
         $ctx.Server.Type = 'SERVICE'
+    }
+
+    if ($isServerless) {
+        $ctx.Server.Type = $ServerType.ToUpperInvariant()
+        $ctx.Server.IsServerless = $isServerless
     }
 
     # set the IP address details
@@ -225,6 +236,10 @@ function New-PodeRunspaceState
 
 function New-PodeRunspacePools
 {
+    if ($PodeContext.Server.IsServerless) {
+        return
+    }
+
     # setup main runspace pool
     $threadsCounts = @{
         'Default' = 1;
@@ -451,6 +466,9 @@ function Listen
         $Force
     )
 
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'listen' -ThrowError
+
     # parse the endpoint for host/port info
     $_endpoint = Get-PodeEndpointInfo -Endpoint $IPPort
 
@@ -659,8 +677,9 @@ function Load
 
 function New-PodeAutoRestartServer
 {
+    # don't configure if not supplied, or running as serverless
     $config = (config)
-    if ($null -eq $config -or $null -eq $config.server.restart)  {
+    if (($null -eq $config) -or ($null -eq $config.server.restart) -or $PodeContext.Server.IsServerless)  {
         return
     }
 

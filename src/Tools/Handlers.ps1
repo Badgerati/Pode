@@ -24,6 +24,9 @@ function Handler
         $ScriptBlock
     )
 
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'handler' -ThrowError
+
     # lower the type
     $Type = $Type.ToLowerInvariant()
 

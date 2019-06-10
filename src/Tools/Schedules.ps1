@@ -108,6 +108,9 @@ function Schedule
         $EndTime = $null
     )
 
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'schedule' -ThrowError
+
     # lower the name
     $Name = $Name.ToLowerInvariant()
 

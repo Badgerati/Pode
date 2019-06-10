@@ -11,7 +11,7 @@
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode is a Cross-Platform PowerShell framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines. Plus many more features!
+Pode is a Cross-Platform PowerShell framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines. Plus many more features, including [Azure Functions](https://badgerati.github.io/Pode/Tutorials/Serverless/AzureFunctions/) and [AWS Lambda](https://badgerati.github.io/Pode/Tutorials/Serverless/AwsLambda/) support!
 
 <p align="center">
     <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code.png?raw=true" />
@@ -35,6 +35,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 
 * Cross-platform using PowerShell Core (with support for PS4.0+)
 * Docker support, including images for ARM/Raspberry Pi
+* Azure Functions and AWS Lambda support
 * Listen on a single or multiple IP address/hostnames
 * Support for HTTP, HTTPS, TCP and SMTP
 * Host REST APIs, Web Pages, and Static Content (with caching)
@@ -72,7 +73,7 @@ docker pull badgerati/pode
 
 Pull Requests, Bug Reports and Feature Requests are welcome!
 
-To run the tests, run the following command from the root of the repo:
+To run the unit tests, run the following command from the root of the repository:
 
 ```powershell
 Invoke-Build Test

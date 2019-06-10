@@ -699,6 +699,10 @@ function Close-PodeRunspaces
         $ClosePool
     )
 
+    if ($PodeContext.Server.IsServerless) {
+        return
+    }
+
     try {
         if (!(Test-Empty $PodeContext.Runspaces)) {
             # sleep for 1s before doing this, to let listeners dispose
@@ -829,7 +833,7 @@ function Close-Pode
     # remove all of the pode temp drives
     Remove-PodePSDrives
 
-    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
+    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -and !$PodeContext.Server.IsServerless) {
         Write-Host " Done" -ForegroundColor Green
     }
 }
@@ -1074,6 +1078,10 @@ function Invoke-ScriptBlock
         $NoNewClosure
     )
 
+    if ($PodeContext.Server.IsServerless) {
+        $NoNewClosure = $true
+    }
+
     if (!$NoNewClosure) {
         $ScriptBlock = ($ScriptBlock).GetNewClosure()
     }
@@ -1252,7 +1260,20 @@ function ConvertFrom-PodeRequestContent
 
     # if the content-type is not multipart/form-data, get the string data
     if ($MetaData.ContentType -ine 'multipart/form-data') {
-        $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+        # get the content based on server type
+        switch ($PodeContext.Server.Type.ToLowerInvariant()) {
+            'aws-lambda' {
+                $Content = $Request.body
+            }
+
+            'azure-functions' {
+                $Content = $Request.RawBody
+            }
+
+            default {
+                $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+            }
+        }
 
         # if there is no content then do nothing
         if ([string]::IsNullOrWhiteSpace($Content)) {
@@ -1987,4 +2008,24 @@ function Get-PodeWildcardFiles
     }
 
     return $null
+}
+
+function Test-PodeIsServerless
+{
+    param (
+        [Parameter()]
+        [string]
+        $FunctionName,
+
+        [switch]
+        $ThrowError
+    )
+
+    if ($PodeContext.Server.IsServerless -and $ThrowError) {
+        throw "The $($FunctionName) function is not supported in a serverless context"
+    }
+
+    if (!$ThrowError) {
+        return $PodeContext.Server.IsServerless
+    }
 }
