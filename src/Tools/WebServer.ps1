@@ -30,6 +30,11 @@ function Engine
 
 function Start-PodeWebServer
 {
+    param (
+        [switch]
+        $Browse
+    )
+
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
         (Get-PodeAccessMiddleware),
@@ -224,5 +229,10 @@ function Start-PodeWebServer
 
     $endpoints | ForEach-Object {
         Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
+    }
+
+    # browse to the first endpoint, if flagged
+    if ($Browse) {
+        Start-Process $endpoints[0].HostName
     }
 }

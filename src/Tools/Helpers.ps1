@@ -2029,3 +2029,27 @@ function Test-PodeIsServerless
         return $PodeContext.Server.IsServerless
     }
 }
+
+function Get-PodeEndpointUrl
+{
+    param (
+        [Parameter()]
+        $Endpoint
+    )
+
+    # get the endpoint on which we're currently listening - use first if there are many
+    if ($null -eq $Endpoint) {
+        $Endpoint = $PodeContext.Server.Endpoints[0]
+    }
+
+    # work out the protocol
+    $protocol = (iftet $Endpoint.Ssl 'https' 'http')
+
+    # grab the port number
+    $port = $Endpoint.Port
+    if ($port -eq 0) {
+        $port = (iftet $Endpoint.Ssl 8443 8080)
+    }
+
+    return "$($protocol)://$($Endpoint.HostName):$($port)"
+}

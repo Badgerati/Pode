@@ -17,20 +17,7 @@ function Start-PodeGuiRunspace
             }
 
             # get the endpoint on which we're currently listening, or use explicitly passed one
-            $endpoint = $PodeContext.Server.Gui.Endpoint
-            if ($null -eq $endpoint) {
-                $endpoint = $PodeContext.Server.Endpoints[0]
-            }
-
-            $protocol = (iftet $endpoint.Ssl 'https' 'http')
-
-            # grab the port
-            $port = $endpoint.Port
-            if ($port -eq 0) {
-                $port = (iftet $endpoint.Ssl 8443 8080)
-            }
-
-            $endpoint = "$($protocol)://$($endpoint.HostName):$($port)"
+            $endpoint = (Get-PodeEndpointUrl -Endpoint $PodeContext.Server.Gui.Endpoint)
 
             # poll the server for a response
             $count = 0
