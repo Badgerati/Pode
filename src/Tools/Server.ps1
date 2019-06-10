@@ -78,7 +78,11 @@ function Server
 
         [switch]
         [Alias('fm')]
-        $FileMonitor
+        $FileMonitor,
+
+        [switch]
+        [Alias('b')]
+        $Browse
     )
 
     # ensure the session is clean
@@ -128,7 +132,7 @@ function Server
         Start-PodeFileMonitor
 
         # start the server
-        Start-PodeServer -Request $Request
+        Start-PodeServer -Request $Request -Browse:$Browse
 
         # at this point, if it's just a one-one off script, return
         if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -or $PodeContext.Server.IsServerless) {
@@ -164,7 +168,10 @@ function Start-PodeServer
 {
     param (
         [Parameter()]
-        $Request
+        $Request,
+
+        [switch]
+        $Browse
     )
 
     try
@@ -208,7 +215,7 @@ function Start-PodeServer
             }
 
             { $_ -ieq 'HTTP' -or $_ -ieq 'HTTPS' } {
-                Start-PodeWebServer
+                Start-PodeWebServer -Browse:$Browse
             }
 
             'SERVICE' {

@@ -72,3 +72,4 @@ server -Request $TriggerMetaData -Type 'azure-functions' {
 | DisableTermination | switch | false | Toggles the ability to allow using `Ctrl+C` to terminate the server | false |
 | DisableLogging | switch | false | Toggles any logging that has been setup. When `true` all logging is disabled | false |
 | FileMonitor | switch | false | When passed, any file changes will cause the server to restart | false |
+| Browse | switch | false | When passed, and running as a web server, on server start Pode will open the first endpoint in your browser | false |

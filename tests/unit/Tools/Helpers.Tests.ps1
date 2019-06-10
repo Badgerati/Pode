@@ -1130,3 +1130,47 @@ Describe 'Close-Pode' {
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 }
+
+Describe 'Get-PodeEndpointUrl' {
+    It 'Returns default endpoint url' {
+        $PodeContext = @{ Server = @{
+            Endpoints = @(@{
+                Ssl = $true
+                Port = 6000
+                Hostname = 'thing.com'
+            })
+        } }
+
+        Get-PodeEndpointUrl | Should Be 'https://thing.com:6000'
+    }
+
+    It 'Returns a passed endpoint url' {
+        $endpoint = @{
+            Ssl = $false
+            Port = 7000
+            Hostname = 'stuff.com'
+        }
+
+        Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'http://stuff.com:7000'
+    }
+
+    It 'Returns a passed endpoint url, with default port for http' {
+        $endpoint = @{
+            Ssl = $false
+            Port = 0
+            Hostname = 'stuff.com'
+        }
+
+        Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'http://stuff.com:8080'
+    }
+
+    It 'Returns a passed endpoint url, with default port for https' {
+        $endpoint = @{
+            Ssl = $true
+            Port = 0
+            Hostname = 'stuff.com'
+        }
+
+        Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'https://stuff.com:8443'
+    }
+}
