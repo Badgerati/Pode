@@ -127,6 +127,9 @@ function Gui
         $Options
     )
 
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'gui' -ThrowError
+
     # only valid for Windows PowerShell
     if (Test-IsPSCore) {
         throw 'The gui function is currently unavailable for PS Core, and only works for Windows PowerShell'
