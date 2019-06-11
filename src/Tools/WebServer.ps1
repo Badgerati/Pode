@@ -30,6 +30,11 @@ function Engine
 
 function Start-PodeWebServer
 {
+    param (
+        [switch]
+        $Browse
+    )
+
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
         (Get-PodeAccessMiddleware),
@@ -68,8 +73,8 @@ function Start-PodeWebServer
 
         # add endpoint to list
         $endpoints += @{
-            'Prefix' = "$($_protocol)://$($_ip):$($_port)/";
-            'HostName' = "$($_protocol)://$($_.HostName):$($_port)/";
+            Prefix = "$($_protocol)://$($_ip):$($_port)/"
+            HostName = "$($_protocol)://$($_.HostName):$($_port)/"
         }
     }
 
@@ -124,21 +129,24 @@ function Start-PodeWebServer
                     $response = $context.Response
 
                     # reset event data
-                    $WebEvent = @{}
-                    $WebEvent.OnEnd = @()
-                    $WebEvent.Auth = @{}
-                    $WebEvent.Response = $response
-                    $WebEvent.Request = $request
-                    $WebEvent.Lockable = $PodeContext.Lockable
-                    $WebEvent.Path = ($request.RawUrl -isplit "\?")[0]
-                    $WebEvent.Method = $request.HttpMethod.ToLowerInvariant()
-                    $WebEvent.Protocol = $request.Url.Scheme
-                    $WebEvent.Endpoint = $request.Url.Authority
-                    $WebEvent.ContentType = $request.ContentType
-                    $WebEvent.ErrorType = $null
+                    $WebEvent = @{
+                        OnEnd = @()
+                        Auth = @{}
+                        Response = $response
+                        Request = $request
+                        Lockable = $PodeContext.Lockable
+                        Path = ($request.RawUrl -isplit "\?")[0]
+                        Method = $request.HttpMethod.ToLowerInvariant()
+                        Protocol = $request.Url.Scheme
+                        Endpoint = $request.Url.Authority
+                        ContentType = $request.ContentType
+                        ErrorType = $null
+                        Cookies = $request.Cookies
+                        PendingCookies = @{}
+                    }
 
                     # set pode in server response header
-                    $response.AddHeader('Server', 'Pode - ')
+                    Set-PodeServerHeader
 
                     # add logging endware for post-request
                     Add-PodeLogEndware -WebEvent $WebEvent
@@ -221,5 +229,10 @@ function Start-PodeWebServer
 
     $endpoints | ForEach-Object {
         Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
+    }
+
+    # browse to the first endpoint, if flagged
+    if ($Browse) {
+        Start-Process $endpoints[0].HostName
     }
 }

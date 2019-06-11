@@ -612,7 +612,9 @@ Describe 'Test-PodeValidNetworkFailure' {
 Describe 'ConvertFrom-PodeRequestContent' {
     Context 'Valid values' {
         It 'Returns xml data' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $value = '<root><value>test</value></root>'
+
             Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
@@ -625,7 +627,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $value = '{ "value": "test" }'
+
             Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
@@ -637,7 +641,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns csv data' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $value = "value`ntest"
+
             Mock Read-PodeStreamToEnd { return $value }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
@@ -649,12 +655,38 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns original data' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $value = "test"
+
             Mock Read-PodeStreamToEnd { return $value }
             
             (ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
             } -ContentType 'text/custom').Data | Should Be 'test'
+        }
+
+        It 'Returns json data for azure-functions' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'Azure-Functions' } }
+
+            $result = ConvertFrom-PodeRequestContent -Request @{
+                'ContentEncoding' = [System.Text.Encoding]::UTF8;
+                'RawBody' = '{ "value": "test" }';
+            } -ContentType 'application/json'
+
+            $result.Data | Should Not Be $null
+            $result.Data.value | Should Be 'test'
+        }
+
+        It 'Returns json data for aws-lambda' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'Aws-Lambda' } }
+
+            $result = ConvertFrom-PodeRequestContent -Request @{
+                'ContentEncoding' = [System.Text.Encoding]::UTF8;
+                'body' = '{ "value": "test" }';
+            } -ContentType 'application/json'
+
+            $result.Data | Should Not Be $null
+            $result.Data.value | Should Be 'test'
         }
     }
 }
@@ -796,6 +828,11 @@ Describe 'Remove-PodeEmptyItemsFromArray' {
 
 Describe 'Invoke-ScriptBlock' {
     It 'Runs scriptblock unscoped, unsplatted, no-args' {
+        Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
+    }
+
+    It 'Runs scriptblock unscoped, unsplatted, no-args, force closure for serverless' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
         Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
     }
 
@@ -1036,5 +1073,104 @@ Describe 'Get-PodeWildcardFiles' {
 
     It 'Returns null for non-wildcard path' {
         Get-PodeWildcardFiles -Path './some/path/file.txt' | Should Be $null
+    }
+}
+
+Describe 'Test-PodeIsServerless' {
+    It 'Returns true' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        Test-PodeIsServerless | Should Be $true
+    }
+
+    It 'Returns false' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        Test-PodeIsServerless | Should Be $false
+    }
+
+    It 'Throws error if serverless' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        { Test-PodeIsServerless -ThrowError } | Should Throw 'not supported in a serverless'
+    }
+
+    It 'Throws no error if not serverless' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        { Test-PodeIsServerless -ThrowError } | Should Not Throw 'not supported in a serverless'
+    }
+}
+
+Describe 'Close-PodeRunspaces' {
+    It 'Returns and does nothing if serverless' {
+        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        Close-PodeRunspaces -ClosePool
+    }
+}
+
+Describe 'Close-Pode' {
+    Mock Close-PodeRunspaces { }
+    Mock Stop-PodeFileMonitor { }
+    Mock Dispose { }
+    Mock Remove-PodePSDrives { }
+    Mock Write-Host { }
+
+    It 'Closes out pode, but with no done flag' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
+        Close-Pode
+        Assert-MockCalled Write-Host -Times 0 -Scope It
+    }
+
+    It 'Closes out pode, but with the done flag' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
+        Close-Pode -Exit
+        Assert-MockCalled Write-Host -Times 1 -Scope It
+    }
+
+    It 'Closes out pode, but with no done flag if serverless' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server'; 'IsServerless' = $true } }
+        Close-Pode -Exit
+        Assert-MockCalled Write-Host -Times 0 -Scope It
+    }
+}
+
+Describe 'Get-PodeEndpointUrl' {
+    It 'Returns default endpoint url' {
+        $PodeContext = @{ Server = @{
+            Endpoints = @(@{
+                Ssl = $true
+                Port = 6000
+                Hostname = 'thing.com'
+            })
+        } }
+
+        Get-PodeEndpointUrl | Should Be 'https://thing.com:6000'
+    }
+
+    It 'Returns a passed endpoint url' {
+        $endpoint = @{
+            Ssl = $false
+            Port = 7000
+            Hostname = 'stuff.com'
+        }
+
+        Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'http://stuff.com:7000'
+    }
+
+    It 'Returns a passed endpoint url, with default port for http' {
+        $endpoint = @{
+            Ssl = $false
+            Port = 0
+            Hostname = 'stuff.com'
+        }
+
+        Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'http://stuff.com:8080'
+    }
+
+    It 'Returns a passed endpoint url, with default port for https' {
+        $endpoint = @{
+            Ssl = $true
+            Port = 0
+            Hostname = 'stuff.com'
+        }
+
+        Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'https://stuff.com:8443'
     }
 }

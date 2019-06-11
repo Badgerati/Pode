@@ -1,7 +1,7 @@
 function Start-PodeGuiRunspace
 {
-    # do nothing if gui not enabled
-    if (!$PodeContext.Server.Gui.Enabled) {
+    # do nothing if gui not enabled, or running as serverless
+    if (!$PodeContext.Server.Gui.Enabled -or $PodeContext.Server.IsServerless) {
         return
     }
 
@@ -17,20 +17,7 @@ function Start-PodeGuiRunspace
             }
 
             # get the endpoint on which we're currently listening, or use explicitly passed one
-            $endpoint = $PodeContext.Server.Gui.Endpoint
-            if ($null -eq $endpoint) {
-                $endpoint = $PodeContext.Server.Endpoints[0]
-            }
-
-            $protocol = (iftet $endpoint.Ssl 'https' 'http')
-
-            # grab the port
-            $port = $endpoint.Port
-            if ($port -eq 0) {
-                $port = (iftet $endpoint.Ssl 8443 8080)
-            }
-
-            $endpoint = "$($protocol)://$($endpoint.HostName):$($port)"
+            $endpoint = (Get-PodeEndpointUrl -Endpoint $PodeContext.Server.Gui.Endpoint)
 
             # poll the server for a response
             $count = 0
@@ -126,6 +113,9 @@ function Gui
         [hashtable]
         $Options
     )
+
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'gui' -ThrowError
 
     # only valid for Windows PowerShell
     if (Test-IsPSCore) {

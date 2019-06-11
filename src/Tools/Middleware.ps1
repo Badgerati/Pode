@@ -39,7 +39,7 @@ function Invoke-PodeMiddleware
             $WebEvent.Middleware = @{ 'Options' = $midware.Options }
 
             # invoke the middleware logic
-            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $WebEvent -Scoped -Return
+            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $WebEvent -Return -Scoped
 
             # remove any custom middleware options
             $WebEvent.Middleware.Clear()
@@ -229,6 +229,46 @@ function Get-PodeQueryMiddleware
             status 400 -e $_
             return $false
         }
+    })
+}
+
+function Get-PodeCookieMiddleware
+{
+    return (Get-PodeInbuiltMiddleware -Name '@cookie' -ScriptBlock {
+        param($e)
+
+        # if it's not serverless, return
+        if (!$PodeContext.Server.IsServerless) {
+            return $true
+        }
+
+        # if cookies already set, return
+        if ($e.Cookies.Count -gt 0) {
+            return $true
+        }
+
+        # if the request's header has no cookies, return
+        $h_cookie = (Get-PodeHeader -Name 'Cookie')
+        if ([string]::IsNullOrWhiteSpace($h_cookie)) {
+            return $true
+        }
+
+        # parse the cookies from the header
+        $cookies = @($h_cookie -split '; ')
+        $e.Cookies = @{}
+
+        foreach ($cookie in $cookies) {
+            $atoms = @($cookie -split '=')
+
+            $value = [string]::Empty
+            if ($atoms.Length -gt 1) {
+                $value = ($atoms[1..($atoms.Length - 1)] -join ([string]::Empty))
+            }
+
+            $e.Cookies[$atoms[0]] = [System.Net.Cookie]::new($atoms[0], $value)
+        }
+
+        return $true
     })
 }
 

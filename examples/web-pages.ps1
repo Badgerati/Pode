@@ -10,7 +10,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -Threads 2 {
+Server -Threads 2 -Browse {
 
     # listen on localhost:8085
     listen localhost:$Port http
@@ -28,7 +28,7 @@ Server -Threads 2 {
     access deny ip all
 
     # log requests to the terminal
-    logger terminal
+    # logger terminal
 
     # set view engine to pode renderer
     engine pode

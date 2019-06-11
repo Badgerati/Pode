@@ -1,5 +1,20 @@
 # Release Notes
 
+## v0.31.0
+
+```plain
+### Features
+* #264: Support for Azure Functions and AWS Lambda
+* #264: New `header` function for adding/setting and getting header values from the Request/Response
+
+### Enhancements
+* #264: Cookies are now done via the "Set-Cookie" header, meaning `cookie` now appropriately sets multiple cookies
+* #266: Have a `-Browse` flag on the `server` to auto-launch the website in a browser
+
+### Bugs
+* #264: The `text` function now sets the content-type to "text/plain" by default
+```
+
 ## v0.30.0
 
 ```plain

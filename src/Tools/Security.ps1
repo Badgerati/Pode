@@ -192,6 +192,9 @@ function Limit
         $Group
     )
 
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'limit' -ThrowError
+
     # if it's array add them all
     if ((Get-PodeType $Value).BaseName -ieq 'array') {
         $Value | ForEach-Object {
@@ -310,6 +313,9 @@ function Access
         [object]
         $Value
     )
+
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'access' -ThrowError
 
     # if it's array add them all
     if ((Get-PodeType $Value).BaseName -ieq 'array') {
@@ -563,8 +569,9 @@ function Get-PodeCsrfToken
     }
 
     # check the headers
-    if (!(Test-Empty $WebEvent.Request.Headers[$key])) {
-        return $WebEvent.Request.Headers[$key]
+    $value = (Get-PodeHeader -Name $key)
+    if (!(Test-Empty $value)) {
+        return $value
     }
 
     return $null

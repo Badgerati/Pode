@@ -9,7 +9,7 @@ function Text
         [Parameter()]
         [Alias('ctype', 'ct')]
         [string]
-        $ContentType = $null,
+        $ContentType = 'text/plain',
 
         [Parameter()]
         [Alias('a')]
@@ -34,14 +34,14 @@ function Text
 
     # if the response stream isn't writable, return
     $res = $WebEvent.Response
-    if (($null -eq $res) -or ($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite) {
+    if (($null -eq $res) -or (!$PodeContext.Server.IsServerless -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite))) {
         return
     }
 
     # set a cache value
     if ($Cache) {
-        $res.AddHeader('Cache-Control', "max-age=$($MaxAge), must-revalidate")
-        $res.AddHeader('Expires', [datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
+        Set-PodeHeader -Name 'Cache-Control' -Value "max-age=$($MaxAge), must-revalidate"
+        Set-PodeHeader -Name 'Expires' -Value ([datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
     }
 
     # specify the content-type if supplied (adding utf-8 if missing)
@@ -54,27 +54,34 @@ function Text
         $res.ContentType = $ContentType
     }
 
-    # convert string to bytes
-    if ($valueType -ieq 'string') {
-        $Value = ConvertFrom-PodeValueToBytes -Value $Value
+    # if we're serverless, set the string as the body
+    if ($PodeContext.Server.IsServerless) {
+        $res.Body = $Value
     }
 
-    # write the content to the response stream
-    $res.ContentLength64 = $Value.Length
-
-    try {
-        $ms = New-Object -TypeName System.IO.MemoryStream
-        $ms.Write($Value, 0, $Value.Length)
-        $ms.WriteTo($res.OutputStream)
-        $ms.Close()
-    }
-    catch {
-        if ((Test-PodeValidNetworkFailure $_.Exception)) {
-            return
+    else {
+        # convert string to bytes
+        if ($valueType -ieq 'string') {
+            $Value = ConvertFrom-PodeValueToBytes -Value $Value
         }
 
-        $_.Exception | Out-Default
-        throw
+        # write the content to the response stream
+        $res.ContentLength64 = $Value.Length
+
+        try {
+            $ms = New-Object -TypeName System.IO.MemoryStream
+            $ms.Write($Value, 0, $Value.Length)
+            $ms.WriteTo($res.OutputStream)
+            $ms.Close()
+        }
+        catch {
+            if ((Test-PodeValidNetworkFailure $_.Exception)) {
+                return
+            }
+
+            $_.Exception | Out-Default
+            throw
+        }
     }
 }
 
@@ -161,21 +168,38 @@ function Attach
     $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
 
     try {
-        # open up the file as a stream
-        $fs = (Get-Item $Path).OpenRead()
-
-        # setup the response details and headers
-        $WebEvent.Response.ContentLength64 = $fs.Length
-        $WebEvent.Response.SendChunked = $false
+        # setup the content type and disposition
         $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
-        $WebEvent.Response.AddHeader('Content-Disposition', "attachment; filename=$($filename)")
+        Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
-        # set file as an attachment on the response
-        $buffer = [byte[]]::new(64 * 1024)
-        $read = 0
+        # if serverless, get the content raw and return
+        if ($PodeContext.Server.IsServerless) {
+            if (Test-IsPSCore) {
+                $content = (Get-Content -Path $Path -Raw -AsByteStream)
+            }
+            else {
+                $content = (Get-Content -Path $Path -Raw -Encoding byte)
+            }
 
-        while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-            $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+            $WebEvent.Response.Body = $content
+        }
+
+        # else if normal, stream the content back
+        else {
+            # setup the response details and headers
+            $WebEvent.Response.ContentLength64 = $fs.Length
+            $WebEvent.Response.SendChunked = $false
+
+            # set file as an attachment on the response
+            $buffer = [byte[]]::new(64 * 1024)
+            $read = 0
+
+            # open up the file as a stream
+            $fs = (Get-Item $Path).OpenRead()
+
+            while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+            }
         }
     }
     finally {
@@ -257,7 +281,7 @@ function Status
         $Description = (Get-PodeStatusDescription -StatusCode $Code)
     }
 
-    if (![string]::IsNullOrWhiteSpace($Description)) {
+    if (!$PodeContext.Server.IsServerless -and ![string]::IsNullOrWhiteSpace($Description)) {
         $WebEvent.Response.StatusDescription = $Description
     }
 
@@ -324,7 +348,7 @@ function Redirect
         $Url = "$($Protocol)://$($Endpoint)$($PortStr)$($uri.PathAndQuery)"
     }
 
-    $WebEvent.Response.RedirectLocation = $Url
+    Set-PodeHeader -Name 'Location' -Value $Url
 
     if ($Moved) {
         status 301 'Moved'
@@ -357,7 +381,7 @@ function Json
     elseif (Test-Empty $Value) {
         $Value = '{}'
     }
-    elseif ((Get-PodeType $Value).Name -ine 'string') {
+    elseif ($Value -isnot 'string') {
         $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
     }
 
@@ -387,7 +411,7 @@ function Csv
     elseif (Test-Empty $Value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-PodeType $Value).Name -ine 'string') {
+    elseif ($Value -isnot 'string') {
         $Value = @(foreach ($v in $Value) {
             New-Object psobject -Property $v
         })
@@ -426,7 +450,7 @@ function Xml
     elseif (Test-Empty $value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-PodeType $Value).Name -ine 'string') {
+    elseif ($Value -isnot 'string') {
         $Value = @(foreach ($v in $Value) {
             New-Object psobject -Property $v
         })
@@ -460,7 +484,7 @@ function Html
     elseif (Test-Empty $value) {
         $Value = [string]::Empty
     }
-    elseif ((Get-PodeType $Value).Name -ine 'string') {
+    elseif ($Value -isnot 'string') {
         $Value = ($Value | ConvertTo-Html)
     }
 
@@ -657,6 +681,10 @@ function Tcp
         $Client
     )
 
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'tcp' -ThrowError
+
+    # use the main client if one isn't supplied
     if ($null -eq $Client) {
         $Client = $TcpEvent.Client
     }

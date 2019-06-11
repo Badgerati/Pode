@@ -96,6 +96,9 @@ function Timer
         $Skip = 0
     )
 
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'timer' -ThrowError
+
     # lower the name
     $Name = $Name.ToLowerInvariant()
 
