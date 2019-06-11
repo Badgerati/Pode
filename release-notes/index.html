@@ -343,6 +343,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0310" title="v0.31.0" class="md-nav__link">
+    v0.31.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0300" title="v0.30.0" class="md-nav__link">
     v0.30.0
   </a>
@@ -1293,6 +1300,66 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+    
+    <label class="md-nav__link" for="nav-4-15">
+      Serverless
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-15">
+        Serverless
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Tutorials/Serverless/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Tutorials/Serverless/AzureFunctions/" title="Azure Functions" class="md-nav__link">
+      Azure Functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Tutorials/Serverless/AwsLambda/" title="AWS Lambda" class="md-nav__link">
+      AWS Lambda
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
     <a href="../Tutorials/SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
@@ -1307,13 +1374,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
     
-    <label class="md-nav__link" for="nav-4-16">
+    <label class="md-nav__link" for="nav-4-17">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-16">
+      <label class="md-nav__title" for="nav-4-17">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1745,6 +1812,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Functions/Response/Header/" title="Header" class="md-nav__link">
+      Header
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Functions/Response/Html/" title="Html" class="md-nav__link">
       Html
     </a>
@@ -2106,6 +2185,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v0310" title="v0.31.0" class="md-nav__link">
+    v0.31.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v0300" title="v0.30.0" class="md-nav__link">
     v0.30.0
   </a>
@@ -2321,6 +2407,20 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v0310">v0.31.0</h2>
+<div class="codehilite"><pre><span></span>### Features
+* #264: Support for Azure Functions and AWS Lambda
+* #264: New `header` function for adding/setting and getting header values from the Request/Response
+
+### Enhancements
+* #264: Cookies are now done via the &quot;Set-Cookie&quot; header, meaning `cookie` now appropriately sets multiple cookies
+* #266: Have a `-Browse` flag on the `server` to auto-launch the website in a browser
+
+### Bugs
+* #264: The `text` function now sets the content-type to &quot;text/plain&quot; by default
+</pre></div>
+
+
 <h2 id="v0300">v0.30.0</h2>
 <div class="codehilite"><pre><span></span>### Enhancements
 * #245: Support for Windows AD group validation on the inbuilt &#39;windows-ad&#39; authentication validator

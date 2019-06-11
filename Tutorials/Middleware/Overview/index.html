@@ -1131,6 +1131,66 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+    
+    <label class="md-nav__link" for="nav-4-15">
+      Serverless
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-15">
+        Serverless
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Serverless/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Serverless/AzureFunctions/" title="Azure Functions" class="md-nav__link">
+      Azure Functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Serverless/AwsLambda/" title="AWS Lambda" class="md-nav__link">
+      AWS Lambda
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
     <a href="../../SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
@@ -1145,13 +1205,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
     
-    <label class="md-nav__link" for="nav-4-16">
+    <label class="md-nav__link" for="nav-4-17">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-16">
+      <label class="md-nav__title" for="nav-4-17">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1583,6 +1643,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Response/Header/" title="Header" class="md-nav__link">
+      Header
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Response/Html/" title="Html" class="md-nav__link">
       Html
     </a>
@@ -2004,7 +2076,7 @@
 <p>The <code>middleware</code> function takes a scriptblock, of which itself accepts a single parameter for the current web event (similar to a <code>route</code>). The event object passed contains the current <code>Request</code> and <code>Response</code> objects - you can also add more custom objects to it, as the event is just a <code>hashtable</code>. The <code>-Name</code> parameter is defined later, but is solely used for allowing you to override the inbuilt middleware of Pode. The <code>route</code> value allows you to specify which routes to run the middleware against.</p>
 <p>If you want to keep processing and proceed to the next middleware/route then <code>return $true</code> from the scriptblock, otherwise <code>return $false</code> and the response will be closed immediately.</p>
 <p>The following example is middleware that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new <code>Agent</code> key on the session for later <code>middleware</code>/<code>route</code> logic:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">middleware</span> <span class="p">{</span>
         <span class="c"># event which contains the Request/Response, and other keys</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$event</span><span class="p">)</span>
@@ -2029,7 +2101,7 @@
 
 
 <p>Where as the following example is middleware that will only be run on requests against the <code>/api</code> route. Here, it will run Basic authentication on every API request:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">middleware</span> <span class="s1">&#39;/api&#39;</span> <span class="p">(</span><span class="n">auth</span> <span class="n">check</span> <span class="n">basic</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
@@ -2048,7 +2120,7 @@
 
 <p>The middleware on a route can either be a single <code>scriptblock</code> or an an array of <code>scriptblocks</code>. Middleware defined on routes will be run before the route itself, but after any global middleware that may have been configured.</p>
 <p>The following example defines a <code>scriptblock</code> to reject calls that come from a specific IP address on a specific <code>route</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="c"># custom middleware to reject access to a specific IP address</span>
     <span class="nv">$reject_ip</span> <span class="p">=</span> <span class="p">{</span>
         <span class="c"># same event object as supplied to global middleware/routes</span>
@@ -2079,31 +2151,74 @@
 
 <h2 id="order-of-running">Order of Running</h2>
 <p>Although you can define your own custom middleware, Pode does have some legacy middleware with a predefined run order. This order of running is as follows:</p>
-<ul>
-<li>Access Rules      - allowing/denying IP addresses (if <a href="../../../Functions/Core/Access"><code>access</code></a> logic is defined)</li>
-<li>Rate limiting     - limiting access to IP addresses (if <a href="../../../Functions/Core/Limit"><code>limit</code></a> logic is defined)</li>
-<li>Public content    - static content such as images/css/js/html in the <code>/public</code> directory (or other defined static paths)</li>
-<li>Body parsing      - parsing request payload a JSON or XML</li>
-<li>Querystring       - getting any query string parameters currently on the request URL</li>
-<li>Custom middleware - runs any defined <code>middleware</code> in the order it was created</li>
-<li>Route middleware  - runs any <code>route</code> middleware for the current route being processed</li>
-<li>Route             - finally, the route itself is processed</li>
-</ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This order will be fully customisable in future releases, which will also remove the overriding logic below.</p>
-</div>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Middleware</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Access Rules</strong></td>
+<td>Allowing/Denying IP addresses (if <a href="../../../Functions/Core/Access"><code>access</code></a> logic is defined)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Rate Limiting</strong></td>
+<td>Limiting access to IP addresses (if <a href="../../../Functions/Core/Limit"><code>limit</code></a> logic is defined)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Public Content</strong></td>
+<td>Static Content such as images/css/js/html in the <code>/public</code> directory (or other defined static paths)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Body Parsing</strong></td>
+<td>Parsing request payload as JSON, XML, or other types</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Query String</strong></td>
+<td>Getting any query string parameters currently on the request URL</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Cookie Parsing</strong></td>
+<td>Parse the cookies from the request's header (this only applies to serverless)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Custom Middleware</strong></td>
+<td>Runs any defined <code>middleware</code> in the order it was created</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Route Middleware</strong></td>
+<td>Runs any <code>route</code> middleware for the current route being processed</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Route</strong></td>
+<td>Finally, the route itself is processed</td>
+</tr>
+</tbody>
+</table>
 <h2 id="overriding-inbuilt">Overriding Inbuilt</h2>
 <p>Pode has inbuilt middleware as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt middlewares have a defined name, that you can pass to the <code>middleware</code> function via the <code>-Name</code> parameter:</p>
 <ul>
-<li>Access control    - <code>@access</code></li>
-<li>Rate limiting     - <code>@limit</code></li>
-<li>Public content    - <code>@public</code></li>
-<li>Body parsing      - <code>@body</code></li>
-<li>Querystring       - <code>@query</code></li>
+<li>Access Control    - <code>@access</code></li>
+<li>Rate Limiting     - <code>@limit</code></li>
+<li>Public Content    - <code>@public</code></li>
+<li>Body Parsing      - <code>@body</code></li>
+<li>Query String      - <code>@query</code></li>
+<li>Cookie Parsing    - <code>@cookie</code></li>
 </ul>
 <p>The following example uses rate limiting, and defines <code>middleware</code> that will override the inbuilt rate limiting logic:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="c"># attach to port 8080</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 

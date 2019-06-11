@@ -1068,6 +1068,66 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-15" type="checkbox" id="nav-4-15">
+    
+    <label class="md-nav__link" for="nav-4-15">
+      Serverless
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-15">
+        Serverless
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Serverless/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Serverless/AzureFunctions/" title="Azure Functions" class="md-nav__link">
+      Azure Functions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Serverless/AwsLambda/" title="AWS Lambda" class="md-nav__link">
+      AWS Lambda
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
     <a href="../../../Tutorials/SmtpServer/" title="SMTP Server" class="md-nav__link">
       SMTP Server
@@ -1082,13 +1142,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-16" type="checkbox" id="nav-4-16">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-17" type="checkbox" id="nav-4-17">
     
-    <label class="md-nav__link" for="nav-4-16">
+    <label class="md-nav__link" for="nav-4-17">
       Misc
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-16">
+      <label class="md-nav__title" for="nav-4-17">
         Misc
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1413,6 +1473,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-5" title="Example 5" class="md-nav__link">
+    Example 5
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1600,6 +1667,18 @@
   <li class="md-nav__item">
     <a href="../../Response/File/" title="File" class="md-nav__link">
       File
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Response/Header/" title="Header" class="md-nav__link">
+      Header
     </a>
   </li>
 
@@ -2013,6 +2092,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-5" title="Example 5" class="md-nav__link">
+    Example 5
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2046,15 +2132,15 @@
                 
                 <h1 id="server">Server</h1>
 <h2 id="description">Description</h2>
-<p>The <code>Server</code> function is the most important function throughout all of Pode, as it's the only function that is mandatory in your scripts. Within the scriptblock supplied to the <code>Server</code> is where you place all of your main server logic - routes, timers, middleware, etc.</p>
+<p>The <code>server</code> function is the most important function throughout all of Pode, as it's the only function that is mandatory in your scripts. The scriptblock you supply to the <code>server</code> is where you place all of your main server logic - routes, timers, middleware, etc.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>You can only have one <code>Server</code> declared within your script</p>
+<p>You can only have one <code>server</code> declared within your script</p>
 </div>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
 <p>The following example will run the scriptblock once, printing out <code>Hello, world!</code>, and then exit:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="nb">Write-Host</span> <span class="s1">&#39;Hello, world!&#39;</span>
 <span class="p">}</span>
 </pre></div>
@@ -2062,7 +2148,7 @@
 
 <h3 id="example-2">Example 2</h3>
 <p>The following will start a server that repeats the scriptblock every 5 seconds:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="n">-Interval</span> <span class="n">5</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="n">-Interval</span> <span class="n">5</span> <span class="p">{</span>
     <span class="nb">Write-Host</span> <span class="s1">&#39;Hey!&#39;</span>
 <span class="p">}</span>
 </pre></div>
@@ -2070,15 +2156,23 @@
 
 <h3 id="example-3">Example 3</h3>
 <p>The following server will accept web requests, and handle them across 2 threads rather than 1:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="n">-Thread</span> <span class="n">2</span> <span class="p">{</span>
-    <span class="c"># route logic</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="n">-Thread</span> <span class="n">2</span> <span class="p">{</span>
+    <span class="n">listen</span> <span class="n">localhost</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <h3 id="example-4">Example 4</h3>
 <p>The following server will restart when it detects a file has been changed. Ie, if you start the server and then alter a web page, or change a dot-sourced script, then the server will restart:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="n">-FileMonitor</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="n">-FileMonitor</span> <span class="p">{</span>
+    <span class="c"># route logic</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="example-5">Example 5</h3>
+<p>The following server will start-up in a serverless context - such as Lambda or Functions. When running in this context you need to supply the request data passed to your serverless script:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="n">-Request</span> <span class="nv">$TriggerMetaData</span> <span class="n">-Type</span> <span class="s1">&#39;azure-functions&#39;</span> <span class="p">{</span>
     <span class="c"># route logic</span>
 <span class="p">}</span>
 </pre></div>
@@ -2125,6 +2219,20 @@
 <td>null</td>
 </tr>
 <tr>
+<td>Request</td>
+<td>object</td>
+<td>false</td>
+<td>This is the request data that is required for running in serverless, such as the <code>$TriggerMetaData</code> from Azure Functions, or the <code>$LambdaInput</code> from AWS Lambda</td>
+<td>null</td>
+</tr>
+<tr>
+<td>Type</td>
+<td>string</td>
+<td>false</td>
+<td>The type of server to run, leave empty for normal functionality. (Values: Azure-Functions, Aws-Lambda)</td>
+<td>empty</td>
+</tr>
+<tr>
 <td>DisableTermination</td>
 <td>switch</td>
 <td>false</td>
@@ -2143,6 +2251,13 @@
 <td>switch</td>
 <td>false</td>
 <td>When passed, any file changes will cause the server to restart</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Browse</td>
+<td>switch</td>
+<td>false</td>
+<td>When passed, and running as a web server, on server start Pode will open the first endpoint in your browser</td>
 <td>false</td>
 </tr>
 </tbody>
