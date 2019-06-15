@@ -215,7 +215,8 @@ function Start-PodeServer
             }
 
             { $_ -ieq 'HTTP' -or $_ -ieq 'HTTPS' } {
-                Start-PodeWebServer -Browse:$Browse
+                Start-PodeKestrelServer -Browse:$Browse
+                #Start-PodeWebServer -Browse:$Browse
             }
 
             'SERVICE' {

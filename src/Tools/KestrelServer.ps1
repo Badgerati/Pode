@@ -1,12 +1,151 @@
-function Start-PodeWebServer
+#using namespace System
+#using namespace System.Collections.Generic
+#using namespace System.IO
+#using namespace System.Linq
+#using namespace System.Reflection
+using namespace System.Threading
+using namespace System.Threading.Tasks
+#using namespace System.Management.Automation
+using namespace Microsoft.AspNetCore
+using namespace Microsoft.AspNetCore.Hosting
+#using namespace Microsoft.AspNetCore.Hosting.Internal
+#using namespace Microsoft.Extensions.Logging.Console
+using namespace Microsoft.AspNetCore.Builder
+using namespace Microsoft.AspNetCore.Http
+using namespace Microsoft.AspNetCore.Server.Kestrel.Core
+#using namespace Microsoft.Extensions.FileProviders
+using namespace Microsoft.AspNetCore.Routing
+using namespace Microsoft.Extensions.DependencyInjection
+#using namespace Microsoft.AspNetCore.Routing.Internal
+#using namespace Microsoft.AspNetCore.Routing.Patterns
+#using namespace Microsoft.AspNetCore.Routing.Constraints
+
+Import-Module PSLambda -Force
+
+function Write-Things($m) {
+    # this fails
+    #if (Test-Empty $m) {
+    #    Write-Host 'eek'
+    #}
+    #else {
+        Write-Host $m
+    #}
+}
+
+class Something
+{
+    [void] static TestLoop($a) {
+        write-host 'starting'
+        start-sleep -seconds 2
+        write-host 'ending'
+        #foreach ($i in $a) { Write-Things $i }
+    }
+}
+
+class PodeStartup
+{
+    [void] Configure([IApplicationBuilder]$app, [IHostingEnvironment]$env) {
+        Write-Host "Configuring Pode"
+        #if($Script:UseFileServer) {
+        #    [FileServerExtensions]::UseFileServer($app, $true)
+        #}
+
+        #$rb = [RouteBuilder]::new($app);
+        #$app.Use([Func[RequestDelegate,RequestDelegate]]{
+        #    param($a, $b)
+        #})
+
+        $r = [RouteHandler]::new([RequestDelegate][PSDelegate]{
+            param([DefaultHttpContext]$context)
+            $req = $context.Request
+            [Console]::WriteLine($req.Path.Value)
+            [Something]::TestLoop(1..100)
+            [Task] $task = [HttpResponseWritingExtensions]::WriteAsync($context.Response, 'Hello!', [CancellationToken]::None)
+            $task.GetAwaiter()
+            return $task
+            #return $context.Response.WriteAsync("Hello!")
+        })
+
+        $rb = [RouteBuilder]::new($app, $r)
+
+        #[Microsoft.AspNetCore.BuilderMapRouteRouteBuilderExtensions]::MapRoute($rb,
+        [MapRouteRouteBuilderExtensions]::MapRoute($rb,
+            "Track Package Route",
+            "/{operation:regex(.*)}")
+
+        $routes = $rb.Build()
+        #[Microsoft.AspNetCore.Builder.RoutingBuilderExtensions]::UseRouter($app, $routes)
+        [RoutingBuilderExtensions]::UseRouter($app, $routes)
+
+        #[Microsoft.AspNetCore.Builder.StatusCodePagesExtensions]::UseStatusCodePages($app)
+        #[Microsoft.AspNetCore.Builder.ExceptionHandlerExtensions]::UseExceptionHandler($app, {
+        #    param($handler)
+        #    $handler | Out-Default
+        #})
+
+        #[Microsoft.AspNetCore.Builder.RunExtensions]::Run($app, {
+        #    param($context)
+        #    'hello' | Out-Default
+        #    $context | Out-Default
+        #})
+
+        #[RequestDelegate][PSDelegate]{
+        #    param([HttpContext] $httpContext)
+        #    [Console]::WriteLine("DefaultEndpointDataSource One")
+        #    [HttpResponse] $response = $httpContext.Response
+        #    [Task] $task = [HttpResponseWritingExtensions]::WriteAsync($response, 'DefaultEndpointDataSource One', [CancellationToken]::None)
+        #    $task.GetAwaiter()
+        #    return $task
+        #}
+    }
+
+    [void] ConfigureServices([IServiceCollection]$svc) {
+        Write-Host "Configuring Pode Services"
+        #[Microsoft.Extensions.DependencyInjection.RoutingServiceCollectionExtensions]::AddRouting($svc)
+        [RoutingServiceCollectionExtensions]::AddRouting($svc)
+    }
+}
+
+function Start-PodeKestrelServer
 {
     param (
         [switch]
         $Browse
     )
 
+    if (!(Test-IsPSCore)) {
+        throw 'Needs to be run from PowerShell Core'
+    }
+
+    Write-Host 'Create'
+
+    $builder = [WebHostBuilder]::new()
+    $builder = [WebHostBuilderExtensions]::UseStartup($builder, [PodeStartup])
+    $builder = [WebHostBuilderKestrelExtensions]::UseKestrel($builder, [Action[KestrelServerOptions]] {
+        param($options)
+
+        $options.Listen([IPAddress]::Any, 8090)
+
+        # $options.Listen([IPAddress]::Any, 8081,
+        # { param($listenOptions)
+        #     $listenOptions.UseHttps("testCert.pfx", "testPassword");
+        # });
+    })
+
+    #$builder = $builder.ConfigureServices([Action[IServiceCollection]] {
+    #    param($svc)
+    #    $svc.AddRouting()
+    #})
+
+    $webhost = $builder.build()
+    [WebHostExtensions]::RunAsync($webhost, $PodeContext.Tokens.Cancellation.Token)
+    #$l = $webhost.Start()
+    #$l.StartAsync($PodeContext.Tokens.Cancellation)
+
+    Write-Host 'End'
+
     # setup any inbuilt middleware
-    $inbuilt_middleware = @(
+    <#$inbuilt_middleware = @(
         (Get-PodeAccessMiddleware),
         (Get-PodeLimitMiddleware),
         (Get-PodePublicMiddleware),
@@ -204,5 +343,5 @@ function Start-PodeWebServer
     # browse to the first endpoint, if flagged
     if ($Browse) {
         Start-Process $endpoints[0].HostName
-    }
+    }#>
 }

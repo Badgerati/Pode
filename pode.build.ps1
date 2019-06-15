@@ -161,6 +161,17 @@ task Pack -If (Test-IsWindows) 7Zip, ChocoPack
 
 
 <#
+# Building
+#>
+
+#TODO: Support for xplat
+# Synopsis: Build and Download dependencies
+task Build {
+    exec{ nuget install Microsoft.AspNetCore.App -Version 2.2.5 -OutputDirectory "./src/bin/nuget" }
+}
+
+
+<#
 # Testing
 #>
 
