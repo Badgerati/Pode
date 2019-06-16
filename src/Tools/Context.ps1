@@ -105,6 +105,8 @@ function New-PodeContext
         $ctx.Server.IsServerless = $isServerless
     }
 
+    $ctx.Server.IsKestrel = $false
+
     # set the IP address details
     $ctx.Server.Endpoints = @()
 

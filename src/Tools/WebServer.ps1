@@ -110,6 +110,7 @@ function Start-PodeWebServer
                         Protocol = $request.Url.Scheme
                         Endpoint = $request.Url.Authority
                         ContentType = $request.ContentType
+                        RemoteIpAddress = $request.RemoteEndPoint.Address
                         ErrorType = $null
                         Cookies = $request.Cookies
                         PendingCookies = @{}

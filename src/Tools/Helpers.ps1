@@ -1271,7 +1271,12 @@ function ConvertFrom-PodeRequestContent
             }
 
             default {
-                $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                if ($PodeContext.Server.IsKestrel) {
+                    $Content = Read-PodeStreamToEnd -Stream $Request.Body
+                }
+                else {
+                    $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                }
             }
         }
 
@@ -1306,7 +1311,13 @@ function ConvertFrom-PodeRequestContent
 
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
-            $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            if ($PodeContext.Server.IsKestrel) {
+                $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.Body
+            }
+            else {
+                $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            }
+
             $Lines = Get-PodeByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
 
             # get the indexes for boundary lines (start and end)

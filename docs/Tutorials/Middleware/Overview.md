@@ -80,7 +80,7 @@ server {
         param($event)
 
         # forbid access to the stated IP address
-        if ($event.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
+        if ($event.RemoteIpAddress.IPAddressToString -ieq '10.10.1.8') {
             status 403
             return $false
         }

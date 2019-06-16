@@ -164,10 +164,12 @@ task Pack -If (Test-IsWindows) 7Zip, ChocoPack
 # Building
 #>
 
-#TODO: Support for xplat
+#TODO: Support for xplat, and use Save-Module instead - for containers
 # Synopsis: Build and Download dependencies
 task Build {
-    exec{ nuget install Microsoft.AspNetCore.App -Version 2.2.5 -OutputDirectory "./src/bin/nuget" }
+    choco install nuget.commandline -y
+    Install-Module PSLambda -Force
+    exec { nuget install Microsoft.AspNetCore.App -Version 2.2.5 -OutputDirectory "./src/bin/nuget" }
 }
 
 

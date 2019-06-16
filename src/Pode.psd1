@@ -83,7 +83,7 @@
         "./bin/nuget/Microsoft.Extensions.WebEncoders.2.2.0/lib/netstandard2.0/Microsoft.Extensions.WebEncoders.dll"
 
         # In order to .Start() we needed...
-        "./bin/nuget/System.IO.Pipelines.4.5.2/lib/netstandard2.0/System.IO.Pipelines.dll"
+        "./bin/nuget/System.IO.Pipelines.4.5.3/lib/netstandard2.0/System.IO.Pipelines.dll"
         "./bin/nuget/Microsoft.AspNetCore.Connections.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Connections.Abstractions.dll"
     )
 

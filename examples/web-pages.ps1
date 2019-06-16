@@ -10,7 +10,7 @@ Import-Module "$($path)/src/Pode.psd1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -Threads 2 {
+Server -Threads 1 {
 
     # listen on localhost:8085
     listen localhost:$Port http
@@ -36,6 +36,11 @@ Server -Threads 2 {
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
         view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+    }
+
+    #TODO: Remove
+    route get '/hello' {
+        json @{ Name = 'Billy' }
     }
 
     # GET request throws fake "500" server error status code

@@ -1,10 +1,13 @@
 function Test-PodeIPLimit
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Parameter()]
         $IP
     )
+
+    if ($null -eq $IP) {
+        return $true
+    }
 
     $type = 'IP'
 
@@ -102,10 +105,13 @@ function Test-PodeIPLimit
 function Test-PodeIPAccess
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Parameter()]
         $IP
     )
+
+    if ($null -eq $IP) {
+        return $true
+    }
 
     $type = 'IP'
 

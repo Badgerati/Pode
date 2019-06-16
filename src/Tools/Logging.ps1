@@ -31,6 +31,7 @@ function Add-PodeLogEndware
     }
 }
 
+#TODO: This should take the WebEvent
 function New-PodeLogObject
 {
     param (
@@ -44,6 +45,7 @@ function New-PodeLogObject
     )
 
     return @{
+        #TODO: Replace with $WebEvent.RemoteIpAddress
         'Host' = $Request.RemoteEndPoint.Address.IPAddressToString;
         'RfcUserIdentity' = '-';
         'User' = '-';
