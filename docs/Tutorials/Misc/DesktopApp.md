@@ -1,9 +1,9 @@
 # Desktop Application
 
-Normally in Pode you define a server and run it however, using the [`gui`](../../Functions/Core/Gui) function Pode can serve the server up as a desktop application.
+Normally in Pode you define a server and run it, however if you use the [`gui`](../../Functions/Core/Gui) function Pode will serve the server up as a desktop application.
 
 !!! warning
-    Currently only supported on Windows due to using WPF. (Though it appears WPF could soon be supported on .NET Core 3)
+    Currently only supported on Windows due to using WPF.
 
 ## Setting Server to run as Application
 
@@ -13,15 +13,15 @@ To serve up you server as a desktop application you can just write you Pode serv
 gui <name> [-options @{}]
 ```
 
-The `gui` *must* have a name supplied - this is the title of the application's window. The options are a `hashtable` that define further feature to customise the window.
+The `gui` *must* have a name supplied - this is the title of the application's window. The options are a `hashtable` that define further features to customise the window.
 
 The following will create a basic web server with a single page, but when the server is run it will pop up as a desktop application:
 
 ```powershell
-Server {
-    gui 'Basic Server'
-
+server {
     listen localhost:8080 http
+
+    gui 'Basic Server'
 
     route get '/' {
         view 'index'
