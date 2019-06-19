@@ -947,6 +947,30 @@ Describe 'Convert-PodePathPatternToRegex' {
     It 'Convert empty to regex non-strict' {
         Convert-PodePathPatternsToRegex -Paths @('') -NotStrict | Should Be $null
     }
+
+    It 'Convert extension wildcard to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('state.*') | Should Be '^(state\..*)$'
+    }
+
+    It 'Convert extension wildcard to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('state.*') -NotStrict | Should Be '(state\..*)'
+    }
+
+    It 'Convert filename wildcard to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('*.json') | Should Be '^(*\.json)$'
+    }
+
+    It 'Convert filename wildcard to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('*.json') -NotStrict | Should Be '(*\.json)'
+    }
+
+    It 'Convert double wildcard to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('*.*') | Should Be '^(.*\..*)$'
+    }
+
+    It 'Convert double wildcard to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('*.*') -NotStrict | Should Be '(.*\..*)'
+    }
 }
 
 Describe 'Convert-PodePathPatternsToRegex' {
