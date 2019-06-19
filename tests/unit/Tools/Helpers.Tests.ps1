@@ -931,6 +931,22 @@ Describe 'Convert-PodePathPatternToRegex' {
     It 'Convert a path to regex, but not slashes and non-strict' {
         Convert-PodePathPatternToRegex -Path '/api*' -NotSlashes -NotStrict | Should Be '/api.*?'
     }
+
+    It 'Convert file to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('state.json') | Should Be '^(state\.json)$'
+    }
+
+    It 'Convert file to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('state.json') -NotStrict | Should Be '(state\.json)'
+    }
+
+    It 'Convert empty to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('') | Should Be $null
+    }
+
+    It 'Convert empty to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('') -NotStrict | Should Be $null
+    }
 }
 
 Describe 'Convert-PodePathPatternsToRegex' {
@@ -948,6 +964,22 @@ Describe 'Convert-PodePathPatternsToRegex' {
 
     It 'Convert paths to regex, but not slashes and non-strict' {
         Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotSlashes -NotStrict | Should Be '(/api.*?|/users.*?)'
+    }
+
+    It 'Convert paths to regex with empty' {
+        Convert-PodePathPatternsToRegex -Paths @('', '/api*', '/users*') | Should Be '^([\\/]api.*?|[\\/]users.*?)$'
+    }
+
+    It 'Convert paths to regex non-strict with empty' {
+        Convert-PodePathPatternsToRegex -Paths @('', '/api*', '/users*') -NotStrict | Should Be '([\\/]api.*?|[\\/]users.*?)'
+    }
+
+    It 'Convert paths to regex, but not slashes with empty' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '', '/users*') -NotSlashes | Should Be '^(/api.*?|/users.*?)$'
+    }
+
+    It 'Convert paths to regex, but not slashes and non-strict with empty' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*', '') -NotSlashes -NotStrict | Should Be '(/api.*?|/users.*?)'
     }
 }
 
