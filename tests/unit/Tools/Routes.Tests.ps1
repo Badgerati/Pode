@@ -580,3 +580,73 @@ Describe 'Route' {
         }
     }
 }
+
+Describe 'Remove-PodeRoute' {
+
+    Context 'Input Validation'{
+        It 'Route Empty'{
+            { Remove-PodeRoute 'GET' ' ' } | Should Throw 'No route supplied for removing the GET definition'
+        }
+    }
+
+    It 'Adds route and remove it' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Route -HttpMethod GET -Route '/users' { Write-Host 'hello' }
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+
+        Remove-PodeRoute 'GET' '/users'
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes.Keys.Count | Should be 0
+    }
+
+    It 'Adds route and remove it and remove it again' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Route -HttpMethod GET -Route '/users' { Write-Host 'hello' }
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+
+        Remove-PodeRoute 'GET' '/users'
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes.Keys.Count | Should be 0
+
+        Remove-PodeRoute 'GET' '/users'
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes.Keys.Count | Should be 0
+    }
+}
+
+Describe 'Add-PodeStaticRoute' {
+
+    Context 'Input Validation'{
+        It 'Route Empty'{
+            { Add-PodeStaticRoute ' ' 'Source' } | Should Throw 'No route supplied for static definition'
+        }
+
+        It 'Source Empty'{
+            { Add-PodeStaticRoute '/users' ' ' } | Should Throw 'No path supplied for static definition'
+        }
+
+        It 'Source file does not exist'{
+            { Add-PodeStaticRoute '/users' 'folderDoesNotExist' } | Should Throw 'Source folder supplied for static route does not exist: folderDoesNotExist'
+        }
+    }
+
+    It 'Adds basic static route' {
+        Mock Test-Path { return $true }
+        Mock New-PodePSDrive { return './assets' }
+
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
+        Add-PodeStaticRoute -Route '/assets' -Source './assets'
+
+        $route = $PodeContext.Server.Routes['static']
+        $route | Should Not Be $null
+        $route.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should Be $true
+        $route['/assets[/]{0,1}(?<file>.*)'].Path | Should Be './assets'
+    }
+}
