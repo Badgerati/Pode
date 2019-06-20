@@ -292,6 +292,158 @@ Describe 'Test-PodeCronExpression'{
             Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
         }
     }
+
+    Context 'Passing test with set of values cron' {
+        It 'Returns true for a Mondays and Tuesdays' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * * * 1,2'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for Feb and Mar' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * * 2,3 *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for 5th day of month and the 7th' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * 5,7 * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for 5th day of Feb and the 7th day of Mar' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * 5,7 2,3 *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for 14th hour and the 16th hour' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* 14,16 * * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for 30th minute and the 40th' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '30,40 * * * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for all values set' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '30,40 14,16 5,7 2,3 1,2'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+    }
+
+    Context 'Failing test with set of values cron' {
+        It 'Returns false for Jan and Mar' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * * 1,3 *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+
+        It 'Returns false for 4th day of Jan and 5th day of Mar' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * 4,5 1,3 *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+
+        It 'Returns false for 13th hour and 15th' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* 13,15 * * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+
+        It 'Returns false for 20th minute and 29th' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '20,29 * * * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+
+        It 'Returns false for all values set' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '20,29 13,15 4,5 1,3 3,4'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+    }
+
+    Context 'Passing test with range cron' {
+        It 'Returns true for a Mondays to Tuesdays' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * * * 1-2'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for Feb to Mar' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * * 2-3 *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for 5th day of month to the 7th' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * 5-7 * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for 5th day of Feb to the 7th day of Mar' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * 5-7 2-3 *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for 14th hour to the 16th hour' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* 14-16 * * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for 30th minute to the 40th' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '30-40 * * * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+
+        It 'Returns true for all values set' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '30-40 14-16 5-7 2-3 1-2'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $true
+        }
+    }
+
+    Context 'Failing test with range cron' {
+        It 'Returns false for Mar to Dec' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * * 3-12 *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+
+        It 'Returns false for 3rd day of Mar to 4th day of Dec' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* * 3-4 3-12 *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+
+        It 'Returns false for 13th hour to 23rd' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '* 15-23 * * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+
+        It 'Returns false for 20th minute to 29th' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '20-29 * * * *'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+
+        It 'Returns false for all values set' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '20-29 15-23 3-4 3-12 3-4'
+
+            Test-PodeCronExpression -Expression $cron -DateTime $inputDate | Should Be $false
+        }
+    }
 }
 
 
