@@ -650,3 +650,105 @@ Describe 'Add-PodeStaticRoute' {
         $route['/assets[/]{0,1}(?<file>.*)'].Path | Should Be './assets'
     }
 }
+
+Describe 'Update-PodeRouteSlashes' {
+    Context 'Static' {
+        It 'Update route slashes'{
+            $input = '/route'
+
+            Update-PodeRouteSlashes -Route $input -Static | Should Be '/route[/]{0,1}(?<file>.*)'
+        }
+
+        It 'Update route slashes, no slash'{
+            $input = 'route'
+
+            Update-PodeRouteSlashes -Route $input -Static | Should Be '/route[/]{0,1}(?<file>.*)'
+        }
+
+        It 'Update route slashes, ending with wildcard'{
+            $input = '/route/*'
+
+            Update-PodeRouteSlashes -Route $input -Static | Should Be '/route[/]{0,1}(?<file>.*)'
+        }
+
+        It 'Update route slashes, ending with wildcard, no slash'{
+            $input = 'route/*'
+
+            Update-PodeRouteSlashes -Route $input -Static | Should Be '/route[/]{0,1}(?<file>.*)'
+        }
+
+        It 'Update route slashes, with midpoint wildcard'{
+            $input = '/route/*/ending'
+
+            Update-PodeRouteSlashes -Route $input -Static | Should Be '/route/.*/ending[/]{0,1}(?<file>.*)'
+        }
+
+        It 'Update route slashes, with midpoint wildcard, no slash'{
+            $input = 'route/*/ending'
+
+            Update-PodeRouteSlashes -Route $input -Static | Should Be '/route/.*/ending[/]{0,1}(?<file>.*)'
+        }
+
+        It 'Update route slashes, with midpoint wildcard, ending with wildcard'{
+            $input = '/route/*/ending/*'
+
+            Update-PodeRouteSlashes -Route $input -Static | Should Be '/route/.*/ending[/]{0,1}(?<file>.*)'
+        }
+
+        It 'Update route slashes, with midpoint wildcard, ending with wildcard, no slash'{
+            $input = 'route/*/ending/*'
+
+            Update-PodeRouteSlashes -Route $input -Static | Should Be '/route/.*/ending[/]{0,1}(?<file>.*)'
+        }
+    }
+
+    Context 'Non Static' {
+        It 'Update route slashes'{
+            $input = '/route'
+
+            Update-PodeRouteSlashes -Route $input | Should Be '/route'
+        }
+
+        It 'Update route slashes, no slash'{
+            $input = 'route'
+
+            Update-PodeRouteSlashes -Route $input | Should Be '/route'
+        }
+
+        It 'Update route slashes, ending with wildcard'{
+            $input = '/route/*'
+
+            Update-PodeRouteSlashes -Route $input | Should Be '/route/.*'
+        }
+
+        It 'Update route slashes, ending with wildcard, no slash'{
+            $input = 'route/*'
+
+            Update-PodeRouteSlashes -Route $input | Should Be '/route/.*'
+        }
+
+        It 'Update route slashes, with midpoint wildcard'{
+            $input = '/route/*/ending'
+
+            Update-PodeRouteSlashes -Route $input | Should Be '/route/.*/ending'
+        }
+
+        It 'Update route slashes, with midpoint wildcard, no slash'{
+            $input = 'route/*/ending'
+
+            Update-PodeRouteSlashes -Route $input | Should Be '/route/.*/ending'
+        }
+
+        It 'Update route slashes, with midpoint wildcard, ending with wildcard'{
+            $input = '/route/*/ending/*'
+
+            Update-PodeRouteSlashes -Route $input | Should Be '/route/.*/ending/.*'
+        }
+
+        It 'Update route slashes, with midpoint wildcard, ending with wildcard, no slash'{
+            $input = 'route/*/ending/*'
+
+            Update-PodeRouteSlashes -Route $input | Should Be '/route/.*/ending/.*'
+        }
+    }
+}
