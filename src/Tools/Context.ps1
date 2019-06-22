@@ -109,14 +109,7 @@ function New-PodeContext
     $ctx.Server.Endpoints = @()
 
     # setup gui details
-    $ctx.Server.Gui = @{
-        'Enabled' = $false;
-        'Name' = $null;
-        'Icon' = $null;
-        'State' = 'Normal';
-        'ShowInTaskbar' = $true;
-        'WindowStyle' = 'SingleBorderWindow';
-    }
+    $ctx.Server.Gui = @{}
 
     # shared temp drives
     $ctx.Server.Drives = @{}
