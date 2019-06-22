@@ -752,3 +752,41 @@ Describe 'Update-PodeRouteSlashes' {
         }
     }
 }
+
+Describe 'Update-PodeRoutePlaceholders'{
+    It 'Update route placeholders, basic'{
+        $input = 'route'
+
+        Update-PodeRoutePlaceholders -Route $input | Should Be 'route'
+    }
+
+    It 'Update route placeholders'{
+        $input = ':route'
+
+        Update-PodeRoutePlaceholders -Route $input | Should Be '(?<route>[\w-_]+?)'
+    }
+
+    It 'Update route placeholders, double with no spacing'{
+        $input = ':route:placeholder'
+
+        Update-PodeRoutePlaceholders -Route $input | Should Be '(?<route>[\w-_]+?)(?<placeholder>[\w-_]+?)'
+    }
+
+    It 'Update route placeholders, double with double ::'{
+        $input = '::route:placeholder'
+
+        Update-PodeRoutePlaceholders -Route $input | Should Be ':(?<route>[\w-_]+?)(?<placeholder>[\w-_]+?)'
+    }
+
+    It 'Update route placeholders, double with slash'{
+        $input = ':route/:placeholder'
+
+        Update-PodeRoutePlaceholders -Route $input | Should Be '(?<route>[\w-_]+?)/(?<placeholder>[\w-_]+?)'
+    }
+
+    It 'Update route placeholders, no update'{
+        $input = ': route'
+
+        Update-PodeRoutePlaceholders -Route $input | Should Be ': route'
+    }
+}
