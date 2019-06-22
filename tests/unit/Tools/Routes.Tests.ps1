@@ -816,3 +816,294 @@ Describe 'Split-PodeRouteQuery'{
         Split-PodeRouteQuery -Route $input | Should Be ''
     }
 }
+
+Describe 'Get-PodeRouteByUrl'{
+    $routeBothSet = @{
+        'Protocol' = 'HTTP';
+        'Endpoint' = '/assets';
+    }
+
+    $routeEndpointSet = @{
+        'Protocol' = '';
+        'Endpoint' = '/assets';
+    }
+
+    $routeProtocolSet = @{
+        'Protocol' = 'HTTP';
+        'Endpoint' = '';
+    }
+
+    $routeNeitherSet = @{
+        'Protocol' = '';
+        'Endpoint' = '';
+    }
+
+    It 'Single route'{
+
+        $Routes = @($routeBothSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeBothSet
+    }
+
+    It 'Single route, no protocol on route'{
+
+        $Routes = @($routeEndpointSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeEndpointSet
+    }
+
+    It 'Single route, no endpoint on route'{
+
+        $Routes = @($routeProtocolSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeProtocolSet
+    }
+
+    It 'Single route, no protcol or endpoint on route'{
+
+        $Routes = @($routeNeitherSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeNeitherSet
+    }
+
+    It 'Single route, different casing, protcol'{
+
+        $Routes = @($routeBothSet)
+
+        $InputProtocol = 'HTTp'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeBothSet
+    }
+
+    It 'Single route, different casing, endpoint'{
+
+        $Routes = @($routeBothSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/asSets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeBothSet
+    }
+
+    It 'Single route, different casing, protocol endpoint'{
+
+        $Routes = @($routeBothSet)
+
+        $InputProtocol = 'HTtP'
+        $InputEndpoint = '/assEts'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeBothSet
+    }
+
+    It 'Single route, not passing protocol, no routes with no protocol'{
+
+        $Routes = @($routeBothSet)
+
+        $InputProtocol = ''
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Be $null
+    }
+
+    It 'Single route, not passing endpoint, no routes with no endpoint'{
+
+        $Routes = @($routeBothSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = ''
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Be $null
+    }
+
+    It 'Single route, not passing protocol and endpoint, no routes with no protocol and endpoint'{
+
+        $Routes = @($routeBothSet)
+
+        $InputProtocol = ''
+        $InputEndpoint = ''
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Be $null
+    }
+
+    It 'Single route, not passing protocol, route with no protocol and endpoint'{
+
+        $Routes = @($routeNeitherSet)
+
+        $InputProtocol = ''
+        $InputEndpoint = '/assests'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeNeitherSet
+    }
+
+    It 'Single route, not passing endpoint, route with no protocol and endpoint'{
+
+        $Routes = @($routeNeitherSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = ''
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeNeitherSet
+    }
+
+    It 'Single route, not passing protocol and endpoint, route with no protocol and endpoint'{
+
+        $Routes = @($routeNeitherSet)
+
+        $InputProtocol = ''
+        $InputEndpoint = ''
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeNeitherSet
+    }
+
+    It 'No routes'{
+
+        $Routes = @()
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Be $null
+    }
+
+    It 'Two routes, sorting'{
+
+        $Routes = @($routeEndpointSet, $routeBothSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeBothSet
+    }
+
+    It 'Two routes, sorting'{
+
+        $Routes = @($routeBothSet, $routeProtocolSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeBothSet
+    }
+
+    It 'Two routes, sorting'{
+
+        $Routes = @($routeBothSet, $routeNeitherSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeBothSet
+    }
+
+    It 'Many routes, sorting'{
+
+        $Routes = @($routeProtocolSet, $routeEndpointSet, $routeBothSet, $routeNeitherSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeBothSet
+    }
+
+    It 'Two routes, not passing protocol, route with no protocol and endpoint'{
+
+        $Routes = @($routeBothSet, $routeNeitherSet)
+
+        $InputProtocol = ''
+        $InputEndpoint = '/assets'
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeNeitherSet
+    }
+
+    It 'Two routes, not passing endpoint, route with no protocol and endpoint'{
+
+        $Routes = @($routeBothSet, $routeNeitherSet)
+
+        $InputProtocol = 'HTTP'
+        $InputEndpoint = ''
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeNeitherSet
+    }
+
+    It 'Two routes, not passing procotol and endpoint, route with no protocol and endpoint'{
+
+        $Routes = @($routeBothSet, $routeNeitherSet)
+
+        $InputProtocol = ''
+        $InputEndpoint = ''
+
+        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Endpoint $InputEndpoint
+
+        $Result | Should Not Be $null
+        $Result | Should Be $routeNeitherSet
+    }
+}
