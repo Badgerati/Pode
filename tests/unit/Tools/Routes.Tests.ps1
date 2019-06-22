@@ -790,3 +790,29 @@ Describe 'Update-PodeRoutePlaceholders'{
         Update-PodeRoutePlaceholders -Route $input | Should Be ': route'
     }
 }
+
+Describe 'Split-PodeRouteQuery'{
+    It 'Split route, no split'{
+        $input = 'route'
+
+        Split-PodeRouteQuery -Route $input | Should Be 'route'
+    }
+
+    It 'Split route, split'{
+        $input = 'route?'
+
+        Split-PodeRouteQuery -Route $input | Should Be 'route'
+    }
+
+    It 'Split route, split'{
+        $input = 'route?split'
+
+        Split-PodeRouteQuery -Route $input | Should Be 'route'
+    }
+
+    It 'Split route, split, first character'{
+        $input = '?route'
+
+        Split-PodeRouteQuery -Route $input | Should Be ''
+    }
+}
