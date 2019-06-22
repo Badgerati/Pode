@@ -52,6 +52,9 @@ function Start-PodeGuiRunspace
                     xmlns=`"http://schemas.microsoft.com/winfx/2006/xaml/presentation`"
                     xmlns:x=`"http://schemas.microsoft.com/winfx/2006/xaml`"
                     Title=`"$($PodeContext.Server.Gui.Name)`"
+                    Height=`"$($PodeContext.Server.Gui.Height)`"
+                    Width=`"$($PodeContext.Server.Gui.Width)`"
+                    ResizeMode=`"$($PodeContext.Server.Gui.ResizeMode)`"
                     WindowStartupLocation=`"CenterScreen`"
                     ShowInTaskbar = `"$($PodeContext.Server.Gui.ShowInTaskbar)`"
                     WindowStyle = `"$($PodeContext.Server.Gui.WindowStyle)`">
@@ -122,52 +125,60 @@ function Gui
         throw 'The gui function is currently unavailable for PS Core, and only works for Windows PowerShell'
     }
 
-    # enable the gui
+    # enable the gui and set it's title/name
     $PodeContext.Server.Gui.Enabled = $true
     $PodeContext.Server.Gui.Name = $Name
 
-    # if we have options, set them up
-    if (!(Test-Empty $Options)) {
-        if (!(Test-Empty $Options.Icon)) {
-            $PodeContext.Server.Gui['Icon'] = (Resolve-Path $Options.Icon).Path
-        }
+    # coalesce the options
+    $Options = (coalesce $Options @{})
 
-        if (!(Test-Empty $Options.ShowInTaskbar)) {
-            $PodeContext.Server.Gui['ShowInTaskbar'] = $Options.ShowInTaskbar
-        }
-
-        if (!(Test-Empty $Options.State)) {
-            $PodeContext.Server.Gui['State'] = $Options.State
-        }
-
-        if (!(Test-Empty $Options.WindowStyle)) {
-            $PodeContext.Server.Gui['WindowStyle'] = $Options.WindowStyle
-        }
-
-        if (!(Test-Empty $Options.ListenName)) {
-            $PodeContext.Server.Gui['ListenName'] = $Options.ListenName
+    # set the window's icon path
+    if (![string]::IsNullOrWhiteSpace($Options.Icon)) {
+        $PodeContext.Server.Gui.Icon = (Resolve-Path $Options.Icon).Path
+        if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
+            throw "Path to icon for GUI does not exist: $($PodeContext.Server.Gui.Icon)"
         }
     }
 
-    # validate the settings
-    $icon = $PodeContext.Server.Gui.Icon
-    if (!(Test-Empty $icon) -and !(Test-Path $icon)) {
-        throw "Path to icon for GUI does not exist: $($icon)"
-    }
+    # display the app in the taskbar?
+    $PodeContext.Server.Gui.ShowInTaskbar = (coalesce $Options.ShowInTaskbar $true)
 
-    $state = $PodeContext.Server.Gui.State
+    # set the window's state
     $states = @('Normal', 'Maximized', 'Minimized')
-    if (!(Test-Empty $state) -and ($states -inotcontains $state)) {
+    $PodeContext.Server.Gui.State = (coalesce $Options.State 'Normal')
+    if ($states -inotcontains $PodeContext.Server.Gui.State) {
         throw "Invalid GUI window state supplied, should be blank or one of $($states -join ' / ')"
     }
 
-    $style = $PodeContext.Server.Gui.WindowStyle
+    # set the window's style
     $styles = @('None', 'SingleBorderWindow', 'ThreeDBorderWindow', 'ToolWindow')
-    if (!(Test-Empty $style) -and ($styles -inotcontains $style)) {
+    $PodeContext.Server.Gui.WindowStyle = (coalesce $Options.WindowStyle 'SingleBorderWindow')
+    if ($styles -inotcontains $PodeContext.Server.Gui.WindowStyle) {
         throw "Invalid GUI window style supplied, should be blank or one of $($styles -join ' / ')"
     }
 
-    # ensure a listen endpoint with name exists - if one has been passed
+    # set the height of the window
+    $PodeContext.Server.Gui.Height = (coalesce ([int]$Options.Height) 0)
+    if ($PodeContext.Server.Gui.Height -le 0) {
+        $PodeContext.Server.Gui.Height = 'auto'
+    }
+
+    # set the width of the window
+    $PodeContext.Server.Gui.Width = (coalesce ([int]$Options.Width) 0)
+    if ($PodeContext.Server.Gui.Width -le 0) {
+        $PodeContext.Server.Gui.Width = 'auto'
+    }
+
+    # set the resize mode of the window
+    $modes = @('CanResize', 'CanMinimize', 'NoResize')
+    $PodeContext.Server.Gui.ResizeMode = (coalesce $Options.ResizeMode 'CanResize')
+    if ($modes -inotcontains $PodeContext.Server.Gui.ResizeMode) {
+        throw "Invalid GUI window resize mode supplied, should be blank or one of $($modes -join ' / ')"
+    }
+
+    # set the gui to use a specific listener
+    $PodeContext.Server.Gui.ListenName = $Options.ListenName
+
     if (!(Test-Empty $PodeContext.Server.Gui.ListenName)) {
         $found = ($PodeContext.Server.Endpoints | Where-Object {
             $_.Name -eq $PodeContext.Server.Gui.ListenName
@@ -177,6 +188,6 @@ function Gui
             throw "Listen endpoint with name '$($Name)' does not exist"
         }
 
-        $PodeContext.Server.Gui['Endpoint'] = $found
+        $PodeContext.Server.Gui.Endpoint = $found
     }
 }
