@@ -16,10 +16,10 @@ The `state` function overcomes this by letting you create a variable in a `timer
 
 ### Example 1
 
-The following example is uses a `timer` to create and update a `hashtable`, and then retrieve that variable in a `route`:
+The following example uses a `timer` to create and update a `hashtable`, and then retrieve that variable in a `route`:
 
 ```powershell
-Server {
+server {
     listen *:8080 http
 
     timer 'forever' 2 {
@@ -62,6 +62,6 @@ Server {
 
 | Name | Type | Required | Description | Default |
 | ---- | ---- | -------- | ----------- | ------- |
-| Action | string | true | The action to perform on the shared state for the variable (Values: Get, Set, Remove) | empty |
+| Action | string | true | The action to perform on the shared state for the variable (Values: Get, Set, Remove, Save, Restore) | empty |
 | Name | string | true | The name of the variable within the shared state | empty |
 | Object | object | false | Should only be supplied for an action of `set`. This is the value for the variable in the shared state | null |

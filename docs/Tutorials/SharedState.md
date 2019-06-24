@@ -25,7 +25,7 @@ state set <name> <object>
 An example of using the `set` action to create a shared hashtable variable is as follows:
 
 ```powershell
-Server {
+server {
     state set 'data' @{ 'Name' = 'Rick Sanchez' } | Out-Null
 }
 ```
@@ -33,7 +33,7 @@ Server {
 As per the tip above, it's always worth wrapping `state` actions within a `lock`. The following example will set a shared variable in a `timer`, and lock the global `Lockable` object.
 
 ```powershell
-Server {
+server {
     timer 'do-something' 5 {
         param($e)
 
@@ -57,7 +57,7 @@ state get <name>
 An example of using the `get` action to retrieve the value from the shared state is as follows:
 
 ```powershell
-Server {
+server {
     $value = (state get 'data')
 }
 ```
@@ -65,7 +65,7 @@ Server {
 As per the tip above, it's always worth wrapping `state` actions within a `lock`. The following example will get a shared variable in a `timer`, and lock the global `Lockable` object.
 
 ```powershell
-Server {
+server {
     timer 'do-something' 5 {
         param($e)
         $value = $null
@@ -92,7 +92,7 @@ state remove <name>
 An example of using the `remove` action to remove a variable from the shared state is as follows:
 
 ```powershell
-Server {
+server {
     state remove 'data' | Out-Null
 }
 ```
@@ -100,7 +100,7 @@ Server {
 As per the tip above, it's always worth wrapping `state` actions within a `lock`. The following example will remove a shared variable in a `timer`, and lock the global `Lockable` object.
 
 ```powershell
-Server {
+server {
     timer 'do-something' 5 {
         param($e)
 
@@ -113,15 +113,10 @@ Server {
 
 ## Full Example
 
-
-
-
-
 The following is a full example of using the `state` function. It is a simple `timer` that creates and updates a `hashtable` variable, and then a `route` is used to retrieve that variable. There is also another route that will remove the variable from the state:
 
-
 ```powershell
-Server {
+server {
     listen *:8080 http
 
     # create the shared variable
