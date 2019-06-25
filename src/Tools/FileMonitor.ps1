@@ -24,21 +24,29 @@ function Start-PodeFileMonitor
 
     # setup the message data for the events
     $msgData = @{
-        'Timer' = $timer;
-        'Exclude' = $PodeContext.Server.FileMonitor.Exclude;
-        'Include' = $PodeContext.Server.FileMonitor.Include;
+        Timer = $timer
+        Settings = $PodeContext.Server.FileMonitor
     }
 
     # setup the events script logic
     $action = {
         # if there are exclusions, and one matches, return
-        if (($null -ne $Event.MessageData.Exclude) -and ($Event.SourceEventArgs.Name -imatch $Event.MessageData.Exclude)) {
+        if (($null -ne $Event.MessageData.Settings.Exclude) -and ($Event.SourceEventArgs.Name -imatch $Event.MessageData.Settings.Exclude)) {
             return
         }
 
         # if there are inclusions, and none match, return
-        if (($null -ne $Event.MessageData.Include) -and ($Event.SourceEventArgs.Name -inotmatch $Event.MessageData.Include)) {
+        if (($null -ne $Event.MessageData.Settings.Include) -and ($Event.SourceEventArgs.Name -inotmatch $Event.MessageData.Settings.Include)) {
             return
+        }
+
+        # if enabled, add the file to the list of files that trigggered the restart
+        if ($Event.MessageData.Settings.ShowFiles) {
+            $name = "[$($Event.SourceEventArgs.ChangeType)] $($Event.SourceEventArgs.Name)"
+            
+            if ($Event.MessageData.Settings.Files -inotcontains $name) {
+                $Event.MessageData.Settings.Files += $name
+            }
         }
 
         # restart the timer
@@ -58,9 +66,24 @@ function Start-PodeFileMonitor
 
     # listen out for timer ticks to reset server
     Register-ObjectEvent -InputObject $timer -EventName 'Elapsed' -SourceIdentifier (Get-PodeFileMonitorTimerName) -Action {
-        $Event.MessageData.Context.Tokens.Restart.Cancel()
+        # if enabled, show the files that triggered the restart
+        if ($Event.MessageData.FileSettings.ShowFiles) {
+            Write-Host 'The following files have changed:' -ForegroundColor Magenta
+
+            foreach ($file in $Event.MessageData.FileSettings.Files) {
+                Write-Host "> $($file)" -ForegroundColor Magenta
+            }
+
+            $Event.MessageData.FileSettings.Files = @()
+        }
+
+        # trigger the restart
+        $Event.MessageData.Tokens.Restart.Cancel()
         $Event.Sender.Stop()
-    } -MessageData @{ 'Context' = $PodeContext; } -SupportEvent
+    } -MessageData @{
+        Tokens = $PodeContext.Tokens
+        FileSettings = $PodeContext.Server.FileMonitor
+    } -SupportEvent
 }
 
 function Stop-PodeFileMonitor

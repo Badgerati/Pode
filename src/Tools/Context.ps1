@@ -89,9 +89,11 @@ function New-PodeContext
     }
 
     $ctx.Server.FileMonitor = @{
-        'Enabled' = $FileMonitor;
-        'Exclude' = (Convert-PodePathPatternsToRegex -Paths $FileMonitorExclude);
-        'Include' = (Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude);
+        Enabled = $FileMonitor
+        Exclude = (Convert-PodePathPatternsToRegex -Paths $FileMonitorExclude)
+        Include = (Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude)
+        ShowFiles = [bool]$ctx.Server.Configuration.server.fileMonitor.showFiles
+        Files = @()
     }
 
     # set the server default type
