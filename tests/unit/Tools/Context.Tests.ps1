@@ -67,6 +67,25 @@ Describe 'State' {
             State -Action Remove -Name 'test' | Should Be 8
             $PodeContext.Server.State['test'] | Should Be $null
         }
+
+        It 'Saves the state to file' {
+            Mock Get-PodeRelativePath { return $Path }
+            Mock Out-File {}
+
+            $PodeContext.Server = @{ 'State' = @{ 'test' = 8 } }
+            State -Action Save -Name './state.json'
+
+            Assert-MockCalled Out-File -Times 1 -Scope It
+        }
+
+        It 'Restores the state from file' {
+            Mock Get-PodeRelativePath { return $Path }
+            Mock Test-Path { return $true }
+            Mock Get-Content { return '{ "Name": "Morty" }' }
+
+            State -Action Restore -Name './state.json'
+            State -Action Get -Name 'Name' | Should Be 'Morty'
+        }
     }
 }
 

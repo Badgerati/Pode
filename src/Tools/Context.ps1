@@ -378,7 +378,7 @@ function State
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('set', 'get', 'remove')]
+        [ValidateSet('set', 'get', 'remove', 'save', 'restore')]
         [Alias('a')]
         [string]
         $Action,
@@ -413,6 +413,33 @@ function State
             'remove' {
                 $Object = $PodeContext.Server.State[$Name]
                 $PodeContext.Server.State.Remove($Name) | Out-Null
+            }
+
+            'save' {
+                $Path = Get-PodeRelativePath -Path $Name -JoinRoot
+                $PodeContext.Server.State |
+                    ConvertTo-Json -Depth 10 |
+                    Out-File -FilePath $Path -Force |
+                    Out-Null
+                return
+            }
+
+            'restore' {
+                $Path = Get-PodeRelativePath -Path $Name -JoinRoot
+                if (!(Test-Path $Path)) {
+                    return
+                }
+
+                if (Test-IsPSCore) {
+                    $PodeContext.Server.State = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
+                }
+                else {
+                    (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties | ForEach-Object {
+                        $PodeContext.Server.State[$_.Name] = $_.Value
+                    }
+                }
+
+                return
             }
         }
 
