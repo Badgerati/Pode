@@ -426,6 +426,9 @@ function State
 
             'restore' {
                 $Path = Get-PodeRelativePath -Path $Name -JoinRoot
+                if (!(Test-Path $Path)) {
+                    return
+                }
 
                 if (Test-IsPSCore) {
                     $PodeContext.Server.State = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)

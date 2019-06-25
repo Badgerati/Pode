@@ -2,7 +2,9 @@
 
 Most things in Pode all run in isolated runspaces, which means you can't create a variable in a timer and then access that variable in a route. To overcome this limitation you can use the [`state`](../../Functions/Utility/State) function, which allows you to set/get variables on a state shared between all runspaces. This means you can create a variable in a timer and set it against the shared state; then you can retrieve that variable from the state in a route.
 
-To do this, you use the [`state`](../../Functions/Utility/State) function with an action of `set`, `get` or `remove`, in combination with the [`lock`](../../Functions/Utility/Lock) function to ensure thread safety
+You also have the option of saving the current state to a file, and then restoring the state back on server start. This way you won't lose state between server restarts.
+
+To do this, you use the [`state`](../../Functions/Utility/State) function with an action of `set`, `get`, `remove`, `save` or `restore`, in combination with the [`lock`](../../Functions/Utility/Lock) function to ensure thread safety
 
 !!! tip
     It's wise to use the `state` function in conjunction with the `lock` function, so as to ensure thread safety between runspaces. The argument object supplied to the `route`, `handler`, `timer`, `schedule`, `middleware`, `endware` and `logger` functions each contain a `.Lockable` resource that can be supplied to the `lock` function.
@@ -111,9 +113,49 @@ server {
 }
 ```
 
+### Save
+
+The `state save` action will save the current state, as JSON, to the specified file. The file can either be relative, or a literal path. When saving the state, it's recommended to wrap the action within a `lock`.
+
+The make-up of the `save` action is:
+
+```powershell
+state save <file>
+```
+
+An example of saving the current state every hour is as follows:
+
+```powershell
+server {
+    schedule 'save-state' '@hourly' {
+        lock $lockable {
+            state save './state.json'
+        }
+    }
+}
+```
+
+### Restore
+
+The `state restore` action will restore the current state from the specified file. The file can either be relative, or a literal path. if you're restoring the state immediately on server start, you don't need to use `lock`.
+
+The make-up of the `restore` action is:
+
+```powershell
+state restore <file>
+```
+
+An example of restore the current state on server start is as follows:
+
+```powershell
+server {
+    state restore './state.json'
+}
+```
+
 ## Full Example
 
-The following is a full example of using the `state` function. It is a simple `timer` that creates and updates a `hashtable` variable, and then a `route` is used to retrieve that variable. There is also another route that will remove the variable from the state:
+The following is a full example of using the `state` function. It is a simple `timer` that creates and updates a `hashtable` variable, and then a `route` is used to retrieve that variable. There is also another route that will remove the variable from the state. The state is also saved on every iteration of the timer, and restored on server start:
 
 ```powershell
 server {
@@ -121,6 +163,9 @@ server {
 
     # create the shared variable
     state set 'hash' @{ 'values' = @(); } | Out-Null
+
+    # attempt to re-initialise the state (will do nothing if the file doesn't exist)
+    state restore './state.json'
 
     # timer to add a random number to the shared state
     timer 'forever' 2 {
@@ -134,6 +179,9 @@ server {
 
             # add a random number
             $hash['values'] += (Get-Random -Minimum 0 -Maximum 10)
+
+            # save the state to file
+            state save './state.json'
         }
     }
 

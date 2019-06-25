@@ -58,6 +58,26 @@ server {
 }
 ```
 
+### Example 2
+
+The following example will restore the state from the file if it exists, and save back to the state every hour:
+
+```powershell
+server {
+    listen *:8080 http
+
+    # restore state from file
+    state restore './state.json'
+
+    # save state to file every hour
+    schedule 'save-state' '@hourly' {
+        lock $lockable {
+            state save './state.json'
+        }
+    }
+}
+```
+
 ## Parameters
 
 | Name | Type | Required | Description | Default |
