@@ -931,6 +931,46 @@ Describe 'Convert-PodePathPatternToRegex' {
     It 'Convert a path to regex, but not slashes and non-strict' {
         Convert-PodePathPatternToRegex -Path '/api*' -NotSlashes -NotStrict | Should Be '/api.*?'
     }
+
+    It 'Convert file to regex' {
+        Convert-PodePathPatternToRegex -Path 'state.json' | Should Be '^state\.json$'
+    }
+
+    It 'Convert file to regex non-strict' {
+        Convert-PodePathPatternToRegex -Path 'state.json' -NotStrict | Should Be 'state\.json'
+    }
+
+    It 'Convert empty to regex' {
+        Convert-PodePathPatternToRegex -Path '' | Should Be '^$'
+    }
+
+    It 'Convert empty to regex non-strict' {
+        Convert-PodePathPatternToRegex -Path '' -NotStrict | Should Be ''
+    }
+
+    It 'Convert extension wildcard to regex' {
+        Convert-PodePathPatternToRegex -Path 'state.*' | Should Be '^state\..*?$'
+    }
+
+    It 'Convert extension wildcard to regex non-strict' {
+        Convert-PodePathPatternToRegex -Path 'state.*' -NotStrict | Should Be 'state\..*?'
+    }
+
+    It 'Convert filename wildcard to regex' {
+        Convert-PodePathPatternToRegex -Path '*.json' | Should Be '^.*?\.json$'
+    }
+
+    It 'Convert filename wildcard to regex non-strict' {
+        Convert-PodePathPatternToRegex -Path '*.json' -NotStrict | Should Be '.*?\.json'
+    }
+
+    It 'Convert double wildcard to regex' {
+        Convert-PodePathPatternToRegex -Path '*.*' | Should Be '^.*?\..*?$'
+    }
+
+    It 'Convert double wildcard to regex non-strict' {
+        Convert-PodePathPatternToRegex -Path '*.*' -NotStrict | Should Be '.*?\..*?'
+    }
 }
 
 Describe 'Convert-PodePathPatternsToRegex' {
@@ -948,6 +988,54 @@ Describe 'Convert-PodePathPatternsToRegex' {
 
     It 'Convert paths to regex, but not slashes and non-strict' {
         Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*') -NotSlashes -NotStrict | Should Be '(/api.*?|/users.*?)'
+    }
+
+    It 'Convert paths to regex with empty' {
+        Convert-PodePathPatternsToRegex -Paths @('', '/api*', '/users*') | Should Be '^([\\/]api.*?|[\\/]users.*?)$'
+    }
+
+    It 'Convert paths to regex non-strict with empty' {
+        Convert-PodePathPatternsToRegex -Paths @('', '/api*', '/users*') -NotStrict | Should Be '([\\/]api.*?|[\\/]users.*?)'
+    }
+
+    It 'Convert paths to regex, but not slashes with empty' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '', '/users*') -NotSlashes | Should Be '^(/api.*?|/users.*?)$'
+    }
+
+    It 'Convert paths to regex, but not slashes and non-strict with empty' {
+        Convert-PodePathPatternsToRegex -Paths @('/api*', '/users*', '') -NotSlashes -NotStrict | Should Be '(/api.*?|/users.*?)'
+    }
+
+    It 'Convert empty to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('') | Should Be $null
+    }
+
+    It 'Convert empty to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('', '') | Should Be $null
+    }
+
+    It 'Convert extension wildcard to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('state.*') | Should Be '^(state\..*?)$'
+    }
+
+    It 'Convert extension wildcard to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('state.*') -NotStrict | Should Be '(state\..*?)'
+    }
+
+    It 'Convert filename wildcard to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('*.json') | Should Be '^(.*?\.json)$'
+    }
+
+    It 'Convert filename wildcard to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('*.json') -NotStrict | Should Be '(.*?\.json)'
+    }
+
+    It 'Convert double wildcard to regex' {
+        Convert-PodePathPatternsToRegex -Paths @('*.*') | Should Be '^(.*?\..*?)$'
+    }
+
+    It 'Convert double wildcard to regex non-strict' {
+        Convert-PodePathPatternsToRegex -Paths @('*.*') -NotStrict | Should Be '(.*?\..*?)'
     }
 }
 

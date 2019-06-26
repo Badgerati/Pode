@@ -1583,9 +1583,7 @@ function Convert-PodePathPatternToRegex
 
         [switch]
         $NotStrict
-    )
-
-    $Path = $Path -ireplace '\.', '\.'
+    )    
 
     if (!$NotSlashes) {
         if ($Path -match '[\\/]\*$') {
@@ -1594,6 +1592,8 @@ function Convert-PodePathPatternToRegex
 
         $Path = $Path -ireplace '[\\/]', '[\\/]'
     }
+
+    $Path = $Path -ireplace '\.', '\.'
 
     $Path = $Path -ireplace '\*', '.*?'
 
