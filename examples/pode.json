@@ -21,5 +21,10 @@
                 "/john": "application/json"
             }
         }
+    },
+    "server": {
+        "fileMonitor": {
+            "showFiles": true
+        }
     }
 }
