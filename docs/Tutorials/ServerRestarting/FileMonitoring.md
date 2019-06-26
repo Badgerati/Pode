@@ -1,6 +1,6 @@
 # File Monitoring
 
-Pode has support for file monitoring which can trigger the server restart, this occurs if Pode detects any file changes within the root directory of your server's script. To enable file monitoring you can either use the `-FileMonitor` switch on your [`server`](../../Functions/Core/Server) script, or enable it through the `pode.json` configuration file as follows:
+Pode has support for file monitoring which can trigger the server to restart, this occurs if Pode detects any file changes within the root directory of your server. To enable file monitoring you can either use the `-FileMonitor` switch on your [`server`](../../Functions/Core/Server) script, or enable it through the `pode.json` configuration file as follows:
 
 ```powershell
 Server {
@@ -20,7 +20,7 @@ or:
 }
 ```
 
-Once enabled, Pode will actively monitor all file changes made within the root directory of your script. For example, if your script was at `C:/Apps/Pode/server.ps1`, then Pode will monitor the `C:/Apps/Pode` directory and all sub-directories/files for changes (exclusions can be configured, see below). When a change is detected, Pode will wait 2 seconds before initiating the restart - this is so multiple rapid file changes don't trigger multiple restarts.
+Once enabled, Pode will actively monitor all file changes made within the root directory of your server. For example, if your server was at `C:/Apps/Pode/server.ps1`, then Pode will monitor the `C:/Apps/Pode` directory and all sub-directories/files for changes (exclusions can be configured, see below). When a change is detected, Pode will wait 2 seconds before initiating the restart - this is so multiple rapid file changes don't trigger multiple restarts.
 
 The file changes which are being monitored by Pode are:
 
@@ -77,4 +77,28 @@ or:
         }
     }
 }
+```
+
+## Show Files
+
+You can enable the showing of what file changes triggered the server to restart. To do this, you can set the `showFiles` property in your `pode.json` file:
+
+```json
+{
+    "server": {
+        "fileMonitor": {
+            "enable": true,
+            "showFiles": true
+        }
+    }
+}
+```
+
+Once enabled, just before a restart occurs, the following is an example of what will be visible above the `Restarting...` output in the terminal:
+
+```plain
+The following files have changed:
+> [Changed] pode.json
+> [Created] views/about.pode
+> [Deleted] public/styles/main.css
 ```
