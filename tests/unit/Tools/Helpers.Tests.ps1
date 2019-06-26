@@ -933,43 +933,43 @@ Describe 'Convert-PodePathPatternToRegex' {
     }
 
     It 'Convert file to regex' {
-        Convert-PodePathPatternsToRegex -Path 'state.json' | Should Be '^(state\.json)$'
+        Convert-PodePathPatternToRegex -Path 'state.json' | Should Be '^state\.json$'
     }
 
     It 'Convert file to regex non-strict' {
-        Convert-PodePathPatternsToRegex -Path 'state.json' -NotStrict | Should Be '(state\.json)'
+        Convert-PodePathPatternToRegex -Path 'state.json' -NotStrict | Should Be 'state\.json'
     }
 
     It 'Convert empty to regex' {
-        Convert-PodePathPatternsToRegex -Path '' | Should Be $null
+        Convert-PodePathPatternToRegex -Path '' | Should Be '^$'
     }
 
     It 'Convert empty to regex non-strict' {
-        Convert-PodePathPatternsToRegex -Path '' -NotStrict | Should Be $null
+        Convert-PodePathPatternToRegex -Path '' -NotStrict | Should Be ''
     }
 
     It 'Convert extension wildcard to regex' {
-        Convert-PodePathPatternsToRegex -Path 'state.*' | Should Be '^(state\..*)$'
+        Convert-PodePathPatternToRegex -Path 'state.*' | Should Be '^state\..*?$'
     }
 
     It 'Convert extension wildcard to regex non-strict' {
-        Convert-PodePathPatternsToRegex -Path 'state.*' -NotStrict | Should Be '(state\..*)'
+        Convert-PodePathPatternToRegex -Path 'state.*' -NotStrict | Should Be 'state\..*?'
     }
 
     It 'Convert filename wildcard to regex' {
-        Convert-PodePathPatternsToRegex -Path '*.json' | Should Be '^(*\.json)$'
+        Convert-PodePathPatternToRegex -Path '*.json' | Should Be '^.*?\.json$'
     }
 
     It 'Convert filename wildcard to regex non-strict' {
-        Convert-PodePathPatternsToRegex -Path '*.json' -NotStrict | Should Be '(*\.json)'
+        Convert-PodePathPatternToRegex -Path '*.json' -NotStrict | Should Be '.*?\.json'
     }
 
     It 'Convert double wildcard to regex' {
-        Convert-PodePathPatternsToRegex -Path '*.*' | Should Be '^(.*\..*)$'
+        Convert-PodePathPatternToRegex -Path '*.*' | Should Be '^.*?\..*?$'
     }
 
     It 'Convert double wildcard to regex non-strict' {
-        Convert-PodePathPatternsToRegex -Path '*.*' -NotStrict | Should Be '(.*\..*)'
+        Convert-PodePathPatternToRegex -Path '*.*' -NotStrict | Should Be '.*?\..*?'
     }
 }
 
@@ -1015,27 +1015,27 @@ Describe 'Convert-PodePathPatternsToRegex' {
     }
 
     It 'Convert extension wildcard to regex' {
-        Convert-PodePathPatternsToRegex -Paths @('state.*') | Should Be '^(state\..*)$'
+        Convert-PodePathPatternsToRegex -Paths @('state.*') | Should Be '^(state\..*?)$'
     }
 
     It 'Convert extension wildcard to regex non-strict' {
-        Convert-PodePathPatternsToRegex -Paths @('state.*') -NotStrict | Should Be '(state\..*)'
+        Convert-PodePathPatternsToRegex -Paths @('state.*') -NotStrict | Should Be '(state\..*?)'
     }
 
     It 'Convert filename wildcard to regex' {
-        Convert-PodePathPatternsToRegex -Paths @('*.json') | Should Be '^(*\.json)$'
+        Convert-PodePathPatternsToRegex -Paths @('*.json') | Should Be '^(.*?\.json)$'
     }
 
     It 'Convert filename wildcard to regex non-strict' {
-        Convert-PodePathPatternsToRegex -Paths @('*.json') -NotStrict | Should Be '(*\.json)'
+        Convert-PodePathPatternsToRegex -Paths @('*.json') -NotStrict | Should Be '(.*?\.json)'
     }
 
     It 'Convert double wildcard to regex' {
-        Convert-PodePathPatternsToRegex -Paths @('*.*') | Should Be '^(.*\..*)$'
+        Convert-PodePathPatternsToRegex -Paths @('*.*') | Should Be '^(.*?\..*?)$'
     }
 
     It 'Convert double wildcard to regex non-strict' {
-        Convert-PodePathPatternsToRegex -Paths @('*.*') -NotStrict | Should Be '(.*\..*)'
+        Convert-PodePathPatternsToRegex -Paths @('*.*') -NotStrict | Should Be '(.*?\..*?)'
     }
 }
 
