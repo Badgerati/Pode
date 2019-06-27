@@ -59,7 +59,7 @@ server {
         param($s)
 
         # get the user
-        $user = Get-DummyUser -UserId $s.Data['userId']
+        $user = Get-DummyUser -UserId $s.Data.userId
 
         # return the user
         json @{
@@ -78,6 +78,9 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
 
 !!! important
     The `ContentType` is required as it informs Pode on how to parse the requests payload. For example, if the content type were `application/json`, then Pode will attempt to parse the body of the request as JSON - converting it to a hashtable.
+
+!!! important
+    On PowerShell 4 and 5, referencing JSON data on `$s.Data` must be done as `$s.Data.userId`. This also works in PowerShell 6+, but you can also use `$s.Data['userId']` on PowerShell 6+.
 
 ## Query Strings
 

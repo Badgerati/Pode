@@ -86,6 +86,9 @@ server {
 }
 ```
 
+!!! important
+    On PowerShell 4 and 5, referencing JSON data on `$event.Data` must be done as `$event.Data.Key`. This also works in PowerShell 6+, but you can also use `$event.Data['Key']` on PowerShell 6+.
+
 ### Example 5
 
 The following example sets up a static route of `/assets` using the directory `./content/assets`. In the `home.html` view if you reference the image `<img src="/assets/images/icon.png" />`, then Pode will get the image from `./content/assets/images/icon.png`.
