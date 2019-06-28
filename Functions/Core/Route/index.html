@@ -2276,6 +2276,10 @@
 </pre></div>
 
 
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>On PowerShell 4 and 5, referencing JSON data on <code>$event.Data</code> must be done as <code>$event.Data.Key</code>. This also works in PowerShell 6+, but you can also use <code>$event.Data['Key']</code> on PowerShell 6+.</p>
+</div>
 <h3 id="example-5">Example 5</h3>
 <p>The following example sets up a static route of <code>/assets</code> using the directory <code>./content/assets</code>. In the <code>home.html</code> view if you reference the image <code>&lt;img src="/assets/images/icon.png" /&gt;</code>, then Pode will get the image from <code>./content/assets/images/icon.png</code>.</p>
 <div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>

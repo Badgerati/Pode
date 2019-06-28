@@ -2112,7 +2112,7 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
         <span class="k">param</span><span class="p">(</span><span class="nv">$s</span><span class="p">)</span>
 
         <span class="c"># get the user</span>
-        <span class="nv">$user</span> <span class="p">=</span> <span class="nb">Get-DummyUser</span> <span class="n">-UserId</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Data</span><span class="p">[</span><span class="s1">&#39;userId&#39;</span><span class="p">]</span>
+        <span class="nv">$user</span> <span class="p">=</span> <span class="nb">Get-DummyUser</span> <span class="n">-UserId</span> <span class="nv">$s</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">userId</span>
 
         <span class="c"># return the user</span>
         <span class="n">json</span> <span class="p">@{</span>
@@ -2132,6 +2132,10 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for stat
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>The <code>ContentType</code> is required as it informs Pode on how to parse the requests payload. For example, if the content type were <code>application/json</code>, then Pode will attempt to parse the body of the request as JSON - converting it to a hashtable.</p>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>On PowerShell 4 and 5, referencing JSON data on <code>$s.Data</code> must be done as <code>$s.Data.userId</code>. This also works in PowerShell 6+, but you can also use <code>$s.Data['userId']</code> on PowerShell 6+.</p>
 </div>
 <h2 id="query-strings">Query Strings</h2>
 <p>The following is an example of using data from a request's query string. To retrieve values from the query string you can use the <code>.Query</code> hashtable on the supplied web-session to a route's logic. This example will return a user based on the <code>userId</code> supplied:</p>

@@ -2035,10 +2035,10 @@
                 
                 
                 <h1 id="desktop-application">Desktop Application</h1>
-<p>Normally in Pode you define a server and run it however, using the <a href="../../Functions/Core/Gui"><code>gui</code></a> function Pode can serve the server up as a desktop application.</p>
+<p>Normally in Pode you define a server and run it, however if you use the <a href="../../Functions/Core/Gui"><code>gui</code></a> function Pode will serve the server up as a desktop application.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Currently only supported on Windows due to using WPF. (Though it appears WPF could soon be supported on .NET Core 3)</p>
+<p>Currently only supported on Windows due to using WPF.</p>
 </div>
 <h2 id="setting-server-to-run-as-application">Setting Server to run as Application</h2>
 <p>To serve up you server as a desktop application you can just write you Pode server script as normal. The only difference is you can use the <a href="../../Functions/Core/Gui"><code>gui</code></a> function to display the application. The make-up of the function is as follows:</p>
@@ -2046,12 +2046,12 @@
 </pre></div>
 
 
-<p>The <code>gui</code> <em>must</em> have a name supplied - this is the title of the application's window. The options are a <code>hashtable</code> that define further feature to customise the window.</p>
+<p>The <code>gui</code> <em>must</em> have a name supplied - this is the title of the application's window. The options are a <code>hashtable</code> that define further features to customise the window.</p>
 <p>The following will create a basic web server with a single page, but when the server is run it will pop up as a desktop application:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
-    <span class="n">gui</span> <span class="s1">&#39;Basic Server&#39;</span>
-
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="n">localhost</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+
+    <span class="n">gui</span> <span class="s1">&#39;Basic Server&#39;</span>
 
     <span class="n">route</span> <span class="n">get</span> <span class="s1">&#39;/&#39;</span> <span class="p">{</span>
         <span class="n">view</span> <span class="s1">&#39;index&#39;</span>

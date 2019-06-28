@@ -646,6 +646,20 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#save" title="Save" class="md-nav__link">
+    Save
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restore" title="Restore" class="md-nav__link">
+    Restore
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2055,6 +2069,20 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#save" title="Save" class="md-nav__link">
+    Save
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restore" title="Restore" class="md-nav__link">
+    Restore
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2088,7 +2116,8 @@
                 
                 <h1 id="shared-state">Shared State</h1>
 <p>Most things in Pode all run in isolated runspaces, which means you can't create a variable in a timer and then access that variable in a route. To overcome this limitation you can use the <a href="../../Functions/Utility/State"><code>state</code></a> function, which allows you to set/get variables on a state shared between all runspaces. This means you can create a variable in a timer and set it against the shared state; then you can retrieve that variable from the state in a route.</p>
-<p>To do this, you use the <a href="../../Functions/Utility/State"><code>state</code></a> function with an action of <code>set</code>, <code>get</code> or <code>remove</code>, in combination with the <a href="../../Functions/Utility/Lock"><code>lock</code></a> function to ensure thread safety</p>
+<p>You also have the option of saving the current state to a file, and then restoring the state back on server start. This way you won't lose state between server restarts.</p>
+<p>To do this, you use the <a href="../../Functions/Utility/State"><code>state</code></a> function with an action of <code>set</code>, <code>get</code>, <code>remove</code>, <code>save</code> or <code>restore</code>, in combination with the <a href="../../Functions/Utility/Lock"><code>lock</code></a> function to ensure thread safety</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>It's wise to use the <code>state</code> function in conjunction with the <code>lock</code> function, so as to ensure thread safety between runspaces. The argument object supplied to the <code>route</code>, <code>handler</code>, <code>timer</code>, <code>schedule</code>, <code>middleware</code>, <code>endware</code> and <code>logger</code> functions each contain a <code>.Lockable</code> resource that can be supplied to the <code>lock</code> function.</p>
@@ -2106,14 +2135,14 @@
 
 
 <p>An example of using the <code>set</code> action to create a shared hashtable variable is as follows:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">state</span> <span class="nb">set </span><span class="s1">&#39;data&#39;</span> <span class="p">@{</span> <span class="s1">&#39;Name&#39;</span> <span class="p">=</span> <span class="s1">&#39;Rick Sanchez&#39;</span> <span class="p">}</span> <span class="p">|</span> <span class="nb">Out-Null</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will set a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
 
@@ -2133,14 +2162,14 @@
 
 
 <p>An example of using the <code>get</code> action to retrieve the value from the shared state is as follows:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="nv">$value</span> <span class="p">=</span> <span class="p">(</span><span class="n">state</span> <span class="n">get</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will get a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
         <span class="nv">$value</span> <span class="p">=</span> <span class="nv">$null</span>
@@ -2163,14 +2192,14 @@
 
 
 <p>An example of using the <code>remove</code> action to remove a variable from the shared state is as follows:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">state</span> <span class="n">remove</span> <span class="s1">&#39;data&#39;</span> <span class="p">|</span> <span class="nb">Out-Null</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <p>As per the tip above, it's always worth wrapping <code>state</code> actions within a <code>lock</code>. The following example will remove a shared variable in a <code>timer</code>, and lock the global <code>Lockable</code> object.</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">timer</span> <span class="s1">&#39;do-something&#39;</span> <span class="n">5</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
 
@@ -2182,13 +2211,48 @@
 </pre></div>
 
 
+<h3 id="save">Save</h3>
+<p>The <code>state save</code> action will save the current state, as JSON, to the specified file. The file can either be relative, or a literal path. When saving the state, it's recommended to wrap the action within a <code>lock</code>.</p>
+<p>The make-up of the <code>save</code> action is:</p>
+<div class="codehilite"><pre><span></span><span class="n">state</span> <span class="n">save</span> <span class="p">&lt;</span><span class="n">file</span><span class="p">&gt;</span>
+</pre></div>
+
+
+<p>An example of saving the current state every hour is as follows:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">schedule</span> <span class="s1">&#39;save-state&#39;</span> <span class="s1">&#39;@hourly&#39;</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$lockable</span> <span class="p">{</span>
+            <span class="n">state</span> <span class="n">save</span> <span class="s1">&#39;./state.json&#39;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="restore">Restore</h3>
+<p>The <code>state restore</code> action will restore the current state from the specified file. The file can either be relative, or a literal path. if you're restoring the state immediately on server start, you don't need to use <code>lock</code>.</p>
+<p>The make-up of the <code>restore</code> action is:</p>
+<div class="codehilite"><pre><span></span><span class="n">state</span> <span class="n">restore</span> <span class="p">&lt;</span><span class="n">file</span><span class="p">&gt;</span>
+</pre></div>
+
+
+<p>An example of restore the current state on server start is as follows:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">state</span> <span class="n">restore</span> <span class="s1">&#39;./state.json&#39;</span>
+<span class="p">}</span>
+</pre></div>
+
+
 <h2 id="full-example">Full Example</h2>
-<p>The following is a full example of using the <code>state</code> function. It is a simple <code>timer</code> that creates and updates a <code>hashtable</code> variable, and then a <code>route</code> is used to retrieve that variable. There is also another route that will remove the variable from the state:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<p>The following is a full example of using the <code>state</code> function. It is a simple <code>timer</code> that creates and updates a <code>hashtable</code> variable, and then a <code>route</code> is used to retrieve that variable. There is also another route that will remove the variable from the state. The state is also saved on every iteration of the timer, and restored on server start:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="c"># create the shared variable</span>
     <span class="n">state</span> <span class="nb">set </span><span class="s1">&#39;hash&#39;</span> <span class="p">@{</span> <span class="s1">&#39;values&#39;</span> <span class="p">=</span> <span class="p">@();</span> <span class="p">}</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+
+    <span class="c"># attempt to re-initialise the state (will do nothing if the file doesn&#39;t exist)</span>
+    <span class="n">state</span> <span class="n">restore</span> <span class="s1">&#39;./state.json&#39;</span>
 
     <span class="c"># timer to add a random number to the shared state</span>
     <span class="n">timer</span> <span class="s1">&#39;forever&#39;</span> <span class="n">2</span> <span class="p">{</span>
@@ -2202,6 +2266,9 @@
 
             <span class="c"># add a random number</span>
             <span class="nv">$hash</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">]</span> <span class="p">+=</span> <span class="p">(</span><span class="nb">Get-Random</span> <span class="n">-Minimum</span> <span class="n">0</span> <span class="n">-Maximum</span> <span class="n">10</span><span class="p">)</span>
+
+            <span class="c"># save the state to file</span>
+            <span class="n">state</span> <span class="n">save</span> <span class="s1">&#39;./state.json&#39;</span>
         <span class="p">}</span>
     <span class="p">}</span>
 

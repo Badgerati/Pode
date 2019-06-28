@@ -1836,6 +1836,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-2" title="Example 2" class="md-nav__link">
+    Example 2
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2043,6 +2050,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example-2" title="Example 2" class="md-nav__link">
+    Example 2
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2088,8 +2102,8 @@
 </div>
 <h2 id="examples">Examples</h2>
 <h3 id="example-1">Example 1</h3>
-<p>The following example is uses a <code>timer</code> to create and update a <code>hashtable</code>, and then retrieve that variable in a <code>route</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
+<p>The following example uses a <code>timer</code> to create and update a <code>hashtable</code>, and then retrieve that variable in a <code>route</code>:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
     <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
 
     <span class="n">timer</span> <span class="s1">&#39;forever&#39;</span> <span class="n">2</span> <span class="p">{</span>
@@ -2129,6 +2143,24 @@
 </pre></div>
 
 
+<h3 id="example-2">Example 2</h3>
+<p>The following example will restore the state from the file if it exists, and save back to the state every hour:</p>
+<div class="codehilite"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+    <span class="n">listen</span> <span class="p">*</span><span class="err">:</span><span class="n">8080</span> <span class="n">http</span>
+
+    <span class="c"># restore state from file</span>
+    <span class="n">state</span> <span class="n">restore</span> <span class="s1">&#39;./state.json&#39;</span>
+
+    <span class="c"># save state to file every hour</span>
+    <span class="n">schedule</span> <span class="s1">&#39;save-state&#39;</span> <span class="s1">&#39;@hourly&#39;</span> <span class="p">{</span>
+        <span class="n">lock</span> <span class="nv">$lockable</span> <span class="p">{</span>
+            <span class="n">state</span> <span class="n">save</span> <span class="s1">&#39;./state.json&#39;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
 <h2 id="parameters">Parameters</h2>
 <table>
 <thead>
@@ -2145,7 +2177,7 @@
 <td>Action</td>
 <td>string</td>
 <td>true</td>
-<td>The action to perform on the shared state for the variable (Values: Get, Set, Remove)</td>
+<td>The action to perform on the shared state for the variable (Values: Get, Set, Remove, Save, Restore)</td>
 <td>empty</td>
 </tr>
 <tr>

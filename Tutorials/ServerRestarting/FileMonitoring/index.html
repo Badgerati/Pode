@@ -573,6 +573,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#show-files" title="Show Files" class="md-nav__link">
+    Show Files
+  </a>
+  
+</li>
+      
       
       
       
@@ -2001,6 +2008,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#show-files" title="Show Files" class="md-nav__link">
+    Show Files
+  </a>
+  
+</li>
+      
       
       
       
@@ -2021,7 +2035,7 @@
                 
                 
                 <h1 id="file-monitoring">File Monitoring</h1>
-<p>Pode has support for file monitoring which can trigger the server restart, this occurs if Pode detects any file changes within the root directory of your server's script. To enable file monitoring you can either use the <code>-FileMonitor</code> switch on your <a href="../../Functions/Core/Server"><code>server</code></a> script, or enable it through the <code>pode.json</code> configuration file as follows:</p>
+<p>Pode has support for file monitoring which can trigger the server to restart, this occurs if Pode detects any file changes within the root directory of your server. To enable file monitoring you can either use the <code>-FileMonitor</code> switch on your <a href="../../Functions/Core/Server"><code>server</code></a> script, or enable it through the <code>pode.json</code> configuration file as follows:</p>
 <div class="codehilite"><pre><span></span><span class="n">Server</span> <span class="p">{</span>
     <span class="c"># logic</span>
 <span class="p">}</span> <span class="n">-FileMonitor</span>
@@ -2039,7 +2053,7 @@
 </pre></div>
 
 
-<p>Once enabled, Pode will actively monitor all file changes made within the root directory of your script. For example, if your script was at <code>C:/Apps/Pode/server.ps1</code>, then Pode will monitor the <code>C:/Apps/Pode</code> directory and all sub-directories/files for changes (exclusions can be configured, see below). When a change is detected, Pode will wait 2 seconds before initiating the restart - this is so multiple rapid file changes don't trigger multiple restarts.</p>
+<p>Once enabled, Pode will actively monitor all file changes made within the root directory of your server. For example, if your server was at <code>C:/Apps/Pode/server.ps1</code>, then Pode will monitor the <code>C:/Apps/Pode</code> directory and all sub-directories/files for changes (exclusions can be configured, see below). When a change is detected, Pode will wait 2 seconds before initiating the restart - this is so multiple rapid file changes don't trigger multiple restarts.</p>
 <p>The file changes which are being monitored by Pode are:</p>
 <ul>
 <li>Updates</li>
@@ -2088,6 +2102,27 @@
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
+</pre></div>
+
+
+<h2 id="show-files">Show Files</h2>
+<p>You can enable the showing of what file changes triggered the server to restart. To do this, you can set the <code>showFiles</code> property in your <code>pode.json</code> file:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;server&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;fileMonitor&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+            <span class="nt">&quot;showFiles&quot;</span><span class="p">:</span> <span class="kc">true</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Once enabled, just before a restart occurs, the following is an example of what will be visible above the <code>Restarting...</code> output in the terminal:</p>
+<div class="codehilite"><pre><span></span>The following files have changed:
+&gt; [Changed] pode.json
+&gt; [Created] views/about.pode
+&gt; [Deleted] public/styles/main.css
 </pre></div>
                 
                   
