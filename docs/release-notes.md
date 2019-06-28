@@ -1,5 +1,20 @@
 # Release Notes
 
+## v0.32.0
+
+```plain
+### Enhancements
+* #270: Support on `gui` to specify the width and height of the window
+* #280: Support when file monitoring to output the files that caused the server to restart
+* #282: New actions on `state` to save and restore to to/from a file
+
+### Bugs
+* #271: Fix in `Convert-PodePathPatternsToRegex` when converting file names - thanks @Fraham!
+
+### Documentation
+* #284: Notes in documention about referencing JSON payload data in PowerShell 4/5
+```
+
 ## v0.31.0
 
 ```plain

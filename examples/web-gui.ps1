@@ -13,8 +13,9 @@ Server {
 
     # tell this server to run as a desktop gui
     gui 'Pode Desktop Application' @{
-        'Icon' = '../images/icon.png';
-        'ListenName' = 'local2'
+        Icon = '../images/icon.png'
+        ListenName = 'local2'
+        ResizeMode = 'NoResize'
     }
 
     # set view engine to pode renderer

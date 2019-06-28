@@ -89,9 +89,11 @@ function New-PodeContext
     }
 
     $ctx.Server.FileMonitor = @{
-        'Enabled' = $FileMonitor;
-        'Exclude' = (Convert-PodePathPatternsToRegex -Paths $FileMonitorExclude);
-        'Include' = (Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude);
+        Enabled = $FileMonitor
+        Exclude = (Convert-PodePathPatternsToRegex -Paths $FileMonitorExclude)
+        Include = (Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude)
+        ShowFiles = [bool]$ctx.Server.Configuration.server.fileMonitor.showFiles
+        Files = @()
     }
 
     # set the server default type
@@ -109,14 +111,7 @@ function New-PodeContext
     $ctx.Server.Endpoints = @()
 
     # setup gui details
-    $ctx.Server.Gui = @{
-        'Enabled' = $false;
-        'Name' = $null;
-        'Icon' = $null;
-        'State' = 'Normal';
-        'ShowInTaskbar' = $true;
-        'WindowStyle' = 'SingleBorderWindow';
-    }
+    $ctx.Server.Gui = @{}
 
     # shared temp drives
     $ctx.Server.Drives = @{}
@@ -385,7 +380,7 @@ function State
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('set', 'get', 'remove')]
+        [ValidateSet('set', 'get', 'remove', 'save', 'restore')]
         [Alias('a')]
         [string]
         $Action,
@@ -420,6 +415,33 @@ function State
             'remove' {
                 $Object = $PodeContext.Server.State[$Name]
                 $PodeContext.Server.State.Remove($Name) | Out-Null
+            }
+
+            'save' {
+                $Path = Get-PodeRelativePath -Path $Name -JoinRoot
+                $PodeContext.Server.State |
+                    ConvertTo-Json -Depth 10 |
+                    Out-File -FilePath $Path -Force |
+                    Out-Null
+                return
+            }
+
+            'restore' {
+                $Path = Get-PodeRelativePath -Path $Name -JoinRoot
+                if (!(Test-Path $Path)) {
+                    return
+                }
+
+                if (Test-IsPSCore) {
+                    $PodeContext.Server.State = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
+                }
+                else {
+                    (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties | ForEach-Object {
+                        $PodeContext.Server.State[$_.Name] = $_.Value
+                    }
+                }
+
+                return
             }
         }
 

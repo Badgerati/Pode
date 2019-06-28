@@ -10,18 +10,24 @@ Server {
     listen *:8085 http
     logger 'terminal'
 
+    # re-initialise the state
+    state restore './state.json'
+
+    # initialise if there was no file
+    if ($null -eq ($hash = (state get 'hash'))) {
+        $hash = state set 'hash' @{}
+        $hash['values'] = @()
+    }
+
     # create timer to update a hashtable and make it globally accessible
     timer 'forever' 2 {
         param($session)
         $hash = $null
 
         lock $session.Lockable {
-            if (($hash = (state get 'hash')) -eq $null) {
-                $hash = (state set 'hash' @{})
-                $hash['values'] = @()
-            }
-
-            $hash['values'] += (Get-Random -Minimum 0 -Maximum 10)
+            $hash = (state get 'hash')
+            $hash.values += (Get-Random -Minimum 0 -Maximum 10)
+            state save './state.json'
         }
     }
 
@@ -41,8 +47,8 @@ Server {
 
         lock $session.Lockable {
             $hash = (state set 'hash' @{})
-            $hash['values'] = @()
+            $hash.values = @()
         }
     }
 
-} -FileMonitor
+}
