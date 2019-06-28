@@ -71,10 +71,12 @@ docker pull badgerati/pode
 
 ## Contributing
 
-Pull Requests, Bug Reports and Feature Requests are welcome!
+Pull Requests, Bug Reports and Feature Requests are welcome! Feel free to help out with Issues and Projects!
 
-To run the unit tests, run the following command from the root of the repository:
+To run the unit tests, run the following command from the root of the repository (this will auto-install Pester for you):
 
 ```powershell
 Invoke-Build Test
 ```
+
+To work on issues you can fork Pode, and then open a Pull Request for approval. Pull Requests should be made against the `develop` branch. Each Pull Request should also have an appropriate issue created.
