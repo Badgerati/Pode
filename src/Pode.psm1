@@ -1,5 +1,5 @@
 # import everything if in a runspace
-if ($PODE_IN_RUNSPACE) {
+if ($PODE_SCOPE_RUNSPACE) {
     $sysfuncs = Get-ChildItem Function:
 }
 
@@ -7,8 +7,8 @@ if ($PODE_IN_RUNSPACE) {
 $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 Get-ChildItem "$($root)/Private/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
-# get existing functions from memory for later comparison
-if (!$PODE_IN_RUNSPACE) {
+# only import public functions if not in a runspace
+if (!$PODE_SCOPE_RUNSPACE) {
     $sysfuncs = Get-ChildItem Function:
 }
 
