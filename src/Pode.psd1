@@ -75,12 +75,21 @@
         'Await',
         'Load',
         'Config',
-        'Cookie',
         'Csrf',
         'Gui',
         'Text',
         'File',
-        'Header'
+        'Header',
+
+        # cookies
+        'Get-PodeCookie',
+        'Get-PodeCookieSecret',
+        'Remove-PodeCookie',
+        'Set-PodeCookie',
+        'Set-PodeCookieSecret',
+        'Test-PodeCookie',
+        'Test-PodeCookieSigned',
+        'Update-PodeCookieExpiry'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

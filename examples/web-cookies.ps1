@@ -14,17 +14,18 @@ Server -Threads 2 {
     engine html
 
     # set a global cookie secret
-    cookie secrets global 'pi'
+    Set-PodeCookieSecret -Value 'pi' -Global
 
     # GET request to set/extend a cookie for the date of the request
     route get '/' {
         $cookieName = 'current-date'
 
-        if ((cookie exists $cookieName)) {
-            cookie extend $cookieName -ttl 7200 | Out-Null
+        if (Test-PodeCookie -Name $cookieName) {
+            Update-PodeCookieExpiry -Name $cookieName -Duration 7200 | Out-Null
         }
         else {
-            cookie set $cookieName ([datetime]::UtcNow) -ttl 7200 -gs | Out-Null
+            $s = Get-PodeCookieSecret -Global
+            Set-PodeCookie -Name $cookieName -Value ([datetime]::UtcNow) -Duration 7200 -Secret $s | Out-Null
         }
 
         view 'simple'
@@ -32,16 +33,17 @@ Server -Threads 2 {
 
     # GET request to remove the date cookie
     route get '/remove' {
-        cookie remove 'current-date'
+        Remove-PodeCookie -Name 'current-date'
     }
 
     # GET request to check to signage of the date cookie
     route get '/check' {
         $cookieName = 'current-date'
 
-        $c1 = cookie get $cookieName
-        $c2 = cookie get $cookieName -gs
-        $ch = cookie check $cookieName -gs
+        $s = Get-PodeCookieSecret -Global
+        $c1 = Get-PodeCookie -Name $cookieName
+        $c2 = Get-PodeCookie -Name $cookieName -Secret $s
+        $ch = Test-PodeCookieSigned -Name $cookieName -Secret $s
 
         json @{
             'SignedValue' = $c1.Value;

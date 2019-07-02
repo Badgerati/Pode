@@ -338,10 +338,10 @@ function Set-PodeCsrfSetup
 
     # if we're using cookies, ensure a global secret exists
     if ($Cookie) {
-        $Secret = (coalesce $Secret (Get-PodeCookieGlobalSecret))
+        $Secret = (coalesce $Secret (Get-PodeCookieSecret -Global))
 
         if (Test-Empty $Secret) {
-            throw "When using cookies for CSRF, a secret is required. You can either supply a secret, or set the cookie global secret - (cookie secrets global <value>)"
+            throw "When using cookies for CSRF, a secret is required. You can either supply a secret, or set the cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
         }
     }
 
