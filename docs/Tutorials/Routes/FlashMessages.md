@@ -1,6 +1,6 @@
 # Flash Messages
 
-Flash messages allow you to pass temporary messages - info/error or other - across multiple web requests via a user's current session.
+Flash messages allow you to pass temporary messages - info/error or otherwise - across multiple web requests via a user's current session.
 
 For example, in sign-up logic you could set a flash error message for an invalid email address; retrieving the message from the session on a redirect for the view, allowing the view to render error messages.
 
@@ -9,24 +9,14 @@ For example, in sign-up logic you could set a flash error message for an invalid
 
 ## Usage
 
-The [`flash`](../../../Functions/Utility/Flash) function allows you to add, get, and remove messages on a user's session.
+The flash functions allow you to add, get, and remove messages on a user's session.
 
-The make-up of the `flash` function is as follows:
-
-```powershell
-flash <action> [<key> <message>]
-```
-
-* Valid `<action>` values are: `Add`, `Clear`, `Get`, `Keys`, `Remove`.
-* A `<key>` must be supplied on `Add`, `Get`, `Remove` actions.
-* A `<message>` must be supplied on the `Add` action.
-
-If you supply multiple `Add` actions using the same `<key>`, then the messages will be grouped together as an array. The action of `Get` for a `<key>` will remove all messages from the current session for that `<key>`.
+If you call `Add-PodeFlashMessage` using the same Name multiple times, then the messages will be appended as an array. Calling `Get-PodeFlashMessage` for a Name will remove all messages from the current session for the Name supplied.
 
 The following is an example of adding a flash message to a session, this will add a message under the `email-error` key:
 
 ```powershell
-flash add 'email-error' 'Invalid email address'
+Add-PodeFlashMessage -Name 'email-error' -Message 'Invalid email address'
 ```
 
 Then to retrieve the message, you can do this in a `route` for a `view`:
@@ -35,7 +25,7 @@ Then to retrieve the message, you can do this in a `route` for a `view`:
 route get '/signup' {
     view 'signup' -d @{
         'errors' = @{
-            'email' = (flash get 'email-error')
+            'email' = (Get-PodeFlashMessage -Name 'email-error')
         }
     }
 }
@@ -43,13 +33,13 @@ route get '/signup' {
 
 ## Views
 
-The `view` function has a helper switch (`-FlashMessages`) to load all current flash messages in the session, into the views data - to save time writing lots of `flash get` calls. When used, all messages will be loaded into the `$data` argument supplied to dynamic views, and accessible under `$data.flash`.
+The `view` function has a helper switch (`-FlashMessages`) to load all current flash messages in the session, into the views data - to save time writing lots of `Get-PodeFlashMessage` calls. When used, all messages will be loaded into the `$data` argument supplied to dynamic views, and accessible under `$data.flash`.
 
 For example, somewhere we could have a sign-up flow which fails validation and adds two messages to the session:
 
 ```powershell
-flash add 'email-error' 'Invalid email address'
-flash add 'name-error' 'No first/last name supplied'
+Add-PodeFlashMessage -Name 'email-error' -Message 'Invalid email address'
+Add-PodeFlashMessage -Name 'name-error' -Message 'No first/last name supplied'
 ```
 
 Then, within your route to load the sign-up view, you can use the switch to automatically load all current flash messages (note: `-fm` is an alias of `-FlashMessages`):

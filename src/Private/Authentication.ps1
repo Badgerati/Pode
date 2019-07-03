@@ -278,7 +278,7 @@ function Set-PodeAuthStatus
 
         # add error to flash if flagged
         if ([bool]$Options.FailureFlash) {
-            flash add 'auth-error' $Description
+            Add-PodeFlashMessage -Name 'auth-error' -Message $Description
         }
 
         # check if we have a failure url redirect

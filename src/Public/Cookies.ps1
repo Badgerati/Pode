@@ -38,7 +38,6 @@ Set-PodeCookie -Name 'Views' -Value 2 -Secret 'hunter2'
 .EXAMPLE
 Set-PodeCookie -Name 'Views' -Value 2 -Duration 3600
 #>
-
 function Set-PodeCookie
 {
     [CmdletBinding(DefaultParameterSetName='Duration')]
@@ -119,7 +118,6 @@ Get-PodeCookie -Name 'Views'
 .EXAMPLE
 Get-PodeCookie -Name 'Views' -Secret 'hunter2'
 #>
-
 function Get-PodeCookie
 {
     [CmdletBinding()]
@@ -170,7 +168,6 @@ The name of the cookie to test for on the Request.
 .EXAMPLE
 Test-PodeCookie -Name 'Views'
 #>
-
 function Test-PodeCookie
 {
     [CmdletBinding()]
@@ -197,7 +194,6 @@ The name of the cookie to be removed.
 .EXAMPLE
 Remove-PodeCookie -Name 'Views'
 #>
-
 function Remove-PodeCookie
 {
     [CmdletBinding()]
@@ -238,7 +234,6 @@ A secret to use for attempting to unsign the cookie's value.
 .EXAMPLE
 Test-PodeCookieSigned -Name 'Views' -Secret 'hunter2'
 #>
-
 function Test-PodeCookieSigned
 {
     [CmdletBinding()]
@@ -283,7 +278,6 @@ Update-PodeCookieExpiry -Name  'Views' -Duration 1800
 .EXAMPLE
 Update-PodeCookieExpiry -Name  'Views' -ExpiryDate ([datetime]::UtcNow.AddSeconds(1800))
 #>
-
 function Update-PodeCookieExpiry
 {
     [CmdletBinding(DefaultParameterSetName='Duration')]
@@ -343,7 +337,6 @@ Set-PodeCookieSecret -Name 'my-secret' -Value 'shhhh!'
 .EXAMPLE
 Set-PodeCookieSecret -Value 'hunter2' -Global
 #>
-
 function Set-PodeCookieSecret
 {
     [CmdletBinding()]
@@ -387,7 +380,6 @@ Get-PodeCookieSecret -Name 'my-secret'
 .EXAMPLE
 Get-PodeCookieSecret -Global
 #>
-
 function Get-PodeCookieSecret
 {
     [CmdletBinding()]

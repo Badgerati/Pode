@@ -107,7 +107,7 @@ server {
     # POST route for form which will require the csrf token from above
     route post '/token' {
         param($e)
-        flash add 'message' $e.Data['message']
+        Add-PodeFlashMessage -Name 'message' -Message $e.Data['message']
         redirect '/'
     }
 }

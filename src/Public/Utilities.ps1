@@ -56,56 +56,6 @@ function Dispose
     }
 }
 
-function Flash
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('Add', 'Clear', 'Get', 'Keys', 'Remove')]
-        [Alias('a')]
-        [string]
-        $Action,
-
-        [Parameter()]
-        [Alias('k')]
-        [string]
-        $Key,
-
-        [Parameter()]
-        [Alias('m')]
-        [string]
-        $Message
-    )
-
-    # if sessions haven't been setup, error
-    if (Test-Empty $PodeContext.Server.Cookies.Session) {
-        throw 'Sessions are required to use Flash messages'
-    }
-
-    # run logic for the action
-    switch ($Action.ToLowerInvariant())
-    {
-        'add' {
-            Add-PodeFlashMessage -Key $Key -Message $Message
-        }
-
-        'get' {
-            return @(Get-PodeFlashMessage -Key $Key)
-        }
-
-        'keys' {
-            return @(Get-PodeFlashMessageKeys)
-        }
-
-        'clear' {
-            Clear-PodeFlashMessages
-        }
-
-        'remove' {
-            Remove-PodeFlashMessage -Key $Key
-        }
-    }
-}
-
 function Include
 {
     param (
