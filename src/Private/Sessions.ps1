@@ -29,7 +29,7 @@ function Set-PodeSessionCookie
         -Name $Session.Name `
         -Value $Session.Id `
         -Secret $PodeContext.Server.Cookies.Session.SecretKey `
-        -Expiry (Get-PodeSessionCookieExpiry -Session $Session) `
+        -ExpiryDate (Get-PodeSessionCookieExpiry -Session $Session) `
         -HttpOnly:$httpOnly `
         -Discard:$discard `
         -Secure:$secure) | Out-Null
@@ -48,7 +48,7 @@ function Get-PodeSessionCookie
     )
 
     # check that the cookie is validly signed
-    if (!(Test-PodeCookieIsSigned -Name $Name -Secret $Secret)) {
+    if (!(Test-PodeCookieSigned -Name $Name -Secret $Secret)) {
         return $null
     }
 

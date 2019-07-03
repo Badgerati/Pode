@@ -2,38 +2,38 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
 Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
-Describe 'Test-PodeCookieExists' {
+Describe 'Test-PodeCookie' {
     It 'Returns true' {
         $WebEvent = @{ 'Cookies' = @{
                 'test' = @{ 'Value' = 'example' }
         } }
 
-        Test-PodeCookieExists -Name 'test' | Should Be $true
+        Test-PodeCookie -Name 'test' | Should Be $true
     }
 
     It 'Returns false for no value' {
         $WebEvent = @{ 'Cookies' = @{ } }
-        Test-PodeCookieExists -Name 'test' | Should Be $false
+        Test-PodeCookie -Name 'test' | Should Be $false
     }
 
     It 'Returns false for not existing' {
         $WebEvent = @{ 'Cookies' = @{ } }
-        Test-PodeCookieExists -Name 'test' | Should Be $false
+        Test-PodeCookie -Name 'test' | Should Be $false
     }
 }
 
-Describe 'Test-PodeCookieIsSigned' {
+Describe 'Test-PodeCookieSigned' {
     It 'Returns false for no value' {
         $WebEvent = @{ 'Cookies' = @{
             'test' = @{ }
         } }
 
-        Test-PodeCookieIsSigned -Name 'test' | Should Be $false
+        Test-PodeCookieSigned -Name 'test' | Should Be $false
     }
 
     It 'Returns false for not existing' {
         $WebEvent = @{ 'Cookies' = @{} }
-        Test-PodeCookieIsSigned -Name 'test' | Should Be $false
+        Test-PodeCookieSigned -Name 'test' | Should Be $false
     }
 
     It 'Throws error for no secret being passed' {
@@ -43,7 +43,7 @@ Describe 'Test-PodeCookieIsSigned' {
             'test' = @{ 'Value' = 'example' }
         } }
 
-        { Test-PodeCookieIsSigned -Name 'test' } | Should Throw 'argument is null'
+        { Test-PodeCookieSigned -Name 'test' } | Should Throw 'argument is null'
         Assert-MockCalled Invoke-PodeCookieUnsign -Times 0 -Scope It
     }
 
@@ -54,7 +54,7 @@ Describe 'Test-PodeCookieIsSigned' {
             'test' = @{ 'Value' = 'example' }
         } }
 
-        Test-PodeCookieIsSigned -Name 'test' -Secret 'key' | Should Be $false
+        Test-PodeCookieSigned -Name 'test' -Secret 'key' | Should Be $false
         Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
     }
 
@@ -65,7 +65,7 @@ Describe 'Test-PodeCookieIsSigned' {
             'test' = @{ 'Value' = 'example' }
         } }
 
-        Test-PodeCookieIsSigned -Name 'test' -Secret 'key' | Should Be $true
+        Test-PodeCookieSigned -Name 'test' -Secret 'key' | Should Be $true
         Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
     }
 
@@ -82,7 +82,7 @@ Describe 'Test-PodeCookieIsSigned' {
             'test' = @{ 'Value' = 'example' }
         } }
 
-        Test-PodeCookieIsSigned -Name 'test' -GlobalSecret | Should Be $true
+        Test-PodeCookieSigned -Name 'test' -Secret (Get-PodeCookieSecret -Global) | Should Be $true
         Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
     }
 }
@@ -155,7 +155,7 @@ Describe 'Get-PodeCookie' {
             'test' = @{ 'Value' = 'example' }
         } }
 
-        $c = Get-PodeCookie -Name 'test' -GlobalSecret
+        $c = Get-PodeCookie -Name 'test' -Secret (Get-PodeCookieSecret -Global)
         $c | Should Not Be $null
         $c.Value | Should Be 'some-id'
 
@@ -238,7 +238,7 @@ Describe 'Set-PodeCookie' {
             $script:WebEvent.Response.Headers[$n] = $v
         }
 
-        $c = Set-PodeCookie -Name 'test' -Value 'example' -GlobalSecret
+        $c = Set-PodeCookie -Name 'test' -Value 'example' -Secret (Get-PodeCookieSecret -Global)
         $c | Should Not Be $null
         $c.Name | Should Be 'test'
         $c.Value | Should Be 'some-id'
@@ -315,7 +315,7 @@ Describe 'Set-PodeCookie' {
             $script:WebEvent.Response.Headers[$n] = $v
         }
 
-        $c = Set-PodeCookie -Name 'test' -Value 'example' -Expiry ([datetime]::UtcNow.AddDays(2))
+        $c = Set-PodeCookie -Name 'test' -Value 'example' -ExpiryDate ([datetime]::UtcNow.AddDays(2))
         $c | Should Not Be $null
         $c.Name | Should Be 'test'
         $c.Value | Should Be 'example'
@@ -485,80 +485,6 @@ Describe 'Remove-PodeCookie' {
 
         $WebEvent.PendingCookies['test'].Discard | Should Be $true
         ($WebEvent.PendingCookies['test'].Expires -lt [datetime]::UtcNow) | Should Be $true
-    }
-}
-
-Describe 'Cookie' {
-    It 'Throws invalid action error' {
-        { Cookie -Action 'MOO' -Name 'test' } | Should Throw "Cannot validate argument on parameter 'Action'"
-    }
-
-    It 'Throws error for null name' {
-        { Cookie -Action Set -Name $null } | Should Throw "because it is an empty string"
-    }
-
-    It 'Throws error for empty name' {
-        { Cookie -Action Set -Name ([string]::Empty) } | Should Throw "because it is an empty string"
-    }
-
-    It 'Calls add method' {
-        Mock Set-PodeCookie { return 'cookie' }
-        $c = Cookie -Action Set -Name 'test' -Value 'example'
-        $c | Should Not Be $null
-        $c | Should Be 'cookie'
-        Assert-MockCalled Set-PodeCookie -Times 1 -Scope It
-    }
-
-    It 'Calls get method' {
-        Mock Get-PodeCookie { return 'cookie' }
-        $c = Cookie -Action Get -Name 'test'
-        $c | Should Not Be $null
-        $c | Should Be 'cookie'
-        Assert-MockCalled Get-PodeCookie -Times 1 -Scope It
-    }
-
-    It 'Calls exists method' {
-        Mock Test-PodeCookieExists { return $true }
-        Cookie -Action Exists -Name 'test' | Should Be $true
-        Assert-MockCalled Test-PodeCookieExists -Times 1 -Scope It
-    }
-
-    It 'Calls remove method' {
-        Mock Remove-PodeCookie { }
-        Cookie -Action Remove -Name 'test'
-        Assert-MockCalled Remove-PodeCookie -Times 1 -Scope It
-    }
-
-    It 'Calls check method' {
-        Mock Test-PodeCookieIsSigned { return $true }
-        Cookie -Action Check -Name 'test' -Secret 'key' | Should Be $true
-        Assert-MockCalled Test-PodeCookieIsSigned -Times 1 -Scope It
-    }
-
-    It 'Calls extend method' {
-        Mock Update-PodeCookieExpiry { }
-        Cookie -Action Extend -Name 'test' -Ttl 3000
-        Assert-MockCalled Update-PodeCookieExpiry -Times 1 -Scope It
-    }
-
-    It 'Calls secret method to set secret' {
-        $PodeContext = @{ 'Server' = @{
-            'Cookies' = @{ 'Secrets' = @{} }
-        } }
-
-        Cookie -Action Secrets -Name 'global' -Value 'test'
-
-        $PodeContext.Server.Cookies.Secrets['global'] | Should Be 'test'
-    }
-
-    It 'Calls secret method to get secret' {
-        $PodeContext = @{ 'Server' = @{
-            'Cookies' = @{ 'Secrets' = @{
-                'global' = 'bill'
-            }
-        } } }
-
-        Cookie -Action Secrets -Name 'global' | Should Be 'bill'
     }
 }
 
