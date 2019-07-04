@@ -96,7 +96,13 @@
         'Get-PodeFlashMessage',
         'Get-PodeFlashMessageNames',
         'Remove-PodeFlashMessage',
-        'Test-PodeFlashMessage'
+        'Test-PodeFlashMessage',
+
+        # headers
+        'Add-PodeHeader',
+        'Test-PodeHeader',
+        'Get-PodeHeader',
+        'Set-PodeHeader'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

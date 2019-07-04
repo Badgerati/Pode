@@ -1830,3 +1830,14 @@ function Get-PodeEndpointUrl
 
     return "$($protocol)://$($Endpoint.HostName):$($port)"
 }
+
+function Set-PodeServerHeader
+{
+    param (
+        [Parameter()]
+        [string]
+        $Type
+    )
+
+    Set-PodeHeader -Name 'Server' -Value "Pode - $($Type)"
+}
