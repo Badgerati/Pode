@@ -2,7 +2,7 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
 Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
-Describe 'Test-PodeHeaderExists' {
+Describe 'Test-PodeHeader' {
     Context 'WebServer' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
 
@@ -13,7 +13,7 @@ Describe 'Test-PodeHeaderExists' {
                 }
             } }
 
-            Test-PodeHeaderExists -Name 'test' | Should Be $true
+            Test-PodeHeader -Name 'test' | Should Be $true
         }
 
         It 'Returns false for no value' {
@@ -21,7 +21,7 @@ Describe 'Test-PodeHeaderExists' {
                 'Headers' = @{}
             } }
 
-            Test-PodeHeaderExists -Name 'test' | Should Be $false
+            Test-PodeHeader -Name 'test' | Should Be $false
         }
 
         It 'Returns false for not existing' {
@@ -29,7 +29,7 @@ Describe 'Test-PodeHeaderExists' {
                 'Headers' = @{}
             } }
 
-            Test-PodeHeaderExists -Name 'test' | Should Be $false
+            Test-PodeHeader -Name 'test' | Should Be $false
         }
     }
 
@@ -43,7 +43,7 @@ Describe 'Test-PodeHeaderExists' {
                 }
             } }
 
-            Test-PodeHeaderExists -Name 'test' | Should Be $true
+            Test-PodeHeader -Name 'test' | Should Be $true
         }
 
         It 'Returns false for no value' {
@@ -51,7 +51,7 @@ Describe 'Test-PodeHeaderExists' {
                 'Headers' = @{}
             } }
 
-            Test-PodeHeaderExists -Name 'test' | Should Be $false
+            Test-PodeHeader -Name 'test' | Should Be $false
         }
 
         It 'Returns false for not existing' {
@@ -59,7 +59,7 @@ Describe 'Test-PodeHeaderExists' {
                 'Headers' = @{}
             } }
 
-            Test-PodeHeaderExists -Name 'test' | Should Be $false
+            Test-PodeHeader -Name 'test' | Should Be $false
         }
     }
 }
@@ -225,44 +225,5 @@ Describe 'Add-PodeHeader' {
             Add-PodeHeader -Name 'test' -Value 'example'
             $WebEvent.Response.Headers['test'] | Should Be 'example'
         }
-    }
-}
-
-Describe 'Header' {
-    It 'Throws invalid action error' {
-        { Header -Action 'MOO' -Name 'test' } | Should Throw "Cannot validate argument on parameter 'Action'"
-    }
-
-    It 'Throws error for null name' {
-        { Header -Action Set -Name $null } | Should Throw "because it is an empty string"
-    }
-
-    It 'Throws error for empty name' {
-        { Header -Action Set -Name ([string]::Empty) } | Should Throw "because it is an empty string"
-    }
-
-    It 'Calls set method' {
-        Mock Set-PodeHeader { }
-        Header -Action Set -Name 'test' -Value 'example'
-        Assert-MockCalled Set-PodeHeader -Times 1 -Scope It
-    }
-
-    It 'Calls add method' {
-        Mock Add-PodeHeader { }
-        Header -Action Add -Name 'test' -Value 'example'
-        Assert-MockCalled Add-PodeHeader -Times 1 -Scope It
-    }
-
-    It 'Calls get method' {
-        Mock Get-PodeHeader { return 'header' }
-        $h = Header -Action Get -Name 'test'
-        $h | Should Be 'header'
-        Assert-MockCalled Get-PodeHeader -Times 1 -Scope It
-    }
-
-    It 'Calls exists method' {
-        Mock Test-PodeHeaderExists { return $true }
-        Header -Action Exists -Name 'test' | Should Be $true
-        Assert-MockCalled Test-PodeHeaderExists -Times 1 -Scope It
     }
 }
