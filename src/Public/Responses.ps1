@@ -494,8 +494,8 @@ function View
     if ($FlashMessages -and !(Test-Empty $WebEvent.Session.Data.Flash)) {
         $Data['flash'] = @{}
 
-        foreach ($key in (flash keys)) {
-            $Data.flash[$key] = (flash get $key)
+        foreach ($name in (Get-PodeFlashMessageNames)) {
+            $Data.flash[$name] = (Get-PodeFlashMessage -Name $name)
         }
     }
     elseif (Test-Empty $Data['flash']) {
