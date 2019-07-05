@@ -11,11 +11,11 @@ Server {
     logger 'terminal'
 
     # re-initialise the state
-    state restore './state.json'
+    Restore-PodeState -Path './state.json'
 
     # initialise if there was no file
-    if ($null -eq ($hash = (state get 'hash'))) {
-        $hash = state set 'hash' @{}
+    if ($null -eq ($hash = (Get-PodeState -Name 'hash'))) {
+        $hash = Set-PodeState -Name 'hash' -Value @{}
         $hash['values'] = @()
     }
 
@@ -25,9 +25,9 @@ Server {
         $hash = $null
 
         lock $session.Lockable {
-            $hash = (state get 'hash')
+            $hash = (Get-PodeState -Name 'hash')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
-            state save './state.json'
+            Save-PodeState -Path './state.json'
         }
     }
 
@@ -36,7 +36,7 @@ Server {
         param($session)
 
         lock $session.Lockable {
-            $hash = (state get 'hash')
+            $hash = (Get-PodeState 'hash')
             json $hash
         }
     }
@@ -46,7 +46,7 @@ Server {
         param($session)
 
         lock $session.Lockable {
-            $hash = (state set 'hash' @{})
+            $hash = (Set-PodeState -Name 'hash' -Value @{})
             $hash.values = @()
         }
     }
