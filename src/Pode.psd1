@@ -51,7 +51,6 @@
         'Redirect',
         'Include',
         'Lock',
-        'State',
         'Listen',
         'Access',
         'Limit',
