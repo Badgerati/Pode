@@ -51,7 +51,6 @@
         'Redirect',
         'Include',
         'Lock',
-        'State',
         'Listen',
         'Access',
         'Limit',
@@ -102,7 +101,15 @@
         'Add-PodeHeader',
         'Test-PodeHeader',
         'Get-PodeHeader',
-        'Set-PodeHeader'
+        'Set-PodeHeader',
+
+        # state
+        'Set-PodeState',
+        'Get-PodeState',
+        'Remove-PodeState',
+        'Save-PodeState',
+        'Restore-PodeState',
+        'Test-PodeState'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
