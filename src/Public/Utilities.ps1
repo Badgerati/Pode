@@ -142,44 +142,6 @@ function Root
     return $PodeContext.Server.Root
 }
 
-function Save
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [Alias('n')]
-        [string]
-        $Name,
-
-        [Parameter()]
-        [Alias('p')]
-        [string]
-        $Path = '.'
-    )
-
-    # if path is '.', replace with server root
-    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-
-    # ensure the parameter name exists in data
-    $fileName = $WebEvent.Data[$Name]
-    if ([string]::IsNullOrWhiteSpace($fileName)) {
-        throw "A parameter called '$($Name)' was not supplied in the request"
-    }
-
-    # ensure the file data exists
-    if (!$WebEvent.Files.ContainsKey($fileName)) {
-        throw "No data for file '$($fileName)' was uploaded in the request"
-    }
-
-    # if the path is a directory, add the filename
-    if (Test-PodePathIsDirectory -Path $Path) {
-        $Path = Join-Path $Path $fileName
-    }
-
-    # save the file
-    [System.IO.File]::WriteAllBytes($Path, $WebEvent.Files[$fileName].Bytes)
-}
-
 function Stopwatch
 {
     param (
@@ -231,53 +193,6 @@ function Stream
     }
     finally {
         $InputObject.Dispose()
-    }
-}
-
-function Tcp
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('write', 'read')]
-        [Alias('a')]
-        [string]
-        $Action,
-
-        [Parameter()]
-        [Alias('m')]
-        [string]
-        $Message,
-
-        [Parameter()]
-        [Alias('c')]
-        $Client
-    )
-
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'tcp' -ThrowError
-
-    # use the main client if one isn't supplied
-    if ($null -eq $Client) {
-        $Client = $TcpEvent.Client
-    }
-
-    switch ($Action.ToLowerInvariant())
-    {
-        'write' {
-            $encoder = New-Object System.Text.ASCIIEncoding
-            $buffer = $encoder.GetBytes("$($Message)`r`n")
-            $stream = $Client.GetStream()
-            await $stream.WriteAsync($buffer, 0, $buffer.Length)
-            $stream.Flush()
-        }
-
-        'read' {
-            $bytes = New-Object byte[] 8192
-            $encoder = New-Object System.Text.ASCIIEncoding
-            $stream = $Client.GetStream()
-            $bytesRead = (await $stream.ReadAsync($bytes, 0, 8192))
-            return $encoder.GetString($bytes, 0, $bytesRead)
-        }
     }
 }
 

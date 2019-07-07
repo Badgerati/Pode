@@ -68,7 +68,7 @@ $endpoint = '/api/MyFunc'
 server -req $TriggerMetadata -type 'azure-functions' {
     # get route that can return data
     route get $endpoint {
-        json @{ 'Data' = 'some random data' }
+        Write-PodeJsonResponse -Value @{ 'Data' = 'some random data' }
     }
 
     # post route to create some data
@@ -97,11 +97,11 @@ $endpoint = '/api/MyFunc'
 
 server -req $TriggerMetadata -type 'azure-functions' -root '../www' {
     # set your engine renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # get route for your 'index.pode' view
     route get $endpoint {
-        view 'index'
+        Write-PodeViewResponse -Path 'index'
     }
 }
 ```

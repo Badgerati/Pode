@@ -98,12 +98,12 @@ Server {
 
     # check the request on this route against the authentication
     route get '/cpu' (auth check client) {
-        json @{ 'cpu' = 82 }
+        Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 
     # this route will not be validated against the authentication
     route get '/memory' {
-        json @{ 'memory' = 14 }
+        Write-PodeJsonResponse -Value @{ 'memory' = 14 }
     }
 }
 ```

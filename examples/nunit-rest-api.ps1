@@ -52,7 +52,7 @@ Server {
         Start-Process -FilePath $tool -NoNewWindow -Wait -ArgumentList $_args -ErrorAction Stop | Out-Null
 
         # return results
-        xml $results -file
+        Write-PodeXmlResponse -Path $results
 
         # delete results file
         Remove-Item -Path $results -Force | Out-Null

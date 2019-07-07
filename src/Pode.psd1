@@ -32,23 +32,14 @@
     FunctionsToExport = @(
         'Route',
         'Handler',
-        'Tcp',
         'Server',
-        'Engine',
-        'Html',
-        'Json',
-        'View',
-        'Xml',
         'Pode',
         'Timer',
         'Logger',
-        'Csv',
         'Test-IsUnix',
         'Test-IsWindows',
         'Test-IsPSCore',
         'Test-Empty',
-        'Status',
-        'Redirect',
         'Include',
         'Lock',
         'Listen',
@@ -63,11 +54,9 @@
         'Session',
         'Invoke-ScriptBlock',
         'Auth',
-        'Attach',
         'Script',
         'Import',
         'Coalesce',
-        'Save',
         'Get-PodeConfiguration',
         'Root',
         'Await',
@@ -75,8 +64,6 @@
         'Config',
         'Csrf',
         'Gui',
-        'Text',
-        'File',
         'Header',
 
         # cookies
@@ -109,7 +96,23 @@
         'Remove-PodeState',
         'Save-PodeState',
         'Restore-PodeState',
-        'Test-PodeState'
+        'Test-PodeState',
+
+        # response helpers
+        'Set-PodeResponseAttachment',
+        'Write-PodeTextResponse',
+        'Write-PodeFileResponse',
+        'Write-PodeCsvResponse',
+        'Write-PodeHtmlResponse',
+        'Write-PodeJsonResponse',
+        'Write-PodeXmlResponse',
+        'Write-PodeViewResponse',
+        'Set-PodeResponseStatus',
+        'Move-PodeResponseUrl',
+        'Write-PodeTcpClient',
+        'Read-PodeTcpClient',
+        'Save-PodeResponseFile',
+        'Set-PodeViewEngine'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

@@ -15,7 +15,7 @@ Server {
     listen *:8080 http
 
     route get '/info' {
-        json @{ 'cpu' = 80; 'memory' = 15; }
+        Write-PodeJsonResponse -Value @{ 'cpu' = 80; 'memory' = 15; }
     }
 }
 ```

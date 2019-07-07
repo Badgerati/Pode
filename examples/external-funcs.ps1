@@ -16,7 +16,7 @@ Server {
     # GET request for "localhost:8085/"
     route 'get' '/' {
         param($session)
-        json @{ 'result' = (Get-Greeting) }
+        Write-PodeJsonResponse -Value @{ 'result' = (Get-Greeting) }
     }
 
 } -FileMonitor

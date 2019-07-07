@@ -17,14 +17,14 @@ Server -Threads 2 {
     import pshtml
 
     # set view engine to PSHTML renderer
-    engine ps1 {
+    Set-PodeViewEngine -Type PSHTML -Extension PS1 -ScriptBlock {
         param($path, $data)
         return [string](. $path $data)
     }
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        view 'index' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'index' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
 } -FileMonitor

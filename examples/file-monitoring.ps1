@@ -8,12 +8,12 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Server {
 
     listen *:8085 http
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
         param($session)
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
 } -FileMonitor

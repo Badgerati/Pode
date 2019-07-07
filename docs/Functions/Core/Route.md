@@ -25,7 +25,7 @@ server {
     listen *:8080 http
 
     route get '/ping' {
-        json @{ 'value' = 'ping' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 }
 ```
@@ -46,7 +46,7 @@ server {
 *./routes/ping.ps1*
 ```powershell
 return {
-    json @{ 'value' = 'ping' }
+    Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
 }
 ```
 
@@ -59,7 +59,7 @@ server {
     listen *:8080 http
 
     route get '/ping' {
-        json @{ 'value' = 'ping' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 
     route -remove get '/ping'
@@ -81,7 +81,7 @@ server {
         $userId = New-DummyUser $event.Data.Email $event.Data.Name $event.Data.Password
 
         # return with userId
-        json @{ 'userId' = $userId; }
+        Write-PodeJsonResponse -Value @{ 'userId' = $userId; }
     }
 }
 ```
@@ -128,7 +128,7 @@ server {
         }
 
         # return the user object
-        json @{ 'user' = $user; }
+        Write-PodeJsonResponse -Value @{ 'user' = $user; }
     }
 }
 ```
@@ -172,11 +172,11 @@ server {
     listen *:8080 http
 
     route get '/ping' {
-        json @{ 'value' = 'ping' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 
     route get '/ping' -protocol http {
-        json @{ 'value' = 'pong' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'pong' }
     }
 }
 ```
@@ -191,11 +191,11 @@ server {
     listen pode.bar.com:8080 http
 
     route get '/ping' -endpoint pode.foo.com {
-        json @{ 'value' = 'ping' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 
     route get '/ping' -endpoint pode.bar.com {
-        json @{ 'value' = 'pong' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'pong' }
     }
 }
 ```
@@ -210,11 +210,11 @@ server {
     listen pode.bar.com:8080 http -name 'pode2'
 
     route get '/ping' -listenName 'pode1' {
-        json @{ 'value' = 'ping' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 
     route get '/ping' -listenName 'pode2' {
-        json @{ 'value' = 'pong' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'pong' }
     }
 }
 ```

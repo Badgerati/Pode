@@ -18,7 +18,7 @@ Describe 'Start-PodeAzFuncServer' {
     Mock Write-Host { }
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
-    Mock Status { }
+    Mock Set-PodeResponseStatus { }
 
     It 'Throws error for null data' {
         { Start-PodeAzFuncServer -Data $null } | Should Throw 'because it is null'
@@ -42,7 +42,7 @@ Describe 'Start-PodeAzFuncServer' {
         $result.Name | Should Be 'Response'
         $result.Value | Should Not Be $null
 
-        Assert-MockCalled Status -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 0 -Scope It
     }
@@ -65,7 +65,7 @@ Describe 'Start-PodeAzFuncServer' {
         $result.Name | Should Be 'Response'
         $result.Value | Should Not Be $null
 
-        Assert-MockCalled Status -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 0 -Scope It
     }
@@ -88,7 +88,7 @@ Describe 'Start-PodeAzFuncServer' {
         $result.Name | Should Be 'Response'
         $result.Value | Should Not Be $null
 
-        Assert-MockCalled Status -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 1 -Scope It
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -112,7 +112,7 @@ Describe 'Start-PodeAzFuncServer' {
         $result.Name | Should Be 'Response'
         $result.Value | Should Not Be $null
 
-        Assert-MockCalled Status -Times 1 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 0 -Scope It
     }
@@ -135,7 +135,7 @@ Describe 'Start-PodeAzFuncServer' {
 
         { Start-PodeAzFuncServer -Data $d } | Should Throw 'some error'
 
-        Assert-MockCalled Status -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 0 -Scope It
     }
@@ -153,7 +153,7 @@ Describe 'Start-PodeAwsLambdaServer' {
     Mock Write-Host { }
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
-    Mock Status { }
+    Mock Set-PodeResponseStatus { }
 
     It 'Throws error for null data' {
         { Start-PodeAwsLambdaServer -Data $null } | Should Throw 'because it is null'
@@ -171,7 +171,7 @@ Describe 'Start-PodeAwsLambdaServer' {
 
         $result | Should Not Be $null
 
-        Assert-MockCalled Status -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 0 -Scope It
     }
@@ -188,7 +188,7 @@ Describe 'Start-PodeAwsLambdaServer' {
 
         $result | Should Not Be $null
 
-        Assert-MockCalled Status -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 1 -Scope It
         Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
@@ -206,7 +206,7 @@ Describe 'Start-PodeAwsLambdaServer' {
 
         $result | Should Not Be $null
 
-        Assert-MockCalled Status -Times 1 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 0 -Scope It
     }
@@ -224,7 +224,7 @@ Describe 'Start-PodeAwsLambdaServer' {
 
         { Start-PodeAwsLambdaServer -Data $d } | Should Throw 'some error'
 
-        Assert-MockCalled Status -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 0 -Scope It
     }

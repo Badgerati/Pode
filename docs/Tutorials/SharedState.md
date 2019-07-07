@@ -140,7 +140,7 @@ server {
 
             # get the hashtable from the state and return it
             $hash = (Get-PodeState -Name 'hash')
-            json $hash
+            Write-PodeJsonResponse -Value $hash
         }
     }
 

@@ -15,7 +15,7 @@ Server {
     listen *:8080 http
 
     route get '/env' {
-        json @{ 'Windows' = (Test-IsWindows) }
+        Write-PodeJsonResponse -Value @{ 'Windows' = (Test-IsWindows) }
     }
 }
 ```

@@ -11,7 +11,7 @@ Server {
     listen *:8085 http
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # setup session details
     middleware (session @{
@@ -28,7 +28,7 @@ Server {
     route 'get' '/' {
         param($s)
         $s.Session.Data.Views++
-        view 'simple' -Data @{ 'numbers' = @($s.Session.Data.Views); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @($s.Session.Data.Views); }
     }
 
 }

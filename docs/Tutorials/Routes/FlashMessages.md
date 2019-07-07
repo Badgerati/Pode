@@ -23,7 +23,7 @@ Then to retrieve the message, you can do this in a `route` for a `view`:
 
 ```powershell
 route get '/signup' {
-    view 'signup' -d @{
+    Write-PodeViewResponse -Path 'signup' -Data @{
         'errors' = @{
             'email' = (Get-PodeFlashMessage -Name 'email-error')
         }

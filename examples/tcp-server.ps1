@@ -15,8 +15,8 @@ Server -Threads 2 {
     # setup a tcp handler
     handler 'tcp' {
         param($session)
-        tcp write 'gief data'
-        $msg = (tcp read)
+        Write-PodeTcpClient -Message 'gief data'
+        $msg = (Read-PodeTcpClient)
         Write-Host $msg
     }
 

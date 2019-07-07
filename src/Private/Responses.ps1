@@ -48,7 +48,7 @@ function Show-PodeErrorPage
     }
 
     # write the error page to the stream
-    File -Path $errorPage.Path -Data $data -ContentType $errorPage.ContentType
+    Write-PodeFileResponse -Path $errorPage.Path -Data $data -ContentType $errorPage.ContentType
 }
 
 function Close-PodeTcpConnection
@@ -67,7 +67,7 @@ function Close-PodeTcpConnection
 
     if ($null -ne $Client) {
         if ($Quit -and $Client.Connected) {
-            tcp write '221 Bye'
+            Write-PodeTcpClient -Message '221 Bye'
         }
 
         dispose $Client -Close

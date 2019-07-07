@@ -21,7 +21,7 @@ Server -Threads 2 {
     listen *:8085 http
 
     # set the view engine
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # setup session details
     middleware (session @{
@@ -44,7 +44,7 @@ Server -Threads 2 {
 
         $e.Session.Data.Views++
 
-        view 'auth-home' -data @{
+        Write-PodeViewResponse -Path 'auth-home' -Data @{
             'Username' = $e.Auth.User.Name;
             'Views' = $e.Session.Data.Views;
         }
@@ -56,7 +56,7 @@ Server -Threads 2 {
     # checking user authetication (to prevent a 401 status)
     route 'get' '/login' (auth check login -o @{ 'login' = $true; 'successUrl' = '/' }) {
         param($e)
-        view -fm 'auth-login'
+        Write-PodeViewResponse -Path 'auth-login' -FlashMessages
     }
 
     # login check:

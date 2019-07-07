@@ -15,17 +15,17 @@ Server -Threads 2 {
     # listen on localhost:8085
     listen *:$Port http
 
-    engine html
+    Set-PodeViewEngine -Type HTML
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        view 'web-upload'
+        Write-PodeViewResponse -Path 'web-upload'
     }
 
     # POST request to upload a file
     route 'post' '/upload' {
-        save 'avatar'
-        redirect '/'
+        Save-PodeResponseFile -ParameterName 'avatar'
+        Move-PodeResponseUrl -Url '/'
     }
 
 } -FileMonitor

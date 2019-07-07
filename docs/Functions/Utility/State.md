@@ -51,7 +51,7 @@ server {
 
             # get the hashtable defined in the timer above, and return it as json
             $hash = (state get 'hash')
-            json $hash
+            Write-PodeJsonResponse -Value $hash
         }
     }
 

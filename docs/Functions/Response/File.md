@@ -17,7 +17,7 @@ Server {
     listen *:8080 http
 
     route get '/data' {
-        file './path/file.xml'
+        Write-PodeFileResponse -Path './path/file.xml'
     }
 }
 ```
@@ -29,10 +29,10 @@ The following example will write a dynamic text file to the response stream, sup
 ```powershell
 Server {
     listen *:8080 http
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     route get '/data' {
-        file './path/file.txt.pode' -d @{ 'date' = [datetime]::UtcNow }
+        Write-PodeFileResponse -Path './path/file.txt.pode' -Data @{ 'date' = [datetime]::UtcNow }
     }
 }
 ```

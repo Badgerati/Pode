@@ -18,7 +18,7 @@ Server -Threads 2 {
     listen localhost:8090 http
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # set csrf middleware, then either session middleware, or cookie global secret
     switch ($Type.ToLowerInvariant()) {
@@ -37,13 +37,13 @@ Server -Threads 2 {
     # this route will work, as GET methods are ignored by CSRF by default
     route get '/' {
         $token = (csrf token)
-        view 'index-csrf' -fm @{ 'csrfToken' = $token }
+        Write-PodeViewResponse -Path 'index-csrf' -fm @{ 'csrfToken' = $token }
     }
 
     # POST route for form with and without csrf token
     route post '/token' {
         param($e)
-        redirect '/'
+        Move-PodeResponseUrl -Url '/'
     }
 
 }

@@ -60,13 +60,13 @@ function Start-PodeSmtpServer
             $data = [string]::Empty
 
             # open response to smtp request
-            tcp write "220 $($PodeContext.Server.Endpoints[0].HostName) -- Pode Proxy Server"
+            Write-PodeTcpClient -Message "220 $($PodeContext.Server.Endpoints[0].HostName) -- Pode Proxy Server"
             $msg = [string]::Empty
 
             # respond to smtp request
             while ($true)
             {
-                try { $msg = (tcp read) }
+                try { $msg = (Read-PodeTcpClient) }
                 catch {
                     $Error[0] | Out-Default
                     break
@@ -75,30 +75,30 @@ function Start-PodeSmtpServer
                 try {
                     if (!(Test-Empty $msg)) {
                         if ($msg.StartsWith('QUIT')) {
-                            tcp write '221 Bye'
+                            Write-PodeTcpClient -Message '221 Bye'
                             Close-PodeTcpConnection
                             break
                         }
 
                         if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO')) {
-                            tcp write '250 OK'
+                            Write-PodeTcpClient -Message '250 OK'
                         }
 
                         if ($msg.StartsWith('RCPT TO')) {
-                            tcp write '250 OK'
+                            Write-PodeTcpClient -Message '250 OK'
                             $rcpt_tos += (Get-PodeSmtpEmail $msg)
                         }
 
                         if ($msg.StartsWith('MAIL FROM')) {
-                            tcp write '250 OK'
+                            Write-PodeTcpClient -Message '250 OK'
                             $mail_from = (Get-PodeSmtpEmail $msg)
                         }
 
                         if ($msg.StartsWith('DATA'))
                         {
-                            tcp write '354 Start mail input; end with <CR><LF>.<CR><LF>'
-                            $data = (tcp read)
-                            tcp write '250 OK'
+                            Write-PodeTcpClient -Message '354 Start mail input; end with <CR><LF>.<CR><LF>'
+                            $data = (Read-PodeTcpClient)
+                            Write-PodeTcpClient -Message '250 OK'
 
                             # set event data/headers
                             $SmtpEvent.From = $mail_from

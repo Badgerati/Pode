@@ -19,12 +19,12 @@ Server -Threads 2 {
     import eps
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
         Get-Module | Out-Default
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
 } -FileMonitor

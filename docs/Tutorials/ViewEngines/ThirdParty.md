@@ -20,7 +20,7 @@ Server {
 
     # set the engine to use and render EPS files
     # (could be index.eps, or for content scripts.css.eps)
-    engine eps {
+    Set-PodeViewEngine -Type EPS -ScriptBlock {
         param($path, $data)
 
         if ($null -eq $data) {
@@ -33,7 +33,7 @@ Server {
 
     # render the index.eps view
     route get '/' {
-        view 'index'
+        Write-PodeViewResponse -Path 'index'
     }
 }
 ```
@@ -61,14 +61,14 @@ Server {
 
     # set the engine to use and render PSHTML (which are just ps1) files
     # (could be index.ps1, or for content scripts.css.ps1)
-    engine ps1 {
+    Set-PodeViewEngine -Type PSHTML -Extension PS1 -ScriptBlock {
         param($path, $data)
         return [string](. $path $data)
     }
 
     # render the index.eps view
     route get '/' {
-        view 'index'
+        Write-PodeViewResponse -Path 'index'
     }
 }
 ```

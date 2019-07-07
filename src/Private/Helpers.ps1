@@ -36,7 +36,7 @@ function Get-PodeFileContentUsingViewEngine
     )
 
     # work out the engine to use when parsing the file
-    $engine = $PodeContext.Server.ViewEngine.Engine
+    $engine = $PodeContext.Server.ViewEngine.Type
 
     $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
     if (![string]::IsNullOrWhiteSpace($ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
@@ -1251,7 +1251,7 @@ function Test-PodePath
     # if the file doesnt exist then fail on 404
     if ([string]::IsNullOrWhiteSpace($Path) -or !(Test-Path $Path)) {
         if (!$NoStatus) {
-            status 404
+            Set-PodeResponseStatus -Code 404
         }
 
         return $false
@@ -1260,7 +1260,7 @@ function Test-PodePath
     # if the file isn't accessible then fail 401
     if (!(Test-PodePathAccess $Path)) {
         if (!$NoStatus) {
-            status 401
+            Set-PodeResponseStatus -Code 401
         }
 
         return $false
@@ -1269,7 +1269,7 @@ function Test-PodePath
     # if we're failing on a directory then fail on 404
     if ($FailOnDirectory -and (Test-PodePathIsDirectory $Path)) {
         if (!$NoStatus) {
-            status 404
+            Set-PodeResponseStatus -Code 404
         }
 
         return $false
@@ -1432,7 +1432,7 @@ function Get-PodeModulePath
 
     # if there's none or more, attempt to get the module used for 'engine'
     try {
-        $usedModule = (Get-Command -Name 'Engine').Module
+        $usedModule = (Get-Command -Name 'Set-PodeViewEngine').Module
         if (($usedModule | Measure-Object).Count -eq 1) {
             return $usedModule.Path
         }

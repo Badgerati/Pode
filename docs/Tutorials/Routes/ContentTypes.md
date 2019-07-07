@@ -15,11 +15,11 @@ server {
     listen *:8080 http
 
     route get '/api/json' -ctype 'application/json' {
-        json @{}
+        Write-PodeJsonResponse -Value @{}
     }
 
     route get '/api/xml' -ctype 'text/xml' {
-        xml @{}
+        Write-PodeXmlResponse -Value @{}
     }
 }
 ```

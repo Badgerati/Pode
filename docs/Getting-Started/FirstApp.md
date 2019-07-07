@@ -53,7 +53,7 @@ server {
     listen localhost:8080 http
 
     route get '/' {
-        json @{ 'value' = 'Hello, world!' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'Hello, world!' }
     }
 }
 ```

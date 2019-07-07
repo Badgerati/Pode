@@ -24,7 +24,7 @@ server {
     gui 'Basic Server'
 
     route get '/' {
-        view 'index'
+        Write-PodeViewResponse -Path 'index'
     }
 }
 ```

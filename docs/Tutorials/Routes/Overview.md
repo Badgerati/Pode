@@ -32,7 +32,7 @@ server {
     listen *:8080 http
 
     route get '/ping' {
-        json @{ 'value' = 'pong'; }
+        Write-PodeJsonResponse -Value @{ 'value' = 'pong'; }
     }
 }
 ```
@@ -62,7 +62,7 @@ server {
         $user = Get-DummyUser -UserId $s.Data.userId
 
         # return the user
-        json @{
+        Write-PodeJsonResponse -Value @{
             'Username' = $user.username;
             'Age' = $user.age;
         }
@@ -97,7 +97,7 @@ server {
         $user = Get-DummyUser -UserId $s.Query['userId']
 
         # return the user
-        json @{
+        Write-PodeJsonResponse -Value @{
             'Username' = $user.username;
             'Age' = $user.age;
         }
@@ -126,7 +126,7 @@ server {
         $user = Get-DummyUser -UserId $s.Parameters['userId']
 
         # return the user
-        json @{
+        Write-PodeJsonResponse -Value @{
             'Username' = $user.username;
             'Age' = $user.age;
         }

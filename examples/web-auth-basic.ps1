@@ -38,7 +38,7 @@ Server -Threads 2 {
     # POST request to get list of users (since there's no session, the auth check will always happen)
     route 'post' '/users' (auth check basic) {
         param($s)
-        json @{ 'Users' = @(
+        Write-PodeJsonResponse -Value @{ 'Users' = @(
             @{
                 'Name' = 'Deep Thought';
                 'Age' = 42;

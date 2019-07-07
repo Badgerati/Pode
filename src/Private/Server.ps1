@@ -105,7 +105,7 @@ function Restart-PodeServer
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
-            'Engine' = 'html';
+            'Type' = 'html';
             'Extension' = 'html';
             'Script' = $null;
             'IsDynamic' = $false;

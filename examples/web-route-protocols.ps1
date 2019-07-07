@@ -12,27 +12,27 @@ Server {
     listen *:8443 https
 
     # set view engine to pode
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page
     route get '/' -endpoint *:8443 -protocol http {
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request to download a file
     route get '/download' {
-        attach 'Anger.jpg'
+        Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
     # GET request with parameters
     route get '/:userId/details' {
         param($event)
-        json @{ 'userId' = $event.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
     }
 
     # ALL requests for http only to redirect to https
     route * * -protocol http {
-        redirect -protocol https -port 8443
+        Move-PodeResponseUrl -Protocol https -Port 8443
     }
 
 } -FileMonitor

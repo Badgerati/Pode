@@ -378,7 +378,7 @@ function Get-PodeCsrfMiddleware
         $token = Get-PodeCsrfToken
 
         if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
-            status 403 'Invalid CSRF Token'
+            Set-PodeResponseStatus -Code 403 -Description 'Invalid CSRF Token'
             return $false
         }
 
@@ -405,7 +405,7 @@ function Get-PodeCsrfCheck
         $token = Get-PodeCsrfToken
 
         if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
-            status 403 'Invalid CSRF Token'
+            Set-PodeResponseStatus -Code 403 -Description 'Invalid CSRF Token'
             return $false
         }
 

@@ -22,18 +22,18 @@ Server {
     #listen "pode.foo.com:8443" https -cert self
 
     # set view engine for web pages
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page at "/"
     route 'get' '/' {
         param($session)
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     route 'get' '/error' {
         param($session)
-        status 500
+        Set-PodeResponseStatus -Code 500
     }
 
 }
