@@ -40,7 +40,6 @@
         'Test-IsWindows',
         'Test-IsPSCore',
         'Test-Empty',
-        'Include',
         'Lock',
         'Listen',
         'Access',
@@ -64,7 +63,6 @@
         'Config',
         'Csrf',
         'Gui',
-        'Header',
 
         # cookies
         'Get-PodeCookie',
@@ -112,7 +110,8 @@
         'Write-PodeTcpClient',
         'Read-PodeTcpClient',
         'Save-PodeResponseFile',
-        'Set-PodeViewEngine'
+        'Set-PodeViewEngine',
+        'Use-PodePartialView'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

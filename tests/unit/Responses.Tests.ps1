@@ -358,7 +358,7 @@ Describe 'Write-PodeFileResponse' {
     }
 }
 
-Describe 'Include' {
+Describe 'Use-PodePartialView' {
     $PodeContext = @{
         'Server' = @{
             'InbuiltDrives' = @{ 'views' = '.' }
@@ -368,18 +368,18 @@ Describe 'Include' {
 
     It 'Throws an error for a path that does not exist' {
         Mock Test-PodePath { return $false }
-        { Include -Path 'sub-view.pode' } | Should Throw 'File not found'
+        { Use-PodePartialView -Path 'sub-view.pode' } | Should Throw 'File not found'
     }
 
     Mock Test-PodePath { return $true }
     Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
 
     It 'Returns file contents, and appends view engine' {
-        Include -Path 'sub-view' | Should Be 'file contents'
+        Use-PodePartialView -Path 'sub-view' | Should Be 'file contents'
     }
 
     It 'Returns file contents' {
-        Include -Path 'sub-view.pode' | Should Be 'file contents'
+        Use-PodePartialView -Path 'sub-view.pode' | Should Be 'file contents'
     }
 }
 

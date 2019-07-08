@@ -56,43 +56,6 @@ function Dispose
     }
 }
 
-function Include
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [Alias('p')]
-        [string]
-        $Path,
-
-        [Parameter()]
-        [Alias('d')]
-        $Data = @{}
-    )
-
-    # default data if null
-    if ($null -eq $Data) {
-        $Data = @{}
-    }
-
-    # add view engine extension
-    $ext = Get-PodeFileExtension -Path $Path
-    if (Test-Empty $ext) {
-        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
-    }
-
-    # only look in the view directory
-    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
-
-    # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path -NoStatus)) {
-        throw "File not found at path: $($Path)"
-    }
-
-    # run any engine logic
-    return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
-}
-
 function Lock
 {
     param (

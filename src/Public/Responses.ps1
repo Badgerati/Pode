@@ -544,7 +544,7 @@ Renders a dynamic, or static, View on the Response.
 Renders a dynamic, or static, View on the Response; allowing for dynamic data to be supplied.
 
 .PARAMETER Path
-The path to a view, relative to the "/views" directory. (Extension is optional).
+The path to a View, relative to the "/views" directory. (Extension is optional).
 
 .PARAMETER Data
 Any dynamic data to supply to a dynamic View.
@@ -970,4 +970,55 @@ function Set-PodeViewEngine
     $PodeContext.Server.ViewEngine.Extension = $Extension
     $PodeContext.Server.ViewEngine.Script = $ScriptBlock
     $PodeContext.Server.ViewEngine.IsDynamic = ($Type -ine 'html')
+}
+
+<#
+.SYNOPSIS
+Includes the contents of a partial View into another dynamic View.
+
+.DESCRIPTION
+Includes the contents of a partial View into another dynamic View. The partial View can be static or dynamic.
+
+.PARAMETER Path
+The path to a partial View, relative to the "/views" directory. (Extension is optional).
+
+.PARAMETER Data
+Any dynamic data to supply to a dynamic partial View.
+
+.EXAMPLE
+Use-PodePartialView -Path 'shared/footer'
+#>
+function Use-PodePartialView
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        $Data = @{}
+    )
+
+    # default data if null
+    if ($null -eq $Data) {
+        $Data = @{}
+    }
+
+    # add view engine extension
+    $ext = Get-PodeFileExtension -Path $Path
+    if ([string]::IsNullOrWhiteSpace($ext)) {
+        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
+    }
+
+    # only look in the view directory
+    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
+
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path -NoStatus)) {
+        throw "File not found at path: $($Path)"
+    }
+
+    # run any engine logic
+    return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
 }
