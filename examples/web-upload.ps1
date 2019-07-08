@@ -24,7 +24,7 @@ Server -Threads 2 {
 
     # POST request to upload a file
     route 'post' '/upload' {
-        Save-PodeResponseFile -ParameterName 'avatar'
+        Save-PodeResponseFile -Key 'avatar'
         Move-PodeResponseUrl -Url '/'
     }
 

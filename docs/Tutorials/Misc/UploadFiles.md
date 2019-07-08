@@ -79,7 +79,7 @@ Server {
 
         # upload the avatar - this will retrieve the filename from $e.Data,
         # and the bytes from $e.Files, saving to the server's root path
-        Save-PodeResponseFile -ParameterName 'avatar'
+        Save-PodeResponseFile -Key 'avatar'
     }
 
 }

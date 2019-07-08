@@ -79,10 +79,10 @@ function Set-PodeResponseAttachment
 
 <#
 .SYNOPSIS
-Writes a String a Byte[] to the Response.
+Writes a String or a Byte[] to the Response.
 
 .DESCRIPTION
-Writes a String a Byte[] to the Response, as some specified content type. This value can also be cached.
+Writes a String or a Byte[] to the Response, as some specified content type. This value can also be cached.
 
 .PARAMETER Value
 A String value to write.
@@ -207,6 +207,41 @@ function Write-PodeTextResponse
     }
 }
 
+<#
+.SYNOPSIS
+Renders the content of a static, or dynamic, file on the Response.
+
+.DESCRIPTION
+Renders the content of a static, or dynamic, file on the Response.
+You can set browser's to cache the content, and also override the file's content type.
+
+.PARAMETER Path
+The path to a file.
+
+.PARAMETER Data
+A HashTable of dynamic data to supply to a dynamic file.
+
+.PARAMETER ContentType
+The content type of the file's contents - this overrides the file's extension.
+
+.PARAMETER MaxAge
+The maximum age to cache the file's content on the browser, in seconds.
+
+.PARAMETER Cache
+Should the file's content be cached by browsers, or not?
+
+.EXAMPLE
+Write-PodeFileResponse -Path 'C:/Files/Stuff.txt'
+
+.EXAMPLE
+Write-PodeFileResponse -Path 'C:/Files/Stuff.txt' -Cache -MaxAge 1800
+
+.EXAMPLE
+Write-PodeFileResponse -Path 'C:/Files/Stuff.txt' -ContentType 'application/json'
+
+.EXAMPLE
+Write-PodeFileResponse -Path 'C:/Views/Index.pode' -Data @{ Counter = 2 }
+#>
 function Write-PodeFileResponse
 {
     [CmdletBinding()]
@@ -265,6 +300,28 @@ function Write-PodeFileResponse
     }
 }
 
+<#
+.SYNOPSIS
+Writes CSV data to the Response.
+
+.DESCRIPTION
+Writes CSV data to the Response, setting the content type accordingly.
+
+.PARAMETER Value
+A String, PSObject, or HashTable value.
+
+.PARAMETER Path
+The path to a CSV file.
+
+.EXAMPLE
+Write-PodeCsvResponse -Value "Name`nRick"
+
+.EXAMPLE
+Write-PodeCsvResponse -Value @{ Name = 'Rick' }
+
+.EXAMPLE
+Write-PodeCsvResponse -Path 'E:/Files/Names.csv'
+#>
 function Write-PodeCsvResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
@@ -309,6 +366,28 @@ function Write-PodeCsvResponse
     Write-PodeTextResponse -Value $Value -ContentType 'text/csv'
 }
 
+<#
+.SYNOPSIS
+Writes HTML data to the Response.
+
+.DESCRIPTION
+Writes HTML data to the Response, setting the content type accordingly.
+
+.PARAMETER Value
+A String, PSObject, or HashTable value.
+
+.PARAMETER Path
+The path to a HTML file.
+
+.EXAMPLE
+Write-PodeHtmlResponse -Value '<html><body>Hello!</body></html>'
+
+.EXAMPLE
+Write-PodeHtmlResponse -Value @{ Message = 'Hello, all!' }
+
+.EXAMPLE
+Write-PodeHtmlResponse -Path 'E:/Site/About.html'
+#>
 function Write-PodeHtmlResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
@@ -343,6 +422,28 @@ function Write-PodeHtmlResponse
     Write-PodeTextResponse -Value $Value -ContentType 'text/html'
 }
 
+<#
+.SYNOPSIS
+Writes JSON data to the Response.
+
+.DESCRIPTION
+Writes JSON data to the Response, setting the content type accordingly.
+
+.PARAMETER Value
+A String, PSObject, or HashTable value.
+
+.PARAMETER Path
+The path to a JSON file.
+
+.EXAMPLE
+Write-PodeJsonResponse -Value '{"name": "Rick"}'
+
+.EXAMPLE
+Write-PodeJsonResponse -Value @{ Name = 'Rick' }
+
+.EXAMPLE
+Write-PodeJsonResponse -Path 'E:/Files/Names.json'
+#>
 function Write-PodeJsonResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
@@ -376,6 +477,28 @@ function Write-PodeJsonResponse
     Write-PodeTextResponse -Value $Value -ContentType 'application/json'
 }
 
+<#
+.SYNOPSIS
+Writes XML data to the Response.
+
+.DESCRIPTION
+Writes XML data to the Response, setting the content type accordingly.
+
+.PARAMETER Value
+A String, PSObject, or HashTable value.
+
+.PARAMETER Path
+The path to an XML file.
+
+.EXAMPLE
+Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
+
+.EXAMPLE
+Write-PodeXmlResponse -Value @{ Name = 'Rick' }
+
+.EXAMPLE
+Write-PodeXmlResponse -Path 'E:/Files/Names.xml'
+#>
 function Write-PodeXmlResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
@@ -413,6 +536,31 @@ function Write-PodeXmlResponse
     Write-PodeTextResponse -Value $Value -ContentType 'text/xml'
 }
 
+<#
+.SYNOPSIS
+Renders a dynamic, or static, View on the Response.
+
+.DESCRIPTION
+Renders a dynamic, or static, View on the Response; allowing for dynamic data to be supplied.
+
+.PARAMETER Path
+The path to a view, relative to the "/views" directory. (Extension is optional).
+
+.PARAMETER Data
+Any dynamic data to supply to a dynamic View.
+
+.PARAMETER FlashMessages
+Automatically supply all Flash messages in the current session to the View.
+
+.EXAMPLE
+Write-PodeViewResponse -Path 'index'
+
+.EXAMPLE
+Write-PodeViewResponse -Path 'accounts/profile_page' -Data @{ Username = 'Morty' }
+
+.EXAMPLE
+Write-PodeViewResponse -Path 'login' -FlashMessages
+#>
 function Write-PodeViewResponse
 {
     [CmdletBinding()]
@@ -469,6 +617,37 @@ function Write-PodeViewResponse
     Write-PodeHtmlResponse -Value (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
 }
 
+<#
+.SYNOPSIS
+Sets the Status Code of the Response, and controls rendering error pages.
+
+.DESCRIPTION
+Sets the Status Code of the Response, and controls rendering error pages.
+
+.PARAMETER Code
+The Status Code to set on the Response.
+
+.PARAMETER Description
+An optional Status Description.
+
+.PARAMETER Exception
+An exception to use when detailing error information on error pages.
+
+.PARAMETER ContentType
+The content type of the error page to use.
+
+.PARAMETER NoErrorPage
+Don't render an error page when the Status Code is 400+.
+
+.EXAMPLE
+Set-PodeResponseStatus -Code 404
+
+.EXAMPLE
+Set-PodeResponseStatus -Code 500 -Exception $_.Exception
+
+.EXAMPLE
+Set-PodeResponseStatus -Code 500 -Exception $_.Exception -ContentType 'application/json'
+#>
 function Set-PodeResponseStatus
 {
     [CmdletBinding()]
@@ -510,6 +689,40 @@ function Set-PodeResponseStatus
     }
 }
 
+<#
+.SYNOPSIS
+Redirecting a user to a new URL.
+
+.DESCRIPTION
+Redirecting a user to a new URL, or the same URL as the Request but a different Protocol - or other components.
+
+.PARAMETER Url
+Redirect the user to a new URL, or a relative path.
+
+.PARAMETER Port
+Change the port of the current Request before redirecting.
+
+.PARAMETER Protocol
+Change the protocol of the current Request before redirecting.
+
+.PARAMETER Domain
+Change the domain name of the current Request before redirecting.
+
+.PARAMETER Moved
+Set the Status Code as "301 Moved", rather than "302 Redirect".
+
+.EXAMPLE
+Move-PodeResponseUrl -Url 'https://google.com'
+
+.EXAMPLE
+Move-PodeResponseUrl -Url '/about'
+
+.EXAMPLE
+Move-PodeResponseUrl -Protocol HTTPS
+
+.EXAMPLE
+Move-PodeResponseUrl -Port 9000 -Moved
+#>
 function Move-PodeResponseUrl
 {
     [CmdletBinding(DefaultParameterSetName='Url')]
@@ -573,6 +786,22 @@ function Move-PodeResponseUrl
     }
 }
 
+<#
+.SYNOPSIS
+Writes data to a TCP Client stream.
+
+.DESCRIPTION
+Writes data to a TCP Client stream.
+
+.PARAMETER Message
+Parameter description
+
+.PARAMETER Client
+An optional TcpClient to write data.
+
+.EXAMPLE
+Write-PodeTcpClient -Message '250 OK'
+#>
 function Write-PodeTcpClient
 {
     [CmdletBinding()]
@@ -600,6 +829,19 @@ function Write-PodeTcpClient
     $stream.Flush()
 }
 
+<#
+.SYNOPSIS
+Reads data from a TCP Client stream.
+
+.DESCRIPTION
+Reads data from a TCP Client stream.
+
+.PARAMETER Client
+An optional TcpClient from which to read data.
+
+.EXAMPLE
+$data = Read-PodeTcpClient
+#>
 function Read-PodeTcpClient
 {
     [CmdletBinding()]
@@ -623,13 +865,32 @@ function Read-PodeTcpClient
     return $encoder.GetString($bytes, 0, $bytesRead)
 }
 
+<#
+.SYNOPSIS
+Saves an uploaded file on the Request to the File System.
+
+.DESCRIPTION
+Saves an uploaded file on the Request to the File System.
+
+.PARAMETER Key
+The name of the key within the web event's Data HashTable that stores the file's name.
+
+.PARAMETER Path
+The path to save files.
+
+.EXAMPLE
+Save-PodeResponseFile -Key 'avatar'
+
+.EXAMPLE
+Save-PodeResponseFile -Key 'avatar' -Path 'F:/Images'
+#>
 function Save-PodeResponseFile
 {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $ParameterName,
+        $Key,
 
         [Parameter()]
         [string]
@@ -640,9 +901,9 @@ function Save-PodeResponseFile
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # ensure the parameter name exists in data
-    $fileName = $WebEvent.Data[$ParameterName]
+    $fileName = $WebEvent.Data[$Key]
     if ([string]::IsNullOrWhiteSpace($fileName)) {
-        throw "A parameter called '$($ParameterName)' was not supplied in the request"
+        throw "A parameter called '$($Key)' was not supplied in the request"
     }
 
     # ensure the file data exists
@@ -659,6 +920,31 @@ function Save-PodeResponseFile
     [System.IO.File]::WriteAllBytes($Path, $WebEvent.Files[$fileName].Bytes)
 }
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.PARAMETER Type
+The type name of the view engine (inbuilt types are: Pode and HTML).
+
+.PARAMETER ScriptBlock
+A ScriptBlock for specifying custom view engine rendering rules.
+
+.PARAMETER Extension
+A custom extension for the engine's files.
+
+.EXAMPLE
+Set-PodeViewEngine -Type HTML
+
+.EXAMPLE
+Set-PodeViewEngine -Type PSHTML -Extension PS1 -ScriptBlock {
+    param($path, $data)
+    return [string](. $path $data)
+}
+#>
 function Set-PodeViewEngine
 {
     [CmdletBinding()]
