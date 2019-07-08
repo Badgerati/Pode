@@ -122,7 +122,7 @@ function New-PodeContext
 
     # view engine for rendering pages
     $ctx.Server.ViewEngine = @{
-        'Engine' = 'html';
+        'Type' = 'html';
         'Extension' = 'html';
         'Script' = $null;
         'IsDynamic' = $false;

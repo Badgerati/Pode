@@ -15,7 +15,7 @@ Server {
     listen *:8080 http
 
     route get '/env' {
-        json @{ 'Unix' = (Test-IsUnix) }
+        Write-PodeJsonResponse -Value @{ 'Unix' = (Test-IsUnix) }
     }
 }
 ```

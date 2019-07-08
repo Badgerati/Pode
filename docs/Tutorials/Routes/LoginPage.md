@@ -35,7 +35,7 @@ Next, we'll need to [`listen`](../../../Functions/Core/Listen) on an endpoint an
 ```powershell
 listen *:8080 http
 
-engine pode
+Set-PodeViewEngine -Type Pode
 ```
 
 To use sessions for our authentication (so we can stay logged in), we need to setup [`session`](../../../Functions/Middleware/Session) [`middleware`](../../../Functions/Core/Middleware). Here our sessions will last for 2 minutes, and will be extended on each request:
@@ -75,7 +75,7 @@ route get '/' (auth check form -o @{ 'failureUrl' = '/login' }) {
 
     $s.Session.Data.Views++
 
-    view 'index' -data @{
+    Write-PodeViewResponse -Path 'index' -Data @{
         'Username' = $s.Auth.User.Name;
         'Views' = $s.Session.Data.Views;
     }
@@ -91,7 +91,7 @@ For the `GET` route we have a `<"login" = $true>` option; this basically means i
 ```powershell
 route get '/login' (auth check form -o @{ 'login' = $true; 'successUrl' = '/' }) {
     param($s)
-    view 'login'
+    Write-PodeViewResponse -Path 'login'
 }
 
 route post '/login' (auth check form -o @{
@@ -151,7 +151,7 @@ Server -Thread 2 {
 
         $s.Session.Data.Views++
 
-        view 'index' -data @{
+        Write-PodeViewResponse -Path 'index' -Data @{
             'Username' = $s.Auth.User.Name;
             'Views' = $s.Session.Data.Views;
         }
@@ -160,7 +160,7 @@ Server -Thread 2 {
     # the "GET /login" endpoint for the login page
     route get '/login' (auth check form -o @{ 'login' = $true; 'successUrl' = '/' }) {
         param($s)
-        view 'login'
+        Write-PodeViewResponse -Path 'login'
     }
 
     # the "POST /login" endpoint for user authentication

@@ -17,7 +17,7 @@ Server -Threads 2 {
     import eps
 
     # set view engine to EPS renderer
-    engine eps {
+    Set-PodeViewEngine -Type EPS -ScriptBlock {
         param($path, $data)
 
         if ($null -eq $data) {
@@ -30,7 +30,7 @@ Server -Threads 2 {
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        view 'index' -Data @{ 'numbers' = @(1, 2, 3); 'date' = [DateTime]::UtcNow; }
+        Write-PodeViewResponse -Path 'index' -Data @{ 'numbers' = @(1, 2, 3); 'date' = [DateTime]::UtcNow; }
     }
 
 } -FileMonitor

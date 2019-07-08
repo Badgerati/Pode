@@ -56,18 +56,18 @@ $e.Files['image.png']   # the bytes of the uploaded file
 
 ### Inbuilt Save
 
-The following script is an example Pode server script that will save the uploaded file, from the above `<form>`:
+The following script is an example Pode server that will save the uploaded file, from the above `<form>`:
 
 ```powershell
 Server {
 
     # listen on localhost:8085
     listen *:8085 http
-    engine html
+    Set-PodeViewEngine -Type HTML
 
     # GET request for web page on "localhost:8085/"
     route get '/' {
-        view 'signup'
+        Write-PodeViewResponse -Path 'signup'
     }
 
     # POST request to save the avatar and create user
@@ -79,7 +79,7 @@ Server {
 
         # upload the avatar - this will retrieve the filename from $e.Data,
         # and the bytes from $e.Files, saving to the server's root path
-        save 'avatar'
+        Save-PodeResponseFile -Key 'avatar'
     }
 
 }

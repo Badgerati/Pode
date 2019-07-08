@@ -13,7 +13,7 @@ Server {
     listen *:8080 http
 
     route get '/' {
-        view 'index'
+        Write-PodeViewResponse -Path 'index'
     }
 }
 ```
@@ -41,11 +41,11 @@ Server {
     listen *:8080 http
 
     route get '/' {
-        view 'index'
+        Write-PodeViewResponse -Path 'index'
     }
 
     route get '/about' {
-        view 'about'
+        Write-PodeViewResponse -Path 'about'
     }
 }
 ```

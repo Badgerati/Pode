@@ -45,7 +45,7 @@ function Invoke-PodeMiddleware
             $WebEvent.Middleware.Clear()
         }
         catch {
-            status 500 -e $_
+            Set-PodeResponseStatus -Code 500 -Exception $_
             $continue = $false
             $_.Exception | Out-Default
         }
@@ -95,7 +95,7 @@ function Get-PodeAccessMiddleware
 
         # ensure the request IP address is allowed
         if (!(Test-PodeIPAccess -IP $s.Request.RemoteEndPoint.Address)) {
-            status 403
+            Set-PodeResponseStatus -Code 403
             return $false
         }
 
@@ -111,7 +111,7 @@ function Get-PodeLimitMiddleware
 
         # ensure the request IP address has not hit a rate limit
         if (!(Test-PodeIPLimit -IP $s.Request.RemoteEndPoint.Address)) {
-            status 429
+            Set-PodeResponseStatus -Code 429
             return $false
         }
 
@@ -148,10 +148,10 @@ function Get-PodePublicMiddleware
 
         # write, or attach, the file to the response
         if ($info.Download) {
-            Attach -Path $e.Path
+            Set-PodeResponseAttachment -Path $e.Path
         }
         else {
-            File -Path $info.Path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
+            Write-PodeFileResponse -Path $info.Path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
         }
 
         # static content found, stop
@@ -171,7 +171,7 @@ function Get-PodeRouteValidateMiddleware
 
             # if there's no route defined, it's a 404
             if ($null -eq $route -or $null -eq $route.Logic) {
-                status 404
+                Set-PodeResponseStatus -Code 404
                 return $false
             }
 
@@ -209,7 +209,7 @@ function Get-PodeBodyMiddleware
             return $true
         }
         catch {
-            status 400 -e $_
+            Set-PodeResponseStatus -Code 400 -Exception $_
             return $false
         }
     })
@@ -226,7 +226,7 @@ function Get-PodeQueryMiddleware
             return $true
         }
         catch {
-            status 400 -e $_
+            Set-PodeResponseStatus -Code 400 -Exception $_
             return $false
         }
     })

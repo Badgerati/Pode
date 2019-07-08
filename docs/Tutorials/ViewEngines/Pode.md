@@ -15,11 +15,11 @@ Server {
     listen *:8080 http
 
     # set the engine to use and render Pode files
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # render the index.pode in the /views directory
     route get '/' {
-        view 'index'
+        Write-PodeViewResponse -Path 'index'
     }
 }
 ```
@@ -50,7 +50,7 @@ Server {
     listen *:8080 http
 
     # set the engine to use and render .pode files
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # render the search.pode view
     route get '/' {
@@ -61,7 +61,7 @@ Server {
         $accounts = Find-Account -Query $query
 
         # render the file
-        view 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
+        Write-PodeViewResponse -Path 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
     }
 }
 ```
@@ -94,7 +94,7 @@ This next quick example allows you to include content from another view:
 ```html
 <!-- /views/index.pode -->
 <html>
-    $(include shared/head)
+    $(Use-PodePartialView -Path 'shared/head')
 
     <body>
         <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>

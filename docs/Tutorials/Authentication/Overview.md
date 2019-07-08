@@ -120,7 +120,7 @@ The following example get the user's name from the `Auth` object:
 route get '/' (auth check form) {
     param($e)
 
-    view 'index' -data @{
+    Write-PodeViewResponse -Path 'index' -Data @{
         'Username' = $e.Auth.User.Name;
     }
 }

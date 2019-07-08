@@ -56,43 +56,6 @@ function Dispose
     }
 }
 
-function Include
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [Alias('p')]
-        [string]
-        $Path,
-
-        [Parameter()]
-        [Alias('d')]
-        $Data = @{}
-    )
-
-    # default data if null
-    if ($null -eq $Data) {
-        $Data = @{}
-    }
-
-    # add view engine extension
-    $ext = Get-PodeFileExtension -Path $Path
-    if (Test-Empty $ext) {
-        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
-    }
-
-    # only look in the view directory
-    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
-
-    # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path -NoStatus)) {
-        throw "File not found at path: $($Path)"
-    }
-
-    # run any engine logic
-    return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
-}
-
 function Lock
 {
     param (
@@ -140,44 +103,6 @@ function Lock
 function Root
 {
     return $PodeContext.Server.Root
-}
-
-function Save
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [Alias('n')]
-        [string]
-        $Name,
-
-        [Parameter()]
-        [Alias('p')]
-        [string]
-        $Path = '.'
-    )
-
-    # if path is '.', replace with server root
-    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-
-    # ensure the parameter name exists in data
-    $fileName = $WebEvent.Data[$Name]
-    if ([string]::IsNullOrWhiteSpace($fileName)) {
-        throw "A parameter called '$($Name)' was not supplied in the request"
-    }
-
-    # ensure the file data exists
-    if (!$WebEvent.Files.ContainsKey($fileName)) {
-        throw "No data for file '$($fileName)' was uploaded in the request"
-    }
-
-    # if the path is a directory, add the filename
-    if (Test-PodePathIsDirectory -Path $Path) {
-        $Path = Join-Path $Path $fileName
-    }
-
-    # save the file
-    [System.IO.File]::WriteAllBytes($Path, $WebEvent.Files[$fileName].Bytes)
 }
 
 function Stopwatch
@@ -231,53 +156,6 @@ function Stream
     }
     finally {
         $InputObject.Dispose()
-    }
-}
-
-function Tcp
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('write', 'read')]
-        [Alias('a')]
-        [string]
-        $Action,
-
-        [Parameter()]
-        [Alias('m')]
-        [string]
-        $Message,
-
-        [Parameter()]
-        [Alias('c')]
-        $Client
-    )
-
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'tcp' -ThrowError
-
-    # use the main client if one isn't supplied
-    if ($null -eq $Client) {
-        $Client = $TcpEvent.Client
-    }
-
-    switch ($Action.ToLowerInvariant())
-    {
-        'write' {
-            $encoder = New-Object System.Text.ASCIIEncoding
-            $buffer = $encoder.GetBytes("$($Message)`r`n")
-            $stream = $Client.GetStream()
-            await $stream.WriteAsync($buffer, 0, $buffer.Length)
-            $stream.Flush()
-        }
-
-        'read' {
-            $bytes = New-Object byte[] 8192
-            $encoder = New-Object System.Text.ASCIIEncoding
-            $stream = $Client.GetStream()
-            $bytesRead = (await $stream.ReadAsync($bytes, 0, 8192))
-            return $encoder.GetString($bytes, 0, $bytesRead)
-        }
     }
 }
 

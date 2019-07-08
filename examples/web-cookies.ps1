@@ -11,7 +11,7 @@ Server -Threads 2 {
     listen localhost:8090 http
 
     # set view engine to pode renderer
-    engine html
+    Set-PodeViewEngine -Type HTML
 
     # set a global cookie secret
     Set-PodeCookieSecret -Value 'pi' -Global
@@ -28,7 +28,7 @@ Server -Threads 2 {
             Set-PodeCookie -Name $cookieName -Value ([datetime]::UtcNow) -Duration 7200 -Secret $s | Out-Null
         }
 
-        view 'simple'
+        Write-PodeViewResponse -Path 'simple'
     }
 
     # GET request to remove the date cookie
@@ -45,7 +45,7 @@ Server -Threads 2 {
         $c2 = Get-PodeCookie -Name $cookieName -Secret $s
         $ch = Test-PodeCookieSigned -Name $cookieName -Secret $s
 
-        json @{
+        Write-PodeJsonResponse -Value @{
             'SignedValue' = $c1.Value;
             'UnsignedValue' = $c2.Value;
             'Valid' = $ch;

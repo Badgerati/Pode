@@ -29,7 +29,7 @@ The following example will render the `index.pode` view when you navigate to `ht
 ```powershell
 Server {
     listen *:8080 http
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     route get '/' {
         view 'index'
@@ -46,7 +46,7 @@ The following example will render the `index.pode` view when you navigate to `ht
 ```powershell
 Server {
     listen *:8080 http
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     route get '/' {
         view 'index' -d @{ 'date' = [DateTime]::Now }

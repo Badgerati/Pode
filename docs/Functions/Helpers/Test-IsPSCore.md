@@ -15,7 +15,7 @@ Server {
     listen *:8080 http
 
     route get '/env' {
-        json @{ 'PSCore' = (Test-IsPSCore) }
+        Write-PodeJsonResponse -Value @{ 'PSCore' = (Test-IsPSCore) }
     }
 }
 ```

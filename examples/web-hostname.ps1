@@ -17,7 +17,7 @@ Server -Threads 2 {
     listen pode.foo.com:$Port http
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # STATIC asset folder route
     route static '/assets' './assets' -d @('index.html')
@@ -25,13 +25,13 @@ Server -Threads 2 {
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
         param($session)
-        view 'web-static' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'web-static' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request to download a file from static route
     route 'get' '/download' {
         param($session)
-        attach '/assets/images/Fry.png'
+        Set-PodeResponseAttachment -Path '/assets/images/Fry.png'
     }
 
 } -FileMonitor

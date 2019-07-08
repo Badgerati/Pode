@@ -8,7 +8,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Server {
 
     listen *:8085 http
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # termial/cli logger
     logger terminal
@@ -27,17 +27,17 @@ Server {
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     route 'get' '/error' {
-        status 500
+        Set-PodeResponseStatus -Code 500
     }
 
     # GET request to download a file
     route 'get' '/download' {
-        attach 'Anger.jpg'
+        Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
 }

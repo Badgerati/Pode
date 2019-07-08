@@ -11,20 +11,20 @@ Server {
 
     # can be hit by sending a GET request to "localhost:8086/api/test"
     route get '/api/test' {
-        json @{ 'hello' = 'world'; }
+        Write-PodeJsonResponse -Value @{ 'hello' = 'world'; }
     }
 
     # can be hit by sending a POST request to "localhost:8086/api/test"
     route post '/api/test' -ctype 'application/json' {
         param($e)
-        json @{ 'hello' = 'world'; 'name' = $e.Data['name']; }
+        Write-PodeJsonResponse -Value @{ 'hello' = 'world'; 'name' = $e.Data['name']; }
     }
 
     # returns details for an example user
     route get '/api/users/:userId' {
         param($e)
         $user = Get-DummyUser -UserId $e.Parameters['userId']
-        json @{ 'user' = $user; }
+        Write-PodeJsonResponse -Value @{ 'user' = $user; }
     }
 
 }

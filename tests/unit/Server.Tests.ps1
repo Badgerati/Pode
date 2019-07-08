@@ -148,7 +148,7 @@ Describe 'Restart-PodeServer' {
                 'Middleware' = @{ 'key' = 'value' };
                 'Endware' = @{ 'key' = 'value' };
                 'ViewEngine' = @{
-                    'Engine' = 'pode';
+                    'Type' = 'pode';
                     'Extension' = 'pode';
                     'Script' = $null;
                     'IsDynamic' = $true;
@@ -178,7 +178,7 @@ Describe 'Restart-PodeServer' {
         $PodeContext.Timers.Count | Should Be 0
         $PodeContext.Schedules.Count | Should Be 0
 
-        $PodeContext.Server.ViewEngine.Engine | Should Be 'html'
+        $PodeContext.Server.ViewEngine.Type | Should Be 'html'
         $PodeContext.Server.ViewEngine.Extension | Should Be 'html'
         $PodeContext.Server.ViewEngine.Script | Should Be $null
         $PodeContext.Server.ViewEngine.IsDynamic | Should Be $false

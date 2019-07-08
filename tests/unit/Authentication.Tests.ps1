@@ -5,31 +5,31 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 $now = [datetime]::UtcNow
 
 Describe 'Set-PodeAuthStatus' {
-    Mock 'redirect' {}
-    Mock 'status' {}
+    Mock Move-PodeResponseUrl {}
+    Mock Set-PodeResponseStatus {}
 
     It 'Redirects to a failure URL' {
         Set-PodeAuthStatus -StatusCode 500 -Options @{'FailureUrl' = 'url'} | Should Be $false
-        Assert-MockCalled 'redirect' -Times 1 -Scope It
-        Assert-MockCalled 'status' -Times 0 -Scope It
+        Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
     }
 
     It 'Sets status to failure' {
         Set-PodeAuthStatus -StatusCode 500 -Options @{} | Should Be $false
-        Assert-MockCalled 'redirect' -Times 0 -Scope It
-        Assert-MockCalled 'status' -Times 1 -Scope It
+        Assert-MockCalled Move-PodeResponseUrl -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
     }
 
     It 'Redirects to a success URL' {
         Set-PodeAuthStatus -Options @{'SuccessUrl' = 'url'} | Should Be $false
-        Assert-MockCalled 'redirect' -Times 1 -Scope It
-        Assert-MockCalled 'status' -Times 0 -Scope It
+        Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
     }
 
     It 'Returns true for next middleware' {
         Set-PodeAuthStatus -Options @{} | Should Be $true
-        Assert-MockCalled 'redirect' -Times 0 -Scope It
-        Assert-MockCalled 'status' -Times 0 -Scope It
+        Assert-MockCalled Move-PodeResponseUrl -Times 0 -Scope It
+        Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
     }
 }
 

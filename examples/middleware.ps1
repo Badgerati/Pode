@@ -41,7 +41,7 @@ Server {
         # if the user agent is powershell, deny access
         if ($session.Request.UserAgent -ilike '*powershell*') {
             # forbidden
-            status 403
+            Set-PodeResponseStatus -Code 403
 
             # stop processing
             return $false
@@ -59,7 +59,7 @@ Server {
         param($session)
 
         if ($session.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
-            status 403
+            Set-PodeResponseStatus -Code 403
             return $false
         }
 
@@ -69,13 +69,13 @@ Server {
     # the reject_ip middleware above is linked to this route,
     # and checked before running the route logic
     route get '/users' $reject_ip {
-        json @{
+        Write-PodeJsonResponse -Value @{
             'Users' = @('John', 'Bill')
         }
     }
 
     # this route has no custom middleware, and just runs the route logic
     route get '/alive' {
-        json @{ 'Alive' = $true }
+        Write-PodeJsonResponse -Value @{ 'Alive' = $true }
     }
 }

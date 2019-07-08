@@ -37,7 +37,7 @@ Server {
 
         lock $session.Lockable {
             $hash = (Get-PodeState 'hash')
-            json $hash
+            Write-PodeJsonResponse -Value $hash
         }
     }
 

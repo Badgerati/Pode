@@ -31,52 +31,52 @@ Server -Threads 2 -Browse {
     # logger terminal
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page on "localhost:8085/"
     route 'get' '/' {
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     route 'get' '/error' {
-        status 500
+        Set-PodeResponseStatus -Code 500
     }
 
     # GET request to page that merely redirects to google
     route 'get' '/redirect' {
-        redirect 'https://google.com'
+        Move-PodeResponseUrl -Url 'https://google.com'
     }
 
     # GET request that redirects to same host, just different port
     route 'get' '/redirect-port' {
         param($event)
         if ($event.Request.Url.Port -ne 8086) {
-            redirect -port 8086
+            Move-PodeResponseUrl -Port 8086
         }
         else {
-            json @{ 'value' = 'you got redirected!'; }
+            Write-PodeJsonResponse -Value @{ 'value' = 'you got redirected!'; }
         }
     }
 
     # GET request to download a file
     route 'get' '/download' {
-        attach 'Anger.jpg'
+        Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
     # GET request with parameters
     route 'get' '/:userId/details' {
         param($event)
-        json @{ 'userId' = $event.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
     }
 
     # ALL request, that supports every method and it a default drop route
     route * '/all' {
-        json @{ 'value' = 'works for every http method' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'works for every http method' }
     }
 
     route get '/api/*/hello' {
-        json @{ 'value' = 'works for every hello route' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'works for every hello route' }
     }
 
     route get '/script' -fp './modules/route_script.ps1'

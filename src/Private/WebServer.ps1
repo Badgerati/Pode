@@ -134,7 +134,7 @@ function Start-PodeWebServer
                     }
                 }
                 catch {
-                    status 500 -e $_
+                    Set-PodeResponseStatus -Code 500 -Exception $_
                     $Error[0] | Out-Default
                 }
 

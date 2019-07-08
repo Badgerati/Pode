@@ -67,7 +67,7 @@ Server {
 
     # check the request against the above auth
     route get '/info' (auth check basic) {
-        json @{ 'cpu' = 82 }
+        Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 }
 ```
@@ -92,7 +92,7 @@ Server {
 
     # the route will use the above auth middleware
     route get '/info' {
-        json @{ 'cpu' = 82 }
+        Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 }
 ```
@@ -120,7 +120,7 @@ Server {
 
     # check the request against the above auth
     route get '/info' (auth check basic) {
-        json @{ 'cpu' = 82 }
+        Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 }
 ```

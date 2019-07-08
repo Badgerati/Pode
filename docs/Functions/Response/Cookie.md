@@ -27,7 +27,7 @@ route get '/' {
 
 route get '/username' {
     $u = (cookie get 'username' -s 'secret-key').Value
-    json @{ 'username' = $u }
+    Write-PodeJsonResponse -Value @{ 'username' = $u }
 }
 ```
 

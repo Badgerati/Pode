@@ -43,7 +43,7 @@ Server {
     listen localhost:8080 http
 
     route get '/ping' {
-        json @{ 'value' = 'pong' }
+        Write-PodeJsonResponse -Value @{ 'value' = 'pong' }
     }
 }
 ```

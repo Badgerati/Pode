@@ -21,36 +21,6 @@ function Endware
     $PodeContext.Server.Endware += $ScriptBlock
 }
 
-function Engine
-{
-    param (
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [Alias('t')]
-        [string]
-        $Engine,
-
-        [Parameter()]
-        [Alias('s')]
-        [scriptblock]
-        $ScriptBlock = $null,
-
-        [Parameter()]
-        [Alias('ext')]
-        [string]
-        $Extension
-    )
-
-    if ([string]::IsNullOrWhiteSpace($Extension)) {
-        $Extension = $Engine.ToLowerInvariant()
-    }
-
-    $PodeContext.Server.ViewEngine.Engine = $Engine.ToLowerInvariant()
-    $PodeContext.Server.ViewEngine.Extension = $Extension
-    $PodeContext.Server.ViewEngine.Script = $ScriptBlock
-    $PodeContext.Server.ViewEngine.IsDynamic = ($Engine -ine 'html')
-}
-
 function Gui
 {
     param (

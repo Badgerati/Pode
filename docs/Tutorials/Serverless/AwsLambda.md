@@ -62,12 +62,12 @@ The following script would be a simple example of using Pode to aid with routing
 server -req $LambdaInput -type 'aws-lambda' {
     # get some user data
     route get '/users' {
-        json @{ 'Users' = @() }
+        Write-PodeJsonResponse -Value @{ 'Users' = @() }
     }
 
     # get some messages data
     route get '/message' {
-        json @{ 'UserId' = 123; 'Messages' = @() }
+        Write-PodeJsonResponse -Value @{ 'UserId' = 123; 'Messages' = @() }
     }
 }
 ```
@@ -86,11 +86,11 @@ Read-S3Object -BucketName '<bucket-name>' -KeyPrefix '<dir-name>' -Folder '/tmp/
 
 server -req $LambdaInput -type 'aws-lambda' -root '/tmp/www' {
     # set your engine renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # get route for your 'index.pode' view
     route get '/home' {
-        view 'index'
+        Write-PodeViewResponse -Path 'index'
     }
 }
 ```

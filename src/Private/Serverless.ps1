@@ -69,7 +69,7 @@ function Start-PodeAzFuncServer
             }
         }
         catch {
-            status 500 -e $_
+            Set-PodeResponseStatus -Code 500 -Exception $_
             Write-Host $Error[0]
         }
 
@@ -151,7 +151,7 @@ function Start-PodeAwsLambdaServer
             }
         }
         catch {
-            status 500 -e $_
+            Set-PodeResponseStatus -Code 500 -Exception $_
             Write-Host $Error[0]
         }
 

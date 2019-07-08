@@ -12,27 +12,27 @@ Server {
     listen 127.0.0.2:8080 http
 
     # set view engine to pode
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page
     route get '/' {
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request to download a file
     route get '/download' {
-        attach 'Anger.jpg'
+        Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
     # GET request with parameters
     route get '/:userId/details' {
         param($event)
-        json @{ 'userId' = $event.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
     }
 
     # ALL requests for 127.0.0.2 to 127.0.0.1
     route * * -endpoint 127.0.0.2 {
-        redirect -endpoint 127.0.0.1
+        Move-PodeResponseUrl -Domain 127.0.0.1
     }
 
 } -FileMonitor

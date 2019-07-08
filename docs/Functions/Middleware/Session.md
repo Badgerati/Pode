@@ -70,7 +70,7 @@ Server {
     route get '/' {
         $param($s)
         $s.Session.Data.Views++
-        json @{ 'Views' = $s.Session.Data.Views }
+        Write-PodeJsonResponse -Value @{ 'Views' = $s.Session.Data.Views }
     }
 }
 ```

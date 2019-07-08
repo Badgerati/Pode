@@ -77,7 +77,7 @@ server {
     middleware (csrf middleware)
 
     route get '/' {
-        view 'login' @{ 'token' = (csrf token) }
+        Write-PodeViewResponse -Path 'login' -Data @{ 'token' = (csrf token) }
     }
 }
 ```
@@ -92,7 +92,7 @@ The following example will configure CSRF as default middleware, and supply a to
 ```powershell
 server {
     listen localhost:8080 http
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # setup session and csrf middleware
     middleware (session @{ 'secret' = 'schwifty' })
@@ -101,14 +101,14 @@ server {
     # this route will work, as GET methods are ignored by CSRF by default
     route get '/' {
         $token = (csrf token)
-        view 'index' -fm @{ 'csrfToken' = $token }
+        Write-PodeViewResponse -Path 'index' -Data @{ 'csrfToken' = $token } -FlashMessages
     }
 
     # POST route for form which will require the csrf token from above
     route post '/token' {
         param($e)
         Add-PodeFlashMessage -Name 'message' -Message $e.Data['message']
-        redirect '/'
+        Move-PodeResponseUrl -Url '/'
     }
 }
 ```

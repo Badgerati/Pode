@@ -283,10 +283,10 @@ function Set-PodeAuthStatus
 
         # check if we have a failure url redirect
         if (!(Test-Empty $Options.FailureUrl)) {
-            redirect $Options.FailureUrl
+            Move-PodeResponseUrl -Url $Options.FailureUrl
         }
         else {
-            status $StatusCode $Description
+            Set-PodeResponseStatus -Code $StatusCode -Description $Description
         }
 
         return $false
@@ -297,7 +297,7 @@ function Set-PodeAuthStatus
     {
         # check if we have a success url redirect
         if (!(Test-Empty $Options.SuccessUrl)) {
-            redirect $Options.SuccessUrl
+            Move-PodeResponseUrl -Url $Options.SuccessUrl
             return $false
         }
 

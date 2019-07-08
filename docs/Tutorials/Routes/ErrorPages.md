@@ -9,7 +9,7 @@ During web requests, Pode has some default status codes that can be returned thr
 * `429` if the rate limit is reached
 * `500` for a complete failure
 
-Status codes that are 400+ will be rendered as an error page, unless the `-NoErrorPage` switch is passed to the `status` function. Pode itself has inbuilt error pages (HTML, JSON, and XML), but you can override these pages using custom error pages ([described below](#error-pages)).
+Status codes that are 400+ will be rendered as an error page, unless the `-NoErrorPage` switch is passed to the `Set-PodeResponseStatus` function. Pode itself has inbuilt error pages (HTML, JSON, and XML), but you can override these pages using custom error pages ([described below](#error-pages)).
 
 If the error page being generated is dynamic, then the following `$data` is supplied and can be used the same as in views:
 
@@ -18,20 +18,11 @@ If the error page being generated is dynamic, then the following `$data` is supp
 * The URL that threw the error
 * The content-type of the error page being generated
 
-They're also supplied details of any exception passed to the `status` function, which can be rendered [if enabled](#exceptions) via the `pode.json` configuration file.
+They're also supplied details of any exception passed to the `Set-PodeResponseStatus` function, which can be rendered [if enabled](#exceptions) via the `pode.json` configuration file.
 
 ## Status Codes
 
-The [`status`](../../../Functions/Response/Status) function allows you to set your own status code on the response, as well as a custom description. If the status code was triggered by an exception being thrown, then you can also supply this so it can be rendered on any [error pages](#error-pages).
-
-The make-up of the `status` function is as follows:
-
-```powershell
-status <int> [-description <string>] [-exception <exception>] [-contentType <string>] [-noErrorPage]
-
-# or with aliases:
-status <int> [-d <string>] [-e <exception>] [-ctype <string>] [-nopage]
-```
+The `Set-PodeResponseStatus` function allows you to set your own status code on the response, as well as a custom description. If the status code was triggered by an exception being thrown, then you can also supply this so it can be rendered on any [error pages](#error-pages).
 
 The following example will set the status code of the response to be `418`:
 
@@ -40,7 +31,7 @@ Server {
     listen *:8080 http
 
     route get '/teapot' {
-        status 418
+        Set-PodeResponseStatus -Code 418
     }
 }
 ```
@@ -56,7 +47,7 @@ Server {
             # logic
         }
         catch {
-            status 500 -d 'oh no! something went wrong!' -e $_
+            Set-PodeResponseStatus -Code 500 -Description 'oh no! something went wrong!' -Exception $_
         }
     }
 }

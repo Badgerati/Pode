@@ -19,11 +19,11 @@ Server {
     }
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page on "localhost:8090/"
     route 'get' '/' {
-        view 'gui' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'gui' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
  } 
