@@ -1,8 +1,8 @@
-# Invoke-ScriptBlock
+# Invoke-PodeScriptBlock
 
 ## Description
 
-The `Invoke-ScriptBlock` function takes a scriptblock and invokes it. You can specify arguments to pass to the script, and whether a value should be returned.
+The `Invoke-PodeScriptBlock` function takes a scriptblock and invokes it. You can specify arguments to pass to the script, and whether a value should be returned.
 
 By default the scriptblock will have the `GetNewClosure()` method called, and will be invoked in the current scope; these can be toggled via `-NoNewClosure` and `-Scoped` respectively.
 
@@ -15,8 +15,8 @@ If any arguments are supplied, they will be supplied as a single argument to the
 The following example will invoke a scriptblock outside of the current scope:
 
 ```powershell
-Server {
-    Invoke-ScriptBlock -Scoped {
+Start-PodeServer {
+    Invoke-PodeScriptBlock -Scoped {
         Write-Host 'Hello, world!'
     }
 }
@@ -27,13 +27,13 @@ Server {
 The following example will invoke a scriptblock, passing it arguments and returning a value:
 
 ```powershell
-Server {
+Start-PodeServer {
     $ht = @{
         'Name' = 'Bob';
         'Age' = 32;
     }
 
-    $value = (Invoke-ScriptBlock -Arguments $ht -Return {
+    $value = (Invoke-PodeScriptBlock -Arguments $ht -Return {
         param($opts)
         return "Hello, $($opts.Name)! You're $($opts.Age) years old."
     })
@@ -45,13 +45,13 @@ Server {
 The following example will invoke a scriptblock, passing it arguments and splatting them to the scriptblock:
 
 ```powershell
-Server {
+Start-PodeServer {
     $ht = @{
         'Name' = 'Bob';
         'Age' = 32;
     }
 
-    Invoke-ScriptBlock -Arguments $ht -Splat {
+    Invoke-PodeScriptBlock -Arguments $ht -Splat {
         param($name, $age)
         Write-Host "Hello, $($name)! You're $($age) years old."
     })

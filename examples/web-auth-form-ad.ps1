@@ -15,10 +15,10 @@ the login page.
 #>
 
 # create a server, and start listening on port 8085
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Endpoint *:8085 -Protocol HTTP
 
     # set the view engine
     Set-PodeViewEngine -Type Pode

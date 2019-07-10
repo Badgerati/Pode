@@ -1,5 +1,6 @@
-function Await
+function Wait-PodeTask
 {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
         [System.Threading.Tasks.Task]
@@ -7,7 +8,7 @@ function Await
     )
 
     # is there a cancel token to supply?
-    if ($null -eq $PodeContext -or $null -eq $PodeContext.Tokens.Cancellation.Token) {
+    if (($null -eq $PodeContext) -or ($null -eq $PodeContext.Tokens.Cancellation.Token)) {
         $Task.Wait()
     }
     else {
@@ -20,12 +21,13 @@ function Await
     }
 }
 
-function Dispose
+function Close-PodeDisposable
 {
+    [CmdletBinding()]
     param (
         [Parameter()]
         [System.IDisposable]
-        $InputObject,
+        $Disposable,
 
         [switch]
         $Close,
@@ -34,13 +36,13 @@ function Dispose
         $CheckNetwork
     )
 
-    if ($null -eq $InputObject) {
+    if ($null -eq $Disposable) {
         return
     }
 
     try {
         if ($Close) {
-            $InputObject.Close()
+            $Disposable.Close()
         }
     }
     catch [exception] {
@@ -52,40 +54,39 @@ function Dispose
         throw $_.Exception
     }
     finally {
-        $InputObject.Dispose()
+        $Disposable.Dispose()
     }
 }
 
-function Lock
+function Lock-PodeObject
 {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
         [object]
-        $InputObject,
+        $Object,
 
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock
     )
 
-    if ($null -eq $InputObject) {
+    if ($null -eq $Object) {
         return
     }
 
-    if ($InputObject.GetType().IsValueType) {
+    if ($Object -is 'ValueType') {
         throw 'Cannot lock value types'
     }
 
     $locked = $false
 
     try {
-        [System.Threading.Monitor]::Enter($InputObject.SyncRoot)
+        [System.Threading.Monitor]::Enter($Object.SyncRoot)
         $locked = $true
 
-        if ($ScriptBlock -ne $null) {
-            Invoke-ScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure
+        if ($null -ne $ScriptBlock) {
+            Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure
         }
     }
     catch {
@@ -94,27 +95,26 @@ function Lock
     }
     finally {
         if ($locked) {
-            [System.Threading.Monitor]::Pulse($InputObject.SyncRoot)
-            [System.Threading.Monitor]::Exit($InputObject.SyncRoot)
+            [System.Threading.Monitor]::Pulse($Object.SyncRoot)
+            [System.Threading.Monitor]::Exit($Object.SyncRoot)
         }
     }
 }
 
-function Root
+function Get-PodeServerPath
 {
     return $PodeContext.Server.Root
 }
 
-function Stopwatch
+function Start-PodeStopwatch
 {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
         [string]
         $Name,
 
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock
     )
@@ -133,140 +133,308 @@ function Stopwatch
     }
 }
 
-function Stream
+function Use-PodeStream
 {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
         [System.IDisposable]
-        $InputObject,
+        $Stream,
 
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock
     )
 
     try {
-        return (Invoke-ScriptBlock -ScriptBlock $ScriptBlock -Arguments $InputObject -Return -NoNewClosure)
+        return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $Stream -Return -NoNewClosure)
     }
     catch {
         $Error[0] | Out-Default
         throw $_.Exception
     }
     finally {
-        $InputObject.Dispose()
+        $Stream.Dispose()
     }
 }
 
-function Pode
+function Use-PodeScript
 {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('init', 'test', 'start', 'install', 'build')]
-        [Alias('a')]
         [string]
-        $Action,
-
-        [switch]
-        [Alias('d')]
-        $Dev
+        $Path
     )
 
-    # default config file name and content
-    $file = './package.json'
-    $name = Split-Path -Leaf -Path $pwd
-    $data = $null
+    # if path is '.', replace with server root
+    $_path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
 
-    # default config data that's used to populate on init
-    $map = @{
-        'name' = $name;
-        'version' = '1.0.0';
-        'description' = '';
-        'main' = './server.ps1';
-        'scripts' = @{
-            'start' = './server.ps1';
-            'install' = 'yarn install --force --ignore-scripts --modules-folder pode_modules';
-            "build" = 'psake';
-            'test' = 'invoke-pester ./tests/*.ps1'
-        };
-        'author' = '';
-        'license' = 'MIT';
-    }
-
-    # check and load config if already exists
-    if (Test-Path $file) {
-        $data = (Get-Content $file | ConvertFrom-Json)
-    }
-
-    # quick check to see if the data is required
-    if ($Action -ine 'init') {
-        if ($null -eq $data) {
-            Write-Host 'package.json file not found' -ForegroundColor Red
-            return
-        }
-        else {
-            $actionScript = $data.scripts.$Action
-
-            if ([string]::IsNullOrWhiteSpace($actionScript) -and $Action -ieq 'start') {
-                $actionScript = $data.main
+    # we have a path, if it's a directory/wildcard then loop over all files
+    if (![string]::IsNullOrWhiteSpace($_path)) {
+        $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps1'
+        if (!(Test-IsEmpty $_paths)) {
+            foreach ($_path in $_paths) {
+                Use-PodeScript -Path $_path
             }
 
-            if ([string]::IsNullOrWhiteSpace($actionScript) -and $Action -ine 'install') {
-                Write-Host "package.json does not contain a script for the $($Action) action" -ForegroundColor Yellow
+            return
+        }
+    }
+
+    # check if the path exists
+    if (!(Test-PodePath $_path -NoStatus)) {
+        throw "The script path does not exist: $(Protect-PodeValue -Value $_path -Default $Path)"
+    }
+
+    # dot-source the script
+    . $_path
+}
+
+function Get-PodeSettings
+{
+    return $PodeContext.Server.Settings
+}
+
+function Add-PodeEndware
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # add the scriptblock to array of endware that needs to be run
+    $PodeContext.Server.Endware += $ScriptBlock
+}
+
+function Import-PodeModule
+{
+    [CmdletBinding(DefaultParameterSetName='Name')]
+    param (
+        [Parameter(Mandatory=$true, ParameterSetName='Name')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Path')]
+        [string]
+        $Path,
+
+        [switch]
+        $Now
+    )
+
+    # get the path of a module, or import modules on mass
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'name' {
+            $modulePath = Join-PodeServerRoot -Folder (Join-PodePaths @('ps_modules', $Name))
+            if ([string]::IsNullOrWhiteSpace($modulePath)) {
+                $Path = (Get-ChildItem (Join-PodePaths @($modulePath, '*', "$($Name).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
+            }
+            else {
+                $Path = (Get-Module -Name $Name -ListAvailable | Select-Object -First 1).Path
+            }
+        }
+
+        'path' {
+            $Path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
+            $paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps*1'
+            if (!(Test-IsEmpty $paths)) {
+                foreach ($_path in $paths) {
+                    Import-PodeModule -Path $_path -Now:$Now
+                }
+
                 return
             }
         }
     }
+
+    # if it's still empty, error
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        throw "Failed to import module: $(Protect-PodeValue -Value $Path -Default $Name)"
+    }
+
+    # check if the path exists
+    if (!(Test-PodePath $Path -NoStatus)) {
+        throw "The module path does not exist: $(Protect-PodeValue -Value $Path -Default $Name)"
+    }
+
+    # import the module into the runspace state
+    $PodeContext.RunspaceState.ImportPSModule($Path)
+
+    # import the module now, if specified
+    if ($Now) {
+        Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
+    }
+}
+
+function Import-PodeSnapIn
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [switch]
+        $Now
+    )
+
+    # if non-windows or core, fail
+    if ((Test-IsPSCore) -or (Test-IsUnix)) {
+        throw 'SnapIns are only supported on Windows PowerShell'
+    }
+
+    # import the snap-in into the runspace state
+    $exp = $null
+    $PodeContext.RunspaceState.ImportPSSnapIn($Name, ([ref]$exp))
+
+    # import the snap-in now, if specified
+    if ($Now) {
+        Add-PSSnapin -Name $Name | Out-Null
+    }
+}
+
+function Protect-PodeValue
+{
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        $Value,
+
+        [Parameter()]
+        $Default
+    )
+
+    return (Resolve-PodeValue -Check (Test-IsEmpty $Value) -TrueValue $Default -FalseValue $Value)
+}
+
+function Resolve-PodeValue
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [bool]
+        $Check,
+
+        [Parameter()]
+        $TrueValue,
+
+        [Parameter()]
+        $FalseValue
+    )
+
+    if ($Check) {
+        return $TrueValue
+    }
+
+    return $FalseValue
+}
+
+function Invoke-PodeScriptBlock
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        $Arguments = $null,
+
+        [switch]
+        $Scoped,
+
+        [switch]
+        $Return,
+
+        [switch]
+        $Splat,
+
+        [switch]
+        $NoNewClosure
+    )
+
+    if ($PodeContext.Server.IsServerless) {
+        $NoNewClosure = $true
+    }
+
+    if (!$NoNewClosure) {
+        $ScriptBlock = ($ScriptBlock).GetNewClosure()
+    }
+
+    if ($Scoped) {
+        if ($Splat) {
+            $result = (& $ScriptBlock @Arguments)
+        }
+        else {
+            $result = (& $ScriptBlock $Arguments)
+        }
+    }
     else {
-        if ($null -ne $data) {
-            Write-Host 'package.json already exists' -ForegroundColor Yellow
-            return
+        if ($Splat) {
+            $result = (. $ScriptBlock @Arguments)
+        }
+        else {
+            $result = (. $ScriptBlock $Arguments)
         }
     }
 
-    switch ($Action.ToLowerInvariant())
-    {
-        'init' {
-            $v = Read-Host -Prompt "name ($($map.name))"
-            if (![string]::IsNullOrWhiteSpace($v)) { $map.name = $v }
+    if ($Return) {
+        return $result
+    }
+}
 
-            $v = Read-Host -Prompt "version ($($map.version))"
-            if (![string]::IsNullOrWhiteSpace($v)) { $map.version = $v }
+function Test-IsEmpty
+{
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        $Value
+    )
 
-            $map.description = Read-Host -Prompt "description"
+    if ($null -eq $Value) {
+        return $true
+    }
 
-            $v = Read-Host -Prompt "entry point ($($map.main))"
-            if (![string]::IsNullOrWhiteSpace($v)) { $map.main = $v; $map.scripts.start = $v }
-
-            $map.author = Read-Host -Prompt "author"
-
-            $v = Read-Host -Prompt "license ($($map.license))"
-            if (![string]::IsNullOrWhiteSpace($v)) { $map.license = $v }
-
-            $map | ConvertTo-Json -Depth 10 | Out-File -FilePath $file -Encoding utf8 -Force
-            Write-Host 'Success, saved package.json' -ForegroundColor Green
+    switch ($Value) {
+        { $_ -is 'string' } {
+            return [string]::IsNullOrWhiteSpace($Value)
         }
 
-        'test' {
-            Invoke-PodePackageScript -ActionScript $actionScript
+        { $_ -is 'array' } {
+            return ($Value.Length -eq 0)
         }
 
-        'start' {
-            Invoke-PodePackageScript -ActionScript $actionScript
+        { $_ -is 'hashtable' } {
+            return ($Value.Count -eq 0)
         }
 
-        'install' {
-            if ($Dev) {
-                Install-PodeLocalModules -Modules $data.devModules
-            }
-
-            Install-PodeLocalModules -Modules $data.modules
-            Invoke-PodePackageScript -ActionScript $actionScript
+        { $_ -is 'scriptblock' } {
+            return ($null -eq $Value -or [string]::IsNullOrWhiteSpace($Value.ToString()))
         }
 
-        'build' {
-            Invoke-PodePackageScript -ActionScript $actionScript
+        { $_ -is 'valuetype' } {
+            return $false
         }
     }
+
+    return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-PodeCount $Value) -eq 0))
+}
+
+function Test-IsPSCore
+{
+    return (Get-PodePSVersionTable).PSEdition -ieq 'core'
+}
+
+function Test-IsUnix
+{
+    return (Get-PodePSVersionTable).Platform -ieq 'unix'
+}
+
+function Test-IsWindows
+{
+    $v = Get-PodePSVersionTable
+    return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }

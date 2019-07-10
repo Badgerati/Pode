@@ -14,7 +14,7 @@ Describe 'Start-PodeAzFuncServer' {
     Mock New-Object { return @{} }
     Mock Get-PodeHeader { return 'some-value' }
     Mock Get-PodeRoute { return @{ Logic = { Write-Host 'Helo' } } }
-    Mock Invoke-ScriptBlock { }
+    Mock Invoke-PodeScriptBlock { }
     Mock Write-Host { }
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
@@ -91,7 +91,7 @@ Describe 'Start-PodeAzFuncServer' {
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 1 -Scope It
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
     It 'Runs the server, errors in middleware' {
@@ -149,7 +149,7 @@ Describe 'Start-PodeAwsLambdaServer' {
     Mock Get-PodeHeader { return 'some-value' }
     Mock Set-PodeHeader { }
     Mock Get-PodeRoute { return @{ Logic = { Write-Host 'Helo' } } }
-    Mock Invoke-ScriptBlock { }
+    Mock Invoke-PodeScriptBlock { }
     Mock Write-Host { }
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
@@ -191,7 +191,7 @@ Describe 'Start-PodeAwsLambdaServer' {
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
         Assert-MockCalled Get-PodeRoute -Times 1 -Scope It
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
     It 'Runs the server, errors in middleware' {

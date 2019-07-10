@@ -24,7 +24,7 @@ To configure CSRF middleware - to use cookies, or ignore methods - you can eithe
 The following example will setup CSRF middleware, along with session middleware. The GET route will generate a token for the `view`, which will be validated on the POST route:
 
 ```powershell
-server {
+Start-PodeServer {
     middleware (session @{ 'secret' = 'vegeta' })
     middleware (csrf middleware)
 
@@ -43,7 +43,7 @@ server {
 The following example will setup CSRF middleware to use cookies, with a secret key for signing, instead of using sessions. Similar to the above example: the GET route will generate a token for the `view`, which will be validated on the POST route:
 
 ```powershell
-server {
+Start-PodeServer {
     middleware (csrf middleware -c -s 'goku')
 
     route get '/' {
@@ -61,7 +61,7 @@ server {
 The following example will setup CSRF, and then do explicit checks on certain routes - regardless of what HTTP methods CSRF is setup to ignore. Here, the first GET route will render, but the other GET and POST routes will need to pass CSRF validation:
 
 ```powershell
-server {
+Start-PodeServer {
     csrf setup -c -s 'broly'
 
     route get '/' {
@@ -83,7 +83,7 @@ server {
 The following example will setup CSRF middleware to only ignore routes on GET requests:
 
 ```powershell
-server {
+Start-PodeServer {
     middleware (csrf middleware -i @('GET'))
 }
 ```

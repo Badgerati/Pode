@@ -20,7 +20,7 @@ function ConvertFrom-PodeFile
     }
 
     # invoke the content as a script to generate the dynamic content
-    return (Invoke-ScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
+    return (Invoke-PodeScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
 }
 
 function Get-PodeFileContentUsingViewEngine
@@ -61,10 +61,10 @@ function Get-PodeFileContentUsingViewEngine
         default {
             if ($null -ne $PodeContext.Server.ViewEngine.Script) {
                 if ($null -eq $Data -or $Data.Count -eq 0) {
-                    $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
+                    $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
                 }
                 else {
-                    $content = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+                    $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
                 }
             }
         }
@@ -162,7 +162,7 @@ function Get-PodeCertificate
 
     # ensure the certificate exists, and get its thumbprint
     $cert = (Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -imatch [regex]::Escape($Certificate) })
-    if (Test-Empty $cert) {
+    if (Test-IsEmpty $cert) {
         throw "Failed to find the $($Certificate) certificate at LocalMachine\My"
     }
 
@@ -189,7 +189,10 @@ function Set-PodeCertificate
 
         [Parameter()]
         [string]
-        $Thumbprint
+        $Thumbprint,
+
+        [switch]
+        $SelfSigned
     )
 
     $addrport = "$($Address):$($Port)"
@@ -211,12 +214,12 @@ function Set-PodeCertificate
     }
 
     # ensure a cert, or thumbprint, has been supplied
-    if ((Test-Empty $Certificate) -and (Test-Empty $Thumbprint)) {
+    if (!$SelfSigned -and (Test-IsEmpty $Certificate) -and (Test-IsEmpty $Thumbprint)) {
         throw "A certificate name, or thumbprint, is required for ssl connections. For the name, either 'self' or '*.example.com' can be supplied to the 'listen' function"
     }
 
     # use the cert specified from the thumbprint
-    if (!(Test-Empty $Thumbprint)) {
+    if (!(Test-IsEmpty $Thumbprint)) {
         $cert = $Thumbprint
     }
 
@@ -224,7 +227,7 @@ function Set-PodeCertificate
     else
     {
         # generate a self-signed cert
-        if (@('self', 'self-signed') -icontains $Certificate) {
+        if ($SelfSigned) {
             Write-Host "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
             $cert = (New-PodeSelfSignedCertificate)
         }
@@ -335,7 +338,7 @@ function Get-PodeEndpointInfo
     # return the info
     return @{
         'Host' = $_host;
-        'Port' = (iftet ($AnyPortOnZero -and $_port -eq 0) '*' $_port);
+        'Port' = (Resolve-PodeValue -Check ($AnyPortOnZero -and $_port -eq 0) -TrueValue '*' -FalseValue $_port);
     }
 }
 
@@ -616,7 +619,7 @@ function Add-PodeRunspace
         $ps.AddScript({ Add-PodePSDrives }) | Out-Null
         $ps.AddScript($ScriptBlock) | Out-Null
 
-        if (!(Test-Empty $Parameters)) {
+        if (!(Test-IsEmpty $Parameters)) {
             $Parameters.Keys | ForEach-Object {
                 $ps.AddParameter($_, $Parameters[$_]) | Out-Null
             }
@@ -652,13 +655,13 @@ function Close-PodeRunspaces
     }
 
     try {
-        if (!(Test-Empty $PodeContext.Runspaces)) {
+        if (!(Test-IsEmpty $PodeContext.Runspaces)) {
             # sleep for 1s before doing this, to let listeners dispose
             Start-Sleep -Seconds 1
 
             # now dispose runspaces
             $PodeContext.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
-                dispose $_.Runspace
+                Close-PodeDisposable -Disposable $_.Runspace
                 $_.Stopped = $true
             }
 
@@ -668,7 +671,7 @@ function Close-PodeRunspaces
         # dispose the runspace pools
         if ($ClosePool -and $null -ne $PodeContext.RunspacePools) {
             $PodeContext.RunspacePools.Values | Where-Object { $null -ne $_ -and !$_.IsDisposed } | ForEach-Object {
-                dispose $_ -Close
+                Close-PodeDisposable -Disposable $_ -Close
             }
         }
     }
@@ -756,7 +759,7 @@ function Start-PodeTerminationListener
     }
 }
 
-function Close-Pode
+function Close-PodeServer
 {
     param (
         [switch]
@@ -771,8 +774,8 @@ function Close-Pode
 
     try {
         # remove all the cancellation tokens
-        dispose $PodeContext.Tokens.Cancellation
-        dispose $PodeContext.Tokens.Restart
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
     }
     catch {
         $Error[0] | Out-Default
@@ -924,30 +927,6 @@ function Join-PodePaths
     }
 
     return $_path
-}
-
-<#
-    If-This-Else-That. If Check is true return Value1, else return Value2
-#>
-function Iftet
-{
-    param (
-        [Parameter()]
-        [bool]
-        $Check,
-
-        [Parameter()]
-        $Value1,
-
-        [Parameter()]
-        $Value2
-    )
-
-    if ($Check) {
-        return $Value1
-    }
-
-    return $Value2
 }
 
 function Get-PodeFileExtension
@@ -1397,17 +1376,17 @@ function Convert-PodePathPatternsToRegex
 
     # remove any empty entries
     $Paths = @($Paths | Where-Object {
-        !(Test-Empty $_)
+        !(Test-IsEmpty $_)
     })
 
     # if no paths, return null
-    if (Test-Empty $Paths) {
+    if (Test-IsEmpty $Paths) {
         return $null
     }
 
     # replace certain chars
     $Paths = @($Paths | ForEach-Object {
-        if (!(Test-Empty $_)) {
+        if (!(Test-IsEmpty $_)) {
             Convert-PodePathPatternToRegex -Path $_ -NotStrict -NotSlashes:$NotSlashes
         }
     })
@@ -1487,7 +1466,7 @@ function Find-PodeErrorPage
     }
 
     # if route patterns have been defined, see if an error content type matches and attempt that
-    if (!(Test-Empty $PodeContext.Server.Web.ErrorPages.Routes)) {
+    if (!(Test-IsEmpty $PodeContext.Server.Web.ErrorPages.Routes)) {
         # find type by pattern
         $matched = @(foreach ($key in $PodeContext.Server.Web.ErrorPages.Routes.Keys) {
             if ($WebEvent.Path -imatch $key) {
@@ -1496,7 +1475,7 @@ function Find-PodeErrorPage
         })[0]
 
         # if we have a match, see if a page exists
-        if (!(Test-Empty $matched)) {
+        if (!(Test-IsEmpty $matched)) {
             $type = $PodeContext.Server.Web.ErrorPages.Routes[$matched]
             $path = Get-PodeErrorPage -Code $Code -ContentType $type
             if (![string]::IsNullOrWhiteSpace($path)) {
@@ -1514,7 +1493,7 @@ function Find-PodeErrorPage
     }
 
     # if we have a default defined, attempt that
-    if (!(Test-Empty $PodeContext.Server.Web.ErrorPages.Default)) {
+    if (!(Test-IsEmpty $PodeContext.Server.Web.ErrorPages.Default)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $PodeContext.Server.Web.ErrorPages.Default
         if (![string]::IsNullOrWhiteSpace($path)) {
             return @{ 'Path' = $path; 'ContentType' = $PodeContext.Server.Web.ErrorPages.Default }
@@ -1636,7 +1615,7 @@ function Find-PodeFileForContentType
         $Engine = $PodeContext.Server.ViewEngine.Extension
     }
 
-    $Engine = (coalesce $Engine 'pode')
+    $Engine = (Protect-PodeValue -Value $Engine -Default 'pode')
     if ($Engine -ine 'pode') {
         $Engine = "($($Engine)|pode)"
     }
@@ -1755,7 +1734,7 @@ function Get-PodeRelativePath
 
     # if flagged, test the path and throw error if it doesn't exist
     if ($TestPath -and !(Test-PodePath $Path -NoStatus)) {
-        throw "The path does not exist: $(coalesce $Path $_rawPath)"
+        throw "The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
     }
 
     return $Path
@@ -1820,12 +1799,12 @@ function Get-PodeEndpointUrl
     }
 
     # work out the protocol
-    $protocol = (iftet $Endpoint.Ssl 'https' 'http')
+    $protocol = (Resolve-PodeValue -Check $Endpoint.Ssl -TrueValue 'https' -FalseValue 'http')
 
     # grab the port number
     $port = $Endpoint.Port
     if ($port -eq 0) {
-        $port = (iftet $Endpoint.Ssl 8443 8080)
+        $port = (Resolve-PodeValue -Check $Endpoint.Ssl -TrueValue 8443 -FalseValue 8080)
     }
 
     return "$($protocol)://$($Endpoint.HostName):$($port)"

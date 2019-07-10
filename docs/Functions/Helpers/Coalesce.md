@@ -11,7 +11,7 @@ The `coalesce` function will return the first argument if it's not `$null` or `e
 The following example will use the second value and output `Hello!`, because the first is `$null`:
 
 ```powershell
-Server {
+Start-PodeServer {
     $msg = (coalesce $null 'Hello!')
     Write-Host $msg
 }

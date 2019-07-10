@@ -11,7 +11,7 @@ The `stopwatch` function lets you wrap logic in a scriptblock, and have the amou
 The following example will wrap a `stopwatch` around reading in files and converting them to JSON:
 
 ```powershell
-Server {
+Start-PodeServer {
     stopwatch 'files' {
         Get-ChildItem 'c:/temp/*.json' | Foreach-Object {
             $content = Get-Content -Raw $_

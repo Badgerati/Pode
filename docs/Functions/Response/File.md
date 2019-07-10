@@ -13,8 +13,8 @@ The content type for the response, by default, is determined by the file's exten
 The following example will write an XML file to the response stream:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/data' {
         Write-PodeFileResponse -Path './path/file.xml'
@@ -27,8 +27,8 @@ Server {
 The following example will write a dynamic text file to the response stream, supplying data needed to generate the file:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
     Set-PodeViewEngine -Type Pode
 
     route get '/data' {

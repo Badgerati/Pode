@@ -4,9 +4,9 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 $PodeContext = @{ 'Server' = $null; }
 
-Describe 'Start-PodeServer' {
+Describe 'Start-PodeInternalServer' {
     Mock Add-PodePSInbuiltDrives { }
-    Mock Invoke-ScriptBlock { }
+    Mock Invoke-PodeScriptBlock { }
     Mock New-PodeRunspaceState { }
     Mock New-PodeRunspacePools { }
     Mock Start-PodeLoggerRunspace { }
@@ -22,9 +22,9 @@ Describe 'Start-PodeServer' {
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ 'Type' = ([string]::Empty); 'Logic' = {} }
-        Start-PodeServer | Out-Null
+        Start-PodeInternalServer | Out-Null
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 0 -Scope It
@@ -36,9 +36,9 @@ Describe 'Start-PodeServer' {
 
     It 'Calls smtp server logic' {
         $PodeContext.Server = @{ 'Type' = 'SMTP'; 'Logic' = {} }
-        Start-PodeServer | Out-Null
+        Start-PodeInternalServer | Out-Null
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
@@ -50,9 +50,9 @@ Describe 'Start-PodeServer' {
 
     It 'Calls tcp server logic' {
         $PodeContext.Server = @{ 'Type' = 'TCP'; 'Logic' = {} }
-        Start-PodeServer | Out-Null
+        Start-PodeInternalServer | Out-Null
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
@@ -64,9 +64,9 @@ Describe 'Start-PodeServer' {
 
     It 'Calls http web server logic' {
         $PodeContext.Server = @{ 'Type' = 'HTTP'; 'Logic' = {} }
-        Start-PodeServer | Out-Null
+        Start-PodeInternalServer | Out-Null
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
@@ -78,9 +78,9 @@ Describe 'Start-PodeServer' {
 
     It 'Calls https web server logic' {
         $PodeContext.Server = @{ 'Type' = 'HTTPS'; 'Logic' = {} }
-        Start-PodeServer | Out-Null
+        Start-PodeInternalServer | Out-Null
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
@@ -91,42 +91,14 @@ Describe 'Start-PodeServer' {
     }
 }
 
-Describe 'Get-PodeServerType' {
-    Context 'Valid parameters supplied' {
-        It 'Return smtp when switch supplied' {
-            Get-PodeServerType -Port 25 -Smtp | Should Be 'SMTP'
-        }
-
-        It 'Return tcp when switch supplied' {
-            Get-PodeServerType -Port 100 -Tcp | Should Be 'TCP'
-        }
-
-        It 'Return https when switch supplied' {
-            Get-PodeServerType -Port 8443 -Https | Should Be 'HTTPS'
-        }
-
-        It 'Return http when no switch supplied, but have port' {
-            Get-PodeServerType -Port 8080 | Should Be 'HTTP'
-        }
-
-        It 'Returns server when no switch/port, but have interval' {
-            Get-PodeServerType -Interval 10 | Should Be 'SERVICE'
-        }
-
-        It 'Returns script when nothing is supplied' {
-            Get-PodeServerType | Should Be ([string]::Empty)
-        }
-    }
-}
-
-Describe 'Restart-PodeServer' {
+Describe 'Restart-PodeInternalServer' {
     Mock Write-Host { }
     Mock Close-PodeRunspaces { }
     Mock Remove-PodePSDrives { }
     Mock Open-PodeConfiguration { return $null }
-    Mock Start-PodeServer { }
+    Mock Start-PodeInternalServer { }
     Mock Out-Default { }
-    Mock Dispose { }
+    Mock Close-PodeDisposable { }
 
     It 'Resetting the server values' {
         $PodeContext = @{
@@ -164,7 +136,7 @@ Describe 'Restart-PodeServer' {
             'Schedules' = @{ 'key' = 'value' };
         }
 
-        Restart-PodeServer | Out-Null
+        Restart-PodeInternalServer | Out-Null
 
         $PodeContext.Server.Routes['GET'].Count | Should Be 0
         $PodeContext.Server.Logging.Methods.Count | Should Be 0
@@ -173,7 +145,7 @@ Describe 'Restart-PodeServer' {
         $PodeContext.Server.Cookies.Session.Count | Should Be 0
         $PodeContext.Server.Authentications.Count | Should Be 0
         $PodeContext.Server.State.Count | Should Be 0
-        $PodeContext.Server.Configuration | Should Be $null
+        $PodeContext.Server.Settings | Should Be $null
 
         $PodeContext.Timers.Count | Should Be 0
         $PodeContext.Schedules.Count | Should Be 0
@@ -186,6 +158,6 @@ Describe 'Restart-PodeServer' {
 
     It 'Catches exception and throws it' {
         Mock Write-Host { throw 'some error' }
-        { Restart-PodeServer } | Should Throw 'some error'
+        { Restart-PodeInternalServer } | Should Throw 'some error'
     }
 }

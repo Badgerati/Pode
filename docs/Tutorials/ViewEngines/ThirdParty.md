@@ -12,11 +12,11 @@ This custom `scriptblock` will be supplied with two arguments:
 If you were to use `EPS` engine, and already have the module installed, then the following server example would work for views and static content:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     # import the EPS module into the runspaces
-    import eps
+    Import-PodeModule -Name EPS
 
     # set the engine to use and render EPS files
     # (could be index.eps, or for content scripts.css.eps)
@@ -53,11 +53,11 @@ The following example structure could be used for the views and static content:
 If you were to use `PSHTML` engine, and already have the module installed, then the following server example would work for views and static content:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     # import the PSHTML module into the runspaces
-    import pshtml
+    Import-PodeModule -Name PSHTML
 
     # set the engine to use and render PSHTML (which are just ps1) files
     # (could be index.ps1, or for content scripts.css.ps1)

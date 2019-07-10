@@ -50,7 +50,7 @@ Your Function's `function.json` will also need to contain at a minimum the Reque
 With the above being done, your Pode `server` can be created as follows:
 
 ```powershell
-server -req $TriggerMetadata -type 'azure-functions' {
+Start-PodeServer -Request $TriggerMetadata -Type 'azure-functions' {
     # logic
 }
 ```
@@ -65,7 +65,7 @@ The following `run.ps1` would be a simple example of using Pode to aid with rout
 param($Request, $TriggerMetadata)
 $endpoint = '/api/MyFunc'
 
-server -req $TriggerMetadata -type 'azure-functions' {
+Start-PodeServer -Request $TriggerMetadata -Type 'azure-functions' {
     # get route that can return data
     route get $endpoint {
         Write-PodeJsonResponse -Value @{ 'Data' = 'some random data' }
@@ -95,7 +95,7 @@ All you need to do then is reference this directory as the root path for your se
 param($Request, $TriggerMetadata)
 $endpoint = '/api/MyFunc'
 
-server -req $TriggerMetadata -type 'azure-functions' -root '../www' {
+Start-PodeServer -Request $TriggerMetadata -Type 'azure-functions' -RootPath '../www' {
     # set your engine renderer
     Set-PodeViewEngine -Type Pode
 

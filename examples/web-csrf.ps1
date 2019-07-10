@@ -12,10 +12,10 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8090
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8090
-    listen localhost:8090 http
+    Add-PodeEndpoint -Endpoint localhost:8090 -Protocol HTTP
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
@@ -37,7 +37,7 @@ Server -Threads 2 {
     # this route will work, as GET methods are ignored by CSRF by default
     route get '/' {
         $token = (csrf token)
-        Write-PodeViewResponse -Path 'index-csrf' -fm @{ 'csrfToken' = $token }
+        Write-PodeViewResponse -Path 'index-csrf' -Data @{ 'csrfToken' = $token } -FlashMessages
     }
 
     # POST route for form with and without csrf token

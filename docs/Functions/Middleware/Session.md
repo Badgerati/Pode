@@ -15,7 +15,7 @@ The age of the session-cookie can be specified (and whether to extend the durati
 The following example sets up basic `session` middleware, using a secret key and a 5min fixed duration:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware (session @{
         'Secret' = 'schwifty';
         'Duration' = 300;
@@ -28,7 +28,7 @@ Server {
 The following example sets up `session` middleware with a non-default cookie name, and a sliding 5min duration:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware (session @{
         'Secret' = 'schwifty';
         'Duration' = 300;
@@ -43,7 +43,7 @@ Server {
 The following example sets up `session` middleware with a custom SessionId script generator; to use a random filename instead of a guid:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware (session @{
         'Secret' = 'schwifty';
         'Duration' = 300;
@@ -59,8 +59,8 @@ Server {
 The following example sets up basic `session` middleware, and defines a `route` that adds data to the session. Each subsequent call to the route will increment the `views` counter:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     middleware (session @{
         'Secret' = 'schwifty';

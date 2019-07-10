@@ -15,7 +15,7 @@ The `root` function returns the parent path to your server script.
 The following example will import the local module, located within the `/modules` directory:
 
 ```powershell
-Server {
-    import "$(root)/modules/tools.psm1"
+Start-PodeServer {
+    Import-PodeModule -Path "$(Get-PodeServerPath)/modules/tools.psm1"
 }
 ```

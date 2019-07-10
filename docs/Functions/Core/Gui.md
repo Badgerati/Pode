@@ -19,8 +19,8 @@ If you run your server directly, then the terminal will remain visible. However,
 The following example will launch the server, and open an application called "Pode Example 1". It will also set the icon of the application:
 
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint localhost:8080 -Protocol HTTP
 
     gui 'Pode Example 1' @{
         Icon = '../images/icon.png'
@@ -33,8 +33,8 @@ server {
 The following example will launch the server, but will open the application as fullscreen:
 
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint localhost:8080 -Protocol HTTP
 
     gui 'Pode Example 2' @{
         State = 'Maximized'
@@ -47,8 +47,8 @@ server {
 The following example will launch the server, and the application's window will open at a defined fixed size:
 
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint localhost:8080 -Protocol HTTP
 
     gui 'Pode Example 2' @{
         ResizeMode = 'NoResize'

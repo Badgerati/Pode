@@ -7,7 +7,7 @@ Form authentication is for when you're using a `<form>` in HTML, and you submit 
 To setup and start using Form authentication in Pode you specify `auth use <name> -t form` in your server script, the validator script you need to supply will have the username/password supplied as arguments to the scriptblock:
 
 ```powershell
-Server {
+Start-PodeServer {
     auth use login -t form -v {
         param($username, $password)
 
@@ -23,7 +23,7 @@ By default, Pode will check if the request's payload (from POST) contains a `use
 For example, to look for the field `email` rather than rather than the default `username` you could do:
 
 ```powershell
-Server {
+Start-PodeServer {
     auth use login -t form -v {
         # check
     } -o @{ 'UsernameField' = 'email' }
@@ -39,7 +39,7 @@ Once configured you can start using Form authentication to validate incoming req
 The following will use Form authentication to validate every request on every `route`:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware (auth check login)
 }
 ```
@@ -47,7 +47,7 @@ Server {
 Whereas the following example will use Form authentication to only validate requests on specific a `route`:
 
 ```powershell
-Server {
+Start-PodeServer {
     route get '/info' (auth check login) {
         # logic
     }
@@ -59,8 +59,8 @@ Server {
 The following full example of Form authentication will setup and configure authentication, validate that a users username/password is valid, and then validate on a specific `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     # setup form authentication to validate a user
     auth use login -t form -v {

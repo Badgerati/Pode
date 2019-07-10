@@ -12,7 +12,7 @@ function Read-PodeStreamToEnd
         return [string]::Empty
     }
 
-    return (stream ([System.IO.StreamReader]::new($Stream, $Encoding)) {
+    return (Use-PodeStream -Stream ([System.IO.StreamReader]::new($Stream, $Encoding)) {
         return $args[0].ReadToEnd()
     })
 }
@@ -148,7 +148,7 @@ function ConvertFrom-PodeBytesToString
         $RemoveNewLine
     )
 
-    if (Test-Empty $Bytes) {
+    if (Test-IsEmpty $Bytes) {
         return $Bytes
     }
 

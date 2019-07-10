@@ -16,8 +16,8 @@ The `listen` function will check for administrator privileges on Windows, unless
 The following example will listen on every IP over port 8080 for HTTP requests:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 }
 ```
 
@@ -26,7 +26,7 @@ server {
 The following example will listen on localhost over port 25 for SMTP requests (this will not require administrator privileges):
 
 ```powershell
-server {
+Start-PodeServer {
     listen 127.0.0.1:25 smtp
 }
 ```
@@ -36,7 +36,7 @@ server {
 The following example will listen on a specific IP address over port 8443 for HTTPS requests; it will also inform Pode to create and bind a self-signed certificate to the IP:Port:
 
 ```powershell
-server {
+Start-PodeServer {
     listen 10.10.1.4:8443 https -cert self
 }
 ```
@@ -46,7 +46,7 @@ server {
 The following example will listen on a specific host name over port 8080 for HTTP requests:
 
 ```powershell
-server {
+Start-PodeServer {
     listen pode.foo.com:8080 http
 }
 ```
@@ -56,8 +56,8 @@ server {
 The following example will listen on a wildcard endpoint over port 8443 for HTTPS requests, binding a certificate to the endpoint using a thumbprint:
 
 ```powershell
-server {
-    listen *.foo.com:8443 https -cthumb '2A9467F7D3940243D6C07DE61E7FCCE292'
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *.foo.com:8443 -Protocol HTTPS -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
 }
 ```
 
@@ -66,7 +66,7 @@ server {
 The following example will listen on multiple endpoints for HTTP (Note, you can specify a combination of HTTP/HTTPS endpoints):
 
 ```powershell
-server {
+Start-PodeServer {
     listen pode.foo.com:8080 http
     listen pode.bar.com:8080 http
 }

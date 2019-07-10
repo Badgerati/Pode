@@ -9,8 +9,8 @@ To serve up a web page you use the [`view`](../../../Functions/Response/View) fu
 When you use the `view` function to serve a web page, the path to the view must be relative to the `/views` directory. For example, the following will display the `/views/index.html` page:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/' {
         Write-PodeViewResponse -Path 'index'
@@ -37,8 +37,8 @@ server.ps1
 
 *server.ps1*
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/' {
         Write-PodeViewResponse -Path 'index'

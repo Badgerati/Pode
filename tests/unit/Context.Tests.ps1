@@ -4,38 +4,28 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 $PodeContext = @{ 'Server' = $null; }
 
-Describe 'Get-PodeConfiguration' {
+Describe 'Get-PodeSettings' {
     It 'Returns JSON config' {
         $json = '{ "settings": { "port": 90 } }'
-        $PodeContext.Server = @{ 'Configuration' = ($json | ConvertFrom-Json) }
-        $config = Get-PodeConfiguration
+        $PodeContext.Server = @{ 'Settings' = ($json | ConvertFrom-Json) }
+        $config = Get-PodeSettings
         $config | Should Not Be $null
         $config.settings.port | Should Be 90
     }
 }
 
-Describe 'Config' {
-    It 'Returns JSON config' {
-        $json = '{ "settings": { "port": 90 } }'
-        $PodeContext.Server = @{ 'Configuration' = ($json | ConvertFrom-Json) }
-        $config = Config
-        $config | Should Not Be $null
-        $config.settings.port | Should Be 90
-    }
-}
-
-Describe 'Listen' {
+Describe 'Add-PodeEndpoint' {
     Context 'Invalid parameters supplied' {
         It 'Throw null IP:Port parameter error' {
-            { Listen -IPPort $null -Type 'HTTP' } | Should Throw 'The argument is null or empty'
+            { Add-PodeEndpoint -Endpoint $null -Protocol 'HTTP' } | Should Throw 'it is an empty string'
         }
 
         It 'Throw empty IP:Port parameter error' {
-            { Listen -IPPort ([string]::Empty) -Type 'HTTP' } | Should Throw 'The argument is null or empty'
+            { Add-PodeEndpoint -Endpoint ([string]::Empty) -Protocol 'HTTP' } | Should Throw 'it is an empty string'
         }
 
         It 'Throw invalid type error for no method' {
-            { Listen -IPPort '127.0.0.1' -Type 'MOO' } | Should Throw "Cannot validate argument on parameter 'Type'"
+            { Add-PodeEndpoint -Endpoint '127.0.0.1' -Protocol 'MOO' } | Should Throw "Cannot validate argument on parameter 'Protocol'"
         }
     }
 
@@ -45,7 +35,7 @@ Describe 'Listen' {
 
         It 'Set just a Hostname address' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP 'foo.com' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint 'foo.com' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -59,7 +49,7 @@ Describe 'Listen' {
 
         It 'Set Hostname address with a Name' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP 'foo.com' -Type 'HTTP' -Name 'Example'
+            Add-PodeEndpoint -Endpoint 'foo.com' -Protocol 'HTTP' -Name 'Example'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -72,7 +62,7 @@ Describe 'Listen' {
 
         It 'Set just a Hostname address with colon' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP 'foo.com:' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint 'foo.com:' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -85,7 +75,7 @@ Describe 'Listen' {
 
         It 'Set both the Hostname address and port' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP 'foo.com:80' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint 'foo.com:80' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -97,7 +87,7 @@ Describe 'Listen' {
 
         It 'Set just an IPv4 address' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint '127.0.0.1' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -109,7 +99,7 @@ Describe 'Listen' {
 
         It 'Set just an IPv4 address for all' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP 'all' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint 'all' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -122,7 +112,7 @@ Describe 'Listen' {
 
         It 'Set just an IPv4 address with colon' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -134,7 +124,7 @@ Describe 'Listen' {
 
         It 'Set just a port' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '80' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint '80' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -146,7 +136,7 @@ Describe 'Listen' {
 
         It 'Set just a port with colon' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP ':80' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint ':80' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -158,7 +148,7 @@ Describe 'Listen' {
 
         It 'Set both IPv4 address and port' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -170,7 +160,7 @@ Describe 'Listen' {
 
         It 'Set both IPv4 address and port for all' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '*:80' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint '*:80' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -183,7 +173,7 @@ Describe 'Listen' {
 
         It 'Throws error for an invalid IPv4' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            { Listen -IP '256.0.0.1' -Type 'HTTP' } | Should Throw 'Invalid IP Address'
+            { Add-PodeEndpoint -Endpoint '256.0.0.1' -Protocol 'HTTP' } | Should Throw 'Invalid IP Address'
 
             $PodeContext.Server.Type | Should Be $null
             $PodeContext.Server.Endpoints | Should Be $null
@@ -191,7 +181,7 @@ Describe 'Listen' {
 
         It 'Throws error for an invalid IPv4 address with port' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            { Listen -IP '256.0.0.1:80' -Type 'HTTP' } | Should Throw 'Invalid IP Address'
+            { Add-PodeEndpoint -Endpoint '256.0.0.1:80' -Protocol 'HTTP' } | Should Throw 'Invalid IP Address'
 
             $PodeContext.Server.Type | Should Be $null
             $PodeContext.Server.Endpoints | Should Be $null
@@ -199,8 +189,8 @@ Describe 'Listen' {
 
         It 'Add two endpoints to listen on, of the same type' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'HTTP'
-            Listen -IP 'pode.foo.com:80' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'HTTP'
+            Add-PodeEndpoint -Endpoint 'pode.foo.com:80' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -217,8 +207,8 @@ Describe 'Listen' {
 
         It 'Add two endpoints to listen on, with different names' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'HTTP' -Name 'Example1'
-            Listen -IP 'pode.foo.com:80' -Type 'HTTP' -Name 'Example2'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'HTTP' -Name 'Example1'
+            Add-PodeEndpoint -Endpoint 'pode.foo.com:80' -Protocol 'HTTP' -Name 'Example2'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -237,8 +227,8 @@ Describe 'Listen' {
 
         It 'Add two endpoints to listen on, one of HTTP and one of HTTPS' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'HTTP'
-            Listen -IP 'pode.foo.com:80' -Type 'HTTPS'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'HTTP'
+            Add-PodeEndpoint -Endpoint 'pode.foo.com:80' -Protocol 'HTTPS'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -255,8 +245,8 @@ Describe 'Listen' {
 
         It 'Add two endpoints to listen on, but one added as they are the same' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'HTTP'
-            Listen -IP '127.0.0.1:80' -Type 'HTTP'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'HTTP'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
@@ -269,82 +259,63 @@ Describe 'Listen' {
 
         It 'Throws error when adding two endpoints of different types' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'HTTP'
-            { Listen -IP 'pode.foo.com:80' -Type 'SMTP' } | Should Throw 'cannot add smtp endpoint'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'HTTP'
+            { Add-PodeEndpoint -Endpoint 'pode.foo.com:80' -Protocol 'SMTP' } | Should Throw 'cannot add smtp endpoint'
         }
 
         It 'Throws error when adding two endpoints with the same name' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'HTTP' -Name 'Example'
-            { Listen -IP 'pode.foo.com:80' -Type 'HTTP' -Name 'Example' } | Should Throw 'already been defined'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'HTTP' -Name 'Example'
+            { Add-PodeEndpoint -Endpoint 'pode.foo.com:80' -Protocol 'HTTP' -Name 'Example' } | Should Throw 'already been defined'
         }
 
         It 'Throws error when adding two SMTP endpoints' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'SMTP'
-            { Listen -IP 'pode.foo.com:80' -Type 'SMTP' } | Should Throw 'already been defined'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'SMTP'
+            { Add-PodeEndpoint -Endpoint 'pode.foo.com:80' -Protocol 'SMTP' } | Should Throw 'already been defined'
         }
 
         It 'Throws error when adding two TCP endpoints' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Listen -IP '127.0.0.1:80' -Type 'TCP'
-            { Listen -IP 'pode.foo.com:80' -Type 'TCP' } | Should Throw 'already been defined'
+            Add-PodeEndpoint -Endpoint '127.0.0.1:80' -Protocol 'TCP'
+            { Add-PodeEndpoint -Endpoint 'pode.foo.com:80' -Protocol 'TCP' } | Should Throw 'already been defined'
         }
 
         It 'Throws an error for not running as admin' {
             Mock Test-IsAdminUser { return $false }
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            { Listen -IP 'foo.com' -Type 'HTTP' } | Should Throw 'Must be running with admin'
+            { Add-PodeEndpoint -Endpoint 'foo.com' -Protocol 'HTTP' } | Should Throw 'Must be running with admin'
         }
     }
 }
 
-Describe 'Script' {
+Describe 'Import-PodeModule' {
     Context 'Invalid parameters supplied' {
         It 'Throw null path parameter error' {
-            { Script -Path $null } | Should Throw 'The argument is null or empty'
+            { Import-PodeModule -Path $null } | Should Throw 'it is an empty string'
         }
 
         It 'Throw empty path parameter error' {
-            { Script -Path ([string]::Empty) } | Should Throw 'The argument is null or empty'
+            { Import-PodeModule -Path ([string]::Empty) } | Should Throw 'it is an empty string'
+        }
+
+        It 'Throw null name parameter error' {
+            { Import-PodeModule -Name $null } | Should Throw 'it is an empty string'
+        }
+
+        It 'Throw empty name parameter error' {
+            { Import-PodeModule -Name ([string]::Empty) } | Should Throw 'it is an empty string'
         }
     }
 
     Context 'Valid parameters supplied' {
-        Mock 'Resolve-Path' { return @{ 'Path' = 'c:/some/file.txt' } }
-        Mock 'Test-PodePath' { return $true }
+        Mock Resolve-Path { return @{ 'Path' = 'c:/some/file.txt' } }
+        Mock Test-PodePath { return $true }
 
         It 'Returns null for no shared state in context' {
             $PodeContext = @{ 'RunspaceState' = [initialsessionstate]::CreateDefault() }
 
-            Script -Path 'file.txt'
-
-            $modules = @($PodeContext.RunspaceState.Modules)
-            $modules.Length | Should Be 1
-            $modules[0].Name | Should Be 'c:/some/file.txt'
-        }
-    }
-}
-
-Describe 'Import' {
-    Context 'Invalid parameters supplied' {
-        It 'Throw null path parameter error' {
-            { Import -Path $null } | Should Throw 'The argument is null or empty'
-        }
-
-        It 'Throw empty path parameter error' {
-            { Import -Path ([string]::Empty) } | Should Throw 'The argument is null or empty'
-        }
-    }
-
-    Context 'Valid parameters supplied' {
-        Mock 'Resolve-Path' { return @{ 'Path' = 'c:/some/file.txt' } }
-        Mock 'Test-PodePath' { return $true }
-
-        It 'Returns null for no shared state in context' {
-            $PodeContext = @{ 'RunspaceState' = [initialsessionstate]::CreateDefault() }
-
-            Import -Path 'file.txt'
+            Import-PodeModule -Path 'file.txt'
 
             $modules = @($PodeContext.RunspaceState.Modules)
             $modules.Length | Should Be 1
@@ -355,7 +326,7 @@ Describe 'Import' {
 
 Describe 'New-PodeAutoRestartServer' {
     It 'Do not create any restart schedules' {
-        Mock 'Config' { return @{} }
+        Mock 'Get-PodeSettings' { return @{} }
 
         $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
         New-PodeAutoRestartServer
@@ -365,7 +336,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a timer for a period server restart' {
-        Mock 'Config' { return @{
+        Mock 'Get-PodeSettings' { return @{
             'server' = @{
                 'restart'=  @{
                     'period' = 180;
@@ -382,7 +353,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a schedule for a timed server restart' {
-        Mock 'Config' { return @{
+        Mock 'Get-PodeSettings' { return @{
             'server' = @{
                 'restart'=  @{
                     'times' = @('18:00');
@@ -399,7 +370,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a schedule for a cron server restart' {
-        Mock 'Config' { return @{
+        Mock 'Get-PodeSettings' { return @{
             'server' = @{
                 'restart'=  @{
                     'crons' = @('@minutely');
@@ -416,7 +387,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a timer and schedule for a period and cron server restart' {
-        Mock 'Config' { return @{
+        Mock 'Get-PodeSettings' { return @{
             'server' = @{
                 'restart'=  @{
                     'period' = 180;
@@ -435,7 +406,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a timer and schedule for a period and timed server restart' {
-        Mock 'Config' { return @{
+        Mock 'Get-PodeSettings' { return @{
             'server' = @{
                 'restart'=  @{
                     'period' = 180;
@@ -454,7 +425,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates two schedules for a cron and timed server restart' {
-        Mock 'Config' { return @{
+        Mock 'Get-PodeSettings' { return @{
             'server' = @{
                 'restart'=  @{
                     'crons' = @('@minutely');

@@ -9,8 +9,8 @@ Caching is also supported on static content.
 The following is an example of using the `route` function to define routes to static content directories; this tells Pode where to get static files from for certain routes. This example will define a static route for `/assets`, and will point to the route at the internal directory path of `./content/assets`:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
     route static '/assets' './content/assets'
 }
 ```
@@ -96,8 +96,8 @@ If you wish to set a max cache time of 30mins, then you would use the `maxAge` p
 Normally content accessed on a static route is rendered on the browser, but you can set the route to flag the files for downloading instead. If you add the `-DownloadOnly` (`-do`) switch to the static `route`, then accessing files on this route in a browser will cause them to be downloaded instead of rendered:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
     route static '/assets' './content/assets' -do
 }
 ```

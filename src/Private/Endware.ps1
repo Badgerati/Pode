@@ -18,7 +18,7 @@ function Invoke-PodeEndware
     foreach ($eware in @($Endware))
     {
         try {
-            Invoke-ScriptBlock -ScriptBlock $eware -Arguments $WebEvent -Scoped | Out-Null
+            Invoke-PodeScriptBlock -ScriptBlock $eware -Arguments $WebEvent -Scoped | Out-Null
         }
         catch {
             $Error[0] | Out-Default

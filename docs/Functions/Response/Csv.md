@@ -11,8 +11,8 @@ The `csv` function converts an `array` of `hashtable` values, or reads in a file
 The following example will convert an `array` of `hashtable` values to a CSV and write it to a web response within a `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/info' {
         csv @( @{'Name' = 'Bob'; 'Age' = 29 }, @{ 'Name' = 'James'; 'Age' = 23 })
@@ -25,8 +25,8 @@ Server {
 The following example will write raw CSV data to a web response within a `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/info' {
         csv "Name, Age`nBob, 29`nJames, 23"
@@ -39,8 +39,8 @@ Server {
 The following example will read in a file, and write the contents as CSV to a web response within a `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/data' {
         csv -file './files/data.csv'

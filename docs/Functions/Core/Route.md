@@ -21,8 +21,8 @@ Routes can also be bound against a specific protocol or endpoint. This allows yo
 The following example sets up a `GET /ping` route, that returns `{ "value": "pong" }`:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/ping' {
         Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
@@ -36,8 +36,8 @@ The following example sets up a `GET /ping` route, and the scriptblock to use is
 
 *server.ps1*
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/ping' -fp './routes/ping.ps1'
 }
@@ -55,8 +55,8 @@ return {
 The following example sets up a `GET /ping` route, and then removes it:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/ping' {
         Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
@@ -71,8 +71,8 @@ server {
 The following example sets up a `POST /users` route, that creates a new user using post data:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route post '/users' {
         param($event)
@@ -94,8 +94,8 @@ server {
 The following example sets up a static route of `/assets` using the directory `./content/assets`. In the `home.html` view if you reference the image `<img src="/assets/images/icon.png" />`, then Pode will get the image from `./content/assets/images/icon.png`.
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route static '/assets' './content/assets'
 
@@ -113,8 +113,8 @@ server {
 The following example sets up a `GET /users/:userId` route, that returns a user based on the route parameter `userId`:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/users/:userId'{
         param($event)
@@ -138,8 +138,8 @@ server {
 The following example sets up a `GET /` route, that has custom middleware to check the user agent first. If the user agent is from PowerShell deny the call, and don't invoke the route's logic:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     $agent_mid = {
         param($event)
@@ -168,8 +168,8 @@ server {
 The following example sets up two `GET /ping` routes: one that applies to only http requests, and another for everything else:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/ping' {
         Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
@@ -186,7 +186,7 @@ server {
 The following example sets up two `GET /ping` routes: one that applies to one endpoint, and the other to the other endpoint:
 
 ```powershell
-server {
+Start-PodeServer {
     listen pode.foo.com:8080 http
     listen pode.bar.com:8080 http
 
@@ -205,7 +205,7 @@ server {
 The following example sets up two `GET /ping` routes: one that applies to one endpoint, and the other to the other endpoint; this is done using the name supplied to the `listen` function:
 
 ```powershell
-server {
+Start-PodeServer {
     listen pode.foo.com:8080 http -name 'pode1'
     listen pode.bar.com:8080 http -name 'pode2'
 

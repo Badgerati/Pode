@@ -11,7 +11,7 @@ The `stream` function allows you to use streams, utilise them, and then automati
 The following example opens a `StreamReader`, reads in the content of the stream, and then automatically disposes of the stream for you. The content is then placed into the `$data` variable:
 
 ```powershell
-Server {
+Start-PodeServer {
     $data = stream ([System.IO.StreamReader]::new($stream)) {
         return $args[0].ReadToEnd()
     }

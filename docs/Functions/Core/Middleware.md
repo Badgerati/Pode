@@ -13,7 +13,7 @@ Middleware in Pode allows you to observe and edit the request/response objects f
 The following example is `middleware` that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new Agent key on the event for later `middleware`/`route`:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware {
         param($event)
 
@@ -33,8 +33,8 @@ Server {
 The following example uses rate limiting, and defines `middleware` that will override the inbuilt rate limiting middleware logic so that it never limits requests:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     limit ip @('127.0.0.1', '[::1]') 8 5
 
@@ -53,7 +53,7 @@ Server {
 The following example is `middleware` that only runs on `/api` routes. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new Agent key on the event for later `middleware`/`route`:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware '/api' {
         param($event)
 
@@ -73,7 +73,7 @@ Server {
 The following example is `middleware` that will run Basic authenticaion validation on every `/api` request (assumes authentication has been set-up):
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware '/api' (auth check basic)
 }
 ```

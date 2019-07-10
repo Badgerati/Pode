@@ -11,9 +11,9 @@ After that, all of your main server logic must be wrapped in a [`Server`](../../
 ```powershell
 Import-Module Pode
 
-Server {
+Start-PodeServer {
     # attach to port 8080
-    listen *:8080 http
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     # logic for routes, timers, schedules, etc
 }

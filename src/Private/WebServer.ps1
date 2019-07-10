@@ -21,7 +21,7 @@ function Start-PodeWebServer
     $endpoints = @()
     $PodeContext.Server.Endpoints | ForEach-Object {
         # get the protocol
-        $_protocol = (iftet $_.Ssl 'https' 'http')
+        $_protocol = (Resolve-PodeValue -Check $_.Ssl -TrueValue 'https' -FalseValue 'http')
 
         # get the ip address
         $_ip = "$($_.Address)"
@@ -32,13 +32,14 @@ function Start-PodeWebServer
         # get the port
         $_port = [int]($_.Port)
         if ($_port -eq 0) {
-            $_port = (iftet $_.Ssl 8443 8080)
+            $_port = (Resolve-PodeValue $_.Ssl -TrueValue 8443 -FalseValue 8080)
         }
 
         # if this endpoint is https, generate a self-signed cert or bind an existing one
         if ($_.Ssl) {
-            $addr = (iftet $_.IsIPAddress $_.Address $_.HostName)
-            Set-PodeCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name -Thumbprint $_.Certificate.Thumbprint
+            $addr = (Resolve-PodeValue -Check $_.IsIPAddress -TrueValue $_.Address -FalseValue $_.HostName)
+            $selfSigned = $_.Certificate.SelfSigned
+            Set-PodeCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name -Thumbprint $_.Certificate.Thumbprint -SelfSigned:$selfSigned
         }
 
         # add endpoint to list
@@ -68,7 +69,7 @@ function Start-PodeWebServer
                 $Listener.Stop()
             }
 
-            dispose $Listener -Close
+            Close-PodeDisposable -Disposable $Listener -Close
         }
 
         throw $_.Exception
@@ -91,7 +92,7 @@ function Start-PodeWebServer
             while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get request and response
-                $context = (await $Listener.GetContextAsync())
+                $context = (Wait-PodeTask -Task $Listener.GetContextAsync())
 
                 try
                 {
@@ -129,7 +130,7 @@ function Start-PodeWebServer
 
                         # invoke route and custom middleware
                         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
-                            Invoke-ScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
+                            Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
                         }
                     }
                 }
@@ -144,7 +145,7 @@ function Start-PodeWebServer
 
                 # close response stream (check if exists, as closing the writer closes this stream on unix)
                 if ($response.OutputStream) {
-                    dispose $response.OutputStream -Close -CheckNetwork
+                    Close-PodeDisposable -Disposable $response.OutputStream -Close -CheckNetwork
                 }
             }
         }
@@ -187,7 +188,7 @@ function Start-PodeWebServer
                     $Listener.Stop()
                 }
 
-                dispose $Listener -Close
+                Close-PodeDisposable -Disposable $Listener -Close
             }
         }
     }

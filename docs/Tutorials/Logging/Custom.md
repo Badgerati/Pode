@@ -7,8 +7,8 @@ Sometimes you don't want to log to a file, or the terminal; instead you want to 
 To create a custom logger you need to supply a scriptblock to the `logger` function, as well as the `-Custom` (`-c`) flag. The following example will output the web request method/resource to the terminal; the scriptblock will be supplied a single argument that has a log object which contains details of the request/response:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     logger -c terminal {
         param($event)

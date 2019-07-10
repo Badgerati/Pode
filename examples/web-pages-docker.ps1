@@ -1,10 +1,10 @@
-Import-Module Pode -Force
+Import-Module Pode -Force -ErrorAction Stop
 
 # create a server, and start listening on port 8085
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on *:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Endpoint *:8085 -Protocol HTTP
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
@@ -27,4 +27,4 @@ Server -Threads 2 {
         'Hello, world!' | Out-File -FilePath "$($PodeContext.Server.Root)/file.txt" -Append -Force
     }
 
-} -FileMonitor
+}

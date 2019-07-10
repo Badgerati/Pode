@@ -11,8 +11,8 @@ The `xml` function converts a `hashtable`, or reads in a file, and converts it t
 The following example will convert a `hashtable` to XML and write it to a web response within a `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/info' {
         xml @{ 'cpu' = 80; 'memory' = 15; }
@@ -25,8 +25,8 @@ Server {
 The following example will write raw XML data to a web response within a `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/info' {
         xml '<root><users><user>Rick</user><user>Morty</user></users></root>'
@@ -39,8 +39,8 @@ Server {
 The following example will read in a file, and write the contents as XML to a web response within a `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/data' {
         xml -file './files/data.xml'

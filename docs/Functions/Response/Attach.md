@@ -11,8 +11,8 @@ The `attach` function allows you to attach files in the `/public` directory, as 
 The following example attaches the installer found at `/public/downloads/installer.exe` onto the response, when the `http://localhost:8080/app/install` endpoint is hit:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/app/install' {
         attach 'downloads/installer.exe'
@@ -25,8 +25,8 @@ Server {
 The following example attaches the image found at `/content/assets/images/icon.png` onto the response, when the `http://localhost:8080/app/icon` endpoint is hit:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route static '/assets' './content/assets'
 

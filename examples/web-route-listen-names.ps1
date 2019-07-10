@@ -5,11 +5,11 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8080 and 8443
-Server {
+Start-PodeServer {
 
     # listen on localhost:8080/8443
-    listen 127.0.0.1:8080 http -name 'local1'
-    listen 127.0.0.2:8080 http -name 'local2'
+    Add-PodeEndpoint -Endpoint 127.0.0.1:8080 -Protocol HTTP -Name 'local1'
+    Add-PodeEndpoint -Endpoint 127.0.0.2:8080 -Protocol HTTP -Name 'local2'
 
     # set view engine to pode
     Set-PodeViewEngine -Type Pode
@@ -35,4 +35,4 @@ Server {
         Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
     }
 
-} -FileMonitor
+}

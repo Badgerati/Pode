@@ -13,7 +13,7 @@ When logging to a file, you can specify a custom path to create the log files, a
 The following example will log web events to the terminal:
 
 ```powershell
-Server {
+Start-PodeServer {
     logger terminal
 }
 ```
@@ -23,7 +23,7 @@ Server {
 The following example will log web events to a file. The log files will be placed at `c:\logs` (default is `/logs` at the root), and will be split down by day; they will also only be kept for 7 days (default is forever) - any log file older than 7 days will automatically be deleted:
 
 ```powershell
-Server {
+Start-PodeServer {
     logger file @{
         'Path' = 'c:/logs/';
         'MaxDays' = 7;
@@ -39,7 +39,7 @@ Server {
 The following example will create a custom log tool that outputs the request method/resource to the terminal. For custom loggers a scriptblock *must* be supplied - the script will be supplied a single argument, which is a log object contains details of the request/response:
 
 ```powershell
-Server {
+Start-PodeServer {
     logger -c terminal {
         param($obj)
 

@@ -234,7 +234,7 @@ Describe 'Route' {
 
         It 'Adds route with simple url and scriptblock from file path' {
             Mock Test-PodePath { return $true }
-            Mock Load { return { Write-Host 'bye' } }
+            Mock Use-PodeScript { return { Write-Host 'bye' } }
 
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
             Route -HttpMethod GET -Route '/users' -FilePath './path/route.ps1'

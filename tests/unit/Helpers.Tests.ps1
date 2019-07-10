@@ -61,62 +61,62 @@ Describe 'Get-PodeType' {
     }
 }
 
-Describe 'Test-Empty' {
+Describe 'Test-IsEmpty' {
     Context 'No value is passed' {
         It 'Return true for no value' {
-            Test-Empty | Should be $true
+            Test-IsEmpty | Should be $true
         }
         
         It 'Return true for null value' {
-            Test-Empty -Value $null | Should be $true
+            Test-IsEmpty -Value $null | Should be $true
         }
     }
 
     Context 'Empty value is passed' {
         It 'Return true for an empty arraylist' {
-            Test-Empty -Value ([System.Collections.ArrayList]::new()) | Should Be $true
+            Test-IsEmpty -Value ([System.Collections.ArrayList]::new()) | Should Be $true
         }
 
         It 'Return true for an empty array' {
-            Test-Empty -Value @() | Should Be $true
+            Test-IsEmpty -Value @() | Should Be $true
         }
 
         It 'Return true for an empty hashtable' {
-            Test-Empty -Value @{} | Should Be $true
+            Test-IsEmpty -Value @{} | Should Be $true
         }
 
         It 'Return true for an empty string' {
-            Test-Empty -Value ([string]::Empty) | Should Be $true
+            Test-IsEmpty -Value ([string]::Empty) | Should Be $true
         }
 
         It 'Return true for a whitespace string' {
-            Test-Empty -Value "  " | Should Be $true
+            Test-IsEmpty -Value "  " | Should Be $true
         }
 
         It 'Return true for an empty scriptblock' {
-            Test-Empty -Value {} | Should Be $true
+            Test-IsEmpty -Value {} | Should Be $true
         }
     }
 
     Context 'Valid value is passed' {
         It 'Return false for a string' {
-            Test-Empty -Value "test" | Should Be $false
+            Test-IsEmpty -Value "test" | Should Be $false
         }
 
         It 'Return false for a number' {
-            Test-Empty -Value 1 | Should Be $false
+            Test-IsEmpty -Value 1 | Should Be $false
         }
 
         It 'Return false for an array' {
-            Test-Empty -Value @('test') | Should Be $false
+            Test-IsEmpty -Value @('test') | Should Be $false
         }
 
         It 'Return false for a hashtable' {
-            Test-Empty -Value @{'key'='value';} | Should Be $false
+            Test-IsEmpty -Value @{'key'='value';} | Should Be $false
         }
 
         It 'Return false for a scriptblock' {
-            Test-Empty -Value { write-host '' } | Should Be $false
+            Test-IsEmpty -Value { write-host '' } | Should Be $false
         }
     }
 }
@@ -528,14 +528,14 @@ Describe 'Get-PodeSubnetRange' {
     }
 }
 
-Describe 'Iftet' {
+Describe 'Resolve-PodeValue' {
     Context 'Valid values' {
         It 'Returns Value2 for False Check' {
-            iftet -Check $false -Value1 'test' -Value2 'hello' | Should Be 'hello'
+            Resolve-PodeValue -Check $false -TrueValue 'test' -FalseValue 'hello' | Should Be 'hello'
         }
 
         It 'Returns Value1 for True Check' {
-            iftet -Check $true -Value1 'test' -Value2 'hello' | Should Be 'test'
+            Resolve-PodeValue -Check $true -TrueValue 'test' -FalseValue 'hello' | Should Be 'test'
         }
     }
 }
@@ -826,42 +826,42 @@ Describe 'Remove-PodeEmptyItemsFromArray' {
     }
 }
 
-Describe 'Invoke-ScriptBlock' {
+Describe 'Invoke-PodeScriptBlock' {
     It 'Runs scriptblock unscoped, unsplatted, no-args' {
-        Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
+        Invoke-PodeScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
     }
 
     It 'Runs scriptblock unscoped, unsplatted, no-args, force closure for serverless' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
-        Invoke-ScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
+        Invoke-PodeScriptBlock -ScriptBlock { return 7 } -Return | Should Be 7
     }
 
     It 'Runs scriptblock unscoped, unsplatted, args' {
-        Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Arguments 5 -Return | Should Be 5
+        Invoke-PodeScriptBlock -ScriptBlock { param($i) return $i } -Arguments 5 -Return | Should Be 5
     }
 
     It 'Runs scriptblock scoped, unsplatted, no-args' {
-        Invoke-ScriptBlock -ScriptBlock { return 7 } -Scoped -Return | Should Be 7
+        Invoke-PodeScriptBlock -ScriptBlock { return 7 } -Scoped -Return | Should Be 7
     }
 
     It 'Runs scriptblock scoped, unsplatted, args' {
-        Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Scoped -Arguments 5 -Return | Should Be 5
+        Invoke-PodeScriptBlock -ScriptBlock { param($i) return $i } -Scoped -Arguments 5 -Return | Should Be 5
     }
 
     It 'Runs scriptblock unscoped, splatted, no-args' {
-        Invoke-ScriptBlock -ScriptBlock { return 7 } -Splat -Return | Should Be 7
+        Invoke-PodeScriptBlock -ScriptBlock { return 7 } -Splat -Return | Should Be 7
     }
 
     It 'Runs scriptblock unscoped, splatted, args' {
-        Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Splat -Arguments @(5) -Return | Should Be 5
+        Invoke-PodeScriptBlock -ScriptBlock { param($i) return $i } -Splat -Arguments @(5) -Return | Should Be 5
     }
 
     It 'Runs scriptblock scoped, splatted, no-args' {
-        Invoke-ScriptBlock -ScriptBlock { return 7 } -Scoped -Splat -Return | Should Be 7
+        Invoke-PodeScriptBlock -ScriptBlock { return 7 } -Scoped -Splat -Return | Should Be 7
     }
 
     It 'Runs scriptblock scoped, splatted, args' {
-        Invoke-ScriptBlock -ScriptBlock { param($i) return $i } -Scoped -Splat -Arguments @(5) -Return | Should Be 5
+        Invoke-PodeScriptBlock -ScriptBlock { param($i) return $i } -Scoped -Splat -Arguments @(5) -Return | Should Be 5
     }
 }
 
@@ -1193,28 +1193,28 @@ Describe 'Close-PodeRunspaces' {
     }
 }
 
-Describe 'Close-Pode' {
+Describe 'Close-PodeServer' {
     Mock Close-PodeRunspaces { }
     Mock Stop-PodeFileMonitor { }
-    Mock Dispose { }
+    Mock Close-PodeDisposable { }
     Mock Remove-PodePSDrives { }
     Mock Write-Host { }
 
     It 'Closes out pode, but with no done flag' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
-        Close-Pode
+        Close-PodeServer
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 
     It 'Closes out pode, but with the done flag' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
-        Close-Pode -Exit
+        Close-PodeServer -Exit
         Assert-MockCalled Write-Host -Times 1 -Scope It
     }
 
     It 'Closes out pode, but with no done flag if serverless' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'Server'; 'IsServerless' = $true } }
-        Close-Pode -Exit
+        Close-PodeServer -Exit
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 }

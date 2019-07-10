@@ -25,7 +25,7 @@ To start off this script, you'll need to have the main [`server`](../../../Funct
 ```powershell
 Import-Module Pode
 
-Server -Thread 2 {
+Start-PodeServer -Thread 2 {
     # the rest of the logic goes here!
 }
 ```
@@ -33,7 +33,7 @@ Server -Thread 2 {
 Next, we'll need to [`listen`](../../../Functions/Core/Listen) on an endpoint and then specify the [`engine`](../../../Functions/Core/Engine) as using `.pode` files:
 
 ```powershell
-listen *:8080 http
+Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
 Set-PodeViewEngine -Type Pode
 ```
@@ -116,8 +116,8 @@ This is the full code for the server above:
 ```powershell
 Import-Module Pode
 
-Server -Thread 2 {
-    listen *:8080 http
+Start-PodeServer -Thread 2 {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     # use pode template engine
     engine pode

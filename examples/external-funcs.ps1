@@ -5,10 +5,10 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server {
+Start-PodeServer {
 
     # listen on localhost:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Endpoint *:8085 -Protocol HTTP
 
     # include the external function module
     script './modules/external-funcs.psm1'
@@ -19,4 +19,4 @@ Server {
         Write-PodeJsonResponse -Value @{ 'result' = (Get-Greeting) }
     }
 
-} -FileMonitor
+}

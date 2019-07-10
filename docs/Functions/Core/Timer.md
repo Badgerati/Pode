@@ -14,7 +14,7 @@ The `timer` function allows you to setup short-running async tasks, that run per
 The following example is a `timer` that runs for ever, every 5secs:
 
 ```powershell
-Server {
+Start-PodeServer {
     timer 'forever' 5 {
         # logic
     }
@@ -26,7 +26,7 @@ Server {
 The following example is a `timer` that will skip the first 3 iterations, and after 15secs (3x5) will loop every 5secs:
 
 ```powershell
-Server {
+Start-PodeServer {
     timer 'skip-first-3' 5 -skip 3 {
         # logic
     }
@@ -38,7 +38,7 @@ Server {
 The following example is a `timer` that runs once after waiting for 2mins:
 
 ```powershell
-Server {
+Start-PodeServer {
     timer 'run-once' 120 -skip 1 -limit 1 {
         # logic
     }
@@ -50,7 +50,7 @@ Server {
 The following example will create a new `timer` every time the `route` is called - the route expects two query string parameters of `Name` an `Seconds`:
 
 ```powershell
-Server {
+Start-PodeServer {
     route 'get' '/api/timer' {
         param($event)
         $query = $event.Query

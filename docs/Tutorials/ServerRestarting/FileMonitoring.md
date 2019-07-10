@@ -1,14 +1,6 @@
 # File Monitoring
 
-Pode has support for file monitoring which can trigger the server to restart, this occurs if Pode detects any file changes within the root directory of your server. To enable file monitoring you can either use the `-FileMonitor` switch on your [`server`](../../Functions/Core/Server) script, or enable it through the `pode.json` configuration file as follows:
-
-```powershell
-Server {
-    # logic
-} -FileMonitor
-```
-
-or:
+Pode has support for file monitoring which can trigger the server to restart, this occurs if Pode detects any file changes within the root directory of your server. To enable file monitoring you can enable it through the `pode.json` configuration file as follows:
 
 ```json
 {
@@ -33,19 +25,11 @@ The file changes which are being monitored by Pode are:
 
 ## Include/Exclude
 
-You can include/exclude paths/files/extensions from triggering a server restart. To include specific paths/files you can use the `-FileMonitorInclude` parameter on your `server`, and to exclude you can use the `-FileMonitorExclude` parameter. You can also configure them within the `pode.json` configuration file.
+You can include/exclude paths/files/extensions from triggering a server restart. To include/exclude specific paths/files you can configure them within the `pode.json` configuration file.
 
-Both of the parameters are arrays, and the values should be patterns for paths/files/extensions - for paths, they should always be from the root directory of your server.
+Both of the settings are arrays, and the values should be patterns for paths/files/extensions - for paths, they should always be from the root directory of your server.
 
 For example, to state that all `txt` and `ps1` files should only trigger restarts, you would do:
-
-```powershell
-Server {
-    # logic
-} -FileMonitor -FileMonitorInclude @('*.txt', '*.ps1')
-```
-
-or:
 
 ```json
 {
@@ -59,14 +43,6 @@ or:
 ```
 
 And to state that changes within the `public` directory should not trigger a restart, you would do:
-
-```powershell
-Server {
-    # logic
-} -FileMonitor -FileMonitorExclude @('public/*')
-```
-
-or:
 
 ```json
 {

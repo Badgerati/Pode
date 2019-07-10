@@ -15,8 +15,8 @@ function Start-PodeServiceServer
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # invoke the service logic
-                Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'Service') -Scoped
-                #Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
+                Invoke-PodeScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'Service') -Scoped
+                #Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
 
                 # sleep before next run
                 Start-Sleep -Seconds $PodeContext.Server.Interval

@@ -13,7 +13,7 @@ You can also use the `load` function to dot-source multiple scripts by using wil
 The following example will run the given PowerShell script, creating any `routes`, etc., that are needed. Because the path is relative, the server's root path will be automatically added:
 
 ```powershell
-server {
+Start-PodeServer {
     load './routes/api.ps1'
 }
 ```
@@ -23,7 +23,7 @@ server {
 The following example will dot-source all `*.ps1` scripts at the passed directory path:
 
 ```powershell
-server {
+Start-PodeServer {
     load './routes/*.ps1'
 }
 ```

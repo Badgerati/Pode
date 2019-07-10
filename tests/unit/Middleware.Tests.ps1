@@ -189,7 +189,7 @@ Describe 'Invoke-PodeMiddleware' {
     }
 
     It 'Runs the logic for a single middleware and returns true' {
-        Mock Invoke-ScriptBlock { return $true }
+        Mock Invoke-PodeScriptBlock { return $true }
         $WebEvent = @{ 'Middleware' = @{} }
         $midware = @{
             'Options' = @{};
@@ -198,11 +198,11 @@ Describe 'Invoke-PodeMiddleware' {
 
         Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware) | Should Be $true
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
     It 'Runs the logic for a single middleware mapped to a route' {
-        Mock Invoke-ScriptBlock { return $true }
+        Mock Invoke-PodeScriptBlock { return $true }
         $WebEvent = @{ 'Middleware' = @{} }
         $midware = @{
             'Options' = @{};
@@ -212,11 +212,11 @@ Describe 'Invoke-PodeMiddleware' {
 
         Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware) -Route '/' | Should Be $true
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
     It 'Runs the logic for two middlewares and returns true' {
-        Mock Invoke-ScriptBlock { return $true }
+        Mock Invoke-PodeScriptBlock { return $true }
         $WebEvent = @{ 'Middleware' = @{} }
 
         $midware1 = @{
@@ -231,11 +231,11 @@ Describe 'Invoke-PodeMiddleware' {
 
         Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware1, $midware2) | Should Be $true
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 2 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 2 -Scope It
     }
 
     It 'Runs the logic for a single middleware and returns false' {
-        Mock Invoke-ScriptBlock { return $false }
+        Mock Invoke-PodeScriptBlock { return $false }
         $WebEvent = @{ 'Middleware' = @{} }
         $midware = @{
             'Options' = @{};
@@ -244,11 +244,11 @@ Describe 'Invoke-PodeMiddleware' {
 
         Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware) | Should Be $false
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
     It 'Runs the logic for a single middleware and returns false after erroring' {
-        Mock Invoke-ScriptBlock { throw 'some error' }
+        Mock Invoke-PodeScriptBlock { throw 'some error' }
         Mock Out-Default { }
         Mock Set-PodeResponseStatus { }
 
@@ -260,7 +260,7 @@ Describe 'Invoke-PodeMiddleware' {
 
         Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware) | Should Be $false
 
-        Assert-MockCalled Invoke-ScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
     }
 }

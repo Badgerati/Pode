@@ -13,8 +13,8 @@ Pode uses a View Engine to render either HTML, Pode, or other file types. Defaul
 The following example will render the `index.html` view when you navigate to `http://localhost:8080`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/' {
         view 'index'
@@ -27,8 +27,8 @@ Server {
 The following example will render the `index.pode` view when you navigate to `http://localhost:8080`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
     Set-PodeViewEngine -Type Pode
 
     route get '/' {
@@ -44,8 +44,8 @@ The following example will render the `index.pode` view when you navigate to `ht
 > The dynamic data can be used in your pode view via `$($data.date)`
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
     Set-PodeViewEngine -Type Pode
 
     route get '/' {

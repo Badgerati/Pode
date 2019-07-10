@@ -33,7 +33,7 @@ route get '/signup' {
 
 ## Views
 
-The `view` function has a helper switch (`-FlashMessages`) to load all current flash messages in the session, into the views data - to save time writing lots of `Get-PodeFlashMessage` calls. When used, all messages will be loaded into the `$data` argument supplied to dynamic views, and accessible under `$data.flash`.
+The `Write-PodeViewResponse` function has a helper switch (`-FlashMessages`) to load all current flash messages in the session, into the views data - to save time writing lots of `Get-PodeFlashMessage` calls. When used, all messages will be loaded into the `$data` argument supplied to dynamic views, and accessible under `$data.flash`.
 
 For example, somewhere we could have a sign-up flow which fails validation and adds two messages to the session:
 
@@ -42,11 +42,11 @@ Add-PodeFlashMessage -Name 'email-error' -Message 'Invalid email address'
 Add-PodeFlashMessage -Name 'name-error' -Message 'No first/last name supplied'
 ```
 
-Then, within your route to load the sign-up view, you can use the switch to automatically load all current flash messages (note: `-fm` is an alias of `-FlashMessages`):
+Then, within your route to load the sign-up view, you can use the switch to automatically load all current flash messages:
 
 ```powershell
 route get '/signup' {
-    view -fm 'signup'
+    Write-PodeViewResponse 'signup' -FlashMessages
 }
 ```
 
@@ -79,7 +79,7 @@ For example, here we have a login page, with the `post` login check. The check f
 
 ```powershell
 route 'get' '/login' (auth check login -o @{ 'login' = $true; 'successUrl' = '/' }) {
-    view -fm 'auth-login'
+    Write-PodeViewResponse 'auth-login' -FlashMessages
 }
 
 route 'post' '/login' (auth check login -o @{

@@ -1,4 +1,4 @@
-function Start-PodeServer
+function Start-PodeInternalServer
 {
     param (
         [Parameter()]
@@ -15,7 +15,7 @@ function Start-PodeServer
 
         # create the runspace state, execute the server logic, and start the runspaces
         New-PodeRunspaceState
-        Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
+        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
         New-PodeRunspacePools
 
         # create timer/schedules for auto-restarting
@@ -70,7 +70,7 @@ function Start-PodeServer
     }
 }
 
-function Restart-PodeServer
+function Restart-PodeInternalServer
 {
     try
     {
@@ -121,66 +121,22 @@ function Restart-PodeServer
         $PodeContext.Server.State.Clear()
 
         # recreate the session tokens
-        dispose $PodeContext.Tokens.Cancellation
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
         $PodeContext.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
 
-        dispose $PodeContext.Tokens.Restart
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
         $PodeContext.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
 
         # reload the configuration
-        $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
+        $PodeContext.Server.Settings = Open-PodeConfiguration -Context $PodeContext
 
         Write-Host " Done" -ForegroundColor Green
 
         # restart the server
-        Start-PodeServer
+        Start-PodeInternalServer
     }
     catch {
         $Error[0] | Out-Default
         throw $_.Exception
     }
-}
-
-function Get-PodeServerType
-{
-    param (
-        [Parameter()]
-        [int]
-        $Port = 0,
-
-        [Parameter()]
-        [int]
-        $Interval = 0,
-
-        [switch]
-        $Smtp,
-
-        [switch]
-        $Tcp,
-
-        [switch]
-        $Https
-    )
-
-    if ($Smtp) {
-        return 'SMTP'
-    }
-
-    if ($Tcp) {
-        return 'TCP'
-    }
-
-    if ($Https) {
-        return 'HTTPS'
-    }
-
-    if ($Port -gt 0) {
-        return 'HTTP'
-    }
-
-    if ($Interval -gt 0) {
-        return 'SERVICE'
-    }
-
-    return ([string]::Empty)
 }

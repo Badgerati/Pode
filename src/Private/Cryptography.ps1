@@ -37,7 +37,7 @@ function Get-PodeRandomBytes
         $Length = 16
     )
 
-    return (stream ([System.Security.Cryptography.RandomNumberGenerator]::Create()) {
+    return (Use-PodeStream -Stream ([System.Security.Cryptography.RandomNumberGenerator]::Create()) {
         param($p)
         $bytes = [byte[]]::new($Length)
         $p.GetBytes($bytes)

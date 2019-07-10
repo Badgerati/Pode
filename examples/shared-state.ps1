@@ -5,9 +5,9 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a basic server
-Server {
+Start-PodeServer {
 
-    listen *:8085 http
+    Add-PodeEndpoint -Endpoint *:8085 -Protocol HTTP
     logger 'terminal'
 
     # re-initialise the state
@@ -24,7 +24,7 @@ Server {
         param($session)
         $hash = $null
 
-        lock $session.Lockable {
+        Lock-PodeObject -Object $session.Lockable {
             $hash = (Get-PodeState -Name 'hash')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
             Save-PodeState -Path './state.json'
@@ -35,7 +35,7 @@ Server {
     route get '/get-array' {
         param($session)
 
-        lock $session.Lockable {
+        Lock-PodeObject -Object $session.Lockable {
             $hash = (Get-PodeState 'hash')
             Write-PodeJsonResponse -Value $hash
         }
@@ -45,7 +45,7 @@ Server {
     route delete '/remove-array' {
         param($session)
 
-        lock $session.Lockable {
+        Lock-PodeObject -Object $session.Lockable {
             $hash = (Set-PodeState -Name 'hash' -Value @{})
             $hash.values = @()
         }

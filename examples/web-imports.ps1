@@ -10,13 +10,13 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    listen localhost:$Port http
+    Add-PodeEndpoint -Endpoint localhost:$Port -Protocol HTTP
 
     # import modules
-    import eps
+    Import-PodeModule -Name EPS
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
@@ -27,4 +27,4 @@ Server -Threads 2 {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
-} -FileMonitor
+}

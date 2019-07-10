@@ -27,7 +27,7 @@ After this, you can put whatever else you want into the configuration file.
 
 The configuration file is automatically loaded when you start your server. Pode will look in the root directory of your server for a `pode.json` file, and if found it will be loaded internally.
 
-Within your scripts you can use the [`config`](../../Functions/Core/Config) function, which will return the contents of the relevant config file.
+Within your scripts you can use the [`Get-PodeSettings`] function, which will return the contents of the relevant config file.
 
 For example, say you have the following `pode.json`:
 
@@ -40,9 +40,9 @@ For example, say you have the following `pode.json`:
 Then you can get and use the port number via:
 
 ```powershell
-Server {
-    $port = (config).port
-    listen *:$port http
+Start-PodeServer {
+    $port = (Get-PodeSettings).port
+    Add-PodeEndpoint -Endpoint *:$port -Protocol HTTP
 }
 ```
 

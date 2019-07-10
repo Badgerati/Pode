@@ -16,24 +16,15 @@ function New-PodeContext
         [string]
         $Name = $null,
 
-        [string[]]
-        $FileMonitorExclude = $null,
-
-        [string[]]
-        $FileMonitorInclude = $null,
-
         [string]
         $ServerType,
 
         [switch]
-        $DisableLogging,
-
-        [switch]
-        $FileMonitor
+        $DisableLogging
     )
 
     # set a random server name if one not supplied
-    if (Test-Empty $Name) {
+    if (Test-IsEmpty $Name) {
         $Name = Get-PodeRandomName
     }
 
@@ -65,35 +56,12 @@ function New-PodeContext
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
 
     # check if there is any global configuration
-    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
+    $ctx.Server.Settings = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
-    if (!(Test-Empty $ctx.Server.Configuration.server.root)) {
-        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.server.root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
-    }
-
-    # setup file monitoring details (code has priority over config)
-    if (!(Test-Empty $ctx.Server.Configuration)) {
-        if (!$FileMonitor) {
-            $FileMonitor = [bool]$ctx.Server.Configuration.server.fileMonitor.enable
-        }
-
-        if (Test-Empty $FileMonitorExclude) {
-            $FileMonitorExclude = @($ctx.Server.Configuration.server.fileMonitor.exclude)
-        }
-
-        if (Test-Empty $FileMonitorInclude) {
-            $FileMonitorInclude = @($ctx.Server.Configuration.server.fileMonitor.include)
-        }
-    }
-
-    $ctx.Server.FileMonitor = @{
-        Enabled = $FileMonitor
-        Exclude = (Convert-PodePathPatternsToRegex -Paths $FileMonitorExclude)
-        Include = (Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude)
-        ShowFiles = [bool]$ctx.Server.Configuration.server.fileMonitor.showFiles
-        Files = @()
+    if (!(Test-IsEmpty $ctx.Server.Settings.server.root)) {
+        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Settings.server.root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
     # set the server default type
@@ -122,10 +90,10 @@ function New-PodeContext
 
     # view engine for rendering pages
     $ctx.Server.ViewEngine = @{
-        'Type' = 'html';
-        'Extension' = 'html';
-        'Script' = $null;
-        'IsDynamic' = $false;
+        Type = 'html'
+        Extension = 'html'
+        Script = $null
+        IsDynamic = $false
     }
 
     # routes for pages and api
@@ -152,14 +120,14 @@ function New-PodeContext
 
     # setup basic access placeholders
     $ctx.Server.Access = @{
-        'Allow' = @{};
-        'Deny' = @{};
+        Allow = @{}
+        Deny = @{}
     }
 
     # setup basic limit rules
     $ctx.Server.Limits = @{
-        'Rules' = @{};
-        'Active' = @{};
+        Rules = @{}
+        Active = @{}
     }
 
     # cookies and session logic
@@ -180,8 +148,8 @@ function New-PodeContext
 
     # create new cancellation tokens
     $ctx.Tokens = @{
-        'Cancellation' = New-Object System.Threading.CancellationTokenSource;
-        'Restart' = New-Object System.Threading.CancellationTokenSource;
+        Cancellation = New-Object System.Threading.CancellationTokenSource
+        Restart = New-Object System.Threading.CancellationTokenSource
     }
 
     # requests that should be logged
@@ -195,9 +163,9 @@ function New-PodeContext
 
     # runspace pools
     $ctx.RunspacePools = @{
-        'Main' = $null;
-        'Schedules' = $null;
-        'Gui' = $null;
+        Main = $null
+        Schedules = $null
+        Gui = $null
     }
 
     # session state
@@ -238,11 +206,11 @@ function New-PodeRunspacePools
 
     # setup main runspace pool
     $threadsCounts = @{
-        'Default' = 1;
-        'Timer' = 1;
-        'Log' = 1;
-        'Schedule' = 1;
-        'Misc' = 1;
+        Default = 1
+        Timer = 1
+        Log = 1
+        Schedule = 1
+        Misc = 1
     }
 
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $PodeContext.Threads
@@ -297,7 +265,7 @@ function Open-PodeConfiguration
     $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
 
     # check to see if an environmental config exists (if the env var is set)
-    if (!(Test-Empty $env:PODE_ENVIRONMENT)) {
+    if (!(Test-IsEmpty $env:PODE_ENVIRONMENT)) {
         $_path = (Join-PodeServerRoot -Folder '.' -FilePath "pode.$($env:PODE_ENVIRONMENT).json" -Root $ServerRoot)
         if (Test-PodePath -Path $_path -NoStatus) {
             $configPath = $_path
@@ -307,10 +275,31 @@ function Open-PodeConfiguration
     # check the path exists, and load the config
     if (Test-PodePath -Path $configPath -NoStatus) {
         $config = (Get-Content $configPath -Raw | ConvertFrom-Json)
-        Set-PodeWebConfiguration -Configuration $config -Context $Context
+        Set-PodeServerConfiguration -Configuration $config.server -Context $Context
+        Set-PodeWebConfiguration -Configuration $config.web -Context $Context
     }
 
     return $config
+}
+
+function Set-PodeServerConfiguration
+{
+    param (
+        [Parameter()]
+        $Configuration,
+
+        [Parameter()]
+        $Context
+    )
+
+    # file monitoring
+    $Context.Server.FileMonitor = @{
+        Enabled = ([bool]$Configuration.fileMonitor.enable)
+        Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.fileMonitor.exclude))
+        Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.fileMonitor.include))
+        ShowFiles = ([bool]$Configuration.fileMonitor.showFiles)
+        Files = @()
+    }
 }
 
 function Set-PodeWebConfiguration
@@ -325,42 +314,42 @@ function Set-PodeWebConfiguration
 
     # setup the main web config
     $Context.Server.Web = @{
-        'Static' = @{
-            'Defaults' = $Configuration.web.static.defaults;
-            'Cache' = @{
-                'Enabled' = [bool]$Configuration.web.static.cache.enable;
-                'MaxAge' = [int](coalesce $Configuration.web.static.cache.maxAge 3600);
-                'Include' = (Convert-PodePathPatternsToRegex -Paths @($Configuration.web.static.cache.include) -NotSlashes);
-                'Exclude' = (Convert-PodePathPatternsToRegex -Paths @($Configuration.web.static.cache.exclude) -NotSlashes);
+        Static = @{
+            Defaults = $Configuration.static.defaults
+            Cache = @{
+                Enabled = [bool]$Configuration.static.cache.enable
+                MaxAge = [int](Protect-PodeValue -Value $Configuration.static.cache.maxAge -Default 3600)
+                Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.static.cache.include) -NotSlashes)
+                Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.static.cache.exclude) -NotSlashes)
             }
-        };
-        'ErrorPages' = @{
-            'ShowExceptions' = [bool]$Configuration.web.errorPages.showExceptions;
-            'StrictContentTyping' = [bool]$Configuration.web.errorPages.strictContentTyping;
-            'Default' = $Configuration.web.errorPages.default;
-            'Routes' = @{};
-        };
-        'ContentType' = @{
-            'Default' = $Configuration.web.contentType.default;
-            'Routes' = @{};
-        };
+        }
+        ErrorPages = @{
+            ShowExceptions = [bool]$Configuration.errorPages.showExceptions
+            StrictContentTyping = [bool]$Configuration.errorPages.strictContentTyping
+            Default = $Configuration.errorPages.default
+            Routes = @{}
+        }
+        ContentType = @{
+            Default = $Configuration.contentType.default
+            Routes = @{}
+        }
     }
 
     # setup content type route patterns for forced content types
-    if ($null -ne $Configuration.web.contentType.routes) {
-        $Configuration.web.contentType.routes.psobject.properties.name | ForEach-Object {
+    if ($null -ne $Configuration.contentType.routes) {
+        $Configuration.contentType.routes.psobject.properties.name | ForEach-Object {
             $_pattern = $_
-            $_type = $Configuration.web.contentType.routes.$_pattern
+            $_type = $Configuration.contentType.routes.$_pattern
             $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
             $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
         }
     }
 
     # setup content type route patterns for error pages
-    if ($null -ne $Configuration.web.errorPages.routes) {
-        $Configuration.web.errorPages.routes.psobject.properties.name | ForEach-Object {
+    if ($null -ne $Configuration.errorPages.routes) {
+        $Configuration.errorPages.routes.psobject.properties.name | ForEach-Object {
             $_pattern = $_
-            $_type = $Configuration.web.errorPages.routes.$_pattern
+            $_type = $Configuration.errorPages.routes.$_pattern
             $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
             $Context.Server.Web.ErrorPages.Routes[$_pattern] = $_type
         }
@@ -370,7 +359,7 @@ function Set-PodeWebConfiguration
 function New-PodeAutoRestartServer
 {
     # don't configure if not supplied, or running as serverless
-    $config = (config)
+    $config = (Get-PodeSettings)
     if (($null -eq $config) -or ($null -eq $config.server.restart) -or $PodeContext.Server.IsServerless)  {
         return
     }

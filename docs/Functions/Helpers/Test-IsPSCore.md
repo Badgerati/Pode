@@ -11,8 +11,8 @@ The `Test-IsPSCore` function will return `$true` if Pode is running using PowerS
 The following example will return whether Pode is running on PowerShell Core:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/env' {
         Write-PodeJsonResponse -Value @{ 'PSCore' = (Test-IsPSCore) }

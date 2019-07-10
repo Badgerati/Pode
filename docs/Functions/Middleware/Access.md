@@ -11,7 +11,7 @@ The `access` function allows you to specify rules to allow/deny IP addresses or 
 The following example will allow access from the localhost:
 
 ```powershell
-Server {
+Start-PodeServer {
     access allow ip '127.0.0.1'
 }
 ```
@@ -24,7 +24,7 @@ Server {
 The following example will allow access from multiple IP addresses:
 
 ```powershell
-Server {
+Start-PodeServer {
     access allow ip @('192.168.1.1', '192.168.1.2')
 }
 ```
@@ -34,7 +34,7 @@ Server {
 The following example will deny access from a subnet mask:
 
 ```powershell
-Server {
+Start-PodeServer {
     access deny ip '10.10.0.0/24'
 }
 ```
@@ -44,7 +44,7 @@ Server {
 The following example will deny access from all IP addresses:
 
 ```powershell
-Server {
+Start-PodeServer {
     access deny ip all
 }
 ```

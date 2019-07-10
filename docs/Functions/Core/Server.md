@@ -14,7 +14,7 @@ The `server` function is the most important function throughout all of Pode, as 
 The following example will run the scriptblock once, printing out `Hello, world!`, and then exit:
 
 ```powershell
-server {
+Start-PodeServer {
     Write-Host 'Hello, world!'
 }
 ```
@@ -24,7 +24,7 @@ server {
 The following will start a server that repeats the scriptblock every 5 seconds:
 
 ```powershell
-server -Interval 5 {
+Start-PodeServer -Interval 5 {
     Write-Host 'Hey!'
 }
 ```
@@ -34,27 +34,17 @@ server -Interval 5 {
 The following server will accept web requests, and handle them across 2 threads rather than 1:
 
 ```powershell
-server -Thread 2 {
-    listen localhost:8080 http
+Start-PodeServer -Thread 2 {
+    Add-PodeEndpoint -Endpoint localhost:8080 -Protocol HTTP
 }
 ```
 
 ### Example 4
 
-The following server will restart when it detects a file has been changed. Ie, if you start the server and then alter a web page, or change a dot-sourced script, then the server will restart:
-
-```powershell
-server -FileMonitor {
-    # route logic
-}
-```
-
-### Example 5
-
 The following server will start-up in a serverless context - such as Lambda or Functions. When running in this context you need to supply the request data passed to your serverless script:
 
 ```powershell
-server -Request $TriggerMetaData -Type 'azure-functions' {
+Start-PodeServer -Request $TriggerMetaData -Type 'azure-functions' {
     # route logic
 }
 ```

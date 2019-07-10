@@ -19,8 +19,8 @@ The `state` function overcomes this by letting you create a variable in a `timer
 The following example uses a `timer` to create and update a `hashtable`, and then retrieve that variable in a `route`:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     timer 'forever' 2 {
         param($event)
@@ -63,8 +63,8 @@ server {
 The following example will restore the state from the file if it exists, and save back to the state every hour:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     # restore state from file
     state restore './state.json'

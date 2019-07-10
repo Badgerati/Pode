@@ -64,7 +64,7 @@ function Start-PodeAzFuncServer
 
                 # invoke route and custom middleware
                 if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
-                    Invoke-ScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
+                    Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
                 }
             }
         }
@@ -146,7 +146,7 @@ function Start-PodeAwsLambdaServer
 
                 # invoke route and custom middleware
                 if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
-                    Invoke-ScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
+                    Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
                 }
             }
         }

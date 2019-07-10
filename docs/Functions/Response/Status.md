@@ -16,8 +16,8 @@ If the status code supplied is 400+ then Pode will attempt to generate an error 
 The following example sets the status code of the response to be 404:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/missing' {
         status 404
@@ -30,8 +30,8 @@ Server {
 The following example sets the status code and description of the response to be 500:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/error' {
         status 500 'Oh no! Something went wrong!'
@@ -44,8 +44,8 @@ Server {
 The following example will catch an exception, and set the status code to 500; the exception will also be used so it can be generated on any [error pages](../../../Tutorials/Routes/ErrorPages):
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/error' {
         try {
@@ -63,8 +63,8 @@ Server {
 The following example will generate an error page using JSON:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
 
     route get '/error' {
         try {
