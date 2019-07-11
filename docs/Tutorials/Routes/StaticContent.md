@@ -10,7 +10,7 @@ The following is an example of using the `route` function to define routes to st
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
     route static '/assets' './content/assets'
 }
 ```
@@ -97,7 +97,7 @@ Normally content accessed on a static route is rendered on the browser, but you 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
     route static '/assets' './content/assets' -do
 }
 ```

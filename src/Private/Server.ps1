@@ -56,11 +56,11 @@ function Start-PodeInternalServer
                 Start-PodeServiceServer
             }
 
-            'AZURE-FUNCTIONS' {
+            'AZUREFUNCTIONS' {
                 Start-PodeAzFuncServer -Data $Request
             }
 
-            'AWS-LAMBDA' {
+            'AWSLAMBDA' {
                 Start-PodeAwsLambdaServer -Data $Request
             }
         }

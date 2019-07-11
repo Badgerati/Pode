@@ -1018,11 +1018,11 @@ function ConvertFrom-PodeRequestContent
     if ($MetaData.ContentType -ine 'multipart/form-data') {
         # get the content based on server type
         switch ($PodeContext.Server.Type.ToLowerInvariant()) {
-            'aws-lambda' {
+            'awslambda' {
                 $Content = $Request.body
             }
 
-            'azure-functions' {
+            'azurefunctions' {
                 $Content = $Request.RawBody
             }
 

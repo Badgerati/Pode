@@ -17,7 +17,7 @@ The following example will listen on every IP over port 8080 for HTTP requests:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 }
 ```
 
@@ -57,7 +57,7 @@ The following example will listen on a wildcard endpoint over port 8443 for HTTP
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *.foo.com:8443 -Protocol HTTPS -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
+    Add-PodeEndpoint -Address *.foo.com:8443 -Protocol HTTPS -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
 }
 ```
 

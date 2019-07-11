@@ -12,7 +12,7 @@ The following example will convert an `array` of `hashtable` values to a CSV and
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/info' {
         csv @( @{'Name' = 'Bob'; 'Age' = 29 }, @{ 'Name' = 'James'; 'Age' = 23 })
@@ -26,7 +26,7 @@ The following example will write raw CSV data to a web response within a `route`
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/info' {
         csv "Name, Age`nBob, 29`nJames, 23"
@@ -40,7 +40,7 @@ The following example will read in a file, and write the contents as CSV to a we
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/data' {
         csv -file './files/data.csv'

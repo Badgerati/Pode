@@ -12,7 +12,7 @@ The following example will write a message onto the TCP stream:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:30 -Protocol TCP
+    Add-PodeEndpoint -Address *:30 -Protocol TCP
 
     handler tcp {
         tcp write 'Hello, world!'
@@ -26,7 +26,7 @@ The following example will read a message from the TCP stream:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:30 -Protocol TCP
+    Add-PodeEndpoint -Address *:30 -Protocol TCP
 
     handler tcp {
         $msg = (tcp read)

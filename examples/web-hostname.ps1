@@ -14,7 +14,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Endpoint pode.foo.com:$Port -Protocol HTTP
+    Add-PodeEndpoint -Address pode.foo.com:$Port -Protocol HTTP
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

@@ -6,7 +6,7 @@ This tutorial will be short and sweet! To start logging requests to your server 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # just this line!
     logger terminal

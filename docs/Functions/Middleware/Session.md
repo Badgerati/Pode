@@ -60,7 +60,7 @@ The following example sets up basic `session` middleware, and defines a `route` 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     middleware (session @{
         'Secret' = 'schwifty';

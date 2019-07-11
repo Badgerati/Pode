@@ -12,7 +12,7 @@ The following example will write raw HTML data to a web response within a `route
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/info' {
         html '<html><head><title>Example</title></head><body>Hello, world!</body></html>'
@@ -26,7 +26,7 @@ The following example will read in a file, and write the contents as HTML to a w
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/data' {
         html -file './files/data.html'

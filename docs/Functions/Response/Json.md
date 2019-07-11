@@ -12,7 +12,7 @@ The following example will convert a `hashtable` to JSON and write it to a web r
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/info' {
         Write-PodeJsonResponse -Value @{ 'cpu' = 80; 'memory' = 15; }
@@ -26,7 +26,7 @@ The following example will write raw JSON data to a web response within a `route
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/info' {
         json '{ "cpu": 80, "memory": 15 }'
@@ -40,7 +40,7 @@ The following example will read in a file, and write the contents as JSON to a w
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/data' {
         json -file './files/data.json'

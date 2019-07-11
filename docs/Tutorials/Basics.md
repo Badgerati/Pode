@@ -13,7 +13,7 @@ Import-Module Pode
 
 Start-PodeServer {
     # attach to port 8080
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # logic for routes, timers, schedules, etc
 }

@@ -13,7 +13,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Endpoint localhost:$Port -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:$Port -Protocol HTTP
 
     # import modules
     Import-PodeModule -Name EPS

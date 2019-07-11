@@ -1,3 +1,55 @@
+<#
+.SYNOPSIS
+Starts a Pode Server with the supplied ScriptBlock.
+
+.DESCRIPTION
+Starts a Pode Server with the supplied ScriptBlock.
+
+.PARAMETER ScriptBlock
+The main logic for the Server.
+
+.PARAMETER Interval
+For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
+
+.PARAMETER Name
+An optional name for the Server (intended for future ideas).
+
+.PARAMETER Threads
+The numbers of threads to use for Web and TCP servers.
+
+.PARAMETER RootPath
+An override for the Server's root path.
+
+.PARAMETER Request
+Intended for Serverless environments, this is Requests details that Pode can parse and use.
+
+.PARAMETER Type
+The server type, to define how Pode should run and deal with incoming Requests.
+
+.PARAMETER DisableTermination
+Disables the ability to terminate the Server.
+
+.PARAMETER DisableLogging
+Disables all logging functionality of the Server.
+
+.PARAMETER Browse
+Open the web Server's default endpoint in your defualt browser.
+
+.EXAMPLE
+Start-PodeServer {
+    # logic
+}
+
+.EXAMPLE
+Start-PodeServer -Interval 10 {
+    # loop this logic every 10secs
+}
+
+.EXAMPLE
+Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' {
+    # run this logic using the inbuilt AWS Lambda routing engine
+}
+#>
 function Start-PodeServer
 {
     [CmdletBinding()]
@@ -26,7 +78,7 @@ function Start-PodeServer
         $Request,
 
         [Parameter()]
-        [ValidateSet('', 'Azure-Functions', 'Aws-Lambda')]
+        [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
         [string]
         $Type,
 
@@ -98,6 +150,28 @@ function Start-PodeServer
     }
 }
 
+<#
+.SYNOPSIS
+The CLI for Pode, to initialise, build and start your Server.
+
+.DESCRIPTION
+The CLI for Pode, to initialise, build and start your Server.
+
+.PARAMETER Action
+The action to invoke on your Server.
+
+.PARAMETER Dev
+Supply when running "pode install", this will install any dev packages defined in your package.json.
+
+.EXAMPLE
+pode install -dev
+
+.EXAMPLE
+pode build
+
+.EXAMPLE
+pode start
+#>
 function Pode
 {
     [CmdletBinding()]
@@ -211,6 +285,43 @@ function Pode
     }
 }
 
+<#
+.SYNOPSIS
+Opens a Web Server up as a Desktop Application.
+
+.DESCRIPTION
+Opens a Web Server up as a Desktop Application.
+
+.PARAMETER Title
+The title of the Application's window.
+
+.PARAMETER Icon
+A path to an icon image for the Application.
+
+.PARAMETER WindowState
+The state the Application's window starts, such as Minimized.
+
+.PARAMETER WindowStyle
+The border style of the Application's window.
+
+.PARAMETER ResizeMode
+Specifies if the Application's window is resizable.
+
+.PARAMETER Height
+The height of the window.
+
+.PARAMETER Width
+The width of the window.
+
+.PARAMETER EndpointName
+The specific endpoint name to use, if you are listening on multiple endpoints.
+
+.PARAMETER HideFromTaskbar
+Stops the Application from appearing on the taskbar.
+
+.EXAMPLE
+Enable-PodeGui -Title 'MyApplication' -WindowState 'Maximized'
+#>
 function Enable-PodeGui
 {
     [CmdletBinding()]
@@ -306,13 +417,53 @@ function Enable-PodeGui
     }
 }
 
+<#
+.SYNOPSIS
+Bind an endpoint to listen for incoming Requests.
+
+.DESCRIPTION
+Bind an endpoint to listen for incoming Requests. The endpoints can be HTTP, HTTPS, TCP or SMTP, with the option to bind certificates.
+
+.PARAMETER Address
+The IP:Port or Hostname:Port endpoint address.
+
+.PARAMETER Protocol
+The protocol of the supplied endpoint.
+
+.PARAMETER Certificate
+A certificate name to find and bind onto HTTPS endpoints (Windows only).
+
+.PARAMETER CertificateThumbprint
+A certificate thumbprint to bind onto HTTPS endpoints (Windows only).
+
+.PARAMETER Name
+An optional name for the endpoint, that can be used with other functions.
+
+.PARAMETER Force
+Ignore Adminstrator checks for non-localhost endpoints.
+
+.PARAMETER SelfSigned
+Create and bind a self-signed certifcate onto HTTPS endpoints (Windows only).
+
+.EXAMPLE
+Add-PodeEndpoint -Address localhost:8090 -Protocol HTTP
+
+.EXAMPLE
+Add-PodeEndpoint -Address localhost -Protocol SMTP
+
+.EXAMPLE
+Add-PodeEndpoint -Address dev.pode.com:8443 -Protocol HTTPS -SelfSigned
+
+.EXAMPLE
+Add-PodeEndpoint -Address live.pode.com -Protocol HTTPS -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
+#>
 function Add-PodeEndpoint
 {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $Endpoint,
+        $Address,
 
         [Parameter()]
         [ValidateSet('HTTP', 'HTTPS', 'SMTP', 'TCP')]
@@ -342,7 +493,7 @@ function Add-PodeEndpoint
     Test-PodeIsServerless -FunctionName 'Add-PodeEndpoint' -ThrowError
 
     # parse the endpoint for host/port info
-    $_endpoint = Get-PodeEndpointInfo -Endpoint $Endpoint
+    $_endpoint = Get-PodeEndpointInfo -Endpoint $Address
 
     # if a name was supplied, check it is unique
     if (!(Test-IsEmpty $Name) -and
@@ -355,7 +506,7 @@ function Add-PodeEndpoint
     $obj = @{
         Name = $Name
         Address = $null
-        RawAddress = $Endpoint
+        RawAddress = $Address
         Port = $null
         IsIPAddress = $true
         HostName = 'localhost'

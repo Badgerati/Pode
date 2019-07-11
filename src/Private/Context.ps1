@@ -29,7 +29,7 @@ function New-PodeContext
     }
 
     # are we running in a serverless context
-    $isServerless = (@('azure-functions', 'aws-lambda') -icontains $ServerType)
+    $isServerless = (@('AzureFunctions', 'AwsLambda') -icontains $ServerType)
 
     # ensure threads are always >0, for to 1 if we're serverless
     if (($Threads -le 0) -or $isServerless) {

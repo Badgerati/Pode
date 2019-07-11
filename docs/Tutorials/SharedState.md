@@ -105,7 +105,7 @@ The following is a full example of using the State functions. It is a simple Tim
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # create the shared variable
     Set-PodeState -Name 'hash' -Value @{ 'values' = @(); } | Out-Null

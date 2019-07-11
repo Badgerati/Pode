@@ -12,7 +12,7 @@ The following example will redirect the enduser to the relative `/login` URL on 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/logout' {
         redirect -url '/login'
@@ -26,7 +26,7 @@ The following example will redirect the enduser to `https://google.com`:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/google' {
         redirect -url 'https://google.com'
@@ -40,7 +40,7 @@ Assuming the current request URI is `http://localhost:8080`, then the following 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/' {
         redirect -port 8090
@@ -54,7 +54,7 @@ Assuming the current request URI is `http://localhost:8080`, then the following 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/' {
         redirect -protocol https
@@ -68,7 +68,7 @@ The following example will redirect every method and route to https:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route * * {
         redirect -protocol https
@@ -82,8 +82,8 @@ The following example will redirect every method and route from the `127.0.0.2` 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint 127.0.0.1:8080 -Protocol HTTP
-    Add-PodeEndpoint -Endpoint 127.0.0.2:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address 127.0.0.1:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address 127.0.0.2:8080 -Protocol HTTP
 
     route * * -endpoint 127.0.0.2 {
         redirect -endpoint 127.0.0.1

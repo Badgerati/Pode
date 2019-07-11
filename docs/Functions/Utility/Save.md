@@ -17,7 +17,7 @@ The following example saves an uploaded image from a `<form>`, called "`prof-pic
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route post '/signup' {
         save 'prof-pic'
@@ -31,7 +31,7 @@ The following example saves an uploaded image from a `<form>`, called "`prof-pic
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route post '/signup' {
         save 'prof-pic' 'e:/profiles/pictures'

@@ -17,7 +17,7 @@ you'll get a 401 status code back.
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Endpoint *:8085 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
 
     # setup basic auth (base64> username:password in header)
     auth use basic -v {

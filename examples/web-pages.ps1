@@ -13,8 +13,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 -Browse {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Endpoint localhost:$Port -Protocol HTTP
-    Add-PodeEndpoint -Endpoint localhost:8090 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:$Port -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8090 -Protocol HTTP
 
     # limit ip @('127.0.0.1', '[::1]') 5 10
 

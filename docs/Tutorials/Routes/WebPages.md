@@ -10,7 +10,7 @@ When you use the `view` function to serve a web page, the path to the view must 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/' {
         Write-PodeViewResponse -Path 'index'
@@ -38,7 +38,7 @@ server.ps1
 *server.ps1*
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/' {
         Write-PodeViewResponse -Path 'index'

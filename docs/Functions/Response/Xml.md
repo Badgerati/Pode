@@ -12,7 +12,7 @@ The following example will convert a `hashtable` to XML and write it to a web re
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/info' {
         xml @{ 'cpu' = 80; 'memory' = 15; }
@@ -26,7 +26,7 @@ The following example will write raw XML data to a web response within a `route`
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/info' {
         xml '<root><users><user>Rick</user><user>Morty</user></users></root>'
@@ -40,7 +40,7 @@ The following example will read in a file, and write the contents as XML to a we
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/data' {
         xml -file './files/data.xml'

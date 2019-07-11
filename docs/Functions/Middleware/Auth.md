@@ -56,7 +56,7 @@ The following example will setup sessionless `Basic` authentication, and then us
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # setup basic auth, with validator to check the user
     auth use basic -v {
@@ -78,7 +78,7 @@ The following example will setup sessionless `Form` authentication, and set it a
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # setup form auth, with validator to check the user
     auth use form -v {
@@ -103,7 +103,7 @@ The following example will setup session-persistent `Basic` authentication, and 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # configure session middleware to bind the auth'd user against
     middleware (session @{

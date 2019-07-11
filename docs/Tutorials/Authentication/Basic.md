@@ -60,7 +60,7 @@ The following full example of Basic authentication will setup and configure auth
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # setup basic authentication to validate a user
     auth use login -t basic -v {

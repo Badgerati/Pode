@@ -28,7 +28,7 @@ The following example will set the status code of the response to be `418`:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/teapot' {
         Set-PodeResponseStatus -Code 418
@@ -40,7 +40,7 @@ Where as this example will set the status code to `500` with a custom descriptio
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/eek' {
         try {

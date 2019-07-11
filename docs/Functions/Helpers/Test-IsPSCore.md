@@ -12,7 +12,7 @@ The following example will return whether Pode is running on PowerShell Core:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/env' {
         Write-PodeJsonResponse -Value @{ 'PSCore' = (Test-IsPSCore) }

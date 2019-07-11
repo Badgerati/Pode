@@ -68,7 +68,7 @@ The following full example of Custom authentication will setup and configure aut
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # here we're calling the custom method "client"
     auth use -c client -p {

@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+Waits for a task to finish, and returns a result if there is one.
+
+.DESCRIPTION
+Waits for a task to finish, and returns a result if there is one.
+
+.PARAMETER Task
+The task to wait on.
+
+.EXAMPLE
+$context = Wait-PodeTask -Task $listener.GetContextAsync()
+#>
 function Wait-PodeTask
 {
     [CmdletBinding()]
@@ -21,6 +34,25 @@ function Wait-PodeTask
     }
 }
 
+<#
+.SYNOPSIS
+Dispose and close streams, tokens, and other Disposables.
+
+.DESCRIPTION
+Dispose and close streams, tokens, and other Disposables.
+
+.PARAMETER Disposable
+The Disposable object to dispose and close.
+
+.PARAMETER Close
+Should the Disposable also be closed, as well as disposed?
+
+.PARAMETER CheckNetwork
+If an error is thrown, check the reason - if it's network related ignore the error.
+
+.EXAMPLE
+Close-PodeDisposable -Disposable $stream -Close
+#>
 function Close-PodeDisposable
 {
     [CmdletBinding()]
@@ -58,6 +90,24 @@ function Close-PodeDisposable
     }
 }
 
+<#
+.SYNOPSIS
+Places a temporary lock on a object while a ScriptBlock is invoked.
+
+.DESCRIPTION
+Places a temporary lock on a object while a ScriptBlock is invoked.
+
+.PARAMETER Object
+The object to lock.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to invoke.
+
+.EXAMPLE
+Lock-PodeObject $SomeArray {
+    $item = $SomeArray[0]
+}
+#>
 function Lock-PodeObject
 {
     [CmdletBinding()]
@@ -101,11 +151,40 @@ function Lock-PodeObject
     }
 }
 
+<#
+.SYNOPSIS
+Returns the literal path of the server.
+
+.DESCRIPTION
+Returns the literal path of the server.
+
+.EXAMPLE
+$path = Get-PodeServerPath
+#>
 function Get-PodeServerPath
 {
     return $PodeContext.Server.Root
 }
 
+<#
+.SYNOPSIS
+Starts a Stopwatch on some ScriptBlock, and outputs the duration at the end.
+
+.DESCRIPTION
+Starts a Stopwatch on some ScriptBlock, and outputs the duration at the end.
+
+.PARAMETER Name
+The name of the Stopwatch.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to time.
+
+.EXAMPLE
+Start-PodeStopwatch 'ReadFile' {
+    $content = Get-Content './file.txt'
+}
+# outputs: "[Stopwatch]: 00:00:12 [ReadFile]"
+#>
 function Start-PodeStopwatch
 {
     [CmdletBinding()]
@@ -133,6 +212,24 @@ function Start-PodeStopwatch
     }
 }
 
+<#
+.SYNOPSIS
+Like the "using" keyword in .NET. Allows you to use a Stream and then disposes of it.
+
+.DESCRIPTION
+Like the "using" keyword in .NET. Allows you to use a Stream and then disposes of it.
+
+.PARAMETER Stream
+The Stream to use and then dispose.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to invoke. It will be supplied the Stream.
+
+.EXAMPLE
+$content = (Use-PodeStream -Stream $stream -ScriptBlock {
+    return $args[0].ReadToEnd()
+})
+#>
 function Use-PodeStream
 {
     [CmdletBinding()]
@@ -158,6 +255,19 @@ function Use-PodeStream
     }
 }
 
+<#
+.SYNOPSIS
+Loads a script, by dot-sourcing, at the supplied path.
+
+.DESCRIPTION
+Loads a script, by dot-sourcing, at the supplied path. If the path is relative, the server's path is prepended.
+
+.PARAMETER Path
+The path, literal or relative to the server, to some script.
+
+.EXAMPLE
+Use-PodeScript -Path './scripts/tools.ps1'
+#>
 function Use-PodeScript
 {
     [CmdletBinding()]
@@ -191,11 +301,37 @@ function Use-PodeScript
     . $_path
 }
 
+<#
+.SYNOPSIS
+Returns the loaded Settings of the server.
+
+.DESCRIPTION
+Returns the loaded Settings of the server.
+
+.EXAMPLE
+$s = Get-PodeSettings
+#>
 function Get-PodeSettings
 {
     return $PodeContext.Server.Settings
 }
 
+<#
+.SYNOPSIS
+Adds a ScriptBlock as Endware to run at the end of each web Request.
+
+.DESCRIPTION
+Adds a ScriptBlock as Endware to run at the end of each web Request.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to add. It will be supplied the current web event.
+
+.EXAMPLE
+Add-PodeEndware {
+    param($e)
+    "Current HttpMethod: $($e.Method)" | Out-Default
+}
+#>
 function Add-PodeEndware
 {
     [CmdletBinding()]
@@ -209,6 +345,28 @@ function Add-PodeEndware
     $PodeContext.Server.Endware += $ScriptBlock
 }
 
+<#
+.SYNOPSIS
+Imports a Module into the current, and all runspaces that Pode uses.
+
+.DESCRIPTION
+Imports a Module into the current, and all runspaces that Pode uses. Modules can also be imported from the ps_modules directory.
+
+.PARAMETER Name
+The name of a globally installed Module, or one within the ps_modules directory, to import.
+
+.PARAMETER Path
+The path, literal or relative, to a Module to import.
+
+.PARAMETER Now
+Import the Module now, into the current runspace.
+
+.EXAMPLE
+Import-PodeModule -Name IISManager
+
+.EXAMPLE
+Import-PodeModule -Path './modules/utilities.psm1'
+#>
 function Import-PodeModule
 {
     [CmdletBinding(DefaultParameterSetName='Name')]
@@ -269,6 +427,22 @@ function Import-PodeModule
     }
 }
 
+<#
+.SYNOPSIS
+Imports a SnapIn into the current, and all runspaces that Pode uses.
+
+.DESCRIPTION
+Imports a SnapIn into the current, and all runspaces that Pode uses.
+
+.PARAMETER Name
+The name of a SnapIn to import.
+
+.PARAMETER Now
+Import the SnapIn now, into the current runspace.
+
+.EXAMPLE
+Import-PodeSnapIn -Name 'WDeploySnapin3.0'
+#>
 function Import-PodeSnapIn
 {
     [CmdletBinding()]
@@ -296,6 +470,22 @@ function Import-PodeSnapIn
     }
 }
 
+<#
+.SYNOPSIS
+Protects a value, by returning a default value is the main one is null/empty.
+
+.DESCRIPTION
+Protects a value, by returning a default value is the main one is null/empty.
+
+.PARAMETER Value
+The main value to use.
+
+.PARAMETER Default
+A default value to return should the main value be null/empty.
+
+.EXAMPLE
+$Name = Protect-PodeValue -Value $Name -Default 'Rick'
+#>
 function Protect-PodeValue
 {
     [CmdletBinding()]
@@ -310,6 +500,25 @@ function Protect-PodeValue
     return (Resolve-PodeValue -Check (Test-IsEmpty $Value) -TrueValue $Default -FalseValue $Value)
 }
 
+<#
+.SYNOPSIS
+Resolves a query, and returns a value based on the response.
+
+.DESCRIPTION
+Resolves a query, and returns a value based on the response.
+
+.PARAMETER Check
+The query, or variable, to evalulate.
+
+.PARAMETER TrueValue
+The value to use if evaluated to True.
+
+.PARAMETER FalseValue
+The value to use if evaluated to False.
+
+.EXAMPLE
+$Port = Resolve-PodeValue -Check $AllowSsl -TrueValue 443 -FalseValue -80
+#>
 function Resolve-PodeValue
 {
     [CmdletBinding()]
@@ -332,6 +541,40 @@ function Resolve-PodeValue
     return $FalseValue
 }
 
+<#
+.SYNOPSIS
+Invokes a ScriptBlock.
+
+.DESCRIPTION
+Invokes a ScriptBlock, supplying optional arguments, splatting, and returning any optional values.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to invoke.
+
+.PARAMETER Arguments
+Any arguments that should be supplied to the ScriptBlock.
+
+.PARAMETER Scoped
+Run the ScriptBlock in a scoped context.
+
+.PARAMETER Return
+Return any values that the ScriptBlock may return.
+
+.PARAMETER Splat
+Spat the argument onto the ScriptBlock.
+
+.PARAMETER NoNewClosure
+Don't create a new closure before invoking the ScriptBlock.
+
+.EXAMPLE
+Invoke-PodeScriptBlock -ScriptBlock { Write-Host 'Hello!' }
+
+.EXAMPLE
+Invoke-PodeScriptBlock -Arguments 'Morty' -ScriptBlock {
+    param($name)
+    Write-Host "Hello, $($name)!"
+}
+#>
 function Invoke-PodeScriptBlock
 {
     [CmdletBinding()]
@@ -386,6 +629,21 @@ function Invoke-PodeScriptBlock
     }
 }
 
+<#
+.SYNOPSIS
+Tests if a value is empty - the value can be of any type.
+
+.DESCRIPTION
+Tests if a value is empty - the value can be of any type.
+
+.PARAMETER Value
+The value to test.
+
+.EXAMPLE
+if (Test-IsEmpty @{}) {
+    # do stuff
+}
+#>
 function Test-IsEmpty
 {
     [CmdletBinding()]
@@ -423,16 +681,52 @@ function Test-IsEmpty
     return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-PodeCount $Value) -eq 0))
 }
 
+<#
+.SYNOPSIS
+Tests if the the current session is running in PowerShell Core.
+
+.DESCRIPTION
+Tests if the the current session is running in PowerShell Core.
+
+.EXAMPLE
+if (Test-IsPSCore) {
+    # do stuff
+}
+#>
 function Test-IsPSCore
 {
     return (Get-PodePSVersionTable).PSEdition -ieq 'core'
 }
 
+<#
+.SYNOPSIS
+Tests if the current OS is Unix.
+
+.DESCRIPTION
+Tests if the current OS is Unix.
+
+.EXAMPLE
+if (Test-IsUnix) {
+    # do stuff
+}
+#>
 function Test-IsUnix
 {
     return (Get-PodePSVersionTable).Platform -ieq 'unix'
 }
 
+<#
+.SYNOPSIS
+Tests if the current OS is Windows.
+
+.DESCRIPTION
+Tests if the current OS is Windows.
+
+.EXAMPLE
+if (Test-IsWindows) {
+    # do stuff
+}
+#>
 function Test-IsWindows
 {
     $v = Get-PodePSVersionTable

@@ -29,7 +29,7 @@ For example, let's say you want a basic `GET /ping` endpoint to just return `pon
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/ping' {
         Write-PodeJsonResponse -Value @{ 'value' = 'pong'; }
@@ -53,7 +53,7 @@ The following is an example of using data from a request's payload - ie, the dat
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route post '/users' {
         param($s)
@@ -88,7 +88,7 @@ The following is an example of using data from a request's query string. To retr
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/users' {
         param($s)
@@ -117,7 +117,7 @@ The following is an example of using values supplied on a request's URL using pa
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/users/:userId' {
         param($s)

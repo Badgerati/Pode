@@ -6,7 +6,7 @@ To start logging requests to your server into a file, you can do the following:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
     logger file
 }
 ```
@@ -17,7 +17,7 @@ When logging to a file, you can configure where Pode stores your logs and for ho
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
     logger file @{
         'Path' = 'D:\Logs';
         'MaxDays' = 3;

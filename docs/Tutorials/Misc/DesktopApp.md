@@ -15,7 +15,7 @@ The following will create a basic web server with a single page, but when the se
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
 
     Enable-PodeGui -Title 'Basic Server'
 

@@ -20,7 +20,7 @@ The following example uses a `timer` to create and update a `hashtable`, and the
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     timer 'forever' 2 {
         param($event)
@@ -64,7 +64,7 @@ The following example will restore the state from the file if it exists, and sav
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # restore state from file
     state restore './state.json'

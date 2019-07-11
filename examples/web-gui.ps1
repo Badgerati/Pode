@@ -8,8 +8,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # listen on localhost:8090
-    Add-PodeEndpoint -Endpoint localhost:8090 -Protocol HTTP -Name 'local1'
-    Add-PodeEndpoint -Endpoint localhost:8091 -Protocol HTTP -Name 'local2'
+    Add-PodeEndpoint -Address localhost:8090 -Protocol HTTP -Name 'local1'
+    Add-PodeEndpoint -Address localhost:8091 -Protocol HTTP -Name 'local2'
 
     # tell this server to run as a desktop gui
     Enable-PodeGui -Title 'Pode Desktop Application' -Icon '../images/icon.png' -EndpointName 'local2' -ResizeMode 'NoResize'

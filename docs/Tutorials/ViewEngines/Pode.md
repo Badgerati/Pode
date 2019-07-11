@@ -12,7 +12,7 @@ To use `.pode` files for views, you will need to place them within the `/views` 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # set the engine to use and render Pode files
     Set-PodeViewEngine -Type Pode
@@ -47,7 +47,7 @@ For example, say you need to render a search page which is a list of accounts fi
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # set the engine to use and render .pode files
     Set-PodeViewEngine -Type Pode

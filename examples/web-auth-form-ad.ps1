@@ -18,7 +18,7 @@ the login page.
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Endpoint *:8085 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
 
     # set the view engine
     Set-PodeViewEngine -Type Pode

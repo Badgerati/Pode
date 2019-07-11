@@ -666,7 +666,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data for azure-functions' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'Azure-Functions' } }
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'AzureFunctions' } }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
@@ -678,7 +678,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data for aws-lambda' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'Aws-Lambda' } }
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'AwsLambda' } }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;

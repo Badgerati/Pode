@@ -60,7 +60,7 @@ The following full example of Form authentication will setup and configure authe
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # setup form authentication to validate a user
     auth use login -t form -v {

@@ -12,7 +12,7 @@ For example, if you have two routes you can force one to only parse JSON and the
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/api/json' -ctype 'application/json' {
         Write-PodeJsonResponse -Value @{}

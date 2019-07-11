@@ -71,7 +71,7 @@ The following example uses rate limiting, and defines `middleware` that will ove
 ```powershell
 Start-PodeServer {
     # attach to port 8080
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # assign limiting to localhost
     limit ip @('127.0.0.1', '[::1]') -limit 10 -seconds 2

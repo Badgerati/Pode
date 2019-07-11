@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a basic server
 Start-PodeServer {
 
-    Add-PodeEndpoint -Endpoint *:8085 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
     logger 'terminal'
 
     # re-initialise the state

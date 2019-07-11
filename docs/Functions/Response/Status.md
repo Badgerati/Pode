@@ -17,7 +17,7 @@ The following example sets the status code of the response to be 404:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/missing' {
         status 404
@@ -31,7 +31,7 @@ The following example sets the status code and description of the response to be
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/error' {
         status 500 'Oh no! Something went wrong!'
@@ -45,7 +45,7 @@ The following example will catch an exception, and set the status code to 500; t
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/error' {
         try {
@@ -64,7 +64,7 @@ The following example will generate an error page using JSON:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/error' {
         try {

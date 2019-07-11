@@ -33,7 +33,7 @@ Start-PodeServer -Thread 2 {
 Next, we'll need to [`listen`](../../../Functions/Core/Listen) on an endpoint and then specify the [`engine`](../../../Functions/Core/Engine) as using `.pode` files:
 
 ```powershell
-Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
 Set-PodeViewEngine -Type Pode
 ```
@@ -117,7 +117,7 @@ This is the full code for the server above:
 Import-Module Pode
 
 Start-PodeServer -Thread 2 {
-    Add-PodeEndpoint -Endpoint *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # use pode template engine
     engine pode

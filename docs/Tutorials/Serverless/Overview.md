@@ -9,7 +9,7 @@ When you use Pode in a serverless environment, the server logic is run once, and
 The server, when in a serverless environment, should be supplied the request object that is supplied to your Functions/Lambda script. You'll also need to specify which environment your server is running under:
 
 ```powershell
-Start-PodeServer -Request <request> -Type 'azure-functions' {
+Start-PodeServer -Request <request> -Type 'AzureFunctions' {
     # route logic
 }
 ```

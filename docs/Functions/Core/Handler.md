@@ -19,7 +19,7 @@ The following example will setup the inbuilt simple SMTP server, writing to the 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:25 -Protocol SMTP
+    Add-PodeEndpoint -Address *:25 -Protocol SMTP
 
     handler smtp {
         param($email)
@@ -37,7 +37,7 @@ The following example will setup a TCP server, having the TCP client passed to t
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Endpoint *:30 -Protocol TCP
+    Add-PodeEndpoint -Address *:30 -Protocol TCP
 
     handler tcp {
         $msg = (tcp read)
