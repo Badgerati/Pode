@@ -32,37 +32,15 @@
     FunctionsToExport = @(
         'Route',
         'Handler',
-        'Server',
-        'Pode',
         'Timer',
         'Logger',
-        'Test-IsUnix',
-        'Test-IsWindows',
-        'Test-IsPSCore',
-        'Test-Empty',
-        'Lock',
-        'Listen',
         'Access',
         'Limit',
-        'Stopwatch',
-        'Dispose',
-        'Stream',
         'Schedule',
         'Middleware',
-        'Endware',
         'Session',
-        'Invoke-ScriptBlock',
         'Auth',
-        'Script',
-        'Import',
-        'Coalesce',
-        'Get-PodeConfiguration',
-        'Root',
-        'Await',
-        'Load',
-        'Config',
         'Csrf',
-        'Gui',
 
         # cookies
         'Get-PodeCookie',
@@ -111,7 +89,32 @@
         'Read-PodeTcpClient',
         'Save-PodeResponseFile',
         'Set-PodeViewEngine',
-        'Use-PodePartialView'
+        'Use-PodePartialView',
+
+        # utility helpers
+        'Wait-PodeTask',
+        'Close-PodeDisposable',
+        'Lock-PodeObject',
+        'Get-PodeServerPath',
+        'Start-PodeStopwatch',
+        'Use-PodeStream',
+        'Use-PodeScript',
+        'Get-PodeSettings',
+        'Add-PodeEndware',
+        'Import-PodeModule',
+        'Protect-PodeValue',
+        'Resolve-PodeValue',
+        'Invoke-PodeScriptBlock',
+        'Test-IsUnix',
+        'Test-IsWindows',
+        'Test-IsPSCore',
+        'Test-IsEmpty',
+
+        # core
+        'Start-PodeServer',
+        'Enable-PodeGui',
+        'Add-PodeEndpoint',
+        'Pode'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

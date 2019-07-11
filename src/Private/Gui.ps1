@@ -51,7 +51,7 @@ function Start-PodeGuiRunspace
                 <Window
                     xmlns=`"http://schemas.microsoft.com/winfx/2006/xaml/presentation`"
                     xmlns:x=`"http://schemas.microsoft.com/winfx/2006/xaml`"
-                    Title=`"$($PodeContext.Server.Gui.Name)`"
+                    Title=`"$($PodeContext.Server.Gui.Title)`"
                     Height=`"$($PodeContext.Server.Gui.Height)`"
                     Width=`"$($PodeContext.Server.Gui.Width)`"
                     ResizeMode=`"$($PodeContext.Server.Gui.ResizeMode)`"
@@ -72,14 +72,14 @@ function Start-PodeGuiRunspace
             $form.TaskbarItemInfo.Description = $form.Title
 
             # add the icon to the form
-            if (!(Test-Empty $PodeContext.Server.Gui.Icon)) {
+            if (!(Test-IsEmpty $PodeContext.Server.Gui.Icon)) {
                 $icon = [Uri]::new($PodeContext.Server.Gui.Icon)
                 $form.Icon = [Windows.Media.Imaging.BitmapFrame]::Create($icon)
             }
 
             # set the state of the window onload
-            if (!(Test-Empty $PodeContext.Server.Gui.State)) {
-                $form.WindowState = $PodeContext.Server.Gui.State
+            if (!(Test-IsEmpty $PodeContext.Server.Gui.WindowState)) {
+                $form.WindowState = $PodeContext.Server.Gui.WindowState
             }
 
             # get the browser object from XAML and navigate to base page

@@ -11,8 +11,8 @@ The `text` function writes a `string`, or a `Byte[]`, to the web response. It al
 The following example will write some plain text to the response stream:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/message' {
         text 'I love you 3000'
@@ -25,8 +25,8 @@ Server {
 The following example will write a JSON value to the response stream:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/user' {
         text '{"name": "rick"}' -ctype 'application/json'

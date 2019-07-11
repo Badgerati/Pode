@@ -11,8 +11,8 @@ Using Pode to render dynamic `view` files is mostly just using normal HTML, but 
 To use `.pode` files for views, you will need to place them within the `/views` directory; then you'll need to set the View Engine to be Pode. Once set, you can just write view responses as per normal:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # set the engine to use and render Pode files
     Set-PodeViewEngine -Type Pode
@@ -46,8 +46,8 @@ Any data supplied to the `view` function when rendering `.pode` files will make 
 For example, say you need to render a search page which is a list of accounts filtered by some query; then your basic server script could look like the following:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # set the engine to use and render .pode files
     Set-PodeViewEngine -Type Pode

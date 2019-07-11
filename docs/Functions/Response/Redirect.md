@@ -11,8 +11,8 @@ The `redirect` function allows you to specify a URL to which the enduser should 
 The following example will redirect the enduser to the relative `/login` URL on the same endpoint:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/logout' {
         redirect -url '/login'
@@ -25,8 +25,8 @@ Server {
 The following example will redirect the enduser to `https://google.com`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/google' {
         redirect -url 'https://google.com'
@@ -39,8 +39,8 @@ Server {
 Assuming the current request URI is `http://localhost:8080`, then the following example will redirect the enduser to `http://localhost:8090`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/' {
         redirect -port 8090
@@ -53,8 +53,8 @@ Server {
 Assuming the current request URI is `http://localhost:8080`, then the following example will redirect the enduser to `https://localhost:8080`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/' {
         redirect -protocol https
@@ -67,8 +67,8 @@ Server {
 The following example will redirect every method and route to https:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route * * {
         redirect -protocol https
@@ -81,9 +81,9 @@ Server {
 The following example will redirect every method and route from the `127.0.0.2` endpoint to the localhost one - the port and protocol will remain untouched:
 
 ```powershell
-Server {
-    listen 127.0.0.1:8080 http
-    listen 127.0.0.2:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address 127.0.0.1:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address 127.0.0.2:8080 -Protocol HTTP
 
     route * * -endpoint 127.0.0.2 {
         redirect -endpoint 127.0.0.1

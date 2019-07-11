@@ -5,9 +5,9 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8086
-Server {
+Start-PodeServer {
 
-    listen *:8086 http
+    Add-PodeEndpoint -Address *:8086 -Protocol HTTP
 
     # can be hit by sending a GET request to "localhost:8086/api/test"
     route get '/api/test' {

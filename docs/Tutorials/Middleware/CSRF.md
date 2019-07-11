@@ -57,7 +57,7 @@ Unlike the `middleware` action however, you cannot configure HTTP methods to ign
 The below will run CSRF validation on the GET route, even though the setup is configured to ignore GET routes:
 
 ```powershell
-server {
+Start-PodeServer {
     csrf setup
 
     route get '/messages' (csrf check) {
@@ -73,7 +73,7 @@ The [`csrf`](../../../Functions/Middleware/Csrf) function allows you to generate
 To generate the token, you can use the following command - but only after you've used either the `setup` or `middleware` actions to configure CSRF:
 
 ```powershell
-server {
+Start-PodeServer {
     middleware (csrf middleware)
 
     route get '/' {
@@ -90,8 +90,8 @@ The following example will configure CSRF as default middleware, and supply a to
 
 *server.ps1*
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
     Set-PodeViewEngine -Type Pode
 
     # setup session and csrf middleware

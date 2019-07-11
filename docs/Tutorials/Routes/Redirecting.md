@@ -13,8 +13,8 @@ By default the redirecting will return a `302` response, but supplying `-Moved` 
 The following example will redirect the user to Google:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/redirect' {
         Move-PodeResponseUrl -Url 'https://google.com'
@@ -25,9 +25,9 @@ Server {
 The below example will redirect the user to the same host/server, but with a different protocol and port:
 
 ```powershell
-Server {
-    listen *:8080 http
-    listen *:8086 https
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8086 -Protocol HTTPS
 
     route get '/redirect' {
         Move-PodeResponseUrl -Port 8086 -Protocol https
@@ -38,9 +38,9 @@ Server {
 This final example will redirect every HTTP request, on every action and route, to https:
 
 ```powershell
-Server {
-    listen *:8080 http
-    listen *:8443 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8443 -Protocol HTTPS
 
     route * * -p http {
         Move-PodeResponseUrl -Port 8443 -Protocol https

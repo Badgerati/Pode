@@ -55,8 +55,8 @@ The following table contains options that you can supply to an `auth check -o @{
 The following example will setup sessionless `Basic` authentication, and then use it as `route` middleware. This will require authentication on every request. The basic authentication will check for an `{ "Authorization": "Basic <user:pass>" }` header on the request:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # setup basic auth, with validator to check the user
     auth use basic -v {
@@ -77,8 +77,8 @@ Server {
 The following example will setup sessionless `Form` authentication, and set it as global middleware for every `route`. This will require authentication on every request. The form authentication will check the POST payload for a `username` and `password`, supplied from a `<form>`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # setup form auth, with validator to check the user
     auth use form -v {
@@ -102,8 +102,8 @@ Server {
 The following example will setup session-persistent `Basic` authentication, and then use it as `route` middleware. This will only require authentication once, and the the check will succeed if the authenticated session cookie is passed:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # configure session middleware to bind the auth'd user against
     middleware (session @{

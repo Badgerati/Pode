@@ -13,7 +13,7 @@ To use the `session` function you must supply a `hashtable` that defines options
 The following is an example of how to setup session middleware, with a `hashtable` that defines all possible options that could be supplied:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware (session @{
         'Secret' = 'schwifty';      # secret-key used to sign session cookie
         'Name' = 'pode.sid';        # session cookie name (def: pode.sid)
@@ -65,7 +65,7 @@ To add data to a session you can utilise the `.Session.Data` object within the a
 An example of using sessions in a `route` to increment a views counter could be done as follows (the counter will continue to increment on each call to the route until the session expires after 2mins):
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
 
     route 'get' '/' {

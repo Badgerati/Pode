@@ -35,11 +35,11 @@ function Invoke-PodeAuthUse
     }
 
     # ensure the parser/validators aren't just empty scriptblocks
-    if (Test-Empty $AuthData.Parser) {
+    if (Test-IsEmpty $AuthData.Parser) {
         throw "Authentication method '$($AuthData.Name)' is has no Parser ScriptBlock logic defined"
     }
 
-    if (Test-Empty $AuthData.Validator) {
+    if (Test-IsEmpty $AuthData.Validator) {
         throw "Authentication method '$($AuthData.Name)' is has no Validator ScriptBlock logic defined"
     }
 
@@ -75,7 +75,7 @@ function Invoke-PodeAuthCheck
     }
 
     # coalesce the options, and set auth type for middleware
-    $Options = (coalesce $Options @{})
+    $Options = (Protect-PodeValue -Value $Options -Default @{})
     $Options.AuthType = $Name
 
     # setup the middleware logic
@@ -84,7 +84,7 @@ function Invoke-PodeAuthCheck
 
         # Route options for using sessions
         $storeInSession = ($e.Middleware.Options.Session -ne $false)
-        $usingSessions = (!(Test-Empty $e.Session))
+        $usingSessions = (!(Test-IsEmpty $e.Session))
 
         # check for logout command
         if ($e.Middleware.Options.Logout -eq $true) {
@@ -93,14 +93,14 @@ function Invoke-PodeAuthCheck
         }
 
         # if the session already has a user/isAuth'd, then setup method and return
-        if ($usingSessions -and !(Test-Empty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
+        if ($usingSessions -and !(Test-IsEmpty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
             $e.Auth = $e.Session.Data.Auth
             return (Set-PodeAuthStatus -Options $e.Middleware.Options)
         }
 
         # check if the login flag is set, in which case just return
         if ($e.Middleware.Options.Login -eq $true) {
-            if (!(Test-Empty $e.Session.Data.Auth)) {
+            if (!(Test-IsEmpty $e.Session.Data.Auth)) {
                 Remove-PodeSessionCookie -Session $e.Session
             }
 
@@ -114,13 +114,13 @@ function Invoke-PodeAuthCheck
         try {
             # if it's a custom type the parser will return the data for use to pass to the validator
             if ($auth.Custom) {
-                $data = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($e, $auth.Options) -Return -Splat)
+                $data = (Invoke-PodeScriptBlock -ScriptBlock $auth.Parser -Arguments @($e, $auth.Options) -Return -Splat)
                 $data += $auth.Options
 
-                $result = (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments $data -Return -Splat)
+                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Validator -Arguments $data -Return -Splat)
             }
             else {
-                $result = (Invoke-ScriptBlock -ScriptBlock $auth.Parser -Arguments @($e, $auth) -Return -Splat)
+                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Parser -Arguments @($e, $auth) -Return -Splat)
             }
         }
         catch {
@@ -129,8 +129,8 @@ function Invoke-PodeAuthCheck
         }
 
         # if there is no result return false (failed auth)
-        if ((Test-Empty $result) -or (Test-Empty $result.User)) {
-            return (Set-PodeAuthStatus -StatusCode (coalesce $result.Code 401) `
+        if ((Test-IsEmpty $result) -or (Test-IsEmpty $result.User)) {
+            return (Set-PodeAuthStatus -StatusCode (Protect-PodeValue -Value $result.Code -Default 401) `
                 -Description $result.Message -Options $e.Middleware.Options)
         }
 
@@ -215,7 +215,7 @@ function Get-PodeAuthMethod
     }
 
     # if we get here, check if a parser was passed for custom type
-    if (Test-Empty $Parser) {
+    if (Test-IsEmpty $Parser) {
         throw "Authentication method '$($Type)' does not exist as an inbuilt type, nor has a Parser been passed for a custom type"
     }
 
@@ -241,12 +241,12 @@ function Remove-PodeAuth
     $Event.Auth = @{}
 
     # if a session auth is found, blank it
-    if (!(Test-Empty $Event.Session.Data.Auth)) {
+    if (!(Test-IsEmpty $Event.Session.Data.Auth)) {
         $Event.Session.Data.Remove('Auth')
     }
 
     # redirect to a failure url, or onto the current path?
-    if (Test-Empty $Event.Middleware.Options.FailureUrl) {
+    if (Test-IsEmpty $Event.Middleware.Options.FailureUrl) {
         $Event.Middleware.Options.FailureUrl = $Event.Request.Url.AbsolutePath
     }
 
@@ -274,7 +274,7 @@ function Set-PodeAuthStatus
     if ($StatusCode -gt 0)
     {
         # override description with the failureMessage if supplied
-        $Description = (coalesce $Options.FailureMessage $Description)
+        $Description = (Protect-PodeValue -Value $Options.FailureMessage -Default $Description)
 
         # add error to flash if flagged
         if ([bool]$Options.FailureFlash) {
@@ -282,7 +282,7 @@ function Set-PodeAuthStatus
         }
 
         # check if we have a failure url redirect
-        if (!(Test-Empty $Options.FailureUrl)) {
+        if (!(Test-IsEmpty $Options.FailureUrl)) {
             Move-PodeResponseUrl -Url $Options.FailureUrl
         }
         else {
@@ -296,7 +296,7 @@ function Set-PodeAuthStatus
     else
     {
         # check if we have a success url redirect
-        if (!(Test-Empty $Options.SuccessUrl)) {
+        if (!(Test-IsEmpty $Options.SuccessUrl)) {
             Move-PodeResponseUrl -Url $Options.SuccessUrl
             return $false
         }
@@ -331,27 +331,27 @@ function Get-PodeAuthValidator
                 $result = Get-PodeAuthADUser -FQDN $options.Fqdn -Username $username -Password $password
 
                 # if there's a message, fail and return the message
-                if (!(Test-Empty $result.Message)) {
+                if (!(Test-IsEmpty $result.Message)) {
                     return $result
                 }
 
                 # if there's no user, then, err, oops
-                if (Test-Empty $result.User) {
+                if (Test-IsEmpty $result.User) {
                     return @{ 'Message' = 'An unexpected error occured' }
                 }
 
                 # if there are no groups/users supplied, return the user
-                if ((Test-Empty $options.Users) -and (Test-Empty $options.Groups)){
+                if ((Test-IsEmpty $options.Users) -and (Test-IsEmpty $options.Groups)){
                     return $result
                 }
 
                 # before checking supplied groups, is the user in the supplied list of authorised users?
-                if (!(Test-Empty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
+                if (!(Test-IsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
                     return $result
                 }
 
                 # if there are groups supplied, check the user is a member of one
-                if (!(Test-Empty $options.Groups)) {
+                if (!(Test-IsEmpty $options.Groups)) {
                     foreach ($group in $options.Groups) {
                         if (@($result.User.Groups) -icontains $group) {
                             return $result
@@ -389,13 +389,13 @@ function Get-PodeAuthADUser
     try
     {
         # setup the dns domain
-        if (Test-Empty $FQDN) {
+        if (Test-IsEmpty $FQDN) {
             $FQDN = $env:USERDNSDOMAIN
         }
 
         # validate the user's AD creds
         $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($FQDN)", "$($Username)", "$($Password)")
-        if (Test-Empty $ad.distinguishedName) {
+        if (Test-IsEmpty $ad.distinguishedName) {
             return @{ 'Message' = 'Invalid credentials supplied' }
         }
 
@@ -404,7 +404,7 @@ function Get-PodeAuthADUser
         $query.filter = "(&(objectCategory=person)(samaccountname=$($Username)))"
 
         $user = $query.FindOne().Properties
-        if (Test-Empty $user) {
+        if (Test-IsEmpty $user) {
             return @{ 'Message' = 'User not found in Active Directory' }
         }
 
@@ -420,9 +420,9 @@ function Get-PodeAuthADUser
         } }
     }
     finally {
-        if (!(Test-Empty $ad.distinguishedName)) {
-            dispose $query
-            dispose $ad -Close
+        if (!(Test-IsEmpty $ad.distinguishedName)) {
+            Close-PodeDisposable -Disposable $query
+            Close-PodeDisposable -Disposable $ad -Close
         }
     }
 }
@@ -516,7 +516,7 @@ function Get-PodeAuthBasic
 
         # ensure the first atom is basic (or opt override)
         $atoms = $header -isplit '\s+'
-        $authType = (coalesce $auth.Options.Name 'Basic')
+        $authType = (Protect-PodeValue -Value $auth.Options.Name -Default 'Basic')
 
         if ($atoms[0] -ine $authType) {
             return @{
@@ -526,7 +526,7 @@ function Get-PodeAuthBasic
         }
 
         # decode the aut header
-        $encType = (coalesce $auth.Options.Encoding 'ISO-8859-1')
+        $encType = (Protect-PodeValue -Value $auth.Options.Encoding -Default 'ISO-8859-1')
 
         try {
             $enc = [System.Text.Encoding]::GetEncoding($encType)
@@ -555,7 +555,7 @@ function Get-PodeAuthBasic
         $u = $decoded.Substring(0, $index)
         $p = $decoded.Substring($index + 1)
 
-        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($u, $p, $auth.Options) -Return -Splat)
+        return (Invoke-PodeScriptBlock -ScriptBlock $auth.Validator -Arguments @($u, $p, $auth.Options) -Return -Splat)
     }
 
     return @{
@@ -585,15 +585,15 @@ function Get-PodeAuthForm
         param($e, $auth)
 
         # get user/pass keys to get from payload
-        $userField = (coalesce $auth.Options.UsernameField 'username')
-        $passField = (coalesce $auth.Options.PasswordField 'password')
+        $userField = (Protect-PodeValue -Value $auth.Options.UsernameField -Default 'username')
+        $passField = (Protect-PodeValue -Value $auth.Options.PasswordField -Default 'password')
 
         # get the user/pass
         $username = $e.Data.$userField
         $password = $e.Data.$passField
 
         # if either are empty, deny
-        if ((Test-Empty $username) -or (Test-Empty $password)) {
+        if ((Test-IsEmpty $username) -or (Test-IsEmpty $password)) {
             return @{
                 'User' = $null;
                 'Message' = 'Username or Password not supplied';
@@ -602,7 +602,7 @@ function Get-PodeAuthForm
         }
 
         # validate and return
-        return (Invoke-ScriptBlock -ScriptBlock $auth.Validator -Arguments @($username, $password, $auth.Options) -Return -Splat)
+        return (Invoke-PodeScriptBlock -ScriptBlock $auth.Validator -Arguments @($username, $password, $auth.Options) -Return -Splat)
     }
 
     return @{

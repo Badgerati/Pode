@@ -14,8 +14,8 @@ The `lock` function takes an object that will be locked so that it is threadsafe
 The following example will lock an object, and increment a counter on the session and write it to the response in a threadsafe scope:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/count' {
         param($s)

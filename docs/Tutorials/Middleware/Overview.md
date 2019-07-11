@@ -23,7 +23,7 @@ If you want to keep processing and proceed to the next middleware/route then `re
 The following example is middleware that observes the user agent of the request. If the request comes from a PowerShell session then stop processing and return forbidden, otherwise create a new `Agent` key on the session for later `middleware`/`route` logic:
 
 ```powershell
-server {
+Start-PodeServer {
     middleware {
         # event which contains the Request/Response, and other keys
         param($event)
@@ -49,7 +49,7 @@ server {
 Where as the following example is middleware that will only be run on requests against the `/api` route. Here, it will run Basic authentication on every API request:
 
 ```powershell
-server {
+Start-PodeServer {
     middleware '/api' (auth check basic)
 }
 ```
@@ -73,7 +73,7 @@ The middleware on a route can either be a single `scriptblock` or an an array of
 The following example defines a `scriptblock` to reject calls that come from a specific IP address on a specific `route`:
 
 ```powershell
-server {
+Start-PodeServer {
     # custom middleware to reject access to a specific IP address
     $reject_ip = {
         # same event object as supplied to global middleware/routes
@@ -131,9 +131,9 @@ Pode has inbuilt middleware as defined in the order of running above. Sometimes 
 The following example uses rate limiting, and defines `middleware` that will override the inbuilt rate limiting logic:
 
 ```powershell
-server {
+Start-PodeServer {
     # attach to port 8080
-    listen *:8080 http
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # assign rate limiting to localhost, and allow 8 request per 5 seconds
     limit ip @('127.0.0.1', '[::1]') 8 5

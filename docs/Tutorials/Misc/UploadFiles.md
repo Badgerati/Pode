@@ -59,10 +59,10 @@ $e.Files['image.png']   # the bytes of the uploaded file
 The following script is an example Pode server that will save the uploaded file, from the above `<form>`:
 
 ```powershell
-Server {
+Start-PodeServer {
 
     # listen on localhost:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
     Set-PodeViewEngine -Type HTML
 
     # GET request for web page on "localhost:8085/"

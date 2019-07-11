@@ -20,7 +20,7 @@ You can either put a rule in for a specify IP address, a subnet mask, or for eve
 The following example will allow access for requests from localhost:
 
 ```powershell
-Server {
+Start-PodeServer {
     access allow ip '127.0.0.1'
 }
 ```
@@ -28,7 +28,7 @@ Server {
 Whereas the following example will deny access to requests from a subnet:
 
 ```powershell
-Server {
+Start-PodeServer {
     access deny ip '10.10.0.0/24'
 }
 ```
@@ -36,7 +36,7 @@ Server {
 To allow access to requests from multiple addresses in one line, the following example will work:
 
 ```powershell
-Server {
+Start-PodeServer {
     access allow ip @('192.168.1.1', '192.168.1.2')
 }
 ```
@@ -44,7 +44,7 @@ Server {
 Finally, to allow or deny access to requests from every address you can use the `all` keyword:
 
 ```powershell
-Server {
+Start-PodeServer {
     access deny ip all
 }
 ```
@@ -58,9 +58,9 @@ This also mean you can override the inbuilt access rule logic, with your own cus
 The following example uses access rules, and defines `middleware` that will override the inbuilt access logic:
 
 ```powershell
-Server {
+Start-PodeServer {
     # attach to port 8080
-    listen *:8080 http
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # assign access rule to deny localhost
     access deny ip @('127.0.0.1', '[::1]')

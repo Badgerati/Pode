@@ -21,7 +21,7 @@ function Test-PodeIPLimit
     $now = [DateTime]::UtcNow
 
     # if there are no rules, it's valid
-    if (Test-Empty $rules) {
+    if (Test-IsEmpty $rules) {
         return $true
     }
 
@@ -86,7 +86,7 @@ function Test-PodeIPLimit
         }
 
         # add ip to active list (ip if not grouped, else the subnet if it's grouped)
-        $_ip = (iftet $_rule_ip.Grouped $_rule_ip.IP $IP.String)
+        $_ip = (Resolve-PodeValue -Check $_rule_ip.Grouped -TrueValue $_rule_ip.IP -FalseValue $IP.String)
 
         $active.Add($_ip, @{
             'Rule' = $_rule_ip;
@@ -120,8 +120,8 @@ function Test-PodeIPAccess
     $deny = $PodeContext.Server.Access.Deny[$type]
 
     # are they empty?
-    $alEmpty = (Test-Empty $allow)
-    $dnEmpty = (Test-Empty $deny)
+    $alEmpty = (Test-IsEmpty $allow)
+    $dnEmpty = (Test-IsEmpty $deny)
 
     # if both are empty, value is valid
     if ($alEmpty -and $dnEmpty) {
@@ -327,20 +327,20 @@ function Set-PodeCsrfSetup
     )
 
     # check that csrf logic hasn't already been defined
-    if (!(Test-Empty $PodeContext.Server.Cookies.Csrf)) {
+    if (!(Test-IsEmpty $PodeContext.Server.Cookies.Csrf)) {
         return
     }
 
     # if sessions haven't been setup and we're not using cookies, error
-    if (!$Cookie -and (Test-Empty $PodeContext.Server.Cookies.Session)) {
+    if (!$Cookie -and (Test-IsEmpty $PodeContext.Server.Cookies.Session)) {
         throw 'Sessions are required to use CSRF unless you pass the -Cookie flag'
     }
 
     # if we're using cookies, ensure a global secret exists
     if ($Cookie) {
-        $Secret = (coalesce $Secret (Get-PodeCookieSecret -Global))
+        $Secret = (Protect-PodeValue -Value $Secret -Default (Get-PodeCookieSecret -Global))
 
-        if (Test-Empty $Secret) {
+        if (Test-IsEmpty $Secret) {
             throw "When using cookies for CSRF, a secret is required. You can either supply a secret, or set the cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
         }
     }
@@ -357,7 +357,7 @@ function Set-PodeCsrfSetup
 function Get-PodeCsrfMiddleware
 {
     # check that csrf logic has been defined
-    if (Test-Empty $PodeContext.Server.Cookies.Csrf) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Csrf) {
         throw 'CSRF middleware has not been defined'
     }
 
@@ -367,7 +367,7 @@ function Get-PodeCsrfMiddleware
 
         # if the current route method is ignored, just return
         $ignored = @($PodeContext.Server.Cookies.Csrf.IgnoredMethods)
-        if (!(Test-Empty $ignored) -and ($ignored -icontains $e.Method)) {
+        if (!(Test-IsEmpty $ignored) -and ($ignored -icontains $e.Method)) {
             return $true
         }
 
@@ -390,7 +390,7 @@ function Get-PodeCsrfMiddleware
 function Get-PodeCsrfCheck
 {
     # check that csrf logic has been defined
-    if (Test-Empty $PodeContext.Server.Cookies.Csrf) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Csrf) {
         throw 'CSRF middleware has not been defined'
     }
 
@@ -420,18 +420,18 @@ function Get-PodeCsrfToken
     $key = $PodeContext.Server.Cookies.Csrf.Name
 
     # check the payload
-    if (!(Test-Empty $WebEvent.Data[$key])) {
+    if (!(Test-IsEmpty $WebEvent.Data[$key])) {
         return $WebEvent.Data[$key]
     }
 
     # check the query string
-    if (!(Test-Empty $WebEvent.Query[$key])) {
+    if (!(Test-IsEmpty $WebEvent.Query[$key])) {
         return $WebEvent.Query[$key]
     }
 
     # check the headers
     $value = (Get-PodeHeader -Name $key)
-    if (!(Test-Empty $value)) {
+    if (!(Test-IsEmpty $value)) {
         return $value
     }
 
@@ -451,7 +451,7 @@ function Test-PodeCsrfToken
     )
 
     # if there's no token/secret, fail
-    if ((Test-Empty $Secret) -or (Test-Empty $Token)) {
+    if ((Test-IsEmpty $Secret) -or (Test-IsEmpty $Token)) {
         return $false
     }
 
@@ -481,7 +481,7 @@ function New-PodeCsrfSecret
 {
     # see if there's already a secret in session/cookie
     $secret = (Get-PodeCsrfSecret)
-    if (!(Test-Empty $secret)) {
+    if (!(Test-IsEmpty $secret)) {
         return $secret
     }
 
@@ -547,17 +547,17 @@ function New-PodeCsrfToken
     )
 
     # fail if the csrf logic hasn't been defined
-    if (Test-Empty $PodeContext.Server.Cookies.Csrf) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Csrf) {
         throw 'CSRF middleware has not been defined'
     }
 
     # generate a new secret if none supplied
-    if (Test-Empty $Secret) {
+    if (Test-IsEmpty $Secret) {
         $Secret = New-PodeCsrfSecret
     }
 
     # generate a new salt if none supplied
-    if (Test-Empty $Salt) {
+    if (Test-IsEmpty $Salt) {
         $Salt = (New-PodeSalt -Length 8)
     }
 

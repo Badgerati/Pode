@@ -20,7 +20,7 @@ Each schedule must have a `<name>`, one or more `<cron>` expressions, and a `<sc
 To create a basic `schedule`, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:
 
 ```powershell
-Server {
+Start-PodeServer {
     schedule 'date' '5 0 * * TUE' {
         Write-Host "$([DateTime]::Now)"
     }
@@ -30,7 +30,7 @@ Server {
 Whereas the following will create the same schedule, but will only trigger the schedule 4 times due to the `-limit` value supplied:
 
 ```powershell
-Server {
+Start-PodeServer {
     schedule 'date' '5 0 * * TUE' -limit 4 {
         Write-Host "$([DateTime]::Now)"
     }
@@ -40,7 +40,7 @@ Server {
 You can also supply multiple cron expressions for the same `schedule`. For example, the following will trigger the same schedule every minute and every hour:
 
 ```powershell
-Server {
+Start-PodeServer {
     schedule 'date' @('@minutely', '@hourly') {
         Write-Host "$([DateTime]::Now)"
     }
@@ -54,7 +54,7 @@ The `-start <datetime>` parameter will cause the `schedule` to only be triggered
 The following will create a `schedule` that triggers at 16:00 every Friday, and is delayed by 1 year:
 
 ```powershell
-Server {
+Start-PodeServer {
     $start = [DateTime]::Now.AddYears(1)
 
     schedule 'date' '0 16 * * FRI' -start $start {
@@ -70,7 +70,7 @@ The `-end <datetime>` parameter will cause the `schedule` to cease triggering af
 The following will create a `schedule` that triggers at 16:00 every Friday, and stops triggering in 1 year:
 
 ```powershell
-Server {
+Start-PodeServer {
     $end = [DateTime]::Now.AddYears(1)
 
     schedule 'date' '0 16 * * FRI' -end $end {

@@ -10,11 +10,11 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -Threads 2 -Browse {
+Start-PodeServer -Threads 2 -Browse {
 
     # listen on localhost:8085
-    listen localhost:$Port http
-    listen localhost:8090 http
+    Add-PodeEndpoint -Address localhost:$Port -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8090 -Protocol HTTP
 
     # limit ip @('127.0.0.1', '[::1]') 5 10
 
@@ -81,4 +81,4 @@ Server -Threads 2 -Browse {
 
     route get '/script' -fp './modules/route_script.ps1'
 
-} -FileMonitor
+}

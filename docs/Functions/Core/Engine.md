@@ -14,7 +14,7 @@ The `engine` function allows you to specify the engine used to render `view` and
 The following example will render views and content using the Pode template engine (such as the `index.pode` view or the `style.css.pode` public content file):
 
 ```powershell
-Server {
+Start-PodeServer {
     engine pode
 }
 ```
@@ -24,7 +24,7 @@ Server {
 The following example will use the third-party engine `EPS` to render views (such as the `index.eps` view or the `style.css.eps` public content file):
 
 ```powershell
-Server {
+Start-PodeServer {
     engine eps {
         param($path, $data)
         return Invoke-EpsTemplate -Path $path -Binding $data

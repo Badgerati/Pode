@@ -12,7 +12,7 @@ Normally this is enough, and you'll likely never need to change it however, if y
 The main way to alter the root path of you server is to use the `-RootPath` parameter on the `server` function:
 
 ```powershell
-Server -RootPath '../server' {
+Start-PodeServer -RootPath '../server' {
     # logic
 }
 ```

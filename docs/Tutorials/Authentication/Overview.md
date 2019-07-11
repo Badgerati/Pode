@@ -25,7 +25,7 @@ auth use <name> -v <{}|string> [-o @{}] [-p {}] [-t <string>] [-c]
 A quick example of using the `use` action for Basic authentication is as follows:
 
 ```powershell
-Server {
+Start-PodeServer {
     auth use basic -v {
         param($username, $pass)
         # logic to check user
@@ -37,7 +37,7 @@ Server {
 or, if you want to use Basic authentication but with a custom name (such as 'login'):
 
 ```powershell
-Server {
+Start-PodeServer {
     auth use login -t basic -v {
         param($username, $pass)
         # logic to check user
@@ -70,7 +70,7 @@ auth check <name> [-o @{}]
 A quick example of using the `check` action against Basic authentication is as follows. The first example sets up the `check` as global middleware, whereas the second example sets up the `check` as custom [`route`](../../../Functions/Core/Route) middleware:
 
 ```powershell
-Server {
+Start-PodeServer {
     # 1. apply the auth check as global middleware
     middleware (auth check basic)
 
@@ -133,7 +133,7 @@ Overtime Pode will start to support inbuilt validators for authentication - such
 For example, the below would use the inbuilt validator for Windows AD:
 
 ```powershell
-server {
+Start-PodeServer {
     auth use login -t basic -v 'windows-ad'
 }
 ```

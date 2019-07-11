@@ -11,8 +11,8 @@ The `tcp` function allows you to read/write messages to/from a TCP stream. By de
 The following example will write a message onto the TCP stream:
 
 ```powershell
-Server {
-    listen *:30 tcp
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:30 -Protocol TCP
 
     handler tcp {
         tcp write 'Hello, world!'
@@ -25,8 +25,8 @@ Server {
 The following example will read a message from the TCP stream:
 
 ```powershell
-Server {
-    listen *:30 tcp
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:30 -Protocol TCP
 
     handler tcp {
         $msg = (tcp read)

@@ -11,7 +11,7 @@ The `dispose` function takes a disposable object and will optionally close the o
 The following example takes a `StreamReader`, and then closes and disposes of the object:
 
 ```powershell
-Server {
+Start-PodeServer {
     $reader = [System.IO.StreamReader]::new($stream)
 
     # logic that uses the reader

@@ -21,9 +21,9 @@ The following example load the `pode.json` file, and bind onto the port number (
 
 *server.ps1*
 ```powershell
-Server {
+Start-PodeServer {
     $port = (config).port
-    listen *:$port http
+    Add-PodeEndpoint -Address *:$port -Protocol HTTP
 }
 ```
 
@@ -47,8 +47,8 @@ The following example has a `pode.json` and `pode.dev.json`. When the you set `$
 
 *server.ps1*
 ```powershell
-Server {
+Start-PodeServer {
     $port = (config).port
-    listen *:$port http
+    Add-PodeEndpoint -Address *:$port -Protocol HTTP
 }
 ```

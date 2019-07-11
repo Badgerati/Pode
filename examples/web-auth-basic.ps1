@@ -14,10 +14,10 @@ you'll get a 401 status code back.
 #>
 
 # create a server, and start listening on port 8085
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
 
     # setup basic auth (base64> username:password in header)
     auth use basic -v {
@@ -50,4 +50,4 @@ Server -Threads 2 {
         ) }
     }
 
-} -FileMonitor
+}

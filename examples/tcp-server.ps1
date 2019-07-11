@@ -5,9 +5,9 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8999
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
-    listen *:8999 tcp
+    Add-PodeEndpoint -Address *:8999 -Protocol TCP
 
     # allow the local ip
     access allow ip 127.0.0.1

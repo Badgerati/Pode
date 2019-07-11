@@ -11,10 +11,10 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 # create a server, and start listening on port 8085 at pode.foo.com
 # -- You will need to add "127.0.0.1  pode.foo.com" to your hosts file
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    listen pode.foo.com:$Port http
+    Add-PodeEndpoint -Address pode.foo.com:$Port -Protocol HTTP
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
@@ -34,4 +34,4 @@ Server -Threads 2 {
         Set-PodeResponseAttachment -Path '/assets/images/Fry.png'
     }
 
-} -FileMonitor
+}

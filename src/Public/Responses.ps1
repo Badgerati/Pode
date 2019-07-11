@@ -73,7 +73,7 @@ function Set-PodeResponseAttachment
         }
     }
     finally {
-        dispose $fs
+        Close-PodeDisposable -Disposable $fs
     }
 }
 
@@ -280,9 +280,9 @@ function Write-PodeFileResponse
 
         # get the sub-file extension, if empty, use original
         $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
-        $subExt = (coalesce $subExt $mainExt)
+        $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
 
-        $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $subExt))
+        $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
         Write-PodeTextResponse -Value $content -ContentType $ContentType
     }
 
@@ -295,7 +295,7 @@ function Write-PodeFileResponse
             $content = (Get-Content -Path $Path -Raw -Encoding byte)
         }
 
-        $ContentType = (coalesce $ContentType (Get-PodeContentType -Extension $mainExt))
+        $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt))
         Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -Cache:$Cache
     }
 }
@@ -825,7 +825,7 @@ function Write-PodeTcpClient
     $encoder = New-Object System.Text.ASCIIEncoding
     $buffer = $encoder.GetBytes("$($Message)`r`n")
     $stream = $Client.GetStream()
-    await $stream.WriteAsync($buffer, 0, $buffer.Length)
+    Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
     $stream.Flush()
 }
 
@@ -861,7 +861,7 @@ function Read-PodeTcpClient
     $bytes = New-Object byte[] 8192
     $encoder = New-Object System.Text.ASCIIEncoding
     $stream = $Client.GetStream()
-    $bytesRead = (await $stream.ReadAsync($bytes, 0, 8192))
+    $bytesRead = (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, 8192))
     return $encoder.GetString($bytes, 0, $bytesRead)
 }
 

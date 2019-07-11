@@ -52,7 +52,7 @@ function Start-PodeTcpServer
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get an incoming request
-                $client = (await $Listener.AcceptTcpClientAsync())
+                $client = (Wait-PodeTask -Task $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
                 $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
@@ -64,7 +64,7 @@ function Start-PodeTcpServer
                         'Lockalble' = $PodeContext.Lockable
                     }
 
-                    Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $TcpEvent -Scoped
+                    Invoke-PodeScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $TcpEvent -Scoped
                 }
 
                 # close the connection

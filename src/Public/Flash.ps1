@@ -29,7 +29,7 @@ function Add-PodeFlashMessage
     )
 
     # if sessions haven't been setup, error
-    if (Test-Empty $PodeContext.Server.Cookies.Session) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Session) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -62,7 +62,7 @@ function Clear-PodeFlashMessages
     param()
 
     # if sessions haven't been setup, error
-    if (Test-Empty $PodeContext.Server.Cookies.Session) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Session) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -96,7 +96,7 @@ function Get-PodeFlashMessage
     )
 
     # if sessions haven't been setup, error
-    if (Test-Empty $PodeContext.Server.Cookies.Session) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Session) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -108,7 +108,7 @@ function Get-PodeFlashMessage
     $v = @($WebEvent.Session.Data.Flash[$Name])
     $WebEvent.Session.Data.Flash.Remove($Name)
 
-    if (Test-Empty $v) {
+    if (Test-IsEmpty $v) {
         return @()
     }
 
@@ -131,7 +131,7 @@ function Get-PodeFlashMessageNames
     param()
 
     # if sessions haven't been setup, error
-    if (Test-Empty $PodeContext.Server.Cookies.Session) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Session) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -166,7 +166,7 @@ function Remove-PodeFlashMessage
     )
 
     # if sessions haven't been setup, error
-    if (Test-Empty $PodeContext.Server.Cookies.Session) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Session) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -199,7 +199,7 @@ function Test-PodeFlashMessage
     )
 
     # if sessions haven't been setup, error
-    if (Test-Empty $PodeContext.Server.Cookies.Session) {
+    if (Test-IsEmpty $PodeContext.Server.Cookies.Session) {
         throw 'Sessions are required to use Flash messages'
     }
 

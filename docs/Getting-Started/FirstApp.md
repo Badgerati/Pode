@@ -33,7 +33,7 @@ Success, saved package.json
 * Within your `server.ps1` file, first you need to create the [`server`](../../Functions/Core/Server). This is where the main script will go that defines how the server should function:
 
 ```powershell
-server {
+Start-PodeServer {
     # logic
 }
 ```
@@ -41,16 +41,16 @@ server {
 * Now we have our server, we need to get it to [`listen`](../../Functions/Core/Listen) on an endpoint. This will allow us to receive requests and respond to them. The below tells your server to listen on `localhost` and port `8080` for HTTP requests:
 
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
 }
 ```
 
 * Our simple server will have a single GET [`route`](../../Tutorials/Routes/Overview); it will be invoked when the root (`/`) of the server is called (ie: `http://localhost:8080/`). This route will respond with a simple JSON response:
 
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
 
     route get '/' {
         Write-PodeJsonResponse -Value @{ 'value' = 'Hello, world!' }

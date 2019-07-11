@@ -2,7 +2,7 @@ function New-PodeSessionCookie
 {
     $sid = @{
         'Name' = $PodeContext.Server.Cookies.Session.Name;
-        'Id' = (Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Cookies.Session.GenerateId -Return);
+        'Id' = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cookies.Session.GenerateId -Return);
         'Cookie' = $PodeContext.Server.Cookies.Session.Info;
         'Data' = @{};
     }
@@ -54,7 +54,7 @@ function Get-PodeSessionCookie
 
     # get the cookie from the request
     $cookie = Get-PodeCookie -Name $Name -Secret $Secret
-    if (Test-Empty $cookie) {
+    if (Test-IsEmpty $cookie) {
         return $null
     }
 
@@ -82,7 +82,7 @@ function Remove-PodeSessionCookie
     Remove-PodeCookie -Name $Session.Name
 
     # remove session from store
-    Invoke-ScriptBlock -ScriptBlock $Session.Delete -Arguments @($Session) -Splat
+    Invoke-PodeScriptBlock -ScriptBlock $Session.Delete -Arguments @($Session) -Splat
 
     # blank the session
     $Session.Clear()
@@ -96,7 +96,7 @@ function Set-PodeSessionCookieDataHash
         $Session
     )
 
-    $Session.Data = (coalesce $Session.Data @{})
+    $Session.Data = (Protect-PodeValue -Value $Session.Data -Default @{})
     $Session.DataHash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json -Depth 10 -Compress))
 }
 
@@ -108,11 +108,11 @@ function Test-PodeSessionCookieDataHash
         $Session
     )
 
-    if (Test-Empty $Session.DataHash) {
+    if (Test-IsEmpty $Session.DataHash) {
         return $false
     }
 
-    $Session.Data = (coalesce $Session.Data @{})
+    $Session.Data = (Protect-PodeValue -Value $Session.Data -Default @{})
     $hash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json -Depth 10 -Compress))
     return ($Session.DataHash -eq $hash)
 }
@@ -125,7 +125,7 @@ function Get-PodeSessionCookieExpiry
         $Session
     )
 
-    $expiry = (iftet $Session.Cookie.Extend ([DateTime]::UtcNow) $Session.Cookie.TimeStamp)
+    $expiry = (Resolve-PodeValue -Check $Session.Cookie.Extend -TrueValue ([DateTime]::UtcNow) -FalseValue $Session.Cookie.TimeStamp)
     $expiry = $expiry.AddSeconds($Session.Cookie.Duration)
     return $expiry
 }
@@ -220,7 +220,7 @@ function Set-PodeSessionCookieInMemClearDown
     # cleardown expired inmem session every 10 minutes
     Schedule -Name '__pode_session_inmem_cleanup__' -Cron '0/10 * * * *' -ScriptBlock {
         $store = $PodeContext.Server.Cookies.Session.Store
-        if (Test-Empty $store.Memory) {
+        if (Test-IsEmpty $store.Memory) {
             return
         }
 

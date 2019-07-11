@@ -11,7 +11,7 @@ The `limit` function allows you to specify rate limiting rules on IP addresses o
 The following example will limit the localhost to 5 requests per second:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip 127.0.0.1 -limit 5 -seconds 1
 }
 ```
@@ -24,7 +24,7 @@ Server {
 The following example will limit multiple IP addresses to 5 requests per 10 seconds:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip @('192.168.1.1', '192.168.1.2') -l 5 -s 10
 }
 ```
@@ -34,7 +34,7 @@ Server {
 The following example will limit a subnet mask to 5 requests per second, per each individual IP address governed by that subnet mask:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip '10.10.0.0/24' -l 5 -s 1
 }
 ```
@@ -47,7 +47,7 @@ Server {
 The following example will limit a subnet mask to 5 requests per second, where all IP addresses governed by the subnet are treated as one:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip -group '10.10.0.0/24' -l 5 -s 1
 }
 ```
@@ -60,7 +60,7 @@ Server {
 The following example will limit requests from all IP addresses to 10 requests per minute:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip all -l 10 -s 60
 }
 ```

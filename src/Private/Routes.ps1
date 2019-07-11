@@ -124,13 +124,13 @@ function Get-PodeStaticRoutePath
         # is the found route set as download only?
         if ($found.Download) {
             $download = $true
-            $path = (Join-Path $found.Path (coalesce $found.File ([string]::Empty)))
+            $path = (Join-Path $found.Path (Protect-PodeValue -Value $found.File -Default ([string]::Empty)))
         }
 
         # if there's no file, we need to check defaults
         elseif (!(Test-PodePathIsFile $found.File) -and (Get-PodeCount @($found.Defaults)) -gt 0)
         {
-            $found.File = (coalesce $found.File ([string]::Empty))
+            $found.File = (Protect-PodeValue -Value $found.File -Default ([string]::Empty))
 
             if ((Get-PodeCount @($found.Defaults)) -eq 1) {
                 $found.File = Join-PodePaths @($found.File, @($found.Defaults)[0])
@@ -218,7 +218,7 @@ function Remove-PodeRoute
     $Route = Split-PodeRouteQuery -Route $Route
 
     # ensure route isn't empty
-    if (Test-Empty $Route) {
+    if (Test-IsEmpty $Route) {
         throw "No route supplied for removing the $($HttpMethod) definition"
     }
 
@@ -284,12 +284,12 @@ function Add-PodeRoute
     )
 
     # if middleware, scriptblock and file path are all null/empty, error
-    if ((Test-Empty $Middleware) -and (Test-Empty $ScriptBlock) -and (Test-Empty $FilePath)) {
+    if ((Test-IsEmpty $Middleware) -and (Test-IsEmpty $ScriptBlock) -and (Test-IsEmpty $FilePath)) {
         throw "[$($HttpMethod)] $($Route) has no scriptblock defined"
     }
 
     # if both a scriptblock and a file path have been supplied, error
-    if (!(Test-Empty $ScriptBlock) -and !(Test-Empty $FilePath)) {
+    if (!(Test-IsEmpty $ScriptBlock) -and !(Test-IsEmpty $FilePath)) {
         throw "[$($HttpMethod)] $($Route) has both a ScriptBlock and a FilePath defined"
     }
 
@@ -300,11 +300,11 @@ function Add-PodeRoute
             throw "[$($HttpMethod)] $($Route) cannot have a wildcard or directory FilePath: $($FilePath)"
         }
 
-        $ScriptBlock = [scriptblock](load $FilePath)
+        $ScriptBlock = [scriptblock](Use-PodeScript -Path $FilePath)
     }
 
     # ensure supplied middlewares are either a scriptblock, or a valid hashtable
-    if (!(Test-Empty $Middleware)) {
+    if (!(Test-IsEmpty $Middleware)) {
         @($Middleware) | ForEach-Object {
             $_type = (Get-PodeType $_).Name
 
@@ -328,7 +328,7 @@ function Add-PodeRoute
     }
 
     # if middleware is set, but there is no scriptblock, set the middleware as the scriptblock
-    if (!(Test-Empty $Middleware) -and ($null -eq $ScriptBlock)) {
+    if (!(Test-IsEmpty $Middleware) -and ($null -eq $ScriptBlock)) {
         # if multiple middleware, error
         if ((Get-PodeType $Middleware).BaseName -ieq 'array' -and (Get-PodeCount $Middleware) -ne 1) {
             throw "[$($HttpMethod)] $($Route) has no logic defined"
@@ -345,7 +345,7 @@ function Add-PodeRoute
     $Route = Split-PodeRouteQuery -Route $Route
 
     # ensure route isn't empty
-    if (Test-Empty $Route) {
+    if (Test-IsEmpty $Route) {
         throw "No route path supplied for $($HttpMethod) definition"
     }
 
@@ -357,7 +357,7 @@ function Add-PodeRoute
     Test-PodeRouteAndError -HttpMethod $HttpMethod -Route $Route -Protocol $Protocol -Endpoint $Endpoint
 
     # if we have middleware, convert scriptblocks to hashtables
-    if (!(Test-Empty $Middleware))
+    if (!(Test-IsEmpty $Middleware))
     {
         $Middleware = @($Middleware)
 
@@ -372,7 +372,7 @@ function Add-PodeRoute
     }
 
     # workout a default content type for the route
-    if ((Test-Empty $ContentType) -and !(Test-Empty $PodeContext.Server.Web)) {
+    if ((Test-IsEmpty $ContentType) -and !(Test-IsEmpty $PodeContext.Server.Web)) {
         $ContentType = $PodeContext.Server.Web.ContentType.Default
 
         # find type by pattern
@@ -380,7 +380,7 @@ function Add-PodeRoute
             $Route -imatch $_
         } | Select-Object -First 1)
 
-        if (!(Test-Empty $matched)) {
+        if (!(Test-IsEmpty $matched)) {
             $ContentType = $PodeContext.Server.Web.ContentType.Routes[$matched]
         }
     }
@@ -430,12 +430,12 @@ function Add-PodeStaticRoute
     $Route = Split-PodeRouteQuery -Route $Route
 
     # ensure route isn't empty
-    if (Test-Empty $Route) {
+    if (Test-IsEmpty $Route) {
         throw "No route supplied for $($HttpMethod) definition"
     }
 
     # if static, ensure the path exists at server root
-    if (Test-Empty $Source) {
+    if (Test-IsEmpty $Source) {
         throw "No path supplied for $($HttpMethod) definition"
     }
 
@@ -530,7 +530,7 @@ function Split-PodeRouteQuery
 
 function Get-PodeStaticRouteDefaults
 {
-    if (!(Test-Empty $PodeContext.Server.Web.Static.Defaults)) {
+    if (!(Test-IsEmpty $PodeContext.Server.Web.Static.Defaults)) {
         return @($PodeContext.Server.Web.Static.Defaults)
     }
 

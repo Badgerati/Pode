@@ -16,7 +16,7 @@ Endware in Pode allows you to observe the request/response objects at the very e
 The following example is `endware` that observes the content length of the response, as well as the status code, and records them in some custom data storage for later analysis:
 
 ```powershell
-Server {
+Start-PodeServer {
     endware {
         param($event)
 

@@ -636,7 +636,7 @@ function Get-PodeContentType
         '.yml' { return 'application/x-yaml' }
         '.z' { return 'application/x-compress' }
         '.zip' { return 'application/zip' }
-        default { return (iftet $DefaultIsNull $null 'text/plain') }
+        default { return (Resolve-PodeValue -Check $DefaultIsNull -TrueValue $null -FalseValue 'text/plain') }
     }
 }
 

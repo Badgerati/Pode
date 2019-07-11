@@ -13,7 +13,7 @@ If the task's result object is non-null, then a value is returned from the `awai
 The following example will wait on an async call for an `HttpListener`; on completion, the `HttpContext` is returned:
 
 ```powershell
-Server {
+Start-PodeServer {
     $context = (await $httpListener.GetContextAsync())
 }
 ```
@@ -23,7 +23,7 @@ Server {
 The following example will async write some bytes to a stream. Since the `WriteAsync` function doesn't return a value, then `await` also doesn't return anything:
 
 ```powershell
-Server {
+Start-PodeServer {
     await $stream.WriteAsync($bytes, 0, $bytes.Length)
 }
 ```

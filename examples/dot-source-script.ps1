@@ -5,8 +5,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # runs the logic once, then exits
-Server {
+Start-PodeServer {
 
-    load ./modules/script1.ps1
+    Use-PodeScript -Path './modules/script1.ps1'
 
 }

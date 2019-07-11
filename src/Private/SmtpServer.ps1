@@ -73,7 +73,7 @@ function Start-PodeSmtpServer
                 }
 
                 try {
-                    if (!(Test-Empty $msg)) {
+                    if (!(Test-IsEmpty $msg)) {
                         if ($msg.StartsWith('QUIT')) {
                             Write-PodeTcpClient -Message '221 Bye'
                             Close-PodeTcpConnection
@@ -117,7 +117,7 @@ function Start-PodeSmtpServer
                             $SmtpEvent.Body = (Get-PodeSmtpBody -Data $data -ContentType $SmtpEvent.ContentType -ContentEncoding $SmtpEvent.ContentEncoding)
 
                             # call user handlers for processing smtp data
-                            Invoke-ScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
+                            Invoke-PodeScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
 
                             # reset the to list
                             $rcpt_tos = @()
@@ -136,7 +136,7 @@ function Start-PodeSmtpServer
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # get an incoming request
-                $client = (await $Listener.AcceptTcpClientAsync())
+                $client = (Wait-PodeTask -Task $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
                 $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
@@ -154,7 +154,7 @@ function Start-PodeSmtpServer
                         'Lockable' = $PodeContext.Lockable
                     }
 
-                    Invoke-ScriptBlock -ScriptBlock $process
+                    Invoke-PodeScriptBlock -ScriptBlock $process
 
                     Close-PodeTcpConnection -Quit
                 }
@@ -252,7 +252,7 @@ function Get-PodeSmtpBody
     $body = ($dataSplit[($indexOfBlankLine + 1)..($indexOfLastDot - 2)] -join [System.Environment]::NewLine)
 
     # if there's no body, just return
-    if (($indexOfLastDot -eq -1) -or (Test-Empty $body)) {
+    if (($indexOfLastDot -eq -1) -or (Test-IsEmpty $body)) {
         return $body
     }
 

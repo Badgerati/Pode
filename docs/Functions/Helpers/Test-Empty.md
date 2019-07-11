@@ -1,8 +1,8 @@
-# Test-Empty
+# Test-IsEmpty
 
 ## Description
 
-The `Test-Empty` function will return whether the value supplied is either `empty`, `$null` or its length is zero.
+The `Test-IsEmpty` function will return whether the value supplied is either `empty`, `$null` or its length is zero.
 
 !!! tip
     The function supports virtually every type from `array` to `string`, even `scriptblock`.
@@ -17,8 +17,8 @@ The `Test-Empty` function will return whether the value supplied is either `empt
 The following example will return `$true` and run the logic because the `array` is empty:
 
 ```powershell
-Server {
-    if (Test-Empty @()) {
+Start-PodeServer {
+    if (Test-IsEmpty @()) {
         # logic
     }
 }
@@ -29,8 +29,8 @@ Server {
 The following example will return `$false` and not run the logic because the `string` is not empty:
 
 ```powershell
-Server {
-    if (Test-Empty 'contains a value') {
+Start-PodeServer {
+    if (Test-IsEmpty 'contains a value') {
         # logic
     }
 }
@@ -41,8 +41,8 @@ Server {
 The following example will return `$true` and run the logic because the `hashtable` is empty:
 
 ```powershell
-Server {
-    if (Test-Empty @{}) {
+Start-PodeServer {
+    if (Test-IsEmpty @{}) {
         # logic
     }
 }

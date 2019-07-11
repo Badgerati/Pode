@@ -23,7 +23,7 @@ You can either rate limit a specific IP address, a subnet mask, or for every add
 The following example will limit requests from localhost to 5 requests per second:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip '127.0.0.1' -l 5 -s 1
 }
 ```
@@ -31,7 +31,7 @@ Server {
 Whereas the following example will rate limit requests from a subnet. By default this will give each IP address governed by a subnet their own limit:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip '10.10.0.0/24' -l 5 -s 1
 }
 ```
@@ -39,7 +39,7 @@ Server {
 To treat all IP addresses governed by a subnet using the same shared limit, you can supply the `-group` flag:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip -g '10.10.0.0/24' -l 5 -s 1
 }
 ```
@@ -47,7 +47,7 @@ Server {
 To rate limit requests from multiple addresses in one line, the following example will work:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip @('192.168.1.1', '192.168.1.2') -l 10 -s 2
 }
 ```
@@ -55,7 +55,7 @@ Server {
 Finally, to rate limit requests from every address you can use the `all` keyword:
 
 ```powershell
-Server {
+Start-PodeServer {
     limit ip all -l 60 -s 10
 }
 ```
@@ -69,9 +69,9 @@ This also mean you can override the inbuilt rate limiting logic, with your own c
 The following example uses rate limiting, and defines `middleware` that will override the inbuilt limiting logic:
 
 ```powershell
-Server {
+Start-PodeServer {
     # attach to port 8080
-    listen *:8080 http
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # assign limiting to localhost
     limit ip @('127.0.0.1', '[::1]') -limit 10 -seconds 2

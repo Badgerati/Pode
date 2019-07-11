@@ -39,7 +39,7 @@ function Invoke-PodeMiddleware
             $WebEvent.Middleware = @{ 'Options' = $midware.Options }
 
             # invoke the middleware logic
-            $continue = Invoke-ScriptBlock -ScriptBlock $midware.Logic -Arguments $WebEvent -Return -Scoped
+            $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments $WebEvent -Return -Scoped
 
             # remove any custom middleware options
             $WebEvent.Middleware.Clear()

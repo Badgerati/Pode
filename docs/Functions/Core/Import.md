@@ -17,7 +17,7 @@ You can also use the `import` function to import multiple modules/scripts into r
 The following example will import the specified module file into each of the runspaces that Pode creates. This way you'll be able to use each of the functions declared within  the module in `routes`, `timers`, `schedules`, `loggers`, `handlers`, etc. (basically, everything):
 
 ```powershell
-server {
+Start-PodeServer {
     import './path/to/module.psm1'
 }
 ```
@@ -27,7 +27,7 @@ server {
 The following example will import the `EPS` module, for views, into each of the runspaces:
 
 ```powershell
-server {
+Start-PodeServer {
     import eps
 }
 ```
@@ -37,7 +37,7 @@ server {
 The following example will import the `WDeploySnapin3.0` snap-in into each of the runspaces:
 
 ```powershell
-server {
+Start-PodeServer {
     import -snapin 'WDeploySnapin3.0'
 }
 ```
@@ -47,7 +47,7 @@ server {
 The following example will import a script into each of the runspaces:
 
 ```powershell
-server {
+Start-PodeServer {
     import './path/to/script.ps1'
 }
 ```
@@ -57,7 +57,7 @@ server {
 The following example will import all modules (`*.psm1`) at the supplied path into each of the runspaces:
 
 ```powershell
-server {
+Start-PodeServer {
     import './path/*.psm1'
 }
 ```

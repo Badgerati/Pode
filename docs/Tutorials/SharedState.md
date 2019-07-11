@@ -21,11 +21,11 @@ The `Set-PodeState` function will create/update a variable on the shared state. 
 An example of setting a shared hashtable variable is as follows:
 
 ```powershell
-server {
+Start-PodeServer {
     timer 'do-something' 5 {
         param($e)
 
-        lock $e.Lockable {
+        Lock-PodeObject -Object $e.Lockable {
             Set-PodeState -Name 'data' -Value @{ 'Name' = 'Rick Sanchez' } | Out-Null
         }
     }
@@ -39,12 +39,12 @@ The `Get-PodeState` function will return the value currently stored on the share
 An example of retrieving the value from the shared state is as follows:
 
 ```powershell
-server {
+Start-PodeServer {
     timer 'do-something' 5 {
         param($e)
         $value = $null
 
-        lock $e.Lockable {
+        Lock-PodeObject -Object $e.Lockable {
             $value = (Get-PodeState -Name 'data')
         }
 
@@ -60,11 +60,11 @@ The `Remove-PodeState` function will remove a variable from the shared state. It
 An example of removing a variable from the shared state is as follows:
 
 ```powershell
-server {
+Start-PodeServer {
     timer 'do-something' 5 {
         param($e)
 
-        lock $e.Lockable {
+        Lock-PodeObject -Object $e.Lockable {
             Remove-PodeState -Name 'data' | Out-Null
         }
     }
@@ -78,9 +78,9 @@ The `Save-PodeState` function will save the current state, as JSON, to the speci
 An example of saving the current state every hour is as follows:
 
 ```powershell
-server {
+Start-PodeServer {
     schedule 'save-state' '@hourly' {
-        lock $lockable {
+        Lock-PodeObject -Object $lockable {
             Save-PodeState -Path './state.json'
         }
     }
@@ -94,7 +94,7 @@ The `Restore-PodeState` function will restore the current state from the specifi
 An example of restore the current state on server start is as follows:
 
 ```powershell
-server {
+Start-PodeServer {
     Restore-PodeState './state.json'
 }
 ```
@@ -104,8 +104,8 @@ server {
 The following is a full example of using the State functions. It is a simple Timer that creates and updates a `hashtable` variable, and then a Route is used to retrieve that variable. There is also another route that will remove the variable from the state. The state is also saved on every iteration of the timer, and restored on server start:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # create the shared variable
     Set-PodeState -Name 'hash' -Value @{ 'values' = @(); } | Out-Null
@@ -118,7 +118,7 @@ server {
         param($e)
 
         # ensure we're thread safe
-        lock $e.Lockable {
+        Lock-PodeObject -Object $e.Lockable {
 
             # attempt to get the hashtable from the state
             $hash = (Get-PodeState -Name 'hash')
@@ -136,7 +136,7 @@ server {
         param($e)
 
         # again, ensure we're thread safe
-        lock $e.Lockable {
+        Lock-PodeObject -Object $e.Lockable {
 
             # get the hashtable from the state and return it
             $hash = (Get-PodeState -Name 'hash')
@@ -149,7 +149,7 @@ server {
         param($e)
 
         # ensure we're thread safe
-        lock $e.Lockable {
+        Lock-PodeObject -Object $e.Lockable {
 
             # remove the hashtable from the state
             Remove-PodeState -Name 'hash' | Out-Null

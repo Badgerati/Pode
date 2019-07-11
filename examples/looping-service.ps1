@@ -5,7 +5,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start looping
-Server -Interval 3 {
+Start-PodeServer -Interval 3 {
 
     schedule 'date' '@minutely' {
         Write-Host ([DateTime]::Now.ToShortDateString())

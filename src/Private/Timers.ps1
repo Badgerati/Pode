@@ -44,7 +44,7 @@ function Start-PodeTimerRunspace
 
                 if ($run) {
                     try {
-                        Invoke-ScriptBlock -ScriptBlock $_.Script -Arguments @{ 'Lockable' = $PodeContext.Lockable } -Scoped
+                        Invoke-PodeScriptBlock -ScriptBlock $_.Script -Arguments @{ 'Lockable' = $PodeContext.Lockable } -Scoped
                     }
                     catch {
                         $Error[0]

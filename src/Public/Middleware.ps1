@@ -84,7 +84,7 @@ function Auth
     # for the 'use' action, ensure we have a validator. and a parser for custom types
     if ($Action -ieq 'use') {
         # was a validator passed
-        if (Test-Empty $Validator) {
+        if (Test-IsEmpty $Validator) {
             throw "Authentication method '$($Name)' is missing required Validator script"
         }
 
@@ -98,7 +98,7 @@ function Auth
         if ($Custom)
         {
             $typeDefined = (![string]::IsNullOrWhiteSpace($Type) -and $PodeContext.Server.Authentications.ContainsKey($Type))
-            if (!$typeDefined -and (Test-Empty $Parser)) {
+            if (!$typeDefined -and (Test-IsEmpty $Parser)) {
                 throw "Custom authentication method '$($Name)' is missing required Parser script"
             }
         }
@@ -223,22 +223,22 @@ function Session
     )
 
     # check that session logic hasn't already been defined
-    if (!(Test-Empty $PodeContext.Server.Cookies.Session)) {
+    if (!(Test-IsEmpty $PodeContext.Server.Cookies.Session)) {
         throw 'Session middleware has already been defined'
     }
 
     # ensure a secret was actually passed
-    if (Test-Empty $Options.Secret) {
+    if (Test-IsEmpty $Options.Secret) {
         throw 'A secret key is required for session cookies'
     }
 
     # ensure the override generator is a scriptblock
-    if (!(Test-Empty $Options.GenerateId) -and ($Options.GenerateId -isnot 'scriptblock')) {
+    if (!(Test-IsEmpty $Options.GenerateId) -and ($Options.GenerateId -isnot 'scriptblock')) {
         throw "Session GenerateId should be a ScriptBlock, but got: $((Get-PodeType $Options.GenerateId).Name)"
     }
 
     # ensure the override store has the required methods
-    if (!(Test-Empty $Options.Store)) {
+    if (!(Test-IsEmpty $Options.Store)) {
         $members = @($Options.Store | Get-Member | Select-Object -ExpandProperty Name)
         @('delete', 'get', 'set') | ForEach-Object {
             if ($members -inotcontains $_) {
@@ -257,16 +257,16 @@ function Session
     $store = $Options.Store
 
     # if no custom store, use the inmem one
-    if (Test-Empty $store) {
+    if (Test-IsEmpty $store) {
         $store = (Get-PodeSessionCookieInMemStore)
         Set-PodeSessionCookieInMemClearDown
     }
 
     # set options against server context
     $PodeContext.Server.Cookies.Session = @{
-        'Name' = (coalesce $Options.Name 'pode.sid');
+        'Name' = (Protect-PodeValue -Value $Options.Name -Default 'pode.sid');
         'SecretKey' = $Options.Secret;
-        'GenerateId' = (coalesce $Options.GenerateId { return (New-PodeGuid) });
+        'GenerateId' = (Protect-PodeValue -Value $Options.GenerateId -Default { return (New-PodeGuid) });
         'Store' = $store;
         'Info' = @{
             'Duration' = [int]($Options.Duration);
@@ -323,11 +323,11 @@ function Session
                 param($e)
 
                 # if auth is in use, then assign to session store
-                if (!(Test-Empty $e.Auth) -and $e.Auth.Store) {
+                if (!(Test-IsEmpty $e.Auth) -and $e.Auth.Store) {
                     $e.Session.Data.Auth = $e.Auth
                 }
 
-                Invoke-ScriptBlock -ScriptBlock $e.Session.Save -Arguments @($e.Session, $true) -Splat
+                Invoke-PodeScriptBlock -ScriptBlock $e.Session.Save -Arguments @($e.Session, $true) -Splat
             }
         }
         catch {

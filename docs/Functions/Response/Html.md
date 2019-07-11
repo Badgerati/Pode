@@ -11,8 +11,8 @@ The `html` function reads in an HTML file and then writes to content the web res
 The following example will write raw HTML data to a web response within a `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/info' {
         html '<html><head><title>Example</title></head><body>Hello, world!</body></html>'
@@ -25,8 +25,8 @@ Server {
 The following example will read in a file, and write the contents as HTML to a web response within a `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/data' {
         html -file './files/data.html'

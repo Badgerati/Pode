@@ -98,7 +98,7 @@ function Start-PodeLoggerRunspace
     $script = {
         # simple safegaurd function to set blank field to a dash(-)
         function sg($value) {
-            if (Test-Empty $value) {
+            if (Test-IsEmpty $value) {
                 return '-'
             }
 
@@ -126,7 +126,7 @@ function Start-PodeLoggerRunspace
             # safetly pop off the first log request from the array
             $r = $null
 
-            lock $PodeContext.RequestsToLog {
+            Lock-PodeObject -Object $PodeContext.RequestsToLog {
                 $r = $PodeContext.RequestsToLog[0]
                 $PodeContext.RequestsToLog.RemoveAt(0) | Out-Null
             }
@@ -147,7 +147,7 @@ function Start-PodeLoggerRunspace
                         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
                         # generate path to log path and date file
-                        if ($null -eq $details -or (Test-Empty $details.Path)) {
+                        if ($null -eq $details -or (Test-IsEmpty $details.Path)) {
                             $path = (Join-PodeServerRoot 'logs' "$($date).log" )
                         }
                         else {
@@ -170,7 +170,7 @@ function Start-PodeLoggerRunspace
                     }
 
                     { $_ -ilike 'custom_*' } {
-                        Invoke-ScriptBlock -ScriptBlock $PodeContext.Server.Logging.Methods[$_] -Arguments @{
+                        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logging.Methods[$_] -Arguments @{
                             'Log' = $r;
                             'Lockable' = $PodeContext.Lockable;
                         }

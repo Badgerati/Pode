@@ -5,18 +5,14 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8090
-Server {
+Start-PodeServer {
 
     # listen on localhost:8090
-    listen localhost:8090 http -n 'local1'
-    listen localhost:8091 http -n 'local2'
+    Add-PodeEndpoint -Address localhost:8090 -Protocol HTTP -Name 'local1'
+    Add-PodeEndpoint -Address localhost:8091 -Protocol HTTP -Name 'local2'
 
     # tell this server to run as a desktop gui
-    gui 'Pode Desktop Application' @{
-        Icon = '../images/icon.png'
-        ListenName = 'local2'
-        ResizeMode = 'NoResize'
-    }
+    Enable-PodeGui -Title 'Pode Desktop Application' -Icon '../images/icon.png' -EndpointName 'local2' -ResizeMode 'NoResize'
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

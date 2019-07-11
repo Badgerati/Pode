@@ -21,7 +21,7 @@ Each timer must have a `<name>`, an `<interval>`, and a `<scriptblock>` for the 
 To create a basic `timer`, the following example will work; this will loop every 5 seconds outputting the date/time:
 
 ```powershell
-Server {
+Start-PodeServer {
     timer 'date' 5 {
         Write-Host "$([DateTime]::Now)"
     }
@@ -35,7 +35,7 @@ The `-skip <int>` parameter will cause the `timer` to skip its first initial tri
 The following will create a `timer` that runs every 10 seconds, and skips the first 5 iterations:
 
 ```powershell
-Server {
+Start-PodeServer {
     timer 'date' 10 -skip 5 {
         Write-Host "$([DateTime]::Now)"
     }
@@ -52,7 +52,7 @@ Normally a `timer` will run forever, or at least until you terminate the server.
 The following will run every 20 seconds, and will only run 3 times:
 
 ```powershell
-Server {
+Start-PodeServer {
     timer 'date' 20 -limit 3 {
         Write-Host "$([DateTime]::Now)"
     }

@@ -13,7 +13,7 @@ Schedule triggers are defined using [`cron expressions`](../../../Tutorials/Misc
 The following example will create a `schedule` that triggers every Tuesday at midnight, but will only trigger 4 times:
 
 ```powershell
-Server {
+Start-PodeServer {
     schedule 'tuesdays' '0 0 * * TUE' -limit 4 {
         # logic
     }
@@ -25,7 +25,7 @@ Server {
 The following example will create a `schedule` that triggers every 5 past the hour, starting in 2hrs:
 
 ```powershell
-Server {
+Start-PodeServer {
     schedule 'hourly-start' '5 * * * *' -start ([DateTime]::Now.AddHours(2)) {
         # logic
     }
@@ -37,7 +37,7 @@ Server {
 The following example will create a `schedule` using a predefined cron to trigger every minute:
 
 ```powershell
-Server {
+Start-PodeServer {
     schedule 'minutely' '@minutely' {
         # logic
     }
@@ -49,7 +49,7 @@ Server {
 The following example will create a `schedule` using multiple predefined cron expressions to trigger every minute and every hour:
 
 ```powershell
-Server {
+Start-PodeServer {
     schedule 'minutely' @('@minutely', '@hourly') {
         # logic
     }

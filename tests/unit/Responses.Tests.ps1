@@ -385,7 +385,7 @@ Describe 'Use-PodePartialView' {
 
 Describe 'Close-PodeTcpConnection' {
     It 'Disposes a passes client' {
-        Mock Dispose { }
+        Mock Close-PodeDisposable { }
 
         try {
             $_client = New-Object System.IO.MemoryStream
@@ -395,11 +395,11 @@ Describe 'Close-PodeTcpConnection' {
             $_client.Dispose()
         }
 
-        Assert-MockCalled Dispose -Times 1 -Scope It
+        Assert-MockCalled Close-PodeDisposable -Times 1 -Scope It
     }
 
     It 'Disposes and Quits a passes client' {
-        Mock Dispose { }
+        Mock Close-PodeDisposable { }
         Mock Write-PodeTcpClient { }
 
         try {
@@ -412,11 +412,11 @@ Describe 'Close-PodeTcpConnection' {
         }
 
         Assert-MockCalled Write-PodeTcpClient -Times 1 -Scope It
-        Assert-MockCalled Dispose -Times 1 -Scope It
+        Assert-MockCalled Close-PodeDisposable -Times 1 -Scope It
     }
 
     It 'Disposes a stored client' {
-        Mock Dispose { }
+        Mock Close-PodeDisposable { }
 
         try {
             $TcpEvent = @{ 'Client' = New-Object System.IO.MemoryStream }
@@ -426,7 +426,7 @@ Describe 'Close-PodeTcpConnection' {
             $TcpEvent.Client.Dispose()
         }
 
-        Assert-MockCalled Dispose -Times 1 -Scope It
+        Assert-MockCalled Close-PodeDisposable -Times 1 -Scope It
     }
 }
 

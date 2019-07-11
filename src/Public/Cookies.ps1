@@ -83,7 +83,7 @@ function Set-PodeCookie
     $cookie.Discard = $Discard
     $cookie.HttpOnly = $HttpOnly
 
-    if (!(Test-Empty $ExpiryDate)) {
+    if (!(Test-IsEmpty $ExpiryDate)) {
         $cookie.Expires = $ExpiryDate
     }
     elseif ($Duration -gt 0) {
@@ -302,7 +302,7 @@ function Update-PodeCookieExpiry
     }
 
     # extends the expiry on the cookie
-    if (!(Test-Empty $ExpiryDate)) {
+    if (!(Test-IsEmpty $ExpiryDate)) {
         $cookie.Expires = $ExpiryDate
     }
     elseif ($Duration -gt 0) {

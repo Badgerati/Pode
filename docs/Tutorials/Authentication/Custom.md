@@ -8,19 +8,19 @@ To setup and start using Custom authentication in Pode you can set `auth use -c 
 
 Let's say we wanted something similar to [`Form`](../Form) authentication but it requires a third piece of information: `ClientName`. To setup Custom authentication for this method, you'll need to specify the parsing scriptblock under `-p`, as well as the validator script too.
 
-The parsing script will be passed the current web event (containing the `Request`/`Response` objects, much like a `route`). In this script you can parse the request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either a `hashtable` or an `array`; this data will then `splatted` onto the validator scriptblock ([info](../../../Functions/Helpers/Invoke-ScriptBlock)):
+The parsing script will be passed the current web event (containing the `Request`/`Response` objects, much like a `route`). In this script you can parse the request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either a `hashtable` or an `array`; this data will then `splatted` onto the validator scriptblock ([info](../../../Functions/Helpers/Invoke-PodeScriptBlock)):
 
 ```powershell
-Server {
+Start-PodeServer {
     # here we're calling the custom method "client"
     auth use -c client -p {
         # the current web event, and auth method options supplied
         param($event, $opts)
 
         # get client/user/pass field names to get from payload
-        $clientField = (coalesce $opts.ClientField 'client')
-        $userField = (coalesce $opts.UsernameField 'username')
-        $passField = (coalesce $opts.PasswordField 'password')
+        $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
+        $userField = (Protect-PodeValue -Value $opts.UsernameField -Default 'username')
+        $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/pass from the post data
         $client = $event.Data.$clientField
@@ -47,7 +47,7 @@ Once configured you can start using the Custom authentication to validate incomi
 The following will use Custom authentication to validate every request on every `route`:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware (auth check client)
 }
 ```
@@ -55,7 +55,7 @@ Server {
 Whereas the following example will use Custom authentication to only validate requests on specific a `route`:
 
 ```powershell
-Server {
+Start-PodeServer {
     route get '/info' (auth check client) {
         # logic
     }
@@ -67,8 +67,8 @@ Server {
 The following full example of Custom authentication will setup and configure authentication, validate that a users client/username/password is valid, and then validate on a specific `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # here we're calling the custom method "client"
     auth use -c client -p {
@@ -76,9 +76,9 @@ Server {
         param($event, $opts)
 
         # get client/user/pass field names to get from payload
-        $clientField = (coalesce $opts.ClientField 'client')
-        $userField = (coalesce $opts.UsernameField 'username')
-        $passField = (coalesce $opts.PasswordField 'password')
+        $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
+        $userField = (Protect-PodeValue -Value $opts.UsernameField -Default 'username')
+        $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/pass from the post data
         $client = $event.Data.$clientField

@@ -109,7 +109,7 @@ Describe 'Set-PodeSessionCookieDataHash' {
 }
 
 Describe 'New-PodeSessionCookie' {
-    Mock 'Invoke-ScriptBlock' { return 'value' }
+    Mock 'Invoke-PodeScriptBlock' { return 'value' }
 
     It 'Creates a new session object' {
         $PodeContext = @{

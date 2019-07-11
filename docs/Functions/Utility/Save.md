@@ -16,8 +16,8 @@ The `Name` supplied is used to retrieve the file's contents from the current web
 The following example saves an uploaded image from a `<form>`, called "`prof-pic`", to the server's root path:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route post '/signup' {
         save 'prof-pic'
@@ -30,8 +30,8 @@ Server {
 The following example saves an uploaded image from a `<form>`, called "`prof-pic`", to a custom path:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route post '/signup' {
         save 'prof-pic' 'e:/profiles/pictures'

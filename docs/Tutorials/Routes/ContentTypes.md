@@ -11,8 +11,8 @@ You can specify a content type to use per route by using the `-ContentType` para
 For example, if you have two routes you can force one to only parse JSON and the other XML as follows:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/api/json' -ctype 'application/json' {
         Write-PodeJsonResponse -Value @{}

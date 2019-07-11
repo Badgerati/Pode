@@ -14,7 +14,7 @@ The `server` function is the most important function throughout all of Pode, as 
 The following example will run the scriptblock once, printing out `Hello, world!`, and then exit:
 
 ```powershell
-server {
+Start-PodeServer {
     Write-Host 'Hello, world!'
 }
 ```
@@ -24,7 +24,7 @@ server {
 The following will start a server that repeats the scriptblock every 5 seconds:
 
 ```powershell
-server -Interval 5 {
+Start-PodeServer -Interval 5 {
     Write-Host 'Hey!'
 }
 ```
@@ -34,27 +34,17 @@ server -Interval 5 {
 The following server will accept web requests, and handle them across 2 threads rather than 1:
 
 ```powershell
-server -Thread 2 {
-    listen localhost:8080 http
+Start-PodeServer -Thread 2 {
+    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
 }
 ```
 
 ### Example 4
 
-The following server will restart when it detects a file has been changed. Ie, if you start the server and then alter a web page, or change a dot-sourced script, then the server will restart:
-
-```powershell
-server -FileMonitor {
-    # route logic
-}
-```
-
-### Example 5
-
 The following server will start-up in a serverless context - such as Lambda or Functions. When running in this context you need to supply the request data passed to your serverless script:
 
 ```powershell
-server -Request $TriggerMetaData -Type 'azure-functions' {
+Start-PodeServer -Request $TriggerMetaData -Type 'AzureFunctions' {
     # route logic
 }
 ```
@@ -68,7 +58,7 @@ server -Request $TriggerMetaData -Type 'azure-functions' {
 | Threads | int | false | Specifies the number of runspaces used to handle incoming requests | 1 |
 | RootPath | string | false | Specifies a custom root path for the server (can be literal or relative to the invocation path) | null |
 | Request | object | false | This is the request data that is required for running in serverless, such as the `$TriggerMetaData` from Azure Functions, or the `$LambdaInput` from AWS Lambda | null |
-| Type | string | false | The type of server to run, leave empty for normal functionality. (Values: Azure-Functions, Aws-Lambda) | empty |
+| Type | string | false | The type of server to run, leave empty for normal functionality. (Values: AzureFunctions, AwsLambda) | empty |
 | DisableTermination | switch | false | Toggles the ability to allow using `Ctrl+C` to terminate the server | false |
 | DisableLogging | switch | false | Toggles any logging that has been setup. When `true` all logging is disabled | false |
 | FileMonitor | switch | false | When passed, any file changes will cause the server to restart | false |

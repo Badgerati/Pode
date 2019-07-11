@@ -18,8 +18,8 @@ The TCP handler will have the TCP client itself passed to the handler's logic, t
 The following example will setup the inbuilt simple SMTP server, writing to the terminal the content of the email:
 
 ```powershell
-Server {
-    listen *:25 smtp
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:25 -Protocol SMTP
 
     handler smtp {
         param($email)
@@ -36,8 +36,8 @@ Server {
 The following example will setup a TCP server, having the TCP client passed to the handler's logic. It will read in a message from the stream, then write one back:
 
 ```powershell
-Server {
-    listen *:30 tcp
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:30 -Protocol TCP
 
     handler tcp {
         $msg = (tcp read)

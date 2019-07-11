@@ -8,7 +8,7 @@
 To use the Windows AD validator you supply the name `windows-ad` to the `auth` function's `-v` parameter. The following example will validate a user's credentials, supplied via a web-form against the default DNS domain defined in `$env:USERDNSDOMAIN`:
 
 ```powershell
-server {
+Start-PodeServer {
     auth use login -t form -v 'windows-ad'
 }
 ```
@@ -38,7 +38,7 @@ route get '/' (auth check login) {
 If you want to supply a custom DNS domain, then you can supply an `FQDN` in the options parameter of the `auth` function:
 
 ```powershell
-server {
+Start-PodeServer {
     auth use login -t form -v 'windows-ad' -o @{
         'fqdn' = 'test.example.com'
     }
@@ -50,7 +50,7 @@ server {
 You can supply a list of group names to validate that user's are a member of them in AD. If you supply multiple group names, the user only needs to be a of one of the groups. You can supply the list of groups to the `auth` function's options parameter as an array - the list is not case-sensitive:
 
 ```powershell
-server {
+Start-PodeServer {
     auth use login -t form -v 'windows-ad' -o @{
         'groups' = @('admins', 'devops')
     }
@@ -62,7 +62,7 @@ server {
 You can supply a list of authorised usernames to validate a user's access, after credentials are validated, and instead of of checking AD groups. You can supply the list of usernames to the `auth` function's options parameter as an array - the list is not case-sensitive:
 
 ```powershell
-server {
+Start-PodeServer {
     auth use login -t form -v 'windows-ad' -o @{
         'users' = @('jsnow', 'rsanchez')
     }
@@ -74,7 +74,7 @@ server {
 The inbuilt validator only supports Windows, but you can use libraries such as [Novell.Directory.Ldap.NETStandard](https://www.nuget.org/packages/Novell.Directory.Ldap.NETStandard/) with dotnet core on *nix environments:
 
 ```powershell
-server {
+Start-PodeServer {
     auth use login -t form -v {
         param ($username, $password)
 

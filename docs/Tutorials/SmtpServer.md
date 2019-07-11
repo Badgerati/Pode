@@ -7,8 +7,8 @@ Unlike with web servers that use the `route` function, SMTP servers use the [`ha
 To create a `handler` for the inbuilt SMTP server you can use the following example:
 
 ```powershell
-Server {
-    listen *:25 smtp
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:25 -Protocol SMTP
 
     handler smtp {
         param($email)

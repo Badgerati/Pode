@@ -27,8 +27,8 @@ The `Set-PodeResponseStatus` function allows you to set your own status code on 
 The following example will set the status code of the response to be `418`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/teapot' {
         Set-PodeResponseStatus -Code 418
@@ -39,8 +39,8 @@ Server {
 Where as this example will set the status code to `500` with a custom description, and the exception that caused the error:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     route get '/eek' {
         try {

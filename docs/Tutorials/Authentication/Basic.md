@@ -7,7 +7,7 @@ Basic authentication is when you pass an encoded `username:password` value on th
 To setup and start using Basic authentication in Pode you can call `auth use <name> -t basic` in your server script, the validator script you need to supply will have the username/password passed as arguments to the scriptblock:
 
 ```powershell
-Server {
+Start-PodeServer {
     auth use login -t basic -v {
         param($username, $password)
 
@@ -23,7 +23,7 @@ By default, Pode will check if the request's header contains an `Authorization` 
 For example, to use `ASCII` encoding rather than the default `ISO-8859-1` you could do:
 
 ```powershell
-Server {
+Start-PodeServer {
     auth use login -t basic -v {
         # check
     } -o @{ 'Encoding' = 'ASCII' }
@@ -39,7 +39,7 @@ Once configured you can start using Basic authentication to validate incoming re
 The following will use Basic authentication to validate every request on every `route`:
 
 ```powershell
-Server {
+Start-PodeServer {
     middleware (auth check login)
 }
 ```
@@ -47,7 +47,7 @@ Server {
 Whereas the following example will use Basic authentication to only validate requests on specific a `route`:
 
 ```powershell
-Server {
+Start-PodeServer {
     route get '/info' (auth check login) {
         # logic
     }
@@ -59,8 +59,8 @@ Server {
 The following full example of Basic authentication will setup and configure authentication, validate that a users username/password is valid, and then validate on a specific `route`:
 
 ```powershell
-Server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
 
     # setup basic authentication to validate a user
     auth use login -t basic -v {
