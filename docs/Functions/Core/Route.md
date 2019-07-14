@@ -22,9 +22,9 @@ The following example sets up a `GET /ping` route, that returns `{ "value": "pon
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
-    route get '/ping' {
+    Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 }
@@ -37,7 +37,7 @@ The following example sets up a `GET /ping` route, and the scriptblock to use is
 *server.ps1*
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     route get '/ping' -fp './routes/ping.ps1'
 }
@@ -56,9 +56,9 @@ The following example sets up a `GET /ping` route, and then removes it:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
-    route get '/ping' {
+    Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 
@@ -72,9 +72,9 @@ The following example sets up a `POST /users` route, that creates a new user usi
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
-    route post '/users' {
+    Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
         param($event)
 
         # create the user using POST data
@@ -95,11 +95,11 @@ The following example sets up a static route of `/assets` using the directory `.
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     route static '/assets' './content/assets'
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         view 'home'
     }
 }
@@ -114,7 +114,7 @@ The following example sets up a `GET /users/:userId` route, that returns a user 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     route get '/users/:userId'{
         param($event)
@@ -139,7 +139,7 @@ The following example sets up a `GET /` route, that has custom middleware to che
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     $agent_mid = {
         param($event)
@@ -169,13 +169,13 @@ The following example sets up two `GET /ping` routes: one that applies to only h
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
-    route get '/ping' {
+    Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 
-    route get '/ping' -protocol http {
+    route get '/ping' -Protocol Http {
         Write-PodeJsonResponse -Value @{ 'value' = 'pong' }
     }
 }
@@ -209,11 +209,11 @@ Start-PodeServer {
     listen pode.foo.com:8080 http -name 'pode1'
     listen pode.bar.com:8080 http -name 'pode2'
 
-    route get '/ping' -listenName 'pode1' {
+    Add-PodeRoute -Method Get -Path '/ping' -EndpointName 'pode1' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'ping' }
     }
 
-    route get '/ping' -listenName 'pode2' {
+    Add-PodeRoute -Method Get -Path '/ping' -EndpointName 'pode2' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'pong' }
     }
 }

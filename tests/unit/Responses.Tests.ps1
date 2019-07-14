@@ -120,7 +120,7 @@ Describe 'Move-PodeResponseUrl' {
                 'Response' = @{ 'StatusCode' = 0; 'StatusDescription' = ''; 'Headers' = @{} }
             }
 
-            Move-PodeResponseUrl -Port 80 -Protocol HTTP
+            Move-PodeResponseUrl -Port 80 -Protocol Http
 
             $WebEvent.Response.StatusCode | Should Be 302
             $WebEvent.Response.StatusDescription | Should Be 'Redirect'
@@ -146,7 +146,7 @@ Describe 'Move-PodeResponseUrl' {
                 'Response' = @{ 'StatusCode' = 0; 'StatusDescription' = ''; 'Headers' = @{} }
             }
 
-            Move-PodeResponseUrl -Port 0 -Protocol HTTP
+            Move-PodeResponseUrl -Port 0 -Protocol Http
 
             $WebEvent.Response.StatusCode | Should Be 302
             $WebEvent.Response.StatusDescription | Should Be 'Redirect'
@@ -159,7 +159,7 @@ Describe 'Move-PodeResponseUrl' {
                 'Response' = @{ 'StatusCode' = 0; 'StatusDescription' = ''; 'Headers' = @{} }
             }
 
-            Move-PodeResponseUrl -Port -10 -Protocol HTTP
+            Move-PodeResponseUrl -Port -10 -Protocol Http
 
             $WebEvent.Response.StatusCode | Should Be 302
             $WebEvent.Response.StatusDescription | Should Be 'Redirect'

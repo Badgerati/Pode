@@ -61,12 +61,12 @@ The following script would be a simple example of using Pode to aid with routing
 
 Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' {
     # get some user data
-    route get '/users' {
+    Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'Users' = @() }
     }
 
     # get some messages data
-    route get '/message' {
+    Add-PodeRoute -Method Get -Path '/message' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'UserId' = 123; 'Messages' = @() }
     }
 }
@@ -89,7 +89,7 @@ Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' -RootPath '/tmp/www' {
     Set-PodeViewEngine -Type Pode
 
     # get route for your 'index.pode' view
-    route get '/home' {
+    Add-PodeRoute -Method Get -Path '/home' -ScriptBlock {
         Write-PodeViewResponse -Path 'index'
     }
 }

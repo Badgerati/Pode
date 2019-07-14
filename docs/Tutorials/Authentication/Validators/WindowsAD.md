@@ -27,7 +27,7 @@ The User object returned, and accessible on `routes` and other functions via `$e
 Such as:
 
 ```powershell
-route get '/' (auth check login) {
+Add-PodeRoute -Method Get -Path '/info' -Middleware (auth check login) -ScriptBlock {
     param($e)
     Write-Host $e.Auth.User.Username
 }

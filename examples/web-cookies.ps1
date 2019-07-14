@@ -8,7 +8,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8090
-    Add-PodeEndpoint -Address localhost:8090 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8090 -Protocol Http
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type HTML
@@ -17,7 +17,7 @@ Start-PodeServer -Threads 2 {
     Set-PodeCookieSecret -Value 'pi' -Global
 
     # GET request to set/extend a cookie for the date of the request
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         $cookieName = 'current-date'
 
         if (Test-PodeCookie -Name $cookieName) {
@@ -32,12 +32,12 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to remove the date cookie
-    route get '/remove' {
+    Add-PodeRoute -Method Get -Path '/remove' -ScriptBlock {
         Remove-PodeCookie -Name 'current-date'
     }
 
     # GET request to check to signage of the date cookie
-    route get '/check' {
+    Add-PodeRoute -Method Get -Path '/check' -ScriptBlock {
         $cookieName = 'current-date'
 
         $s = Get-PodeCookieSecret -Global

@@ -12,13 +12,13 @@ To use `.pode` files for views, you will need to place them within the `/views` 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # set the engine to use and render Pode files
     Set-PodeViewEngine -Type Pode
 
     # render the index.pode in the /views directory
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'index'
     }
 }
@@ -47,13 +47,13 @@ For example, say you need to render a search page which is a list of accounts fi
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # set the engine to use and render .pode files
     Set-PodeViewEngine -Type Pode
 
     # render the search.pode view
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($event)
 
         # some logic to get accounts

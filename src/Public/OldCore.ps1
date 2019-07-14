@@ -143,10 +143,10 @@ function Middleware
 
     # if route is empty, set it to root
     $Route = Protect-PodeValue -Value $Route -Default '/'
-    $Route = Split-PodeRouteQuery -Route $Route
+    $Route = Split-PodeRouteQuery -Path $Route
     $Route = Protect-PodeValue -Value $Route -Default '/'
-    $Route = Update-PodeRouteSlashes -Route $Route
-    $Route = Update-PodeRoutePlaceholders -Route $Route
+    $Route = Update-PodeRouteSlashes -Path $Route
+    $Route = Update-PodeRoutePlaceholders -Path $Route
 
     # create the middleware hash, or re-use a passed one
     if (Test-IsEmpty $HashTable)
@@ -178,125 +178,6 @@ function Middleware
     }
     else {
         $PodeContext.Server.Middleware += $HashTable
-    }
-}
-
-function Route
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
-        [Alias('hm')]
-        [string]
-        $HttpMethod,
-
-        [Parameter(Mandatory=$true)]
-        [Alias('r')]
-        [string]
-        $Route,
-
-        [Parameter()]
-        [Alias('m')]
-        [object[]]
-        $Middleware,
-
-        [Parameter()]
-        [Alias('s')]
-        [scriptblock]
-        $ScriptBlock,
-
-        [Parameter()]
-        [Alias('d')]
-        [string[]]
-        $Defaults,
-
-        [Parameter()]
-        [ValidateSet('', 'HTTP', 'HTTPS')]
-        [Alias('p')]
-        [string]
-        $Protocol,
-
-        [Parameter()]
-        [Alias('e')]
-        [string]
-        $Endpoint,
-
-        [Parameter()]
-        [Alias('ln', 'lid')]
-        [string]
-        $ListenName,
-
-        [Parameter()]
-        [Alias('ctype', 'ct')]
-        [string]
-        $ContentType,
-
-        [Parameter()]
-        [Alias('etype', 'et')]
-        [string]
-        $ErrorType,
-
-        [Parameter()]
-        [Alias('fp')]
-        [string]
-        $FilePath,
-
-        [switch]
-        [Alias('rm')]
-        $Remove,
-
-        [switch]
-        [Alias('do')]
-        $DownloadOnly
-    )
-
-    # uppercase the method
-    $HttpMethod = $HttpMethod.ToUpperInvariant()
-
-    # if a ListenName was supplied, find it and use it
-    if (!(Test-IsEmpty $ListenName)) {
-        # ensure it exists
-        $found = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $ListenName } | Select-Object -First 1)
-        if ($null -eq $found) {
-            throw "Listen endpoint with name '$($ListenName)' does not exist"
-        }
-
-        # override and set the protocol and endpoint
-        $Protocol = $found.Protocol
-        $Endpoint = $found.RawAddress
-    }
-
-    # if an endpoint was supplied (or used from a listen name), set any appropriate wildcards
-    if (!(Test-IsEmpty $Endpoint)) {
-        $_endpoint = Get-PodeEndpointInfo -Endpoint $Endpoint -AnyPortOnZero
-        $Endpoint = "$($_endpoint.Host):$($_endpoint.Port)"
-    }
-
-    # are we removing the route's logic?
-    if ($Remove) {
-        Remove-PodeRoute -HttpMethod $HttpMethod -Route $Route -Protocol $Protocol -Endpoint $Endpoint
-        return
-    }
-
-    # add a new dynamic or static route
-    if ($HttpMethod -ieq 'static') {
-        Add-PodeStaticRoute -Route $Route -Source ([string](@($Middleware))[0]) -Protocol $Protocol `
-            -Endpoint $Endpoint -Defaults $Defaults -DownloadOnly:$DownloadOnly
-    }
-    else {
-        # error if defaults are defined
-        if ((Get-PodeCount $Defaults) -gt 0) {
-            throw "[$($HttpMethod)] $($Route) has default static files defined, which is only for [STATIC] routes"
-        }
-
-        # error if download only passed
-        if ($DownloadOnly) {
-            throw "[$($HttpMethod)] $($Route) is flagged as DownloadOnly, which is only for [STATIC] routes"
-        }
-
-        # add the route
-        Add-PodeRoute -HttpMethod $HttpMethod -Route $Route -Middleware $Middleware -ScriptBlock $ScriptBlock `
-            -Protocol $Protocol -Endpoint $Endpoint -ContentType $ContentType -ErrorType $ErrorType -FilePath $FilePath
     }
 }
 

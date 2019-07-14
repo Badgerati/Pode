@@ -18,7 +18,7 @@ take you back to the login page.
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8085 -Protocol Http
 
     # set the view engine
     Set-PodeViewEngine -Type Pode
@@ -48,7 +48,8 @@ Start-PodeServer -Threads 2 {
 
     # home page:
     # redirects to login page if not authenticated
-    route 'get' '/' (auth check login -o @{ 'failureUrl' = '/login' }) {
+    $auth_check = (auth check login -o @{ 'failureUrl' = '/login' })
+    Add-PodeRoute -Method Get -Path '/' -Middleware $auth_check -ScriptBlock {
         param($e)
 
         $e.Session.Data.Views++
@@ -63,26 +64,26 @@ Start-PodeServer -Threads 2 {
     # the login flag set below checks if there is already an authenticated session cookie. If there is, then
     # the user is redirected to the home page. If there is no session then the login page will load without
     # checking user authetication (to prevent a 401 status)
-    route 'get' '/login' (auth check login -o @{ 'login' = $true; 'successUrl' = '/' }) {
-        param($e)
+    $auth_login = (auth check login -o @{ 'login' = $true; 'successUrl' = '/' })
+    Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
         Write-PodeViewResponse -Path 'auth-login' -FlashMessages
     }
 
     # login check:
     # this is the endpoint the <form>'s action will invoke. If the user validates then they are set against
     # the session as authenticated, and redirect to the home page. If they fail, then the login page reloads
-    route 'post' '/login' (auth check login -o @{
+    Add-PodeRoute -Method Post -Path '/login' -Middleware (auth check login -o @{
         'failureUrl' = '/login';
         'successUrl' = '/';
         'failureFlash' = $true;
-    }) {}
+    }) -ScriptBlock {}
 
     # logout check:
     # when the logout button is click, this endpoint is invoked. The logout flag set below informs this call
     # to purge the currently authenticated session, and then redirect back to the login page
-    route 'post' '/logout' (auth check login -o @{
+    Add-PodeRoute -Method Post -Path '/logout' -Middleware (auth check login -o @{
         'logout' = $true;
         'failureUrl' = '/login';
-    }) {}
+    }) -ScriptBlock {}
 
 }

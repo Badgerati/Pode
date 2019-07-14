@@ -13,8 +13,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 -Browse {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address localhost:$Port -Protocol HTTP
-    Add-PodeEndpoint -Address localhost:8090 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:$Port -Protocol Http
+    Add-PodeEndpoint -Address localhost:8090 -Protocol Http
 
     # limit ip @('127.0.0.1', '[::1]') 5 10
 
@@ -34,22 +34,22 @@ Start-PodeServer -Threads 2 -Browse {
     Set-PodeViewEngine -Type Pode
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
-    route 'get' '/error' {
+    Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
         Set-PodeResponseStatus -Code 500
     }
 
     # GET request to page that merely redirects to google
-    route 'get' '/redirect' {
+    Add-PodeRoute -Method Get -Path '/redirect' -ScriptBlock {
         Move-PodeResponseUrl -Url 'https://google.com'
     }
 
     # GET request that redirects to same host, just different port
-    route 'get' '/redirect-port' {
+    Add-PodeRoute -Method Get -Path '/redirect-port' -ScriptBlock {
         param($event)
         if ($event.Request.Url.Port -ne 8086) {
             Move-PodeResponseUrl -Port 8086
@@ -60,25 +60,25 @@ Start-PodeServer -Threads 2 -Browse {
     }
 
     # GET request to download a file
-    route 'get' '/download' {
+    Add-PodeRoute -Method Get -Path '/download' -ScriptBlock {
         Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
     # GET request with parameters
-    route 'get' '/:userId/details' {
+    Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
         param($event)
         Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
     }
 
     # ALL request, that supports every method and it a default drop route
-    route * '/all' {
+    Add-PodeRoute -Method * -Path '/all' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every http method' }
     }
 
-    route get '/api/*/hello' {
+    Add-PodeRoute -Method Get -Path '/api/*/hello' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every hello route' }
     }
 
-    route get '/script' -fp './modules/route_script.ps1'
+    Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/route_script.ps1'
 
 }

@@ -8,7 +8,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8085 -Protocol Http
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
@@ -25,7 +25,7 @@ Start-PodeServer {
     })
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($s)
         $s.Session.Data.Views++
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @($s.Session.Data.Views); }

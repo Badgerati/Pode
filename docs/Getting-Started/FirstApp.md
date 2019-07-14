@@ -42,7 +42,7 @@ Start-PodeServer {
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
 }
 ```
 
@@ -50,9 +50,9 @@ Start-PodeServer {
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'Hello, world!' }
     }
 }

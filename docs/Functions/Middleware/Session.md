@@ -60,14 +60,14 @@ The following example sets up basic `session` middleware, and defines a `route` 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     middleware (session @{
         'Secret' = 'schwifty';
         'Duration' = 300;
     })
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         $param($s)
         $s.Session.Data.Views++
         Write-PodeJsonResponse -Value @{ 'Views' = $s.Session.Data.Views }

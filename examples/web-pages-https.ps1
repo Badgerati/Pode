@@ -25,13 +25,13 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # GET request for web page at "/"
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($session)
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
-    route 'get' '/error' {
+    Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
         param($session)
         Set-PodeResponseStatus -Code 500
     }

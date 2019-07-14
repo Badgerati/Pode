@@ -30,7 +30,6 @@
 
     # Functions to export from this Module
     FunctionsToExport = @(
-        'Route',
         'Handler',
         'Timer',
         'Logger',
@@ -109,6 +108,14 @@
         'Test-IsWindows',
         'Test-IsPSCore',
         'Test-IsEmpty',
+
+        # routes
+        'Add-PodeRoute',
+        'Add-PodeStaticRoute',
+        'Remove-PodeRoute',
+        'Remove-PodeStaticRoute',
+        'Clear-PodeRoutes',
+        'Clear-PodeStaticRoutes',
 
         # core
         'Start-PodeServer',

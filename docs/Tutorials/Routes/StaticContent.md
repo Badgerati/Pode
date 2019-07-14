@@ -10,8 +10,8 @@ The following is an example of using the `route` function to define routes to st
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
-    route static '/assets' './content/assets'
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeStaticRoute -Path '/assets' -Source './content/assets'
 }
 ```
 
@@ -42,7 +42,7 @@ The default pages can be configured in two ways; either by using the `-Defaults`
 
 *Defaults Parameter*
 ```powershell
-route static '/assets' './content/assets' -d @('home.html')
+Add-PodeStaticRoute -Path '/assets' -Source './content/assets' -Defaults @('index.html')
 ```
 
 *Configuration File*
@@ -97,8 +97,8 @@ Normally content accessed on a static route is rendered on the browser, but you 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
-    route static '/assets' './content/assets' -do
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeStaticRoute -Path '/assets' -Source './content/assets' -DownloadOnly
 }
 ```
 

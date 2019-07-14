@@ -17,7 +17,7 @@ The following example will listen on every IP over port 8080 for HTTP requests:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 }
 ```
 

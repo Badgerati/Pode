@@ -13,7 +13,7 @@ If you were to use `EPS` engine, and already have the module installed, then the
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # import the EPS module into the runspaces
     Import-PodeModule -Name EPS
@@ -32,7 +32,7 @@ Start-PodeServer {
     }
 
     # render the index.eps view
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'index'
     }
 }
@@ -54,7 +54,7 @@ If you were to use `PSHTML` engine, and already have the module installed, then 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # import the PSHTML module into the runspaces
     Import-PodeModule -Name PSHTML
@@ -67,7 +67,7 @@ Start-PodeServer {
     }
 
     # render the index.eps view
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'index'
     }
 }

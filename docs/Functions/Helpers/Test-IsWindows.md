@@ -12,9 +12,9 @@ The following example will return whether the current environment is Windows:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
-    route get '/env' {
+    Add-PodeRoute -Method Get -Path '/env' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'Windows' = (Test-IsWindows) }
     }
 }

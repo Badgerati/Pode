@@ -12,7 +12,7 @@ The following example will write some plain text to the response stream:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     route get '/message' {
         text 'I love you 3000'
@@ -26,7 +26,7 @@ The following example will write a JSON value to the response stream:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     route get '/user' {
         text '{"name": "rick"}' -ctype 'application/json'

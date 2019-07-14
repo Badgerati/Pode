@@ -21,7 +21,7 @@ $c = cookie set 'date' ([datetime]::UtcNow)
 The following example will add a signed cookie to the response, and then in a route retrieve it:
 
 ```powershell
-route get '/' {
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
     cookie set 'username' 'great.scott' -s 'secret-key' | Out-Null
 }
 

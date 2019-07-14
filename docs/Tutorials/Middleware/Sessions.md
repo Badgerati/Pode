@@ -68,7 +68,7 @@ An example of using sessions in a `route` to increment a views counter could be 
 Start-PodeServer {
     middleware (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
 
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($s)
         $s.Session.Data.Views++
         Write-PodeJsonResponse -Value @{ 'Views' = $s.Session.Data.Views }

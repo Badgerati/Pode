@@ -105,7 +105,7 @@ The following is a full example of using the State functions. It is a simple Tim
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # create the shared variable
     Set-PodeState -Name 'hash' -Value @{ 'values' = @(); } | Out-Null
@@ -132,7 +132,7 @@ Start-PodeServer {
     }
 
     # route to return the value of the hashtable from shared state
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($e)
 
         # again, ensure we're thread safe
@@ -145,7 +145,7 @@ Start-PodeServer {
     }
 
     # route to remove the hashtable from shared state
-    route delete '/' {
+    Add-PodeRoute -Method Delete -Path '/' -ScriptBlock {
         param($e)
 
         # ensure we're thread safe

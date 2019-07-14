@@ -67,18 +67,18 @@ $endpoint = '/api/MyFunc'
 
 Start-PodeServer -Request $TriggerMetadata -Type 'AzureFunctions' {
     # get route that can return data
-    route get $endpoint {
+    Add-PodeRoute -Method Get -Path $endpoint -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'Data' = 'some random data' }
     }
 
     # post route to create some data
-    route post $endpoint {
+    Add-PodeRoute -Method Post -Path $endpoint -ScriptBlock {
         param($e)
         New-Thing -Name $e.Data['Name']
     }
 
     # put route to update some data
-    route put $endpoint {
+    Add-PodeRoute -Method Put -Path $endpoint -ScriptBlock {
         param($e)
         Update-Thing -Name $e.Data['Name']
     }
@@ -100,7 +100,7 @@ Start-PodeServer -Request $TriggerMetadata -Type 'AzureFunctions' -RootPath '../
     Set-PodeViewEngine -Type Pode
 
     # get route for your 'index.pode' view
-    route get $endpoint {
+    Add-PodeRoute -Method Get -Path $endpoint -ScriptBlock {
         Write-PodeViewResponse -Path 'index'
     }
 }

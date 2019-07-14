@@ -8,7 +8,7 @@ To create a custom logger you need to supply a scriptblock to the `logger` funct
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     logger -c terminal {
         param($event)

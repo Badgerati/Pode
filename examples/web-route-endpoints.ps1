@@ -8,30 +8,30 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # listen on localhost:8080
-    Add-PodeEndpoint -Address 127.0.0.1:8080 -Protocol HTTP
-    Add-PodeEndpoint -Address 127.0.0.2:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address 127.0.0.1:8080 -Protocol Http
+    Add-PodeEndpoint -Address 127.0.0.2:8080 -Protocol Http
 
     # set view engine to pode
     Set-PodeViewEngine -Type Pode
 
     # GET request for web page
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request to download a file
-    route get '/download' {
+    Add-PodeRoute -Method Get -Path '/download' -ScriptBlock {
         Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
     # GET request with parameters
-    route get '/:userId/details' {
+    Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
         param($event)
         Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
     }
 
     # ALL requests for 127.0.0.2 to 127.0.0.1
-    route * * -endpoint 127.0.0.2 {
+    Add-PodeRoute -Method * -Path * -Endpoint 127.0.0.2 -ScriptBlock {
         Move-PodeResponseUrl -Domain 127.0.0.1
     }
 
