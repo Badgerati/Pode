@@ -48,7 +48,7 @@ function Add-PodeRoute
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw "[$($Method)]: No Path path supplied for Route"
+        throw "[$($Method)]: No Path supplied for Route"
     }
 
     # ensure the route has appropriate slashes

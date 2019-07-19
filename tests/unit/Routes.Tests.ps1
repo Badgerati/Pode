@@ -188,401 +188,395 @@ Describe 'Remove-PodeRoute' {
     }
 }
 
-Describe 'Route' {
-    Context 'Invalid parameters supplied' {
-        It 'Throws invalid method error for no method' {
-            { Route -Method 'MOO' -Route '/' -ScriptBlock {} } | Should Throw "Cannot validate argument on parameter 'HttpMethod'"
-        }
-
-        It 'Throws null route parameter error' {
-            { Route -Method GET -Route $null -ScriptBlock {} } | Should Throw 'it is an empty string'
-        }
-
-        It 'Throws empty route parameter error' {
-            { Route -Method GET -Route ([string]::Empty) -ScriptBlock {} } | Should Throw 'it is an empty string'
-        }
-
-        It 'Throws null logic and middleware error' {
-            { Route -Method GET -Route '/' -Middleware $null -ScriptBlock $null } | Should Throw 'no scriptblock defined'
-        }
-
-        It 'Throws error when scriptblock and file path supplied' {
-            { Route -Method GET -Route '/' -ScriptBlock { write-host 'hi' } -FilePath './path' } | Should Throw 'has both a scriptblock and a filepath'
-        }
-
-        It 'Throws error when file path is a directory' {
-            Mock Test-PodePath { return $true }
-            { Route -Method GET -Route '/' -FilePath './path' } | Should Throw 'cannot have a wildcard or directory'
-        }
-
-        It 'Throws error when file path is a wildcard' {
-            Mock Test-PodePath { return $true }
-            { Route -Method GET -Route '/' -FilePath './path/*' } | Should Throw 'cannot have a wildcard or directory'
-        }
+Describe 'Add-PodeRoute' {
+    It 'Throws invalid method error for no method' {
+        { Add-PodeRoute -Method 'MOO' -Path '/' -ScriptBlock {} } | Should Throw "Cannot validate argument on parameter 'Method'"
     }
 
-    Context 'Valid route parameters' {
-        It 'Throws error because only querystring has been given' {
-            { Route -Method GET -Route "?k=v" {} } | Should Throw "No route path supplied"
+    It 'Throws null route parameter error' {
+        { Add-PodeRoute -Method GET -Path $null -ScriptBlock {} } | Should Throw 'it is an empty string'
+    }
+
+    It 'Throws empty route parameter error' {
+        { Add-PodeRoute -Method GET -Path ([string]::Empty) -ScriptBlock {} } | Should Throw 'it is an empty string'
+    }
+
+    It 'Throws null logic and middleware error' {
+        { Add-PodeRoute -Method GET -Path '/' -Middleware $null -ScriptBlock $null } | Should Throw 'because it is null'
+    }
+
+    It 'Throws error when scriptblock and file path supplied' {
+        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } -FilePath './path' } | Should Throw 'parameter set cannot be resolved'
+    }
+
+    It 'Throws error when file path is a directory' {
+        Mock Test-PodePath { return $true }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{} } }
+        { Add-PodeRoute -Method GET -Path '/' -FilePath './path' } | Should Throw 'cannot be a wildcard or directory'
+    }
+
+    It 'Throws error when file path is a wildcard' {
+        Mock Test-PodePath { return $true }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{} } }
+        { Add-PodeRoute -Method GET -Path '/' -FilePath './path/*' } | Should Throw 'cannot be a wildcard or directory'
+    }
+
+    It 'Throws error because no scriptblock supplied' {
+        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock {} } | Should Throw "No logic passed"
+    }
+
+    It 'Throws error because only querystring has been given' {
+        { Add-PodeRoute -Method GET -Path "?k=v" -ScriptBlock { write-host 'hi' } } | Should Throw "No path supplied"
+    }
+
+    It 'Throws error because route already exists' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
+            @{'Protocol' = ''; 'Endpoint' = ''}
+        ); }; }; }
+
+        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } } | Should Throw 'already defined'
+    }
+
+    It 'Throws error because route and protocol already exists' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
+            @{'Protocol' = ''; 'Endpoint' = ''}
+            @{'Protocol' = 'http'; 'Endpoint' = ''}
+        ); }; }; }
+
+        { Add-PodeRoute -Method GET -Path '/' -Protocol 'http' -ScriptBlock { write-host 'hi' } } | Should Throw 'already defined for'
+    }
+
+    It 'Throws error because route and endpoint already exists' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
+            @{'Protocol' = ''; 'Endpoint' = ''}
+            @{'Protocol' = ''; 'Endpoint' = 'pode.foo.com:*'}
+        ); }; }; }
+
+        { Add-PodeRoute -Method GET -Path '/' -Endpoint 'pode.foo.com' -ScriptBlock { write-host 'hi' } } | Should Throw 'already defined for'
+    }
+
+    It 'Throws error because route, endpoint and protocol already exists' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
+            @{'Protocol' = ''; 'Endpoint' = ''}
+            @{'Protocol' = ''; 'Endpoint' = 'pode.foo.com:*'}
+            @{'Protocol' = 'https'; 'Endpoint' = 'pode.foo.com:*'}
+        ); }; }; }
+
+        { Add-PodeRoute -Method GET -Path '/' -Protocol 'https' -Endpoint 'pode.foo.com' -ScriptBlock {} } | Should Throw 'already defined for'
+    }
+
+    It 'Throws error on GET route for endpoint name not existing' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        { Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -EndpointName 'test' } | Should Throw 'does not exist'
+    }
+
+    It 'Adds route with simple url' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' }
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].ContentType | Should Be ([string]::Empty)
+    }
+
+    It 'Adds route with simple url and scriptblock from file path' {
+        Mock Test-PodePath { return $true }
+        Mock Use-PodeScript { return { Write-Host 'bye' } }
+
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -FilePath './path/route.ps1'
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'bye' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].ContentType | Should Be ([string]::Empty)
+    }
+
+    Mock Test-PodePath { return $false }
+
+    It 'Adds route with simple url with content type' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ContentType 'application/json' -ScriptBlock { Write-Host 'hello' }
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].ContentType | Should Be 'application/json'
+    }
+
+    It 'Adds route with simple url with default content type' {
+        $PodeContext.Server = @{
+            'Routes' = @{ 'GET' = @{}; };
+            'Web' = @{ 'ContentType' = @{
+                'Default' = 'text/xml';
+                'Routes' = @{};
+            } };
         }
 
-        It 'Throws error because route already exists' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
-                @{'Protocol' = ''; 'Endpoint' = ''}
-            ); }; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' }
 
-            { Route -Method GET -Route '/' {} } | Should Throw 'already defined'
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].ContentType | Should Be 'text/xml'
+    }
+
+    It 'Adds route with simple url with route pattern content type' {
+        $PodeContext.Server = @{
+            'Routes' = @{ 'GET' = @{}; };
+            'Web' = @{ 'ContentType' = @{
+                'Default' = 'text/xml';
+                'Routes' = @{ '/users' = 'text/plain' };
+            } };
         }
 
-        It 'Throws error because route and protocol already exists' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
-                @{'Protocol' = ''; 'Endpoint' = ''}
-                @{'Protocol' = 'http'; 'Endpoint' = ''}
-            ); }; }; }
-
-            { Route -Method GET -Route '/' -Protocol 'http' {} } | Should Throw 'already defined for'
-        }
-
-        It 'Throws error because route and endpoint already exists' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
-                @{'Protocol' = ''; 'Endpoint' = ''}
-                @{'Protocol' = ''; 'Endpoint' = 'pode.foo.com:*'}
-            ); }; }; }
-
-            { Route -Method GET -Route '/' -Endpoint 'pode.foo.com' {} } | Should Throw 'already defined for'
-        }
-
-        It 'Throws error because route, endpoint and protocol already exists' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
-                @{'Protocol' = ''; 'Endpoint' = ''}
-                @{'Protocol' = ''; 'Endpoint' = 'pode.foo.com:*'}
-                @{'Protocol' = 'https'; 'Endpoint' = 'pode.foo.com:*'}
-            ); }; }; }
-
-            { Route -Method GET -Route '/' -Protocol 'https' -Endpoint 'pode.foo.com' {} } | Should Throw 'already defined for'
-        }
-
-        It 'Throws error when setting defaults on GET route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            { Route -Method GET -Route '/users' { Write-Host 'hello' } -Defaults @('index.html') } | Should Throw 'default static files defined'
-        }
-
-        It 'Throws error when setting DownloadOnly on GET route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            { Route -Method GET -Route '/users' { Write-Host 'hello' } -DownloadOnly } | Should Throw 'flagged as DownloadOnly'
-        }
-
-        It 'Throws error on GET route for endpoint name not existing' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            { Route -Method GET -Route '/users' { Write-Host 'hello' } -EndpointName 'test' } | Should Throw 'does not exist'
-        }
-
-        It 'Adds route with simple url' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' { Write-Host 'hello' }
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].ContentType | Should Be ([string]::Empty)
-        }
-
-        It 'Adds route with simple url and scriptblock from file path' {
-            Mock Test-PodePath { return $true }
-            Mock Use-PodeScript { return { Write-Host 'bye' } }
-
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' -FilePath './path/route.ps1'
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'bye' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].ContentType | Should Be ([string]::Empty)
-        }
-
-        Mock Test-PodePath { return $false }
-
-        It 'Adds route with simple url with content type' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' -ContentType 'application/json' { Write-Host 'hello' }
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].ContentType | Should Be 'application/json'
-        }
-
-        It 'Adds route with simple url with default content type' {
-            $PodeContext.Server = @{
-                'Routes' = @{ 'GET' = @{}; };
-                'Web' = @{ 'ContentType' = @{
-                    'Default' = 'text/xml';
-                    'Routes' = @{};
-                } };
-            }
-
-            Route -Method GET -Route '/users' { Write-Host 'hello' }
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].ContentType | Should Be 'text/xml'
-        }
-
-        It 'Adds route with simple url with route pattern content type' {
-            $PodeContext.Server = @{
-                'Routes' = @{ 'GET' = @{}; };
-                'Web' = @{ 'ContentType' = @{
-                    'Default' = 'text/xml';
-                    'Routes' = @{ '/users' = 'text/plain' };
-                } };
-            }
-
-            Route -Method GET -Route '/users' { Write-Host 'hello' }
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].ContentType | Should Be 'text/plain'
-        }
-
-        It 'Adds route with full endpoint' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' { Write-Host 'hello' } -Endpoint 'pode.foo.com:8080'
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].Endpoint | Should Be 'pode.foo.com:8080'
-        }
-
-        It 'Adds route with wildcard host endpoint' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' { Write-Host 'hello' } -Endpoint '8080'
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].Endpoint | Should Be '*:8080'
-        }
-
-        It 'Adds route with wildcard port endpoint' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' { Write-Host 'hello' } -Endpoint 'pode.foo.com'
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].Endpoint | Should Be 'pode.foo.com:*'
-        }
-
-        It 'Adds route with http protocol' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' { Write-Host 'hello' } -Protocol 'http'
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-            $routes.ContainsKey('/users') | Should Be $true
-            $routes['/users'] | Should Not Be $null
-            $routes['/users'].Length | Should Be 1
-            $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $routes['/users'][0].Middleware | Should Be $null
-            $routes['/users'][0].Protocol | Should Be 'http'
-        }
-
-        It 'Throws error when adding static route under get method' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'Root' = $pwd }
-            { Route -Method GET -Route '/assets' -Middleware './assets' } | Should Throw 'invalid type'
-        }
-
-        It 'Adds route with middleware supplied as scriptblock and no logic' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' ({ Write-Host 'middle' }) -ScriptBlock $null
-
-            $route = $PodeContext.Server.Routes['get']
-            $route | Should Not be $null
-
-            $route = $route['/users']
-            $route | Should Not Be $null
-
-            $route.Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
-            $route.Middleware | Should Be $null
-        }
-
-        It 'Adds route with middleware supplied as hashtable with null logic' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            { Route -Method GET -Route '/users' (@{ 'Logic' = $null }) -ScriptBlock {} } | Should Throw 'no logic defined'
-        }
-
-        It 'Adds route with middleware supplied as hashtable with invalid type logic' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            { Route -Method GET -Route '/users' (@{ 'Logic' = 74 }) -ScriptBlock {} } | Should Throw 'invalid logic type'
-        }
-
-        It 'Adds route with invalid middleware type' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            { Route -Method GET -Route '/users' 74 -ScriptBlock {} } | Should Throw 'invalid type'
-        }
-
-        It 'Adds route with middleware supplied as hashtable and empty logic' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock {}
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-
-            $routes = $routes['/users']
-            $routes | Should Not Be $null
-            $routes.Length | Should Be 1
-
-            $routes[0].Logic.ToString() | Should Be ({}).ToString()
-            $routes[0].Protocol | Should Be ''
-            $routes[0].Endpoint | Should Be ''
-
-            $routes[0].Middleware.Length | Should Be 1
-            $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
-            $routes[0].Middleware[0].Options | Should Be 'test'
-        }
-
-        It 'Adds route with middleware supplied as hashtable and no logic' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock $null
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-
-            $routes = $routes['/users']
-            $routes | Should Not Be $null
-            $routes.Length | Should Be 1
-
-            $routes[0].Logic.ToString() | Should Be ({}).ToString()
-            $routes[0].Protocol | Should Be ''
-            $routes[0].Endpoint | Should Be ''
-
-            $routes[0].Middleware.Length | Should Be 1
-            $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
-            $routes[0].Middleware[0].Options | Should Be 'test'
-        }
-
-        It 'Adds route with middleware and logic supplied' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' { Write-Host 'middle' } -ScriptBlock { Write-Host 'logic' }
-
-            $routes = $PodeContext.Server.Routes['get']
-            $routes | Should Not be $null
-
-            $routes = $routes['/users']
-            $routes | Should Not Be $null
-            $routes.Length | Should Be 1
-
-            $routes[0].Logic.ToString() | Should Be ({ Write-Host 'logic' }).ToString()
-            $routes[0].Protocol | Should Be ''
-            $routes[0].Endpoint | Should Be ''
-
-            $routes[0].Middleware.Length | Should Be 1
-            $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
-        }
-
-        It 'Throws error for route with array of middleware and no logic supplied' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-
-            { Route -Method GET -Route '/users' @(
-                { Write-Host 'middle1' },
-                { Write-Host 'middle2' }
-             ) $null } | Should Throw 'no logic defined'
-
-            $route = $PodeContext.Server.Routes['get']
-            $route | Should Not be $null
-
-            $route = $route['/users']
-            $route | Should Be $null
-        }
-
-        It 'Adds route with array of middleware and logic supplied' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users' @(
-                { Write-Host 'middle1' },
-                { Write-Host 'middle2' }
-             ) { Write-Host 'logic' }
-
-            $route = $PodeContext.Server.Routes['get']
-            $route | Should Not be $null
-
-            $route = $route['/users']
-            $route | Should Not Be $null
-
-            $route.Logic.ToString() | Should Be ({ Write-Host 'logic' }).ToString()
-            $route.Middleware.Length | Should Be 2
-            $route.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $route.Middleware[1].Logic.ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
-        }
-
-        It 'Adds route with simple url and querystring' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users?k=v' { Write-Host 'hello' }
-
-            $route = $PodeContext.Server.Routes['get']
-            $route | Should Not be $null
-            $route.ContainsKey('/users') | Should Be $true
-            $route['/users'] | Should Not Be $null
-            $route['/users'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $route['/users'].Middleware | Should Be $null
-        }
-
-        It 'Adds route with url parameters' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users/:userId' { Write-Host 'hello' }
-
-            $route = $PodeContext.Server.Routes['get']
-            $route | Should Not be $null
-            $route.ContainsKey('/users/(?<userId>[\w-_]+?)') | Should Be $true
-            $route['/users/(?<userId>[\w-_]+?)'] | Should Not Be $null
-            $route['/users/(?<userId>[\w-_]+?)'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $route['/users/(?<userId>[\w-_]+?)'].Middleware | Should Be $null
-        }
-
-        It 'Adds route with url parameters and querystring' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Route -Method GET -Route '/users/:userId?k=v' { Write-Host 'hello' }
-
-            $route = $PodeContext.Server.Routes['get']
-            $route | Should Not be $null
-            $route.ContainsKey('/users/(?<userId>[\w-_]+?)') | Should Be $true
-            $route['/users/(?<userId>[\w-_]+?)'] | Should Not Be $null
-            $route['/users/(?<userId>[\w-_]+?)'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-            $route['/users/(?<userId>[\w-_]+?)'].Middleware | Should Be $null
-        }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' }
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].ContentType | Should Be 'text/plain'
+    }
+
+    It 'Adds route with full endpoint' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -Endpoint 'pode.foo.com:8080'
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].Endpoint | Should Be 'pode.foo.com:8080'
+    }
+
+    It 'Adds route with wildcard host endpoint' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -Endpoint '8080'
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].Endpoint | Should Be '*:8080'
+    }
+
+    It 'Adds route with wildcard port endpoint' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -Endpoint 'pode.foo.com'
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].Endpoint | Should Be 'pode.foo.com:*'
+    }
+
+    It 'Adds route with http protocol' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -Protocol 'http'
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/users') | Should Be $true
+        $routes['/users'] | Should Not Be $null
+        $routes['/users'].Length | Should Be 1
+        $routes['/users'][0].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $routes['/users'][0].Middleware | Should Be $null
+        $routes['/users'][0].Protocol | Should Be 'http'
+    }
+
+    It 'Adds route with middleware supplied as scriptblock and no logic' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -Middleware ({ Write-Host 'middle' }) -ScriptBlock {}
+
+        $route = $PodeContext.Server.Routes['get']
+        $route | Should Not be $null
+
+        $route = $route['/users']
+        $route | Should Not Be $null
+
+        $route.Middleware.Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+        $route.Logic | Should Be ({}).ToString()
+    }
+
+    It 'Adds route with middleware supplied as hashtable with null logic' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        { Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = $null }) -ScriptBlock {} } | Should Throw 'no logic defined'
+    }
+
+    It 'Adds route with middleware supplied as hashtable with invalid type logic' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        { Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = 74 }) -ScriptBlock {} } | Should Throw 'invalid logic type'
+    }
+
+    It 'Adds route with invalid middleware type' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        { Add-PodeRoute -Method GET -Path '/users' -Middleware 74 -ScriptBlock {} } | Should Throw 'invalid type'
+    }
+
+    It 'Adds route with middleware supplied as hashtable and empty logic' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock {}
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+
+        $routes = $routes['/users']
+        $routes | Should Not Be $null
+        $routes.Length | Should Be 1
+
+        $routes[0].Logic.ToString() | Should Be ({}).ToString()
+        $routes[0].Protocol | Should Be ''
+        $routes[0].Endpoint | Should Be ''
+
+        $routes[0].Middleware.Length | Should Be 1
+        $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+        $routes[0].Middleware[0].Options | Should Be 'test'
+    }
+
+    It 'Adds route with middleware supplied as hashtable and no logic' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock {}
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+
+        $routes = $routes['/users']
+        $routes | Should Not Be $null
+        $routes.Length | Should Be 1
+
+        $routes[0].Logic.ToString() | Should Be ({}).ToString()
+        $routes[0].Protocol | Should Be ''
+        $routes[0].Endpoint | Should Be ''
+
+        $routes[0].Middleware.Length | Should Be 1
+        $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+        $routes[0].Middleware[0].Options | Should Be 'test'
+    }
+
+    It 'Adds route with middleware and logic supplied' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -Middleware { Write-Host 'middle' } -ScriptBlock { Write-Host 'logic' }
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+
+        $routes = $routes['/users']
+        $routes | Should Not Be $null
+        $routes.Length | Should Be 1
+
+        $routes[0].Logic.ToString() | Should Be ({ Write-Host 'logic' }).ToString()
+        $routes[0].Protocol | Should Be ''
+        $routes[0].Endpoint | Should Be ''
+
+        $routes[0].Middleware.Length | Should Be 1
+        $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
+    }
+
+    It 'Adds route with array of middleware and no logic supplied' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+
+        Add-PodeRoute -Method GET -Path '/users' -Middleware @(
+            { Write-Host 'middle1' },
+            { Write-Host 'middle2' }
+            ) -ScriptBlock {}
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes | Should Not be $null
+
+        $routes = $routes['/users']
+        $routes | Should Not Be $null
+        $routes.Length | Should Be 1
+
+        $routes[0].Logic.ToString() | Should Be ({}).ToString()
+
+        $routes[0].Middleware.Length | Should Be 2
+        $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+        $routes[0].Middleware[1].Logic.ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
+    }
+
+    It 'Adds route with array of middleware and logic supplied' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -Middleware @(
+            { Write-Host 'middle1' },
+            { Write-Host 'middle2' }
+            ) -ScriptBlock { Write-Host 'logic' }
+
+        $route = $PodeContext.Server.Routes['get']
+        $route | Should Not be $null
+
+        $route = $route['/users']
+        $route | Should Not Be $null
+
+        $route.Logic.ToString() | Should Be ({ Write-Host 'logic' }).ToString()
+        $route.Middleware.Length | Should Be 2
+        $route.Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
+        $route.Middleware[1].Logic.ToString() | Should Be ({ Write-Host 'middle2' }).ToString()
+    }
+
+    It 'Adds route with simple url and querystring' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users?k=v' -ScriptBlock { Write-Host 'hello' }
+
+        $route = $PodeContext.Server.Routes['get']
+        $route | Should Not be $null
+        $route.ContainsKey('/users') | Should Be $true
+        $route['/users'] | Should Not Be $null
+        $route['/users'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $route['/users'].Middleware | Should Be $null
+    }
+
+    It 'Adds route with url parameters' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users/:userId' -ScriptBlock { Write-Host 'hello' }
+
+        $route = $PodeContext.Server.Routes['get']
+        $route | Should Not be $null
+        $route.ContainsKey('/users/(?<userId>[\w-_]+?)') | Should Be $true
+        $route['/users/(?<userId>[\w-_]+?)'] | Should Not Be $null
+        $route['/users/(?<userId>[\w-_]+?)'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $route['/users/(?<userId>[\w-_]+?)'].Middleware | Should Be $null
+    }
+
+    It 'Adds route with url parameters and querystring' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users/:userId?k=v' -ScriptBlock { Write-Host 'hello' }
+
+        $route = $PodeContext.Server.Routes['get']
+        $route | Should Not be $null
+        $route.ContainsKey('/users/(?<userId>[\w-_]+?)') | Should Be $true
+        $route['/users/(?<userId>[\w-_]+?)'] | Should Not Be $null
+        $route['/users/(?<userId>[\w-_]+?)'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $route['/users/(?<userId>[\w-_]+?)'].Middleware | Should Be $null
     }
 }
