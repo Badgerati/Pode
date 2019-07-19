@@ -1,3 +1,60 @@
+<#
+.SYNOPSIS
+Adds a Route for a specific HTTP Method.
+
+.DESCRIPTION
+Adds a Route for a specific HTTP Method, with path, that when called with invoke any logic and/or Middleware.
+
+.PARAMETER Method
+The HTTP Method of this Route.
+
+.PARAMETER Path
+The URI path for the Route.
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware.
+
+.PARAMETER ScriptBlock
+A ScriptBlock for the Route's main logic.
+
+.PARAMETER Protocol
+The protocol this Route should be bound against.
+
+.PARAMETER Endpoint
+The endpoint this Route should be bound against.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint this Route should be bound against.
+
+.PARAMETER ContentType
+The content type the Route should use when parsing any payloads.
+
+.PARAMETER ErrorContentType
+The content type of any error pages that may get returned.
+
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.
+
+.EXAMPLE
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{ Name = 'Bob' }
+}
+
+.EXAMPLE
+Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (csrf check) -ScriptBlock {
+    Write-PodeJsonResponse -Value @{ Messages = @() }
+}
+
+.EXAMPLE
+Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{ Name = 'Bob' }
+}
+
+.EXAMPLE
+Add-PodeRoute -Method Get -Path '/api/cpu' -ErrorContentType 'application/json' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{ CPU = 84 }
+}
+#>
 function Add-PodeRoute
 {
     [CmdletBinding(DefaultParameterSetName='Script')]
@@ -152,6 +209,43 @@ function Add-PodeRoute
     })
 }
 
+<#
+.SYNOPSIS
+Add a static Route for rendering static content.
+
+.DESCRIPTION
+Add a static Route for rendering static content. You can also define default pages to display.
+
+.PARAMETER Path
+The URI path for the static Route.
+
+.PARAMETER Source
+The literal, or relative, path to the directory that contains the static content.
+
+.PARAMETER Protocol
+The protocol this static Route should be bound against.
+
+.PARAMETER Endpoint
+The endpoint this static Route should be bound against.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint to bind the static Route against.
+
+.PARAMETER Defaults
+An array of default pages to display, such as 'index.html'.
+
+.PARAMETER DownloadOnly
+When supplied, all static content on this Route will be attached as downloads - rather than rendered.
+
+.EXAMPLE
+Add-PodeStaticRoute -Path '/assets' -Source './assets'
+
+.EXAMPLE
+Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html')
+
+.EXAMPLE
+Add-PodeStaticRoute -Path '/installers' -Source './exes' -DownloadOnly
+#>
 function Add-PodeStaticRoute
 {
     [CmdletBinding()]
@@ -238,6 +332,31 @@ function Add-PodeStaticRoute
 
 }
 
+<#
+.SYNOPSIS
+Remove a specific Route.
+
+.DESCRIPTION
+Remove a specific Route.
+
+.PARAMETER Method
+The method of the Route to remove.
+
+.PARAMETER Path
+The path of the Route to remove.
+
+.PARAMETER Protocol
+The protocol of the Route to remove.
+
+.PARAMETER Endpoint
+The endpoint of the Route to remove.
+
+.EXAMPLE
+Remove-PodeRoute -Method Get -Route '/about'
+
+.EXAMPLE
+Remove-PodeRoute -Method Post -Route '/users/:userId' -Endpoint 127.0.0.2:8001
+#>
 function Remove-PodeRoute
 {
     [CmdletBinding()]
@@ -286,6 +405,28 @@ function Remove-PodeRoute
     }
 }
 
+<#
+.SYNOPSIS
+Remove a specific static Route.
+
+.DESCRIPTION
+Remove a specific static Route.
+
+.PARAMETER Path
+The path of the static Route to remove.
+
+.PARAMETER Protocol
+The protocol of the static Route to remove.
+
+.PARAMETER Endpoint
+The endpoint of the static Route to remove.
+
+.EXAMPLE
+Remove-PodeStaticRoute -Path '/assets'
+
+.EXAMPLE
+Remove-PodeStaticRoute -Path '/assets' -Protocol
+#>
 function Remove-PodeStaticRoute
 {
     [CmdletBinding()]
@@ -324,6 +465,22 @@ function Remove-PodeStaticRoute
     }
 }
 
+<#
+.SYNOPSIS
+Removes all added Routes, or Routes for a specific Method.
+
+.DESCRIPTION
+Removes all added Routes, or Routes for a specific Method.
+
+.PARAMETER Method
+The Method to from which to remove all Routes.
+
+.EXAMPLE
+Clear-PodeRoutes
+
+.EXAMPLE
+Clear-PodeRoutes -Method Get
+#>
 function Clear-PodeRoutes
 {
     [CmdletBinding()]
@@ -344,6 +501,16 @@ function Clear-PodeRoutes
     }
 }
 
+<#
+.SYNOPSIS
+Removes all added static Routes.
+
+.DESCRIPTION
+Removes all added static Routes.
+
+.EXAMPLE
+Clear-PodeStaticRoutes
+#>
 function Clear-PodeStaticRoutes
 {
     [CmdletBinding()]
