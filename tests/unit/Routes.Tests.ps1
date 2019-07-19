@@ -188,6 +188,91 @@ Describe 'Remove-PodeRoute' {
     }
 }
 
+Describe 'Remove-PodeStaticRoute' {
+    It 'Adds a static route, and then removes it' {
+        Mock Test-PodePath { return $true }
+        Mock New-PodePSDrive { return './assets' }
+
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
+        Add-PodeStaticRoute -Path '/assets' -Source './assets'
+
+        $routes = $PodeContext.Server.Routes['static']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should Be $true
+        $routes['/assets[/]{0,1}(?<file>.*)'].Path | Should Be './assets'
+
+        Remove-PodeStaticRoute -Path '/assets'
+
+        $routes = $PodeContext.Server.Routes['static']
+        $routes | Should Not be $null
+        $routes.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should Be $false
+    }
+}
+
+Describe 'Clear-PodeRoutes' {
+    It 'Adds routes for methods, and clears everything' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello1' }
+        Add-PodeRoute -Method POST -Path '/messages' -ScriptBlock { Write-Host 'hello2' }
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes.ContainsKey('/users') | Should Be $true
+
+        $routes = $PodeContext.Server.Routes['post']
+        $routes.ContainsKey('/messages') | Should Be $true
+
+        Clear-PodeRoutes
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes.ContainsKey('/users') | Should Be $false
+
+        $routes = $PodeContext.Server.Routes['post']
+        $routes.ContainsKey('/messages') | Should Be $false
+    }
+
+    It 'Adds routes for methods, and clears one method' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; }; }
+        Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello1' }
+        Add-PodeRoute -Method POST -Path '/messages' -ScriptBlock { Write-Host 'hello2' }
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes.ContainsKey('/users') | Should Be $true
+
+        $routes = $PodeContext.Server.Routes['post']
+        $routes.ContainsKey('/messages') | Should Be $true
+
+        Clear-PodeRoutes -Method Get
+
+        $routes = $PodeContext.Server.Routes['get']
+        $routes.ContainsKey('/users') | Should Be $false
+
+        $routes = $PodeContext.Server.Routes['post']
+        $routes.ContainsKey('/messages') | Should Be $true
+    }
+}
+
+Describe 'Clear-PodeStaticRoutes' {
+    It 'Adds some static routes, and clears them all' {
+        Mock Test-PodePath { return $true }
+        Mock New-PodePSDrive { return './assets' }
+
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
+
+        Add-PodeStaticRoute -Path '/assets' -Source './assets'
+        Add-PodeStaticRoute -Path '/images' -Source './images'
+
+        $routes = $PodeContext.Server.Routes['static']
+        $routes.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should Be $true
+        $routes.ContainsKey('/images[/]{0,1}(?<file>.*)') | Should Be $true
+
+        Clear-PodeStaticRoutes
+
+        $routes = $PodeContext.Server.Routes['static']
+        $routes.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should Be $false
+        $routes.ContainsKey('/images[/]{0,1}(?<file>.*)') | Should Be $false
+    }
+}
+
 Describe 'Add-PodeRoute' {
     It 'Throws invalid method error for no method' {
         { Add-PodeRoute -Method 'MOO' -Path '/' -ScriptBlock {} } | Should Throw "Cannot validate argument on parameter 'Method'"
