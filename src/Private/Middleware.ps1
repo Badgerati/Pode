@@ -167,7 +167,7 @@ function Get-PodeRouteValidateMiddleware
             param($s)
 
             # ensure the path has a route
-            $route = Get-PodeRoute -HttpMethod $s.Method -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint -CheckWildMethod
+            $route = Get-PodeRoute -Method $s.Method -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint -CheckWildMethod
 
             # if there's no route defined, it's a 404
             if ($null -eq $route -or $null -eq $route.Logic) {

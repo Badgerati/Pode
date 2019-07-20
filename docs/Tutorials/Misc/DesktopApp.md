@@ -15,11 +15,11 @@ The following will create a basic web server with a single page, but when the se
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
 
     Enable-PodeGui -Title 'Basic Server'
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'index'
     }
 }

@@ -56,17 +56,7 @@ Start-PodeServer {
 
 ## Route Middleware
 
-Custom middleware on a `route` is basically the same as above however, you don't use the `middleware` function and instead insert it straight on the `route`. Normally a route is defined as follows:
-
-```powershell
-route <method> <path> <logic>
-```
-
-but when you need to add custom middleware to a route, the make-up of the `route` looks like:
-
-```powershell
-route <method> <path> <middleware> <logic>
-```
+Custom middleware on a Route is basically the same as above however, you don't use the main Middleware functions and instead insert it straight on the Route. To do this, you can use the `-Middleware` parameter on the `Add-PodeRoute` function.
 
 The middleware on a route can either be a single `scriptblock` or an an array of `scriptblocks`. Middleware defined on routes will be run before the route itself, but after any global middleware that may have been configured.
 
@@ -90,12 +80,12 @@ Start-PodeServer {
     }
 
     # the middleware above is linked to this route, and checked before running the route logic
-    route get '/users' $reject_ip {
+    Add-PodeRoute -Method Get -Path '/users' -Middleware $reject_ip -ScriptBlock {
         # route logic
     }
 
     # this route has no custom middleware, and just runs the route logic
-    route get '/alive' {
+    Add-PodeRoute -Method Get -Path '/alive' -ScriptBlock {
         # route logic
     }
 }
@@ -133,7 +123,7 @@ The following example uses rate limiting, and defines `middleware` that will ove
 ```powershell
 Start-PodeServer {
     # attach to port 8080
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # assign rate limiting to localhost, and allow 8 request per 5 seconds
     limit ip @('127.0.0.1', '[::1]') 8 5
@@ -144,7 +134,7 @@ Start-PodeServer {
     }
 
     # basic route
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # logic
     }
 }

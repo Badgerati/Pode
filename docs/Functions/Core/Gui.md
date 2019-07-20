@@ -20,7 +20,7 @@ The following example will launch the server, and open an application called "Po
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
 
     gui 'Pode Example 1' @{
         Icon = '../images/icon.png'
@@ -34,7 +34,7 @@ The following example will launch the server, but will open the application as f
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
 
     gui 'Pode Example 2' @{
         State = 'Maximized'
@@ -48,7 +48,7 @@ The following example will launch the server, and the application's window will 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
 
     gui 'Pode Example 2' @{
         ResizeMode = 'NoResize'

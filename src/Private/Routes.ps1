@@ -4,7 +4,7 @@ function Get-PodeRoute
         [Parameter(Mandatory=$true)]
         [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
         [string]
-        $HttpMethod,
+        $Method,
 
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
@@ -25,23 +25,23 @@ function Get-PodeRoute
 
     # first, if supplied, check the wildcard method
     if ($CheckWildMethod -and $PodeContext.Server.Routes['*'].Count -ne 0) {
-        $found = Get-PodeRoute -HttpMethod '*' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+        $found = Get-PodeRoute -Method '*' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
         if ($null -ne $found) {
             return $found
         }
     }
 
     # is this a static route?
-    $isStatic = ($HttpMethod -ieq 'static')
+    $isStatic = ($Method -ieq 'static')
 
     # first ensure we have the method
-    $method = $PodeContext.Server.Routes[$HttpMethod]
-    if ($null -eq $method) {
+    $_method = $PodeContext.Server.Routes[$Method]
+    if ($null -eq $_method) {
         return $null
     }
 
     # if we have a perfect match for the route, return it if the protocol is right
-    $found = Get-PodeRouteByUrl -Routes $method[$Route] -Protocol $Protocol -Endpoint $Endpoint
+    $found = Get-PodeRouteByUrl -Routes $_method[$Route] -Protocol $Protocol -Endpoint $Endpoint
     if (!$isStatic -and $null -ne $found) {
         return @{
             'Logic' = $found.Logic;
@@ -56,7 +56,7 @@ function Get-PodeRoute
 
     # otherwise, attempt to match on regex parameters
     else {
-        $valid = @(foreach ($key in $method.Keys) {
+        $valid = @(foreach ($key in $_method.Keys) {
             if ($Route -imatch "^$($key)$") {
                 $key
             }
@@ -66,7 +66,7 @@ function Get-PodeRoute
             return $null
         }
 
-        $found = Get-PodeRouteByUrl -Routes $method[$valid] -Protocol $Protocol -Endpoint $Endpoint
+        $found = Get-PodeRouteByUrl -Routes $_method[$valid] -Protocol $Protocol -Endpoint $Endpoint
         if ($null -eq $found) {
             return $null
         }
@@ -115,7 +115,7 @@ function Get-PodeStaticRoutePath
     )
 
     # attempt to get a static route for the path
-    $found = Get-PodeRoute -HttpMethod 'static' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+    $found = Get-PodeRoute -Method 'static' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
     $path = $null
     $download = $false
 
@@ -193,300 +193,25 @@ function Get-PodeRouteByUrl
     return @($rs | Sort-Object -Property { $_.Protocol }, { $_.Endpoint } -Descending)[0]
 }
 
-function Remove-PodeRoute
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
-        [string]
-        $HttpMethod,
-
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Route,
-
-        [Parameter()]
-        [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Endpoint
-    )
-
-    # split route on '?' for query
-    $Route = Split-PodeRouteQuery -Route $Route
-
-    # ensure route isn't empty
-    if (Test-IsEmpty $Route) {
-        throw "No route supplied for removing the $($HttpMethod) definition"
-    }
-
-    # ensure the route has appropriate slashes and replace parameters
-    $Route = Update-PodeRouteSlashes -Route $Route
-    $Route = Update-PodeRoutePlaceholders -Route $Route
-
-    # ensure route does exist
-    if (!$PodeContext.Server.Routes[$HttpMethod].ContainsKey($Route)) {
-        return
-    }
-
-    # remove the route's logic
-    $PodeContext.Server.Routes[$HttpMethod][$Route] = @($PodeContext.Server.Routes[$HttpMethod][$Route] | Where-Object {
-        !($_.Protocol -ieq $Protocol -and $_.Endpoint -ieq $Endpoint)
-    })
-
-    # if the route has no more logic, just remove it
-    if ((Get-PodeCount $PodeContext.Server.Routes[$HttpMethod][$Route]) -eq 0) {
-        $PodeContext.Server.Routes[$HttpMethod].Remove($Route) | Out-Null
-    }
-}
-
-function Add-PodeRoute
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', '*')]
-        [string]
-        $HttpMethod,
-
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Route,
-
-        [Parameter()]
-        [object[]]
-        $Middleware,
-
-        [Parameter()]
-        [scriptblock]
-        $ScriptBlock,
-
-        [Parameter()]
-        [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Endpoint,
-
-        [Parameter()]
-        [string]
-        $ContentType,
-
-        [Parameter()]
-        [string]
-        $ErrorType,
-
-        [Parameter()]
-        [string]
-        $FilePath
-    )
-
-    # if middleware, scriptblock and file path are all null/empty, error
-    if ((Test-IsEmpty $Middleware) -and (Test-IsEmpty $ScriptBlock) -and (Test-IsEmpty $FilePath)) {
-        throw "[$($HttpMethod)] $($Route) has no scriptblock defined"
-    }
-
-    # if both a scriptblock and a file path have been supplied, error
-    if (!(Test-IsEmpty $ScriptBlock) -and !(Test-IsEmpty $FilePath)) {
-        throw "[$($HttpMethod)] $($Route) has both a ScriptBlock and a FilePath defined"
-    }
-
-    # if we have a file path supplied, load that path as a scriptblock
-    if (Test-PodePath -Path $FilePath -NoStatus) {
-        # if the path is a wildcard or directory, error
-        if (!(Test-PodePathIsFile -Path $FilePath -FailOnWildcard)) {
-            throw "[$($HttpMethod)] $($Route) cannot have a wildcard or directory FilePath: $($FilePath)"
-        }
-
-        $ScriptBlock = [scriptblock](Use-PodeScript -Path $FilePath)
-    }
-
-    # ensure supplied middlewares are either a scriptblock, or a valid hashtable
-    if (!(Test-IsEmpty $Middleware)) {
-        @($Middleware) | ForEach-Object {
-            $_type = (Get-PodeType $_).Name
-
-            # check middleware is a type valid
-            if ($_type -ine 'scriptblock' -and $_type -ine 'hashtable') {
-                throw "A middleware supplied for the '[$($HttpMethod)] $($Route)' route is of an invalid type. Expected either ScriptBlock or Hashtable, but got: $($_type)"
-            }
-
-            # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
-            if ($_type -ieq 'hashtable') {
-                if ($null -eq $_.Logic) {
-                    throw "A Hashtable middleware supplied for the '[$($HttpMethod)] $($Route)' route has no Logic defined"
-                }
-
-                $_ltype = (Get-PodeType $_.Logic).Name
-                if ($_ltype -ine 'scriptblock') {
-                    throw "A Hashtable middleware supplied for the '[$($HttpMethod)] $($Route)' route has has an invalid Logic type. Expected ScriptBlock, but got: $($_ltype)"
-                }
-            }
-        }
-    }
-
-    # if middleware is set, but there is no scriptblock, set the middleware as the scriptblock
-    if (!(Test-IsEmpty $Middleware) -and ($null -eq $ScriptBlock)) {
-        # if multiple middleware, error
-        if ((Get-PodeType $Middleware).BaseName -ieq 'array' -and (Get-PodeCount $Middleware) -ne 1) {
-            throw "[$($HttpMethod)] $($Route) has no logic defined"
-        }
-
-        $ScriptBlock = {}
-        if ((Get-PodeType $Middleware[0]).Name -ieq 'scriptblock') {
-            $ScriptBlock = $Middleware[0]
-            $Middleware = $null
-        }
-    }
-
-    # split route on '?' for query
-    $Route = Split-PodeRouteQuery -Route $Route
-
-    # ensure route isn't empty
-    if (Test-IsEmpty $Route) {
-        throw "No route path supplied for $($HttpMethod) definition"
-    }
-
-    # ensure the route has appropriate slashes
-    $Route = Update-PodeRouteSlashes -Route $Route
-    $Route = Update-PodeRoutePlaceholders -Route $Route
-
-    # ensure route doesn't already exist
-    Test-PodeRouteAndError -HttpMethod $HttpMethod -Route $Route -Protocol $Protocol -Endpoint $Endpoint
-
-    # if we have middleware, convert scriptblocks to hashtables
-    if (!(Test-IsEmpty $Middleware))
-    {
-        $Middleware = @($Middleware)
-
-        for ($i = 0; $i -lt $Middleware.Length; $i++) {
-            if ((Get-PodeType $Middleware[$i]).Name -ieq 'scriptblock')
-            {
-                $Middleware[$i] = @{
-                    'Logic' = $Middleware[$i]
-                }
-            }
-        }
-    }
-
-    # workout a default content type for the route
-    if ((Test-IsEmpty $ContentType) -and !(Test-IsEmpty $PodeContext.Server.Web)) {
-        $ContentType = $PodeContext.Server.Web.ContentType.Default
-
-        # find type by pattern
-        $matched = ($PodeContext.Server.Web.ContentType.Routes.Keys | Where-Object {
-            $Route -imatch $_
-        } | Select-Object -First 1)
-
-        if (!(Test-IsEmpty $matched)) {
-            $ContentType = $PodeContext.Server.Web.ContentType.Routes[$matched]
-        }
-    }
-
-    # add the route logic
-    $PodeContext.Server.Routes[$HttpMethod][$Route] += @(@{
-        'Logic' = $ScriptBlock;
-        'Middleware' = $Middleware;
-        'Protocol' = $Protocol;
-        'Endpoint' = $Endpoint.Trim();
-        'ContentType' = $ContentType;
-        'ErrorType' = $ErrorType;
-    })
-}
-
-function Add-PodeStaticRoute
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Route,
-
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Source,
-
-        [Parameter()]
-        [string[]]
-        $Defaults,
-
-        [Parameter()]
-        [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Endpoint,
-
-        [switch]
-        $DownloadOnly
-    )
-
-    # store the route method
-    $HttpMethod = 'static'
-
-    # split route on '?' for query
-    $Route = Split-PodeRouteQuery -Route $Route
-
-    # ensure route isn't empty
-    if (Test-IsEmpty $Route) {
-        throw "No route supplied for $($HttpMethod) definition"
-    }
-
-    # if static, ensure the path exists at server root
-    if (Test-IsEmpty $Source) {
-        throw "No path supplied for $($HttpMethod) definition"
-    }
-
-    $Source = (Join-PodeServerRoot $Source)
-    if (!(Test-Path $Source)) {
-        throw "Source folder supplied for $($HttpMethod) route does not exist: $($Source)"
-    }
-
-    # setup a temp drive for the path
-    $Source = New-PodePSDrive -Path $Source
-
-    # ensure the route has appropriate slashes
-    $Route = Update-PodeRouteSlashes -Route $Route -Static
-
-    # ensure route doesn't already exist
-    Test-PodeRouteAndError -HttpMethod $HttpMethod -Route $Route -Protocol $Protocol -Endpoint $Endpoint
-
-    # setup default static files
-    if ($null -eq $Defaults) {
-        $Defaults = Get-PodeStaticRouteDefaults
-    }
-
-    # add the route path
-    $PodeContext.Server.Routes[$HttpMethod][$Route] += @(@{
-        'Path' = $Source;
-        'Defaults' = $Defaults;
-        'Protocol' = $Protocol;
-        'Endpoint' = $Endpoint.Trim();
-        'Download' = $DownloadOnly;
-    })
-}
-
 function Update-PodeRoutePlaceholders
 {
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $Route
+        $Path
     )
 
     # replace placeholder parameters with regex
     $placeholder = '\:(?<tag>[\w]+)'
-    if ($Route -imatch $placeholder) {
-        $Route = [regex]::Escape($Route)
+    if ($Path -imatch $placeholder) {
+        $Path = [regex]::Escape($Path)
     }
 
-    while ($Route -imatch $placeholder) {
-        $Route = ($Route -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
+    while ($Path -imatch $placeholder) {
+        $Path = ($Path -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
     }
 
-    return $Route
+    return $Path
 }
 
 function Update-PodeRouteSlashes
@@ -494,27 +219,26 @@ function Update-PodeRouteSlashes
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $Route,
+        $Path,
 
         [switch]
         $Static
     )
 
     # ensure route starts with a '/'
-    if (!$Route.StartsWith('/')) {
-        $Route = "/$($Route)"
+    if (!$Path.StartsWith('/')) {
+        $Path = "/$($Path)"
     }
 
-    if ($Static)
-    {
+    if ($Static) {
         # ensure the static route ends with '/{0,1}.*'
-        $Route = $Route.TrimEnd('/*')
-        $Route = "$($Route)[/]{0,1}(?<file>*)"
+        $Path = $Path.TrimEnd('/*')
+        $Path = "$($Path)[/]{0,1}(?<file>*)"
     }
 
     # replace * with .*
-    $Route = ($Route -ireplace '\*', '.*')
-    return $Route
+    $Path = ($Path -ireplace '\*', '.*')
+    return $Path
 }
 
 function Split-PodeRouteQuery
@@ -522,10 +246,10 @@ function Split-PodeRouteQuery
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $Route
+        $Path
     )
 
-    return ($Route -isplit "\?")[0]
+    return ($Path -isplit "\?")[0]
 }
 
 function Get-PodeStaticRouteDefaults
@@ -547,11 +271,11 @@ function Test-PodeRouteAndError
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $HttpMethod,
+        $Method,
 
         [Parameter(Mandatory=$true)]
         [string]
-        $Route,
+        $Path,
 
         [Parameter()]
         [string]
@@ -562,7 +286,7 @@ function Test-PodeRouteAndError
         $Endpoint
     )
 
-    $found = @($PodeContext.Server.Routes[$HttpMethod][$Route])
+    $found = @($PodeContext.Server.Routes[$Method][$Path])
 
     if (($found | Where-Object { $_.Protocol -ieq $Protocol -and $_.Endpoint -ieq $Endpoint } | Measure-Object).Count -eq 0) {
         return
@@ -577,9 +301,41 @@ function Test-PodeRouteAndError
     }
 
     if ([string]::IsNullOrEmpty($_url)) {
-        throw "[$($HttpMethod)] $($Route) is already defined"
+        throw "[$($Method)] $($Path): Already defined"
     }
     else {
-        throw "[$($HttpMethod)] $($Route) is already defined for $($_url)"
+        throw "[$($Method)] $($Path): Already defined for $($_url)"
     }
+}
+
+function Get-PodeEndpointByName
+{
+    param (
+        [Parameter()]
+        [string]
+        $EndpointName,
+
+        [switch]
+        $ThrowError
+    )
+
+    # if an EndpointName was supplied, find it and use it
+    if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+        return $null
+    }
+
+    # ensure it exists
+    $found = ($PodeContext.Server.Endpoints | Where-Object {
+        $_.Name -ieq $EndpointName
+    } | Select-Object -First 1)
+
+    if ($null -eq $found) {
+        if ($ThrowError) {
+            throw "Endpoint with name '$($EndpointName)' does not exist"
+        }
+
+        return $null
+    }
+
+    return $found
 }

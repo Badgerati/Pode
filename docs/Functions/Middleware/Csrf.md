@@ -28,11 +28,11 @@ Start-PodeServer {
     middleware (session @{ 'secret' = 'vegeta' })
     middleware (csrf middleware)
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         view 'index' @{ 'token' = (csrf token) }
     }
 
-    route post '/login' {
+    Add-PodeRoute -Method Post -Path '/login' -ScriptBlock {
         # the csrf token is required to use this route
     }
 }
@@ -46,11 +46,11 @@ The following example will setup CSRF middleware to use cookies, with a secret k
 Start-PodeServer {
     middleware (csrf middleware -c -s 'goku')
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         view 'index' @{ 'token' = (csrf token) }
     }
 
-    route post '/login' {
+    Add-PodeRoute -Method Post -Path '/login' -ScriptBlock {
         # the csrf token is required to use this route
     }
 }
@@ -64,15 +64,15 @@ The following example will setup CSRF, and then do explicit checks on certain ro
 Start-PodeServer {
     csrf setup -c -s 'broly'
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         view 'index' @{ 'token' = (csrf token) }
     }
 
-    route get '/messages' (csrf check) {
+    Add-PodeRoute -Method Get -Path '/messages' -Middleware (csrf check) -ScriptBlock {
         # the csrf token is required to use this route
     }
 
-    route post '/login' (csrf check) {
+    Add-PodeRoute -Method Post -Path '/login' -Middleware (csrf check) -ScriptBlock
         # the csrf token is required to use this route
     }
 }

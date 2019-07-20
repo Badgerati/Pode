@@ -34,7 +34,7 @@ The following example uses rate limiting, and defines `middleware` that will ove
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     limit ip @('127.0.0.1', '[::1]') 8 5
 
@@ -42,7 +42,7 @@ Start-PodeServer {
         return $true
     }
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # logic
     }
 }

@@ -22,7 +22,7 @@ Add-PodeFlashMessage -Name 'email-error' -Message 'Invalid email address'
 Then to retrieve the message, you can do this in a `route` for a `view`:
 
 ```powershell
-route get '/signup' {
+Add-PodeRoute -Method Get -Path '/signup' -ScriptBlock {
     Write-PodeViewResponse -Path 'signup' -Data @{
         'errors' = @{
             'email' = (Get-PodeFlashMessage -Name 'email-error')
@@ -45,7 +45,7 @@ Add-PodeFlashMessage -Name 'name-error' -Message 'No first/last name supplied'
 Then, within your route to load the sign-up view, you can use the switch to automatically load all current flash messages:
 
 ```powershell
-route get '/signup' {
+Add-PodeRoute -Method Get -Path '/signup' -ScriptBlock {
     Write-PodeViewResponse 'signup' -FlashMessages
 }
 ```
@@ -78,15 +78,16 @@ When doing authentication checks, normally if the check fails Pode will throw an
 For example, here we have a login page, with the `post` login check. The check flags that any authentication errors should be loaded into the session's flash messages:
 
 ```powershell
-route 'get' '/login' (auth check login -o @{ 'login' = $true; 'successUrl' = '/' }) {
+$auth_login_page = (auth check login -o @{ 'login' = $true; 'successUrl' = '/' })
+Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login_page -ScriptBlock {
     Write-PodeViewResponse 'auth-login' -FlashMessages
 }
 
-route 'post' '/login' (auth check login -o @{
+Add-PodeRoute -Method Post -Path '/login' -Middleware (auth check login -o @{
     'failureUrl' = '/login';
     'successUrl' = '/';
     'failureFlash' = $true;
-}) {}
+}) -ScriptBlock {}
 ```
 
 Then, to load the authentication back for the user:

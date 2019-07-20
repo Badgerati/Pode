@@ -13,17 +13,17 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:$port -Protocol HTTP
+    Add-PodeEndpoint -Address *:$port -Protocol Http
 
     Set-PodeViewEngine -Type HTML
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'web-upload'
     }
 
     # POST request to upload a file
-    route 'post' '/upload' {
+    Add-PodeRoute -Method Post -Path '/upload' -ScriptBlock {
         Save-PodeResponseFile -Key 'avatar'
         Move-PodeResponseUrl -Url '/'
     }

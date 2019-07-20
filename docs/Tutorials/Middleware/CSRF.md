@@ -60,7 +60,7 @@ The below will run CSRF validation on the GET route, even though the setup is co
 Start-PodeServer {
     csrf setup
 
-    route get '/messages' (csrf check) {
+    Add-PodeRoute -Method Get -Path '/messages' -Middleware (csrf check) -ScriptBlock {
         # logic
     }
 }
@@ -76,7 +76,7 @@ To generate the token, you can use the following command - but only after you've
 Start-PodeServer {
     middleware (csrf middleware)
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'login' -Data @{ 'token' = (csrf token) }
     }
 }
@@ -91,7 +91,7 @@ The following example will configure CSRF as default middleware, and supply a to
 *server.ps1*
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
     # setup session and csrf middleware
@@ -99,13 +99,13 @@ Start-PodeServer {
     middleware (csrf middleware)
 
     # this route will work, as GET methods are ignored by CSRF by default
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         $token = (csrf token)
         Write-PodeViewResponse -Path 'index' -Data @{ 'csrfToken' = $token } -FlashMessages
     }
 
     # POST route for form which will require the csrf token from above
-    route post '/token' {
+    Add-PodeRoute -Method Post -Path '/token' -ScriptBlock {
         param($e)
         Add-PodeFlashMessage -Name 'message' -Message $e.Data['message']
         Move-PodeResponseUrl -Url '/'

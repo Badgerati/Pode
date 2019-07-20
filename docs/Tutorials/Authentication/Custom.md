@@ -56,7 +56,7 @@ Whereas the following example will use Custom authentication to only validate re
 
 ```powershell
 Start-PodeServer {
-    route get '/info' (auth check client) {
+    Add-PodeRoute -Method Get -Path '/info' -Middleware (auth check login) -ScriptBlock {
         # logic
     }
 }
@@ -68,7 +68,7 @@ The following full example of Custom authentication will setup and configure aut
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # here we're calling the custom method "client"
     auth use -c client -p {
@@ -97,12 +97,12 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    route get '/cpu' (auth check client) {
+    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (auth check client) -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 
     # this route will not be validated against the authentication
-    route get '/memory' {
+    Add-PodeRoute -Method Get -Path '/memory' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'memory' = 14 }
     }
 }

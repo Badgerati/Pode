@@ -35,7 +35,7 @@ The following server will accept web requests, and handle them across 2 threads 
 
 ```powershell
 Start-PodeServer -Thread 2 {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
 }
 ```
 

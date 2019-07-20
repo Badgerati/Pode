@@ -14,8 +14,11 @@ Set-PodeResponseAttachment -Path 'downloads/installer.exe'
 
 .EXAMPLE
 # attaches the "/content/assets/images/icon.png" file from a static Route
-route static '/assets' './content/assets'
-Set-PodeResponseAttachment -Path '/assets/images/icon.png'
+Add-PodeStaticRoute -Path '/assets' -Source './content/assets'
+
+Add-PodeRoute -Method Get -Path '/icon' -ScriptBlock {
+    Set-PodeResponseAttachment -Path '/assets/images/icon.png'
+}
 #>
 function Set-PodeResponseAttachment
 {
@@ -736,7 +739,7 @@ function Move-PodeResponseUrl
         $Port = 0,
 
         [Parameter(ParameterSetName='Components')]
-        [ValidateSet('', 'HTTP', 'HTTPS')]
+        [ValidateSet('', 'Http', 'Https')]
         [string]
         $Protocol,
 

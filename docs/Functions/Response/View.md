@@ -14,9 +14,9 @@ The following example will render the `index.html` view when you navigate to `ht
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         view 'index'
     }
 }
@@ -28,10 +28,10 @@ The following example will render the `index.pode` view when you navigate to `ht
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         view 'index'
     }
 }
@@ -45,10 +45,10 @@ The following example will render the `index.pode` view when you navigate to `ht
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         view 'index' -d @{ 'date' = [DateTime]::Now }
     }
 }

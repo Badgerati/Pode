@@ -14,9 +14,9 @@ The following example will write an XML file to the response stream:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
-    route get '/data' {
+    Add-PodeRoute -Method Get -Path '/data' -ScriptBlock {
         Write-PodeFileResponse -Path './path/file.xml'
     }
 }
@@ -28,10 +28,10 @@ The following example will write a dynamic text file to the response stream, sup
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
-    route get '/data' {
+    Add-PodeRoute -Method Get -Path '/data' -ScriptBlock {
         Write-PodeFileResponse -Path './path/file.txt.pode' -Data @{ 'date' = [datetime]::UtcNow }
     }
 }

@@ -12,7 +12,7 @@ The following example attaches the installer found at `/public/downloads/install
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     route get '/app/install' {
         attach 'downloads/installer.exe'
@@ -26,7 +26,7 @@ The following example attaches the image found at `/content/assets/images/icon.p
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     route static '/assets' './content/assets'
 

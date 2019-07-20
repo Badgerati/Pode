@@ -15,7 +15,7 @@ The following example will lock an object, and increment a counter on the sessio
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     route get '/count' {
         param($s)

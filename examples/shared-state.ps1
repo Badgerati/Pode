@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a basic server
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8085 -Protocol Http
     logger 'terminal'
 
     # re-initialise the state
@@ -32,7 +32,7 @@ Start-PodeServer {
     }
 
     # route to retrieve and return the value of the hashtable from global state
-    route get '/get-array' {
+    Add-PodeRoute -Method Get -Path '/array' -ScriptBlock {
         param($session)
 
         Lock-PodeObject -Object $session.Lockable {
@@ -42,7 +42,7 @@ Start-PodeServer {
     }
 
     # route to remove the hashtable from global state
-    route delete '/remove-array' {
+    Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
         param($session)
 
         Lock-PodeObject -Object $session.Lockable {

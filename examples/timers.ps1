@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a basic server
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address *:8081 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8081 -Protocol Http
 
     # runs forever, looping every 5secs
     timer 'forever' 5 {
@@ -35,7 +35,7 @@ Start-PodeServer {
     } -skip 1 -limit 1
 
     # create a new timer via a route
-    route 'get' '/api/timer' {
+    Add-PodeRoute -Method Get -Path '/api/timer' -ScriptBlock {
         param($event)
         $query = $event.Query
 

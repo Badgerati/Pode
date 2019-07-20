@@ -75,7 +75,7 @@ Start-PodeServer {
     middleware (auth check basic)
 
     # 2. or, apply auth check as custom route middleware
-    route get '/users' (auth check basic) {
+    Add-PodeRoute -Method Get -Path '/users' -Middleware (auth check basic) -ScriptBlock {
         # route logic
     }
 }
@@ -117,7 +117,7 @@ The object will further contain:
 The following example get the user's name from the `Auth` object:
 
 ```powershell
-route get '/' (auth check form) {
+Add-PodeRoute -Method Get -Path '/' -Middleware (auth check form) -ScriptBlock {
     param($e)
 
     Write-PodeViewResponse -Path 'index' -Data @{

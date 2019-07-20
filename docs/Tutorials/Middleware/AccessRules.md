@@ -60,7 +60,7 @@ The following example uses access rules, and defines `middleware` that will over
 ```powershell
 Start-PodeServer {
     # attach to port 8080
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # assign access rule to deny localhost
     access deny ip @('127.0.0.1', '[::1]')
@@ -72,7 +72,7 @@ Start-PodeServer {
     }
 
     # basic route
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # logic
     }
 }

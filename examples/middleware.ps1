@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:$port -Protocol HTTP
+    Add-PodeEndpoint -Address *:$port -Protocol Http
 
     # limit localhost to 5 request per 10 seconds
     limit ip @('127.0.0.1', '[::1]') 5 10
@@ -68,14 +68,14 @@ Start-PodeServer {
 
     # the reject_ip middleware above is linked to this route,
     # and checked before running the route logic
-    route get '/users' $reject_ip {
+    Add-PodeRoute -Method Get -Path '/users' -Middleware $reject_ip -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             'Users' = @('John', 'Bill')
         }
     }
 
     # this route has no custom middleware, and just runs the route logic
-    route get '/alive' {
+    Add-PodeRoute -Method Get -Path '/alive' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'Alive' = $true }
     }
 }

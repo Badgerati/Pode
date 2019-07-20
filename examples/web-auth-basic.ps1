@@ -17,7 +17,7 @@ you'll get a 401 status code back.
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8085 -Protocol Http
 
     # setup basic auth (base64> username:password in header)
     auth use basic -v {
@@ -36,7 +36,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # POST request to get list of users (since there's no session, the auth check will always happen)
-    route 'post' '/users' (auth check basic) {
+    Add-PodeRoute -Method Post -Path '/users' -Middleware (auth check basic) -ScriptBlock {
         param($s)
         Write-PodeJsonResponse -Value @{ 'Users' = @(
             @{

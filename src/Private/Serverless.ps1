@@ -59,7 +59,7 @@ function Start-PodeAzFuncServer
             # invoke middleware
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                 # get the route logic
-                $route = Get-PodeRoute -HttpMethod $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
+                $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
                     -Endpoint $WebEvent.Endpoint -CheckWildMethod
 
                 # invoke route and custom middleware
@@ -141,7 +141,7 @@ function Start-PodeAwsLambdaServer
             # invoke middleware
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                 # get the route logic
-                $route = Get-PodeRoute -HttpMethod $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
+                $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
                     -Endpoint $WebEvent.Endpoint -CheckWildMethod
 
                 # invoke route and custom middleware

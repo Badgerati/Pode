@@ -7,11 +7,11 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a server listening on port 8085, set to monitor file changes and restart the server
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address *:8085 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8085 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($session)
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }

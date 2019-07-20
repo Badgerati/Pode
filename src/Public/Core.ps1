@@ -446,16 +446,16 @@ Ignore Adminstrator checks for non-localhost endpoints.
 Create and bind a self-signed certifcate onto HTTPS endpoints (Windows only).
 
 .EXAMPLE
-Add-PodeEndpoint -Address localhost:8090 -Protocol HTTP
+Add-PodeEndpoint -Address localhost:8090 -Protocol Http
 
 .EXAMPLE
-Add-PodeEndpoint -Address localhost -Protocol SMTP
+Add-PodeEndpoint -Address localhost -Protocol Smtp
 
 .EXAMPLE
-Add-PodeEndpoint -Address dev.pode.com:8443 -Protocol HTTPS -SelfSigned
+Add-PodeEndpoint -Address dev.pode.com:8443 -Protocol Https -SelfSigned
 
 .EXAMPLE
-Add-PodeEndpoint -Address live.pode.com -Protocol HTTPS -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
+Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
 #>
 function Add-PodeEndpoint
 {
@@ -466,7 +466,7 @@ function Add-PodeEndpoint
         $Address,
 
         [Parameter()]
-        [ValidateSet('HTTP', 'HTTPS', 'SMTP', 'TCP')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp')]
         [string]
         $Protocol,
 

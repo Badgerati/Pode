@@ -48,7 +48,7 @@ Whereas the following example will use Form authentication to only validate requ
 
 ```powershell
 Start-PodeServer {
-    route get '/info' (auth check login) {
+    Add-PodeRoute -Method Get -Path '/info' -Middleware (auth check login) -ScriptBlock {
         # logic
     }
 }
@@ -60,7 +60,7 @@ The following full example of Form authentication will setup and configure authe
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol HTTP
+    Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # setup form authentication to validate a user
     auth use login -t form -v {
@@ -79,12 +79,12 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    route get '/cpu' (auth check login) {
+    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (auth check login) -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 
     # this route will not be validated against the authentication
-    route get '/memory' {
+    Add-PodeRoute -Method Get -Path '/memory' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'memory' = 14 }
     }
 }
