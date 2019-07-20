@@ -559,3 +559,162 @@ function Add-PodeEndpoint
         $PodeContext.Server.Endpoints += $obj
     }
 }
+
+function Add-PodeTimer
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Interval,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [int]
+        $Limit = 0,
+
+        [Parameter()]
+        [int]
+        $Skip = 0
+    )
+
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'Add-PodeTimer' -ThrowError
+
+    # ensure the timer doesn't already exist
+    if ($PodeContext.Timers.ContainsKey($Name)) {
+        throw "[Timer] $($Name): Timer already defined"
+    }
+
+    # is the interval valid?
+    if ($Interval -le 0) {
+        throw "[Timer] $($Name): Interval must be greater than 0"
+    }
+
+    # is the limit valid?
+    if ($Limit -lt 0) {
+        throw "[Timer] $($Name): Cannot have a negative limit"
+    }
+
+    if ($Limit -ne 0) {
+        $Limit += $Skip
+    }
+
+    # is the skip valid?
+    if ($Skip -lt 0) {
+        throw "[Timer] $($Name): Cannot have a negative skip value"
+    }
+
+    # add the timer
+    $PodeContext.Timers[$Name] = @{
+        Name = $Name
+        Interval = $Interval
+        Limit = $Limit
+        Count = 0
+        Skip = $Skip
+        Countable = ($Skip -gt 0 -or $Limit -gt 0)
+        NextTick = [DateTime]::Now.AddSeconds($Interval)
+        Script = $ScriptBlock
+    }
+}
+
+function Remove-PodeTimer
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    $PodeContext.Timers.Remove($Name) | Out-Null
+}
+
+function Clear-PodeTimers
+{
+    $PodeContext.Timers.Clear()
+}
+
+function Add-PodeSchedule
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [string[]]
+        $Cron,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [int]
+        $Limit = 0,
+
+        [Parameter()]
+        [DateTime]
+        $StartTime,
+
+        [Parameter()]
+        [DateTime]
+        $EndTime
+    )
+
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'Add-PodeSchedule' -ThrowError
+
+    # ensure the schedule doesn't already exist
+    if ($PodeContext.Schedules.ContainsKey($Name)) {
+        throw "[Schedule] $($Name): Schedule already defined"
+    }
+
+    # ensure the limit is valid
+    if ($Limit -lt 0) {
+        throw "[Schedule] $($Name): Cannot have a negative limit"
+    }
+
+    # ensure the start/end dates are valid
+    if (($null -ne $EndTime) -and ($EndTime -lt [DateTime]::Now)) {
+        throw "[Schedule] $($Name): The EndTime value must be in the future"
+    }
+
+    if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -lt $StartTime)) {
+        throw "[Schedule] $($Name): Cannot have a StartTime after the EndTime"
+    }
+
+    # add the schedule
+    $PodeContext.Schedules[$Name] = @{
+        Name = $Name
+        StartTime = $StartTime
+        EndTime = $EndTime
+        Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        Limit = $Limit
+        Count = 0
+        Countable = ($Limit -gt 0)
+        Script = $ScriptBlock
+    }
+}
+
+function Remove-PodeSchedule
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    $PodeContext.Schedules.Remove($Name) | Out-Null
+}
+
+function Clear-PodeSchedules
+{
+    $PodeContext.Schedules.Clear()
+}

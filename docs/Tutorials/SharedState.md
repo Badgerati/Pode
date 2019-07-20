@@ -22,7 +22,7 @@ An example of setting a shared hashtable variable is as follows:
 
 ```powershell
 Start-PodeServer {
-    timer 'do-something' 5 {
+    Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
         param($e)
 
         Lock-PodeObject -Object $e.Lockable {
@@ -40,7 +40,7 @@ An example of retrieving the value from the shared state is as follows:
 
 ```powershell
 Start-PodeServer {
-    timer 'do-something' 5 {
+    Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
         param($e)
         $value = $null
 
@@ -61,7 +61,7 @@ An example of removing a variable from the shared state is as follows:
 
 ```powershell
 Start-PodeServer {
-    timer 'do-something' 5 {
+    Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
         param($e)
 
         Lock-PodeObject -Object $e.Lockable {
@@ -79,7 +79,7 @@ An example of saving the current state every hour is as follows:
 
 ```powershell
 Start-PodeServer {
-    schedule 'save-state' '@hourly' {
+    Add-PodeSchedule -Name 'save-state' -Cron '@hourly' -ScriptBlock {
         Lock-PodeObject -Object $lockable {
             Save-PodeState -Path './state.json'
         }
@@ -114,7 +114,7 @@ Start-PodeServer {
     Restore-PodeState -Path './state.json'
 
     # timer to add a random number to the shared state
-    timer 'forever' 2 {
+    Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         param($e)
 
         # ensure we're thread safe

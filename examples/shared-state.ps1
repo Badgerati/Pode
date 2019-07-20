@@ -20,7 +20,7 @@ Start-PodeServer {
     }
 
     # create timer to update a hashtable and make it globally accessible
-    timer 'forever' 2 {
+    Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         param($session)
         $hash = $null
 
