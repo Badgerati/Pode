@@ -1820,3 +1820,23 @@ function Set-PodeServerHeader
 
     Set-PodeHeader -Name 'Server' -Value "Pode - $($Type)"
 }
+
+function Get-PodeHandler
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Service', 'Smtp', 'Tcp')]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [string]
+        $Name
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        return $PodeContext.Server.Handlers[$Type]
+    }
+
+    return $PodeContext.Server.Handlers[$Type][$Name]
+}

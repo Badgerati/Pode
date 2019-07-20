@@ -113,9 +113,9 @@ function New-PodeContext
 
     # handlers for tcp
     $ctx.Server.Handlers = @{
-        'tcp' = $null;
-        'smtp' = $null;
-        'service' = $null;
+        'tcp' = @{};
+        'smtp' = @{};
+        'service' = @{};
     }
 
     # setup basic access placeholders

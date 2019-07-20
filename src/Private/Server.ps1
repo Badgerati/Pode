@@ -92,7 +92,7 @@ function Restart-PodeInternalServer
         }
 
         $PodeContext.Server.Handlers.Keys.Clone() | ForEach-Object {
-            $PodeContext.Server.Handlers[$_] = $null
+            $PodeContext.Server.Handlers[$_].Clear()
         }
 
         $PodeContext.Timers.Clear()

@@ -1,32 +1,3 @@
-function Handler
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('SMTP', 'TCP', 'Service')]
-        [string]
-        $Type,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [scriptblock]
-        $ScriptBlock
-    )
-
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'handler' -ThrowError
-
-    # lower the type
-    $Type = $Type.ToLowerInvariant()
-
-    # ensure handler isn't already set
-    if ($null -ne $PodeContext.Server.Handlers[$Type]) {
-        throw "Handler for $($Type) already defined"
-    }
-
-    # add the handler
-    $PodeContext.Server.Handlers[$Type] = $ScriptBlock
-}
-
 function Logger
 {
     param (

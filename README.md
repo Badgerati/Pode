@@ -16,7 +16,7 @@
 Pode is a Cross-Platform PowerShell framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines. Plus many more features, including [Azure Functions](https://badgerati.github.io/Pode/Tutorials/Serverless/AzureFunctions/) and [AWS Lambda](https://badgerati.github.io/Pode/Tutorials/Serverless/AwsLambda/) support!
 
 <p align="center">
-    <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code.png?raw=true" />
+    <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code_2.png?raw=true" />
 </p>
 
 See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app!
