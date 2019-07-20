@@ -1,8 +1,8 @@
 function Start-PodeSmtpServer
 {
     # ensure we have smtp handlers
-    if ($null -eq (Get-PodeTcpHandler -Type 'SMTP')) {
-        throw 'No SMTP handler has been passed'
+    if (Test-IsEmpty (Get-PodeHandler -Type Smtp)) {
+        throw 'No SMTP handlers have been defined'
     }
 
     # grab the relavant port
@@ -117,7 +117,10 @@ function Start-PodeSmtpServer
                             $SmtpEvent.Body = (Get-PodeSmtpBody -Data $data -ContentType $SmtpEvent.ContentType -ContentEncoding $SmtpEvent.ContentEncoding)
 
                             # call user handlers for processing smtp data
-                            Invoke-PodeScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'SMTP') -Arguments $SmtpEvent -Scoped
+                            $handlers = Get-PodeHandler -Type Smtp
+                            foreach ($name in $handlers.Keys) {
+                                Invoke-PodeScriptBlock -ScriptBlock $handlers[$name].Logic -Arguments $SmtpEvent -Scoped
+                            }
 
                             # reset the to list
                             $rcpt_tos = @()
@@ -155,7 +158,6 @@ function Start-PodeSmtpServer
                     }
 
                     Invoke-PodeScriptBlock -ScriptBlock $process
-
                     Close-PodeTcpConnection -Quit
                 }
             }

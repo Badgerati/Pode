@@ -1,8 +1,8 @@
 function Start-PodeTcpServer
 {
-    # ensure we have tcp handler
-    if ($null -eq (Get-PodeTcpHandler -Type 'TCP')) {
-        throw 'No TCP handler has been passed'
+    # ensure we have service handlers
+    if (Test-IsEmpty (Get-PodeHandler -Type Tcp)) {
+        throw 'No TCP handlers have been defined'
     }
 
     # grab the relavant port
@@ -64,7 +64,11 @@ function Start-PodeTcpServer
                         'Lockalble' = $PodeContext.Lockable
                     }
 
-                    Invoke-PodeScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'TCP') -Arguments $TcpEvent -Scoped
+                    # invoke the tcp handlers
+                    $handlers = Get-PodeHandler -Type Tcp
+                    foreach ($name in $handlers.Keys) {
+                        Invoke-PodeScriptBlock -ScriptBlock $handlers[$name].Logic -Arguments $TcpEvent -Scoped
+                    }
                 }
 
                 # close the connection

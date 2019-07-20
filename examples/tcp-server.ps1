@@ -13,7 +13,7 @@ Start-PodeServer -Threads 2 {
     access allow ip 127.0.0.1
 
     # setup a tcp handler
-    handler 'tcp' {
+    Add-PodeHandler -Type Tcp -Name 'Main' -ScriptBlock {
         param($session)
         Write-PodeTcpClient -Message 'gief data'
         $msg = (Read-PodeTcpClient)

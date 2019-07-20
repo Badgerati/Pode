@@ -1,8 +1,8 @@
 function Start-PodeServiceServer
 {
-    # ensure we have svc handler
-    if ($null -eq (Get-PodeTcpHandler -Type 'Service')) {
-        throw 'No Service handler has been passed'
+    # ensure we have service handlers
+    if (Test-IsEmpty (Get-PodeHandler -Type Service)) {
+        throw 'No Service handlers have been defined'
     }
 
     # state we're running
@@ -14,9 +14,11 @@ function Start-PodeServiceServer
         {
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
-                # invoke the service logic
-                Invoke-PodeScriptBlock -ScriptBlock (Get-PodeTcpHandler -Type 'Service') -Scoped
-                #Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
+                # invoke the service handlers
+                $handlers = Get-PodeHandler -Type Service
+                foreach ($name in $handlers.Keys) {
+                    Invoke-PodeScriptBlock -ScriptBlock $handlers[$name].Logic -Scoped
+                }
 
                 # sleep before next run
                 Start-Sleep -Seconds $PodeContext.Server.Interval

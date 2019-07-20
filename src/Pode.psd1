@@ -30,7 +30,6 @@
 
     # Functions to export from this Module
     FunctionsToExport = @(
-        'Handler',
         'Timer',
         'Logger',
         'Access',
@@ -116,6 +115,11 @@
         'Remove-PodeStaticRoute',
         'Clear-PodeRoutes',
         'Clear-PodeStaticRoutes',
+
+        # handlers
+        'Add-PodeHandler',
+        'Remove-PodeHandler',
+        'Clear-PodeHandlers',
 
         # core
         'Start-PodeServer',

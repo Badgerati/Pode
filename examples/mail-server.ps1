@@ -13,11 +13,11 @@ Start-PodeServer -Threads 2 {
     access allow ip 127.0.0.1
 
     # setup an smtp handler
-    handler 'smtp' {
-        param($session)
-        Write-Host $session.From
-        Write-Host $session.To
-        Write-Host $session.Data
+    Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
+        param($email)
+        Write-Host $email.From
+        Write-Host $email.To
+        Write-Host $email.Data
     }
 
 }
