@@ -308,7 +308,7 @@ function Add-PodeStaticRoute
     Test-PodeRouteAndError -Method $Method -Path $Path -Protocol $Protocol -Endpoint $Endpoint
 
     # if static, ensure the path exists at server root
-    $Source = (Join-PodeServerRoot $Source)
+    $Source = Get-PodeRelativePath -Path $Source -JoinRoot
     if (!(Test-PodePath -Path $Source -NoStatus)) {
         throw "[$($Method))] $($Path): The Source path supplied for Static Route does not exist: $($Source)"
     }
