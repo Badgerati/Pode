@@ -40,7 +40,7 @@ The following will use Form authentication to validate every request on every `r
 
 ```powershell
 Start-PodeServer {
-    middleware (auth check login)
+    (auth check login) | Add-PodeMiddleware -Name 'GlobalAuthValidation'
 }
 ```
 

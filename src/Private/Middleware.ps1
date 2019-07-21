@@ -90,7 +90,7 @@ function Get-PodeInbuiltMiddleware
 
 function Get-PodeAccessMiddleware
 {
-    return (Get-PodeInbuiltMiddleware -Name '@access' -ScriptBlock {
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_access__' -ScriptBlock {
         param($s)
 
         # ensure the request IP address is allowed
@@ -106,7 +106,7 @@ function Get-PodeAccessMiddleware
 
 function Get-PodeLimitMiddleware
 {
-    return (Get-PodeInbuiltMiddleware -Name '@limit' -ScriptBlock {
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
         param($s)
 
         # ensure the request IP address has not hit a rate limit
@@ -122,7 +122,7 @@ function Get-PodeLimitMiddleware
 
 function Get-PodePublicMiddleware
 {
-    return (Get-PodeInbuiltMiddleware -Name '@public' -ScriptBlock {
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {
         param($e)
 
         # get the static file path
@@ -162,7 +162,7 @@ function Get-PodePublicMiddleware
 function Get-PodeRouteValidateMiddleware
 {
     return @{
-        'Name' = '@route-valid';
+        'Name' = '__pode_mw_route_validation__';
         'Logic' = {
             param($s)
 
@@ -194,7 +194,7 @@ function Get-PodeRouteValidateMiddleware
 
 function Get-PodeBodyMiddleware
 {
-    return (Get-PodeInbuiltMiddleware -Name '@body' -ScriptBlock {
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_body_parsing__' -ScriptBlock {
         param($e)
 
         try {
@@ -217,7 +217,7 @@ function Get-PodeBodyMiddleware
 
 function Get-PodeQueryMiddleware
 {
-    return (Get-PodeInbuiltMiddleware -Name '@query' -ScriptBlock {
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_query_parsing__' -ScriptBlock {
         param($s)
 
         try {
@@ -234,7 +234,7 @@ function Get-PodeQueryMiddleware
 
 function Get-PodeCookieMiddleware
 {
-    return (Get-PodeInbuiltMiddleware -Name '@cookie' -ScriptBlock {
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_cookie_parsing__' -ScriptBlock {
         param($e)
 
         # if it's not serverless, return

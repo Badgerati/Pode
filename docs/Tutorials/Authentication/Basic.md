@@ -40,7 +40,7 @@ The following will use Basic authentication to validate every request on every `
 
 ```powershell
 Start-PodeServer {
-    middleware (auth check login)
+    (auth check login) | Add-PodeMiddleware -Name 'GlobalAuthValidation'
 }
 ```
 

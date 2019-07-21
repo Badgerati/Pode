@@ -14,7 +14,7 @@ The following is an example of how to setup session middleware, with a `hashtabl
 
 ```powershell
 Start-PodeServer {
-    middleware (session @{
+    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
         'Secret' = 'schwifty';      # secret-key used to sign session cookie
         'Name' = 'pode.sid';        # session cookie name (def: pode.sid)
         'Duration' = 120;           # duration of the cookie, in seconds
@@ -66,7 +66,7 @@ An example of using sessions in a `route` to increment a views counter could be 
 
 ```powershell
 Start-PodeServer {
-    middleware (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
+    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($s)

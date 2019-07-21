@@ -33,7 +33,6 @@
         'Logger',
         'Access',
         'Limit',
-        'Middleware',
         'Session',
         'Auth',
         'Csrf',
@@ -128,6 +127,11 @@
         'Add-PodeTimer',
         'Remove-PodeTimer',
         'Clear-PodeTimers',
+
+        # middleware
+        'Add-PodeMiddleware',
+        'Remove-PodeMiddleware',
+        'Clear-PodeMiddleware',
 
         # core
         'Start-PodeServer',

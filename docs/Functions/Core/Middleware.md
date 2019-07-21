@@ -38,7 +38,7 @@ Start-PodeServer {
 
     limit ip @('127.0.0.1', '[::1]') 8 5
 
-    middleware -Name '@limit' {
+    middleware -Name '__pode_mw_rate_limit__' {
         return $true
     }
 
@@ -103,10 +103,10 @@ Middleware in Pode is executed in a specific order due to having inbuilt middlew
 
 Pode has some inbuilt middleware, as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt middlewares have a defined name, that you can pass to the `middleware` function via `-Name`:
 
-* Access control - `@access`
-* Rate limiting - `@limit`
-* Public content - `@public`
-* Body parsing - `@body`
-* Querystring - `@query`
+* Access control - `__pode_mw_access__`
+* Rate limiting - `__pode_mw_rate_limit__`
+* Public content - `__pode_mw_static_content__`
+* Body parsing - `__pode_mw_body_parsing__`
+* Querystring - `__pode_mw_query_parsing__`
 
 > An example of overriding the inbuilt middleware can be found in the examples above

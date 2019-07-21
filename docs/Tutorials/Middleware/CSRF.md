@@ -30,8 +30,8 @@ Using the `middleware` action on the [`csrf`](../../../Functions/Middleware/Csrf
 The below will setup default CSRF middleware, which will use sessions (so session middleware is required), and will ignore the default HTTP methods of GET, HEAD, OPTIONS, TRACE, STATIC:
 
 ```powershell
-middleware (session @{ 'secret' = 'vegeta' })
-middleware (csrf middleware)
+Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{ 'secret' = 'vegeta' })
+Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf middleware)
 ```
 
 Now, you can use the `csrf` function with the `check` and `token` actions.
@@ -74,7 +74,7 @@ To generate the token, you can use the following command - but only after you've
 
 ```powershell
 Start-PodeServer {
-    middleware (csrf middleware)
+    Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf middleware)
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'login' -Data @{ 'token' = (csrf token) }
@@ -95,8 +95,8 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # setup session and csrf middleware
-    middleware (session @{ 'secret' = 'schwifty' })
-    middleware (csrf middleware)
+    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{ 'secret' = 'schwifty' })
+    Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf middleware)
 
     # this route will work, as GET methods are ignored by CSRF by default
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

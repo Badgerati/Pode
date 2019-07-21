@@ -28,16 +28,11 @@ function Start-PodeTimerRunspace
                 # increment total number of runs for timer (do we still need to count?)
                 if ($_.Countable) {
                     $_.Count++
-                    $_.Countable = ($_.Count -lt $_.Skip -or $_.Count -lt $_.Limit)
-                }
-
-                # check if this run should be skipped
-                if ($_.Count -lt $_.Skip) {
-                    $run = $false
+                    $_.Countable = ($_.Count -le $_.Limit)
                 }
 
                 # check if we have hit the limit, and remove
-                if ($run -and $_.Limit -ne 0 -and $_.Count -ge $_.Limit) {
+                if ($run -and ($_.Limit -ne 0) -and ($_.Count -gt $_.Limit)) {
                     $run = $false
                     $_remove += $_.Name
                 }
@@ -49,9 +44,9 @@ function Start-PodeTimerRunspace
                     catch {
                         $Error[0]
                     }
-
-                    $_.NextTick = $_now.AddSeconds($_.Interval)
                 }
+
+                $_.NextTick = $_now.AddSeconds($_.Interval)
             }
 
             # remove any timers

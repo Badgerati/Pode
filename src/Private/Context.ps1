@@ -371,7 +371,7 @@ function New-PodeAutoRestartServer
     if ($period -gt 0) {
         Add-PodeTimer -Name '__pode_restart_period__' -Interval ($period * 60) -ScriptBlock {
             $PodeContext.Tokens.Restart.Cancel()
-        } -Skip 1
+        }
     }
 
     # times - convert into cron expressions
