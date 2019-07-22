@@ -24,7 +24,7 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type Pode
 
     # setup session details
-    middleware (session @{
+    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
         'Secret' = 'schwifty';
         'Duration' = 120;
         'Extend' = $true;

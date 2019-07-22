@@ -53,7 +53,7 @@ Start-PodeServer {
 
 Since access rules are a legacy form of middleware in Pode, then when you setup rules via the `access` function the point at which the rules are checked on the request lifecycle is fixed (see [here](../Overview/#order-of-running)).
 
-This also mean you can override the inbuilt access rule logic, with your own custom logic, using the [`middleware`](../../../Functions/Core/Middleware) function. To override the access rule logic you can pass `@access` to the `-Name` parameter of the `middleware` function.
+This also mean you can override the inbuilt access rule logic, with your own custom logic, using the [`middleware`](../../../Functions/Core/Middleware) function. To override the access rule logic you can pass `__pode_mw_access__` to the `-Name` parameter of the `middleware` function.
 
 The following example uses access rules, and defines `middleware` that will override the inbuilt access logic:
 
@@ -67,7 +67,7 @@ Start-PodeServer {
 
     # create middleware to override the inbuilt access rule logic.
     # this will ignore the 'deny' part, and just allow the request
-    middleware -name '@access' {
+    Add-PodeMiddleware -Name '__pode_mw_access__' -ScriptBlock {
         return $true
     }
 

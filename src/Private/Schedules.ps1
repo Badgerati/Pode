@@ -28,8 +28,8 @@ function Start-PodeScheduleRunspace
             # select the schedules that need triggering
             $PodeContext.Schedules.Values |
                 Where-Object {
-                    ($null -eq $_.StartTime -or $_.StartTime -le $_now) -and
-                    ($null -eq $_.EndTime -or $_.EndTime -ge $_now) -and
+                    (($null -eq $_.StartTime) -or ($_.StartTime -le $_now)) -and
+                    (($null -eq $_.EndTime) -or ($_.EndTime -ge $_now)) -and
                     (Test-PodeCronExpressions -Expressions $_.Crons -DateTime $_now)
                 } | ForEach-Object {
 
@@ -44,13 +44,13 @@ function Start-PodeScheduleRunspace
                     $_remove += $_.Name
                 }
 
+                # trigger the schedules logic
                 try {
-                    # trigger the schedules logic
                     Add-PodeRunspace -Type 'Schedules' -ScriptBlock (($_.Script).GetNewClosure()) `
                         -Parameters @{ 'Lockable' = $PodeContext.Lockable } -Forget
                 }
                 catch {
-                    $Error[0]
+                    $Error[0] | Out-Default
                 }
 
                 # reset the cron if it's random
@@ -59,12 +59,12 @@ function Start-PodeScheduleRunspace
 
             # add any schedules to remove that have exceeded their end time
             $_remove += @($PodeContext.Schedules.Values |
-                Where-Object { ($null -ne $_.EndTime -and $_.EndTime -lt $_now) }).Name
+                Where-Object { (($null -ne $_.EndTime) -and ($_.EndTime -lt $_now)) }).Name
 
             # remove any schedules
-            $_remove | ForEach-Object {
-                if ($PodeContext.Schedules.ContainsKey($_)) {
-                    $PodeContext.Schedules.Remove($_)
+            foreach ($name in $_remove) {
+                if ($PodeContext.Schedules.ContainsKey($name)) {
+                    $PodeContext.Schedules.Remove($name) | Out-Null
                 }
             }
 

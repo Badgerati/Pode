@@ -14,7 +14,7 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # setup session details
-    middleware (session @{
+    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
         'Secret' = 'schwifty';  # secret-key used to sign session cookie
         'Name' = 'pode.sid';    # session cookie name (def: pode.sid)
         'Duration' = 120;       # duration of the cookie, in seconds

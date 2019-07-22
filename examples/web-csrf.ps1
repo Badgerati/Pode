@@ -24,12 +24,12 @@ Start-PodeServer -Threads 2 {
     switch ($Type.ToLowerInvariant()) {
         'cookie' {
             Set-PodeCookieSecret -Value 'rem' -Global
-            middleware (csrf -c middleware)
+            Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf -c middleware)
         }
 
         'session' {
-            middleware (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
-            middleware (csrf middleware)
+            Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
+            Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf middleware)
         }
     }
 

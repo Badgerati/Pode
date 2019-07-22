@@ -72,7 +72,7 @@ A quick example of using the `check` action against Basic authentication is as f
 ```powershell
 Start-PodeServer {
     # 1. apply the auth check as global middleware
-    middleware (auth check basic)
+    (auth check basic) | Add-PodeMiddleware -Name 'GlobalAuthValidation'
 
     # 2. or, apply auth check as custom route middleware
     Add-PodeRoute -Method Get -Path '/users' -Middleware (auth check basic) -ScriptBlock {

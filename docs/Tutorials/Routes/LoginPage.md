@@ -41,7 +41,7 @@ Set-PodeViewEngine -Type Pode
 To use sessions for our authentication (so we can stay logged in), we need to setup [`session`](../../../Functions/Middleware/Session) [`middleware`](../../../Functions/Core/Middleware). Here our sessions will last for 2 minutes, and will be extended on each request:
 
 ```powershell
-middleware (session @{
+Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
     'secret' = 'schwify';
     'duration' = 120;
     'extend' = $true;
@@ -129,7 +129,7 @@ Start-PodeServer -Thread 2 {
     Set-PodeViewEngine -Type Pode
 
     # setup session middleware
-    middleware (session @{
+    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
         'secret' = 'schwify';
         'duration' = 120;
         'extend' = $true;

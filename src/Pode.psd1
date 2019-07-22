@@ -30,12 +30,9 @@
 
     # Functions to export from this Module
     FunctionsToExport = @(
-        'Timer',
         'Logger',
         'Access',
         'Limit',
-        'Schedule',
-        'Middleware',
         'Session',
         'Auth',
         'Csrf',
@@ -120,6 +117,21 @@
         'Add-PodeHandler',
         'Remove-PodeHandler',
         'Clear-PodeHandlers',
+
+        # schedules
+        'Add-PodeSchedule',
+        'Remove-PodeSchedule',
+        'Clear-PodeSchedule',
+
+        # timers
+        'Add-PodeTimer',
+        'Remove-PodeTimer',
+        'Clear-PodeTimers',
+
+        # middleware
+        'Add-PodeMiddleware',
+        'Remove-PodeMiddleware',
+        'Clear-PodeMiddleware',
 
         # core
         'Start-PodeServer',

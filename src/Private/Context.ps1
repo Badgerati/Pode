@@ -369,9 +369,9 @@ function New-PodeAutoRestartServer
     # period - setup a timer
     $period = [int]$restart.period
     if ($period -gt 0) {
-        Timer -Name '__pode_restart_period__' -Interval ($period * 60) -ScriptBlock {
+        Add-PodeTimer -Name '__pode_restart_period__' -Interval ($period * 60) -ScriptBlock {
             $PodeContext.Tokens.Restart.Cancel()
-        } -Skip 1
+        }
     }
 
     # times - convert into cron expressions
@@ -384,7 +384,7 @@ function New-PodeAutoRestartServer
             $crons += "$([int]$atoms[1]) $([int]$atoms[0]) * * *"
         }
 
-        Schedule -Name '__pode_restart_times__' -Cron @($crons) -ScriptBlock {
+        Add-PodeSchedule -Name '__pode_restart_times__' -Cron @($crons) -ScriptBlock {
             $PodeContext.Tokens.Restart.Cancel()
         }
     }
@@ -392,7 +392,7 @@ function New-PodeAutoRestartServer
     # crons - setup schedules
     $crons = @(@($restart.crons) -ne $null)
     if (($crons | Measure-Object).Count -gt 0) {
-        Schedule -Name '__pode_restart_crons__' -Cron @($crons) -ScriptBlock {
+        Add-PodeSchedule -Name '__pode_restart_crons__' -Cron @($crons) -ScriptBlock {
             $PodeContext.Tokens.Restart.Cancel()
         }
     }

@@ -559,3 +559,465 @@ function Add-PodeEndpoint
         $PodeContext.Server.Endpoints += $obj
     }
 }
+
+<#
+.SYNOPSIS
+Adds a new Timer with logic to periodically invoke.
+
+.DESCRIPTION
+Adds a new Timer with logic to periodically invoke, with options to only run a specific number of times.
+
+.PARAMETER Name
+The Name of the Timer.
+
+.PARAMETER Interval
+The number of seconds to periodically invoke the Timer's ScriptBlock.
+
+.PARAMETER ScriptBlock
+The script for the Timer.
+
+.PARAMETER Limit
+The number of times the Timer should be invoked before being removed. (If 0, it will run indefinitely)
+
+.PARAMETER Skip
+The number of "invokes" to skip before the Timer actually runs.
+
+.EXAMPLE
+Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
+
+.EXAMPLE
+Add-PodeTimer -Name 'RunOnce' -Interval 1 -Limit 1 -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeTimer -Name 'RunAfter60secs' -Interval 10 -Skip 6 -ScriptBlock { /* logic */ }
+#>
+function Add-PodeTimer
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Interval,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [int]
+        $Limit = 0,
+
+        [Parameter()]
+        [int]
+        $Skip = 0
+    )
+
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'Add-PodeTimer' -ThrowError
+
+    # ensure the timer doesn't already exist
+    if ($PodeContext.Timers.ContainsKey($Name)) {
+        throw "[Timer] $($Name): Timer already defined"
+    }
+
+    # is the interval valid?
+    if ($Interval -le 0) {
+        throw "[Timer] $($Name): Interval must be greater than 0"
+    }
+
+    # is the limit valid?
+    if ($Limit -lt 0) {
+        throw "[Timer] $($Name): Cannot have a negative limit"
+    }
+
+    # is the skip valid?
+    if ($Skip -lt 0) {
+        throw "[Timer] $($Name): Cannot have a negative skip value"
+    }
+
+    # calculate the next tick time (based on Skip)
+    $NextTick = [DateTime]::Now.AddSeconds($Interval)
+    if ($Skip -gt 1) {
+        $NextTick = $NextTick.AddSeconds($Interval * $Skip)
+    }
+
+    # add the timer
+    $PodeContext.Timers[$Name] = @{
+        Name = $Name
+        Interval = $Interval
+        Limit = $Limit
+        Count = 0
+        Skip = $Skip
+        Countable = ($Limit -gt 0)
+        NextTick = $NextTick
+        Script = $ScriptBlock
+    }
+}
+
+<#
+.SYNOPSIS
+Removes a specific Timer.
+
+.DESCRIPTION
+Removes a specific Timer.
+
+.PARAMETER Name
+The Name of Timer to be removed.
+
+.EXAMPLE
+Remove-PodeTimer -Name 'SaveState'
+#>
+function Remove-PodeTimer
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    $PodeContext.Timers.Remove($Name) | Out-Null
+}
+
+<#
+.SYNOPSIS
+Removes all Timers.
+
+.DESCRIPTION
+Removes all Timers.
+
+.EXAMPLE
+Clear-PodeTimers
+#>
+function Clear-PodeTimers
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Timers.Clear()
+}
+
+<#
+.SYNOPSIS
+Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
+
+.DESCRIPTION
+Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
+
+.PARAMETER Name
+The Name of the Schedule.
+
+.PARAMETER Cron
+One, or an Array, of Cron Expressions to define when the Schedule should trigger.
+
+.PARAMETER ScriptBlock
+The script defining the Schedule's logic.
+
+.PARAMETER Limit
+The number of times the Schedule should trigger before being removed.
+
+.PARAMETER StartTime
+A DateTime for when the Schedule should start triggering.
+
+.PARAMETER EndTime
+A DateTime for when the Schedule should stop triggering, and be removed.
+
+.EXAMPLE
+Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeSchedule -Name 'RunEveryTuesday' -Cron '0 0 * * TUE' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+$start = [DateTime]::Now.AddDays(2)
+Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime $start -ScriptBlock { /* logic */ }
+#>
+function Add-PodeSchedule
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [string[]]
+        $Cron,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [int]
+        $Limit = 0,
+
+        [Parameter()]
+        [DateTime]
+        $StartTime,
+
+        [Parameter()]
+        [DateTime]
+        $EndTime
+    )
+
+    # error if serverless
+    Test-PodeIsServerless -FunctionName 'Add-PodeSchedule' -ThrowError
+
+    # ensure the schedule doesn't already exist
+    if ($PodeContext.Schedules.ContainsKey($Name)) {
+        throw "[Schedule] $($Name): Schedule already defined"
+    }
+
+    # ensure the limit is valid
+    if ($Limit -lt 0) {
+        throw "[Schedule] $($Name): Cannot have a negative limit"
+    }
+
+    # ensure the start/end dates are valid
+    if (($null -ne $EndTime) -and ($EndTime -lt [DateTime]::Now)) {
+        throw "[Schedule] $($Name): The EndTime value must be in the future"
+    }
+
+    if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -lt $StartTime)) {
+        throw "[Schedule] $($Name): Cannot have a StartTime after the EndTime"
+    }
+
+    # add the schedule
+    $PodeContext.Schedules[$Name] = @{
+        Name = $Name
+        StartTime = $StartTime
+        EndTime = $EndTime
+        Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        Limit = $Limit
+        Count = 0
+        Countable = ($Limit -gt 0)
+        Script = $ScriptBlock
+    }
+}
+
+<#
+.SYNOPSIS
+Removes a specific Schedule.
+
+.DESCRIPTION
+Removes a specific Schedule.
+
+.PARAMETER Name
+The Name of the Schedule to be removed.
+
+.EXAMPLE
+Remove-PodeSchedule -Name 'RenewToken'
+#>
+function Remove-PodeSchedule
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    $PodeContext.Schedules.Remove($Name) | Out-Null
+}
+
+<#
+.SYNOPSIS
+Removes all Schedules.
+
+.DESCRIPTION
+Removes all Schedules.
+
+.EXAMPLE
+Clear-PodeSchedules
+#>
+function Clear-PodeSchedules
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Schedules.Clear()
+}
+
+<#
+.SYNOPSIS
+Adds a new Middleware to be invoked before every Route, or certain Routes.
+
+.DESCRIPTION
+Adds a new Middleware to be invoked before every Route, or certain Routes.
+
+.PARAMETER Name
+The Name of the Middleware.
+
+.PARAMETER ScriptBlock
+The Script defining the logic of the Middleware.
+
+.PARAMETER InputObject
+A Middleware HashTable from New-PodeMiddleware, or from certain other functions that return Middleware as a HashTable.
+
+.PARAMETER Route
+A Route path for which Routes this Middleware should only be invoked against.
+
+.PARAMETER Options
+A HashTable of Options that will be accessible within the Middleware's ScriptBlock.
+
+.EXAMPLE
+Add-PodeMiddleware -Name 'BlockAgents' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeMiddleware -Name 'CheckEmailOnApi' -Route '/api/*' -ScriptBlock { /* logic */ }
+#>
+function Add-PodeMiddleware
+{
+    [CmdletBinding(DefaultParameterSetName='Script')]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Input', ValueFromPipeline=$true)]
+        [hashtable]
+        $InputObject,
+
+        [Parameter()]
+        [string]
+        $Route,
+
+        [Parameter()]
+        [hashtable]
+        $Options
+    )
+
+    # ensure name doesn't already exist
+    if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
+        throw "[Middleware] $($Name): Middleware already defined"
+    }
+
+    # if it's a script - call New-PodeMiddleware
+    if ($PSCmdlet.ParameterSetName -ieq 'script') {
+        $InputObject = New-PodeMiddleware -ScriptBlock $ScriptBlock -Route $Route -Options $Options
+    }
+
+    # ensure we have a script to run
+    if (Test-IsEmpty $InputObject.Logic) {
+        throw "[Middleware]: No logic supplied in ScriptBlock"
+    }
+
+    # set name, and override route/options
+    $InputObject.Name = $Name
+    $InputObject.Route = Protect-PodeValue -Value $Route -Default $InputObject.Route
+    $InputObject.Options = Protect-PodeValue -Value $Options -Default $InputObject.Options
+
+    # add the logic to array of middleware that needs to be run
+    $PodeContext.Server.Middleware += $InputObject
+}
+
+<#
+.SYNOPSIS
+Creates a new Middleware HashTable object, that can be piped/used in Add-PodeMiddleware or in Routes.
+
+.DESCRIPTION
+Creates a new Middleware HashTable object, that can be piped/used in Add-PodeMiddleware or in Routes.
+
+.PARAMETER ScriptBlock
+The Script that defines the logic of the Middleware.
+
+.PARAMETER Route
+A Route path for which Routes this Middleware should only be invoked against.
+
+.PARAMETER Options
+A HashTable of Options that will be accessible within the Middleware's ScriptBlock.
+
+.EXAMPLE
+$middleware = New-PodeMiddleware -ScriptBlock { /* logic */ } -Options @{ ElementName = 'Email' }
+$middleware | Add-PodeMiddleware -Name 'CheckEmail'
+#>
+function New-PodeMiddleware
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [string]
+        $Route,
+
+        [Parameter()]
+        [hashtable]
+        $Options
+    )
+
+    # if route is empty, set it to root
+    $Route = Protect-PodeValue -Value $Route -Default '/'
+    $Route = Split-PodeRouteQuery -Path $Route
+    $Route = Protect-PodeValue -Value $Route -Default '/'
+    $Route = Update-PodeRouteSlashes -Path $Route
+    $Route = Update-PodeRoutePlaceholders -Path $Route
+
+    # create the middleware hashtable from a scriptblock
+    $HashTable = @{
+        Route = $Route
+        Logic = $ScriptBlock
+        Options = $Options
+    }
+
+    if (Test-IsEmpty $HashTable.Logic) {
+        throw "[Middleware]: No logic supplied in ScriptBlock"
+    }
+
+    # return the middleware, so it can be cached/added at a later date
+    return $HashTable
+}
+
+<#
+.SYNOPSIS
+Removes a specific user defined Middleware.
+
+.DESCRIPTION
+Removes a specific user defined Middleware.
+
+.PARAMETER Name
+The Name of the Middleware to be removed.
+
+.EXAMPLE
+Remove-PodeMiddleware -Name 'Sessions'
+#>
+function Remove-PodeMiddleware
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    $PodeContext.Server.Middleware = @($PodeContext.Server.Middleware | Where-Object { $_.Name -ine $Name })
+}
+
+<#
+.SYNOPSIS
+Removes all user defined Middleware.
+
+.DESCRIPTION
+Removes all user defined Middleware.
+
+.EXAMPLE
+Clear-PodeMiddleware
+#>
+function Clear-PodeMiddleware
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Server.Middleware = @()
+}

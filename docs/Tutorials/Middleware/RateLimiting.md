@@ -64,7 +64,7 @@ Start-PodeServer {
 
 Since rate limiting is a legacy form of middleware in Pode, then when you setup rules via the `limit` function the point at which the limit is checked on the request lifecycle is fixed (see [here](../Overview/#order-of-running)).
 
-This also mean you can override the inbuilt rate limiting logic, with your own custom logic, using the [`middleware`](../../../Functions/Core/Middleware) function. To override the rate limiting logic you can pass `@limit` to the `-Name` parameter of the `middleware` function.
+This also mean you can override the inbuilt rate limiting logic, with your own custom logic, using the [`middleware`](../../../Functions/Core/Middleware) function. To override the rate limiting logic you can pass `__pode_mw_rate_limit__` to the `-Name` parameter of the `middleware` function.
 
 The following example uses rate limiting, and defines `middleware` that will override the inbuilt limiting logic:
 
@@ -78,7 +78,7 @@ Start-PodeServer {
 
     # create middleware to override the inbuilt rate limiting logic.
     # this will ignore the limiting part, and just allow the request
-    middleware -name '@limit' {
+    Add-PodeMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
         return $true
     }
 

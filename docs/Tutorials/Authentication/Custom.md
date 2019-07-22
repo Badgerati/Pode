@@ -48,7 +48,7 @@ The following will use Custom authentication to validate every request on every 
 
 ```powershell
 Start-PodeServer {
-    middleware (auth check client)
+    (auth check client) | Add-PodeMiddleware -Name 'GlobalAuthValidation'
 }
 ```
 
