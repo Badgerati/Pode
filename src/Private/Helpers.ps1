@@ -812,7 +812,7 @@ function New-PodePSDrive
     }
 
     # create the temp drive
-    $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global -ErrorAction Stop)
+    $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global)
 
     # store internally, and return the drive's name
     if (!$PodeContext.Server.Drives.ContainsKey($drive.Name)) {

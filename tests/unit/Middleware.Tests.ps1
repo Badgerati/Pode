@@ -72,16 +72,6 @@ Describe 'Middleware' {
             $PodeContext.Server.Middleware[0].Route | Should Be '/api'
         }
 
-        It 'Adds single middleware script to list with route and return' {
-            $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
-
-            $result = (Middleware -Route '/api' -ScriptBlock { write-host 'middle1' } -Return)
-
-            $PodeContext.Server.Middleware.Length | Should Be 0
-            $result.Logic.ToString() | Should Be ({ Write-Host 'middle1' }).ToString()
-            $result.Route | Should Be '/api'
-        }
-
         It 'Adds two middleware scripts to list' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 

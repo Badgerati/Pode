@@ -66,7 +66,7 @@ Describe 'Add-PodeTimer' {
         $timer.Limit | Should Be 0
         $timer.Count | Should Be 0
         $timer.Skip | Should Be 1
-        $timer.Countable | Should Be $true
+        $timer.Countable | Should Be $false
         $timer.NextTick | Should BeOfType System.DateTime
         $timer.Script | Should Not Be $null
         $timer.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
@@ -80,7 +80,7 @@ Describe 'Add-PodeTimer' {
         $timer | Should Not Be $null
         $timer.Name | Should Be 'test'
         $timer.Interval | Should Be 3
-        $timer.Limit | Should Be 3
+        $timer.Limit | Should Be 2
         $timer.Count | Should Be 0
         $timer.Skip | Should Be 1
         $timer.Countable | Should Be $true
