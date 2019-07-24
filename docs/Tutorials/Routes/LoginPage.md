@@ -1,9 +1,9 @@
 # Creating a Login Page
 
-This is mostly a pure example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using Form authentication with sessions.
+This is an example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using Form authentication with Sessions.
 
 !!! info
-    This full example can be seen on GitHub in `examples/web-auth-form.ps1`.
+    The full example can be seen on GitHub in `examples/web-auth-form.ps1`.
 
 ## File Structure
 
@@ -20,7 +20,7 @@ server.ps1
 
 ## Server
 
-To start off this script, you'll need to have the main [`server`](../../../Functions/Core/Server) wrapper; here we'll use 2 threads to handle requests:
+To start off this script, you'll need to have the main `Start-PodeServer` function; here we'll use 2 threads to handle requests:
 
 ```powershell
 Import-Module Pode
@@ -30,25 +30,20 @@ Start-PodeServer -Thread 2 {
 }
 ```
 
-Next, we'll need to [`listen`](../../../Functions/Core/Listen) on an endpoint and then specify the [`engine`](../../../Functions/Core/Engine) as using `.pode` files:
+Next, we'll need to use the `Add-PodeEndpoint` function to listen on an endpoint and then specify the View Engine as using `.pode` files:
 
 ```powershell
 Add-PodeEndpoint -Address *:8080 -Protocol Http
-
 Set-PodeViewEngine -Type Pode
 ```
 
-To use sessions for our authentication (so we can stay logged in), we need to setup [`session`](../../../Functions/Middleware/Session) [`middleware`](../../../Functions/Core/Middleware). Here our sessions will last for 2 minutes, and will be extended on each request:
+To use sessions for our authentication (so we can stay logged in), we need to setup session middleware using the `Enable-PodeSessionMiddleware` function. Here our sessions will last for 2 minutes, and will be extended on each request:
 
 ```powershell
-Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
-    'secret' = 'schwify';
-    'duration' = 120;
-    'extend' = $true;
-})
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 ```
 
-Once we have the sessions in, we need to configure the Form [`authentication`](../../../Functions/Middleware/Auth) - the username/password here are hardcoded, but normally you would validate against a database:
+Once we have the session middleware intialised, we need to configure the Form [`authentication`](../../../Functions/Middleware/Auth) - the username/password here are hardcoded, but normally you would validate against a database:
 
 ```powershell
 auth use form -v {
@@ -67,7 +62,7 @@ auth use form -v {
 }
 ```
 
-This is where it gets interesting, below is the [`route`](../../../Functions/Core/Route) for the root (`/`) endpoint. This will check the cookies in the request for a signed session cookie, if one is found then the `index.pode` page is displayed - after incrementing a page-view counter. However, if there is no session, or authentication fails, the user is redirected to the login page:
+This is where it gets interesting, below is the Route for the root (`/`) endpoint. This will check the cookies in the request for a signed session cookie, if one is found then the `index.pode` page is displayed - after incrementing a page-view counter. However, if there is no session, or authentication fails, the user is redirected to the login page:
 
 ```powershell
 $auth_check = (auth check form -o @{ 'failureUrl' = '/login' })
@@ -129,11 +124,7 @@ Start-PodeServer -Thread 2 {
     Set-PodeViewEngine -Type Pode
 
     # setup session middleware
-    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
-        'secret' = 'schwify';
-        'duration' = 120;
-        'extend' = $true;
-    })
+    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 
     # setup form authentication
     auth use form -v {

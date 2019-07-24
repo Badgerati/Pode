@@ -4,80 +4,68 @@ Pode has inbuilt support for CSRF middleware validation and tokens on web reques
 
 ## Usage
 
-To setup and configure using CSRF in Pode, you can use the [`csrf`](../../../Functions/Middleware/Csrf) function. This function allows you to generate CSRF tokens, as well as two methods of returning valid middleware that can be supplied to the [`middleware`](../../../Functions/Core/Middleware) function - or be used on `routes`.
-
-The make-up of the `csrf` function is as follows:
-
-```powershell
-csrf <action> [-ignoreMethods @()] [-secret <string>] [-cookie]
-
-# or with aliases:
-csrf <action> [-i @()] [-s <string>] [-c]
-```
-
-The valid actions for the function are `middleware`, `check`, `setup` and `token`; each of which are described below.
+To use CSRF in Pode, you can use the CSRF functions. These functions allow you to generate CSRF tokens, as well as two methods of returning valid middleware.
 
 The `-IgnoreMethods` array can either be empty, to run validation on every route, or can be formed of the following HTTP methods: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, STATIC.
 
 The `-Secret` is used for signing the cookie that might be used, and is only required when `-Cookie` is also supplied.
 
-## Actions
+## Functions
 
-### Middleware
+### Enable-PodeCsrfMiddleware
 
-Using the `middleware` action on the [`csrf`](../../../Functions/Middleware/Csrf) function allows you to configure how CSRF will work in Pode, as well as returning a valid `scriptblock` that can be used with the [`middleware`](../../../Functions/Core/Middleware) function. You can also configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.
+This function will configure how CSRF will work in Pode, as well as automatically create the Middleware. You can also configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.
 
-The below will setup default CSRF middleware, which will use sessions (so session middleware is required), and will ignore the default HTTP methods of GET, HEAD, OPTIONS, TRACE, STATIC:
+The below will setup default CSRF middleware, which will use sessions (so session middleware is required), and will ignore the default HTTP methods of GET, HEAD, OPTIONS, TRACE:
 
 ```powershell
-Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{ 'secret' = 'vegeta' })
-Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf middleware)
+Enable-PodeSessionMiddleware -Secret 'vegeta'
+Enable-PodeCsrfMiddleware
 ```
 
-Now, you can use the `csrf` function with the `check` and `token` actions.
+### Initialize-PodeCsrf
 
-### Setup
+Similar to the `Enable-PodeCsrfMiddleware` function, this function configures how CSRF will work in Pode. You can configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.
 
-Similar to the `middleware` action, the `setup` action on the [`csrf`](../../../Functions/Middleware/Csrf) function also allows you to configure how CSRF will work in Pode. You can configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.
+This function is to be used when you want to use the `Get-PodeCsrfMiddleware` function, for more dynamic control of CSRF verification.
 
 Below, we'll setup CSRF to work on cookies, and only ignore GET routes:
 
 ```powershell
-csrf setup -i @('GET') -c -s 'secret-key'
+Initialize-PodeCsrf -IgnoreMethods @('Get') -Secret 'secret-key' -UseCookies
 ```
 
-Now, you can use the `csrf` function with the `check` and `token` actions.
+### Get-PodeCsrfMiddleware
 
-### Check
+The `Get-PodeCsrfMiddleware` function is similar to the `Enable-PodeCsrfMiddleware` function, but is designed so you can use it on Routes so SRF verification can be used more dynamically. By default the CSRF middleware will ignore GET routes, however the `Get-PodeCsrfMiddleware` middleware skips this method validation - meaning you could use it on a GET route and it will require a valid CSRF token.
 
-The `check` action is similar to the `middleware` action, but is mostly designed so you can use it on `routes`. By default the CSRF middleware will ignore GET routes, however the `check` middleware skips this method validation - meaning you could use it on a GET route and it will require a valid CSRF token.
-
-Unlike the `middleware` action however, you cannot configure HTTP methods to ignore or whether to to sessions/cookies. Therefore, in order to use this action you are required to use the `setup` action first (or the `middleware` action).
+Unlike the `Enable-PodeCsrfMiddleware` function however, you cannot configure HTTP methods to ignore or whether to use sessions/cookies. Therefore, in order to use this action you are required to use the `Initialize-PodeCsrf` action first.
 
 The below will run CSRF validation on the GET route, even though the setup is configured to ignore GET routes:
 
 ```powershell
 Start-PodeServer {
-    csrf setup
+    Initialize-PodeCsrf -IgnoreMethods @('Get')
 
-    Add-PodeRoute -Method Get -Path '/messages' -Middleware (csrf check) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/messages' -Middleware (Get-PodeCsrfMiddleware) -ScriptBlock {
         # logic
     }
 }
 ```
 
-### Tokens
+### New-PodeCsrfToken
 
-The [`csrf`](../../../Functions/Middleware/Csrf) function allows you to generate tokens using the `token` action. It will randomly generate a token that you can use in your webpages, such as in hidden form inputs or meta elements for AJAX requests. The token itself is formed using a secure random secret key, and a random salt.
+The `New-PodeCsrfToken` function allows you to generate tokens. It will randomly generate a token that you can use in your web-pages, such as in hidden form inputs or meta elements for AJAX requests. The token itself is formed using a secure random secret key, and a random salt.
 
-To generate the token, you can use the following command - but only after you've used either the `setup` or `middleware` actions to configure CSRF:
+To generate the token, you can use the following example:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf middleware)
+    Enable-PodeSessionMiddleware -Secret 'vegeta'
+    Enable-PodeCsrfMiddleware
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        Write-PodeViewResponse -Path 'login' -Data @{ 'token' = (csrf token) }
+        Write-PodeViewResponse -Path 'login' -Data @{ 'token' = (New-PodeCsrfToken) }
     }
 }
 ```
@@ -95,12 +83,12 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # setup session and csrf middleware
-    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{ 'secret' = 'schwifty' })
-    Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf middleware)
+    Enable-PodeSessionMiddleware -Secret 'vegeta'
+    Enable-PodeCsrfMiddleware
 
     # this route will work, as GET methods are ignored by CSRF by default
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        $token = (csrf token)
+        $token = (New-PodeCsrfToken)
         Write-PodeViewResponse -Path 'index' -Data @{ 'csrfToken' = $token } -FlashMessages
     }
 

@@ -10,7 +10,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address *:$port -Protocol Http
 
     # limit localhost to 5 request per 10 seconds
-    limit ip @('127.0.0.1', '[::1]') 5 10
+    Add-PodeLimitRule -Type IP -Values @('127.0.0.1', '[::1]') -Limit 5 -Seconds 10
 
     # override the rate limiting to ignore it
     Add-PodeMiddleware -Name  '__pode_mw_rate_limit__' -ScriptBlock {

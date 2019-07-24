@@ -120,7 +120,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # assign rate limiting to localhost, and allow 8 request per 5 seconds
-    limit ip @('127.0.0.1', '[::1]') 8 5
+    Add-PodeLimitRule -Type IP -Values @('127.0.0.1', '[::1]') -Limit 8 -Seconds 5
 
     # create middleware to override the inbuilt rate limiting (to stop the limiting)
     Add-PodeMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {

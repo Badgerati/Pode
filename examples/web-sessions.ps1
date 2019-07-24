@@ -14,15 +14,9 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # setup session details
-    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
-        'Secret' = 'schwifty';  # secret-key used to sign session cookie
-        'Name' = 'pode.sid';    # session cookie name (def: pode.sid)
-        'Duration' = 120;       # duration of the cookie, in seconds
-        'Extend' = $true;       # extend the duration of the cookie on each call
-        'GenerateId' = {        # custom SessionId generator (def: guid)
-            return [System.IO.Path]::GetRandomFileName()
-        };
-    })
+    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator {
+        return [System.IO.Path]::GetRandomFileName()
+    }
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

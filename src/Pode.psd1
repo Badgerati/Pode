@@ -31,11 +31,7 @@
     # Functions to export from this Module
     FunctionsToExport = @(
         'Logger',
-        'Access',
-        'Limit',
-        'Session',
         'Auth',
-        'Csrf',
 
         # cookies
         'Get-PodeCookie',
@@ -132,6 +128,13 @@
         'Add-PodeMiddleware',
         'Remove-PodeMiddleware',
         'Clear-PodeMiddleware',
+        'Add-PodeAccessRule',
+        'Add-PodeLimitRule',
+        'Enable-PodeSessionMiddleware',
+        'New-PodeCsrfToken',
+        'Get-PodeCsrfMiddleware',
+        'Initialize-PodeCsrf',
+        'Enable-PodeCsrfMiddleware',
 
         # core
         'Start-PodeServer',

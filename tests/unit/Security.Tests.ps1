@@ -20,77 +20,53 @@ Describe 'Test-PodeIPLimit' {
     }
 }
 
-Describe 'Limit' {
+Describe 'Add-PodeLimitRule' {
     Mock Add-PodeIPLimit { }
-
-    Context 'Invalid parameters' {
-        It 'Throws error for invalid Type' {
-            { Limit -Type 'MOO' -Value 'test' -Limit 1 -Seconds 1 } | Should Throw "Cannot validate argument on parameter 'Type'"
-        }
-
-        It 'Throws error for invalid Value' {
-            { Limit -Type 'IP' -Value $null -Limit 1 -Seconds 1 } | Should Throw "argument is null"
-        }
-    }
 
     Context 'Valid parameters' {
         It 'Adds single IP address' {
-            Limit -Type 'IP' -Value '127.0.0.1' -Limit 1 -Seconds 1
+            Add-PodeLimitRule -Type 'IP' -Values '127.0.0.1' -Limit 1 -Seconds 1
             Assert-MockCalled Add-PodeIPLimit -Times 1 -Scope It
         }
 
         It 'Adds single subnet' {
-            Limit -Type 'IP' -Value '10.10.0.0/24' -Limit 1 -Seconds 1
+            Add-PodeLimitRule -Type 'IP' -Values '10.10.0.0/24' -Limit 1 -Seconds 1
             Assert-MockCalled Add-PodeIPLimit -Times 1 -Scope It
         }
 
         It 'Adds 3 IP addresses' {
-            Limit -Type 'IP' -Value @('127.0.0.1', '127.0.0.2', '127.0.0.3') -Limit 1 -Seconds 1
+            Add-PodeLimitRule -Type 'IP' -Values @('127.0.0.1', '127.0.0.2', '127.0.0.3') -Limit 1 -Seconds 1
             Assert-MockCalled Add-PodeIPLimit -Times 3 -Scope It
         }
 
         It 'Adds 3 subnets' {
-            Limit -Type 'IP' -Value @('10.10.0.0/24', '10.10.1.0/24', '10.10.2.0/24') -Limit 1 -Seconds 1
+            Add-PodeLimitRule -Type 'IP' -Value @('10.10.0.0/24', '10.10.1.0/24', '10.10.2.0/24') -Limit 1 -Seconds 1
             Assert-MockCalled Add-PodeIPLimit -Times 3 -Scope It
         }
     }
 }
 
-Describe 'Access' {
+Describe 'Add-PodeAccessRule' {
     Mock Add-PodeIPAccess { }
-
-    Context 'Invalid parameters' {
-        It 'Throws error for invalid Permission' {
-            { Access -Permission 'MOO' -Type 'IP' -Value 'test' } | Should Throw "Cannot validate argument on parameter 'Permission'"
-        }
-
-        It 'Throws error for invalid Type' {
-            { Access -Permission 'Allow' -Type 'MOO' -Value 'test' } | Should Throw "Cannot validate argument on parameter 'Type'"
-        }
-
-        It 'Throws error for invalid Value' {
-            { Access -Permission 'Allow' -Type 'IP' -Value $null } | Should Throw "argument is null"
-        }
-    }
 
     Context 'Valid parameters' {
         It 'Adds single IP address' {
-            Access -Permission 'Allow' -Type 'IP' -Value '127.0.0.1'
+            Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values '127.0.0.1'
             Assert-MockCalled Add-PodeIPAccess -Times 1 -Scope It
         }
 
         It 'Adds single subnet' {
-            Access -Permission 'Allow' -Type 'IP' -Value '10.10.0.0/24'
+            Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values '10.10.0.0/24'
             Assert-MockCalled Add-PodeIPAccess -Times 1 -Scope It
         }
 
         It 'Adds 3 IP addresses' {
-            Access -Permission 'Allow' -Type 'IP' -Value @('127.0.0.1', '127.0.0.2', '127.0.0.3')
+            Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values @('127.0.0.1', '127.0.0.2', '127.0.0.3')
             Assert-MockCalled Add-PodeIPAccess -Times 3 -Scope It
         }
 
         It 'Adds 3 subnets' {
-            Access -Permission 'Allow' -Type 'IP' -Value @('10.10.0.0/24', '10.10.1.0/24', '10.10.2.0/24')
+            Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values @('10.10.0.0/24', '10.10.1.0/24', '10.10.2.0/24')
             Assert-MockCalled Add-PodeIPAccess -Times 3 -Scope It
         }
     }
@@ -218,20 +194,10 @@ Describe 'Add-PodeIPLimit' {
 }
 
 Describe 'Add-PodeIPAccess' {
-    Context 'Invalid parameters' {
-        It 'Throws error for invalid Permission' {
-            { Add-PodeIPAccess -Permission 'MOO' -IP 'test' } | Should Throw "Cannot validate argument on parameter 'Permission'"
-        }
-
-        It 'Throws error for invalid IP' {
-            { Add-PodeIPAccess -Permission 'Allow' -IP $null } | Should Throw "because it is an empty string"
-        }
-    }
-
     Context 'Valid parameters' {
         It 'Adds an IP to allow' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Permission 'Allow' -IP '127.0.0.1'
+            Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
 
             $a = $PodeContext.Server.Access.Allow.IP
             $a | Should Not Be $null
@@ -250,7 +216,7 @@ Describe 'Add-PodeIPAccess' {
 
         It 'Adds any IP to allow' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Permission 'Allow' -IP 'all'
+            Add-PodeIPAccess -Access 'Allow' -IP 'all'
 
             $a = $PodeContext.Server.Access.Allow.IP
             $a | Should Not Be $null
@@ -269,7 +235,7 @@ Describe 'Add-PodeIPAccess' {
 
         It 'Adds a subnet mask to allow' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Permission 'Allow' -IP '10.10.0.0/24'
+            Add-PodeIPAccess -Access 'Allow' -IP '10.10.0.0/24'
 
             $a = $PodeContext.Server.Access.Allow.IP
             $a | Should Not Be $null
@@ -288,7 +254,7 @@ Describe 'Add-PodeIPAccess' {
 
         It 'Adds an IP to deny' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Permission 'Deny' -IP '127.0.0.1'
+            Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
 
             $a = $PodeContext.Server.Access.Deny.IP
             $a | Should Not Be $null
@@ -307,7 +273,7 @@ Describe 'Add-PodeIPAccess' {
 
         It 'Adds any IP to deny' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Permission 'Deny' -IP 'all'
+            Add-PodeIPAccess -Access 'Deny' -IP 'all'
 
             $a = $PodeContext.Server.Access.Deny.IP
             $a | Should Not Be $null
@@ -326,7 +292,7 @@ Describe 'Add-PodeIPAccess' {
 
         It 'Adds a subnet mask to deny' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            Add-PodeIPAccess -Permission 'Deny' -IP '10.10.0.0/24'
+            Add-PodeIPAccess -Access 'Deny' -IP '10.10.0.0/24'
 
             $a = $PodeContext.Server.Access.Deny.IP
             $a | Should Not Be $null
@@ -347,7 +313,7 @@ Describe 'Add-PodeIPAccess' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
 
             # add to deny first
-            Add-PodeIPAccess -Permission 'Deny' -IP '127.0.0.1'
+            Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
 
             $a = $PodeContext.Server.Access.Deny.IP
             $a | Should Not Be $null
@@ -355,7 +321,7 @@ Describe 'Add-PodeIPAccess' {
             $a.ContainsKey('127.0.0.1') | Should Be $true
 
             # add to allow, deny should be removed
-            Add-PodeIPAccess -Permission 'Allow' -IP '127.0.0.1'
+            Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
 
             # check allow
             $a = $PodeContext.Server.Access.Allow.IP
@@ -383,7 +349,7 @@ Describe 'Add-PodeIPAccess' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
 
             # add to allow first
-            Add-PodeIPAccess -Permission 'Allow' -IP '127.0.0.1'
+            Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
 
             $a = $PodeContext.Server.Access.Allow.IP
             $a | Should Not Be $null
@@ -391,7 +357,7 @@ Describe 'Add-PodeIPAccess' {
             $a.ContainsKey('127.0.0.1') | Should Be $true
 
             # add to deny, allow should be removed
-            Add-PodeIPAccess -Permission 'Deny' -IP '127.0.0.1'
+            Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
 
             # check deny
             $a = $PodeContext.Server.Access.Deny.IP
@@ -417,7 +383,7 @@ Describe 'Add-PodeIPAccess' {
 
         It 'Throws error for invalid IP' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            { Add-PodeIPAccess -Permission 'Allow' -IP '256.0.0.0' } | Should Throw 'invalid ip address'
+            { Add-PodeIPAccess -Access 'Allow' -IP '256.0.0.0' } | Should Throw 'invalid ip address'
         }
     }
 }
@@ -558,14 +524,22 @@ Describe 'New-PodeCsrfToken' {
         'Cookies' = @{ 'Csrf' = @{ 'key' = 'value' } }
     }}
 
-    It 'Returns a token for an existing secret/salt' {
-        New-PodeCsrfToken -Secret 'key' -Salt 'salt' | Should Be 't:salt.salt-key'
-    }
-
     It 'Returns a token for new secret/salt' {
         Mock New-PodeCsrfSecret { return 'new-key' }
         Mock New-PodeSalt { return 'new-salt' }
         New-PodeCsrfToken | Should Be 't:new-salt.new-salt-new-key'
+    }
+}
+
+Describe 'Restore-PodeCsrfToken' {
+    Mock Invoke-PodeSHA256Hash { return "$($Value)" }
+
+    $PodeContext = @{ 'Server' = @{
+        'Cookies' = @{ 'Csrf' = @{ 'key' = 'value' } }
+    }}
+
+    It 'Returns a token for an existing secret/salt' {
+        Restore-PodeCsrfToken -Secret 'key' -Salt 'salt' | Should Be 't:salt.salt-key'
     }
 }
 
@@ -575,7 +549,7 @@ Describe 'Set-PodeCsrfSecret' {
     }}
 
     It 'Sets the secret agaisnt the session' {
-        $PodeContext.Server.Cookies.Csrf.Cookie = $false
+        $PodeContext.Server.Cookies.Csrf.UseCookies = $false
         $WebEvent = @{ 'Session' = @{
              'Data' = @{}
         } }
@@ -586,7 +560,7 @@ Describe 'Set-PodeCsrfSecret' {
     }
 
     It 'Sets the secret agaisnt a cookie' {
-        $PodeContext.Server.Cookies.Csrf.Cookie = $true
+        $PodeContext.Server.Cookies.Csrf.UseCookies = $true
         Mock Set-PodeCookie { }
 
         Set-PodeCsrfSecret -Secret 'some-secret'
@@ -601,7 +575,7 @@ Describe 'Get-PodeCsrfSecret' {
     }}
 
     It 'Gets the secret from the session' {
-        $PodeContext.Server.Cookies.Csrf.Cookie = $false
+        $PodeContext.Server.Cookies.Csrf.UseCookies = $false
         $WebEvent = @{ 'Session' = @{
              'Data' = @{ 'pode.csrf' = 'some-secret' }
         } }
@@ -610,7 +584,7 @@ Describe 'Get-PodeCsrfSecret' {
     }
 
     It 'Gets the secret from a cookie' {
-        $PodeContext.Server.Cookies.Csrf.Cookie = $true
+        $PodeContext.Server.Cookies.Csrf.UseCookies = $true
         Mock Get-PodeCookie { return @{ 'Value' = 'some-secret' } }
 
         Get-PodeCsrfSecret | Should Be 'some-secret'

@@ -24,19 +24,19 @@ Start-PodeServer -Threads 2 {
     switch ($Type.ToLowerInvariant()) {
         'cookie' {
             Set-PodeCookieSecret -Value 'rem' -Global
-            Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf -c middleware)
+            Enable-PodeCsrfMiddleware -UseCookies
         }
 
         'session' {
-            Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
-            Add-PodeMiddleware -Name 'CSRF' -ScriptBlock (csrf middleware)
+            Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
+            Enable-PodeCsrfMiddleware
         }
     }
 
     # GET request for index page, and to make a token
     # this route will work, as GET methods are ignored by CSRF by default
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        $token = (csrf token)
+        $token = (New-PodeCsrfToken)
         Write-PodeViewResponse -Path 'index-csrf' -Data @{ 'csrfToken' = $token } -FlashMessages
     }
 
