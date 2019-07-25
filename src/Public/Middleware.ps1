@@ -1,3 +1,25 @@
+<#
+.SYNOPSIS
+Adds an access rule to allow or deny IP addresses.
+
+.DESCRIPTION
+Adds an access rule to allow or deny IP addresses.
+
+.PARAMETER Access
+The type of access to enable.
+
+.PARAMETER Type
+What type of request are we configuring?
+
+.PARAMETER Values
+A single, or an array of values.
+
+.EXAMPLE
+Add-PodeAccessRule -Access Allow -Type IP -Values '127.0.0.1'
+
+.EXAMPLE
+Add-PodeAccessRule -Access Deny -Type IP -Values @('192.168.1.1', '10.10.1.0/24')
+#>
 function Add-PodeAccessRule
 {
     [CmdletBinding()]
@@ -31,6 +53,34 @@ function Add-PodeAccessRule
     }
 }
 
+<#
+.SYNOPSIS
+Adds rate limiting rules for an IP address.
+
+.DESCRIPTION
+Adds rate limiting rules for an IP address.
+
+.PARAMETER Type
+What type of request are we limiting?
+
+.PARAMETER Values
+A single, or an array of values.
+
+.PARAMETER Limit
+The maximum number of requests to allow.
+
+.PARAMETER Seconds
+The number of seconds to count requests before restarting the count.
+
+.PARAMETER Group
+If supplied, groups of IPs in a subnet will be concidered as one IP.
+
+.EXAMPLE
+Add-PodeLimitRule -Type IP -Values '127.0.0.1' -Limit 10 -Seconds 1
+
+.EXAMPLE
+Add-PodeLimitRule -Type IP -Values @('192.168.1.1', '10.10.1.0/24') -Limit 50 -Seconds 1 -Group
+#>
 function Add-PodeLimitRule
 {
     [CmdletBinding()]
@@ -70,6 +120,65 @@ function Add-PodeLimitRule
     }
 }
 
+<#
+.SYNOPSIS
+Enables Middleware for creating, retrieving and using Sessions within Pode.
+
+.DESCRIPTION
+Enables Middleware for creating, retrieving and using Sessions within Pode. With support for defining Session duration, and custom Storage.
+
+.PARAMETER Secret
+A secret to use when signing Session cookies.
+
+.PARAMETER Name
+The name of the cookie Sessions use.
+
+.PARAMETER Duration
+The duration a Session cookie should last for, before being expired.
+
+.PARAMETER Generator
+A custom ScriptBlock to generate a random unique SessionId. The value returned must be a String.
+
+.PARAMETER Storage
+A custom PSObject that defines methods for Delete, Get, and Set. This allow you to store Sessions in custom Storage such as Redis.
+
+.PARAMETER Extend
+If supplied, the Session's cookie will have its duration extended on each successful Request.
+
+.PARAMETER HttpOnly
+If supplied, the Session cookie will only be accessible to browsers.
+
+.PARAMETER Secure
+If supplied, the Session cookie will only be accessible over HTTPS Requests.
+
+.EXAMPLE
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
+
+.EXAMPLE
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator {
+    return [System.IO.Path]::GetRandomFileName()
+}
+
+.EXAMPLE
+$store = New-Object -TypeName psobject |
+
+# delete a sessionId and data
+$store | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+    param($sessionId)
+}
+
+# get a sessionId's data
+$store | Add-Member -MemberType ScriptMethod -Name Get -Value {
+    param($sessionId)
+}
+
+# update/insert a sessionId and data
+$store | Add-Member -MemberType ScriptMethod -Name Set -Value {
+    param($sessionId, $data, $expiry)
+}
+
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Storage $store
+#>
 function Enable-PodeSessionMiddleware
 {
     [CmdletBinding()]
@@ -109,9 +218,6 @@ function Enable-PodeSessionMiddleware
         $HttpOnly,
 
         [switch]
-        $Discard,
-
-        [switch]
         $Secure
     )
 
@@ -146,7 +252,6 @@ function Enable-PodeSessionMiddleware
             Duration = $Duration
             Extend = $Extend
             Secure = $Secure
-            Discard = $Discard
             HttpOnly = $HttpOnly
         }
     }
@@ -216,6 +321,16 @@ function Enable-PodeSessionMiddleware
     (New-PodeMiddleware -ScriptBlock $script) | Add-PodeMiddleware -Name '__pode_mw_sessions__'
 }
 
+<#
+.SYNOPSIS
+Creates and returns a new secure token for use with CSRF.
+
+.DESCRIPTION
+Creates and returns a new secure token for use with CSRF.
+
+.EXAMPLE
+$token = New-PodeCsrfToken
+#>
 function New-PodeCsrfToken
 {
     [CmdletBinding()]
@@ -234,6 +349,19 @@ function New-PodeCsrfToken
     return "t:$($Salt).$(Invoke-PodeSHA256Hash -Value "$($Salt)-$($Secret)")"
 }
 
+<#
+.SYNOPSIS
+Returns adhoc CSRF CSRF verification Middleware, for use on Routes.
+
+.DESCRIPTION
+Returns adhoc CSRF CSRF verification Middleware, for use on Routes.
+
+.EXAMPLE
+$csrf = Get-PodeCsrfMiddleware
+Add-PodeRoute -Method Get -Path '/cpu' -Middleware $csrf -ScriptBlock {
+    # logic
+}
+#>
 function Get-PodeCsrfMiddleware
 {
     [CmdletBinding()]
@@ -266,6 +394,28 @@ function Get-PodeCsrfMiddleware
     return (New-PodeMiddleware -ScriptBlock $script)
 }
 
+<#
+.SYNOPSIS
+Initialises CSRF within Pode for adhoc usage.
+
+.DESCRIPTION
+Initialises CSRF within Pode for adhoc usage, with configurable HTTP methods to ignore verification.
+
+.PARAMETER IgnoreMethods
+An array of HTTP methods to ignore CSRF verification.
+
+.PARAMETER Secret
+A secret to use when signing cookies - for when using CSRF with cookies.
+
+.PARAMETER UseCookies
+If supplied, CSRF will used cookies rather than sessions.
+
+.EXAMPLE
+Initialize-PodeCsrf -IgnoreMethods @('Get', 'Trace')
+
+.EXAMPLE
+Initialize-PodeCsrf -Secret 'some-secret' -UseCookies
+#>
 function Initialize-PodeCsrf
 {
     [CmdletBinding()]
@@ -289,7 +439,7 @@ function Initialize-PodeCsrf
     }
 
     # if sessions haven't been setup and we're not using cookies, error
-    if (!$Cookie -and !(Test-PodeSessionsConfigured)) {
+    if (!$UseCookies -and !(Test-PodeSessionsConfigured)) {
         throw 'Sessions are required to use CSRF unless you want to use cookies'
     }
 
@@ -311,6 +461,28 @@ function Initialize-PodeCsrf
     }
 }
 
+<#
+.SYNOPSIS
+Enables Middleware for verifying CSRF tokens on Requests.
+
+.DESCRIPTION
+Enables Middleware for verifying CSRF tokens on Requests, with configurable HTTP methods to ignore verification.
+
+.PARAMETER IgnoreMethods
+An array of HTTP methods to ignore CSRF verification.
+
+.PARAMETER Secret
+A secret to use when signing cookies - for when using CSRF with cookies.
+
+.PARAMETER UseCookies
+If supplied, CSRF will used cookies rather than sessions.
+
+.EXAMPLE
+Enable-PodeCsrfMiddleware -IgnoreMethods @('Get', 'Trace')
+
+.EXAMPLE
+Enable-PodeCsrfMiddleware -Secret 'some-secret' -UseCookies
+#>
 function Enable-PodeCsrfMiddleware
 {
     [CmdletBinding()]
@@ -320,10 +492,11 @@ function Enable-PodeCsrfMiddleware
         [string[]]
         $IgnoreMethods = @('Get', 'Head', 'Options', 'Trace'),
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Cookies')]
         [string]
         $Secret,
 
+        [Parameter(ParameterSetName='Cookies')]
         [switch]
         $UseCookies
     )

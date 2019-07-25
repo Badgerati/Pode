@@ -388,27 +388,71 @@ Describe 'Add-PodeIPAccess' {
     }
 }
 
-Describe 'Csrf' {
-    It 'Returs main middleware' {
-        Mock Set-PodeCsrfSetup { }
-        Mock Get-PodeCsrfMiddleware { return { write-host 'hello' } }
-        (Csrf -Action Middleware).ToString() | Should Be ({ write-host 'hello' }).ToString()
+Describe 'Enable-PodeCsrfMiddleware' {
+    It 'Enables the main CSRF middleware' {
+        Mock Initialize-PodeCsrf {}
+        Mock New-PodeMiddleware { return @{} }
+        Mock Add-PodeMiddleware {}
+
+        Enable-PodeCsrfMiddleware
+
+        Assert-MockCalled New-PodeMiddleware -Times 1 -Scope It
+        Assert-MockCalled Add-PodeMiddleware -Times 1 -Scope It
+    }
+}
+
+Describe 'Get-PodeCsrfMiddleware' {
+    It 'Returns CSRF verification middleware' {
+        Mock Test-PodeCsrfConfigured { return $true }
+        Mock New-PodeMiddleware { return { write-host 'hello' } }
+
+        (Get-PodeCsrfMiddleware).ToString() | Should Be ({ write-host 'hello' }).ToString()
+    }
+}
+
+Describe 'New-PodeCsrfToken' {
+    It 'Returns a token' {
+        Mock Test-PodeCsrfConfigured { return $true }
+        Mock New-PodeCsrfSecret { return 'secret' }
+        Mock New-PodeSalt { return 'salt' }
+        Mock Invoke-PodeSHA256Hash { return 'salt-secret' }
+        New-PodeCsrfToken | Should Be 't:salt.salt-secret'
+    }
+}
+
+Describe 'Initialize-PodeCsrf' {
+    It 'Runs csrf setup using sessions' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
+
+        Mock Test-PodeCsrfConfigured { return $false }
+        Mock Test-PodeSessionsConfigured { return $true }
+        Mock Get-PodeCookieSecret { return 'secret' }
+
+        Initialize-PodeCsrf -IgnoreMethods @('Get')
+
+        $PodeContext.Server.Cookies.Csrf.Name | Should Be 'pode.csrf'
+        $PodeContext.Server.Cookies.Csrf.UseCookies | Should Be $false
+        $PodeContext.Server.Cookies.Csrf.Secret | Should Be ''
+        $PodeContext.Server.Cookies.Csrf.IgnoredMethods | Should Be @('Get')
     }
 
-    It 'Returs check middleware' {
-        Mock Get-PodeCsrfCheck { return { write-host 'hello' } }
-        (Csrf -Action Check).ToString() | Should Be ({ write-host 'hello' }).ToString()
-    }
+    It 'Runs csrf setup using cookies' {
+        $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
+            'Csrf' = @{ 'Name' = 'Key' }
+        }}}
 
-    It 'Runs csrf setup' {
-        Mock Set-PodeCsrfSetup { }
-        Csrf -Action Setup
-        Assert-MockCalled Set-PodeCsrfSetup -Times 1 -Scope It
-    }
+        Mock Test-PodeCsrfConfigured { return $false }
+        Mock Test-PodeSessionsConfigured { return $false }
+        Mock Get-PodeCookieSecret { return 'secret' }
 
-    It 'Returs a token' {
-        Mock New-PodeCsrfToken { return 'token' }
-        Csrf -Action Token | Should Be 'token'
+        Initialize-PodeCsrf -IgnoreMethods @('Get') -UseCookies
+
+        $PodeContext.Server.Cookies.Csrf.Name | Should Be 'pode.csrf'
+        $PodeContext.Server.Cookies.Csrf.UseCookies | Should Be $true
+        $PodeContext.Server.Cookies.Csrf.Secret | Should Be 'secret'
+        $PodeContext.Server.Cookies.Csrf.IgnoredMethods | Should Be @('Get')
     }
 }
 
@@ -490,7 +534,7 @@ Describe 'Test-PodeCsrfToken' {
     }
 
     It 'Returns true for token match' {
-        Mock New-PodeCsrfToken { return 't:value1.signed' }
+        Mock Restore-PodeCsrfToken { return 't:value1.signed' }
         Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should Be $true
     }
 }
@@ -515,7 +559,7 @@ Describe 'New-PodeCsrfToken' {
             'Cookies' = @{ 'Csrf' = $null }
         }}
 
-        { New-PodeCsrfToken } | Should Throw 'not been defined'
+        { New-PodeCsrfToken } | Should Throw 'not been initialised'
     }
 
     Mock Invoke-PodeSHA256Hash { return "$($Value)" }
