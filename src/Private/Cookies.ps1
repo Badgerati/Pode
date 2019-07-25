@@ -63,16 +63,16 @@ function ConvertTo-PodeCookie
     }
 
     return @{
-        'Name' = $Cookie.Name;
-        'Value' = $Cookie.Value;
-        'Expires' = $Cookie.Expires;
-        'Expired' = $Cookie.Expired;
-        'Discard' = $Cookie.Discard;
-        'HttpOnly' = $Cookie.HttpOnly;
-        'Secure' = $Cookie.Secure;
-        'Path' = $Cookie.Path;
-        'TimeStamp' = $Cookie.TimeStamp;
-        'Signed' = $Cookie.Value.StartsWith('s:');
+        Name = $Cookie.Name
+        Value = $Cookie.Value
+        Expires = $Cookie.Expires
+        Expired = $Cookie.Expired
+        Discard = $Cookie.Discard
+        HttpOnly = $Cookie.HttpOnly
+        Secure = $Cookie.Secure
+        Path = $Cookie.Path
+        TimeStamp = $Cookie.TimeStamp
+        Signed = $Cookie.Value.StartsWith('s:')
     }
 }
 

@@ -248,10 +248,9 @@ function Add-PodeIPAccess
         [Parameter(Mandatory=$true)]
         [ValidateSet('Allow', 'Deny')]
         [string]
-        $Permission,
+        $Access,
 
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
         [string]
         $IP
     )
@@ -260,16 +259,16 @@ function Add-PodeIPAccess
     $type = 'IP'
 
     # get opposite permission
-    $opp = "$(if ($Permission -ieq 'allow') { 'Deny' } else { 'Allow' })"
+    $opp = "$(if ($Access -ieq 'allow') { 'Deny' } else { 'Allow' })"
 
     # get permission lists for type
-    $permType = $PodeContext.Server.Access[$Permission][$type]
+    $permType = $PodeContext.Server.Access[$Access][$type]
     $oppType = $PodeContext.Server.Access[$opp][$type]
 
     # setup up perm type
     if ($null -eq $permType) {
-        $PodeContext.Server.Access[$Permission][$type] = @{}
-        $permType = $PodeContext.Server.Access[$Permission][$type]
+        $PodeContext.Server.Access[$Access][$type] = @{}
+        $permType = $PodeContext.Server.Access[$Access][$type]
     }
 
     # have we already added the ip?
@@ -299,119 +298,15 @@ function Add-PodeIPAccess
 
     # add access rule for ip
     $permType.Add($IP, @{
-        'Lower' = @{
-            'Family' = $_tmpLo.AddressFamily;
-            'Bytes' = $_tmpLo.GetAddressBytes();
-        };
-        'Upper' = @{
-            'Family' = $_tmpHi.AddressFamily;
-            'Bytes' = $_tmpHi.GetAddressBytes();
-        };
+        Lower = @{
+            Family = $_tmpLo.AddressFamily
+            Bytes = $_tmpLo.GetAddressBytes()
+        }
+        Upper = @{
+            Family = $_tmpHi.AddressFamily
+            Bytes = $_tmpHi.GetAddressBytes()
+        }
     })
-}
-
-function Set-PodeCsrfSetup
-{
-    param (
-        [Parameter()]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC')]
-        [string[]]
-        $IgnoreMethods = @('GET', 'HEAD', 'OPTIONS', 'TRACE', 'STATIC'),
-
-        [Parameter()]
-        [string]
-        $Secret,
-
-        [switch]
-        $Cookie
-    )
-
-    # check that csrf logic hasn't already been defined
-    if (!(Test-IsEmpty $PodeContext.Server.Cookies.Csrf)) {
-        return
-    }
-
-    # if sessions haven't been setup and we're not using cookies, error
-    if (!$Cookie -and (Test-IsEmpty $PodeContext.Server.Cookies.Session)) {
-        throw 'Sessions are required to use CSRF unless you pass the -Cookie flag'
-    }
-
-    # if we're using cookies, ensure a global secret exists
-    if ($Cookie) {
-        $Secret = (Protect-PodeValue -Value $Secret -Default (Get-PodeCookieSecret -Global))
-
-        if (Test-IsEmpty $Secret) {
-            throw "When using cookies for CSRF, a secret is required. You can either supply a secret, or set the cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
-        }
-    }
-
-    # set the options against the server context
-    $PodeContext.Server.Cookies.Csrf = @{
-        'Name' = 'pode.csrf';
-        'Cookie' = $Cookie;
-        'Secret' = $Secret;
-        'IgnoredMethods' = $IgnoreMethods;
-    }
-}
-
-function Get-PodeCsrfMiddleware
-{
-    # check that csrf logic has been defined
-    if (Test-IsEmpty $PodeContext.Server.Cookies.Csrf) {
-        throw 'CSRF middleware has not been defined'
-    }
-
-    # return scriptblock for the csrf middleware
-    return {
-        param($e)
-
-        # if the current route method is ignored, just return
-        $ignored = @($PodeContext.Server.Cookies.Csrf.IgnoredMethods)
-        if (!(Test-IsEmpty $ignored) -and ($ignored -icontains $e.Method)) {
-            return $true
-        }
-
-        # if there's not a secret, generate and store it
-        $secret = New-PodeCsrfSecret
-
-        # verify the token on the request, if invalid, throw a 403
-        $token = Get-PodeCsrfToken
-
-        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
-            Set-PodeResponseStatus -Code 403 -Description 'Invalid CSRF Token'
-            return $false
-        }
-
-        # token is valid, move along
-        return $true
-    }
-}
-
-function Get-PodeCsrfCheck
-{
-    # check that csrf logic has been defined
-    if (Test-IsEmpty $PodeContext.Server.Cookies.Csrf) {
-        throw 'CSRF middleware has not been defined'
-    }
-
-    # return scriptblock for the csrf check middleware
-    return {
-        param($e)
-
-        # if there's not a secret, generate and store it
-        $secret = New-PodeCsrfSecret
-
-        # verify the token on the request, if invalid, throw a 403
-        $token = Get-PodeCsrfToken
-
-        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
-            Set-PodeResponseStatus -Code 403 -Description 'Invalid CSRF Token'
-            return $false
-        }
-
-        # token is valid, move along
-        return $true
-    }
 }
 
 function Get-PodeCsrfToken
@@ -470,7 +365,7 @@ function Test-PodeCsrfToken
     $salt = $_token.Substring(0, $periodIndex)
 
     # ensure the token is valid
-    if ((New-PodeCsrfToken -Secret $Secret -Salt $salt) -ne $Token) {
+    if ((Restore-PodeCsrfToken -Secret $Secret -Salt $salt) -ne $Token) {
         return $false
     }
 
@@ -497,7 +392,7 @@ function Get-PodeCsrfSecret
     $key = $PodeContext.Server.Cookies.Csrf.Name
 
     # are we getting it from a cookie, or session?
-    if ($PodeContext.Server.Cookies.Csrf.Cookie) {
+    if ($PodeContext.Server.Cookies.Csrf.UseCookies) {
         return (Get-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
             -Secret $PodeContext.Server.Cookies.Csrf.Secret).Value
@@ -521,7 +416,7 @@ function Set-PodeCsrfSecret
     $key = $PodeContext.Server.Cookies.Csrf.Name
 
     # are we setting this on a cookie, or session?
-    if ($PodeContext.Server.Cookies.Csrf.Cookie) {
+    if ($PodeContext.Server.Cookies.Csrf.UseCookies) {
         (Set-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
             -Value $Secret `
@@ -534,33 +429,22 @@ function Set-PodeCsrfSecret
     }
 }
 
-function New-PodeCsrfToken
+function Restore-PodeCsrfToken
 {
     param (
-        [Parameter()]
+        [Parameter(Mandatory=$true)]
         [string]
         $Secret,
 
-        [Parameter()]
+        [Parameter(Mandatory=$true)]
         [string]
         $Salt
     )
 
-    # fail if the csrf logic hasn't been defined
-    if (Test-IsEmpty $PodeContext.Server.Cookies.Csrf) {
-        throw 'CSRF middleware has not been defined'
-    }
-
-    # generate a new secret if none supplied
-    if (Test-IsEmpty $Secret) {
-        $Secret = New-PodeCsrfSecret
-    }
-
-    # generate a new salt if none supplied
-    if (Test-IsEmpty $Salt) {
-        $Salt = (New-PodeSalt -Length 8)
-    }
-
-    # return a new token
     return "t:$($Salt).$(Invoke-PodeSHA256Hash -Value "$($Salt)-$($Secret)")"
+}
+
+function Test-PodeCsrfConfigured
+{
+    return (!(Test-IsEmpty $PodeContext.Server.Cookies.Csrf))
 }

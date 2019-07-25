@@ -1,10 +1,10 @@
 function New-PodeSessionCookie
 {
     $sid = @{
-        'Name' = $PodeContext.Server.Cookies.Session.Name;
-        'Id' = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cookies.Session.GenerateId -Return);
-        'Cookie' = $PodeContext.Server.Cookies.Session.Info;
-        'Data' = @{};
+        Name = $PodeContext.Server.Cookies.Session.Name
+        Id = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cookies.Session.GenerateId -Return)
+        Cookie = $PodeContext.Server.Cookies.Session.Info
+        Data = @{}
     }
 
     Set-PodeSessionCookieDataHash -Session $sid
@@ -28,7 +28,7 @@ function Set-PodeSessionCookie
     (Set-PodeCookie `
         -Name $Session.Name `
         -Value $Session.Id `
-        -Secret $PodeContext.Server.Cookies.Session.SecretKey `
+        -Secret $PodeContext.Server.Cookies.Session.Secret `
         -ExpiryDate (Get-PodeSessionCookieExpiry -Session $Session) `
         -HttpOnly:$httpOnly `
         -Discard:$discard `
@@ -60,10 +60,10 @@ function Get-PodeSessionCookie
 
     # generate the session from the cookie
     $data = @{
-        'Name' = $cookie.Name;
-        'Id' = $cookie.Value;
-        'Cookie' = $PodeContext.Server.Cookies.Session.Info;
-        'Data' = @{};
+        Name = $cookie.Name
+        Id = $cookie.Value
+        Cookie = $PodeContext.Server.Cookies.Session.Info
+        Data = @{}
     }
 
     $data.Cookie.TimeStamp = $cookie.TimeStamp
@@ -202,8 +202,8 @@ function Get-PodeSessionCookieInMemStore
         param($sessionId, $data, $expiry)
 
         $this.Memory[$sessionId] = @{
-            'Data' = $data;
-            'Expiry' = $expiry;
+            Data = $data
+            Expiry = $expiry
         }
     }
 
@@ -232,4 +232,9 @@ function Set-PodeSessionCookieInMemClearDown
             }
         }
     }
+}
+
+function Test-PodeSessionsConfigured
+{
+    return (!(Test-IsEmpty $PodeContext.Server.Cookies.Session))
 }

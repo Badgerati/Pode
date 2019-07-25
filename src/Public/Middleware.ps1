@@ -1,190 +1,104 @@
-function Access
+<#
+.SYNOPSIS
+Adds an access rule to allow or deny IP addresses.
+
+.DESCRIPTION
+Adds an access rule to allow or deny IP addresses.
+
+.PARAMETER Access
+The type of access to enable.
+
+.PARAMETER Type
+What type of request are we configuring?
+
+.PARAMETER Values
+A single, or an array of values.
+
+.EXAMPLE
+Add-PodeAccessRule -Access Allow -Type IP -Values '127.0.0.1'
+
+.EXAMPLE
+Add-PodeAccessRule -Access Deny -Type IP -Values @('192.168.1.1', '10.10.1.0/24')
+#>
+function Add-PodeAccessRule
 {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateSet('Allow', 'Deny')]
-        [Alias('p')]
         [string]
-        $Permission,
+        $Access,
 
         [Parameter(Mandatory=$true)]
         [ValidateSet('IP')]
-        [Alias('t')]
         [string]
         $Type,
 
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [Alias('v')]
-        [object]
-        $Value
+        [string[]]
+        $Values
     )
 
     # error if serverless
-    Test-PodeIsServerless -FunctionName 'access' -ThrowError
-
-    # if it's array add them all
-    if ((Get-PodeType $Value).BaseName -ieq 'array') {
-        $Value | ForEach-Object {
-            access -Permission $Permission -Type $Type -Value $_
-        }
-
-        return
-    }
+    Test-PodeIsServerless -FunctionName 'Add-PodeAccessRule' -ThrowError
 
     # call the appropriate access method
     switch ($Type.ToLowerInvariant())
     {
         'ip' {
-            Add-PodeIPAccess -Permission $Permission -IP $Value
-        }
-    }
-}
-
-function Auth
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('use', 'check')]
-        [Alias('a')]
-        [string]
-        $Action,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [Alias('n')]
-        [string]
-        $Name,
-
-        [Parameter()]
-        [Alias('v')]
-        [object]
-        $Validator,
-
-        [Parameter()]
-        [Alias('p')]
-        [scriptblock]
-        $Parser,
-
-        [Parameter()]
-        [Alias('o')]
-        [hashtable]
-        $Options,
-
-        [Parameter()]
-        [Alias('t')]
-        [string]
-        $Type,
-
-        [switch]
-        [Alias('c')]
-        $Custom
-    )
-
-    # for the 'use' action, ensure we have a validator. and a parser for custom types
-    if ($Action -ieq 'use') {
-        # was a validator passed
-        if (Test-IsEmpty $Validator) {
-            throw "Authentication method '$($Name)' is missing required Validator script"
-        }
-
-        # is the validator a string/scriptblock?
-        $vTypes = @('string', 'scriptblock')
-        if ($vTypes -inotcontains (Get-PodeType $Validator).Name) {
-            throw "Authentication method '$($Name)' has an invalid validator supplied, should be one of: $($vTypes -join ', ')"
-        }
-
-        # don't fail if custom and type supplied, and it's already defined
-        if ($Custom)
-        {
-            $typeDefined = (![string]::IsNullOrWhiteSpace($Type) -and $PodeContext.Server.Authentications.ContainsKey($Type))
-            if (!$typeDefined -and (Test-IsEmpty $Parser)) {
-                throw "Custom authentication method '$($Name)' is missing required Parser script"
+            foreach ($ip in $Values) {
+                Add-PodeIPAccess -Access $Access -IP $ip
             }
         }
     }
-
-    # invoke the appropriate auth logic for the action
-    switch ($Action.ToLowerInvariant())
-    {
-        'use' {
-            Invoke-PodeAuthUse -Name $Name -Type $Type -Validator $Validator -Parser $Parser -Options $Options -Custom:$Custom
-        }
-
-        'check' {
-            return (Invoke-PodeAuthCheck -Name $Name -Options $Options)
-        }
-    }
 }
 
-function Csrf
+<#
+.SYNOPSIS
+Adds rate limiting rules for an IP address.
+
+.DESCRIPTION
+Adds rate limiting rules for an IP address.
+
+.PARAMETER Type
+What type of request are we limiting?
+
+.PARAMETER Values
+A single, or an array of values.
+
+.PARAMETER Limit
+The maximum number of requests to allow.
+
+.PARAMETER Seconds
+The number of seconds to count requests before restarting the count.
+
+.PARAMETER Group
+If supplied, groups of IPs in a subnet will be concidered as one IP.
+
+.EXAMPLE
+Add-PodeLimitRule -Type IP -Values '127.0.0.1' -Limit 10 -Seconds 1
+
+.EXAMPLE
+Add-PodeLimitRule -Type IP -Values @('192.168.1.1', '10.10.1.0/24') -Limit 50 -Seconds 1 -Group
+#>
+function Add-PodeLimitRule
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('Check', 'Middleware', 'Setup', 'Token')]
-        [Alias('a')]
-        [string]
-        $Action,
-
-        [Parameter()]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC')]
-        [Alias('i')]
-        [string[]]
-        $IgnoreMethods = @('GET', 'HEAD', 'OPTIONS', 'TRACE', 'STATIC'),
-
-        [Parameter()]
-        [Alias('s')]
-        [string]
-        $Secret,
-
-        [switch]
-        [Alias('c')]
-        $Cookie
-    )
-
-    switch ($Action.ToLowerInvariant())
-    {
-        'check' {
-            return (Get-PodeCsrfCheck)
-        }
-
-        'middleware' {
-            Set-PodeCsrfSetup -IgnoreMethods $IgnoreMethods -Secret $Secret -Cookie:$Cookie
-            return (Get-PodeCsrfMiddleware)
-        }
-
-        'setup' {
-            Set-PodeCsrfSetup -IgnoreMethods $IgnoreMethods -Secret $Secret -Cookie:$Cookie
-        }
-
-        'token' {
-            return (New-PodeCsrfToken)
-        }
-    }
-}
-
-function Limit
-{
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
         [ValidateSet('IP')]
-        [Alias('t')]
         [string]
         $Type,
 
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [Alias('v')]
-        [object]
-        $Value,
+        [string[]]
+        $Values,
 
         [Parameter(Mandatory=$true)]
-        [Alias('l')]
         [int]
         $Limit,
 
         [Parameter(Mandatory=$true)]
-        [Alias('s')]
         [int]
         $Seconds,
 
@@ -193,92 +107,157 @@ function Limit
     )
 
     # error if serverless
-    Test-PodeIsServerless -FunctionName 'limit' -ThrowError
-
-    # if it's array add them all
-    if ((Get-PodeType $Value).BaseName -ieq 'array') {
-        $Value | ForEach-Object {
-            limit -Type $Type -Value $_ -Limit $Limit -Seconds $Seconds -Group:$Group
-        }
-
-        return
-    }
+    Test-PodeIsServerless -FunctionName 'Add-PodeLimitRule' -ThrowError
 
     # call the appropriate limit method
     switch ($Type.ToLowerInvariant())
     {
         'ip' {
-            Add-PodeIPLimit -IP $Value -Limit $Limit -Seconds $Seconds -Group:$Group
+            foreach ($ip in $Values) {
+                Add-PodeIPLimit -IP $ip -Limit $Limit -Seconds $Seconds -Group:$Group
+            }
         }
     }
 }
 
-function Session
+<#
+.SYNOPSIS
+Enables Middleware for creating, retrieving and using Sessions within Pode.
+
+.DESCRIPTION
+Enables Middleware for creating, retrieving and using Sessions within Pode. With support for defining Session duration, and custom Storage.
+
+.PARAMETER Secret
+A secret to use when signing Session cookies.
+
+.PARAMETER Name
+The name of the cookie Sessions use.
+
+.PARAMETER Duration
+The duration a Session cookie should last for, before being expired.
+
+.PARAMETER Generator
+A custom ScriptBlock to generate a random unique SessionId. The value returned must be a String.
+
+.PARAMETER Storage
+A custom PSObject that defines methods for Delete, Get, and Set. This allow you to store Sessions in custom Storage such as Redis.
+
+.PARAMETER Extend
+If supplied, the Session's cookie will have its duration extended on each successful Request.
+
+.PARAMETER HttpOnly
+If supplied, the Session cookie will only be accessible to browsers.
+
+.PARAMETER Secure
+If supplied, the Session cookie will only be accessible over HTTPS Requests.
+
+.EXAMPLE
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
+
+.EXAMPLE
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator {
+    return [System.IO.Path]::GetRandomFileName()
+}
+
+.EXAMPLE
+$store = New-Object -TypeName psobject |
+
+# delete a sessionId and data
+$store | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+    param($sessionId)
+}
+
+# get a sessionId's data
+$store | Add-Member -MemberType ScriptMethod -Name Get -Value {
+    param($sessionId)
+}
+
+# update/insert a sessionId and data
+$store | Add-Member -MemberType ScriptMethod -Name Set -Value {
+    param($sessionId, $data, $expiry)
+}
+
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Storage $store
+#>
+function Enable-PodeSessionMiddleware
 {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [hashtable]
-        $Options
+        [string]
+        $Secret,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name = 'pode.sid',
+
+        [Parameter()]
+        [ValidateScript({
+            if ($_ -lt 0) {
+                throw "Duration must be 0 or greater, but got: $($_)s"
+            }
+
+            return $true
+        })]
+        [int]
+        $Duration = 0,
+
+        [Parameter()]
+        [scriptblock]
+        $Generator,
+
+        [Parameter()]
+        [psobject]
+        $Storage,
+
+        [switch]
+        $Extend,
+
+        [switch]
+        $HttpOnly,
+
+        [switch]
+        $Secure
     )
 
-    # check that session logic hasn't already been defined
-    if (!(Test-IsEmpty $PodeContext.Server.Cookies.Session)) {
-        throw 'Session middleware has already been defined'
-    }
-
-    # ensure a secret was actually passed
-    if (Test-IsEmpty $Options.Secret) {
-        throw 'A secret key is required for session cookies'
-    }
-
-    # ensure the override generator is a scriptblock
-    if (!(Test-IsEmpty $Options.GenerateId) -and ($Options.GenerateId -isnot 'scriptblock')) {
-        throw "Session GenerateId should be a ScriptBlock, but got: $((Get-PodeType $Options.GenerateId).Name)"
+    # check that session logic hasn't already been initialised
+    if (Test-PodeSessionsConfigured) {
+        throw 'Session Middleware has already been intialised'
     }
 
     # ensure the override store has the required methods
-    if (!(Test-IsEmpty $Options.Store)) {
-        $members = @($Options.Store | Get-Member | Select-Object -ExpandProperty Name)
+    if (!(Test-IsEmpty $Storage)) {
+        $members = @($Storage | Get-Member | Select-Object -ExpandProperty Name)
         @('delete', 'get', 'set') | ForEach-Object {
             if ($members -inotcontains $_) {
-                throw "Custom session store does not implement the required '$($_)' method"
+                throw "Custom session storage does not implement the required '$($_)()' method"
             }
         }
     }
 
-    # ensure the duration is not <0
-    $Options.Duration = [int]($Options.Duration)
-    if ($Options.Duration -lt 0) {
-        throw "Session duration must be 0 or greater, but got: $($Options.Duration)s"
-    }
-
-    # get the appropriate store
-    $store = $Options.Store
-
-    # if no custom store, use the inmem one
-    if (Test-IsEmpty $store) {
-        $store = (Get-PodeSessionCookieInMemStore)
+    # if no custom storage, use the inmem one
+    if (Test-IsEmpty $Storage) {
+        $Storage = (Get-PodeSessionCookieInMemStore)
         Set-PodeSessionCookieInMemClearDown
     }
 
     # set options against server context
     $PodeContext.Server.Cookies.Session = @{
-        'Name' = (Protect-PodeValue -Value $Options.Name -Default 'pode.sid');
-        'SecretKey' = $Options.Secret;
-        'GenerateId' = (Protect-PodeValue -Value $Options.GenerateId -Default { return (New-PodeGuid) });
-        'Store' = $store;
-        'Info' = @{
-            'Duration' = [int]($Options.Duration);
-            'Extend' = [bool]($Options.Extend);
-            'Secure' = [bool]($Options.Secure);
-            'Discard' = [bool]($Options.Discard);
-            'HttpOnly' = [bool]($Options.HttpOnly);
-        };
+        Name = $Name
+        Secret = $Secret
+        GenerateId = (Protect-PodeValue -Value $Generator -Default { return (New-PodeGuid) })
+        Store = $Storage
+        Info = @{
+            Duration = $Duration
+            Extend = $Extend
+            Secure = $Secure
+            HttpOnly = $HttpOnly
+        }
     }
 
     # return scriptblock for the session middleware
-    return {
+    $script = {
         param($e)
 
         # if session already set, return
@@ -290,7 +269,7 @@ function Session
         {
             # get the session cookie
             $_sessionInfo = $PodeContext.Server.Cookies.Session
-            $e.Session = Get-PodeSessionCookie -Name $_sessionInfo.Name -Secret $_sessionInfo.SecretKey
+            $e.Session = Get-PodeSessionCookie -Name $_sessionInfo.Name -Secret $_sessionInfo.Secret
 
             # if no session on browser, create a new one
             if (!$e.Session) {
@@ -338,4 +317,216 @@ function Session
         # move along
         return $true
     }
+
+    (New-PodeMiddleware -ScriptBlock $script) | Add-PodeMiddleware -Name '__pode_mw_sessions__'
+}
+
+<#
+.SYNOPSIS
+Creates and returns a new secure token for use with CSRF.
+
+.DESCRIPTION
+Creates and returns a new secure token for use with CSRF.
+
+.EXAMPLE
+$token = New-PodeCsrfToken
+#>
+function New-PodeCsrfToken
+{
+    [CmdletBinding()]
+    param()
+
+    # fail if the csrf logic hasn't been initialised
+    if (!(Test-PodeCsrfConfigured)) {
+        throw 'CSRF Middleware has not been initialised'
+    }
+
+    # generate a new secret and salt
+    $Secret = New-PodeCsrfSecret
+    $Salt = (New-PodeSalt -Length 8)
+
+    # return a new token
+    return "t:$($Salt).$(Invoke-PodeSHA256Hash -Value "$($Salt)-$($Secret)")"
+}
+
+<#
+.SYNOPSIS
+Returns adhoc CSRF CSRF verification Middleware, for use on Routes.
+
+.DESCRIPTION
+Returns adhoc CSRF CSRF verification Middleware, for use on Routes.
+
+.EXAMPLE
+$csrf = Get-PodeCsrfMiddleware
+Add-PodeRoute -Method Get -Path '/cpu' -Middleware $csrf -ScriptBlock {
+    # logic
+}
+#>
+function Get-PodeCsrfMiddleware
+{
+    [CmdletBinding()]
+    param()
+
+    # fail if the csrf logic hasn't been initialised
+    if (!(Test-PodeCsrfConfigured)) {
+        throw 'CSRF Middleware has not been initialised'
+    }
+
+    # return scriptblock for the csrf route middleware to test tokens
+    $script = {
+        param($e)
+
+        # if there's not a secret, generate and store it
+        $secret = New-PodeCsrfSecret
+
+        # verify the token on the request, if invalid, throw a 403
+        $token = Get-PodeCsrfToken
+
+        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
+            Set-PodeResponseStatus -Code 403 -Description 'Invalid CSRF Token'
+            return $false
+        }
+
+        # token is valid, move along
+        return $true
+    }
+
+    return (New-PodeMiddleware -ScriptBlock $script)
+}
+
+<#
+.SYNOPSIS
+Initialises CSRF within Pode for adhoc usage.
+
+.DESCRIPTION
+Initialises CSRF within Pode for adhoc usage, with configurable HTTP methods to ignore verification.
+
+.PARAMETER IgnoreMethods
+An array of HTTP methods to ignore CSRF verification.
+
+.PARAMETER Secret
+A secret to use when signing cookies - for when using CSRF with cookies.
+
+.PARAMETER UseCookies
+If supplied, CSRF will used cookies rather than sessions.
+
+.EXAMPLE
+Initialize-PodeCsrf -IgnoreMethods @('Get', 'Trace')
+
+.EXAMPLE
+Initialize-PodeCsrf -Secret 'some-secret' -UseCookies
+#>
+function Initialize-PodeCsrf
+{
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [ValidateSet('Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
+        [string[]]
+        $IgnoreMethods = @('Get', 'Head', 'Options', 'Trace'),
+
+        [Parameter()]
+        [string]
+        $Secret,
+
+        [switch]
+        $UseCookies
+    )
+
+    # check that csrf logic hasn't already been intialised
+    if (Test-PodeCsrfConfigured) {
+        return
+    }
+
+    # if sessions haven't been setup and we're not using cookies, error
+    if (!$UseCookies -and !(Test-PodeSessionsConfigured)) {
+        throw 'Sessions are required to use CSRF unless you want to use cookies'
+    }
+
+    # if we're using cookies, ensure a global secret exists
+    if ($UseCookies) {
+        $Secret = (Protect-PodeValue -Value $Secret -Default (Get-PodeCookieSecret -Global))
+
+        if (Test-IsEmpty $Secret) {
+            throw "When using cookies for CSRF, a Secret is required. You can either supply a Secret, or set the Cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
+        }
+    }
+
+    # set the options against the server context
+    $PodeContext.Server.Cookies.Csrf = @{
+        Name = 'pode.csrf'
+        UseCookies = $UseCookies
+        Secret = $Secret
+        IgnoredMethods = $IgnoreMethods
+    }
+}
+
+<#
+.SYNOPSIS
+Enables Middleware for verifying CSRF tokens on Requests.
+
+.DESCRIPTION
+Enables Middleware for verifying CSRF tokens on Requests, with configurable HTTP methods to ignore verification.
+
+.PARAMETER IgnoreMethods
+An array of HTTP methods to ignore CSRF verification.
+
+.PARAMETER Secret
+A secret to use when signing cookies - for when using CSRF with cookies.
+
+.PARAMETER UseCookies
+If supplied, CSRF will used cookies rather than sessions.
+
+.EXAMPLE
+Enable-PodeCsrfMiddleware -IgnoreMethods @('Get', 'Trace')
+
+.EXAMPLE
+Enable-PodeCsrfMiddleware -Secret 'some-secret' -UseCookies
+#>
+function Enable-PodeCsrfMiddleware
+{
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [ValidateSet('Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
+        [string[]]
+        $IgnoreMethods = @('Get', 'Head', 'Options', 'Trace'),
+
+        [Parameter(ParameterSetName='Cookies')]
+        [string]
+        $Secret,
+
+        [Parameter(ParameterSetName='Cookies')]
+        [switch]
+        $UseCookies
+    )
+
+    Initialize-PodeCsrf -IgnoreMethods $IgnoreMethods -Secret $Secret -UseCookies:$UseCookies
+
+    # return scriptblock for the csrf middleware
+    $script = {
+        param($e)
+
+        # if the current route method is ignored, just return
+        $ignored = @($PodeContext.Server.Cookies.Csrf.IgnoredMethods)
+        if (!(Test-IsEmpty $ignored) -and ($ignored -icontains $e.Method)) {
+            return $true
+        }
+
+        # if there's not a secret, generate and store it
+        $secret = New-PodeCsrfSecret
+
+        # verify the token on the request, if invalid, throw a 403
+        $token = Get-PodeCsrfToken
+
+        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
+            Set-PodeResponseStatus -Code 403 -Description 'Invalid CSRF Token'
+            return $false
+        }
+
+        # token is valid, move along
+        return $true
+    }
+
+    (New-PodeMiddleware -ScriptBlock $script) | Add-PodeMiddleware -Name '__pode_mw_csrf__'
 }

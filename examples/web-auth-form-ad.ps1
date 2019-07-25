@@ -24,11 +24,7 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type Pode
 
     # setup session details
-    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
-        'Secret' = 'schwifty';
-        'Duration' = 120;
-        'Extend' = $true;
-    })
+    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 
     # setup form auth against windows AD (<form> in HTML)
     auth use login -t form -v 'windows-ad' -o @{

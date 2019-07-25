@@ -41,7 +41,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 }
 
 .EXAMPLE
-Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (csrf check) -ScriptBlock {
+Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (Get-PodeCsrfMiddleware) -ScriptBlock {
     Write-PodeJsonResponse -Value @{ Messages = @() }
 }
 

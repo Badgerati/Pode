@@ -1,39 +1,30 @@
 # Sessions
 
-Session `middleware` is supported on web requests and responses, in the form of signed-cookies and server-side data storage. When configured, the middleware will check for a session-cookie on the request; if a cookie is not found on the request, or the session is not in the store, then a new session is created and attached to the response. If there is a session, then the appropriate data is loaded from the store.
+Session Middleware is supported on web requests and responses in the form of signed-cookies and server-side data storage. When configured, the middleware will check for a session-cookie on the request; if a cookie is not found on the request, or the session is not in the store, then a new session is created and attached to the response. If there is a session, then the appropriate data is loaded from the store.
 
-The age of the session-cookie can be specified, as well as whether to extend the duration each time on each request. A secret-key to sign cookies can be supplied, as well as the ability to specify custom data stores - the default is in-mem, custom could be anything like redis/mongo.
+The age of the session-cookie can be specified, as well as whether to extend the duration each time on each request. A secret-key to sign cookies can be supplied, as well as the ability to specify custom data stores - the default is in-mem, custom could be anything like Redis/MongoDB.
 
 ## Usage
 
-To setup and configure using sessions in Pode, you can use the [`session`](../../../Functions/Middleware/Session) function. This function will return valid middleware that can be supplied to the [`middleware`](../../../Functions/Core/Middleware) function.
+To intialise sessions in Pode you use the `Enable-PodeSessionMiddleware` function. This function will configure and automatically create Middleware to enable sessions.
 
-To use the `session` function you must supply a `hashtable` that defines options to configure sessions, and the way they work.
-
-The following is an example of how to setup session middleware, with a `hashtable` that defines all possible options that could be supplied:
+The following is an example of how to setup session middleware:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{
-        'Secret' = 'schwifty';      # secret-key used to sign session cookie
-        'Name' = 'pode.sid';        # session cookie name (def: pode.sid)
-        'Duration' = 120;           # duration of the cookie, in seconds
-        'Extend' = $true;           # extend the duration of the cookie on each call
-        'GenerateId' = {            # custom SessionId generator (def: guid)
-            return [System.IO.Path]::GetRandomFileName()
-        };
-        'Store' = $null;            # custom object with required methods (def: in-mem)
-    })
+    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator {
+        return [System.IO.Path]::GetRandomFileName()
+    }
 }
 ```
 
-### GenerateId
+### Generate SessionIds
 
-If supplied, the `GenerateId` script must be a `scriptblock` that returns a valid string. The string itself should be a random unique value, that can be used as a unique session identifier. If no `GenerateId` script is supplied, then the default `sessionId` is a `guid`.
+If supplied, the `-Generator` is a `scriptblock` that must return a valid string. The string itself should be a random unique value, that can be used as a unique session identifier. If no `-Generator` script is supplied, then the default `SessionId` is a `GUID`.
 
-### Store
+### Storage
 
-If supplied, the `Store` must be a valid `psobject` with the following required `ScriptMethod` members:
+If supplied, the `-Storage` parameter is a `psobject` with the following required `ScriptMethod` members:
 
 ```powershell
 [hashtable] Get([string] $sessionId)
@@ -41,7 +32,7 @@ If supplied, the `Store` must be a valid `psobject` with the following required 
 [void]      Delete([string] $sessionId)
 ```
 
-If no store is supplied, then a default in-memory store is used - with auto-cleanup for expired sessions.
+If no `-Storage` is supplied, then a default in-memory store is used - with auto-cleanup for expired sessions.
 
 For example, the `Delete` method could be done as follows:
 
@@ -58,15 +49,15 @@ return $store
 
 ## Session Data
 
-To add data to a session you can utilise the `.Session.Data` object within the argument supplied to a `route` - or other middleware. The data will be saved at the end of the route logic automatically using [`endware`](../../../Functions/Core/Endware). When a request comes in using the same session, the data is loaded from the store.
+To add data to a session you can utilise the `.Session.Data` object within the web event object supplied to a Route - or other Middleware. The data will be saved at the end of the route logic automatically using Endware. When a request comes in using the same session, the data is loaded from the store.
 
 ### Example
 
-An example of using sessions in a `route` to increment a views counter could be done as follows (the counter will continue to increment on each call to the route until the session expires after 2mins):
+An example of using sessions in a Route to increment a views counter could be done as follows (the counter will continue to increment on each call to the route until the session expires after 2mins):
 
 ```powershell
 Start-PodeServer {
-    Add-PodeMiddleware -Name 'Sessions' -ScriptBlock (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
+    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($s)
