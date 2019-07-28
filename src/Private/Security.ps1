@@ -227,18 +227,18 @@ function Add-PodeIPLimit
 
     # add limit rule for ip
     $rules.Add($IP, @{
-        'Limit' = $Limit;
-        'Seconds' = $Seconds;
-        'Grouped' = [bool]$Group;
-        'IP' = $IP;
-        'Lower' = @{
-            'Family' = $_tmpLo.AddressFamily;
-            'Bytes' = $_tmpLo.GetAddressBytes();
-        };
-        'Upper' = @{
-            'Family' = $_tmpHi.AddressFamily;
-            'Bytes' = $_tmpHi.GetAddressBytes();
-        };
+        Limit = $Limit
+        Seconds = $Seconds
+        Grouped = [bool]$Group
+        IP = $IP
+        Lower = @{
+            Family = $_tmpLo.AddressFamily
+            Bytes = $_tmpLo.GetAddressBytes()
+        }
+        Upper = @{
+            Family = $_tmpHi.AddressFamily
+            Bytes = $_tmpHi.GetAddressBytes()
+        }
     })
 }
 

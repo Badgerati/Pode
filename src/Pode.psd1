@@ -31,7 +31,6 @@
     # Functions to export from this Module
     FunctionsToExport = @(
         'Logger',
-        'Auth',
 
         # cookies
         'Get-PodeCookie',
@@ -135,6 +134,13 @@
         'Get-PodeCsrfMiddleware',
         'Initialize-PodeCsrf',
         'Enable-PodeCsrfMiddleware',
+
+        # auth
+        'New-PodeAuthType',
+        'Add-PodeAuth',
+        'Add-PodeAuthWindowsAd',
+        'Remove-PodeAuth',
+        'Get-PodeAuthMiddleware',
 
         # core
         'Start-PodeServer',

@@ -72,7 +72,8 @@ function Add-PodeRoute
         [object[]]
         $Middleware,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        #[Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [Parameter(ParameterSetName='Script')]
         [scriptblock]
         $ScriptBlock,
 
@@ -199,13 +200,14 @@ function Add-PodeRoute
     }
 
     # add the route
+    Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $PodeContext.Server.Routes[$Method][$Path] += @(@{
-        'Logic' = $ScriptBlock;
-        'Middleware' = $Middleware;
-        'Protocol' = $Protocol;
-        'Endpoint' = $Endpoint.Trim();
-        'ContentType' = $ContentType;
-        'ErrorType' = $ErrorContentType;
+        Logic = $ScriptBlock
+        Middleware = $Middleware
+        Protocol = $Protocol
+        Endpoint = $Endpoint.Trim()
+        ContentType = $ContentType
+        ErrorType = $ErrorContentType
     })
 }
 
@@ -323,11 +325,11 @@ function Add-PodeStaticRoute
 
     # add the route path
     $PodeContext.Server.Routes[$Method][$Path] += @(@{
-        'Path' = $Source;
-        'Defaults' = $Defaults;
-        'Protocol' = $Protocol;
-        'Endpoint' = $Endpoint.Trim();
-        'Download' = $DownloadOnly;
+        Path = $Source
+        Defaults = $Defaults
+        Protocol = $Protocol
+        Endpoint = $Endpoint.Trim()
+        Download = $DownloadOnly
     })
 
 }

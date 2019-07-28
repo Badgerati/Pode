@@ -170,7 +170,7 @@ function Get-PodeRouteValidateMiddleware
             $route = Get-PodeRoute -Method $s.Method -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint -CheckWildMethod
 
             # if there's no route defined, it's a 404
-            if ($null -eq $route -or $null -eq $route.Logic) {
+            if ($null -eq $route) {
                 Set-PodeResponseStatus -Code 404
                 return $false
             }
