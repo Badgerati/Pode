@@ -1,21 +1,21 @@
 # Windows AD
 
 !!! important
-    The Windows AD validator is only supported on Windows (PowerShell, and PS Core v6.1+ only).
+    The Windows AD authentication method is only supported on Windows (PowerShell, and PS Core v6.1+ only).
 
 ## Usage
 
-To use the Windows AD validator you supply the name `windows-ad` to the `auth` function's `-v` parameter. The following example will validate a user's credentials, supplied via a web-form against the default DNS domain defined in `$env:USERDNSDOMAIN`:
+To use Windows AD authentication you use the `Add-PodeAuthWindowsAd` function. The following example will validate a user's credentials, supplied via a web-form against the default DNS domain defined in `$env:USERDNSDOMAIN`:
 
 ```powershell
 Start-PodeServer {
-    auth use login -t form -v 'windows-ad'
+    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login'
 }
 ```
 
 ### User Object
 
-The User object returned, and accessible on `routes` and other functions via `$e.Auth.User`, will contain the following information:
+The User object returned, and accessible on Routes, and other functions via `$e.Auth.User`, will contain the following information:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -27,7 +27,7 @@ The User object returned, and accessible on `routes` and other functions via `$e
 Such as:
 
 ```powershell
-Add-PodeRoute -Method Get -Path '/info' -Middleware (auth check login) -ScriptBlock {
+Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
     param($e)
     Write-Host $e.Auth.User.Username
 }
@@ -35,13 +35,11 @@ Add-PodeRoute -Method Get -Path '/info' -Middleware (auth check login) -ScriptBl
 
 ### Custom Domain
 
-If you want to supply a custom DNS domain, then you can supply an `FQDN` in the options parameter of the `auth` function:
+If you want to supply a custom DNS domain, then you can supply the `-FQDN` parameter:
 
 ```powershell
 Start-PodeServer {
-    auth use login -t form -v 'windows-ad' -o @{
-        'fqdn' = 'test.example.com'
-    }
+    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com'
 }
 ```
 
@@ -51,9 +49,7 @@ You can supply a list of group names to validate that user's are a member of the
 
 ```powershell
 Start-PodeServer {
-    auth use login -t form -v 'windows-ad' -o @{
-        'groups' = @('admins', 'devops')
-    }
+    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @('admins', 'devops')
 }
 ```
 
@@ -63,19 +59,17 @@ You can supply a list of authorised usernames to validate a user's access, after
 
 ```powershell
 Start-PodeServer {
-    auth use login -t form -v 'windows-ad' -o @{
-        'users' = @('jsnow', 'rsanchez')
-    }
+    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
 }
 ```
 
 ## Linux
 
-The inbuilt validator only supports Windows, but you can use libraries such as [Novell.Directory.Ldap.NETStandard](https://www.nuget.org/packages/Novell.Directory.Ldap.NETStandard/) with dotnet core on *nix environments:
+The inbuilt authentication only supports Windows, but you can use libraries such as [Novell.Directory.Ldap.NETStandard](https://www.nuget.org/packages/Novell.Directory.Ldap.NETStandard/) with dotnet core on *nix environments:
 
 ```powershell
 Start-PodeServer {
-    auth use login -t form -v {
+    New-PodeAuthType -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param ($username, $password)
 
         Add-Type -Path '<path-to-novell-dll>'
@@ -93,7 +87,9 @@ Start-PodeServer {
         }
 
         return @{
-            'user' = @{ 'username' = "<domain>\$username" }
+            User = @{
+                Username = "<domain>\$username"
+            }
         }
     }
 }

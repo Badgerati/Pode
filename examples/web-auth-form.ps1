@@ -55,8 +55,8 @@ Start-PodeServer -Threads 2 {
         $e.Session.Data.Views++
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
-            'Username' = $e.Auth.User.Name;
-            'Views' = $e.Session.Data.Views;
+            Username = $e.Auth.User.Name;
+            Views = $e.Session.Data.Views;
         }
     }
 

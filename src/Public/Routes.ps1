@@ -72,7 +72,6 @@ function Add-PodeRoute
         [object[]]
         $Middleware,
 
-        #[Parameter(Mandatory=$true, ParameterSetName='Script')]
         [Parameter(ParameterSetName='Script')]
         [scriptblock]
         $ScriptBlock,
