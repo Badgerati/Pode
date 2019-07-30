@@ -286,10 +286,6 @@ Describe 'Add-PodeRoute' {
         { Add-PodeRoute -Method GET -Path ([string]::Empty) -ScriptBlock {} } | Should Throw 'it is an empty string'
     }
 
-    It 'Throws null logic and middleware error' {
-        { Add-PodeRoute -Method GET -Path '/' -Middleware $null -ScriptBlock $null } | Should Throw 'because it is null'
-    }
-
     It 'Throws error when scriptblock and file path supplied' {
         { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } -FilePath './path' } | Should Throw 'parameter set cannot be resolved'
     }

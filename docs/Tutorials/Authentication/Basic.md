@@ -1,54 +1,50 @@
 # Basic Authentication
 
-Basic authentication is when you pass an encoded `username:password` value on the header of your requests: `@{ 'Authorization' = 'Basic <base64 encoded username:password>' }`.
+Basic Authentication is when you pass an encoded `username:password` value on the header of your requests: `@{ 'Authorization' = 'Basic <base64 encoded username:password>' }`.
 
 ## Setup
 
-To setup and start using Basic authentication in Pode you can call `auth use <name> -t basic` in your server script, the validator script you need to supply will have the username/password passed as arguments to the scriptblock:
+To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Basic` function, and then pipe this into the `Add-PodeAuth` function:
 
 ```powershell
 Start-PodeServer {
-    auth use login -t basic -v {
+    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($username, $password)
 
         # check if the user is valid
 
-        return @{ 'user' = $user }
+        return @{ User = $user }
     }
 }
 ```
 
-By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with `Basic`. The `auth use` action can be supplied options via `-o` to override the start name of the value, as well as the encoding that Pode uses.
+By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Basic`. The `New-PodeAuthType -Basic` function can be supplied parameters to customise this name, as well as the encoding.
 
 For example, to use `ASCII` encoding rather than the default `ISO-8859-1` you could do:
 
 ```powershell
 Start-PodeServer {
-    auth use login -t basic -v {
-        # check
-    } -o @{ 'Encoding' = 'ASCII' }
+    New-PodeAuthType -Basic -Encoding 'ASCII' | Add-PodeAuth -Name 'Login' -ScriptBlock {}
 }
 ```
-
-More options can be seen further below.
 
 ## Validating
 
-Once configured you can start using Basic authentication to validate incoming requests. You can either configure the validation to happen on every `route` as global `middleware`, or as custom `route` middleware.
+Once configured you can start using Basic Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
-The following will use Basic authentication to validate every request on every `route`:
+The following will use Basic Authentication to validate every request on every Route:
 
 ```powershell
 Start-PodeServer {
-    (auth check login) | Add-PodeMiddleware -Name 'GlobalAuthValidation'
+    Get-PodeAuthMiddleware -Name 'Login' | Add-PodeMiddleware -Name 'GlobalAuthValidation'
 }
 ```
 
-Whereas the following example will use Basic authentication to only validate requests on specific a `route`:
+Whereas the following example will use Basic authentication to only validate requests on specific a Route:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeRoute -Method Get -Path '/info' -Middleware (auth check login) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
         # logic
     }
 }
@@ -56,14 +52,14 @@ Start-PodeServer {
 
 ## Full Example
 
-The following full example of Basic authentication will setup and configure authentication, validate that a users username/password is valid, and then validate on a specific `route`:
+The following full example of Basic authentication will setup and configure authentication, validate that a users username/password is valid, and then validate on a specific Route:
 
 ```powershell
 Start-PodeServer {
     Add-PodeEndpoint -Address *:8080 -Protocol Http
 
     # setup basic authentication to validate a user
-    auth use login -t basic -v {
+    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -79,7 +75,7 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (auth check login) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 
@@ -89,10 +85,3 @@ Start-PodeServer {
     }
 }
 ```
-
-## Use Options
-
-| Name | Description | Default |
-| ---- | ----------- | ------- |
-| Encoding | Defines which encoding to use when decoding the Authorization header | ISO-8859-1 |
-| Name | Defines the name part of the header, in front of the encoded sting, such as the `Basic` part of `Basic <username:password>` | Basic |

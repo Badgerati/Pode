@@ -1,21 +1,20 @@
 # Custom Authentication
 
-Custom authentication works much like the inbuilt types, but allows you to specify your own parsing logic, as well as any custom options that might be required.
+Custom authentication works much like the inbuilt types (Basic and Form), but allows you to specify your own parsing logic, as well as any custom options that might be required.
 
 ## Setup and Parsing
 
-To setup and start using Custom authentication in Pode you can set `auth use -c <name>` in you server script. The `<name>` can be anything you want, even the name of an inbuilt method (it will still use your custom logic!).
+To setup and start using Custom authentication in Pode you use the `New-PodeAuthType -Custom` function, and then pipe this into the `Add-PodeAuth` function.
 
-Let's say we wanted something similar to [`Form`](../Form) authentication but it requires a third piece of information: `ClientName`. To setup Custom authentication for this method, you'll need to specify the parsing scriptblock under `-p`, as well as the validator script too.
+Let's say we wanted something similar to [`Form`](../Form) Authentication, but it requires a third piece of information: `ClientName`. To setup Custom Authentication for this method, you'll need to specify the parsing logic within the `-ScriptBlock`.
 
-The parsing script will be passed the current web event (containing the `Request`/`Response` objects, much like a `route`). In this script you can parse the request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either a `hashtable` or an `array`; this data will then `splatted` onto the validator scriptblock ([info](../../../Functions/Helpers/Invoke-PodeScriptBlock)):
+The `-ScriptBlock` on `New-PodeAuthType` will be passed the current web event (containing the `Request`/`Response` objects, much like a Route). In this script you can parse the Request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either an `array`, which will then splatted onto the `-ScriptBlock` from your `Add-PodeAuth` function:
 
 ```powershell
 Start-PodeServer {
-    # here we're calling the custom method "client"
-    auth use -c client -p {
-        # the current web event, and auth method options supplied
-        param($event, $opts)
+    # define a new custom authentication type
+    $custom_type = New-PodeAuthType -Custom -ScriptBlock {
+        param($e, $opts)
 
         # get client/user/pass field names to get from payload
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -23,32 +22,34 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/pass from the post data
-        $client = $event.Data.$clientField
-        $username = $event.Data.$userField
-        $password = $event.Data.$passField
+        $client = $e.Data.$clientField
+        $username = $e.Data.$userField
+        $password = $e.Data.$passField
 
         # return the data, to be passed to the validator script
         return @($client, $username, $password)
-    } `
-    -v {
+    }
+
+    # now, add a new custom authentication method
+    $custom_type | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($client, $username, $password)
 
         # check if the client is valid
 
-        return  @{ 'user' = $user }
+        return  @{ User = $user }
     }
 }
 ```
 
 ## Validating
 
-Once configured you can start using the Custom authentication to validate incoming requests. You can either configure the validation to happen on every `route` as global `middleware`, or as custom `route` middleware.
+Once configured you can start using the Custom Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
-The following will use Custom authentication to validate every request on every `route`:
+The following will use Custom Authentication to validate every request on every Route:
 
 ```powershell
 Start-PodeServer {
-    (auth check client) | Add-PodeMiddleware -Name 'GlobalAuthValidation'
+    Get-PodeAuthMiddleware -Name 'Login' | Add-PodeMiddleware -Name 'GlobalAuthValidation'
 }
 ```
 
@@ -56,7 +57,7 @@ Whereas the following example will use Custom authentication to only validate re
 
 ```powershell
 Start-PodeServer {
-    Add-PodeRoute -Method Get -Path '/info' -Middleware (auth check login) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
         # logic
     }
 }
@@ -70,10 +71,9 @@ The following full example of Custom authentication will setup and configure aut
 Start-PodeServer {
     Add-PodeEndpoint -Address *:8080 -Protocol Http
 
-    # here we're calling the custom method "client"
-    auth use -c client -p {
-        # the current web event, and auth method options supplied
-        param($event, $opts)
+    # define a new custom authentication type
+    $custom_type = New-PodeAuthType -Custom -ScriptBlock {
+        param($e, $opts)
 
         # get client/user/pass field names to get from payload
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -81,23 +81,25 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/pass from the post data
-        $client = $event.Data.$clientField
-        $username = $event.Data.$userField
-        $password = $event.Data.$passField
+        $client = $e.Data.$clientField
+        $username = $e.Data.$userField
+        $password = $e.Data.$passField
 
         # return the data, to be passed to the validator script
         return @($client, $username, $password)
-    } `
-    -v {
+    }
+
+    # now, add a new custom authentication method
+    $custom_type | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($client, $username, $password)
 
         # check if the client is valid
 
-        return  @{ 'user' = $user }
+        return  @{ User = $user }
     }
 
     # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (auth check client) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 
@@ -129,8 +131,3 @@ Below is an example HTML page that would POST the client/username/password to th
     </div>
 </form>
 ```
-
-## Use Options
-
-!!! info
-    There are no `use` options for custom types, unless you define your own.

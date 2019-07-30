@@ -944,7 +944,7 @@ function New-PodeMiddleware
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
         $ScriptBlock,
 

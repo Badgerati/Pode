@@ -73,21 +73,21 @@ With this, the two flash messages for `email-error` and `name-error` are automat
 
 ## Authentication
 
-When doing authentication checks, normally if the check fails Pode will throw an error and return with a `401` status code. However, you can tell `auth check` calls to load these errors in the session's flash messages under an `auth-error` key. To do this, you specify the `FailureFlash` option as `$true` to the `auth check` call.
+When doing authentication checks, normally if the check fails Pode will throw an error and return with a `401` status code. However, you can tell `Get-PodeAuthMiddleware` to load these errors in the Session's Flash messages under an `auth-error` key. To do this, you specify the `-EnableFlash` switch.
 
-For example, here we have a login page, with the `post` login check. The check flags that any authentication errors should be loaded into the session's flash messages:
+For example, here we have a login page, with the `POST` login check. The check flags that any authentication errors should be loaded into the session's flash messages:
 
 ```powershell
-$auth_login_page = (auth check login -o @{ 'login' = $true; 'successUrl' = '/' })
-Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login_page -ScriptBlock {
-    Write-PodeViewResponse 'auth-login' -FlashMessages
+$auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl = '/'
+Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
+    Write-PodeViewResponse -Path 'auth-login' -FlashMessages
 }
 
-Add-PodeRoute -Method Post -Path '/login' -Middleware (auth check login -o @{
-    'failureUrl' = '/login';
-    'successUrl' = '/';
-    'failureFlash' = $true;
-}) -ScriptBlock {}
+Add-PodeRoute -Method Post -Path '/login' -Middleware (Get-PodeAuthMiddleware `
+    -Name 'Login' `
+    -FailureUrl '/login' `
+    -SuccessUrl '/' `
+    -EnableFlash)
 ```
 
 Then, to load the authentication back for the user:

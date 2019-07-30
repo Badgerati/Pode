@@ -24,7 +24,7 @@ Start-PodeServer {
         return $true
     }
 
-    # middleware from a hashtable/pipeline - useful for inbuilt types, like "auth check"
+    # middleware from a hashtable/pipeline - useful for inbuilt types
     $mw = @{
         'Logic' = {
             'Middleware from hashtables!' | Out-Default

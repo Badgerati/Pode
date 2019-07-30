@@ -9,7 +9,7 @@ Describe 'Set-PodeAuthStatus' {
     Mock Set-PodeResponseStatus {}
 
     It 'Redirects to a failure URL' {
-        Set-PodeAuthStatus -StatusCode 500 -Options @{'FailureUrl' = 'url'} | Should Be $false
+        Set-PodeAuthStatus -StatusCode 500 -Options @{'Failure' = @{ 'Url' = 'url'} } | Should Be $false
         Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
     }
@@ -21,7 +21,7 @@ Describe 'Set-PodeAuthStatus' {
     }
 
     It 'Redirects to a success URL' {
-        Set-PodeAuthStatus -Options @{'SuccessUrl' = 'url'} | Should Be $false
+        Set-PodeAuthStatus -Options @{'Success' = @{ 'Url' = 'url' } } | Should Be $false
         Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
     }
@@ -33,66 +33,95 @@ Describe 'Set-PodeAuthStatus' {
     }
 }
 
-Describe 'Get-PodeAuthBasic' {
-    Context 'Invalid parameters supplied' {
-        It 'Throws empty name error' {
-            { Get-PodeAuthBasic -Name ([string]::Empty) -ScriptBlock {} } | Should Throw 'argument is null'
-        }
-
-        It 'Throws null name error' {
-            { Get-PodeAuthBasic -Name $null -ScriptBlock {} } | Should Throw 'argument is null'
-        }
-
-        It 'Throws null script error' {
-            { Get-PodeAuthBasic -ScriptBlock $null } | Should Throw 'argument is null'
-        }
-    }
-
-    Context 'Valid parameters' {
-        It 'Returns auth data' {
-            $result = Get-PodeAuthBasic -Name 'Basic' -ScriptBlock { Write-Host 'Hello' }
-
-            $result | Should Not Be $null
-            $result.Name | Should Be 'Basic'
-
-            $result.Parser | Should Not Be $null
-            $result.Parser.GetType().Name | Should Be 'ScriptBlock'
-
-            $result.Validator | Should Not Be $null
-            $result.Validator.GetType().Name | Should Be 'ScriptBlock'
-            $result.Validator.ToString() | Should Be ({ Write-Host 'Hello' }).ToString()
-        }
+Describe 'Get-PodeAuthBasicType' {
+    It 'Returns form auth type' {
+        $result = Get-PodeAuthBasicType
+        $result | Should Not Be $null
+        $result.GetType().Name | Should Be 'ScriptBlock'
     }
 }
 
-Describe 'Get-PodeAuthForm' {
-    Context 'Invalid parameters supplied' {
-        It 'Throws empty name error' {
-            { Get-PodeAuthForm -Name ([string]::Empty) -ScriptBlock {} } | Should Throw 'argument is null'
+Describe 'Get-PodeAuthFormType' {
+    It 'Returns basic auth type' {
+        $result = Get-PodeAuthFormType
+        $result | Should Not Be $null
+        $result.GetType().Name | Should Be 'ScriptBlock'
+    }
+}
+
+Describe 'Get-PodeAuthInbuiltMethod' {
+    It 'Returns Windows AD auth' {
+        $result = Get-PodeAuthInbuiltMethod -Type WindowsAd
+        $result | Should Not Be $null
+        $result.GetType().Name | Should Be 'ScriptBlock'
+    }
+}
+
+Describe 'Get-PodeAuthMiddlewareScript' {
+    It 'Returns auth middleware' {
+        $result = Get-PodeAuthMiddlewareScript
+        $result | Should Not Be $null
+        $result.GetType().Name | Should Be 'ScriptBlock'
+    }
+}
+
+Describe 'Remove-PodeAuthSession' {
+    It 'Removes the user, and kills the session' {
+        Mock Remove-PodeSessionCookie {}
+
+        $event = @{
+            Auth = @{ User = @{} }
+            Session = @{
+                Data = @{
+                    Auth = @{ User = @{} }
+                }
+            }
+            Middleware = @{
+                Options = @{
+                    Failure = @{
+                        Url = 'http://fake.com'
+                    }
+                }
+            }
         }
 
-        It 'Throws null name error' {
-            { Get-PodeAuthForm -Name $null -ScriptBlock {} } | Should Throw 'argument is null'
-        }
+        Remove-PodeAuthSession -Event $event
 
-        It 'Throws null script error' {
-            { Get-PodeAuthForm -ScriptBlock $null } | Should Throw 'argument is null'
-        }
+        $event.Auth.Count | Should Be 0
+        $event.Auth.User | Should Be $null
+        $event.Session.Data.Auth | Should be $null
+        $event.Middleware.Options.Failure.Url | Should Be 'http://fake.com'
+
+        Assert-MockCalled Remove-PodeSessionCookie -Times 1 -Scope It
     }
 
-    Context 'Valid parameters' {
-        It 'Returns auth data' {
-            $result = Get-PodeAuthForm -Name 'Form' -ScriptBlock { Write-Host 'Hello' }
+    It 'Removes the user, and kills the session, redirecting to root' {
+        Mock Remove-PodeSessionCookie {}
 
-            $result | Should Not Be $null
-            $result.Name | Should Be 'Form'
-
-            $result.Parser | Should Not Be $null
-            $result.Parser.GetType().Name | Should Be 'ScriptBlock'
-
-            $result.Validator | Should Not Be $null
-            $result.Validator.GetType().Name | Should Be 'ScriptBlock'
-            $result.Validator.ToString() | Should Be ({ Write-Host 'Hello' }).ToString()
+        $event = @{
+            Auth = @{ User = @{} }
+            Session = @{
+                Data = @{
+                    Auth = @{ User = @{} }
+                }
+            }
+            Middleware = @{
+                Options = @{
+                    Failure = @{}
+                }
+            }
+            Request = @{
+                Url = @{ AbsolutePath ='/' }
+            }
         }
+
+        Remove-PodeAuthSession -Event $event
+
+        $event.Auth.Count | Should Be 0
+        $event.Auth.User | Should Be $null
+        $event.Session.Data.Auth | Should be $null
+        $event.Middleware.Options.Failure.Url | Should Be '/'
+
+        Assert-MockCalled Remove-PodeSessionCookie -Times 1 -Scope It
     }
 }
