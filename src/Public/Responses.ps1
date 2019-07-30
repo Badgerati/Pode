@@ -345,7 +345,7 @@ function Write-PodeCsvResponse
         }
 
         'value' {
-            if ($Value -isnot 'string') {
+            if ($Value -isnot [string]) {
                 $Value = @(foreach ($v in $Value) {
                     New-Object psobject -Property $v
                 })
@@ -411,7 +411,7 @@ function Write-PodeHtmlResponse
         }
 
         'value' {
-            if ($Value -isnot 'string') {
+            if ($Value -isnot [string]) {
                 $Value = ($Value | ConvertTo-Html)
                 $Value = ($Value -join ([environment]::NewLine))
             }
@@ -467,7 +467,7 @@ function Write-PodeJsonResponse
         }
 
         'value' {
-            if ($Value -isnot 'string') {
+            if ($Value -isnot [string]) {
                 $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
             }
         }
@@ -522,7 +522,7 @@ function Write-PodeXmlResponse
         }
 
         'value' {
-            if ($Value -isnot 'string') {
+            if ($Value -isnot [string]) {
                 $Value = @(foreach ($v in $Value) {
                     New-Object psobject -Property $v
                 })

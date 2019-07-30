@@ -125,7 +125,7 @@ function Lock-PodeObject
         return
     }
 
-    if ($Object -is 'ValueType') {
+    if ($Object -is [valuetype]) {
         throw 'Cannot lock value types'
     }
 
@@ -657,23 +657,23 @@ function Test-IsEmpty
     }
 
     switch ($Value) {
-        { $_ -is 'string' } {
+        { $_ -is [string] } {
             return [string]::IsNullOrWhiteSpace($Value)
         }
 
-        { $_ -is 'array' } {
+        { $_ -is [array] } {
             return ($Value.Length -eq 0)
         }
 
-        { $_ -is 'hashtable' } {
+        { $_ -is [hashtable] } {
             return ($Value.Count -eq 0)
         }
 
-        { $_ -is 'scriptblock' } {
+        { $_ -is [scriptblock] } {
             return ($null -eq $Value -or [string]::IsNullOrWhiteSpace($Value.ToString()))
         }
 
-        { $_ -is 'valuetype' } {
+        { $_ -is [valuetype] } {
             return $false
         }
     }

@@ -152,17 +152,17 @@ function Add-PodeRoute
     if (!(Test-IsEmpty $Middleware)) {
         @($Middleware) | ForEach-Object {
             # check middleware is a type valid
-            if (($_ -isnot 'scriptblock') -and ($_ -isnot 'hashtable')) {
+            if (($_ -isnot [scriptblock]) -and ($_ -isnot [hashtable])) {
                 throw "One of the Route Middlewares supplied for the '[$($Method)] $($Path)' Route is an invalid type. Expected either ScriptBlock or Hashtable, but got: $($_.GetType().Name)"
             }
 
             # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
-            if ($_ -is 'hashtable') {
+            if ($_ -is [hashtable]) {
                 if ($null -eq $_.Logic) {
                     throw "A Hashtable Middleware supplied for the '[$($Method)] $($Path)' Route has no Logic defined"
                 }
 
-                if ($_.Logic -isnot 'scriptblock') {
+                if ($_.Logic -isnot [scriptblock]) {
                     throw "A Hashtable Middleware supplied for the '[$($Method)] $($Path)' Route has has an invalid Logic type. Expected ScriptBlock, but got: $($_.Logic.GetType().Name)"
                 }
             }
@@ -175,7 +175,7 @@ function Add-PodeRoute
         $Middleware = @($Middleware)
 
         for ($i = 0; $i -lt $Middleware.Length; $i++) {
-            if ($Middleware[$i] -is 'scriptblock') {
+            if ($Middleware[$i] -is [scriptblock]) {
                 $Middleware[$i] = @{
                     'Logic' = $Middleware[$i]
                 }
