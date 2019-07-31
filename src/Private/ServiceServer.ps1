@@ -26,7 +26,7 @@ function Start-PodeServiceServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $Error[0] | Out-Default
+            Write-PodeErrorLog -Exception $_
             throw $_.Exception
         }
     }

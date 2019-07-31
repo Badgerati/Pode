@@ -310,7 +310,7 @@ function Enable-PodeSessionMiddleware
             }
         }
         catch {
-            $Error[0] | Out-Default
+            Write-PodeErrorLog -Exception $_
             return $false
         }
 

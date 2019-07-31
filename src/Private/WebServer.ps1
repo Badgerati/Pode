@@ -62,7 +62,7 @@ function Start-PodeWebServer
         $listener.Start()
     }
     catch {
-        $Error[0] | Out-Default
+        Write-PodeErrorLog -Exception $_
 
         if ($null -ne $Listener) {
             if ($Listener.IsListening) {
@@ -120,7 +120,7 @@ function Start-PodeWebServer
                     Set-PodeServerHeader
 
                     # add logging endware for post-request
-                    Add-PodeLogEndware -WebEvent $WebEvent
+                    Add-PodeRequestLogEndware -WebEvent $WebEvent
 
                     # invoke middleware
                     if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
@@ -138,7 +138,7 @@ function Start-PodeWebServer
                 }
                 catch {
                     Set-PodeResponseStatus -Code 500 -Exception $_
-                    $Error[0] | Out-Default
+                    Write-PodeErrorLog -Exception $_
                 }
 
                 # invoke endware specifc to the current web event
@@ -153,7 +153,7 @@ function Start-PodeWebServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $Error[0] | Out-Default
+            Write-PodeErrorLog -Exception $_
             throw $_.Exception
         }
     }
@@ -181,7 +181,7 @@ function Start-PodeWebServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $Error[0] | Out-Default
+            Write-PodeErrorLog -Exception $_
             throw $_.Exception
         }
         finally {

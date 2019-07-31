@@ -82,7 +82,7 @@ function Close-PodeDisposable
             return
         }
 
-        $Error[0] | Out-Default
+        Write-PodeErrorLog -Exception $_
         throw $_.Exception
     }
     finally {
@@ -103,10 +103,18 @@ The object to lock.
 .PARAMETER ScriptBlock
 The ScriptBlock to invoke.
 
+.PARAMETER Return
+If supplied, any values from the ScriptBlock will be returned.
+
 .EXAMPLE
-Lock-PodeObject $SomeArray {
+Lock-PodeObject -Object $SomeArray -ScriptBlock {
     $item = $SomeArray[0]
 }
+
+.EXAMPLE
+$result = (Lock-PodeObject -Return -Object $SomeArray -ScriptBlock {
+    return $SomeArray[0]
+})
 #>
 function Lock-PodeObject
 {
@@ -118,7 +126,10 @@ function Lock-PodeObject
 
         [Parameter(Mandatory=$true)]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [switch]
+        $Return
     )
 
     if ($null -eq $Object) {
@@ -136,11 +147,16 @@ function Lock-PodeObject
         $locked = $true
 
         if ($null -ne $ScriptBlock) {
-            Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure
+            if ($Return) {
+                return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure -Return)
+            }
+            else {
+                Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure
+            }
         }
     }
     catch {
-        $Error[0] | Out-Default
+        Write-PodeErrorLog -Exception $_
         throw $_.Exception
     }
     finally {
@@ -203,7 +219,7 @@ function Start-PodeStopwatch
         . $ScriptBlock
     }
     catch {
-        $Error[0] | Out-Default
+        Write-PodeErrorLog -Exception $_
         throw $_.Exception
     }
     finally {
@@ -247,7 +263,7 @@ function Use-PodeStream
         return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $Stream -Return -NoNewClosure)
     }
     catch {
-        $Error[0] | Out-Default
+        Write-PodeErrorLog -Exception $_
         throw $_.Exception
     }
     finally {

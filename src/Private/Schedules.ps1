@@ -50,7 +50,7 @@ function Start-PodeScheduleRunspace
                         -Parameters @{ 'Lockable' = $PodeContext.Lockable } -Forget
                 }
                 catch {
-                    $Error[0] | Out-Default
+                    Write-PodeErrorLog -Exception $_
                 }
 
                 # reset the cron if it's random

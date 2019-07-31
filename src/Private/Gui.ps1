@@ -90,7 +90,7 @@ function Start-PodeGuiRunspace
             Start-Sleep -Seconds 1
         }
         catch {
-            $Error[0] | Out-Default
+            Write-PodeErrorLog -Exception $_
             throw $_.Exception
         }
         finally {

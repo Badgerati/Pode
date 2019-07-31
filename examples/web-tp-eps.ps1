@@ -11,7 +11,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address *:8085 -Protocol Http
 
     # log requests to the terminal
-    logger terminal
+    New-PodeLoggingType -Terminal | Enable-PodeRequestLogging
 
     # import the EPS module to each runspace
     Import-PodeModule -Name EPS

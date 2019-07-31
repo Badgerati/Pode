@@ -638,7 +638,7 @@ function Add-PodeRunspace
         }
     }
     catch {
-        $Error[0] | Out-Default
+        Write-PodeErrorLog -Exception $_
         throw $_.Exception
     }
 }
@@ -676,7 +676,7 @@ function Close-PodeRunspaces
         }
     }
     catch {
-        $Error[0] | Out-Default
+        Write-PodeErrorLog -Exception $_
         throw $_.Exception
     }
 }
@@ -778,7 +778,7 @@ function Close-PodeServer
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
     }
     catch {
-        $Error[0] | Out-Default
+        Write-PodeErrorLog -Exception $_
     }
 
     # remove all of the pode temp drives

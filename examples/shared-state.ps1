@@ -8,7 +8,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     Add-PodeEndpoint -Address *:8085 -Protocol Http
-    logger 'terminal'
+    New-PodeLoggingType -Terminal | Enable-PodeRequestLogging
 
     # re-initialise the state
     Restore-PodeState -Path './state.json'

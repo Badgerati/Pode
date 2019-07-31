@@ -45,7 +45,7 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
 
@@ -132,9 +132,9 @@ function New-PodeContext
 
     # cookies and session logic
     $ctx.Server.Cookies = @{
-        'Session' = @{};
-        'Csrf' = @{};
-        'Secrets' = @{};
+        Session = @{}
+        Csrf = @{}
+        Secrets = @{}
     }
 
     # authnetication methods
@@ -142,8 +142,8 @@ function New-PodeContext
 
     # logging methods
     $ctx.Server.Logging = @{
-        'Methods' = @{};
-        'Disabled' = $DisableLogging;
+        Methods = @{}
+        Disabled = $DisableLogging
     }
 
     # create new cancellation tokens
@@ -153,7 +153,7 @@ function New-PodeContext
     }
 
     # requests that should be logged
-    $ctx.RequestsToLog = New-Object System.Collections.ArrayList
+    $ctx.LogsToProcess = New-Object System.Collections.ArrayList
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()
@@ -243,7 +243,7 @@ function New-PodeStateContext
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
-        Add-Member -MemberType NoteProperty -Name RequestsToLog -Value $Context.RequestsToLog -PassThru |
+        Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Context.Lockable -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
 }
