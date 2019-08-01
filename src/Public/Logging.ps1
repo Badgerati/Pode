@@ -81,6 +81,7 @@ function New-PodeLoggingType
                     MaxDays = $MaxDays
                     MaxSize = $MaxSize
                     FileId = 0
+                    Date = $null
                     NextClearDown = [datetime]::Now.Date
                 }
             }
@@ -223,8 +224,13 @@ function Write-PodeErrorLog
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        $Exception
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName='Exception')]
+        [System.Exception]
+        $Exception,
+
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName='Error')]
+        [System.Management.Automation.ErrorRecord]
+        $ErrorRecord
     )
 
     # do nothing if logging is disabled, or error logging isn't setup
@@ -234,11 +240,22 @@ function Write-PodeErrorLog
     }
 
     # build error object for what we need
-    $item = @{
-        Category = (Protect-PodeValue -Value $Exception.CategoryInfo.ToString() -Default $Exception.Source)
-        Message = (Protect-PodeValue -Value $Exception.Exception.Message -Default $Exception.Message)
-        StackTrace = (Protect-PodeValue -Value $Exception.Exception.StackTrace -Default $Exception.StackTrace)
-        ScriptStackTrace = $Exception.ScriptStackTrace
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'exception' {
+            $item = @{
+                Category = $Exception.Source
+                Message = $Exception.Message
+                StackTrace = $Exception.StackTrace
+            }
+        }
+
+        'error' {
+            $item = @{
+                Category = $ErrorRecord.CategoryInfo.ToString()
+                Message = $ErrorRecord.Exception.Message
+                StackTrace = $ErrorRecord.ScriptStackTrace
+            }
+        }
     }
 
     # add the item to be processed

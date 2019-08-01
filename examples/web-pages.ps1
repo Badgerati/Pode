@@ -32,8 +32,23 @@ Start-PodeServer -Threads 2 -Browse {
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
 
+    # wire up a custom logger
+    $logType = New-PodeLoggingType -Custom -ScriptBlock {
+        param($item)
+        $item.HttpMethod | Out-Default
+    }
+
+    $logType | Add-PodeLogger -Name 'custom' -ScriptBlock {
+        param($item)
+        return @{
+            HttpMethod = $item.HttpMethod
+        }
+    }
+
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        param($e)
+        $e.Request | Write-PodeLog -Name 'custom'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 

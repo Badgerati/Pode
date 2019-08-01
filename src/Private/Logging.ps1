@@ -14,7 +14,13 @@ function Get-PodeLoggingFileType
         # variables
         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
-        # get the file id
+        # do we need to reset the fileId?
+        if ($options.Date -ine $date) {
+            $options.Date = $date
+            $options.FileId = 0
+        }
+
+        # get the fileId
         if ($options.FileId -eq 0) {
             $path = (Join-Path $options.Path "$($options.Name)_$($date)_*.log")
             $options.FileId = (@(Get-ChildItem -Path $path)).Length
@@ -92,7 +98,7 @@ function Get-PodeLoggingInbuiltMethod
                     "Computer: $($env:COMPUTERNAME)",
                     "Category: $($item.Category)",
                     "Message: $($item.Message)",
-                    "StackTrace: $(Protect-PodeValue -Value $item.ScriptStackTrace -Default $item.StackTrace)"
+                    "StackTrace: $($item.StackTrace)"
                 )
 
                 return "$($row -join "`n")`n"
@@ -236,13 +242,15 @@ function Start-PodeLoggingRunspace
                 return $log
             })
 
-            # run the log item through the appropriate method, then through the storage script
-            $logger = Get-PodeLogger -Name $log.Name
+            if ($null -ne $log) {
+                # run the log item through the appropriate method, then through the storage script
+                $logger = Get-PodeLogger -Name $log.Name
 
-            $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments @($log.Item, $logger.Options) -Return -Splat)
-            $result += $logger.Type.Options
+                $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments @($log.Item, $logger.Options) -Return -Splat)
+                $result += $logger.Type.Options
 
-            Invoke-PodeScriptBlock -ScriptBlock $logger.Type.ScriptBlock -Arguments $result -Splat
+                Invoke-PodeScriptBlock -ScriptBlock $logger.Type.ScriptBlock -Arguments $result -Splat
+            }
 
             # small sleep to lower cpu usage
             Start-Sleep -Milliseconds 100

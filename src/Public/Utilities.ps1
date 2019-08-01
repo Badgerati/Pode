@@ -82,7 +82,7 @@ function Close-PodeDisposable
             return
         }
 
-        Write-PodeErrorLog -Exception $_
+        $_ | Write-PodeErrorLog
         throw $_.Exception
     }
     finally {
@@ -156,7 +156,7 @@ function Lock-PodeObject
         }
     }
     catch {
-        Write-PodeErrorLog -Exception $_
+        $_ | Write-PodeErrorLog
         throw $_.Exception
     }
     finally {
@@ -219,7 +219,7 @@ function Start-PodeStopwatch
         . $ScriptBlock
     }
     catch {
-        Write-PodeErrorLog -Exception $_
+        $_ | Write-PodeErrorLog
         throw $_.Exception
     }
     finally {
@@ -263,7 +263,7 @@ function Use-PodeStream
         return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $Stream -Return -NoNewClosure)
     }
     catch {
-        Write-PodeErrorLog -Exception $_
+        $_ | Write-PodeErrorLog
         throw $_.Exception
     }
     finally {

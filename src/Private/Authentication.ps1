@@ -178,7 +178,7 @@ function Get-PodeAuthMiddlewareScript
             }
         }
         catch {
-            Write-PodeErrorLog -Exception $_
+            $_ | Write-PodeErrorLog
             return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Options $e.Middleware.Options)
         }
 

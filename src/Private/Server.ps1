@@ -136,7 +136,7 @@ function Restart-PodeInternalServer
         Start-PodeInternalServer
     }
     catch {
-        Write-PodeErrorLog -Exception $_
+        $_ | Write-PodeErrorLog
         throw $_.Exception
     }
 }

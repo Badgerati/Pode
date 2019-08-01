@@ -47,7 +47,7 @@ function Invoke-PodeMiddleware
         catch {
             Set-PodeResponseStatus -Code 500 -Exception $_
             $continue = $false
-            Write-PodeErrorLog -Exception $_
+            $_ | Write-PodeErrorLog
         }
 
         if (!$continue) {

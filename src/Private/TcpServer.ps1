@@ -77,7 +77,7 @@ function Start-PodeTcpServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            Write-PodeErrorLog -Exception $_
+            $_ | Write-PodeErrorLog
             throw $_.Exception
         }
     }
@@ -105,7 +105,7 @@ function Start-PodeTcpServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            Write-PodeErrorLog -Exception $_
+            $_ | Write-PodeErrorLog
             throw $_.Exception
         }
         finally {

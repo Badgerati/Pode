@@ -97,7 +97,7 @@ Describe 'Restart-PodeInternalServer' {
     Mock Remove-PodePSDrives { }
     Mock Open-PodeConfiguration { return $null }
     Mock Start-PodeInternalServer { }
-    Mock Out-Default { }
+    Mock Write-PodeErrorLog { }
     Mock Close-PodeDisposable { }
 
     It 'Resetting the server values' {
@@ -158,6 +158,7 @@ Describe 'Restart-PodeInternalServer' {
 
     It 'Catches exception and throws it' {
         Mock Write-Host { throw 'some error' }
+        Mock Write-PodeErrorLog {}
         { Restart-PodeInternalServer } | Should Throw 'some error'
     }
 }
