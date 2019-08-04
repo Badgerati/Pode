@@ -1,16 +1,215 @@
+function Get-PodeLoggingTerminalMethod
+{
+    return {
+        param($item, $options)
+        $item.ToString() | Out-Default
+    }
+}
+
+function Get-PodeLoggingFileMethod
+{
+    return {
+        param($item, $options)
+
+        # variables
+        $date = [DateTime]::Now.ToString('yyyy-MM-dd')
+
+        # do we need to reset the fileId?
+        if ($options.Date -ine $date) {
+            $options.Date = $date
+            $options.FileId = 0
+        }
+
+        # get the fileId
+        if ($options.FileId -eq 0) {
+            $path = (Join-Path $options.Path "$($options.Name)_$($date)_*.log")
+            $options.FileId = (@(Get-ChildItem -Path $path)).Length
+            if ($options.FileId -eq 0) {
+                $options.FileId = 1
+            }
+        }
+
+        $id = "$($options.FileId)".PadLeft(3, '0')
+        if ($options.MaxSize -gt 0) {
+            $path = (Join-Path $options.Path "$($options.Name)_$($date)_$($id).log")
+            if ((Get-Item -Path $path -Force).Length -ge $options.MaxSize) {
+                $options.FileId++
+                $id = "$($options.FileId)".PadLeft(3, '0')
+            }
+        }
+
+        # get the file to write to
+        $path = (Join-Path $options.Path "$($options.Name)_$($date)_$($id).log")
+
+        # write the item to the file
+        $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
+
+        # if set, remove log files beyond days set (ensure this is only run once a day)
+        if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
+            $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
+
+            Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+                Where-Object { $_.CreationTime -lt $date } |
+                Remove-Item $_ -Force | Out-Null
+
+            $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
+        }
+    }
+}
+
+function Get-PodeLoggingInbuiltType
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Errors', 'Requests')]
+        [string]
+        $Type
+    )
+
+    switch ($Type.ToLowerInvariant())
+    {
+        'requests' {
+            $script = {
+                param($item, $options)
+
+                # just return the item if Raw is set
+                if ($options.Raw) {
+                    return $item
+                }
+
+                function sg($value) {
+                    if ([string]::IsNullOrWhiteSpace($value)) {
+                        return '-'
+                    }
+
+                    return $value
+                }
+
+                # build the url with http method
+                $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
+
+                # build and return the request row
+                return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$(sg $item.Date)] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
+            }
+        }
+
+        'errors' {
+            $script = {
+                param($item, $options)
+
+                # do nothing if the error level isn't present
+                if (@($options.Levels) -inotcontains $item.Level) {
+                    return
+                }
+
+                # just return the item if Raw is set
+                if ($options.Raw) {
+                    return $item
+                }
+
+                # build the exception details
+                $row = @(
+                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
+                    "Level: $($item.Level)",
+                    "Server: $($item.Server)",
+                    "Category: $($item.Category)",
+                    "Message: $($item.Message)",
+                    "StackTrace: $($item.StackTrace)"
+                )
+
+                # join the details and return
+                return "$($row -join "`n")`n"
+            }
+        }
+    }
+
+    return $script
+}
+
+function Get-PodeRequestLoggingName
+{
+    return '__pode_log_requests__'
+}
+
+function Get-PodeErrorLoggingName
+{
+    return '__pode_log_errors__'
+}
+
 function Get-PodeLogger
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
         [string]
         $Name
     )
 
-    return $PodeContext.Server.Logging.Methods[$Name]
+    return $PodeContext.Server.Logging.Types[$Name]
 }
 
-function Add-PodeLogEndware
+function Test-PodeLoggerEnabled
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return (!$PodeContext.Server.Logging.Disabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
+}
+
+function Write-PodeRequestLog
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        $Request,
+
+        [Parameter(Mandatory=$true)]
+        $Response,
+
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    # do nothing if logging is disabled, or request logging isn't setup
+    $name = Get-PodeRequestLoggingName
+    if (!(Test-PodeLoggerEnabled -Name $name)) {
+        return
+    }
+
+    # build a request object
+    $item = @{
+        Host = $Request.RemoteEndPoint.Address.IPAddressToString
+        RfcUserIdentity = '-'
+        User = '-'
+        Date = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
+        Request = @{
+            Method = $Request.HttpMethod.ToUpperInvariant()
+            Resource = $Path
+            Protocol = "HTTP/$($Request.ProtocolVersion)"
+            Referrer = $Request.UrlReferrer
+            Agent = $Request.UserAgent
+        }
+        Response = @{
+            StatusCode = $Response.StatusCode
+            StatusDescription = $Response.StatusDescription
+            Size = '-'
+        }
+    }
+
+    if ($Response.ContentLength64 -gt 0) {
+        $item.Response.Size = $Response.ContentLength64
+    }
+
+    # add the item to be processed
+    $PodeContext.LogsToProcess.Add(@{
+        Name = $name
+        Item = $item
+    }) | Out-Null
+}
+
+function Add-PodeRequestLogEndware
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -18,164 +217,56 @@ function Add-PodeLogEndware
         $WebEvent
     )
 
-    # don't setup logging if not configured
-    if ($PodeContext.Server.Logging.Disabled -or (Get-PodeCount $PodeContext.Server.Logging.Methods) -eq 0) {
+    # do nothing if logging is disabled, or request logging isn't setup
+    $name = Get-PodeRequestLoggingName
+    if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
 
-    # add the logging endware
+    # add the request logging endware
     $WebEvent.OnEnd += {
-        param($s)
-        $obj = New-PodeLogObject -Request $s.Request -Path $s.Path
-        Add-PodeLogObject -LogObject $obj -Response $s.Response
+        param($e)
+        Write-PodeRequestLog -Request $e.Request -Response $e.Response -Path $e.Path
     }
 }
 
-function New-PodeLogObject
+function Start-PodeLoggingRunspace
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Request,
-
-        [Parameter()]
-        [string]
-        $Path
-    )
-
-    return @{
-        'Host' = $Request.RemoteEndPoint.Address.IPAddressToString;
-        'RfcUserIdentity' = '-';
-        'User' = '-';
-        'Date' = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz');
-        'Request' = @{
-            'Method' = $Request.HttpMethod.ToUpperInvariant();
-            'Resource' = $Path;
-            'Protocol' = "HTTP/$($Request.ProtocolVersion)";
-            'Referrer' = $Request.UrlReferrer;
-            'Agent' = $Request.UserAgent;
-        };
-        'Response' = @{
-            'StatusCode' = '-';
-            'StatusDescription' = '-';
-            'Size' = '-';
-        };
-    }
-}
-
-function Add-PodeLogObject
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $LogObject,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Response
-    )
-
-    if ($PodeContext.Server.Logging.Disabled -or (Get-PodeCount $PodeContext.Server.Logging.Methods) -eq 0) {
-        return
-    }
-
-    $LogObject.Response.StatusCode = $Response.StatusCode
-    $LogObject.Response.StatusDescription = $Response.StatusDescription
-
-    if ($Response.ContentLength64 -gt 0) {
-        $LogObject.Response.Size = $Response.ContentLength64
-    }
-
-    $PodeContext.RequestsToLog.Add($LogObject) | Out-Null
-}
-
-function Start-PodeLoggerRunspace
-{
-    if ((Get-PodeCount $PodeContext.Server.Logging.Methods) -eq 0) {
+    # skip if there are no loggers configured
+    if ($PodeContext.Server.Logging.Types.Count -eq 0) {
         return
     }
 
     $script = {
-        # simple safegaurd function to set blank field to a dash(-)
-        function sg($value) {
-            if (Test-IsEmpty $value) {
-                return '-'
-            }
-
-            return $value
-        }
-
-        # convert a log request into a Combined Log Format string
-        function Get-RequestString($req) {
-            $url = "$(sg $req.Request.Method) $(sg $req.Request.Resource) $(sg $req.Request.Protocol)"
-            return "$(sg $req.Host) $(sg $req.RfcUserIdentity) $(sg $req.User) [$(sg $req.Date)] `"$($url)`" $(sg $req.Response.StatusCode) $(sg $req.Response.Size) `"$(sg $req.Request.Referrer)`" `"$(sg $req.Request.Agent)`""
-        }
-
-        # helper variables for files
-        $_files_next_run = [DateTime]::Now.Date
-
-        # main logic loop
         while ($true)
         {
-            # if there are no requests to log, just sleep
-            if ((Get-PodeCount $PodeContext.RequestsToLog) -eq 0) {
-                Start-Sleep -Seconds 1
+            # sleep for a 10 minutes if disabled
+            if ($PodeContext.Server.Logging.Disabled) {
+                Start-Sleep -Seconds 600
                 continue
             }
 
-            # safetly pop off the first log request from the array
-            $r = $null
-
-            Lock-PodeObject -Object $PodeContext.RequestsToLog {
-                $r = $PodeContext.RequestsToLog[0]
-                $PodeContext.RequestsToLog.RemoveAt(0) | Out-Null
+            # if there are no logs to process, just sleep few a few seconds
+            if ($PodeContext.LogsToProcess.Count -eq 0) {
+                Start-Sleep -Seconds 5
+                continue
             }
 
-            # convert the request into a log string
-            $str = (Get-RequestString $r)
+            # safetly pop off the first log from the array
+            $log = (Lock-PodeObject -Return -Object $PodeContext.LogsToProcess -ScriptBlock {
+                $log = $PodeContext.LogsToProcess[0]
+                $PodeContext.LogsToProcess.RemoveAt(0) | Out-Null
+                return $log
+            })
 
-            # apply log request to supplied loggers
-            $PodeContext.Server.Logging.Methods.Keys | ForEach-Object {
-                switch ($_.ToLowerInvariant())
-                {
-                    'terminal' {
-                        $str | Out-Default
-                    }
+            if ($null -ne $log) {
+                # run the log item through the appropriate method, then through the storage script
+                $logger = Get-PodeLogger -Name $log.Name
 
-                    'file' {
-                        $details = $PodeContext.Server.Logging.Methods[$_]
-                        $date = [DateTime]::Now.ToString('yyyy-MM-dd')
+                $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments @($log.Item, $logger.Options) -Return -Splat)
+                $result += $logger.Method.Options
 
-                        # generate path to log path and date file
-                        if ($null -eq $details -or (Test-IsEmpty $details.Path)) {
-                            $path = (Join-PodeServerRoot 'logs' "$($date).log" )
-                        }
-                        else {
-                            $path = (Join-Path $details.Path "$($date).log")
-                        }
-
-                        # append log to file
-                        $str | Out-File -FilePath $path -Encoding utf8 -Append -Force
-
-                        # if set, remove log files beyond days set (ensure this is only run once a day)
-                        if ($null -ne $details -and [int]$details.MaxDays -gt 0 -and $_files_next_run -lt [DateTime]::Now) {
-                            $date = [DateTime]::Now.AddDays(-$details.MaxDays)
-
-                            Get-ChildItem -Path $path -Filter '*.log' -Force |
-                                Where-Object { $_.CreationTime -lt $date } |
-                                Remove-Item $_ -Force | Out-Null
-
-                            $_files_next_run = [DateTime]::Now.Date.AddDays(1)
-                        }
-                    }
-
-                    { $_ -ilike 'custom_*' } {
-                        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logging.Methods[$_] -Arguments @{
-                            'Log' = $r;
-                            'Lockable' = $PodeContext.Lockable;
-                        }
-                    }
-                }
+                Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $result -Splat
             }
 
             # small sleep to lower cpu usage

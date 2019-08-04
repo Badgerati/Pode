@@ -25,7 +25,7 @@ function Start-PodeInternalServer
         if (![string]::IsNullOrWhiteSpace($_type) -and !$PodeContext.Server.IsServerless)
         {
             # start runspace for loggers
-            Start-PodeLoggerRunspace
+            Start-PodeLoggingRunspace
 
             # start runspace for timers
             Start-PodeTimerRunspace
@@ -97,7 +97,7 @@ function Restart-PodeInternalServer
 
         $PodeContext.Timers.Clear()
         $PodeContext.Schedules.Clear()
-        $PodeContext.Server.Logging.Methods.Clear()
+        $PodeContext.Server.Logging.Types.Clear()
 
         # clear middle/endware
         $PodeContext.Server.Middleware = @()
@@ -105,10 +105,10 @@ function Restart-PodeInternalServer
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
-            'Type' = 'html';
-            'Extension' = 'html';
-            'Script' = $null;
-            'IsDynamic' = $false;
+            Type = 'html'
+            Extension = 'html'
+            Script = $null
+            IsDynamic = $false
         }
 
         # clear up cookie sessions
@@ -136,7 +136,7 @@ function Restart-PodeInternalServer
         Start-PodeInternalServer
     }
     catch {
-        $Error[0] | Out-Default
+        $_ | Write-PodeErrorLog
         throw $_.Exception
     }
 }

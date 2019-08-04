@@ -4,25 +4,31 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+$LOGGING_TYPE = 'Terminal' # Terminal, Fiie, Custom
+
 # create a server, and start listening on port 8085
 Start-PodeServer {
 
     Add-PodeEndpoint -Address *:8085 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
-    # termial/cli logger
-    logger terminal
+    switch ($LOGGING_TYPE.ToLowerInvariant()) {
+        'terminal' {
+            New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+        }
 
-    # daily file logger
-    logger file @{
-        'Path' = $null; # default is '<root>/logs'
-        'MaxDays' = 4;
-    }
+        'file' {
+            New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4 | Enable-PodeRequestLogging
+        }
 
-    # custom logger
-    logger -c output {
-        param($event)
-        $event.Log.Request.Protocol | Out-Default
+        'custom' {
+            $type = New-PodeLoggingMethod -Custom -ScriptBlock {
+                param($item)
+                # send request row to S3
+            }
+
+            $type | Enable-PodeRequestLogging
+        }
     }
 
     # GET request for web page on "localhost:8085/"

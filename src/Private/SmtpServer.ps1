@@ -68,7 +68,7 @@ function Start-PodeSmtpServer
             {
                 try { $msg = (Read-PodeTcpClient) }
                 catch {
-                    $Error[0] | Out-Default
+                    $_ | Write-PodeErrorLog
                     break
                 }
 
@@ -128,7 +128,7 @@ function Start-PodeSmtpServer
                     }
                 }
                 catch [exception] {
-                    $Error[0] | Out-Default
+                    $_ | Write-PodeErrorLog
                     throw $_.exception
                 }
             }
@@ -166,7 +166,7 @@ function Start-PodeSmtpServer
             Close-PodeTcpConnection -Quit
         }
         catch {
-            $Error[0] | Out-Default
+            $_ | Write-PodeErrorLog
             throw $_.Exception
         }
     }
@@ -194,7 +194,7 @@ function Start-PodeSmtpServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $Error[0] | Out-Default
+            $_ | Write-PodeErrorLog
             throw $_.Exception
         }
         finally {

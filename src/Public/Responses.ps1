@@ -199,7 +199,7 @@ function Write-PodeTextResponse
                 return
             }
 
-            $_.Exception | Out-Default
+            $_ | Write-PodeErrorLog
             throw
         }
         finally {

@@ -14,20 +14,16 @@ function Get-PodeAuthBasicType
 
         # ensure the first atom is basic (or opt override)
         $atoms = $header -isplit '\s+'
-        $headerTag = (Protect-PodeValue -Value $options.HeaderTag -Default 'Basic')
-
-        if ($atoms[0] -ine $headerTag) {
+        if ($atoms[0] -ine $options.HeaderTag) {
             return @{
-                Message = "Header is not $($headerTag) Authorization"
+                Message = "Header is not $($options.HeaderTag) Authorization"
                 Code = 400
             }
         }
 
         # decode the aut header
-        $encType = (Protect-PodeValue -Value $options.Encoding -Default 'ISO-8859-1')
-
         try {
-            $enc = [System.Text.Encoding]::GetEncoding($encType)
+            $enc = [System.Text.Encoding]::GetEncoding($options.Encoding)
         }
         catch {
             return @{
@@ -62,8 +58,8 @@ function Get-PodeAuthFormType
         param($e, $options)
 
         # get user/pass keys to get from payload
-        $userField = (Protect-PodeValue -Value $options.Fields.Username -Default 'username')
-        $passField = (Protect-PodeValue -Value $options.Fields.Password -Default 'password')
+        $userField = $options.Fields.Username
+        $passField = $options.Fields.Password
 
         # get the user/pass
         $username = $e.Data.$userField
@@ -94,7 +90,7 @@ function Get-PodeAuthInbuiltMethod
     switch ($Type.ToLowerInvariant())
     {
         'windowsad' {
-            return {
+            $script = {
                 param($username, $password, $options)
 
                 # validate and retrieve the AD user
@@ -134,6 +130,8 @@ function Get-PodeAuthInbuiltMethod
             }
         }
     }
+
+    return $script
 }
 
 function Get-PodeAuthMiddlewareScript
@@ -180,7 +178,7 @@ function Get-PodeAuthMiddlewareScript
             }
         }
         catch {
-            $_.Exception | Out-Default
+            $_ | Write-PodeErrorLog
             return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Options $e.Middleware.Options)
         }
 

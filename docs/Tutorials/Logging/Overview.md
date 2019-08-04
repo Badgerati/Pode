@@ -1,29 +1,12 @@
 # Logging Overview
 
-Logging in Pode allows you to log web events onto the [terminal](../Terminal), into a [file](../File), or into some [custom](../Custom) logging platform (such as LogStash or Splunk). To start logging requests to your server you use the [`logger`](../../Functions/Core/Logger) function.
+There are two aspects to logging in Pode: Methods and Types.
 
-!!! tip
-    You can have many loggers defined, so you could log to the terminal, a file, and other custom tools - you aren't restricted to just one logger!
+* Methods define how log items should be recorded, such as to a file or terminal.
+* Types define how items to log are transformed, and what should be supplied to the Method.
 
-When logging to the terminal, or a file, Pode will write logs using [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined). For custom loggers Pode will pass to your scriptblock a single argument that contains the relevant request information; this log object will look like the following:
+For example when you supply an Exception to `Write-PodeErrorLog`, this Exception is first supplied to Pode's inbuilt Error type. This type transforms any Exception (or Error Record) into a string which can then be supplied to the File logging method.
 
-```powershell
-@{
-    'Host' = '10.10.0.3';
-    'RfcUserIdentity' = '-';
-    'User' = '-';
-    'Date' = '14/Jun/2018:20:23:52 +01:00';
-    'Request' = @{
-        'Method' = 'GET';
-        'Resource' = '/api/users';
-        'Protocol' = "HTTP/1.1";
-        'Referrer' = '-';
-        'Agent' = '<user-agent>';
-    };
-    'Response' = @{
-        'StatusCode' = '200';
-        'StautsDescription' = 'OK'
-        'Size' = '9001';
-    };
-}
-```
+In Pode you can use File, Terminal or a Custom method. As well as Request, Error, or a Custom type.
+
+This means you could write a logging method to output to an S3 bucket, Splunk, or any other logging platform.

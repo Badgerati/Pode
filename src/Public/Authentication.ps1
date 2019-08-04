@@ -99,8 +99,8 @@ function New-PodeAuthType
             return @{
                 ScriptBlock = (Get-PodeAuthBasicType)
                 Options = @{
-                    HeaderTag = $HeaderTag
-                    Encoding = $Encoding
+                    HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
+                    Encoding = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
                 }
             }
         }
@@ -110,8 +110,8 @@ function New-PodeAuthType
                 ScriptBlock = (Get-PodeAuthFormType)
                 Options = @{
                     Fields = @{
-                        Username = $UsernameField
-                        Password = $PasswordField
+                        Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
+                        Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
                     }
                 }
             }

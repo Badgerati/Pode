@@ -23,12 +23,12 @@ Describe 'Invoke-PodeEndware' {
 
     It 'Runs the logic for a single endware and errors' {
         Mock Invoke-PodeScriptBlock { throw 'some error' }
-        Mock Out-Default { }
+        Mock Write-PodeErrorLog { }
 
         Invoke-PodeEndware -WebEvent @{} -Endware @({ 'test' | Out-Null })
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled Out-Default -Times 1 -Scope It
+        Assert-MockCalled Write-PodeErrorLog -Times 1 -Scope It
     }
 }
 

@@ -220,7 +220,7 @@ Describe 'Invoke-PodeMiddleware' {
 
     It 'Runs the logic for a single middleware and returns false after erroring' {
         Mock Invoke-PodeScriptBlock { throw 'some error' }
-        Mock Out-Default { }
+        Mock Write-PodeErrorLog { }
         Mock Set-PodeResponseStatus { }
 
         $WebEvent = @{ 'Middleware' = @{} }

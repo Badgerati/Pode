@@ -89,7 +89,7 @@ For the `GET` Route we supply `-AutoLogin`, this basically means if the user nav
 
 ```powershell
 # the login page itself
-$auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl = '/'
+$auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl '/'
 Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
     Write-PodeViewResponse -Path 'auth-login' -FlashMessages
 }
@@ -158,7 +158,7 @@ Start-PodeServer -Thread 2 {
     }
 
     # the "GET /login" endpoint for the login page
-    $auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl = '/'
+    $auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl '/'
     Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
         Write-PodeViewResponse -Path 'auth-login' -FlashMessages
     }

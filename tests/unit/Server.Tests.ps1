@@ -9,7 +9,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Invoke-PodeScriptBlock { }
     Mock New-PodeRunspaceState { }
     Mock New-PodeRunspacePools { }
-    Mock Start-PodeLoggerRunspace { }
+    Mock Start-PodeLoggingRunspace { }
     Mock Start-PodeTimerRunspace { }
     Mock Start-PodeScheduleRunspace { }
     Mock Start-PodeGuiRunspace { }
@@ -97,7 +97,7 @@ Describe 'Restart-PodeInternalServer' {
     Mock Remove-PodePSDrives { }
     Mock Open-PodeConfiguration { return $null }
     Mock Start-PodeInternalServer { }
-    Mock Out-Default { }
+    Mock Write-PodeErrorLog { }
     Mock Close-PodeDisposable { }
 
     It 'Resetting the server values' {
@@ -115,7 +115,7 @@ Describe 'Restart-PodeInternalServer' {
                     'TCP' = @{ };
                 };
                 'Logging' = @{
-                    'Methods' = @{ 'key' = 'value' };
+                    'Types' = @{ 'key' = 'value' };
                 };
                 'Middleware' = @{ 'key' = 'value' };
                 'Endware' = @{ 'key' = 'value' };
@@ -139,7 +139,7 @@ Describe 'Restart-PodeInternalServer' {
         Restart-PodeInternalServer | Out-Null
 
         $PodeContext.Server.Routes['GET'].Count | Should Be 0
-        $PodeContext.Server.Logging.Methods.Count | Should Be 0
+        $PodeContext.Server.Logging.Types.Count | Should Be 0
         $PodeContext.Server.Middleware.Count | Should Be 0
         $PodeContext.Server.Endware.Count | Should Be 0
         $PodeContext.Server.Cookies.Session.Count | Should Be 0
@@ -158,6 +158,7 @@ Describe 'Restart-PodeInternalServer' {
 
     It 'Catches exception and throws it' {
         Mock Write-Host { throw 'some error' }
+        Mock Write-PodeErrorLog {}
         { Restart-PodeInternalServer } | Should Throw 'some error'
     }
 }

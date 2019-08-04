@@ -30,8 +30,6 @@
 
     # Functions to export from this Module
     FunctionsToExport = @(
-        'Logger',
-
         # cookies
         'Get-PodeCookie',
         'Get-PodeCookieSecret',
@@ -141,6 +139,18 @@
         'Add-PodeAuthWindowsAd',
         'Remove-PodeAuth',
         'Get-PodeAuthMiddleware',
+
+        # logging
+        'New-PodeLoggingMethod',
+        'Enable-PodeRequestLogging',
+        'Enable-PodeErrorLogging',
+        'Disable-PodeRequestLogging',
+        'Disable-PodeErrorLogging',
+        'Add-PodeLogger',
+        'Remove-PodeLogger',
+        'Clear-PodeLoggers',
+        'Write-PodeErrorLog',
+        'Write-PodeLog',
 
         # core
         'Start-PodeServer',

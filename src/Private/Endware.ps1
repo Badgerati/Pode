@@ -21,7 +21,7 @@ function Invoke-PodeEndware
             Invoke-PodeScriptBlock -ScriptBlock $eware -Arguments $WebEvent -Scoped | Out-Null
         }
         catch {
-            $Error[0] | Out-Default
+            $_ | Write-PodeErrorLog
         }
     }
 }
