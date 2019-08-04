@@ -218,20 +218,27 @@ task PushCodeCoverage -If (Test-IsAppVeyor) {
 # Docs
 #>
 
-# Synopsis: Run the documentation
-task Docs DocsDeps, {
+# Synopsis: Run the documentation locally
+task Docs DocsDeps, DocsHelpBuild, {
     mkdocs serve
 }
 
 # Synopsis: Build the function help documentation
 task DocsHelpBuild DocsDeps, {
-    Remove-Mode Pode -Force
+    # import the local module
+    Remove-Module Pode -Force -ErrorAction Ignore
     Import-Module ./src/Pode.psm1 -Force
-    New-MarkdownHelp -Module Pode -OutputFolder ./docs/Functions -Force -AlphabeticParamsOrder
-    Remove-Module Pode -Force
+
+    # build the function docs
+    $path = './docs2/Functions'
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+    New-MarkdownHelp -Module Pode -OutputFolder $path -Force -AlphabeticParamsOrder
+
+    # remove the module
+    Remove-Module Pode -Force -ErrorAction Ignore
 }
 
 # Synopsis: Build the documentation
-task DocsBuild DocsHelpBuild, {
+task DocsBuild DocsDeps, DocsHelpBuild, {
     mkdocs build
 }
