@@ -11,7 +11,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address *:8085 -Protocol Http
 
     # log requests to the terminal
-    New-PodeLoggingType -Terminal | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 
     # import the PSHTML module to each runspace
     Import-PodeModule -Name PSHTML

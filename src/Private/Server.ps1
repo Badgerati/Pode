@@ -97,7 +97,7 @@ function Restart-PodeInternalServer
 
         $PodeContext.Timers.Clear()
         $PodeContext.Schedules.Clear()
-        $PodeContext.Server.Logging.Methods.Clear()
+        $PodeContext.Server.Logging.Types.Clear()
 
         # clear middle/endware
         $PodeContext.Server.Middleware = @()

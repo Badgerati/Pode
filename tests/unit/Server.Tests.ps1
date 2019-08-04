@@ -115,7 +115,7 @@ Describe 'Restart-PodeInternalServer' {
                     'TCP' = @{ };
                 };
                 'Logging' = @{
-                    'Methods' = @{ 'key' = 'value' };
+                    'Types' = @{ 'key' = 'value' };
                 };
                 'Middleware' = @{ 'key' = 'value' };
                 'Endware' = @{ 'key' = 'value' };
@@ -139,7 +139,7 @@ Describe 'Restart-PodeInternalServer' {
         Restart-PodeInternalServer | Out-Null
 
         $PodeContext.Server.Routes['GET'].Count | Should Be 0
-        $PodeContext.Server.Logging.Methods.Count | Should Be 0
+        $PodeContext.Server.Logging.Types.Count | Should Be 0
         $PodeContext.Server.Middleware.Count | Should Be 0
         $PodeContext.Server.Endware.Count | Should Be 0
         $PodeContext.Server.Cookies.Session.Count | Should Be 0

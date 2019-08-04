@@ -140,9 +140,9 @@ function New-PodeContext
     # authnetication methods
     $ctx.Server.Authentications = @{}
 
-    # logging methods
+    # logging methods and types
     $ctx.Server.Logging = @{
-        Methods = @{}
+        Types = @{}
         Disabled = $DisableLogging
     }
 

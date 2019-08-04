@@ -141,7 +141,7 @@
         'Get-PodeAuthMiddleware',
 
         # logging
-        'New-PodeLoggingType',
+        'New-PodeLoggingMethod',
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
         'Add-PodeLogger',

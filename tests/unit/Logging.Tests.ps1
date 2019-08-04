@@ -4,19 +4,19 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 Describe 'Get-PodeLogger' {
     It 'Returns null as the logger does not exist' {
-        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Methods' = @{}; } }; }
+        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{}; } }; }
         Get-PodeLogger -Name 'test' | Should Be $null
     }
 
     It 'Returns terminal logger for name' {
-        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Methods' = @{ 'test' = $null }; } }; }
+        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = $null }; } }; }
         $result = (Get-PodeLogger -Name 'test')
 
         $result | Should Be $null
     }
 
     It 'Returns custom logger for name' {
-        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Methods' = @{ 'test' = { Write-Host 'hello' } }; } }; }
+        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = { Write-Host 'hello' } }; } }; }
         $result = (Get-PodeLogger -Name 'test')
 
         $result | Should Not Be $null
@@ -58,6 +58,10 @@ Describe 'Write-PodeErrorLog' {
 
     It 'Adds an error log item' {
         Mock Test-PodeLoggerEnabled { return $true }
+        Mock Get-PodeLogger { return @{ Options = @{
+            Levels = @('Error')
+        } } }
+
         $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
 
         try { throw 'some error' }
@@ -71,6 +75,10 @@ Describe 'Write-PodeErrorLog' {
 
     It 'Adds an exception log item' {
         Mock Test-PodeLoggerEnabled { return $true }
+        Mock Get-PodeLogger { return @{ Options = @{
+            Levels = @('Error')
+        } } }
+
         $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
 
         $exp = [exception]::new('some error')
@@ -78,6 +86,20 @@ Describe 'Write-PodeErrorLog' {
 
         $PodeContext.LogsToProcess.Count | Should Be 1
         $PodeContext.LogsToProcess[0].Item.Message | Should Be 'some error'
+    }
+
+    It 'Does not log as Verbose not allowed' {
+        Mock Test-PodeLoggerEnabled { return $true }
+        Mock Get-PodeLogger { return @{ Options = @{
+            Levels = @('Error')
+        } } }
+
+        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
+
+        $exp = [exception]::new('some error')
+        Write-PodeErrorLog -Exception $exp -Level Verbose
+
+        $PodeContext.LogsToProcess.Count | Should Be 0
     }
 }
 

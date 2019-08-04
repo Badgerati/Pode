@@ -14,15 +14,15 @@ Start-PodeServer {
 
     switch ($LOGGING_TYPE.ToLowerInvariant()) {
         'terminal' {
-            New-PodeLoggingType -Terminal | Enable-PodeRequestLogging
+            New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
         }
 
         'file' {
-            New-PodeLoggingType -File -Name 'requests' -MaxDays 4 | Enable-PodeRequestLogging
+            New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4 | Enable-PodeRequestLogging
         }
 
         'custom' {
-            $type = New-PodeLoggingType -Custom -ScriptBlock {
+            $type = New-PodeLoggingMethod -Custom -ScriptBlock {
                 param($item)
                 # send request row to S3
             }

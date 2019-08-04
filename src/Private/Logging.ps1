@@ -1,4 +1,4 @@
-function Get-PodeLoggingTerminalType
+function Get-PodeLoggingTerminalMethod
 {
     return {
         param($item, $options)
@@ -6,7 +6,7 @@ function Get-PodeLoggingTerminalType
     }
 }
 
-function Get-PodeLoggingFileType
+function Get-PodeLoggingFileMethod
 {
     return {
         param($item, $options)
@@ -57,7 +57,7 @@ function Get-PodeLoggingFileType
     }
 }
 
-function Get-PodeLoggingInbuiltMethod
+function Get-PodeLoggingInbuiltType
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -71,6 +71,11 @@ function Get-PodeLoggingInbuiltMethod
         'requests' {
             $script = {
                 param($item, $options)
+
+                # just return the item if Raw is set
+                if ($options.Raw) {
+                    return $item
+                }
 
                 function sg($value) {
                     if ([string]::IsNullOrWhiteSpace($value)) {
@@ -92,15 +97,27 @@ function Get-PodeLoggingInbuiltMethod
             $script = {
                 param($item, $options)
 
+                # do nothing if the error level isn't present
+                if (@($options.Levels) -inotcontains $item.Level) {
+                    return
+                }
+
+                # just return the item if Raw is set
+                if ($options.Raw) {
+                    return $item
+                }
+
+                # build the exception details
                 $row = @(
-                    "Date: $([datetime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))",
-                    "Level: Error",
-                    "Computer: $($env:COMPUTERNAME)",
+                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
+                    "Level: $($item.Level)",
+                    "Server: $($item.Server)",
                     "Category: $($item.Category)",
                     "Message: $($item.Message)",
                     "StackTrace: $($item.StackTrace)"
                 )
 
+                # join the details and return
                 return "$($row -join "`n")`n"
             }
         }
@@ -127,7 +144,7 @@ function Get-PodeLogger
         $Name
     )
 
-    return $PodeContext.Server.Logging.Methods[$Name]
+    return $PodeContext.Server.Logging.Types[$Name]
 }
 
 function Test-PodeLoggerEnabled
@@ -138,7 +155,7 @@ function Test-PodeLoggerEnabled
         $Name
     )
 
-    return (!$PodeContext.Server.Logging.Disabled -and $PodeContext.Server.Logging.Methods.ContainsKey($Name))
+    return (!$PodeContext.Server.Logging.Disabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
 function Write-PodeRequestLog
@@ -216,7 +233,7 @@ function Add-PodeRequestLogEndware
 function Start-PodeLoggingRunspace
 {
     # skip if there are no loggers configured
-    if ($PodeContext.Server.Logging.Methods.Count -eq 0) {
+    if ($PodeContext.Server.Logging.Types.Count -eq 0) {
         return
     }
 
@@ -247,9 +264,9 @@ function Start-PodeLoggingRunspace
                 $logger = Get-PodeLogger -Name $log.Name
 
                 $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments @($log.Item, $logger.Options) -Return -Splat)
-                $result += $logger.Type.Options
+                $result += $logger.Method.Options
 
-                Invoke-PodeScriptBlock -ScriptBlock $logger.Type.ScriptBlock -Arguments $result -Splat
+                Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $result -Splat
             }
 
             # small sleep to lower cpu usage

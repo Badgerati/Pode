@@ -26,14 +26,14 @@ Start-PodeServer -Threads 2 -Browse {
     Add-PodeAccessRule -Access Deny -Type IP -Values all
 
     # log requests to the terminal
-    New-PodeLoggingType -Terminal | Enable-PodeRequestLogging
-    New-PodeLoggingType -Terminal | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
 
     # wire up a custom logger
-    $logType = New-PodeLoggingType -Custom -ScriptBlock {
+    $logType = New-PodeLoggingMethod -Custom -ScriptBlock {
         param($item)
         $item.HttpMethod | Out-Default
     }
