@@ -1,6 +1,6 @@
 # Serverless
 
-Pode has support for being used within a serverless context, such as Azure Functions or AWS Lambda, helping you with routing, but also leveraging middleware, authentication, and other features of Pode.
+Pode has support for being used within a serverless context - such as Azure Functions or AWS Lambda - helping you with routing, but also leveraging middleware, authentication, and other features of Pode.
 
 ## Usage
 
@@ -16,19 +16,15 @@ Start-PodeServer -Request <request> -Type 'AzureFunctions' {
 
 ## Unsupported Features
 
-Unfortunately not all the features of Pode can be used within a serverless environment. Below is a list of functions from Pode that cannot be used when running under serverless:
+Unfortunately not all the features of Pode can be used within a serverless environment. Below is a list of features in Pode that cannot be used when running in a serverless context:
 
-* [`Access`](../../../Functions/Middleware/Access)
-* [`Gui`](../../../Functions/Core/Gui)
-* [`Handler`](../../../Functions/Core/Handler)
-* [`Limit`](../../../Functions/Middleware/Limit)
-* [`Listen`](../../../Functions/Core/Listen)
-* [`Logger`](../../../Functions/Core/Logger)
-* [`Schedule`](../../../Functions/Core/Schedule)
-* [`Tcp`](../../../Functions/Utility/Tcp)
-* [`Timer`](../../../Functions/Core/Timer)
-
-And the below is a list of some features that aren't supported:
-
-* File Monitoring
-* Server Restarting
+* Access Middleware.
+* Limit Middleware.
+* Opening your server as a GUI.
+* TCP/Service Handler logic.
+* Listening on endpoints (as Azure/AWS does this for you).
+* Logging.
+* Schedules.
+* Timers.
+* File Monitoring.
+* Server Restarting.
