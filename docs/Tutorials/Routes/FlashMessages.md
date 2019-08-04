@@ -78,7 +78,7 @@ When doing authentication checks, normally if the check fails Pode will throw an
 For example, here we have a login page, with the `POST` login check. The check flags that any authentication errors should be loaded into the session's flash messages:
 
 ```powershell
-$auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl = '/'
+$auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl '/'
 Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
     Write-PodeViewResponse -Path 'auth-login' -FlashMessages
 }

@@ -50,7 +50,7 @@ Start-PodeServer -Threads 2 {
     # the login flag set below checks if there is already an authenticated session cookie. If there is, then
     # the user is redirected to the home page. If there is no session then the login page will load without
     # checking user authetication (to prevent a 401 status)
-    $auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl = '/'
+    $auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl '/'
 
     Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
         Write-PodeViewResponse -Path 'auth-login' -FlashMessages

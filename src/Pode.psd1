@@ -144,6 +144,8 @@
         'New-PodeLoggingMethod',
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
+        'Disable-PodeRequestLogging',
+        'Disable-PodeErrorLogging',
         'Add-PodeLogger',
         'Remove-PodeLogger',
         'Clear-PodeLoggers',
