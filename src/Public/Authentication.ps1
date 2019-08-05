@@ -39,15 +39,12 @@ $basic_auth = New-PodeAuthType -Basic
 $form_auth = New-PodeAuthType -Form -UsernameField 'Email'
 
 .EXAMPLE
-$custom_auth = New-PodeAuthType -Custom -ScriptBlock {
-    $username = Get-PodeHeader -Name 'X-Username'
-    $password = Get-PodeHeader -Name 'X-Password'
-    return @($username, $password)
-}
+$custom_auth = New-PodeAuthType -Custom -ScriptBlock { /* logic */ }
 #>
 function New-PodeAuthType
 {
     [CmdletBinding(DefaultParameterSetName='Basic')]
+    [OutputType([hashtable])]
     param (
         [Parameter(ParameterSetName='Basic')]
         [switch]
@@ -146,19 +143,7 @@ The ScriptBlock defining logic that retrieves and verifys a user.
 Any custom Options to supply to the ScriptBlock.
 
 .EXAMPLE
-New-PodeAuthType -Form | Add-PodeAuth -Name 'Main' -ScriptBlock {
-    param($user, $pass, $opts)
-
-    if ($user -eq 'morty' -and $pass -eq 'evil') {
-        return @{
-            User = @{
-                Username = 'morty'
-            }
-        }
-    }
-
-    return @{ Message = 'Invalid details supplied' }
-}
+New-PodeAuthType -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeAuth
 {
@@ -362,24 +347,18 @@ If supplied, navigating to a login page with a valid session will redirect to th
 If supplied, the current session will be purged, and the user will be redirected to the FailureUrl.
 
 .EXAMPLE
-Add-PodeRoute -Method Get -Path '/' -Middleware (Get-PodeAuthMiddleware -Name 'Main') -ScriptBlock {
-    param($e)
-    $e.Auth.User | Out-Default
-}
+Add-PodeRoute -Method Get -Path '/' -Middleware (Get-PodeAuthMiddleware -Name 'Main') -ScriptBlock { /* logic */ }
 
 .EXAMPLE
 Get-PodeAuthMiddleware -Name 'BasicAuth' -Sessionless | Add-PodeMiddeware -Name 'GlobalAuth'
 
 .EXAMPLE
-$login_check = Get-PodeAuthMiddleware -Name 'Main' -SuccessUrl '/' -AutoLogin
-
-Add-PodeRoute -Method Get -Path '/login' -Middleware $login_check -ScriptBlock {
-    Write-PodeViewResponse -Path 'login' -FlashMessages
-}
+Add-PodeRoute -Method Get -Path '/login' -Middleware (Get-PodeAuthMiddleware -Name 'Main' -SuccessUrl '/' -AutoLogin) -ScriptBlock { /* logic */ }
 #>
 function Get-PodeAuthMiddleware
 {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]

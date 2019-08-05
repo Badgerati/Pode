@@ -17,12 +17,13 @@ Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
 function Set-PodeState
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
 
-        [Parameter()]
+        [Parameter(ValueFromPipeline=$true)]
         [object]
         $Value
     )
@@ -51,6 +52,7 @@ Get-PodeState -Name 'Data'
 function Get-PodeState
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -80,6 +82,7 @@ Remove-PodeState -Name 'Data'
 function Remove-PodeState
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -185,6 +188,7 @@ Test-PodeState -Name 'Data'
 function Test-PodeState
 {
     [CmdletBinding()]
+    [OutputType([bool])]
     param (
         [Parameter(Mandatory=$true)]
         [string]

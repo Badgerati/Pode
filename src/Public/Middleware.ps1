@@ -155,29 +155,7 @@ If supplied, the Session cookie will only be accessible over HTTPS Requests.
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
 
 .EXAMPLE
-Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator {
-    return [System.IO.Path]::GetRandomFileName()
-}
-
-.EXAMPLE
-$store = New-Object -TypeName psobject |
-
-# delete a sessionId and data
-$store | Add-Member -MemberType ScriptMethod -Name Delete -Value {
-    param($sessionId)
-}
-
-# get a sessionId's data
-$store | Add-Member -MemberType ScriptMethod -Name Get -Value {
-    param($sessionId)
-}
-
-# update/insert a sessionId and data
-$store | Add-Member -MemberType ScriptMethod -Name Set -Value {
-    param($sessionId, $data, $expiry)
-}
-
-Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Storage $store
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator { return [System.IO.Path]::GetRandomFileName() }
 #>
 function Enable-PodeSessionMiddleware
 {
@@ -334,6 +312,7 @@ $token = New-PodeCsrfToken
 function New-PodeCsrfToken
 {
     [CmdletBinding()]
+    [OutputType([string])]
     param()
 
     # fail if the csrf logic hasn't been initialised
@@ -358,13 +337,12 @@ Returns adhoc CSRF CSRF verification Middleware, for use on Routes.
 
 .EXAMPLE
 $csrf = Get-PodeCsrfMiddleware
-Add-PodeRoute -Method Get -Path '/cpu' -Middleware $csrf -ScriptBlock {
-    # logic
-}
+Add-PodeRoute -Method Get -Path '/cpu' -Middleware $csrf -ScriptBlock { /* logic */ }
 #>
 function Get-PodeCsrfMiddleware
 {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param()
 
     # fail if the csrf logic hasn't been initialised

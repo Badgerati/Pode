@@ -36,25 +36,19 @@ Disables all logging functionality of the Server.
 Open the web Server's default endpoint in your defualt browser.
 
 .EXAMPLE
-Start-PodeServer {
-    # logic
-}
+Start-PodeServer { /* logic */ }
 
 .EXAMPLE
-Start-PodeServer -Interval 10 {
-    # loop this logic every 10secs
-}
+Start-PodeServer -Interval 10 { /* logic */ }
 
 .EXAMPLE
-Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' {
-    # run this logic using the inbuilt AWS Lambda routing engine
-}
+Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' { /* logic */ }
 #>
 function Start-PodeServer
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -326,7 +320,7 @@ function Enable-PodeGui
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Title,
 
@@ -675,7 +669,7 @@ function Remove-PodeTimer
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Name
     )
@@ -733,8 +727,7 @@ Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logi
 Add-PodeSchedule -Name 'RunEveryTuesday' -Cron '0 0 * * TUE' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-$start = [DateTime]::Now.AddDays(2)
-Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime $start -ScriptBlock { /* logic */ }
+Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime [DateTime]::Now.AddDays(2) -ScriptBlock { /* logic */ }
 #>
 function Add-PodeSchedule
 {
@@ -817,7 +810,7 @@ function Remove-PodeSchedule
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Name
     )
@@ -937,12 +930,12 @@ A Route path for which Routes this Middleware should only be invoked against.
 A HashTable of Options that will be accessible within the Middleware's ScriptBlock.
 
 .EXAMPLE
-$middleware = New-PodeMiddleware -ScriptBlock { /* logic */ } -Options @{ ElementName = 'Email' }
-$middleware | Add-PodeMiddleware -Name 'CheckEmail'
+New-PodeMiddleware -ScriptBlock { /* logic */ } -Options @{ ElementName = 'Email' } | Add-PodeMiddleware -Name 'CheckEmail'
 #>
 function New-PodeMiddleware
 {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]

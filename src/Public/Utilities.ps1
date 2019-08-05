@@ -14,6 +14,7 @@ $context = Wait-PodeTask -Task $listener.GetContextAsync()
 function Wait-PodeTask
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [System.Threading.Tasks.Task]
@@ -107,20 +108,17 @@ The ScriptBlock to invoke.
 If supplied, any values from the ScriptBlock will be returned.
 
 .EXAMPLE
-Lock-PodeObject -Object $SomeArray -ScriptBlock {
-    $item = $SomeArray[0]
-}
+Lock-PodeObject -Object $SomeArray -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-$result = (Lock-PodeObject -Return -Object $SomeArray -ScriptBlock {
-    return $SomeArray[0]
-})
+$result = (Lock-PodeObject -Return -Object $SomeArray -ScriptBlock { /* logic */ })
 #>
 function Lock-PodeObject
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [object]
         $Object,
 
@@ -179,6 +177,10 @@ $path = Get-PodeServerPath
 #>
 function Get-PodeServerPath
 {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+
     return $PodeContext.Server.Root
 }
 
@@ -196,10 +198,7 @@ The name of the Stopwatch.
 The ScriptBlock to time.
 
 .EXAMPLE
-Start-PodeStopwatch 'ReadFile' {
-    $content = Get-Content './file.txt'
-}
-# outputs: "[Stopwatch]: 00:00:12 [ReadFile]"
+Start-PodeStopwatch -Name 'ReadFile' -ScriptBlock { $content = Get-Content './file.txt' }
 #>
 function Start-PodeStopwatch
 {
@@ -209,7 +208,7 @@ function Start-PodeStopwatch
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
         $ScriptBlock
     )
@@ -242,13 +241,12 @@ The Stream to use and then dispose.
 The ScriptBlock to invoke. It will be supplied the Stream.
 
 .EXAMPLE
-$content = (Use-PodeStream -Stream $stream -ScriptBlock {
-    return $args[0].ReadToEnd()
-})
+$content = (Use-PodeStream -Stream $stream -ScriptBlock { return $args[0].ReadToEnd() })
 #>
 function Use-PodeStream
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [System.IDisposable]
@@ -329,6 +327,10 @@ $s = Get-PodeSettings
 #>
 function Get-PodeSettings
 {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
+
     return $PodeContext.Server.Settings
 }
 
@@ -343,16 +345,13 @@ Adds a ScriptBlock as Endware to run at the end of each web Request.
 The ScriptBlock to add. It will be supplied the current web event.
 
 .EXAMPLE
-Add-PodeEndware {
-    param($e)
-    "Current HttpMethod: $($e.Method)" | Out-Default
-}
+Add-PodeEndware -ScriptBlock { /* logic */ }
 #>
 function Add-PodeEndware
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
         $ScriptBlock
     )
@@ -505,6 +504,7 @@ $Name = Protect-PodeValue -Value $Name -Default 'Rick'
 function Protect-PodeValue
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter()]
         $Value,
@@ -538,6 +538,7 @@ $Port = Resolve-PodeValue -Check $AllowSsl -TrueValue 443 -FalseValue -80
 function Resolve-PodeValue
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [bool]
@@ -586,14 +587,12 @@ Don't create a new closure before invoking the ScriptBlock.
 Invoke-PodeScriptBlock -ScriptBlock { Write-Host 'Hello!' }
 
 .EXAMPLE
-Invoke-PodeScriptBlock -Arguments 'Morty' -ScriptBlock {
-    param($name)
-    Write-Host "Hello, $($name)!"
-}
+Invoke-PodeScriptBlock -Arguments 'Morty' -ScriptBlock { /* logic */ }
 #>
 function Invoke-PodeScriptBlock
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [scriptblock]
@@ -656,13 +655,12 @@ Tests if a value is empty - the value can be of any type.
 The value to test.
 
 .EXAMPLE
-if (Test-IsEmpty @{}) {
-    # do stuff
-}
+if (Test-IsEmpty @{}) { /* logic */ }
 #>
 function Test-IsEmpty
 {
     [CmdletBinding()]
+    [OutputType([bool])]
     param (
         [Parameter()]
         $Value
@@ -705,12 +703,14 @@ Tests if the the current session is running in PowerShell Core.
 Tests if the the current session is running in PowerShell Core.
 
 .EXAMPLE
-if (Test-IsPSCore) {
-    # do stuff
-}
+if (Test-IsPSCore) { /* logic */ }
 #>
 function Test-IsPSCore
 {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
     return (Get-PodePSVersionTable).PSEdition -ieq 'core'
 }
 
@@ -722,12 +722,14 @@ Tests if the current OS is Unix.
 Tests if the current OS is Unix.
 
 .EXAMPLE
-if (Test-IsUnix) {
-    # do stuff
-}
+if (Test-IsUnix) { /* logic */ }
 #>
 function Test-IsUnix
 {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
     return (Get-PodePSVersionTable).Platform -ieq 'unix'
 }
 
@@ -739,12 +741,14 @@ Tests if the current OS is Windows.
 Tests if the current OS is Windows.
 
 .EXAMPLE
-if (Test-IsWindows) {
-    # do stuff
-}
+if (Test-IsWindows) { /* logic */ }
 #>
 function Test-IsWindows
 {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
     $v = Get-PodePSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }

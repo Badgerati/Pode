@@ -6,19 +6,12 @@ Attaches a file onto the Response for downloading.
 Attaches a file from the "/public", and static Routes, onto the Response for downloading.
 
 .PARAMETER Path
-The path to a static file relative to the "/public" directory, or a static Route.
+The Path to a static file relative to the "/public" directory, or a static Route.
+
+If the supplied Path doesn't match any custom static Route, the Pode will look in the "/public" directory.
 
 .EXAMPLE
-# attaches the "/public/downloads/installer.exe" file
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
-
-.EXAMPLE
-# attaches the "/content/assets/images/icon.png" file from a static Route
-Add-PodeStaticRoute -Path '/assets' -Source './content/assets'
-
-Add-PodeRoute -Method Get -Path '/icon' -ScriptBlock {
-    Set-PodeResponseAttachment -Path '/assets/images/icon.png'
-}
 #>
 function Set-PodeResponseAttachment
 {
@@ -109,8 +102,7 @@ Write-PodeTextResponse -Value 'Leeeeeerrrooooy Jeeeenkiiins!'
 Write-PodeTextResponse -Value '{"name": "Rick"}' -ContentType 'application/json'
 
 .EXAMPLE
-$bytes = Get-Content -Path ./some/image.png -Raw -AsByteStream
-Write-PodeTextResponse -Bytes $bytes -Cache -MaxAge 1800
+Write-PodeTextResponse -Bytes (Get-Content -Path ./some/image.png -Raw -AsByteStream) -Cache -MaxAge 1800
 #>
 function Write-PodeTextResponse
 {
@@ -848,6 +840,7 @@ $data = Read-PodeTcpClient
 function Read-PodeTcpClient
 {
     [CmdletBinding()]
+    [OutputType([string])]
     param (
         [Parameter()]
         $Client
@@ -943,10 +936,7 @@ A custom extension for the engine's files.
 Set-PodeViewEngine -Type HTML
 
 .EXAMPLE
-Set-PodeViewEngine -Type PSHTML -Extension PS1 -ScriptBlock {
-    param($path, $data)
-    return [string](. $path $data)
-}
+Set-PodeViewEngine -Type PSHTML -Extension PS1 -ScriptBlock { param($path, $data) /* logic */ }
 #>
 function Set-PodeViewEngine
 {
@@ -994,6 +984,7 @@ Use-PodePartialView -Path 'shared/footer'
 function Use-PodePartialView
 {
     [CmdletBinding()]
+    [OutputType([string])]
     param (
         [Parameter(Mandatory=$true)]
         [string]

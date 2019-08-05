@@ -36,24 +36,16 @@ The content type of any error pages that may get returned.
 A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.
 
 .EXAMPLE
-Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-    Write-PodeJsonResponse -Value @{ Name = 'Bob' }
-}
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (Get-PodeCsrfMiddleware) -ScriptBlock {
-    Write-PodeJsonResponse -Value @{ Messages = @() }
-}
+Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (Get-PodeCsrfMiddleware) -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -ScriptBlock {
-    Write-PodeJsonResponse -Value @{ Name = 'Bob' }
-}
+Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeRoute -Method Get -Path '/api/cpu' -ErrorContentType 'application/json' -ScriptBlock {
-    Write-PodeJsonResponse -Value @{ CPU = 84 }
-}
+Add-PodeRoute -Method Get -Path '/api/cpu' -ErrorContentType 'application/json' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeRoute
 {

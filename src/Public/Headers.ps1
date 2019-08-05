@@ -51,6 +51,7 @@ Test-PodeHeader -Name 'X-AuthToken'
 function Test-PodeHeader
 {
     [CmdletBinding()]
+    [OutputType([bool])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -77,6 +78,7 @@ Get-PodeHeader -Name 'X-AuthToken'
 function Get-PodeHeader
 {
     [CmdletBinding()]
+    [OutputType([string])]
     param (
         [Parameter(Mandatory=$true)]
         [string]

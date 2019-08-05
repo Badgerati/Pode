@@ -39,14 +39,12 @@ $term_logging = New-PodeLoggingMethod -Terminal
 $file_logging = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
 
 .EXAMPLE
-$custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock {
-    param($item, $opts)
-    $item | Out-Default
-}
+$custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
 #>
 function New-PodeLoggingMethod
 {
     [CmdletBinding(DefaultParameterSetName='Terminal')]
+    [OutputType([hashtable])]
     param (
         [Parameter(ParameterSetName='Terminal')]
         [switch]
@@ -309,10 +307,7 @@ The ScriptBlock defining logic that transforms an item, and returns it for outpu
 Any custom Options to supply to the ScriptBlock.
 
 .EXAMPLE
-New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Main' -ScriptBlock {
-    param($item, $opts)
-    return "$($item.Key1) $($item.Key2) $($item.Key3)"
-}
+New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Main' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeLogger
 {
@@ -420,16 +415,10 @@ An ErrorRecord to write.
 The Level of the error being logged.
 
 .EXAMPLE
-try {
-    # logic
-}
-catch {
-    $_ | Write-PodeErrorLog
-}
+try { /* logic */ } catch { $_ | Write-PodeErrorLog }
 
 .EXAMPLE
-$exp = [System.Exception]::new('error message')
-$exp | Write-PodeErrorLog
+[System.Exception]::new('error message') | Write-PodeErrorLog
 #>
 function Write-PodeErrorLog
 {
