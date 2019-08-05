@@ -18,14 +18,10 @@ The ScriptBlock for the Handler's main logic.
 A literal, or relative, path to a file containing a ScriptBlock for the Handler's main logic.
 
 .EXAMPLE
-Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
-    param($email)
-}
+Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeHandler -Type Service -Name 'Looper' -ScriptBlock {
-    Write-Host 'Hello, world!'
-}
+Add-PodeHandler -Type Service -Name 'Looper' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeHandler
 {

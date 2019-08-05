@@ -23,7 +23,7 @@ function Set-PodeState
         [string]
         $Name,
 
-        [Parameter()]
+        [Parameter(ValueFromPipeline=$true)]
         [object]
         $Value
     )
