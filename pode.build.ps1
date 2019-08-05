@@ -230,9 +230,9 @@ task DocsHelpBuild DocsDeps, {
     Import-Module ./src/Pode.psm1 -Force
 
     # build the function docs
-    $path = './docs2/Functions'
+    $path = './docs/Functions'
     New-Item -Path $path -ItemType Directory -Force | Out-Null
-    New-MarkdownHelp -Module Pode -OutputFolder $path -Force -AlphabeticParamsOrder
+    New-MarkdownHelp -Module Pode -OutputFolder $path -Force -AlphabeticParamsOrder -NoMetadata
 
     # remove the module
     Remove-Module Pode -Force -ErrorAction Ignore
