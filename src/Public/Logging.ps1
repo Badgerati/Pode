@@ -47,6 +47,7 @@ $custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock {
 function New-PodeLoggingMethod
 {
     [CmdletBinding(DefaultParameterSetName='Terminal')]
+    [OutputType([hashtable])]
     param (
         [Parameter(ParameterSetName='Terminal')]
         [switch]

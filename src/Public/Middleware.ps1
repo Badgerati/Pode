@@ -334,6 +334,7 @@ $token = New-PodeCsrfToken
 function New-PodeCsrfToken
 {
     [CmdletBinding()]
+    [OutputType([string])]
     param()
 
     # fail if the csrf logic hasn't been initialised
@@ -365,6 +366,7 @@ Add-PodeRoute -Method Get -Path '/cpu' -Middleware $csrf -ScriptBlock {
 function Get-PodeCsrfMiddleware
 {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param()
 
     # fail if the csrf logic hasn't been initialised

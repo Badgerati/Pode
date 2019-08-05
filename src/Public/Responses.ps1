@@ -848,6 +848,7 @@ $data = Read-PodeTcpClient
 function Read-PodeTcpClient
 {
     [CmdletBinding()]
+    [OutputType([string])]
     param (
         [Parameter()]
         $Client
@@ -994,6 +995,7 @@ Use-PodePartialView -Path 'shared/footer'
 function Use-PodePartialView
 {
     [CmdletBinding()]
+    [OutputType([string])]
     param (
         [Parameter(Mandatory=$true)]
         [string]

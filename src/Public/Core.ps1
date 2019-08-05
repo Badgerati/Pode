@@ -943,6 +943,7 @@ $middleware | Add-PodeMiddleware -Name 'CheckEmail'
 function New-PodeMiddleware
 {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]

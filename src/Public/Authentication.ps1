@@ -48,6 +48,7 @@ $custom_auth = New-PodeAuthType -Custom -ScriptBlock {
 function New-PodeAuthType
 {
     [CmdletBinding(DefaultParameterSetName='Basic')]
+    [OutputType([hashtable])]
     param (
         [Parameter(ParameterSetName='Basic')]
         [switch]
@@ -380,6 +381,7 @@ Add-PodeRoute -Method Get -Path '/login' -Middleware $login_check -ScriptBlock {
 function Get-PodeAuthMiddleware
 {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]

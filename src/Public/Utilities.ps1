@@ -14,6 +14,7 @@ $context = Wait-PodeTask -Task $listener.GetContextAsync()
 function Wait-PodeTask
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [System.Threading.Tasks.Task]
@@ -119,6 +120,7 @@ $result = (Lock-PodeObject -Return -Object $SomeArray -ScriptBlock {
 function Lock-PodeObject
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [object]
@@ -179,6 +181,10 @@ $path = Get-PodeServerPath
 #>
 function Get-PodeServerPath
 {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+
     return $PodeContext.Server.Root
 }
 
@@ -249,6 +255,7 @@ $content = (Use-PodeStream -Stream $stream -ScriptBlock {
 function Use-PodeStream
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [System.IDisposable]
@@ -329,6 +336,10 @@ $s = Get-PodeSettings
 #>
 function Get-PodeSettings
 {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
+
     return $PodeContext.Server.Settings
 }
 
@@ -505,6 +516,7 @@ $Name = Protect-PodeValue -Value $Name -Default 'Rick'
 function Protect-PodeValue
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter()]
         $Value,
@@ -538,6 +550,7 @@ $Port = Resolve-PodeValue -Check $AllowSsl -TrueValue 443 -FalseValue -80
 function Resolve-PodeValue
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [bool]
@@ -594,6 +607,7 @@ Invoke-PodeScriptBlock -Arguments 'Morty' -ScriptBlock {
 function Invoke-PodeScriptBlock
 {
     [CmdletBinding()]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
         [scriptblock]
@@ -663,6 +677,7 @@ if (Test-IsEmpty @{}) {
 function Test-IsEmpty
 {
     [CmdletBinding()]
+    [OutputType([bool])]
     param (
         [Parameter()]
         $Value
@@ -711,6 +726,10 @@ if (Test-IsPSCore) {
 #>
 function Test-IsPSCore
 {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
     return (Get-PodePSVersionTable).PSEdition -ieq 'core'
 }
 
@@ -728,6 +747,10 @@ if (Test-IsUnix) {
 #>
 function Test-IsUnix
 {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
     return (Get-PodePSVersionTable).Platform -ieq 'unix'
 }
 
@@ -745,6 +768,10 @@ if (Test-IsWindows) {
 #>
 function Test-IsWindows
 {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
     $v = Get-PodePSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }

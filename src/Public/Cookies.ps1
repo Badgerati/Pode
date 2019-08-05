@@ -41,6 +41,7 @@ Set-PodeCookie -Name 'Views' -Value 2 -Duration 3600
 function Set-PodeCookie
 {
     [CmdletBinding(DefaultParameterSetName='Duration')]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -121,6 +122,7 @@ Get-PodeCookie -Name 'Views' -Secret 'hunter2'
 function Get-PodeCookie
 {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -171,6 +173,7 @@ Test-PodeCookie -Name 'Views'
 function Test-PodeCookie
 {
     [CmdletBinding()]
+    [OutputType([bool])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -237,6 +240,7 @@ Test-PodeCookieSigned -Name 'Views' -Secret 'hunter2'
 function Test-PodeCookieSigned
 {
     [CmdletBinding()]
+    [OutputType([bool])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -281,6 +285,7 @@ Update-PodeCookieExpiry -Name  'Views' -ExpiryDate ([datetime]::UtcNow.AddSecond
 function Update-PodeCookieExpiry
 {
     [CmdletBinding(DefaultParameterSetName='Duration')]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -383,6 +388,7 @@ Get-PodeCookieSecret -Global
 function Get-PodeCookieSecret
 {
     [CmdletBinding()]
+    [OutputType([string])]
     param (
         [Parameter(Mandatory=$true, ParameterSetName='General')]
         [string]
