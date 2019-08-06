@@ -1,6 +1,6 @@
 # Content Types
 
-Any payload supplied in a web request is normally parsed using the content type on the request's headers. However, it's possible to override - or *force* - a specific content type on routes when parsing the payload. This can be achieved by either using the `-ContentType` parameter on the [`route`](../../../Functions/Core/Route) function, or using the [`pode.json`](../../Configuration) configuration file.
+Any payload supplied in a web request is normally parsed using the content type on the request's headers. However, it's possible to override - or *force* - a specific content type on routes when parsing the payload. This can be achieved by either using the `-ContentType` parameter on the [`route`](../../../Functions/Core/Route) function, or using the [`server.psd1`](../../Configuration) configuration file.
 
 When a specific content type is supplied then any payload will be parsed as that content type only - even if the content type is supplied on the web request's header. This way, you can force a route to only accept a certain content type.
 
@@ -28,17 +28,17 @@ If the `/api/json` endpoint is supplied an XML payload then the parsing will fai
 
 ## Configuration
 
-Using the `pode.json` configuration file, you can define a default content type to use for every route, or you can define patterns to match multiple route paths to set content types on mass.
+Using the `server.psd1` configuration file, you can define a default content type to use for every route, or you can define patterns to match multiple route paths to set content types on mass.
 
 ### Default
 
 To define a default content type for everything, you can use the following configuration:
 
-```json
-{
-    "web": {
-        "contentType": {
-            "default": "text/plain"
+```powershell
+@{
+    Web = @{
+        ContentType = @{
+            Default = "text/plain"
         }
     }
 }
@@ -48,15 +48,15 @@ To define a default content type for everything, you can use the following confi
 
 You can define patterns to match multiple route paths, and any route that matches (when created) will have the appropriate content type set.
 
-For example, the following configuration in your `pode.json` would bind all `/api` routes to `application/json`, and then all `/status` routes to `text/xml`:
+For example, the following configuration in your `server.psd1` would bind all `/api` routes to `application/json`, and then all `/status` routes to `text/xml`:
 
-```json
-{
-    "web": {
-        "contentType": {
-            "routes": {
-                "/api/*": "application/json",
-                "/status/*": "text/xml"
+```powershell
+@{
+    Web = @{
+        ContentType = @{
+            Routes = @{
+                "/api/*" = "application/json"
+                "/status/*" = "text/xml"
             }
         }
     }

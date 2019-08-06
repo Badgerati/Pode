@@ -18,7 +18,7 @@ If the error page being generated is dynamic, then the following `$data` is supp
 * The URL that threw the error
 * The content-type of the error page being generated
 
-They're also supplied details of any exception passed to the `Set-PodeResponseStatus` function, which can be rendered [if enabled](#exceptions) via the `pode.json` configuration file.
+They're also supplied details of any exception passed to the `Set-PodeResponseStatus` function, which can be rendered [if enabled](#exceptions) via the `server.psd1` configuration file.
 
 ## Status Codes
 
@@ -98,18 +98,18 @@ If you're using a dynamic view engine to render the error pages, then like [`vie
 
 ```powershell
 @{
-    'Url' = [string];
-    'Status' = @{
-        'Code' = [int];
-        'Description' = [string];
-    };
-    'Exception' = @{
-        'Message' = [string];
-        'StackTrace' = [string];
-        'Line' = [string];
-        'Category' = [string];
-    };
-    'ContentType' = [string];
+    Url = [string]
+    Status = @{
+        Code = [int]
+        Description = [string]
+    }
+    Exception = @{
+        Message = [string]
+        StackTrace = [string]
+        Line = [string]
+        Category = [string]
+    }
+    ContentType = [string]
 }
 ```
 
@@ -118,23 +118,23 @@ If you're using a dynamic view engine to render the error pages, then like [`vie
 
 ### Exceptions
 
-Above you'll see that the exception supplied to `status` will also be supplied to any dynamic error pages. By default this is disabled, but you can enable the viewing of exceptions on the error page by using the `pode.json` configuration file:
+Above you'll see that the exception supplied to `status` will also be supplied to any dynamic error pages. By default this is disabled, but you can enable the viewing of exceptions on the error page by using the `server.psd1` configuration file:
 
-```json
-{
-    "web": {
-        "errorPages": {
-            "showExceptions": true
+```powershell
+@{
+    Web = @{
+        ErrorPages = @{
+            ShowExceptions = $true
         }
     }
 }
 ```
 
-Once set to `true`, any available exception details for status codes will be available to error pages - a useful setting to have in a [`pode.dev.json`](../../Configuration#environments) file.
+Once set to `true`, any available exception details for status codes will be available to error pages - a useful setting to have in a [`server.dev.psd1`](../../Configuration#environments) file.
 
 ### Content Types
 
-Using the `pode.json` configuration file, you can define which file content types to attempt when generating error pages for routes. You can either:
+Using the `server.psd1` configuration file, you can define which file content types to attempt when generating error pages for routes. You can either:
 
 * Define a [default](#default) content type that will apply to every route, or
 * Enable [strict](#strict-typing) content typing to use a route/request's content type, or
@@ -144,11 +144,11 @@ Using the `pode.json` configuration file, you can define which file content type
 
 To define a default content type for everything, you can use the following configuration. With this, any error thrown in any route will attempt to render an HTML error page:
 
-```json
-{
-    "web": {
-        "errorPages": {
-            "default": "text/html"
+```powershell
+@{
+    Web = @{
+        ErrorPages = @{
+            Default = "text/html"
         }
     }
 }
@@ -158,15 +158,15 @@ To define a default content type for everything, you can use the following confi
 
 You can define patterns to match multiple route paths, and any route that matches, when an error page is being generated, will attempt to generate an error page for the content type set.
 
-For example, the following configuration in your `pode.json` file would bind all `/api` routes to `application/json` error pages, and then all `/status` routes to `text/xml` error pages:
+For example, the following configuration in your `server.psd1` file would bind all `/api` routes to `application/json` error pages, and then all `/status` routes to `text/xml` error pages:
 
-```json
-{
-    "web": {
-        "errorPages": {
-            "routes": {
-                "/api/*": "application/json",
-                "/status/*": "text/xml"
+```powershell
+@{
+    Web = @{
+        ErrorPages = @{
+            Routes = @{
+                "/api/*" = "application/json"
+                "/status/*" = "text/xml"
             }
         }
     }
@@ -175,17 +175,17 @@ For example, the following configuration in your `pode.json` file would bind all
 
 #### Strict Typing
 
-You can enable strict content typing in the `pode.json` file. When enabled, Pode will attempt to generate an error page that matches the route/request's content type.
+You can enable strict content typing in the `server.psd1` file. When enabled, Pode will attempt to generate an error page that matches the route/request's content type.
 
 For example: if the request's `Content-Type` header is set to `application/json` (or you're using [route content types](../ContentTypes)), and you have strict content typing enabled, then Pode will attempt to use a JSON error page.
 
 To enable strict content typing, you can use the following:
 
-```json
-{
-    "web": {
-        "errorPages": {
-            "strictContentTyping": true
+```powershell
+@{
+    Web = @{
+        ErrorPages = @{
+            StrictContentTyping = $true
         }
     }
 }

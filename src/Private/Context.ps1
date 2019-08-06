@@ -60,8 +60,8 @@ function New-PodeContext
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
-    if (!(Test-IsEmpty $ctx.Server.Settings.server.root)) {
-        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Settings.server.root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
+    if (!(Test-IsEmpty $ctx.Server.Settings.Server.Root)) {
+        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Settings.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
     # set the server default type
@@ -262,11 +262,11 @@ function Open-PodeConfiguration
     $config = @{}
 
     # set the path to the root config file
-    $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'pode.json' -Root $ServerRoot)
+    $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'server.psd1' -Root $ServerRoot)
 
     # check to see if an environmental config exists (if the env var is set)
     if (!(Test-IsEmpty $env:PODE_ENVIRONMENT)) {
-        $_path = (Join-PodeServerRoot -Folder '.' -FilePath "pode.$($env:PODE_ENVIRONMENT).json" -Root $ServerRoot)
+        $_path = (Join-PodeServerRoot -Folder '.' -FilePath "server.$($env:PODE_ENVIRONMENT).psd1" -Root $ServerRoot)
         if (Test-PodePath -Path $_path -NoStatus) {
             $configPath = $_path
         }
@@ -274,9 +274,9 @@ function Open-PodeConfiguration
 
     # check the path exists, and load the config
     if (Test-PodePath -Path $configPath -NoStatus) {
-        $config = (Get-Content $configPath -Raw | ConvertFrom-Json)
-        Set-PodeServerConfiguration -Configuration $config.server -Context $Context
-        Set-PodeWebConfiguration -Configuration $config.web -Context $Context
+        $config = Import-PowerShellDataFile -Path $configPath
+        Set-PodeServerConfiguration -Configuration $config.Server -Context $Context
+        Set-PodeWebConfiguration -Configuration $config.Web -Context $Context
     }
 
     return $config
@@ -286,6 +286,7 @@ function Set-PodeServerConfiguration
 {
     param (
         [Parameter()]
+        [hashtable]
         $Configuration,
 
         [Parameter()]
@@ -294,10 +295,10 @@ function Set-PodeServerConfiguration
 
     # file monitoring
     $Context.Server.FileMonitor = @{
-        Enabled = ([bool]$Configuration.fileMonitor.enable)
-        Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.fileMonitor.exclude))
-        Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.fileMonitor.include))
-        ShowFiles = ([bool]$Configuration.fileMonitor.showFiles)
+        Enabled = ([bool]$Configuration.FileMonitor.Enable)
+        Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Exclude))
+        Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Include))
+        ShowFiles = ([bool]$Configuration.FileMonitor.ShowFiles)
         Files = @()
     }
 }
@@ -306,6 +307,7 @@ function Set-PodeWebConfiguration
 {
     param (
         [Parameter()]
+        [hashtable]
         $Configuration,
 
         [Parameter()]
@@ -315,44 +317,38 @@ function Set-PodeWebConfiguration
     # setup the main web config
     $Context.Server.Web = @{
         Static = @{
-            Defaults = $Configuration.static.defaults
+            Defaults = $Configuration.Static.Defaults
             Cache = @{
-                Enabled = [bool]$Configuration.static.cache.enable
-                MaxAge = [int](Protect-PodeValue -Value $Configuration.static.cache.maxAge -Default 3600)
-                Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.static.cache.include) -NotSlashes)
-                Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.static.cache.exclude) -NotSlashes)
+                Enabled = [bool]$Configuration.Static.Cache.Enable
+                MaxAge = [int](Protect-PodeValue -Value $Configuration.Static.Cache.MaxAge -Default 3600)
+                Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Include) -NotSlashes)
+                Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Exclude) -NotSlashes)
             }
         }
         ErrorPages = @{
-            ShowExceptions = [bool]$Configuration.errorPages.showExceptions
-            StrictContentTyping = [bool]$Configuration.errorPages.strictContentTyping
-            Default = $Configuration.errorPages.default
+            ShowExceptions = [bool]$Configuration.ErrorPages.ShowExceptions
+            StrictContentTyping = [bool]$Configuration.ErrorPages.StrictContentTyping
+            Default = $Configuration.ErrorPages.Default
             Routes = @{}
         }
         ContentType = @{
-            Default = $Configuration.contentType.default
+            Default = $Configuration.ContentType.Default
             Routes = @{}
         }
     }
 
     # setup content type route patterns for forced content types
-    if ($null -ne $Configuration.contentType.routes) {
-        $Configuration.contentType.routes.psobject.properties.name | ForEach-Object {
-            $_pattern = $_
-            $_type = $Configuration.contentType.routes.$_pattern
-            $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
-            $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
-        }
+    $Configuration.ContentType.Routes.Keys | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+        $_type = $Configuration.ContentType.Routes[$_]
+        $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
+        $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
     }
 
     # setup content type route patterns for error pages
-    if ($null -ne $Configuration.errorPages.routes) {
-        $Configuration.errorPages.routes.psobject.properties.name | ForEach-Object {
-            $_pattern = $_
-            $_type = $Configuration.errorPages.routes.$_pattern
-            $_pattern = (Convert-PodePathPatternToRegex -Path $_pattern -NotSlashes)
-            $Context.Server.Web.ErrorPages.Routes[$_pattern] = $_type
-        }
+    $Configuration.ErrorPages.Routes.Keys | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+        $_type = $Configuration.ErrorPages.Routes[$_]
+        $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
+        $Context.Server.Web.ErrorPages.Routes[$_pattern] = $_type
     }
 }
 
@@ -360,11 +356,11 @@ function New-PodeAutoRestartServer
 {
     # don't configure if not supplied, or running as serverless
     $config = (Get-PodeSettings)
-    if (($null -eq $config) -or ($null -eq $config.server.restart) -or $PodeContext.Server.IsServerless)  {
+    if (($null -eq $config) -or ($null -eq $config.Server.Restart) -or $PodeContext.Server.IsServerless)  {
         return
     }
 
-    $restart = $config.server.restart
+    $restart = $config.Server.Restart
 
     # period - setup a timer
     $period = [int]$restart.period
