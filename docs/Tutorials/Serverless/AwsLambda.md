@@ -74,7 +74,7 @@ Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' {
 
 ### Websites
 
-You can render websites using Pode as well. To do this in Lambda Functions you'll need to upload your website files to some S3 bucket. In here you can place your normal `/views`, `/public` and `/errors` directories - as well as your `pode.json` file.
+You can render websites using Pode as well. To do this in Lambda Functions you'll need to upload your website files to some S3 bucket. In here you can place your normal `/views`, `/public` and `/errors` directories - as well as your `server.psd1` file.
 
 Then within your Function script, you need to read in the data from your S3 bucket to some path your Function can access. Once read in, you need to then reference this directory as the root path for your server:
 

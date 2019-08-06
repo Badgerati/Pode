@@ -1,12 +1,12 @@
 # File Monitoring
 
-Pode has support for file monitoring which can trigger the server to restart, this occurs if Pode detects any file changes within the root directory of your server. To enable file monitoring you can enable it through the `pode.json` configuration file as follows:
+Pode has support for file monitoring which can trigger the server to restart, this occurs if Pode detects any file changes within the root directory of your server. To enable file monitoring you can enable it through the `server.psd1` configuration file as follows:
 
-```json
-{
-    "server": {
-        "fileMonitor": {
-            "enable": true
+```powershell
+@{
+    Server = @{
+        FileMonitor = @{
+            Enable = $true
         }
     }
 }
@@ -25,18 +25,18 @@ The file changes which are being monitored by Pode are:
 
 ## Include/Exclude
 
-You can include/exclude paths/files/extensions from triggering a server restart. To include/exclude specific paths/files you can configure them within the `pode.json` configuration file.
+You can include/exclude paths/files/extensions from triggering a server restart. To include/exclude specific paths/files you can configure them within the `server.psd1` configuration file.
 
 Both of the settings are arrays, and the values should be patterns for paths/files/extensions - for paths, they should always be from the root directory of your server.
 
 For example, to state that all `txt` and `ps1` files should only trigger restarts, you would do:
 
-```json
-{
-    "server": {
-        "fileMonitor": {
-            "enable": true,
-            "include": [ "*.txt", "*.ps1" ]
+```powershell
+@{
+    Server = @{
+        FileMonitor = @{
+            Enable = $true
+            Include = @("*.txt", "*.ps1")
         }
     }
 }
@@ -44,12 +44,12 @@ For example, to state that all `txt` and `ps1` files should only trigger restart
 
 And to state that changes within the `public` directory should not trigger a restart, you would do:
 
-```json
-{
-    "server": {
-        "fileMonitor": {
-            "enable": true,
-            "exclude": [ "public/*" ]
+```powershell
+@{
+    Server = @{
+        FileMonitor = @{
+            Enable = $true
+            Exclude = @("public/*")
         }
     }
 }
@@ -57,14 +57,14 @@ And to state that changes within the `public` directory should not trigger a res
 
 ## Show Files
 
-You can enable the showing of what file changes triggered the server to restart. To do this, you can set the `showFiles` property in your `pode.json` file:
+You can enable the showing of what file changes triggered the server to restart. To do this, you can set the `showFiles` property in your `server.psd1` file:
 
-```json
-{
-    "server": {
-        "fileMonitor": {
-            "enable": true,
-            "showFiles": true
+```powershell
+@{
+    Server = @{
+        FileMonitor = @{
+            Enable = $true
+            ShowFiles = $true
         }
     }
 }
@@ -74,7 +74,7 @@ Once enabled, just before a restart occurs, the following is an example of what 
 
 ```plain
 The following files have changed:
-> [Changed] pode.json
+> [Changed] server.psd1
 > [Created] views/about.pode
 > [Deleted] public/styles/main.css
 ```

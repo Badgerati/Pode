@@ -17,18 +17,18 @@ Start-PodeServer -RootPath '../server' {
 }
 ```
 
-With this, everything from your `pode.json`, `/views`, `/public`, etc will need to be within the `../server` directory.
+With this, everything from your `server.psd1`, `/views`, `/public`, etc will need to be within the `../server` directory.
 
 ## Configuration
 
-The other way to alter the root path is via the `pode.json` file:
+The other way to alter the root path is via the `server.psd1` file:
 
-```json
-{
-    "server": {
-        "root": "../server"
+```powershell
+@{
+    Server = @{
+        Root = "../server"
     }
 }
 ```
 
-In this case, the `pode.json` file will need to be located at `$MyInvocation.PSScriptRoot`. Everything else will need to be located in `../server`.
+In this case, the `server.psd1` file will need to be located at `$MyInvocation.PSScriptRoot`. Everything else will need to be located in `../server`.

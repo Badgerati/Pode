@@ -87,7 +87,7 @@ Start-PodeServer -Request $TriggerMetadata -Type 'AzureFunctions' {
 
 ### Websites
 
-You can render websites using Pode as well. Let's say you create a `/www` directory at the root of your project, within here you can place your normal `/views`, `/public` and `/errors` directories - as well as your `pode.json` file.
+You can render websites using Pode as well. Let's say you create a `/www` directory at the root of your project, within here you can place your normal `/views`, `/public` and `/errors` directories - as well as your `server.psd1` file.
 
 All you need to do then is reference this directory as the root path for your server:
 

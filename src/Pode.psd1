@@ -26,7 +26,7 @@
     Description = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '3.0'
+    PowerShellVersion = '5.0'
 
     # Functions to export from this Module
     FunctionsToExport = @(

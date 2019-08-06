@@ -35,7 +35,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 
 ## Features
 
-* Cross-platform using PowerShell Core (with support for PS4.0+)
+* Cross-platform using PowerShell Core (with support for PS5)
 * Docker support, including images for ARM/Raspberry Pi
 * Azure Functions and AWS Lambda support
 * Listen on a single or multiple IP address/hostnames

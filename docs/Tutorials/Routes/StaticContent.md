@@ -38,7 +38,7 @@ These pages are checked in order, and if one is found then its content is return
 Invoke-WebRequest -Uri 'http://localhost:8080/assets/images/home' -Method Get
 ```
 
-The default pages can be configured in two ways; either by using the `-Defaults` parameter on the `route` function, or by setting them in the `pode.json` [configuration file](../../Configuration). To set the defaults to be only a `home.html` page, both ways would work as follows:
+The default pages can be configured in two ways; either by using the `-Defaults` parameter on the `route` function, or by setting them in the `server.psd1` [configuration file](../../Configuration). To set the defaults to be only a `home.html` page, both ways would work as follows:
 
 *Defaults Parameter*
 ```powershell
@@ -46,11 +46,11 @@ Add-PodeStaticRoute -Path '/assets' -Source './content/assets' -Defaults @('inde
 ```
 
 *Configuration File*
-```json
-{
-    "web": {
-        "static": {
-            "defaults": [ "home.html" ]
+```powershell
+@{
+    Web = @{
+        Static = @{
+            Defaults = @('home.html')
         }
     }
 }
@@ -60,16 +60,16 @@ Add-PodeStaticRoute -Path '/assets' -Source './content/assets' -Defaults @('inde
 
 Having web pages send requests to your Pode server for all static content every time can be quite a strain on the server. To help the server, you can enable static content caching, which will inform users' browsers to cache files (ie `*.css` and `*.js`) for so many seconds - stopping the browser from re-requesting it from your server each time.
 
-By default, caching is disabled and can be enabled and controlled using the `pode.json` configuration file.
+By default, caching is disabled and can be enabled and controlled using the `server.psd1` configuration file.
 
 To enable caching, with a default cache time of 1hr, you do:
 
-```json
-{
-    "web": {
-        "static": {
-            "cache": {
-                "enable": true
+```powershell
+@{
+    Web = @{
+        Static = @{
+            Cache = @{
+                Enable = $true
             }
         }
     }
@@ -78,13 +78,13 @@ To enable caching, with a default cache time of 1hr, you do:
 
 If you wish to set a max cache time of 30mins, then you would use the `maxAge` property - setting it to `1800secs`:
 
-```json
-{
-    "web": {
-        "static": {
-            "cache": {
-                "enable": true,
-                "maxAge": 1800
+```powershell
+@{
+    Web = @{
+        Static = @{
+            Cache = @{
+                Enable = $true
+                MaxAge = 1800
             }
         }
     }
@@ -106,19 +106,19 @@ When a static route is set as downloadable, then `-Defaults` and caching are not
 
 ### Include/Exclude
 
-Sometimes you don't want all static content to be cached, maybe you want `*.exe` files to always be re-requested? This is possible using the `include` and `exclude` properties in the `pode.json`.
+Sometimes you don't want all static content to be cached, maybe you want `*.exe` files to always be re-requested? This is possible using the `include` and `exclude` properties in the `server.psd1`.
 
 Let's say you do want to exclude all `*.exe` files from being cached:
 
-```json
-{
-    "web": {
-        "static": {
-            "cache": {
-                "enable": true,
-                "exclude": [
+```powershell
+@{
+    Web = @{
+        Static = @{
+            Cache = @{
+                Enable = $true
+                Exclude = @(
                     "*.exe"
-                ]
+                )
             }
         }
     }
@@ -127,16 +127,16 @@ Let's say you do want to exclude all `*.exe` files from being cached:
 
 Or, you could setup some static routes called `/assets` and `/images`, and you want everything on `/images` to be cached, but only `*.js` files to be cached on `/assets`:
 
-```json
-{
-    "web": {
-        "static": {
-            "cache": {
-                "enable": true,
-                "include": [
+```powershell
+@{
+    Web = @{
+        Static = @{
+            Cache = @{
+                Enable = $true
+                Include = @(
                     "/images/*",
                     "/assets/*.js"
-                ]
+                )
             }
         }
     }
