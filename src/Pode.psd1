@@ -75,7 +75,7 @@
         'Move-PodeResponseUrl',
         'Write-PodeTcpClient',
         'Read-PodeTcpClient',
-        'Save-PodeResponseFile',
+        'Save-PodeRequestFile',
         'Set-PodeViewEngine',
         'Use-PodePartialView',
 
@@ -87,7 +87,7 @@
         'Start-PodeStopwatch',
         'Use-PodeStream',
         'Use-PodeScript',
-        'Get-PodeSettings',
+        'Get-PodeConfig',
         'Add-PodeEndware',
         'Import-PodeModule',
         'Protect-PodeValue',
@@ -154,7 +154,7 @@
 
         # core
         'Start-PodeServer',
-        'Enable-PodeGui',
+        'Show-PodeGui',
         'Add-PodeEndpoint',
         'Pode'
     )

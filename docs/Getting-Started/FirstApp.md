@@ -1,6 +1,6 @@
 # Building your first Pode app
 
-!!! note
+!!! important
     Before starting, ensure you've [installed](../Installation) Pode.
 
 The following steps will run you through creating your first Pode app, and give you an overview to some of the basic features.
@@ -30,7 +30,7 @@ Success, saved package.json
 
 ## REST Server
 
-* Within your `server.ps1` file, first you need to create the [`server`](../../Functions/Core/Server). This is where the main script will go that defines how the server should function:
+* Within your `server.ps1` file, first you need to start the Server. This is where the main script will go that defines how the server should function:
 
 ```powershell
 Start-PodeServer {
@@ -38,7 +38,7 @@ Start-PodeServer {
 }
 ```
 
-* Now we have our server, we need to get it to [`listen`](../../Functions/Core/Listen) on an endpoint. This will allow us to receive requests and respond to them. The below tells your server to listen on `localhost` and port `8080` for HTTP requests:
+* Now we have our server, we need to get it to listen on an endpoint. This will allow us to receive requests and respond to them. The below tells your server to listen on `localhost` and port `8080` for HTTP requests:
 
 ```powershell
 Start-PodeServer {
@@ -58,7 +58,7 @@ Start-PodeServer {
 }
 ```
 
-* Save the file, and run `pode start` (or `./server.ps1`) from the console. This will start the server listening on `localhost:8080`. When `http://localhost:8080/` is hit, the server will respond with:
+* Save the file, and run `pode start` (or `./server.ps1`) from the terminal. This will start the server listening on `localhost:8080`. When `http://localhost:8080/` is hit, the server will respond with:
 
 ```json
 {

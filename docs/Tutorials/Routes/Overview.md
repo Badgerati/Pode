@@ -1,4 +1,4 @@
-# Routing Overview
+# Overview
 
 Routes in Pode allow you to bind logic that should be invoked when a users call certain paths on a URL, for a specific HTTP method, against your server. Routes allow you to host REST APIs and Web Pages, as well as using custom Middleware for logic such as authentication.
 
@@ -50,8 +50,8 @@ Start-PodeServer {
 
         # return the user
         Write-PodeJsonResponse -Value @{
-            'Username' = $user.username;
-            'Age' = $user.age;
+            Username = $user.username
+            Age = $user.age
         }
     }
 }
@@ -85,8 +85,8 @@ Start-PodeServer {
 
         # return the user
         Write-PodeJsonResponse -Value @{
-            'Username' = $user.username;
-            'Age' = $user.age;
+            Username = $user.username
+            Age = $user.age
         }
     }
 }
@@ -114,8 +114,8 @@ Start-PodeServer {
 
         # return the user
         Write-PodeJsonResponse -Value @{
-            'Username' = $user.username;
-            'Age' = $user.age;
+            Username = $user.username
+            Age = $user.age
         }
     }
 }

@@ -1,6 +1,6 @@
 # Installation
 
-Pode is a PowerShell module that can be installed from either Chocolatey, PowerShell Gallery, or Docker. Once installed, you can import the module into your PowerShell scripts.
+Pode is a PowerShell module that can be installed from either Chocolatey, the PowerShell Gallery, or Docker. Once installed, you can use the module in your PowerShell scripts.
 
 ## Chocolatey
 

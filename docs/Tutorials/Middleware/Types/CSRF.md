@@ -6,7 +6,7 @@ Pode has inbuilt support for CSRF middleware validation and tokens on web reques
 
 To use CSRF in Pode, you can use the CSRF functions. These functions allow you to generate CSRF tokens, as well as two methods of returning valid middleware.
 
-The `-IgnoreMethods` array can either be empty, to run validation on every route, or can be formed of the following HTTP methods: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, STATIC.
+The `-IgnoreMethods` array can either be empty, to run validation on every route, or can be formed of the following HTTP methods: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE.
 
 The `-Secret` is used for signing the cookie that might be used, and is only required when `-Cookie` is also supplied.
 

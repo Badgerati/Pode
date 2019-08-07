@@ -1,4 +1,4 @@
-# Logging to File
+# File
 
 You can log items to a file using Pode's inbuilt file logging logic. The inbuilt logic allows you to define a maximum number of days to keep files, as well as a maximum file size. The logic will convert any item to a string, and then write it to file.
 

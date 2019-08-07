@@ -4,7 +4,7 @@ Pode has an inbuilt SMTP server which automatically creates a TCP listener on po
 
 Unlike with web servers that use the Route functions, SMTP servers use the Handler functions, which let you specify logic for handling responses from TCP streams.
 
-To create a `handler` for the inbuilt SMTP server you can use the following example:
+To create a Handler for the inbuilt SMTP server you can use the following example:
 
 ```powershell
 Start-PodeServer {

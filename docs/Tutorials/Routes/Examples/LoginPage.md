@@ -180,7 +180,7 @@ Start-PodeServer -Thread 2 {
 
 ## Pages
 
-The following are the web pages used above, as well as the CSS style. The web pages have been created using [`.pode`](../../ViewEngines/Pode) files, which allows you to embed PowerShell into the files.
+The following are the web pages used above, as well as the CSS style. The web pages have been created using [`.pode`](../../../Views/Pode) files, which allows you to embed PowerShell into the files.
 
 *index.pode*
 ```html

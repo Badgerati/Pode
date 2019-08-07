@@ -5,7 +5,7 @@ Flash messages allow you to pass temporary messages - info/error or otherwise - 
 For example, in sign-up logic you could set a flash error message for an invalid email address; retrieving the message from the session on a redirect for the view, allowing the view to render error messages.
 
 !!! Important
-    To use flash messages you need to have [`Session Middleware`](../../Middleware/Sessions) enabled.
+    To use flash messages you need to have [`Session Middleware`](../../../Middleware/Sessions) enabled.
 
 ## Usage
 
@@ -19,13 +19,13 @@ The following is an example of adding a flash message to a session, this will ad
 Add-PodeFlashMessage -Name 'email-error' -Message 'Invalid email address'
 ```
 
-Then to retrieve the message, you can do this in a `route` for a `view`:
+Then to retrieve the message, you can do this in a Route for a View:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/signup' -ScriptBlock {
     Write-PodeViewResponse -Path 'signup' -Data @{
-        'errors' = @{
-            'email' = (Get-PodeFlashMessage -Name 'email-error')
+        Errors = @{
+            Email = (Get-PodeFlashMessage -Name 'email-error')
         }
     }
 }

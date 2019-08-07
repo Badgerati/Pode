@@ -1,4 +1,4 @@
-# Custom Logging
+# Custom
 
 Sometimes you don't want to log to a file, or the terminal; instead you want to log to something better, like LogStash, Splunk, Athena, or any other central logging platform. Although Pode doesn't have these inbuilt (yet!) it is possible to create a custom logging method, where you define a ScriptBlock with logic to send logs to these platforms.
 

@@ -1,4 +1,4 @@
-# Form Authentication
+# Form
 
 Form Authentication is for when you're using a `<form>` in HTML, and you submit the form. This Authentication method expects a `username` and `password` to be passed from the form's input fields.
 

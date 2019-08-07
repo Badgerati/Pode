@@ -1,6 +1,6 @@
 # Docker
 
-Pode has some Docker images that you can use, for instructions to pull these images down you can [look here](../Installation).
+Pode has a Docker image that you can use, for instructions on pulling these images you can [look here](../Installation).
 
 The images use PowerShell Core on either an Ubuntu Xenial (default) or ARM32 image.
 

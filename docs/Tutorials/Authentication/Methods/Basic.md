@@ -1,4 +1,4 @@
-# Basic Authentication
+# Basic
 
 Basic Authentication is when you pass an encoded `username:password` value on the header of your requests: `@{ 'Authorization' = 'Basic <base64 encoded username:password>' }`.
 

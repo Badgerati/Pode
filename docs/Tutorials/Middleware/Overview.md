@@ -1,10 +1,10 @@
-# Middleware Overview
+# Overview
 
-When working with web servers in Pode - REST APIs, Routes, Web Pages, etc. - they each have support for using Middleware. Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the web event for later use, or terminate the response without processing the main Route logic.
+Middleware in Pode allows you to observe and edit the request/response objects for a current web event - you can alter the response, add custom objects to the web event for later use, or terminate the response without processing the main Route logic.
 
 Middleware is supported in both a global scope, using `Add-PodeMiddleware`, as well as at the Route level using the `-Middleware` parameter on `Add-PodeRoute`.
 
-Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with `Add-PodeMiddleware` and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../AccessRules) and [Rate Limiting](../RateLimiting) page).
+Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with `Add-PodeMiddleware` and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/AccessRules) and [Rate Limiting](../Types/RateLimiting) page).
 
 ## Global Middleware
 
@@ -91,8 +91,8 @@ Although you can define your own custom middleware, Pode does have some inbuilt 
 
 | Order | Middleware | Description |
 | ----- | ---------- | ----------- |
-| 1 | **Access Rules** | Allowing/Denying IP addresses (if [`access`](../../../Functions/Core/Access) logic is defined) |
-| 2 | **Rate Limiting** | Limiting access to IP addresses (if [`limit`](../../../Functions/Core/Limit) logic is defined) |
+| 1 | **Access Rules** | Allowing/Denying IP addresses (if access rules have been defined) |
+| 2 | **Rate Limiting** | Limiting access to IP addresses (if rate limiting rules have been defined) |
 | 3 | **Static Content** | Static Content such as images/css/js/html in the `/public` directory (or other defined static routes) |
 | 4 | **Body Parsing** | Parsing request payload as JSON, XML, or other types |
 | 5 | **Query String** | Getting any query string parameters currently on the request URL |

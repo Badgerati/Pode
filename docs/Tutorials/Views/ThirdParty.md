@@ -1,11 +1,11 @@
 # Third Party Engines
 
-Pode supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) or [PSHTML](https://github.com/Stephanevg/PSHTML) template engines. To do this, you'll need to supply a custom `scriptblock` to the [`engine`](../../../Functions/Core/Engine) function which tells Pode how use the third-party engine.
+Pode supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) or [PSHTML](https://github.com/Stephanevg/PSHTML) template engines. To do this you'll need to supply a `scriptblock` to the `Set-PodeViewEngine` function which tells Pode how use the third-party engine to render views.
 
 This custom `scriptblock` will be supplied with two arguments:
 
 1. `$path`: The path to the file that needs generating using your chosen template engine
-2. `$data`: Any data that was supplied to the [`view`](../../../Functions/Response/View) function
+2. `$data`: Any data that was supplied to the `Write-PodeViewResponse` function
 
 ## EPS
 

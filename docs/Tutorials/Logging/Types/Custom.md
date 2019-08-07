@@ -1,4 +1,4 @@
-# Custom Logging
+# Custom
 
 You can define Custom logging types in Pode by using the `Add-PodeLogger` function. Much like Requests and Errors, this function too accepts any logging method from `New-PodeLoggingMethod`.
 

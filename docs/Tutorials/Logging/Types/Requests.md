@@ -1,4 +1,4 @@
-# Request Logging
+# Requests
 
 Pode has inbuilt Request logging logic, that will parse and return a valid log item for whatever method of logging you supply.
 

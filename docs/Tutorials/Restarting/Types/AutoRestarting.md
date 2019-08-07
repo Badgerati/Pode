@@ -1,10 +1,10 @@
 # Auto-Restarting
 
-You can schedule automatic server restarts by using the `server.restart` section within your `server.psd1` configuration file. You can schedule server restarts in 3 ways:
+You can schedule automatic server restarts by using the `Server.Restart` section within your `server.psd1` configuration file. You can schedule server restarts in 3 ways:
 
 1. **Periodic**: A single value that defines after how many minutes the server should restart.
 2. **Times**: An array of times that define at which times each day the server should restart.
-3. **Cron Expressions**: An array of [`cron expression`](../../Misc/CronExpressions) that define when the server should restart.
+3. **Cron Expressions**: An array of [`cron expression`](../../../Misc/CronExpressions) that define when the server should restart.
 
 The section in your `server.psd1` file could look as follows (you can define 1 or all):
 
@@ -53,7 +53,7 @@ Server restarts can be fined by the time of day, this is an array of times each 
 
 ## Cron Expressions
 
-To further advance timed and periodic server restarts, you can also define when a restart should occur by using an array of [`cron expressions`](../../Misc/CronExpressions). For example, should you want to restart your server on every Tuesday and Friday at 12:00, then you could add the following to your `server.psd1` file:
+To further advance timed and periodic server restarts, you can also define when a restart should occur by using an array of [`cron expressions`](../../../Misc/CronExpressions). For example, should you want to restart your server on every Tuesday and Friday at 12:00, then you could add the following to your `server.psd1` file:
 
 ```powershell
 @{

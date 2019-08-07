@@ -1,4 +1,4 @@
-# Error Logging
+# Errors
 
 Pode has inbuilt Error logging logic, that parses Exceptions and ErrorRecords, and will return a valid log item for whatever method of logging you supply.
 

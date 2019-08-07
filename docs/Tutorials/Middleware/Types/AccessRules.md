@@ -45,7 +45,7 @@ Start-PodeServer {
 
 ## Overriding
 
-Since access rules are an inbuilt Middleware in Pode, then when you setup rules the point at which the rules are checked on the request lifecycle is fixed (see [here](../Overview/#order-of-running)).
+Since access rules are an inbuilt Middleware in Pode, then when you setup rules the point at which the rules are checked on the request lifecycle is fixed (see [here](../../Overview/#order-of-running)).
 
 This means you can override the inbuilt access rule logic with your own custom logic, using the `Add-PodeMiddleware` function. To override the access rule logic you can pass `__pode_mw_access__` to the `-Name` parameter of the `Add-PodeMiddleware` function.
 

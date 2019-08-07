@@ -24,7 +24,7 @@ Start-PodeServer -Threads 2 {
 
     # POST request to upload a file
     Add-PodeRoute -Method Post -Path '/upload' -ScriptBlock {
-        Save-PodeResponseFile -Key 'avatar'
+        Save-PodeRequestFile -Key 'avatar'
         Move-PodeResponseUrl -Url '/'
     }
 

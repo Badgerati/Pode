@@ -1,4 +1,4 @@
-# Logging Overview
+# Overview
 
 There are two aspects to logging in Pode: Methods and Types.
 

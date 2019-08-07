@@ -4,13 +4,13 @@ Most things in Pode all run in isolated runspaces, which means you can't create 
 
 You also have the option of saving the current state to a file, and then restoring the state back on server start. This way you won't lose state between server restarts.
 
-To do this, you use the State functions in combination with the [`lock`](../../Functions/Utility/Lock) function to ensure thread safety.
+To do this, you use the State functions in combination with the `Lock-PodeObject` function to ensure thread safety.
 
 !!! tip
-    It's wise to use the State functions in conjunction with the `lock` function, so as to ensure thread safety between runspaces. The argument supplied to the Routes, Handlers, Timers, Schedules, Middleware, Endware and Loggers each contain a `.Lockable` resource that can be supplied to the `lock` function.
+    It's wise to use the State functions in conjunction with the `Lock-PodeObject` function, to ensure thread safety between runspaces. The event argument supplied to the Routes, Handlers, Timers, Schedules, Middleware, Endware and Loggers each contain a `.Lockable` resource that can be supplied to the `Lock-PodeObject` function.
 
 !!! warning
-    If you omit the use of `lock`, you will run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
+    If you omit the use of `Lock-PodeObject`, you will run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
 
 ## Usage
 
@@ -73,7 +73,7 @@ Start-PodeServer {
 
 ### Save
 
-The `Save-PodeState` function will save the current state, as JSON, to the specified file. The file path can either be relative, or a literal path. When saving the state, it's recommended to wrap the function within a `lock`.
+The `Save-PodeState` function will save the current state, as JSON, to the specified file. The file path can either be relative, or a literal path. When saving the state, it's recommended to wrap the function within a `Lock-PodeObject`.
 
 An example of saving the current state every hour is as follows:
 
@@ -89,7 +89,7 @@ Start-PodeServer {
 
 ### Restore
 
-The `Restore-PodeState` function will restore the current state from the specified file. The file path can either be relative, or a literal path. if you're restoring the state immediately on server start, you don't need to use `lock`.
+The `Restore-PodeState` function will restore the current state from the specified file. The file path can either be relative, or a literal path. if you're restoring the state immediately on server start, you don't need to use `Lock-PodeObject`.
 
 An example of restore the current state on server start is as follows:
 

@@ -1,4 +1,4 @@
-# Error Pages and Status Codes
+# Error Pages / Status Codes
 
 During web requests, Pode has some default status codes that can be returned throughout a request's lifecycle:
 
@@ -90,11 +90,11 @@ An example file structure for `/errors` is as follows:
 By default Pode will always generate error pages as HTML, unless you enable strict content typing or routes patterns ([detailed later](#content-types)).
 
 !!! important
-    To use error pages with a view engine (such as `.pode`), you need to set the [`view engine`](../../../Functions/Core/Engine) in your server.
+    To use error pages with a view engine (such as `.pode`), you need to use the `Set-PodeViewEngine` function in your server.
 
 #### Dynamic Data
 
-If you're using a dynamic view engine to render the error pages, then like [`views`](../../ViewEngines/Pode), there will be a `$data` variable that you can use within the error page file. The `$data` variable will have the following structure:
+If you're using a dynamic view engine to render the error pages, then like [`views`](../../Views/Pode), there will be a `$data` variable that you can use within the error page file. The `$data` variable will have the following structure:
 
 ```powershell
 @{
@@ -130,7 +130,7 @@ Above you'll see that the exception supplied to `status` will also be supplied t
 }
 ```
 
-Once set to `true`, any available exception details for status codes will be available to error pages - a useful setting to have in a [`server.dev.psd1`](../../Configuration#environments) file.
+Once set to `true`, any available exception details for status codes will be available to error pages - a useful setting to have in a [`server.dev.psd1`](../../../Configuration#environments) file.
 
 ### Content Types
 

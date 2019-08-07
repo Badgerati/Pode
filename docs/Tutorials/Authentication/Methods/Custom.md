@@ -1,4 +1,4 @@
-# Custom Authentication
+# Custom
 
 Custom authentication works much like the inbuilt types (Basic and Form), but allows you to specify your own parsing logic, as well as any custom options that might be required.
 

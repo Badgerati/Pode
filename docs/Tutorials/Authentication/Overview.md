@@ -1,4 +1,4 @@
-# Authentication Overview
+# Overview
 
 Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session signed-cookie).
 
@@ -113,7 +113,7 @@ Add-PodeRoute -Method Get -Path '/' -Middleware (Get-PodeAuthMiddleware -Name 'L
 
 ## Inbuilt Authenticators
 
-Overtime Pode will start to support inbuilt authentication methods - such as [Windows Active Directory](../Validators/WindowsAD). More information can be found in the Validators section.
+Overtime Pode will start to support inbuilt authentication methods - such as [Windows Active Directory](../Inbuilt/WindowsAD). More information can be found in the Inbuilt section.
 
 For example, the below would use the inbuilt Windows AD authentication method:
 

@@ -1,7 +1,6 @@
-# Logging to Terminal
+# Terminal
 
 You can log items to the terminal using Pode's inbuilt terminal logic. The inbuilt logic will convert any item to a string, and output it to the terminal.
-
 
 ## Examples
 
