@@ -1,6 +1,6 @@
 # Basics
 
-All of your main server logic must be set using the `Start-PodeStart` block:
+All of your main server logic must be set using the [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) block:
 
 ```powershell
 Start-PodeServer {

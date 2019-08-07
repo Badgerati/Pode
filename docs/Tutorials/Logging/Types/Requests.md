@@ -4,9 +4,9 @@ Pode has inbuilt Request logging logic, that will parse and return a valid log i
 
 ## Enabling
 
-To enable and use the Request logging you use the `Enable-PodeRequestLogging` function, supplying a logging method from `New-PodeLoggingMethod`.
+To enable and use the Request logging you use the [`Enable-PodeRequestLogging`](../../../../../Functions/Logging/Enable-PodeRequestLogging) function, supplying a logging method from [`New-PodeLoggingMethod`].
 
-The Request type logic will format a string using [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined). This string is then supplied to the logging method's scriptblock. If you're using a Custom logging method and want the raw hashtable instead, you can supply `-Raw` to `Enable-PodeRequestLogging`.
+The Request type logic will format a string using [Combined Log Format](https://httpd.apache.org/docs/1.3/logs.html#combined). This string is then supplied to the logging method's scriptblock. If you're using a Custom logging method and want the raw hashtable instead, you can supply `-Raw` to [`Enable-PodeRequestLogging`].
 
 ## Examples
 

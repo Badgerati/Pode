@@ -1,15 +1,15 @@
 # Desktop Application
 
-Normally in Pode you define a server and run it, however if you use the `Show-PodeGui` function Pode will serve the server up as a desktop application.
+Normally in Pode you define a server and run it, however if you use the [`Show-PodeGui`](../../../../Functions/Core/Show-PodeGui) function Pode will serve the server up as a desktop application.
 
 !!! warning
     Currently only supported on Windows due to using WPF.
 
 ## Setting Server to run as Application
 
-To serve up you server as a desktop application you can just write you Pode server script as normal. The only difference is you can use the `Show-PodeGui` function to display the application.
+To serve up you server as a desktop application you can just write you Pode server script as normal. The only difference is you can use the [`Show-PodeGui`](../../../../Functions/Core/Show-PodeGui) function to display the application.
 
-The `Show-PodeGui` function *must* have a Title supplied - this is the title of the application's window.
+The [`Show-PodeGui`](../../../../Functions/Core/Show-PodeGui) function *must* have a Title supplied - this is the title of the application's window.
 
 The following will create a basic web server with a single page, but when the server is run it will pop up as a desktop application:
 

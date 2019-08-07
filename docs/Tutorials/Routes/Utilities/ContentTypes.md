@@ -1,6 +1,6 @@
 # Content Types
 
-Any payload supplied in a web request is normally parsed using the content type on the request's headers. However, it's possible to override - or *force* - a specific content type on routes when parsing the payload. This can be achieved by either using the `-ContentType` parameter on the `Add-PodeRoute` function, or using the [`server.psd1`](../../Configuration) configuration file.
+Any payload supplied in a web request is normally parsed using the content type on the request's headers. However, it's possible to override - or *force* - a specific content type on routes when parsing the payload. This can be achieved by either using the `-ContentType` parameter on the [`Add-PodeRoute`](../../../../../Functions/Routes/Add-PodeRoute) function, or using the [`server.psd1`](../../Configuration) configuration file.
 
 When a specific content type is supplied then any payload will be parsed as that content type only - even if the content type is supplied on the web request's header. This way, you can force a route to only accept a certain content type.
 

@@ -9,7 +9,7 @@ During web requests, Pode has some default status codes that can be returned thr
 * `429` if the rate limit is reached
 * `500` for a complete failure
 
-Status codes that are 400+ will be rendered as an error page, unless the `-NoErrorPage` switch is passed to the `Set-PodeResponseStatus` function. Pode itself has inbuilt error pages (HTML, JSON, and XML), but you can override these pages using custom error pages ([described below](#error-pages)).
+Status codes that are 400+ will be rendered as an error page, unless the `-NoErrorPage` switch is passed to the [`Set-PodeResponseStatus`](../../../../../Functions/Responses/Set-PodeResponseStatus) function. Pode itself has inbuilt error pages (HTML, JSON, and XML), but you can override these pages using custom error pages ([described below](#error-pages)).
 
 If the error page being generated is dynamic, then the following `$data` is supplied and can be used the same as in views:
 
@@ -18,11 +18,11 @@ If the error page being generated is dynamic, then the following `$data` is supp
 * The URL that threw the error
 * The content-type of the error page being generated
 
-They're also supplied details of any exception passed to the `Set-PodeResponseStatus` function, which can be rendered [if enabled](#exceptions) via the `server.psd1` configuration file.
+They're also supplied details of any exception passed to the [`Set-PodeResponseStatus`](../../../../../Functions/Responses/Set-PodeResponseStatus) function, which can be rendered [if enabled](#exceptions) via the `server.psd1` configuration file.
 
 ## Status Codes
 
-The `Set-PodeResponseStatus` function allows you to set your own status code on the response, as well as a custom description. If the status code was triggered by an exception being thrown, then you can also supply this so it can be rendered on any [error pages](#error-pages).
+The [`Set-PodeResponseStatus`](../../../../../Functions/Responses/Set-PodeResponseStatus) function allows you to set your own status code on the response, as well as a custom description. If the status code was triggered by an exception being thrown, then you can also supply this so it can be rendered on any [error pages](#error-pages).
 
 The following example will set the status code of the response to be `418`:
 
@@ -90,7 +90,7 @@ An example file structure for `/errors` is as follows:
 By default Pode will always generate error pages as HTML, unless you enable strict content typing or routes patterns ([detailed later](#content-types)).
 
 !!! important
-    To use error pages with a view engine (such as `.pode`), you need to use the `Set-PodeViewEngine` function in your server.
+    To use error pages with a view engine (such as `.pode`), you need to use the [`Set-PodeViewEngine`](../../../../../Functions/Responses/Set-PodeViewEngine) function in your server.
 
 #### Dynamic Data
 

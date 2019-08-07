@@ -27,7 +27,7 @@ After this, you can put whatever else you want into the configuration file.
 
 The configuration file is automatically loaded when you start your server. Pode will look in the root directory of your server for a `server.psd1` file, and if found it will be loaded internally.
 
-Within your scripts you can use the `Get-PodeConfig` function, which will return the values of the relevant configuration file.
+Within your scripts you can use the [`Get-PodeConfig`](../../../Functions/Utilities/Get-PodeConfig) function, which will return the values of the relevant configuration file.
 
 For example, say you have the following `server.psd1`:
 

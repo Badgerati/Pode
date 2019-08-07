@@ -1,6 +1,6 @@
 # SMTP Server
 
-Pode has an inbuilt SMTP server which automatically creates a TCP listener on port 25 (unless you specify a different port via the `Add-PodeEndpoint` function).
+Pode has an inbuilt SMTP server which automatically creates a TCP listener on port 25 (unless you specify a different port via the [`Add-PodeEndpoint`](../../../Functions/Core/Add-PodeEndpoint) function).
 
 Unlike with web servers that use the Route functions, SMTP servers use the Handler functions, which let you specify logic for handling responses from TCP streams.
 

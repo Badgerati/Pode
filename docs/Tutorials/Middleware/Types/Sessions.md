@@ -6,7 +6,7 @@ The age of the session-cookie can be specified, as well as whether to extend the
 
 ## Usage
 
-To intialise sessions in Pode you use the `Enable-PodeSessionMiddleware` function. This function will configure and automatically create Middleware to enable sessions.
+To intialise sessions in Pode you use the [`Enable-PodeSessionMiddleware`](../../../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. This function will configure and automatically create Middleware to enable sessions.
 
 The following is an example of how to setup session middleware:
 

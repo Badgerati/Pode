@@ -4,9 +4,9 @@ Serving up web pages via Pode is simple, you can either write your pages in HTML
 
 ## Basics
 
-To serve up a web page you use the `Write-PodeViewResponse` function, and if you're using a dynamic template (like [`.pode`](../../../Views/Pode) files) to render your views use the `Set-PodeViewEngine` function.
+To serve up a web page you use the [`Write-PodeViewResponse`](../../../../../Functions/Responses/Write-PodeViewResponse) function, and if you're using a dynamic template (like [`.pode`](../../../Views/Pode) files) to render your views use the [`Write-PodeViewResponse`](../../../../../Functions/Responses/Write-PodeViewResponse) function.
 
-When you use the `Write-PodeViewResponse` function to serve a web page, the path to the view must be relative to the `/views` directory. For example, the following will display the `/views/index.html` page:
+When you use the [`Write-PodeViewResponse`](../../../../../Functions/Responses/Write-PodeViewResponse) function to serve a web page, the path to the view must be relative to the `/views` directory. For example, the following will display the `/views/index.html` page:
 
 ```powershell
 Start-PodeServer {

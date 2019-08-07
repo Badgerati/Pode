@@ -5,7 +5,7 @@
 
 ## Usage
 
-To use Windows AD authentication you use the `Add-PodeAuthWindowsAd` function. The following example will validate a user's credentials, supplied via a web-form against the default DNS domain defined in `$env:USERDNSDOMAIN`:
+To use Windows AD authentication you use the [`Add-PodeAuthWindowsAd`](../../../../../Functions/Authentication/Add-PodeAuthWindowsAd) function. The following example will validate a user's credentials, supplied via a web-form against the default DNS domain defined in `$env:USERDNSDOMAIN`:
 
 ```powershell
 Start-PodeServer {
