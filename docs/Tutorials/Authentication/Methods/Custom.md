@@ -4,11 +4,11 @@ Custom authentication works much like the inbuilt types (Basic and Form), but al
 
 ## Setup and Parsing
 
-To setup and start using Custom authentication in Pode you use the `New-PodeAuthType -Custom` function, and then pipe this into the [`Add-PodeAuth`](../../../../../Functions/Authentication/Add-PodeAuth) function.
+To setup and start using Custom authentication in Pode you use the `New-PodeAuthType -Custom` function, and then pipe this into the  [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function.
 
 Let's say we wanted something similar to [`Form`](../Form) Authentication, but it requires a third piece of information: `ClientName`. To setup Custom Authentication for this method, you'll need to specify the parsing logic within the `-ScriptBlock`.
 
-The `-ScriptBlock` on [`New-PodeAuthType`](../../../../../Functions/Authentication/New-PodeAuthType) will be passed the current web event (containing the `Request`/`Response` objects, much like a Route). In this script you can parse the Request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either an `array`, which will then splatted onto the `-ScriptBlock` from your [`New-PodeAuthType`](../../../../../Functions/Authentication/New-PodeAuthType) function:
+The `-ScriptBlock` on  [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) will be passed the current web event (containing the `Request`/`Response` objects, much like a Route). In this script you can parse the Request payload/headers for any credential information that needs validating. Once sourced, the data returned from the script should be either an `array`, which will then splatted onto the `-ScriptBlock` from your  [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) function:
 
 ```powershell
 Start-PodeServer {

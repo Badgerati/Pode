@@ -40,4 +40,4 @@ package.json
 
 ## Importing
 
-When the modules have been downloaded, you can utilise them using the [`Import-PodeModule`](../../../Functions/Utilities/Import-PodeModule) function.
+When the modules have been downloaded, you can utilise them using the  [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) function.

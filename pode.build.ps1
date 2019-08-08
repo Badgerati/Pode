@@ -242,7 +242,7 @@ task DocsHelpBuild DocsDeps, {
     # update docs to bind links to unlinked functions
     $path = Join-Path $pwd 'docs'
     Get-ChildItem -Path $path -Recurse -Filter '*.md' | ForEach-Object {
-        $depth = ($_.FullName.Replace($path, [string]::Empty).trim('\/') -split '[\\/]').Length + 1
+        $depth = ($_.FullName.Replace($path, [string]::Empty).trim('\/') -split '[\\/]').Length
 
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
             if ($_ -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>[^(])') {

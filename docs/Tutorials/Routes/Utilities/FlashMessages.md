@@ -11,7 +11,7 @@ For example, in sign-up logic you could set a flash error message for an invalid
 
 The flash functions allow you to add, get, and remove messages on a user's session.
 
-If you call [`Add-PodeFlashMessage`](../../../../../Functions/Flash/Add-PodeFlashMessage) using the same Name multiple times, then the messages will be appended as an array. Calling [`Add-PodeFlashMessage`](../../../../../Functions/Flash/Add-PodeFlashMessage) for a Name will remove all messages from the current session for the Name supplied.
+If you call  [`Add-PodeFlashMessage`](../../../../Functions/Flash/Add-PodeFlashMessage) using the same Name multiple times, then the messages will be appended as an array. Calling  [`Add-PodeFlashMessage`](../../../../Functions/Flash/Add-PodeFlashMessage) for a Name will remove all messages from the current session for the Name supplied.
 
 The following is an example of adding a flash message to a session, this will add a message under the `email-error` key:
 
@@ -33,7 +33,7 @@ Add-PodeRoute -Method Get -Path '/signup' -ScriptBlock {
 
 ## Views
 
-The [`Write-PodeViewResponse`](../../../../../Functions/Responses/Write-PodeViewResponse) function has a helper switch (`-FlashMessages`) to load all current flash messages in the session, into the views data - to save time writing lots of [`Write-PodeViewResponse`](../../../../../Functions/Responses/Write-PodeViewResponse) calls. When used, all messages will be loaded into the `$data` argument supplied to dynamic views, and accessible under `$data.flash`.
+The  [`Write-PodeViewResponse`](../../../../Functions/Responses/Write-PodeViewResponse) function has a helper switch (`-FlashMessages`) to load all current flash messages in the session, into the views data - to save time writing lots of  [`Write-PodeViewResponse`](../../../../Functions/Responses/Write-PodeViewResponse) calls. When used, all messages will be loaded into the `$data` argument supplied to dynamic views, and accessible under `$data.flash`.
 
 For example, somewhere we could have a sign-up flow which fails validation and adds two messages to the session:
 
@@ -73,7 +73,7 @@ With this, the two flash messages for `email-error` and `name-error` are automat
 
 ## Authentication
 
-When doing authentication checks, normally if the check fails Pode will throw an error and return with a `401` status code. However, you can tell [`Get-PodeAuthMiddleware`](../../../../../Functions/Authentication/Get-PodeAuthMiddleware) to load these errors in the Session's Flash messages under an `auth-error` key. To do this, you specify the `-EnableFlash` switch.
+When doing authentication checks, normally if the check fails Pode will throw an error and return with a `401` status code. However, you can tell  [`Get-PodeAuthMiddleware`](../../../../Functions/Authentication/Get-PodeAuthMiddleware) to load these errors in the Session's Flash messages under an `auth-error` key. To do this, you specify the `-EnableFlash` switch.
 
 For example, here we have a login page, with the `POST` login check. The check flags that any authentication errors should be loaded into the session's flash messages:
 

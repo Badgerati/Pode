@@ -6,7 +6,7 @@ Caching is also supported on static content.
 
 ## Static Routes
 
-The following is an example of using the [`Add-PodeStaticRoute`](../../../../../Functions/Routes/Add-PodeStaticRoute) function to define a route to some static content directory; this tells Pode where to get static files from for certain routes. This example will define a static route for `/assets`, and will point the route at the internal directory path of `./content/assets`:
+The following is an example of using the  [`Add-PodeStaticRoute`](../../../../Functions/Routes/Add-PodeStaticRoute) function to define a route to some static content directory; this tells Pode where to get static files from for certain routes. This example will define a static route for `/assets`, and will point the route at the internal directory path of `./content/assets`:
 
 ```powershell
 Start-PodeServer {
@@ -38,7 +38,7 @@ These pages are checked in order, and if one is found then its content is return
 Invoke-WebRequest -Uri 'http://localhost:8080/assets/images/home' -Method Get
 ```
 
-The default pages can be configured in two ways; either by using the `-Defaults` parameter on the [`Add-PodeStaticRoute`](../../../../../Functions/Routes/Add-PodeStaticRoute) function, or by setting them in the `server.psd1` [configuration file](../../../Configuration). To set the defaults to be only a `home.html` page, both ways would work as follows:
+The default pages can be configured in two ways; either by using the `-Defaults` parameter on the  [`Add-PodeStaticRoute`](../../../../Functions/Routes/Add-PodeStaticRoute) function, or by setting them in the `server.psd1` [configuration file](../../../Configuration). To set the defaults to be only a `home.html` page, both ways would work as follows:
 
 *Defaults Parameter*
 ```powershell
@@ -93,7 +93,7 @@ If you wish to set a max cache time of 30mins, then you would use the `MaxAge` p
 
 ## Downloadable
 
-Normally content accessed on a static route is rendered on the browser, but you can set the route to flag the files for downloading instead. If you set the `-DownloadOnly` switch on the [`Add-PodeStaticRoute`](../../../../../Functions/Routes/Add-PodeStaticRoute) function, then accessing files on this route in a browser will cause them to be downloaded instead of rendered:
+Normally content accessed on a static route is rendered on the browser, but you can set the route to flag the files for downloading instead. If you set the `-DownloadOnly` switch on the  [`Add-PodeStaticRoute`](../../../../Functions/Routes/Add-PodeStaticRoute) function, then accessing files on this route in a browser will cause them to be downloaded instead of rendered:
 
 ```powershell
 Start-PodeServer {

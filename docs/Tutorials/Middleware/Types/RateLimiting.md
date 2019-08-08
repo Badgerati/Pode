@@ -4,7 +4,7 @@ Rate limiting in Pode is inbuilt Middleware, that allows you to specify a maximu
 
 ## Usage
 
-To setup rate limiting in Pode you use the [`Add-PodeLimitRule`](../../../../../Functions/Middleware/Add-PodeLimitRule) function.
+To setup rate limiting in Pode you use the  [`Add-PodeLimitRule`](../../../../Functions/Middleware/Add-PodeLimitRule) function.
 
 You can either rate limit a specific IP address, a subnet mask, or every address using `all`. You can also supply an array of addresses/subnets as well, rather than one at a time.
 
@@ -53,9 +53,9 @@ Start-PodeServer {
 
 ## Overriding
 
-Since rate limiting is an inbuilt Middleware, then when you setup rules via the [`Add-PodeLimitRule`](../../../../../Functions/Middleware/Add-PodeLimitRule) function the point at which the limit is checked on the request lifecycle is fixed (see [here](../../Overview/#order-of-running)).
+Since rate limiting is an inbuilt Middleware, then when you setup rules via the  [`Add-PodeLimitRule`](../../../../Functions/Middleware/Add-PodeLimitRule) function the point at which the limit is checked on the request lifecycle is fixed (see [here](../../Overview/#order-of-running)).
 
-This means you can override the inbuilt rate limiting logic, with your own custom logic, using the [`Add-PodeMiddleware`](../../../../../Functions/Core/Add-PodeMiddleware) function. To override the rate limiting logic you can pass `__pode_mw_rate_limit__` to the `-Name` parameter of the [`Add-PodeMiddleware`](../../../../../Functions/Core/Add-PodeMiddleware) function.
+This means you can override the inbuilt rate limiting logic, with your own custom logic, using the  [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function. To override the rate limiting logic you can pass `__pode_mw_rate_limit__` to the `-Name` parameter of the  [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function.
 
 The following example uses rate limiting, and defines Middleware that will override the inbuilt limiting logic:
 

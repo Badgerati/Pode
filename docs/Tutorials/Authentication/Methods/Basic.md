@@ -4,7 +4,7 @@ Basic Authentication is when you pass an encoded `username:password` value on th
 
 ## Setup
 
-To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Basic` function, and then pipe this into the [`Add-PodeAuth`](../../../../../Functions/Authentication/Add-PodeAuth) function:
+To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Basic` function, and then pipe this into the  [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
 ```powershell
 Start-PodeServer {

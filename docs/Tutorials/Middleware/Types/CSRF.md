@@ -25,9 +25,9 @@ Enable-PodeCsrfMiddleware
 
 ### Initialize-PodeCsrf
 
-Similar to the [`Enable-PodeCsrfMiddleware`](../../../../../Functions/Middleware/Enable-PodeCsrfMiddleware) function, this function configures how CSRF will work in Pode. You can configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.
+Similar to the  [`Enable-PodeCsrfMiddleware`](../../../../Functions/Middleware/Enable-PodeCsrfMiddleware) function, this function configures how CSRF will work in Pode. You can configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.
 
-This function is to be used when you want to use the [`Get-PodeCsrfMiddleware`](../../../../../Functions/Middleware/Get-PodeCsrfMiddleware) function, for more dynamic control of CSRF verification.
+This function is to be used when you want to use the  [`Get-PodeCsrfMiddleware`](../../../../Functions/Middleware/Get-PodeCsrfMiddleware) function, for more dynamic control of CSRF verification.
 
 Below, we'll setup CSRF to work on cookies, and only ignore GET routes:
 
@@ -37,9 +37,9 @@ Initialize-PodeCsrf -IgnoreMethods @('Get') -Secret 'secret-key' -UseCookies
 
 ### Get-PodeCsrfMiddleware
 
-The [`Get-PodeCsrfMiddleware`](../../../../../Functions/Middleware/Get-PodeCsrfMiddleware) function is similar to the [`Get-PodeCsrfMiddleware`](../../../../../Functions/Middleware/Get-PodeCsrfMiddleware) function, but is designed so you can use it on Routes so SRF verification can be used more dynamically. By default the CSRF middleware will ignore GET routes, however the [`Get-PodeCsrfMiddleware`](../../../../../Functions/Middleware/Get-PodeCsrfMiddleware) middleware skips this method validation - meaning you could use it on a GET route and it will require a valid CSRF token.
+The  [`Get-PodeCsrfMiddleware`](../../../../Functions/Middleware/Get-PodeCsrfMiddleware) function is similar to the  [`Get-PodeCsrfMiddleware`](../../../../Functions/Middleware/Get-PodeCsrfMiddleware) function, but is designed so you can use it on Routes so SRF verification can be used more dynamically. By default the CSRF middleware will ignore GET routes, however the  [`Get-PodeCsrfMiddleware`](../../../../Functions/Middleware/Get-PodeCsrfMiddleware) middleware skips this method validation - meaning you could use it on a GET route and it will require a valid CSRF token.
 
-Unlike the [`Enable-PodeCsrfMiddleware`](../../../../../Functions/Middleware/Enable-PodeCsrfMiddleware) function however, you cannot configure HTTP methods to ignore or whether to use sessions/cookies. Therefore, in order to use this action you are required to use the [`Enable-PodeCsrfMiddleware`](../../../../../Functions/Middleware/Enable-PodeCsrfMiddleware) action first.
+Unlike the  [`Enable-PodeCsrfMiddleware`](../../../../Functions/Middleware/Enable-PodeCsrfMiddleware) function however, you cannot configure HTTP methods to ignore or whether to use sessions/cookies. Therefore, in order to use this action you are required to use the  [`Enable-PodeCsrfMiddleware`](../../../../Functions/Middleware/Enable-PodeCsrfMiddleware) action first.
 
 The below will run CSRF validation on the GET route, even though the setup is configured to ignore GET routes:
 
@@ -55,7 +55,7 @@ Start-PodeServer {
 
 ### New-PodeCsrfToken
 
-The [`New-PodeCsrfToken`](../../../../../Functions/Middleware/New-PodeCsrfToken) function allows you to generate tokens. It will randomly generate a token that you can use in your web-pages, such as in hidden form inputs or meta elements for AJAX requests. The token itself is formed using a secure random secret key, and a random salt.
+The  [`New-PodeCsrfToken`](../../../../Functions/Middleware/New-PodeCsrfToken) function allows you to generate tokens. It will randomly generate a token that you can use in your web-pages, such as in hidden form inputs or meta elements for AJAX requests. The token itself is formed using a secure random secret key, and a random salt.
 
 To generate the token, you can use the following example:
 
