@@ -61,7 +61,7 @@ Start-PodeServer {
 }
 ```
 
-The `-Name` of the authentication method must be unique. The `-Type` comes from [`New-PodeAuthType`], and can also be pied in.
+The `-Name` of the authentication method must be unique. The `-Type` comes from [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType), and can also be pied in.
 
 The `-ScriptBlock` is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a `User` needs to be returned from the script as `@{ User = $user }`. If `$null`, or a null user is returned then the script is assumed to have failed - meaning the user will have failed authentication.
 

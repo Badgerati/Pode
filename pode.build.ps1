@@ -245,9 +245,10 @@ task DocsHelpBuild DocsDeps, {
         $depth = ($_.FullName.Replace($path, [string]::Empty).trim('\/') -split '[\\/]').Length + 1
 
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
-            if ($_ -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\]\s') {
+            if ($_ -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>[^(])') {
                 $name = $Matches['name']
-                $_ -ireplace '\[`[a-z]+\-pode[a-z]+`\]\s', "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name)) "
+                $char = $Matches['char']
+                $_ -ireplace '\[`[a-z]+\-pode[a-z]+`\][^(]', "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)"
             }
             else {
                 $_

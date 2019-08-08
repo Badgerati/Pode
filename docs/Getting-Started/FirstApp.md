@@ -16,7 +16,7 @@ The following steps will run you through creating your first Pode app, and give 
     * The `init` action will ask for some input, leave everything as default (just press enter).
 
 ```powershell
-??  pode init
+PS> pode init
 name (my-first-pode-app):
 version (1.0.0):
 description:

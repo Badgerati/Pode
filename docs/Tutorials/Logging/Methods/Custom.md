@@ -7,7 +7,7 @@ These custom method can be used for any log type - Requests, Error, or Custom.
 The ScriptBlock you create will be supplied two arguments:
 
 1. The item to be logged. This could be a string (from Requests/Errors), or any custom type.
-2. The options you supplied on [`New-PodeLoggingMethod`].
+2. The options you supplied on [`New-PodeLoggingMethod`](../../../../../Functions/Logging/New-PodeLoggingMethod).
 
 ## Examples
 
