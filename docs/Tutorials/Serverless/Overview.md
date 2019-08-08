@@ -23,7 +23,6 @@ Unfortunately not all the features of Pode can be used within a serverless envir
 * Opening your server as a GUI.
 * TCP/Service Handler logic.
 * Listening on endpoints (as Azure/AWS does this for you).
-* Logging.
 * Schedules.
 * Timers.
 * File Monitoring.
