@@ -1,10 +1,10 @@
-# Form Authentication
+# Form
 
 Form Authentication is for when you're using a `<form>` in HTML, and you submit the form. This Authentication method expects a `username` and `password` to be passed from the form's input fields.
 
 ## Setup
 
-To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Form` function, and then pipe this into the `Add-PodeAuth` function:
+To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Form` function, and then pipe this into the  [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
 ```powershell
 Start-PodeServer {

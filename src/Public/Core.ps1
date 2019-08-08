@@ -314,9 +314,9 @@ The specific endpoint name to use, if you are listening on multiple endpoints.
 Stops the Application from appearing on the taskbar.
 
 .EXAMPLE
-Enable-PodeGui -Title 'MyApplication' -WindowState 'Maximized'
+Show-PodeGui -Title 'MyApplication' -WindowState 'Maximized'
 #>
-function Enable-PodeGui
+function Show-PodeGui
 {
     [CmdletBinding()]
     param (
@@ -360,7 +360,7 @@ function Enable-PodeGui
     )
 
     # error if serverless
-    Test-PodeIsServerless -FunctionName 'Enable-PodeGui' -ThrowError
+    Test-PodeIsServerless -FunctionName 'Show-PodeGui' -ThrowError
 
     # only valid for Windows PowerShell
     if (Test-IsPSCore) {

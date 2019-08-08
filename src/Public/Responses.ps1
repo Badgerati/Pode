@@ -875,12 +875,12 @@ The name of the key within the web event's Data HashTable that stores the file's
 The path to save files.
 
 .EXAMPLE
-Save-PodeResponseFile -Key 'avatar'
+Save-PodeRequestFile -Key 'avatar'
 
 .EXAMPLE
-Save-PodeResponseFile -Key 'avatar' -Path 'F:/Images'
+Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images'
 #>
-function Save-PodeResponseFile
+function Save-PodeRequestFile
 {
     [CmdletBinding()]
     param (

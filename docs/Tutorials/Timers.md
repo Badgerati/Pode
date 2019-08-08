@@ -3,7 +3,7 @@
 A Timer in Pode is a short-running async task. All timers in Pode run in the same separate runspace along side your main server logic. Timers have unique names, and iterate on a defined number of seconds.
 
 !!! warning
-    Since all timers are run within the same runspace, it is wise to keep them as short-running as possible. If you require something long-running we recommend you use Schedules.
+    Since all timers are run within the same runspace, it is wise to keep them as short-running as possible. If you require something long-running we recommend you use [Schedules](../Schedules).
 
 ## Create a Timer
 

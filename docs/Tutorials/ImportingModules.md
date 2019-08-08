@@ -1,6 +1,6 @@
 # Importing Modules/SnapIns
 
-Because Pode runs most things in isolated runspaces, importing and using modules or snap-ins can be quite bothersome. To overcome this, you can use the `Import-PodeModule` or `Import-PodeSnapIn` functions to declare paths/names of modules or snap-ins that need to be imported into all of the runspaces.
+Because Pode runs most things in isolated runspaces, importing and using modules or snap-ins can be quite bothersome. To overcome this, you can use the  [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) or  [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) functions to declare paths/names of modules or snap-ins that need to be imported into all of the runspaces.
 
 !!! important
     Snap-ins are only supported in Windows PowerShell.

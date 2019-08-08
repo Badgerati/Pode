@@ -6,7 +6,7 @@
 [![Code Coverage](https://coveralls.io/repos/github/Badgerati/Pode/badge.svg?branch=develop)](https://coveralls.io/github/Badgerati/Pode?branch=develop)
 [![Gitter](https://badges.gitter.im/Badgerati/Pode.svg)](https://gitter.im/Badgerati/Pode?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Pode is a Cross-Platform PowerShell framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers. It also allows you to render dynamic files using `.pode` files, which is effectively embedded PowerShell, or other Third-Party template engines. Pode also has support for middleware, sessions, and authentication; as well as access and rate limiting features. There's also Azure Functions and AWS Lambda support!
+Pode is a Cross-Platform PowerShell framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers. It also allows you to render dynamic files using `.pode` files, which is effectively embedded PowerShell, or other Third-Party template engines. Pode also has support for middleware, sessions, authentication, and logging; as well as access and rate limiting features. There's also Azure Functions and AWS Lambda support!
 
 [![GetStarted](https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&style=for-the-badge)](./Getting-Started/Installation)
 [![QuickLook](https://img.shields.io/badge/-Quick%20Look!-blue.svg?longCache=true&style=for-the-badge)](#quick-look)
@@ -24,7 +24,7 @@ Pode is a Cross-Platform PowerShell framework to create web servers that host RE
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes
 * Async scheduled tasks using cron expressions for short/long-running processes
-* Supports request logging to CLI, Files, and custom loggers to other services like LogStash
+* Supports logging to CLI, Files, and custom logic for other services like LogStash
 * Cross-state variable access across multiple runspaces
 * Restart the server via file monitoring, or defined periods/times
 * Ability to allow/deny requests from certain IP addresses and subnets
@@ -36,7 +36,7 @@ Pode is a Cross-Platform PowerShell framework to create web servers that host RE
 
 ## Quick Look!
 
-Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will [`listen`](./Functions/Core/Listen) on an endpoint, create the [`route`](./Functions/Core/Route), and respond with [`JSON`](./Functions/Response/Json) when `http://localhost:8080/ping` is hit:
+Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will listen on an endpoint, create the route, and respond with a JSON object when `http://localhost:8080/ping` is called:
 
 ```powershell
 Start-PodeServer {

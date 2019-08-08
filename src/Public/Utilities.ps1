@@ -317,21 +317,21 @@ function Use-PodeScript
 
 <#
 .SYNOPSIS
-Returns the loaded Settings of the server.
+Returns the loaded configuration of the server.
 
 .DESCRIPTION
-Returns the loaded Settings of the server.
+Returns the loaded configuration of the server.
 
 .EXAMPLE
-$s = Get-PodeSettings
+$s = Get-PodeConfig
 #>
-function Get-PodeSettings
+function Get-PodeConfig
 {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param()
 
-    return $PodeContext.Server.Settings
+    return $PodeContext.Server.Configuration
 }
 
 <#

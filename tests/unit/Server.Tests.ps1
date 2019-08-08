@@ -145,7 +145,7 @@ Describe 'Restart-PodeInternalServer' {
         $PodeContext.Server.Cookies.Session.Count | Should Be 0
         $PodeContext.Server.Authentications.Count | Should Be 0
         $PodeContext.Server.State.Count | Should Be 0
-        $PodeContext.Server.Settings | Should Be $null
+        $PodeContext.Server.Configuration | Should Be $null
 
         $PodeContext.Timers.Count | Should Be 0
         $PodeContext.Schedules.Count | Should Be 0

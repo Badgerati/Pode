@@ -4,11 +4,11 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 $PodeContext = @{ 'Server' = $null; }
 
-Describe 'Get-PodeSettings' {
+Describe 'Get-PodeConfig' {
     It 'Returns JSON config' {
         $json = '{ "settings": { "port": 90 } }'
-        $PodeContext.Server = @{ 'Settings' = ($json | ConvertFrom-Json) }
-        $config = Get-PodeSettings
+        $PodeContext.Server = @{ 'Configuration' = ($json | ConvertFrom-Json) }
+        $config = Get-PodeConfig
         $config | Should Not Be $null
         $config.settings.port | Should Be 90
     }
@@ -326,7 +326,7 @@ Describe 'Import-PodeModule' {
 
 Describe 'New-PodeAutoRestartServer' {
     It 'Do not create any restart schedules' {
-        Mock 'Get-PodeSettings' { return @{} }
+        Mock 'Get-PodeConfig' { return @{} }
 
         $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
         New-PodeAutoRestartServer
@@ -336,7 +336,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a timer for a period server restart' {
-        Mock 'Get-PodeSettings' { return @{
+        Mock 'Get-PodeConfig' { return @{
             'server' = @{
                 'restart'=  @{
                     'period' = 180;
@@ -353,7 +353,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a schedule for a timed server restart' {
-        Mock 'Get-PodeSettings' { return @{
+        Mock 'Get-PodeConfig' { return @{
             'server' = @{
                 'restart'=  @{
                     'times' = @('18:00');
@@ -370,7 +370,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a schedule for a cron server restart' {
-        Mock 'Get-PodeSettings' { return @{
+        Mock 'Get-PodeConfig' { return @{
             'server' = @{
                 'restart'=  @{
                     'crons' = @('@minutely');
@@ -387,7 +387,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a timer and schedule for a period and cron server restart' {
-        Mock 'Get-PodeSettings' { return @{
+        Mock 'Get-PodeConfig' { return @{
             'server' = @{
                 'restart'=  @{
                     'period' = 180;
@@ -406,7 +406,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates a timer and schedule for a period and timed server restart' {
-        Mock 'Get-PodeSettings' { return @{
+        Mock 'Get-PodeConfig' { return @{
             'server' = @{
                 'restart'=  @{
                     'period' = 180;
@@ -425,7 +425,7 @@ Describe 'New-PodeAutoRestartServer' {
     }
 
     It 'Creates two schedules for a cron and timed server restart' {
-        Mock 'Get-PodeSettings' { return @{
+        Mock 'Get-PodeConfig' { return @{
             'server' = @{
                 'restart'=  @{
                     'crons' = @('@minutely');

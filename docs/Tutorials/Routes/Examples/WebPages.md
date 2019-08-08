@@ -4,9 +4,9 @@ Serving up web pages via Pode is simple, you can either write your pages in HTML
 
 ## Basics
 
-To serve up a web page you use the [`view`](../../../Functions/Response/View) function, and if you're using a dynamic template (like [`.pode`](../../ViewEngines/Pode) files) to render you views you use the [`engine`](../../../Functions/Core/Engine) function.
+To serve up a web page you use the  [`Write-PodeViewResponse`](../../../../Functions/Responses/Write-PodeViewResponse) function, and if you're using a dynamic template (like [`.pode`](../../../Views/Pode) files) to render your views use the  [`Write-PodeViewResponse`](../../../../Functions/Responses/Write-PodeViewResponse) function.
 
-When you use the `view` function to serve a web page, the path to the view must be relative to the `/views` directory. For example, the following will display the `/views/index.html` page:
+When you use the  [`Write-PodeViewResponse`](../../../../Functions/Responses/Write-PodeViewResponse) function to serve a web page, the path to the view must be relative to the `/views` directory. For example, the following will display the `/views/index.html` page:
 
 ```powershell
 Start-PodeServer {
@@ -19,7 +19,7 @@ Start-PodeServer {
 ```
 
 !!! info
-    If your web page references any CSS, JavaScript, etc. files, then Pode will automatically find them within the `/public` directory - or any relative `static` routes you may have defined. For example, if you reference `<link rel="stylesheet" type="text/css" href="/styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
+    If your web page references any CSS, JavaScript, etc. files, then Pode will automatically find them within the `/public` directory - or any relative static routes you may have defined. For example, if you reference `<link rel="stylesheet" type="text/css" href="/styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
 ## Full Example
 

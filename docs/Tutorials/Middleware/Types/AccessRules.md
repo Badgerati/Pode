@@ -4,7 +4,7 @@ Access rules in Pode are inbuilt Middleware that allow you to specify allow/deny
 
 ## Usage
 
-To setup access rules in Pode you use the `Add-PodeAccessRule` function.
+To setup access rules in Pode you use the  [`Add-PodeAccessRule`](../../../../Functions/Middleware/Add-PodeAccessRule) function.
 
 You can either put a rule in for a specific IP address/subnet mask, or for every address (using `all`). You can also supply an array of addresses/subnets as well, rather than one at a time.
 
@@ -45,9 +45,9 @@ Start-PodeServer {
 
 ## Overriding
 
-Since access rules are an inbuilt Middleware in Pode, then when you setup rules the point at which the rules are checked on the request lifecycle is fixed (see [here](../Overview/#order-of-running)).
+Since access rules are an inbuilt Middleware in Pode, then when you setup rules the point at which the rules are checked on the request lifecycle is fixed (see [here](../../Overview/#order-of-running)).
 
-This means you can override the inbuilt access rule logic with your own custom logic, using the `Add-PodeMiddleware` function. To override the access rule logic you can pass `__pode_mw_access__` to the `-Name` parameter of the `Add-PodeMiddleware` function.
+This means you can override the inbuilt access rule logic with your own custom logic, using the  [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function. To override the access rule logic you can pass `__pode_mw_access__` to the `-Name` parameter of the  [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function.
 
 The following example uses access rules, and defines Middleware that will override the inbuilt access logic:
 

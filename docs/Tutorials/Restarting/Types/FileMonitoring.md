@@ -57,7 +57,7 @@ And to state that changes within the `public` directory should not trigger a res
 
 ## Show Files
 
-You can enable the showing of what file changes triggered the server to restart. To do this, you can set the `showFiles` property in your `server.psd1` file:
+You can enable the showing of what file changes triggered the server to restart. To do this, you can set the `ShowFiles` property in your `server.psd1` file:
 
 ```powershell
 @{

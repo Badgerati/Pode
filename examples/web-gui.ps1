@@ -12,7 +12,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost:8091 -Protocol Http -Name 'local2'
 
     # tell this server to run as a desktop gui
-    Enable-PodeGui -Title 'Pode Desktop Application' -Icon '../images/icon.png' -EndpointName 'local2' -ResizeMode 'NoResize'
+    Show-PodeGui -Title 'Pode Desktop Application' -Icon '../images/icon.png' -EndpointName 'local2' -ResizeMode 'NoResize'
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

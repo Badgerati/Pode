@@ -1,4 +1,4 @@
-# Error Logging
+# Errors
 
 Pode has inbuilt Error logging logic, that parses Exceptions and ErrorRecords, and will return a valid log item for whatever method of logging you supply.
 
@@ -6,7 +6,7 @@ It also has support for error levels (such as Error, Warning, Verbose), with sup
 
 ## Enabling
 
-To enable and use the Error logging you use the `Enable-PodeErrorLogging` function, supplying a logging method from `New-PodeLoggingMethod`. You can supply your own errors to be logged by using `Write-PodeErrorLog`.
+To enable and use the Error logging you use the  [`Enable-PodeErrorLogging`](../../../../Functions/Logging/Enable-PodeErrorLogging) function, supplying a logging method from  [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod). You can supply your own errors to be logged by using  [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod).
 
 When Pode logs an error, the information being logged is as follows:
 

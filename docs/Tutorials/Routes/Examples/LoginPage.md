@@ -20,7 +20,7 @@ server.ps1
 
 ## Server
 
-To start off this script, you'll need to have the main `Start-PodeServer` function; here we'll use 2 threads to handle requests:
+To start off this script, you'll need to have the main  [`Start-PodeServer`](../../../../Functions/Core/Start-PodeServer) function; here we'll use 2 threads to handle requests:
 
 ```powershell
 Import-Module Pode
@@ -30,14 +30,14 @@ Start-PodeServer -Thread 2 {
 }
 ```
 
-Next, we'll need to use the `Add-PodeEndpoint` function to listen on an endpoint and then specify the View Engine as using `.pode` files:
+Next, we'll need to use the  [`Add-PodeEndpoint`](../../../../Functions/Core/Add-PodeEndpoint) function to listen on an endpoint and then specify the View Engine as using `.pode` files:
 
 ```powershell
 Add-PodeEndpoint -Address *:8080 -Protocol Http
 Set-PodeViewEngine -Type Pode
 ```
 
-To use sessions for our authentication (so we can stay logged in), we need to setup Session Middleware using the `Enable-PodeSessionMiddleware` function. Here our sessions will last for 2 minutes, and will be extended on each request:
+To use sessions for our authentication (so we can stay logged in), we need to setup Session Middleware using the  [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. Here our sessions will last for 2 minutes, and will be extended on each request:
 
 ```powershell
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
@@ -180,7 +180,7 @@ Start-PodeServer -Thread 2 {
 
 ## Pages
 
-The following are the web pages used above, as well as the CSS style. The web pages have been created using [`.pode`](../../ViewEngines/Pode) files, which allows you to embed PowerShell into the files.
+The following are the web pages used above, as well as the CSS style. The web pages have been created using [`.pode`](../../../Views/Pode) files, which allows you to embed PowerShell into the files.
 
 *index.pode*
 ```html

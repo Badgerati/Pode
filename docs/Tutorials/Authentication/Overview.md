@@ -1,17 +1,17 @@
-# Authentication Overview
+# Overview
 
 Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session signed-cookie).
 
 !!! info
     To use session-persistent authentication you will also need to use Session Middleware.
 
-To setup and use authentication in Pode you need to use the `New-PodeAuthType` and `Add-PodeAuth` functions, as well as the `Get-PodeAuthMiddleware` function for defining authentication Middleware.
+To setup and use authentication in Pode you need to use the  [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) and  [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) functions, as well as the  [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function for defining authentication Middleware.
 
 ## Functions
 
 ### New-PodeAuthType
 
-The `New-PodeAuthType` function allows you to create and configure Basic/Form authentication types, or you can create your own Custom authentication types. These types can then be used on the `Add-PodeAuth` function.
+The  [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function allows you to create and configure Basic/Form authentication types, or you can create your own Custom authentication types. These types can then be used on the  [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function.
 
 An example of creating Basic/Form authentication is as follows:
 
@@ -47,9 +47,9 @@ Start-PodeServer {
 
 ### Add-PodeAuth
 
-The `Add-PodeAuth` function allows you to add authentication methods to your server. You can have many methods configured, defining which one to validate against using the `Get-PodeAuthMiddleware` function.
+The  [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function allows you to add authentication methods to your server. You can have many methods configured, defining which one to validate against using the  [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function.
 
-An example of using `Add-PodeAuth` for Basic authentication is as follows:
+An example of using  [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) for Basic authentication is as follows:
 
 ```powershell
 Start-PodeServer {
@@ -61,15 +61,15 @@ Start-PodeServer {
 }
 ```
 
-The `-Name` of the authentication method must be unique. The `-Type` comes from `New-PodeAuthType`, and can also be pied in.
+The `-Name` of the authentication method must be unique. The `-Type` comes from  [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType), and can also be pied in.
 
 The `-ScriptBlock` is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a `User` needs to be returned from the script as `@{ User = $user }`. If `$null`, or a null user is returned then the script is assumed to have failed - meaning the user will have failed authentication.
 
 ### Get-PodeAuthMiddleware
 
-The `Get-PodeAuthMiddleware` function allows you to define which authentication method to validate a Request against. It returns valid Middleware, meaning you can either use it on specific Routes, or globally for all routes as Middleware. If this action fails, then a 401 response is returned.
+The  [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) function allows you to define which authentication method to validate a Request against. It returns valid Middleware, meaning you can either use it on specific Routes, or globally for all routes as Middleware. If this action fails, then a 401 response is returned.
 
-An example of using `Get-PodeAuthMiddleware` against Basic authentication is as follows. The first example sets up global middleware, whereas the second example sets up custom Route Middleware:
+An example of using  [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) against Basic authentication is as follows. The first example sets up global middleware, whereas the second example sets up custom Route Middleware:
 
 ```powershell
 Start-PodeServer {
@@ -85,11 +85,11 @@ Start-PodeServer {
 
 On success, it will allow the Route logic to be invoked. If Session Middleware has been configured then an authenticated session is also created for future requests, using a signed session-cookie.
 
-When the user makes another call using the same authenticated session and that cookie is present, then `Get-PodeAuthMiddleware` will detect the already authenticated session and skip validation. If you're using sessions and you don't want to check the session, or store the user against a session, then use the `-Sessionless` switch.
+When the user makes another call using the same authenticated session and that cookie is present, then  [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) will detect the already authenticated session and skip validation. If you're using sessions and you don't want to check the session, or store the user against a session, then use the `-Sessionless` switch.
 
 ## Users
 
-After successful validation, an `Auth` object will be created for use against the current web event. This `Auth` object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from `Get-PodeAuthMiddleware` is invoked).
+After successful validation, an `Auth` object will be created for use against the current web event. This `Auth` object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from  [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) is invoked).
 
 The `Auth` object will also contain:
 
@@ -113,7 +113,7 @@ Add-PodeRoute -Method Get -Path '/' -Middleware (Get-PodeAuthMiddleware -Name 'L
 
 ## Inbuilt Authenticators
 
-Overtime Pode will start to support inbuilt authentication methods - such as [Windows Active Directory](../Validators/WindowsAD). More information can be found in the Validators section.
+Overtime Pode will start to support inbuilt authentication methods - such as [Windows Active Directory](../Inbuilt/WindowsAD). More information can be found in the Inbuilt section.
 
 For example, the below would use the inbuilt Windows AD authentication method:
 

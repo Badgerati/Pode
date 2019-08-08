@@ -7,7 +7,7 @@ Pode has the ability to generate and bind self-signed certificates (for dev/test
 
 ## Self-Signed
 
-If you are developing/testing a site on HTTPS then Pode can generate and bind quick self-signed certificates. To do this you can pass the `-SelfSigned` swicth to the `Add-PodeEndpoint` functions:
+If you are developing/testing a site on HTTPS then Pode can generate and bind quick self-signed certificates. To do this you can pass the `-SelfSigned` swicth to the  [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) functions:
 
 ```powershell
 Start-PodeServer {

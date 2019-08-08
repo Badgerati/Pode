@@ -13,7 +13,7 @@
 
 > Note: For v1.0.0 the syntax of Pode's functions are being migrated to normal PowerShell syntax.
 
-Pode is a Cross-Platform PowerShell framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/ViewEngines/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/ViewEngines/ThirdParty/) template engines. Plus many more features, including [Azure Functions](https://badgerati.github.io/Pode/Tutorials/Serverless/AzureFunctions/) and [AWS Lambda](https://badgerati.github.io/Pode/Tutorials/Serverless/AwsLambda/) support!
+Pode is a Cross-Platform PowerShell framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Tutorials/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/Views/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/Views/ThirdParty/) template engines. Plus many more features, including [Azure Functions](https://badgerati.github.io/Pode/Tutorials/Serverless/AzureFunctions/) and [AWS Lambda](https://badgerati.github.io/Pode/Tutorials/Serverless/AwsLambda/) support!
 
 <p align="center">
     <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code_2.png?raw=true" />
@@ -46,7 +46,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes
 * Async scheduled tasks using cron expressions for short/long-running processes
-* Supports request logging to CLI, Files, and custom loggers to other services like LogStash
+* Supports logging to CLI, Files, and custom logic for other services like LogStash
 * Cross-state variable access across multiple runspaces
 * Restart the server via file monitoring, or defined periods/times
 * Ability to allow/deny requests from certain IP addresses and subnets

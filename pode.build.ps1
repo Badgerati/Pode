@@ -231,10 +231,31 @@ task DocsHelpBuild DocsDeps, {
 
     # build the function docs
     $path = './docs/Functions'
+    $map =@{}
 
     (Get-Module Pode).ExportedFunctions.Keys | ForEach-Object {
         $type = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf -Path (Get-Command $_ -Module Pode).ScriptBlock.File))
         New-MarkdownHelp -Command $_ -OutputFolder (Join-Path $path $type) -Force -Metadata @{ PodeType = $type } -AlphabeticParamsOrder | Out-Null
+        $map[$_] = $type
+    }
+
+    # update docs to bind links to unlinked functions
+    $path = Join-Path $pwd 'docs'
+    Get-ChildItem -Path $path -Recurse -Filter '*.md' | ForEach-Object {
+        $depth = ($_.FullName.Replace($path, [string]::Empty).trim('\/') -split '[\\/]').Length
+
+        $content = (Get-Content -Path $_.FullName | ForEach-Object {
+            if ($_ -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>[^(])') {
+                $name = $Matches['name']
+                $char = $Matches['char']
+                $_ -ireplace '\[`[a-z]+\-pode[a-z]+`\][^(]', "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)"
+            }
+            else {
+                $_
+            }
+        })
+
+        $content | Out-File -FilePath $_.FullName -Force -Encoding ascii
     }
 
     # remove the module

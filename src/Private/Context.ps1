@@ -56,12 +56,12 @@ function New-PodeContext
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
 
     # check if there is any global configuration
-    $ctx.Server.Settings = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
+    $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
-    if (!(Test-IsEmpty $ctx.Server.Settings.Server.Root)) {
-        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Settings.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
+    if (!(Test-IsEmpty $ctx.Server.Configuration.Server.Root)) {
+        $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
     # set the server default type
@@ -355,7 +355,7 @@ function Set-PodeWebConfiguration
 function New-PodeAutoRestartServer
 {
     # don't configure if not supplied, or running as serverless
-    $config = (Get-PodeSettings)
+    $config = (Get-PodeConfig)
     if (($null -eq $config) -or ($null -eq $config.Server.Restart) -or $PodeContext.Server.IsServerless)  {
         return
     }

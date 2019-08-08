@@ -28,20 +28,20 @@ Your Function's `function.json` will also need to contain at a minimum the Reque
 
 ```json
 {
-  "bindings": [
-    {
-      "authLevel": "<anything>",
-      "type": "httpTrigger",
-      "direction": "in",
-      "name": "Request",
-      "methods": ["<allowed-methods>"]
-    },
-    {
-      "type": "http",
-      "direction": "out",
-      "name": "Response"
-    }
-  ]
+    "bindings": [
+        {
+            "authLevel": "<anything>",
+            "type": "httpTrigger",
+            "direction": "in",
+            "name": "Request",
+            "methods": ["<allowed-methods>"]
+        },
+        {
+            "type": "http",
+            "direction": "out",
+            "name": "Response"
+        }
+    ]
 }
 ```
 

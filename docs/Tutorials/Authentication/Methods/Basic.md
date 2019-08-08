@@ -1,10 +1,10 @@
-# Basic Authentication
+# Basic
 
 Basic Authentication is when you pass an encoded `username:password` value on the header of your requests: `@{ 'Authorization' = 'Basic <base64 encoded username:password>' }`.
 
 ## Setup
 
-To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Basic` function, and then pipe this into the `Add-PodeAuth` function:
+To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Basic` function, and then pipe this into the  [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
 ```powershell
 Start-PodeServer {
