@@ -801,6 +801,11 @@ function New-PodePSDrive
         $Name
     )
 
+    # if the path is a share, do nothing
+    if ($Path.StartsWith('\\')) {
+        return $Path
+    }
+
     # if no name is passed, used a randomly generated one
     if ([string]::IsNullOrWhiteSpace($Name)) {
         $Name = "PodeDir$(New-PodeGuid)"
