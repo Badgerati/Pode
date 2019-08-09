@@ -33,7 +33,7 @@ The following table outlines some of the predefined cron expressions supported b
 | @daily | `0 0 * * *` |
 | @weekly | `0 0 * * 0` |
 | @monthly | `0 0 1 * *` |
-| @quaterly | `0 0 1 1,4,8,7,10` |
+| @quarterly | `0 0 1 1,4,8,7,10` |
 | @yearly | `0 0 1 1 *` |
 | @annually | `0 0 1 1 *` |
 | @twice-hourly | `0,30 * * * *` |
