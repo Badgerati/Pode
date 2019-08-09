@@ -221,7 +221,7 @@ New-PodeAuthType -Basic | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Devel
 #>
 function Add-PodeAuthWindowsAd
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Groups')]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -235,13 +235,17 @@ function Add-PodeAuthWindowsAd
         [string]
         $Fqdn = $env:USERDNSDOMAIN,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Groups')]
         [string[]]
         $Groups,
 
         [Parameter()]
         [string[]]
-        $Users
+        $Users,
+
+        [Parameter(ParameterSetName='NoGroups')]
+        [switch]
+        $NoGroups
     )
 
     # Check PowerShell/OS version
@@ -268,6 +272,7 @@ function Add-PodeAuthWindowsAd
             Fqdn = $Fqdn
             Users = $Users
             Groups = $Groups
+            NoGroups = $NoGroups
         }
     }
 }
