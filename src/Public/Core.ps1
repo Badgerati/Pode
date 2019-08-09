@@ -898,6 +898,14 @@ function Add-PodeMiddleware
     if ($PSCmdlet.ParameterSetName -ieq 'script') {
         $InputObject = New-PodeMiddleware -ScriptBlock $ScriptBlock -Route $Route -Options $Options
     }
+    else {
+        if (![string]::IsNullOrWhiteSpace($Route)) {
+            $Route = ConvertTo-PodeRouteRegex -Path $Route
+        }
+
+        $InputObject.Route = Protect-PodeValue -Value $Route -Default $InputObject.Route
+        $InputObject.Options = Protect-PodeValue -Value $Options -Default $InputObject.Options
+    }
 
     # ensure we have a script to run
     if (Test-IsEmpty $InputObject.Logic) {
@@ -906,8 +914,6 @@ function Add-PodeMiddleware
 
     # set name, and override route/options
     $InputObject.Name = $Name
-    $InputObject.Route = Protect-PodeValue -Value $Route -Default $InputObject.Route
-    $InputObject.Options = Protect-PodeValue -Value $Options -Default $InputObject.Options
 
     # add the logic to array of middleware that needs to be run
     $PodeContext.Server.Middleware += $InputObject
@@ -951,11 +957,7 @@ function New-PodeMiddleware
     )
 
     # if route is empty, set it to root
-    $Route = Protect-PodeValue -Value $Route -Default '/'
-    $Route = Split-PodeRouteQuery -Path $Route
-    $Route = Protect-PodeValue -Value $Route -Default '/'
-    $Route = Update-PodeRouteSlashes -Path $Route
-    $Route = Update-PodeRoutePlaceholders -Path $Route
+    $Route = ConvertTo-PodeRouteRegex -Path $Route
 
     # create the middleware hashtable from a scriptblock
     $HashTable = @{
