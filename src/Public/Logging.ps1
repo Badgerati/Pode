@@ -169,6 +169,8 @@ function Enable-PodeRequestLogging
         $Raw
     )
 
+    Test-PodeIsServerless -FunctionName 'Enable-PodeRequestLogging' -ThrowError
+
     $name = Get-PodeRequestLoggingName
 
     # error if it's already enabled
