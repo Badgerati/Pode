@@ -38,13 +38,13 @@ function Get-PodeCronPredefined
         '@daily' = '0 0 * * *';
         '@weekly' = '0 0 * * 0';
         '@monthly' = '0 0 1 * *';
-        '@quaterly' = '0 0 1 1,4,8,7,10';
+        '@quarterly' = '0 0 1 1,4,7,10';
         '@yearly' = '0 0 1 1 *';
         '@annually' = '0 0 1 1 *';
 
         # twice
         '@twice-hourly' = '0,30 * * * *';
-        '@twice-daily' = '0,12 0 * * *';
+        '@twice-daily' = '0 0,12 * * *';
         '@twice-weekly' = '0 0 * * 0,4';
         '@twice-monthly' = '0 0 1,15 * *';
         '@twice-yearly' = '0 0 1 1,6 *';
@@ -362,9 +362,13 @@ function Test-PodeCronExpression
         $DateTime = [datetime]::Now
     }
 
-    # check day of week and day of month (both must fail)
-    if (!(Test-RangeAndValue -AtomContraint $Expression.DayOfWeek -NowValue ([int]$DateTime.DayOfWeek)) -and
-        !(Test-RangeAndValue -AtomContraint $Expression.DayOfMonth -NowValue $DateTime.Day)) {
+    # check day of month
+    if (!(Test-RangeAndValue -AtomContraint $Expression.DayOfMonth -NowValue $DateTime.Day)) {
+        return $false
+    }
+
+    # check day of week
+    if (!(Test-RangeAndValue -AtomContraint $Expression.DayOfWeek -NowValue ([int]$DateTime.DayOfWeek))) {
         return $false
     }
 
