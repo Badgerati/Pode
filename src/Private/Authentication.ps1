@@ -137,26 +137,26 @@ function Get-PodeAuthInbuiltMethod
 function Get-PodeAuthMiddlewareScript
 {
     return {
-        param($e)
+        param($e, $opts)
 
         # route options for using sessions
-        $storeInSession = !$e.Middleware.Options.Sessionless
+        $storeInSession = !$opts.Sessionless
         $usingSessions = (!(Test-IsEmpty $e.Session))
 
         # check for logout command
-        if ($e.Middleware.Options.Logout) {
-            Remove-PodeAuthSession -Event $e
-            return (Set-PodeAuthStatus -StatusCode 302 -Options $e.Middleware.Options)
+        if ($opts.Logout) {
+            Remove-PodeAuthSession -Event $e -Options $opts
+            return (Set-PodeAuthStatus -StatusCode 302 -Options $opts)
         }
 
         # if the session already has a user/isAuth'd, then skip auth
         if ($usingSessions -and !(Test-IsEmpty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
             $e.Auth = $e.Session.Data.Auth
-            return (Set-PodeAuthStatus -Options $e.Middleware.Options)
+            return (Set-PodeAuthStatus -Options $opts)
         }
 
         # check if the auto-login flag is set, in which case just return
-        if ($e.Middleware.Options.AutoLogin) {
+        if ($opts.AutoLogin) {
             if (!(Test-IsEmpty $e.Session.Data.Auth)) {
                 Remove-PodeSessionCookie -Session $e.Session
             }
@@ -165,7 +165,7 @@ function Get-PodeAuthMiddlewareScript
         }
 
         # get the auth method
-        $auth = $PodeContext.Server.Authentications[$e.Middleware.Options.Name]
+        $auth = $PodeContext.Server.Authentications[$opts.Name]
 
         try {
             # run auth type script to parse request for data
@@ -179,7 +179,7 @@ function Get-PodeAuthMiddlewareScript
         }
         catch {
             $_ | Write-PodeErrorLog
-            return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Options $e.Middleware.Options)
+            return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Options $opts)
         }
 
         # if there is no result, return false (failed auth)
@@ -187,7 +187,7 @@ function Get-PodeAuthMiddlewareScript
             return (Set-PodeAuthStatus `
                 -StatusCode (Protect-PodeValue -Value $result.Code -Default 401) `
                 -Description $result.Message `
-                -Options $e.Middleware.Options)
+                -Options $opts)
         }
 
         # assign the user to the session, and wire up a quick method
@@ -197,7 +197,7 @@ function Get-PodeAuthMiddlewareScript
         $e.Auth.Store = $storeInSession
 
         # continue
-        return (Set-PodeAuthStatus -Options $e.Middleware.Options)
+        return (Set-PodeAuthStatus -Options $opts)
     }
 }
 
@@ -206,7 +206,11 @@ function Remove-PodeAuthSession
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Event
+        $Event,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Options
     )
 
     # blank out the auth
@@ -218,8 +222,8 @@ function Remove-PodeAuthSession
     }
 
     # redirect to a failure url, or onto the current path?
-    if ([string]::IsNullOrWhiteSpace($Event.Middleware.Options.Failure.Url)) {
-        $Event.Middleware.Options.Failure.Url = $Event.Request.Url.AbsolutePath
+    if ([string]::IsNullOrWhiteSpace($Options.Failure.Url)) {
+        $Options.Failure.Url = $Event.Request.Url.AbsolutePath
     }
 
     # Delete the session (remove from store, blank it, and remove from Response)

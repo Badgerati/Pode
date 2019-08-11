@@ -276,15 +276,17 @@ function Enable-PodeSessionMiddleware
             }
 
             # assign endware for session to set cookie/storage
-            $e.OnEnd += {
-                param($e)
+            $e.OnEnd += @{
+                Logic = {
+                    param($e)
 
-                # if auth is in use, then assign to session store
-                if (!(Test-IsEmpty $e.Auth) -and $e.Auth.Store) {
-                    $e.Session.Data.Auth = $e.Auth
+                    # if auth is in use, then assign to session store
+                    if (!(Test-IsEmpty $e.Auth) -and $e.Auth.Store) {
+                        $e.Session.Data.Auth = $e.Auth
+                    }
+
+                    Invoke-PodeScriptBlock -ScriptBlock $e.Session.Save -Arguments @($e.Session, $true) -Splat
                 }
-
-                Invoke-PodeScriptBlock -ScriptBlock $e.Session.Save -Arguments @($e.Session, $true) -Splat
             }
         }
         catch {

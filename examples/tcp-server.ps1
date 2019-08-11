@@ -14,7 +14,7 @@ Start-PodeServer -Threads 2 {
 
     # setup a tcp handler
     Add-PodeHandler -Type Tcp -Name 'Main' -ScriptBlock {
-        param($session)
+        param($e)
         Write-PodeTcpClient -Message 'gief data'
         $msg = (Read-PodeTcpClient)
         Write-Host $msg

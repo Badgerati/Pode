@@ -10,7 +10,7 @@ function Invoke-PodeEndware
     )
 
     # if there's no endware, do nothing
-    if ($null -eq $Endware -or $Endware.Length -eq 0) {
+    if (($null -eq $Endware) -or ($Endware.Length -eq 0)) {
         return
     }
 
@@ -18,7 +18,7 @@ function Invoke-PodeEndware
     foreach ($eware in @($Endware))
     {
         try {
-            Invoke-PodeScriptBlock -ScriptBlock $eware -Arguments $WebEvent -Scoped | Out-Null
+            Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments (@($WebEvent) + @($eware.Arguments)) -Scoped -Splat | Out-Null
         }
         catch {
             $_ | Write-PodeErrorLog

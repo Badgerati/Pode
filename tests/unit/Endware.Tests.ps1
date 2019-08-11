@@ -9,15 +9,16 @@ Describe 'Invoke-PodeEndware' {
 
     It 'Runs the logic for a single endware' {
         Mock Invoke-PodeScriptBlock { }
-        Invoke-PodeEndware -WebEvent @{} -Endware @({ 'test' | Out-Null })
+        Invoke-PodeEndware -WebEvent @{} -Endware @(@{ Logic = { 'test' | Out-Null } })
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
     It 'Runs the logic for 2 endwares' {
         Mock Invoke-PodeScriptBlock { }
         Invoke-PodeEndware -WebEvent @{} -Endware @(
-            { 'test' | Out-Null },
-            { 'test2' | Out-Null })
+            @{ Logic = { 'test' | Out-Null } },
+            @{ Logic = { 'test2' | Out-Null } }
+        )
         Assert-MockCalled Invoke-PodeScriptBlock -Times 2 -Scope It
     }
 
@@ -25,7 +26,7 @@ Describe 'Invoke-PodeEndware' {
         Mock Invoke-PodeScriptBlock { throw 'some error' }
         Mock Write-PodeErrorLog { }
 
-        Invoke-PodeEndware -WebEvent @{} -Endware @({ 'test' | Out-Null })
+        Invoke-PodeEndware -WebEvent @{} -Endware @(@{ Logic = { 'test' | Out-Null } })
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled Write-PodeErrorLog -Times 1 -Scope It
@@ -46,7 +47,7 @@ Describe 'Add-PodeEndware' {
             Add-PodeEndware -ScriptBlock { write-host 'end1' }
 
             $PodeContext.Server.Endware.Length | Should Be 1
-            $PodeContext.Server.Endware[0].ToString() | Should Be ({ Write-Host 'end1' }).ToString()
+            $PodeContext.Server.Endware[0].Logic.ToString() | Should Be ({ Write-Host 'end1' }).ToString()
         }
 
         It 'Adds two Endwares to list' {
@@ -56,8 +57,8 @@ Describe 'Add-PodeEndware' {
             Add-PodeEndware -ScriptBlock { write-host 'end2' }
 
             $PodeContext.Server.Endware.Length | Should Be 2
-            $PodeContext.Server.Endware[0].ToString() | Should Be ({ Write-Host 'end1' }).ToString()
-            $PodeContext.Server.Endware[1].ToString() | Should Be ({ Write-Host 'end2' }).ToString()
+            $PodeContext.Server.Endware[0].Logic.ToString() | Should Be ({ Write-Host 'end1' }).ToString()
+            $PodeContext.Server.Endware[1].Logic.ToString() | Should Be ({ Write-Host 'end2' }).ToString()
         }
     }
 }

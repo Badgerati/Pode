@@ -76,21 +76,17 @@ Describe 'Remove-PodeAuthSession' {
                     Auth = @{ User = @{} }
                 }
             }
-            Middleware = @{
-                Options = @{
-                    Failure = @{
-                        Url = 'http://fake.com'
-                    }
-                }
-            }
         }
 
-        Remove-PodeAuthSession -Event $event
+        Remove-PodeAuthSession -Event $event -Options @{
+            Failure = @{
+                Url = 'http://example.com'
+            }
+        }
 
         $event.Auth.Count | Should Be 0
         $event.Auth.User | Should Be $null
         $event.Session.Data.Auth | Should be $null
-        $event.Middleware.Options.Failure.Url | Should Be 'http://fake.com'
 
         Assert-MockCalled Remove-PodeSessionCookie -Times 1 -Scope It
     }
@@ -105,22 +101,20 @@ Describe 'Remove-PodeAuthSession' {
                     Auth = @{ User = @{} }
                 }
             }
-            Middleware = @{
-                Options = @{
-                    Failure = @{}
-                }
-            }
             Request = @{
                 Url = @{ AbsolutePath ='/' }
             }
         }
 
-        Remove-PodeAuthSession -Event $event
+        Remove-PodeAuthSession -Event $event -Options @{
+            Failure = @{
+                Url = 'http://example.com'
+            }
+        }
 
         $event.Auth.Count | Should Be 0
         $event.Auth.User | Should Be $null
         $event.Session.Data.Auth | Should be $null
-        $event.Middleware.Options.Failure.Url | Should Be '/'
 
         Assert-MockCalled Remove-PodeSessionCookie -Times 1 -Scope It
     }

@@ -416,5 +416,5 @@ function Get-PodeAuthMiddleware
     }
 
     # return the middleware
-    return (Get-PodeAuthMiddlewareScript | New-PodeMiddleware -Options $options)
+    return (Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options)
 }

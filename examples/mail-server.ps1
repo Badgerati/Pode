@@ -14,10 +14,10 @@ Start-PodeServer -Threads 2 {
 
     # setup an smtp handler
     Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
-        param($email)
-        Write-Host $email.From
-        Write-Host $email.To
-        Write-Host $email.Data
+        param($e)
+        Write-Host $e.Email.From
+        Write-Host $e.Email.To
+        Write-Host $e.Email.Data
     }
 
 }

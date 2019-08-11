@@ -17,11 +17,17 @@ The ScriptBlock for the Handler's main logic.
 .PARAMETER FilePath
 A literal, or relative, path to a file containing a ScriptBlock for the Handler's main logic.
 
+.PARAMETER ArgumentList
+An array of arguments to supply to the Handler's ScriptBlock.
+
 .EXAMPLE
 Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
 Add-PodeHandler -Type Service -Name 'Looper' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
 #>
 function Add-PodeHandler
 {
@@ -42,7 +48,11 @@ function Add-PodeHandler
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
-        $FilePath
+        $FilePath,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
     )
 
     # error if serverless
@@ -70,7 +80,8 @@ function Add-PodeHandler
 
     # add the handler
     $PodeContext.Server.Handlers[$Type][$Name] += @(@{
-        'Logic' = $ScriptBlock;
+        Logic = $ScriptBlock
+        Arguments = $ArgumentList
     })
 }
 

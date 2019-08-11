@@ -60,14 +60,15 @@ function Start-PodeTcpServer
                 # ensure the request ip is allowed and deal with the tcp call
                 if ((Test-PodeIPAccess -IP $ip) -and (Test-PodeIPLimit -IP $ip)) {
                     $TcpEvent = @{
-                        'Client' = $client;
-                        'Lockalble' = $PodeContext.Lockable
+                        Client = $client
+                        Lockable = $PodeContext.Lockable
                     }
 
                     # invoke the tcp handlers
                     $handlers = Get-PodeHandler -Type Tcp
                     foreach ($name in $handlers.Keys) {
-                        Invoke-PodeScriptBlock -ScriptBlock $handlers[$name].Logic -Arguments $TcpEvent -Scoped
+                        $handler = $handlers[$name]
+                        Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments (@($TcpEvent) + @($handler.Arguments)) -Scoped -Splat
                     }
                 }
 

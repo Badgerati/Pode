@@ -50,7 +50,7 @@ function Start-PodeSmtpServer
         # scriptblock for the core smtp message processing logic
         $process = {
             # if there's no client, just return
-            if ($null -eq $TcpEvent.Client) {
+            if ($null -eq $SmtpEvent.Client) {
                 return
             }
 
@@ -101,25 +101,25 @@ function Start-PodeSmtpServer
                             Write-PodeTcpClient -Message '250 OK'
 
                             # set event data/headers
-                            $SmtpEvent.From = $mail_from
-                            $SmtpEvent.To = $rcpt_tos
-                            $SmtpEvent.Data = $data
-                            $SmtpEvent.Headers = (Get-PodeSmtpHeadersFromData $data)
-                            $SmtpEvent.Lockable = $PodeContext.Lockable
+                            $SmtpEvent.Email.From = $mail_from
+                            $SmtpEvent.Email.To = $rcpt_tos
+                            $SmtpEvent.Email.Data = $data
+                            $SmtpEvent.Email.Headers = (Get-PodeSmtpHeadersFromData $data)
 
                             # set the subject/priority/content-types
-                            $SmtpEvent.Subject = $SmtpEvent.Headers['Subject']
-                            $SmtpEvent.IsUrgent = (($SmtpEvent.Headers['Priority'] -ieq 'urgent') -or ($SmtpEvent.Headers['Importance'] -ieq 'high'))
-                            $SmtpEvent.ContentType = $SmtpEvent.Headers['Content-Type']
-                            $SmtpEvent.ContentEncoding = $SmtpEvent.Headers['Content-Transfer-Encoding']
+                            $SmtpEvent.Email.Subject = $SmtpEvent.Headers['Subject']
+                            $SmtpEvent.Email.IsUrgent = (($SmtpEvent.Headers['Priority'] -ieq 'urgent') -or ($SmtpEvent.Headers['Importance'] -ieq 'high'))
+                            $SmtpEvent.Email.ContentType = $SmtpEvent.Headers['Content-Type']
+                            $SmtpEvent.Email.ContentEncoding = $SmtpEvent.Headers['Content-Transfer-Encoding']
 
                             # set the email body
-                            $SmtpEvent.Body = (Get-PodeSmtpBody -Data $data -ContentType $SmtpEvent.ContentType -ContentEncoding $SmtpEvent.ContentEncoding)
+                            $SmtpEvent.Email.Body = (Get-PodeSmtpBody -Data $data -ContentType $SmtpEvent.ContentType -ContentEncoding $SmtpEvent.ContentEncoding)
 
                             # call user handlers for processing smtp data
                             $handlers = Get-PodeHandler -Type Smtp
                             foreach ($name in $handlers.Keys) {
-                                Invoke-PodeScriptBlock -ScriptBlock $handlers[$name].Logic -Arguments $SmtpEvent -Scoped
+                                $handler = $handlers[$name]
+                                Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments (@($SmtpEvent) + @($handler.Arguments)) -Scoped -Splat
                             }
 
                             # reset the to list
@@ -151,10 +151,10 @@ function Start-PodeSmtpServer
 
                 # deal with smtp call
                 else {
-                    $SmtpEvent = @{}
-                    $TcpEvent = @{
-                        'Client' = $client;
-                        'Lockable' = $PodeContext.Lockable
+                    $SmtpEvent = @{
+                        Client = $client
+                        Lockable = $PodeContext.Lockable
+                        Email = $null
                     }
 
                     Invoke-PodeScriptBlock -ScriptBlock $process
