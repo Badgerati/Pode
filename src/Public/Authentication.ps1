@@ -213,11 +213,17 @@ An array of Group names to only allow access.
 .PARAMETER Users
 An array of Usernames to only allow access.
 
+.PARAMETER NoGroups
+If supplied, groups will not be retrieved for the user in AD.
+
 .EXAMPLE
 New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
 
 .EXAMPLE
 New-PodeAuthType -Basic | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Developers')
+
+.EXAMPLE
+New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
 #>
 function Add-PodeAuthWindowsAd
 {
