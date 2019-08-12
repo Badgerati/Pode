@@ -169,12 +169,11 @@ function Get-PodeAuthMiddlewareScript
 
         try {
             # run auth type script to parse request for data
-            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.ScriptBlock -Arguments @($e, $auth.Type.Options) -Return -Splat)
+            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.ScriptBlock -Arguments (@($e) + @($auth.Type.Arguments)) -Return -Splat)
 
             # if data is a hashtable, then don't call validator (parser either failed, or forced a success)
             if ($result -isnot [hashtable]) {
-                $result += $auth.Options
-                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $result -Return -Splat)
+                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments (@($result) + @($auth.Arguments)) -Return -Splat)
             }
         }
         catch {

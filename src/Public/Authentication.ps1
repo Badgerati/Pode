@@ -29,8 +29,8 @@ If supplied, will allow you to create a Custom Authentication credentials retrie
 .PARAMETER ScriptBlock
 The ScriptBlock to retrieve user credentials.
 
-.PARAMETER Options
-Any custom Options to supply to a Custom Authentication type's ScriptBlock.
+.PARAMETER ArgumentList
+An array of arguments to supply to the Custom Authentication type's ScriptBlock.
 
 .EXAMPLE
 $basic_auth = New-PodeAuthType -Basic
@@ -87,7 +87,7 @@ function New-PodeAuthType
 
         [Parameter(ParameterSetName='Custom')]
         [hashtable]
-        $Options
+        $ArgumentList
     )
 
     # configure the auth type
@@ -95,7 +95,7 @@ function New-PodeAuthType
         'basic' {
             return @{
                 ScriptBlock = (Get-PodeAuthBasicType)
-                Options = @{
+                Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                     Encoding = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
                 }
@@ -105,7 +105,7 @@ function New-PodeAuthType
         'form' {
             return @{
                 ScriptBlock = (Get-PodeAuthFormType)
-                Options = @{
+                Arguments = @{
                     Fields = @{
                         Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
                         Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
@@ -117,7 +117,7 @@ function New-PodeAuthType
         'custom' {
             return @{
                 ScriptBlock = $ScriptBlock
-                Options = $Options
+                Arguments = $ArgumentList
             }
         }
     }
@@ -139,8 +139,8 @@ The Type to use for retrieving credentials (From New-PodeAuthType).
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that retrieves and verifys a user.
 
-.PARAMETER Options
-Any custom Options to supply to the ScriptBlock.
+.PARAMETER ArgumentList
+An array of arguments to supply to the Custom Authentication's ScriptBlock.
 
 .EXAMPLE
 New-PodeAuthType -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
@@ -169,8 +169,8 @@ function Add-PodeAuth
         $ScriptBlock,
 
         [Parameter()]
-        [hashtable]
-        $Options
+        [object[]]
+        $ArgumentList
     )
 
     # ensure the name doesn't already exist
@@ -187,7 +187,7 @@ function Add-PodeAuth
     $PodeContext.Server.Authentications[$Name] = @{
         Type = $Type
         ScriptBlock = $ScriptBlock
-        Options = $Options
+        Arguments = $ArgumentList
     }
 }
 
@@ -264,7 +264,7 @@ function Add-PodeAuthWindowsAd
     $PodeContext.Server.Authentications[$Name] = @{
         Type = $Type
         ScriptBlock = (Get-PodeAuthInbuiltMethod -Type WindowsAd)
-        Options = @{
+        Arguments = @{
             Fqdn = $Fqdn
             Users = $Users
             Groups = $Groups
