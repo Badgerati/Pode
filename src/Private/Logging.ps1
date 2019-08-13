@@ -265,10 +265,8 @@ function Start-PodeLoggingRunspace
                 # run the log item through the appropriate method, then through the storage script
                 $logger = Get-PodeLogger -Name $log.Name
 
-                $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments @($log.Item, $logger.Options) -Return -Splat)
-                $result += $logger.Method.Options
-
-                Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $result -Splat
+                $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments (@($log.Item) + @($logger.Arguments)) -Return -Splat)
+                Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments (@($result) + @($logger.Method.Arguments)) -Splat
             }
 
             # small sleep to lower cpu usage

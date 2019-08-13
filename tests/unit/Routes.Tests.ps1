@@ -527,7 +527,7 @@ Describe 'Add-PodeRoute' {
 
     It 'Adds route with middleware supplied as hashtable and empty logic' {
         $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-        Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock {}
+        Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = { Write-Host 'middle' }; 'Arguments' = 'test' }) -ScriptBlock {}
 
         $routes = $PodeContext.Server.Routes['get']
         $routes | Should Not be $null
@@ -542,12 +542,12 @@ Describe 'Add-PodeRoute' {
 
         $routes[0].Middleware.Length | Should Be 1
         $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
-        $routes[0].Middleware[0].Options | Should Be 'test'
+        $routes[0].Middleware[0].Arguments | Should Be 'test'
     }
 
     It 'Adds route with middleware supplied as hashtable and no logic' {
         $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-        Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = { Write-Host 'middle' }; 'Options' = 'test' }) -ScriptBlock {}
+        Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = { Write-Host 'middle' }; 'Arguments' = 'test' }) -ScriptBlock {}
 
         $routes = $PodeContext.Server.Routes['get']
         $routes | Should Not be $null
@@ -562,7 +562,7 @@ Describe 'Add-PodeRoute' {
 
         $routes[0].Middleware.Length | Should Be 1
         $routes[0].Middleware[0].Logic.ToString() | Should Be ({ Write-Host 'middle' }).ToString()
-        $routes[0].Middleware[0].Options | Should Be 'test'
+        $routes[0].Middleware[0].Arguments | Should Be 'test'
     }
 
     It 'Adds route with middleware and logic supplied' {
