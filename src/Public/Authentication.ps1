@@ -213,15 +213,21 @@ An array of Group names to only allow access.
 .PARAMETER Users
 An array of Usernames to only allow access.
 
+.PARAMETER NoGroups
+If supplied, groups will not be retrieved for the user in AD.
+
 .EXAMPLE
 New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
 
 .EXAMPLE
 New-PodeAuthType -Basic | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Developers')
+
+.EXAMPLE
+New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
 #>
 function Add-PodeAuthWindowsAd
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Groups')]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -235,13 +241,17 @@ function Add-PodeAuthWindowsAd
         [string]
         $Fqdn = $env:USERDNSDOMAIN,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Groups')]
         [string[]]
         $Groups,
 
         [Parameter()]
         [string[]]
-        $Users
+        $Users,
+
+        [Parameter(ParameterSetName='NoGroups')]
+        [switch]
+        $NoGroups
     )
 
     # Check PowerShell/OS version
@@ -268,6 +278,7 @@ function Add-PodeAuthWindowsAd
             Fqdn = $Fqdn
             Users = $Users
             Groups = $Groups
+            NoGroups = $NoGroups
         }
     }
 }

@@ -94,7 +94,8 @@ function Get-PodeAuthInbuiltMethod
                 param($username, $password, $options)
 
                 # validate and retrieve the AD user
-                $result = Get-PodeAuthADUser -Fqdn $options.Fqdn -Username $username -Password $password
+                $noGroups = $options.NoGroups
+                $result = Get-PodeAuthADUser -Fqdn $options.Fqdn -Username $username -Password $password -NoGroups:$noGroups
 
                 # if there's a message, fail and return the message
                 if (!(Test-IsEmpty $result.Message)) {
@@ -289,7 +290,10 @@ function Get-PodeAuthADUser
 
         [Parameter()]
         [string]
-        $Password
+        $Password,
+
+        [switch]
+        $NoGroups
     )
 
     try
@@ -313,7 +317,10 @@ function Get-PodeAuthADUser
         }
 
         # get the users groups
-        $groups = Get-PodeAuthADGroups -Query $query -CategoryName $Username -CategoryType 'person'
+        $groups =@()
+        if (!$NoGroups) {
+            $groups = Get-PodeAuthADGroups -Query $query -CategoryName $Username -CategoryType 'person'
+        }
 
         # return the user
         return @{

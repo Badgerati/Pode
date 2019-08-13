@@ -254,6 +254,23 @@ function Split-PodeRouteQuery
     return ($Path -isplit "\?")[0]
 }
 
+function ConvertTo-PodeRouteRegex
+{
+    param (
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    $Path = Protect-PodeValue -Value $Path -Default '/'
+    $Path = Split-PodeRouteQuery -Path $Path
+    $Path = Protect-PodeValue -Value $Path -Default '/'
+    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRoutePlaceholders -Path $Path
+
+    return $Path
+}
+
 function Get-PodeStaticRouteDefaults
 {
     if (!(Test-IsEmpty $PodeContext.Server.Web.Static.Defaults)) {
