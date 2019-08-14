@@ -76,8 +76,8 @@ function Get-PodeInbuiltMiddleware
 
     # return the script
     return @{
-        'Name' = $Name;
-        'Logic' = $ScriptBlock;
+        Name = $Name
+        Logic = $ScriptBlock
     }
 }
 
@@ -155,8 +155,8 @@ function Get-PodePublicMiddleware
 function Get-PodeRouteValidateMiddleware
 {
     return @{
-        'Name' = '__pode_mw_route_validation__';
-        'Logic' = {
+        Name = '__pode_mw_route_validation__'
+        Logic = {
             param($s)
 
             # ensure the path has a route

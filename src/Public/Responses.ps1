@@ -430,6 +430,9 @@ A String, PSObject, or HashTable value.
 .PARAMETER Path
 The path to a JSON file.
 
+.PARAMETER Depth
+The Depth to generate the JSON document - the larger this value the worse performance gets.
+
 .EXAMPLE
 Write-PodeJsonResponse -Value '{"name": "Rick"}'
 
@@ -448,7 +451,11 @@ function Write-PodeJsonResponse
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
-        $Path
+        $Path,
+
+        [Parameter()]
+        [int]
+        $Depth = 10
     )
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -460,7 +467,12 @@ function Write-PodeJsonResponse
 
         'value' {
             if ($Value -isnot [string]) {
-                $Value = ($Value | ConvertTo-Json -Depth 10 -Compress)
+                if ($Depth -le 0) {
+                    $Value = ($Value | ConvertTo-Json -Compress)
+                }
+                else {
+                    $Value = ($Value | ConvertTo-Json -Depth $Depth -Compress)
+                }
             }
         }
     }

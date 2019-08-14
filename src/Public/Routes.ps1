@@ -522,3 +522,85 @@ function Clear-PodeStaticRoutes
 
     $PodeContext.Server.Routes['Static'].Clear()
 }
+
+function ConvertTo-PodeRoute
+{
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string[]]
+        $Commands,
+
+        [Parameter()]
+        [string]
+        $Module,
+
+        [switch]
+        $NoVerb
+    )
+
+    #TODO: Override HTTP method
+    #TODO: subpath for module
+    #TODO: custom subpath before any module
+    #TODO: middleware support + auth
+    #TODO: write nothing in the route if the $result is null/empty
+
+    # if a module was supplied, import it - then validate the commands
+    if (![string]::IsNullOrWhiteSpace($Module)) {
+        Import-PodeModule -Name $Module -Now
+
+        Write-Verbose "Getting exported commands from module"
+        $ModuleCommands = (Get-Module -Name $Module).ExportedCommands.Keys
+
+        # if commands were supplied validate them - otherwise use all exported ones
+        if (Test-IsEmpty $Commands) {
+            Write-Verbose "Using all commands in $($Module) for converting to routes"
+            $Commands = $ModuleCommands
+        }
+        else {
+            Write-Verbose "Validating supplied commands against module's exported commands"
+            foreach ($cmd in $Commands) {
+                if ($ModuleCommands -inotcontains $cmd) {
+                    throw "Module $($Module) does not contain function $($cmd) to convert to a Route"
+                }
+            }
+        }
+    }
+
+    # create the routes for each of the commands
+    foreach ($cmd in $Commands) {
+        # get module verb/noun and comvert verb to HTTP method
+        $split = ($cmd -split '\-')
+
+        if ($split.Length -ge 2) {
+            $verb = $split[0]
+            $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
+        }
+        else {
+            $verb = [string]::Empty
+            $noun = $split[0]
+        }
+
+        $method = Convert-PodeFunctionVerbToHttpMethod -Verb $verb
+
+        $name = $cmd
+        if ($NoVerb) {
+            $name = $noun
+        }
+
+        # create the route
+        Add-PodeRoute -Method $method -Path "/$($name)" -ArgumentList $cmd -ScriptBlock {
+            param($e, $cmd)
+
+            if ($e.Method -ieq 'get') {
+                $parameters = $e.Query
+            }
+            else {
+                $parameters = $e.Data
+            }
+
+            $result = (. $cmd @parameters)
+            Write-PodeJsonResponse -Value $result -Depth 1
+        }
+    }
+}

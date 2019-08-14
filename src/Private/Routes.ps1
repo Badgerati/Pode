@@ -358,3 +358,41 @@ function Get-PodeEndpointByName
 
     return $found
 }
+
+function Convert-PodeFunctionVerbToHttpMethod
+{
+    param (
+        [Parameter()]
+        [string]
+        $Verb
+    )
+
+    # if empty, just return default
+    $DefaultMethod = 'POST'
+    if ([string]::IsNullOrWhiteSpace($Verb)) {
+        return $DefaultMethod
+    }
+
+    # GET method
+    if (@('Find', 'Format', 'Get', 'Join', 'Search', 'Select', 'Split', 'Measure', 'Ping', 'Test', 'Trace') -icontains $Verb) {
+        return 'GET'
+    }
+
+    # PUT method
+    if (@('Set') -icontains $Verb) {
+        return 'PUT'
+    }
+
+    # PATCH method
+    if (@('Rename', 'Edit', 'Update') -icontains $Verb) {
+        return 'PATCH'
+    }
+
+    # DELETE method
+    if (@('Clear', 'Close', 'Exit', 'Hide', 'Remove', 'Undo', 'Dismount', 'Unpublish', 'Disable', 'Uninstall', 'Unregister') -icontains $Verb) {
+        return 'DELETE'
+    }
+
+    # default method is POST
+    return $DefaultMethod
+}
