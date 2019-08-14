@@ -1,3 +1,5 @@
+Add-Type -AssemblyName System.Web
+
 # import everything if in a runspace
 if ($PODE_SCOPE_RUNSPACE) {
     $sysfuncs = Get-ChildItem Function:

@@ -125,7 +125,11 @@ function Get-PodeSessionCookieExpiry
         $Session
     )
 
-    $expiry = (Resolve-PodeValue -Check $Session.Cookie.Extend -TrueValue ([DateTime]::UtcNow) -FalseValue $Session.Cookie.TimeStamp)
+    if ($null -eq $Session.Cookie) {
+        return [DateTime]::MinValue
+    }
+
+    $expiry = (Resolve-PodeValue -Check ([bool]$Session.Cookie.Extend) -TrueValue ([DateTime]::UtcNow) -FalseValue $Session.Cookie.TimeStamp)
     $expiry = $expiry.AddSeconds($Session.Cookie.Duration)
     return $expiry
 }
@@ -141,6 +145,11 @@ function Set-PodeSessionCookieHelpers
     # force save a session's data to the store
     $Session | Add-Member -MemberType NoteProperty -Name Save -Value {
         param($session, $check)
+
+        # do nothing if session has no ID
+        if ([string]::IsNullOrWhiteSpace($session.Id)) {
+            return
+        }
 
         # only save if check and hashes different
         if ($check -and (Test-PodeSessionCookieDataHash -Session $session)) {

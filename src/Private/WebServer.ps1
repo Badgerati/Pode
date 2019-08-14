@@ -131,7 +131,7 @@ function Start-PodeWebServer
                         # invoke route and custom middleware
                         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
                             if ($null -ne $route.Logic) {
-                                Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
+                                Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments (@($WebEvent) + @($route.Arguments)) -Scoped -Splat
                             }
                         }
                     }

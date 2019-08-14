@@ -44,13 +44,14 @@ function Get-PodeRoute
     $found = Get-PodeRouteByUrl -Routes $_method[$Route] -Protocol $Protocol -Endpoint $Endpoint
     if (!$isStatic -and $null -ne $found) {
         return @{
-            'Logic' = $found.Logic;
-            'Middleware' = $found.Middleware;
-            'Protocol' = $found.Protocol;
-            'Endpoint' = $found.Endpoint;
-            'ContentType' = $found.ContentType;
-            'ErrorType' = $found.ErrorType;
-            'Parameters' = $null;
+            Logic = $found.Logic
+            Middleware = $found.Middleware
+            Protocol = $found.Protocol
+            Endpoint = $found.Endpoint
+            ContentType = $found.ContentType
+            ErrorType = $found.ErrorType
+            Parameters = $null
+            Arguments = $found.Arguments
         }
     }
 
@@ -75,23 +76,24 @@ function Get-PodeRoute
 
         if ($isStatic) {
             return @{
-                'Path' = $found.Path;
-                'Defaults' = $found.Defaults;
-                'Protocol' = $found.Protocol;
-                'Endpoint' = $found.Endpoint;
-                'Download' = $found.Download;
-                'File' = $Matches['file'];
+                Path = $found.Path
+                Defaults = $found.Defaults
+                Protocol = $found.Protocol
+                Endpoint = $found.Endpoint
+                Download = $found.Download
+                File = $Matches['file']
             }
         }
         else {
             return @{
-                'Logic' = $found.Logic;
-                'Middleware' = $found.Middleware;
-                'Protocol' = $found.Protocol;
-                'Endpoint' = $found.Endpoint;
-                'ContentType' = $found.ContentType;
-                'ErrorType' = $found.ErrorType;
-                'Parameters' = $Matches;
+                Logic = $found.Logic
+                Middleware = $found.Middleware
+                Protocol = $found.Protocol
+                Endpoint = $found.Endpoint
+                ContentType = $found.ContentType
+                ErrorType = $found.ErrorType
+                Parameters = $Matches
+                Arguments = $found.Arguments
             }
         }
     }
@@ -155,8 +157,8 @@ function Get-PodeStaticRoutePath
 
     # return the route details
     return @{
-        'Path' = $path;
-        'Download' = $download;
+        Path = $path;
+        Download = $download;
     }
 }
 

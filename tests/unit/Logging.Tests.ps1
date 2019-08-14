@@ -58,7 +58,7 @@ Describe 'Write-PodeErrorLog' {
 
     It 'Adds an error log item' {
         Mock Test-PodeLoggerEnabled { return $true }
-        Mock Get-PodeLogger { return @{ Options = @{
+        Mock Get-PodeLogger { return @{ Arguments = @{
             Levels = @('Error')
         } } }
 
@@ -75,7 +75,7 @@ Describe 'Write-PodeErrorLog' {
 
     It 'Adds an exception log item' {
         Mock Test-PodeLoggerEnabled { return $true }
-        Mock Get-PodeLogger { return @{ Options = @{
+        Mock Get-PodeLogger { return @{ Arguments = @{
             Levels = @('Error')
         } } }
 
@@ -90,7 +90,7 @@ Describe 'Write-PodeErrorLog' {
 
     It 'Does not log as Verbose not allowed' {
         Mock Test-PodeLoggerEnabled { return $true }
-        Mock Get-PodeLogger { return @{ Options = @{
+        Mock Get-PodeLogger { return @{ Arguments = @{
             Levels = @('Error')
         } } }
 

@@ -14,10 +14,16 @@ function Start-PodeServiceServer
         {
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
+                # the event object
+                $ServiceEvent = @{
+                    Lockable = $PodeContext.Lockable
+                }
+
                 # invoke the service handlers
                 $handlers = Get-PodeHandler -Type Service
                 foreach ($name in $handlers.Keys) {
-                    Invoke-PodeScriptBlock -ScriptBlock $handlers[$name].Logic -Scoped
+                    $handler = $handlers[$name]
+                    Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments (@($ServiceEvent) + @($handler.Arguments)) -Scoped -Splat
                 }
 
                 # sleep before next run

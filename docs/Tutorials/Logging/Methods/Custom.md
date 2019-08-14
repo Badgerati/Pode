@@ -21,14 +21,14 @@ $s3_options = @{
     SecretKey = $SecretKey
 }
 
-$s3_logging = New-PodeLoggingType -Custom -Options $s3_options -ScriptBlock {
-    param($item, $opts)
+$s3_logging = New-PodeLoggingType -Custom -ArgumentList $s3_options -ScriptBlock {
+    param($item, $s3_opts)
 
     Write-S3Object `
         -BucketName '<name>' `
         -Content $item.ToString() `
-        -AccessKey $opts.AccessKey `
-        -SecretKey $opts.SecretKey
+        -AccessKey $s3_opts.AccessKey `
+        -SecretKey $s3_opts.SecretKey
 }
 
 $s3_logging | Enable-PodeRequestLogging

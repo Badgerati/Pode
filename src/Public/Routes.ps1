@@ -35,6 +35,9 @@ The content type of any error pages that may get returned.
 .PARAMETER FilePath
 A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.
 
+.PARAMETER ArgumentList
+An array of arguments to supply to the Route's ScriptBlock.
+
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
@@ -46,6 +49,9 @@ Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -Script
 
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/api/cpu' -ErrorContentType 'application/json' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
 #>
 function Add-PodeRoute
 {
@@ -91,7 +97,11 @@ function Add-PodeRoute
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
-        $FilePath
+        $FilePath,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
     )
 
     # split route on '?' for query
@@ -199,6 +209,7 @@ function Add-PodeRoute
         Endpoint = $Endpoint.Trim()
         ContentType = $ContentType
         ErrorType = $ErrorContentType
+        Arguments = $ArgumentList
     })
 }
 

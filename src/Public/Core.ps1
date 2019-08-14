@@ -576,6 +576,9 @@ The number of times the Timer should be invoked before being removed. (If 0, it 
 .PARAMETER Skip
 The number of "invokes" to skip before the Timer actually runs.
 
+.PARAMETER ArgumentList
+An array of arguments to supply to the Timer's ScriptBlock.
+
 .EXAMPLE
 Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
 
@@ -584,6 +587,9 @@ Add-PodeTimer -Name 'RunOnce' -Interval 1 -Limit 1 -ScriptBlock { /* logic */ }
 
 .EXAMPLE
 Add-PodeTimer -Name 'RunAfter60secs' -Interval 10 -Skip 6 -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeTimer -Name 'Args' -Interval 2 -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
 #>
 function Add-PodeTimer
 {
@@ -607,7 +613,11 @@ function Add-PodeTimer
 
         [Parameter()]
         [int]
-        $Skip = 0
+        $Skip = 0,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
     )
 
     # error if serverless
@@ -649,6 +659,7 @@ function Add-PodeTimer
         Countable = ($Limit -gt 0)
         NextTick = $NextTick
         Script = $ScriptBlock
+        Arguments = $ArgumentList
     }
 }
 
@@ -720,6 +731,9 @@ A DateTime for when the Schedule should start triggering.
 .PARAMETER EndTime
 A DateTime for when the Schedule should stop triggering, and be removed.
 
+.PARAMETER ArgumentList
+A hashtable of arguments to supply to the Schedule's ScriptBlock.
+
 .EXAMPLE
 Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
 
@@ -728,6 +742,9 @@ Add-PodeSchedule -Name 'RunEveryTuesday' -Cron '0 0 * * TUE' -ScriptBlock { /* l
 
 .EXAMPLE
 Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime [DateTime]::Now.AddDays(2) -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -ArgumentList @{ Arg1 = 'value' }
 #>
 function Add-PodeSchedule
 {
@@ -755,7 +772,11 @@ function Add-PodeSchedule
 
         [Parameter()]
         [DateTime]
-        $EndTime
+        $EndTime,
+
+        [Parameter()]
+        [hashtable]
+        $ArgumentList
     )
 
     # error if serverless
@@ -790,6 +811,7 @@ function Add-PodeSchedule
         Count = 0
         Countable = ($Limit -gt 0)
         Script = $ScriptBlock
+        Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
     }
 }
 
@@ -855,8 +877,8 @@ A Middleware HashTable from New-PodeMiddleware, or from certain other functions 
 .PARAMETER Route
 A Route path for which Routes this Middleware should only be invoked against.
 
-.PARAMETER Options
-A HashTable of Options that will be accessible within the Middleware's ScriptBlock.
+.PARAMETER ArgumentList
+An array of arguments to supply to the Middleware's ScriptBlock.
 
 .EXAMPLE
 Add-PodeMiddleware -Name 'BlockAgents' -ScriptBlock { /* logic */ }
@@ -885,8 +907,8 @@ function Add-PodeMiddleware
         $Route,
 
         [Parameter()]
-        [hashtable]
-        $Options
+        [object[]]
+        $ArgumentList
     )
 
     # ensure name doesn't already exist
@@ -896,7 +918,7 @@ function Add-PodeMiddleware
 
     # if it's a script - call New-PodeMiddleware
     if ($PSCmdlet.ParameterSetName -ieq 'script') {
-        $InputObject = New-PodeMiddleware -ScriptBlock $ScriptBlock -Route $Route -Options $Options
+        $InputObject = New-PodeMiddleware -ScriptBlock $ScriptBlock -Route $Route -ArgumentList $ArgumentList
     }
     else {
         if (![string]::IsNullOrWhiteSpace($Route)) {
@@ -912,7 +934,7 @@ function Add-PodeMiddleware
         throw "[Middleware]: No logic supplied in ScriptBlock"
     }
 
-    # set name, and override route/options
+    # set name, and override route/args
     $InputObject.Name = $Name
 
     # add the logic to array of middleware that needs to be run
@@ -932,11 +954,11 @@ The Script that defines the logic of the Middleware.
 .PARAMETER Route
 A Route path for which Routes this Middleware should only be invoked against.
 
-.PARAMETER Options
-A HashTable of Options that will be accessible within the Middleware's ScriptBlock.
+.PARAMETER ArgumentList
+An array of arguments to supply to the Middleware's ScriptBlock.
 
 .EXAMPLE
-New-PodeMiddleware -ScriptBlock { /* logic */ } -Options @{ ElementName = 'Email' } | Add-PodeMiddleware -Name 'CheckEmail'
+New-PodeMiddleware -ScriptBlock { /* logic */ } -ArgumentList 'Email' | Add-PodeMiddleware -Name 'CheckEmail'
 #>
 function New-PodeMiddleware
 {
@@ -952,8 +974,8 @@ function New-PodeMiddleware
         $Route,
 
         [Parameter()]
-        [hashtable]
-        $Options
+        [object[]]
+        $ArgumentList
     )
 
     # if route is empty, set it to root
@@ -963,7 +985,7 @@ function New-PodeMiddleware
     $HashTable = @{
         Route = $Route
         Logic = $ScriptBlock
-        Options = $Options
+        Arguments = $ArgumentList
     }
 
     if (Test-IsEmpty $HashTable.Logic) {

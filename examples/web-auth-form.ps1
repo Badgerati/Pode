@@ -23,6 +23,9 @@ Start-PodeServer -Threads 2 {
     # set the view engine
     Set-PodeViewEngine -Type Pode
 
+    # enable error logging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+
     # setup session details
     Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 

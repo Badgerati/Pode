@@ -29,8 +29,8 @@ If supplied, will allow you to create a Custom Logging output method.
 .PARAMETER ScriptBlock
 The ScriptBlock that defines how to output a log item.
 
-.PARAMETER Options
-Any custom Options to supply to a Custom Logging output method's ScriptBlock.
+.PARAMETER ArgumentList
+An array of arguments to supply to the Custom Logging output method's ScriptBlock.
 
 .EXAMPLE
 $term_logging = New-PodeLoggingMethod -Terminal
@@ -100,15 +100,15 @@ function New-PodeLoggingMethod
         $ScriptBlock,
 
         [Parameter(ParameterSetName='Custom')]
-        [hashtable]
-        $Options
+        [object[]]
+        $ArgumentList
     )
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
             return @{
                 ScriptBlock = (Get-PodeLoggingTerminalMethod)
-                Options = @{}
+                Arguments = @{}
             }
         }
 
@@ -119,7 +119,7 @@ function New-PodeLoggingMethod
 
             return @{
                 ScriptBlock = (Get-PodeLoggingFileMethod)
-                Options = @{
+                Arguments = @{
                     Name = $Name
                     Path = $Path
                     MaxDays = $MaxDays
@@ -134,7 +134,7 @@ function New-PodeLoggingMethod
         'custom' {
             return @{
                 ScriptBlock = $ScriptBlock
-                Options = $Options
+                Arguments = $ArgumentList
             }
         }
     }
@@ -187,7 +187,7 @@ function Enable-PodeRequestLogging
     $PodeContext.Server.Logging.Types[$name] = @{
         Method = $Method
         ScriptBlock = (Get-PodeLoggingInbuiltType -Type Requests)
-        Options = @{
+        Arguments = @{
             Raw = $Raw
         }
     }
@@ -264,7 +264,7 @@ function Enable-PodeErrorLogging
     $PodeContext.Server.Logging.Types[$name] = @{
         Method = $Method
         ScriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
-        Options = @{
+        Arguments = @{
             Raw = $Raw
             Levels = $Levels
         }
@@ -305,8 +305,8 @@ The Method to use for output the log entry (From New-PodeLoggingMethod).
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that transforms an item, and returns it for outputting.
 
-.PARAMETER Options
-Any custom Options to supply to the ScriptBlock.
+.PARAMETER ArgumentList
+An array of arguments to supply to the Custom Logger's ScriptBlock.
 
 .EXAMPLE
 New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Main' -ScriptBlock { /* logic */ }
@@ -335,8 +335,8 @@ function Add-PodeLogger
         $ScriptBlock,
 
         [Parameter()]
-        [hashtable]
-        $Options
+        [object[]]
+        $ArgumentList
     )
 
     # ensure the name doesn't already exist
@@ -353,7 +353,7 @@ function Add-PodeLogger
     $PodeContext.Server.Logging.Types[$Name] = @{
         Method = $Method
         ScriptBlock = $ScriptBlock
-        Options = $Options
+        Arguments = $ArgumentList
     }
 }
 
@@ -448,8 +448,8 @@ function Write-PodeErrorLog
     }
 
     # do nothing if the error level isn't present
-    $options = (Get-PodeLogger -Name $name).Options
-    if (@($Options.Levels) -inotcontains $Level) {
+    $_args = (Get-PodeLogger -Name $name).Arguments
+    if (@($_args.Levels) -inotcontains $Level) {
         return
     }
 

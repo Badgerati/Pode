@@ -46,8 +46,17 @@ function Start-PodeScheduleRunspace
 
                 # trigger the schedules logic
                 try {
-                    Add-PodeRunspace -Type 'Schedules' -ScriptBlock (($_.Script).GetNewClosure()) `
-                        -Parameters @{ 'Lockable' = $PodeContext.Lockable } -Forget
+                    $parameters = @{
+                        Event = @{
+                            Lockable = $PodeContext.Lockable
+                        }
+                    }
+
+                    foreach ($key in $_.Arguments.Keys) {
+                        $parameters[$key] = $_.Arguments[$key]
+                    }
+
+                    Add-PodeRunspace -Type 'Schedules' -ScriptBlock (($_.Script).GetNewClosure()) -Parameters $parameters -Forget
                 }
                 catch {
                     $_ | Write-PodeErrorLog

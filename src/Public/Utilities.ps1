@@ -344,6 +344,9 @@ Adds a ScriptBlock as Endware to run at the end of each web Request.
 .PARAMETER ScriptBlock
 The ScriptBlock to add. It will be supplied the current web event.
 
+.PARAMETER ArgumentList
+An array of arguments to supply to the Endware's ScriptBlock.
+
 .EXAMPLE
 Add-PodeEndware -ScriptBlock { /* logic */ }
 #>
@@ -353,11 +356,18 @@ function Add-PodeEndware
     param (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
     )
 
     # add the scriptblock to array of endware that needs to be run
-    $PodeContext.Server.Endware += $ScriptBlock
+    $PodeContext.Server.Endware += @{
+        Logic = $ScriptBlock
+        Arguments = $ArgumentList
+    }
 }
 
 <#

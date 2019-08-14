@@ -35,14 +35,7 @@ function Invoke-PodeMiddleware
     foreach ($midware in @($Middleware))
     {
         try {
-            # set any custom middleware options
-            $WebEvent.Middleware = @{ 'Options' = $midware.Options }
-
-            # invoke the middleware logic
-            $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments $WebEvent -Return -Scoped
-
-            # remove any custom middleware options
-            $WebEvent.Middleware.Clear()
+            $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments (@($WebEvent) + @($midware.Arguments)) -Return -Scoped -Splat
         }
         catch {
             Set-PodeResponseStatus -Code 500 -Exception $_
