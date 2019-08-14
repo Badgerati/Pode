@@ -212,6 +212,7 @@ task PushCodeCoverage -If (Test-PodeBuildIsAppVeyor) {
     try {
         $coverage = Format-Coverage -PesterResults $Script:TestStatus -CoverallsApiToken $env:PODE_COVERALLS_TOKEN -RootFolder $pwd -BranchName $ENV:APPVEYOR_REPO_BRANCH
         Publish-Coverage -Coverage $coverage
+    }
     catch {
         $_.Exception | Out-Default
     }
