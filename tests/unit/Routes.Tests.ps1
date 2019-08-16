@@ -661,3 +661,60 @@ Describe 'Add-PodeRoute' {
         $route['/users/(?<userId>[\w-_]+?)'].Middleware | Should Be $null
     }
 }
+
+Describe 'Convert-PodeFunctionVerbToHttpMethod' {
+    It 'Returns POST for no Verb' {
+        Convert-PodeFunctionVerbToHttpMethod -Verb ([string]::Empty) | Should Be 'POST'
+    }
+
+    It 'Returns POST' {
+        Convert-PodeFunctionVerbToHttpMethod -Verb Invoke | Should Be 'POST'
+    }
+
+    It 'Returns GET' {
+        Convert-PodeFunctionVerbToHttpMethod -Verb Find | Should Be 'GET'
+    }
+
+    It 'Returns PUT' {
+        Convert-PodeFunctionVerbToHttpMethod -Verb Set | Should Be 'PUT'
+    }
+
+    It 'Returns PATCH' {
+        Convert-PodeFunctionVerbToHttpMethod -Verb Edit | Should Be 'PATCH'
+    }
+
+    It 'Returns DELETE' {
+        Convert-PodeFunctionVerbToHttpMethod -Verb Remove | Should Be 'DELETE'
+    }
+}
+
+Describe 'ConvertTo-PodeRoute' {
+    Mock Import-PodeModule {}
+    Mock Write-Verbose {}
+    Mock Add-PodeRoute {}
+    Mock Write-PodeJsonResponse {}
+    Mock Get-Module { return @{ ExportedCommands = @{ Keys = @('Some-ModuleCommand1', 'Some-ModuleCommand2') } } }
+
+    It 'Throws error when module does not contain command' {
+        { ConvertTo-PodeRoute -Module Example -Commands 'Get-ChildItem' } | Should Throw 'does not contain function'
+    }
+
+    It 'Throws error for no commands' {
+        { ConvertTo-PodeRoute } | Should Throw 'No commands supplied to convert to Routes'
+    }
+
+    It 'Calls Add-PodeRoute twice for commands' {
+        ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Invoke-Expression')
+        Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
+    }
+
+    It 'Calls Add-PodeRoute twice for module commands' {
+        ConvertTo-PodeRoute -Module Example
+        Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
+    }
+
+    It 'Calls Add-PodeRoute once for module filtered commands' {
+        ConvertTo-PodeRoute -Module Example -Commands 'Some-ModuleCommand1'
+        Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
+    }
+}
