@@ -525,7 +525,7 @@ function Clear-PodeStaticRoutes
 
 <#
 .SYNOPSIS
-Takes an array of Commands, or a Module, and converts them into Pode Routes.
+Takes an array of Commands, or a Module, and converts them into Routes.
 
 .DESCRIPTION
 Takes an array of Commands (Functions/Aliases), or a Module, and generates appropriate Routes for the commands.
@@ -549,7 +549,7 @@ Like normal Routes, an array of Middleware that will be applied to all generated
 If supplied, the Command's Verb will not be included in the Route's path.
 
 .EXAMPLE
-ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware (Get-PodeAuthMiddleware -Name '<auth-name>' -Sessionless)
+ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware (Get-PodeAuthMiddleware -Name 'auth-name' -Sessionless)
 
 .EXAMPLE
 ConvertTo-PodeRoute -Module Pester -Path '/api'
@@ -561,7 +561,7 @@ function ConvertTo-PodeRoute
 {
     [CmdletBinding()]
     param (
-        [Parameter()]
+        [Parameter(ValueFromPipeline=$true)]
         [string[]]
         $Commands,
 
