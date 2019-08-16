@@ -522,3 +522,148 @@ function Clear-PodeStaticRoutes
 
     $PodeContext.Server.Routes['Static'].Clear()
 }
+
+<#
+.SYNOPSIS
+Takes an array of Commands, or a Module, and converts them into Routes.
+
+.DESCRIPTION
+Takes an array of Commands (Functions/Aliases), or a Module, and generates appropriate Routes for the commands.
+
+.PARAMETER Commands
+An array of Commands to convert - if a Module is supplied, these Commands must be present within that Module.
+
+.PARAMETER Module
+A Module whose exported commands will be converted.
+
+.PARAMETER Method
+An override HTTP method to use when generating the Routes. If not supplied, Pode will make a best guess based on the Command's Verb.
+
+.PARAMETER Path
+An optional Path for the Route.
+
+.PARAMETER Middleware
+Like normal Routes, an array of Middleware that will be applied to all generated Routes.
+
+.PARAMETER NoVerb
+If supplied, the Command's Verb will not be included in the Route's path.
+
+.EXAMPLE
+ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware (Get-PodeAuthMiddleware -Name 'auth-name' -Sessionless)
+
+.EXAMPLE
+ConvertTo-PodeRoute -Module Pester -Path '/api'
+
+.EXAMPLE
+ConvertTo-PodeRoute -Commands @('Invoke-Pester') -Module Pester
+#>
+function ConvertTo-PodeRoute
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline=$true)]
+        [string[]]
+        $Commands,
+
+        [Parameter()]
+        [string]
+        $Module,
+
+        [Parameter()]
+        [ValidateSet('', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
+        [string]
+        $Method,
+
+        [Parameter()]
+        [string]
+        $Path = '/',
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [switch]
+        $NoVerb
+    )
+
+    # if a module was supplied, import it - then validate the commands
+    if (![string]::IsNullOrWhiteSpace($Module)) {
+        Import-PodeModule -Name $Module -Now
+
+        Write-Verbose "Getting exported commands from module"
+        $ModuleCommands = (Get-Module -Name $Module).ExportedCommands.Keys
+
+        # if commands were supplied validate them - otherwise use all exported ones
+        if (Test-IsEmpty $Commands) {
+            Write-Verbose "Using all commands in $($Module) for converting to routes"
+            $Commands = $ModuleCommands
+        }
+        else {
+            Write-Verbose "Validating supplied commands against module's exported commands"
+            foreach ($cmd in $Commands) {
+                if ($ModuleCommands -inotcontains $cmd) {
+                    throw "Module $($Module) does not contain function $($cmd) to convert to a Route"
+                }
+            }
+        }
+    }
+
+    # if there are no commands, fail
+    if (Test-IsEmpty $Commands) {
+        throw 'No commands supplied to convert to Routes'
+    }
+
+    # trim end trailing slashes from the path
+    $Path = $Path.TrimEnd('/')
+
+    # create the routes for each of the commands
+    foreach ($cmd in $Commands) {
+        # get module verb/noun and comvert verb to HTTP method
+        $split = ($cmd -split '\-')
+
+        if ($split.Length -ge 2) {
+            $verb = $split[0]
+            $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
+        }
+        else {
+            $verb = [string]::Empty
+            $noun = $split[0]
+        }
+
+        # determine the http method, or use the one passed
+        $_method = $Method
+        if ([string]::IsNullOrWhiteSpace($_method)) {
+            $_method = Convert-PodeFunctionVerbToHttpMethod -Verb $verb
+        }
+
+        # use the full function name, or remove the verb
+        $name = $cmd
+        if ($NoVerb) {
+            $name = $noun
+        }
+
+        # build the route's path
+        $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
+
+        # create the route
+        Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -ArgumentList $cmd -ScriptBlock {
+            param($e, $cmd)
+
+            # either get params from the QueryString or Payload
+            if ($e.Method -ieq 'get') {
+                $parameters = $e.Query
+            }
+            else {
+                $parameters = $e.Data
+            }
+
+            # invoke the function
+            $result = (. $cmd @parameters)
+
+            # if we have a result, convert it to json
+            if (!(Test-IsEmpty $result)) {
+                Write-PodeJsonResponse -Value $result -Depth 1
+            }
+        }
+    }
+}

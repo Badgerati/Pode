@@ -448,6 +448,7 @@ function Import-PodeModule
 
     # import the module now, if specified
     if ($Now) {
+        Write-Verbose "Importing module now: $($Path)"
         Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
     }
 }
