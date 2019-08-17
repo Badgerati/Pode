@@ -11,6 +11,8 @@ Also being changed is the `pode.json` configuration file, which is now a `server
 
 ## Authentication
 
+([Tutorial](../../../Tutorials/Authentication/Overview))
+
 The old `auth use` has been split into two to make it easier - there are now two functions that define authentication types (which retrieve credentials from the request object), and validators (which take the credentials and ensure the user is valid).
 
 For `auth check`, this has now been replaced with [`Get-PodeAuthMiddleware`], and the hashtable is now function parameters.
@@ -50,6 +52,8 @@ Cookies use to be done via actions following the `cookie` function, such as `coo
 
 ## Configuration
 
+([Tutorial](../../../Tutorials/Configuration))
+
 The `config` function has simply been renamed to [`Get-PodeConfig`].
 
 ### PSD1
@@ -84,6 +88,8 @@ would now be:
 
 ## Flash Messages
 
+([Tutorial](../../../Tutorials/Routes/Utilities/FlashMessages))
+
 Flash messages use to be done via actions following `flash` function, such as `flash add`. These actions are now the following functions:
 
 | Action | Function |
@@ -97,9 +103,13 @@ Flash messages use to be done via actions following `flash` function, such as `f
 
 ## GUI
 
+([Tutorial](../../../Tutorials/Misc/DesktopApp))
+
 The `gui` function use to take a Name with a hashtable of options. This function has now been renamed to [`Show-PodeGui`], and the options are all now function parameters.
 
 ## Handlers
+
+([Tutorial](../../../Tutorials/SmtpServer))
 
 The biggest change the Handlers is that you can now create multiple handlers for each of SMTP, TCP and Service - rather than just one. With this, the new [`Add-PodeHandler`] requires a `-Name` to be supplied.
 
@@ -121,6 +131,8 @@ Headers use to be done via actions following the `header` function, such as `hea
 | header exists | [`Test-PodeHeader`] |
 
 ## Logging
+
+([Tutorial](../../../Tutorials/Logging/Overview))
 
 Logging in Pode has had by far the biggest refactor, so big it's completely different - so it may just be worth looking at the tutorial.
 
@@ -155,6 +167,8 @@ You can now write items from anywhere in your server to a custom logger, includi
 
 ## Middleware
 
+([Tutorial](../../../Tutorials/Middleware/Overview))
+
 ### General
 
 Middleware has changed a fair bit, however, generally you'll just be using the [`Add-PodeMiddleware`] function with a `-ScriptBlock` which replaces the old `middleware` function. The only difference now is you're required to supply a `-Name` for the new [`Remove-PodeMiddleware`] function.
@@ -170,9 +184,13 @@ There is a new [`New-PodeMiddleware`] function which wil return a valid middlewa
 
 ### Sessions
 
+([Tutorial](../../../Tutorials/Middleware/Types/Sessions))
+
 The `session` function has now been replaced by the new [`Enable-PodeSessionMiddleware`] function. With the new function, not only will it automatically enabled session middleware for you, but the old `-Options` hashtable has now been converted into proper function parameters.
 
 ### CSRF
+
+([Tutorial](../../../Tutorials/Middleware/Types/CSRF))
 
 The `csrf` function used to take actions that defined what it did, such as `csrf token`. Now, each of these actions has been split up into their own functions:
 
@@ -187,6 +205,8 @@ The `csrf` function used to take actions that defined what it did, such as `csrf
     Similar to the old setup, the [`Initialize-PodeCsrf`] function must be called before you can use [`Get-PodeCsrfMiddleware`] or [`New-PodeCsrfToken`]. The [`Enable-PodeCsrfMiddleware`] does automatically call [`Initialize-PodeCsrf`], as well as configure CSRF globally.
 
 ## Importing Modules/Scripts
+
+([Tutorial](../../../Tutorials/ImportingModules))
 
 The functions to import and load Modules, Scripts and SnapIns have all changed to the following:
 
@@ -218,6 +238,8 @@ The old response helpers have all been updated:
 
 ## Routes
 
+([Tutorial](../../../Tutorials/Routes/Overview))
+
 ### Normal
 
 Normal routes defined via `route` can now be done using [`Add-PodeRoute`]. The parameters are practically the same, such as `-Method`, `-Path` and `-ScriptBlock`.
@@ -240,6 +262,8 @@ Static routes that used to be setup using `route static` are now setup using the
 
 ## Schedules
 
+([Tutorial](../../../Tutorials/Schedules))
+
 Schedules haven't changed too much, though there are now some new functions to remove and clear schedules. The main one is that `schedule` has been changed to [`Add-PodeSchedule`].
 
 | Function |
@@ -250,11 +274,15 @@ Schedules haven't changed too much, though there are now some new functions to r
 
 ## Server
 
+([Tutorial](../../../Tutorials/Basics))
+
 The `server` function has had a fair overhaul. A lot of the parameters which were old/legacy have now been removed - such as `-Port`, `-IP`, and all of the `-Http` swicthes.
 
 The `server` function itself has been renamed to [`Start-PodeServer`].
 
 ## State
+
+([Tutorial](../../../Tutorials/SharedState))
 
 The shared state use to be done via actions following the `state` function, such as `state set`. These actions are now the following functions:
 
@@ -268,6 +296,8 @@ The shared state use to be done via actions following the `state` function, such
 | state test | [`Test-PodeState`] |
 
 ## Timers
+
+([Tutorial](../../../Tutorials/Timers))
 
 Timers haven't changed too much, though there are now some new functions to remove and clear timers. The main one is that `timer` has been changed to [`Add-PodeTimer`].
 
