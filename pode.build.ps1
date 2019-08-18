@@ -13,7 +13,7 @@ $Versions = @{
     Coveralls = '1.0.25'
     SevenZip = '18.5.0.20180730'
     Checksum = '0.2.0'
-    MkDocsTheme = '4.2.0'
+    MkDocsTheme = '4.4.0'
     PlatyPS = '0.14.0'
 }
 
