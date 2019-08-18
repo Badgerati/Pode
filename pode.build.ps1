@@ -250,14 +250,15 @@ task DocsHelpBuild DocsDeps, {
         $depth = ($_.FullName.Replace($path, [string]::Empty).trim('\/') -split '[\\/]').Length
 
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
-            if ($_ -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>[^(])') {
+            $line = $_
+
+            while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>[^(])') {
                 $name = $Matches['name']
                 $char = $Matches['char']
-                $_ -ireplace '\[`[a-z]+\-pode[a-z]+`\][^(]', "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)"
+                $line = ($line -ireplace "\[``$($name)``\][^(]", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
             }
-            else {
-                $_
-            }
+
+            $line
         })
 
         $content | Out-File -FilePath $_.FullName -Force -Encoding ascii
