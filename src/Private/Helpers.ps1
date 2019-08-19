@@ -472,18 +472,27 @@ function Get-PodeIPAddress
         $IP
     )
 
+    # any address for IPv4
     if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
         return [System.Net.IPAddress]::Any
     }
 
+    # any address for IPv6
     if (($IP -ieq '::') -or ($IP -ieq '[::]')) {
         return [System.Net.IPAddress]::IPv6Any
     }
 
+    # localhost
+    if ($IP -ieq 'localhost') {
+        return [System.Net.IPAddress]::Loopback
+    }
+
+    # hostname
     if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
         return $IP
     }
 
+    # raw ip
     return [System.Net.IPAddress]::Parse($IP)
 }
 
@@ -1010,8 +1019,8 @@ function ConvertFrom-PodeRequestContent
 
     # result object for data/files
     $Result = @{
-        'Data' = @{};
-        'Files' = @{};
+        Data = @{}
+        Files = @{}
     }
 
     # if there is no content-type then do nothing
@@ -1032,7 +1041,12 @@ function ConvertFrom-PodeRequestContent
             }
 
             default {
-                $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                if ($PodeContext.Server.IsKestrel) {
+                    $Content = Read-PodeStreamToEnd -Stream $Request.Body
+                }
+                else {
+                    $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                }
             }
         }
 
@@ -1067,7 +1081,13 @@ function ConvertFrom-PodeRequestContent
 
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
-            $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            if ($PodeContext.Server.IsKestrel) {
+                $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.Body
+            }
+            else {
+                $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            }
+
             $Lines = Get-PodeByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
 
             # get the indexes for boundary lines (start and end)
@@ -1439,7 +1459,7 @@ function Get-PodeModuleRootPath
 
 function Get-PodeUrl
 {
-    return "$($WebEvent.Protocol)://$($WebEvent.Endpoint)$($WebEvent.Path)"
+    return "$($WebEvent.Protocol.Scheme)://$($WebEvent.Endpoint)$($WebEvent.Path)"
 }
 
 function Find-PodeErrorPage

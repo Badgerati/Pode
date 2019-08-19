@@ -15,6 +15,8 @@ $Versions = @{
     Checksum = '0.2.0'
     MkDocsTheme = '4.4.0'
     PlatyPS = '0.14.0'
+    PSLambda = '0.2.0'
+    AspNetCore = '2.2.5'
 }
 
 <#
@@ -168,6 +170,19 @@ task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
 
 # Synopsis: Package up the Module
 task Pack -If (Test-PodeBuildIsWindows) 7Zip, ChocoPack
+
+
+<#
+# Building
+#>
+
+#TODO: Support for xplat, and use Save-Module instead - for containers
+# Synopsis: Build and Download dependencies
+task Build {
+    choco install nuget.commandline -y
+    Install-Module PSLambda -RequiredVersion $Versions.PSLambda -Force
+    exec { nuget install Microsoft.AspNetCore.App -Version $Versions.AspNetCore -OutputDirectory "./src/bin/nuget" }
+}
 
 
 <#

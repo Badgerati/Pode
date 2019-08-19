@@ -60,7 +60,7 @@ Start-PodeServer {
     $reject_ip = {
         param($session)
 
-        if ($session.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
+        if ($session.RemoteIpAddress.IPAddressToString -ieq '10.10.1.8') {
             Set-PodeResponseStatus -Code 403
             return $false
         }

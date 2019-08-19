@@ -11,7 +11,7 @@
     RootModule = 'Pode.psm1'
 
     # Version number of this module.
-    ModuleVersion = '$version$'
+    ModuleVersion = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID = 'e3ea217c-fc3d-406b-95d5-4304ab06c6af'
@@ -29,7 +29,67 @@
     PowerShellVersion = '5.0'
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @('System.Web')
+    RequiredAssemblies = @(
+        # general assemblies
+        'System.Web'
+
+        # before we can make a WebHostBuilder we need these
+        "./bin/nuget/Microsoft.AspNetCore.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Hosting.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Hosting.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Hosting.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Hosting.Abstractions.dll"
+        "./bin/nuget/Microsoft.Extensions.Hosting.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Hosting.Abstractions.dll"
+        "./bin/nuget/Microsoft.Extensions.DependencyInjection.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll"
+        "./bin/nuget/Microsoft.Extensions.Configuration.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Configuration.Abstractions.dll"
+        "./bin/nuget/Microsoft.Extensions.FileProviders.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.FileProviders.Abstractions.dll"
+        "./bin/nuget/Microsoft.Extensions.Configuration.EnvironmentVariables.2.2.4/lib/netstandard2.0/Microsoft.Extensions.Configuration.EnvironmentVariables.dll"
+        "./bin/nuget/Microsoft.Extensions.Configuration.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Configuration.dll"
+        "./bin/nuget/Microsoft.Extensions.Primitives.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Primitives.dll"
+
+         # before it would .build() we need these
+        "./bin/nuget/Microsoft.AspNetCore.Server.Kestrel.Core.2.2.0/lib/netcoreapp2.1/Microsoft.AspNetCore.Server.Kestrel.Core.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Server.Kestrel.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Server.Kestrel.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.dll"
+        "./bin/nuget/Microsoft.Extensions.Configuration.FileExtensions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Configuration.FileExtensions.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Hosting.Server.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Hosting.Server.Abstractions.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Http.Features.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Http.Features.dll"
+        "./bin/nuget/Microsoft.Extensions.Logging.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.dll"
+        "./bin/nuget/Microsoft.Extensions.Logging.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Logging.dll"
+        "./bin/nuget/Microsoft.Extensions.Logging.Configuration.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Logging.Configuration.dll"
+        "./bin/nuget/Microsoft.Extensions.Logging.Debug.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Logging.Debug.dll"
+        "./bin/nuget/Microsoft.Extensions.Logging.Console.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Logging.Console.dll"
+        "./bin/nuget/Microsoft.Extensions.DependencyInjection.2.2.0/lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Http.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Http.Abstractions.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Http.2.2.2/lib/netstandard2.0/Microsoft.AspNetCore.Http.dll"
+        "./bin/nuget/Microsoft.Extensions.Options.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Options.dll"
+        "./bin/nuget/Microsoft.Extensions.ObjectPool.2.2.0/lib/netstandard2.0/Microsoft.Extensions.ObjectPool.dll"
+        "./bin/nuget/Microsoft.Extensions.FileProviders.Physical.2.2.0/lib/netstandard2.0/Microsoft.Extensions.FileProviders.Physical.dll"
+        "./bin/nuget/Microsoft.Extensions.FileProviders.Composite.2.2.0/lib/netstandard2.0/Microsoft.Extensions.FileProviders.Composite.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.2.2.1/lib/netstandard2.0/Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Diagnostics.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Diagnostics.Abstractions.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Diagnostics.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Diagnostics.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Http.Extensions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Http.Extensions.dll"
+        "./bin/nuget/Microsoft.AspNetCore.HttpOverrides.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.HttpOverrides.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Routing.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Routing.Abstractions.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Routing.2.2.2/lib/netstandard2.0/Microsoft.AspNetCore.Routing.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Server.IISIntegration.2.2.1/lib/netstandard2.0/Microsoft.AspNetCore.Server.IISIntegration.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Server.Kestrel.Https.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Server.Kestrel.Https.dll"
+        "./bin/nuget/Microsoft.AspNetCore.WebUtilities.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.WebUtilities.dll"
+        "./bin/nuget/Microsoft.Extensions.Configuration.Binder.2.2.4/lib/netstandard2.0/Microsoft.Extensions.Configuration.Binder.dll"
+        "./bin/nuget/Microsoft.Extensions.Configuration.Json.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Configuration.Json.dll"
+        "./bin/nuget/Microsoft.Extensions.FileSystemGlobbing.2.2.0/lib/netstandard2.0/Microsoft.Extensions.FileSystemGlobbing.dll"
+        "./bin/nuget/Microsoft.Extensions.Logging.Console.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Logging.Console.dll"
+        "./bin/nuget/Microsoft.Extensions.Options.ConfigurationExtensions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Options.ConfigurationExtensions.dll"
+        "./bin/nuget/Microsoft.Net.Http.Headers.2.2.0/lib/netstandard2.0/Microsoft.Net.Http.Headers.dll"
+        "./bin/nuget/Microsoft.Extensions.FileProviders.Embedded.2.2.0/lib/netstandard2.0/Microsoft.Extensions.FileProviders.Embedded.dll"
+
+         # in order to configure static files, we need
+        "./bin/nuget/Microsoft.AspNetCore.StaticFiles.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.StaticFiles.dll"
+        "./bin/nuget/Microsoft.Extensions.WebEncoders.2.2.0/lib/netstandard2.0/Microsoft.Extensions.WebEncoders.dll"
+
+         # in order to .Start() we need
+        "./bin/nuget/System.IO.Pipelines.4.5.3/lib/netstandard2.0/System.IO.Pipelines.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Connections.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Connections.Abstractions.dll"
+    )
 
     # Functions to export from this Module
     FunctionsToExport = @(

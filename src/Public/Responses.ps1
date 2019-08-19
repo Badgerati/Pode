@@ -52,19 +52,26 @@ function Set-PodeResponseAttachment
 
         # else if normal, stream the content back
         else {
-            # setup the response details and headers
-            $WebEvent.Response.ContentLength64 = $fs.Length
-            $WebEvent.Response.SendChunked = $false
+            if ($PodeContext.server.IsKestrel) {
+                Wait-PodeTask -Task ([Microsoft.AspNetCore.Http.SendFileResponseExtensions]::SendFileAsync(
+                    $WebEvent.Response, (Get-Item $Path), [System.Threading.CancellationToken]::None
+                )) | Out-Null
+            }
+            else {
+                # setup the response details and headers
+                $WebEvent.Response.ContentLength64 = $fs.Length
+                $WebEvent.Response.SendChunked = $false
 
-            # set file as an attachment on the response
-            $buffer = [byte[]]::new(64 * 1024)
-            $read = 0
+                # set file as an attachment on the response
+                $buffer = [byte[]]::new(64 * 1024)
+                $read = 0
 
-            # open up the file as a stream
-            $fs = (Get-Item $Path).OpenRead()
+                # open up the file as a stream
+                $fs = (Get-Item $Path).OpenRead()
 
-            while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+                while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                    $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+                }
             }
         }
     }
@@ -142,8 +149,21 @@ function Write-PodeTextResponse
 
     # if the response stream isn't writable, return
     $res = $WebEvent.Response
-    if (($null -eq $res) -or (!$PodeContext.Server.IsServerless -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite))) {
+    if ($null -eq $res) {
         return
+    }
+
+    if (!$PodeContext.Server.IsServerless) {
+        if ($PodeContext.Server.IsKestrel) {
+            if (($null -eq $res.Body) -or !$res.Body.CanWrite) {
+                return
+            }
+        }
+        else {
+            if (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite) {
+                return
+            }
+        }
     }
 
     # set a cache value
@@ -179,12 +199,19 @@ function Write-PodeTextResponse
         }
 
         # write the content to the response stream
-        $res.ContentLength64 = $Bytes.Length
-
         try {
-            $ms = New-Object -TypeName System.IO.MemoryStream
-            $ms.Write($Bytes, 0, $Bytes.Length)
-            $ms.WriteTo($res.OutputStream)
+            if ($PodeContext.Server.IsKestrel) {
+                $res.ContentLength = $Bytes.Length
+                $ms = New-Object -TypeName System.IO.MemoryStream
+                $ms.Write($Bytes, 0, $Bytes.Length)
+                $ms.WriteTo($res.Body)
+            }
+            else {
+                $res.ContentLength64 = $Bytes.Length
+                $ms = New-Object -TypeName System.IO.MemoryStream
+                $ms.Write($Bytes, 0, $Bytes.Length)
+                $ms.WriteTo($res.OutputStream)
+            }
         }
         catch {
             if ((Test-PodeValidNetworkFailure $_.Exception)) {
@@ -686,7 +713,7 @@ function Set-PodeResponseStatus
         $Description = (Get-PodeStatusDescription -StatusCode $Code)
     }
 
-    if (!$PodeContext.Server.IsServerless -and ![string]::IsNullOrWhiteSpace($Description)) {
+    if (!$PodeContext.Server.IsServerless -and !$PodeContext.Server.IsKestrel -and ![string]::IsNullOrWhiteSpace($Description)) {
         $WebEvent.Response.StatusDescription = $Description
     }
 

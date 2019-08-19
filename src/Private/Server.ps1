@@ -49,7 +49,12 @@ function Start-PodeInternalServer
             }
 
             { $_ -ieq 'HTTP' -or $_ -ieq 'HTTPS' } {
-                Start-PodeWebServer -Browse:$Browse
+                if ($PodeContext.Server.IsKestrel) {
+                    Start-PodeKestrelServer -Browse:$Browse
+                }
+                else {
+                    Start-PodeWebServer -Browse:$Browse
+                }
             }
 
             'SERVICE' {

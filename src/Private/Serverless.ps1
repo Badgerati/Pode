@@ -36,7 +36,10 @@ function Start-PodeAzFuncServer
                 Lockable = $PodeContext.Lockable
                 Method = $request.Method.ToLowerInvariant()
                 Query = $request.Query
-                Protocol = ($request.Url -split '://')[0]
+                Protocol = @{
+                    Scheme = ($request.Url -split '://')[0]
+                    Version = [string]::Empty
+                }
                 Endpoint = ((Get-PodeHeader -Name 'host') -split ':')[0]
                 ContentType = (Get-PodeHeader -Name 'content-type')
                 ErrorType = $null
@@ -59,7 +62,7 @@ function Start-PodeAzFuncServer
             # invoke middleware
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                 # get the route logic
-                $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
+                $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol.Scheme `
                     -Endpoint $WebEvent.Endpoint -CheckWildMethod
 
                 # invoke route and custom middleware
@@ -129,7 +132,10 @@ function Start-PodeAwsLambdaServer
                 Path = $request.path
                 Method = $request.httpMethod.ToLowerInvariant()
                 Query = $request.queryStringParameters
-                Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
+                Protocol = @{
+                    Scheme = (Get-PodeHeader -Name 'X-Forwarded-Proto')
+                    Version = [string]::Empty
+                }
                 Endpoint = ((Get-PodeHeader -Name 'Host') -split ':')[0]
                 ContentType = (Get-PodeHeader -Name 'Content-Type')
                 ErrorType = $null
@@ -143,7 +149,7 @@ function Start-PodeAwsLambdaServer
             # invoke middleware
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                 # get the route logic
-                $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
+                $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol.Scheme `
                     -Endpoint $WebEvent.Endpoint -CheckWildMethod
 
                 # invoke route and custom middleware

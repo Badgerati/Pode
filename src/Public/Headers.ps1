@@ -30,6 +30,9 @@ function Add-PodeHeader
     if ($PodeContext.Server.IsServerless) {
         $WebEvent.Response.Headers[$Name] = $Value
     }
+    elseif ($PodeContext.Server.IsKestrel) {
+        [Microsoft.AspNetCore.Http.HeaderDictionaryExtensions]::Append($WebEvent.Response.Headers, $Name, $Value) | Out-Null
+    }
     else {
         $WebEvent.Response.AppendHeader($Name, $Value) | Out-Null
     }
@@ -126,6 +129,9 @@ function Set-PodeHeader
 
     if ($PodeContext.Server.IsServerless) {
         $WebEvent.Response.Headers[$Name] = $Value
+    }
+    elseif ($PodeContext.Server.IsKestrel) {
+        [Microsoft.AspNetCore.Http.HeaderDictionaryExtensions]::Append($WebEvent.Response.Headers, $Name, $Value) | Out-Null
     }
     else {
         $WebEvent.Response.AddHeader($Name, $Value) | Out-Null

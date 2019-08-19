@@ -1,4 +1,51 @@
+# import pslambda if it's there
+if ($null -ne (Get-Module -Name PSLambda -ListAvailable)) {
+    Import-Module -Name PSLambda -RequiredVersion 0.2.0 -Force
+    $env:ASPNETCORE_SUPPRESSSTATUSMESSAGES = 'true'
+}
+
+# add system.web, as some machines seem to not have it pre-loaded
 Add-Type -AssemblyName System.Web
+
+# add pode task class
+Add-Type @"
+    using System.Threading.Tasks;
+    using System.Threading;
+    using System.Collections;
+
+    public sealed class PodeTask
+    {
+        public static Task CreateDelayTask(CancellationToken token)
+        {
+            var task = new Task(() => {
+                try {
+                    var itask = Task.Delay(30000, token);
+                    itask.Wait();
+                }
+                catch { }
+            });
+
+            return task;
+        }
+
+        public static Task CreateContextTask(Stack contexts)
+        {
+            var task = new Task<object>(() => {
+                while (true) {
+                    lock(contexts) {
+                        if (contexts.Count > 0) {
+                            return contexts.Pop();
+                        }
+                    }
+
+                    Thread.Sleep(100);
+                }
+            });
+
+            return task;
+        }
+    }
+"@
 
 # import everything if in a runspace
 if ($PODE_SCOPE_RUNSPACE) {

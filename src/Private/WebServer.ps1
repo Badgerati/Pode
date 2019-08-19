@@ -18,36 +18,7 @@ function Start-PodeWebServer
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
 
     # work out which endpoints to listen on
-    $endpoints = @()
-    $PodeContext.Server.Endpoints | ForEach-Object {
-        # get the protocol
-        $_protocol = (Resolve-PodeValue -Check $_.Ssl -TrueValue 'https' -FalseValue 'http')
-
-        # get the ip address
-        $_ip = "$($_.Address)"
-        if ($_ip -ieq '0.0.0.0') {
-            $_ip = '*'
-        }
-
-        # get the port
-        $_port = [int]($_.Port)
-        if ($_port -eq 0) {
-            $_port = (Resolve-PodeValue $_.Ssl -TrueValue 8443 -FalseValue 8080)
-        }
-
-        # if this endpoint is https, generate a self-signed cert or bind an existing one
-        if ($_.Ssl) {
-            $addr = (Resolve-PodeValue -Check $_.IsIPAddress -TrueValue $_.Address -FalseValue $_.HostName)
-            $selfSigned = $_.Certificate.SelfSigned
-            Set-PodeCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name -Thumbprint $_.Certificate.Thumbprint -SelfSigned:$selfSigned
-        }
-
-        # add endpoint to list
-        $endpoints += @{
-            Prefix = "$($_protocol)://$($_ip):$($_port)/"
-            HostName = "$($_protocol)://$($_.HostName):$($_port)/"
-        }
-    }
+    $endpoints = Get-PodeListenEndpoints
 
     # create the listener on http and/or https
     $listener = New-Object System.Net.HttpListener
@@ -108,9 +79,13 @@ function Start-PodeWebServer
                         Lockable = $PodeContext.Lockable
                         Path = ($request.RawUrl -isplit "\?")[0]
                         Method = $request.HttpMethod.ToLowerInvariant()
-                        Protocol = $request.Url.Scheme
+                        Protocol = @{
+                            Scheme = $request.Url.Scheme
+                            Version = $request.ProtocolVersion
+                        }
                         Endpoint = $request.Url.Authority
                         ContentType = $request.ContentType
+                        RemoteIpAddress = $request.RemoteEndPoint.Address
                         ErrorType = $null
                         Cookies = $request.Cookies
                         PendingCookies = @{}
@@ -125,7 +100,7 @@ function Start-PodeWebServer
                     # invoke middleware
                     if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                         # get the route logic
-                        $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
+                        $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol.Scheme `
                             -Endpoint $WebEvent.Endpoint -CheckWildMethod
 
                         # invoke route and custom middleware

@@ -31,6 +31,9 @@ function New-PodeContext
     # are we running in a serverless context
     $isServerless = (@('AzureFunctions', 'AwsLambda') -icontains $ServerType)
 
+    # are we running as kestrel?
+    $isKestrel = ($ServerType -ieq 'Kestrel')
+
     # ensure threads are always >0, for to 1 if we're serverless
     if (($Threads -le 0) -or $isServerless) {
         $Threads = 1
@@ -70,9 +73,15 @@ function New-PodeContext
         $ctx.Server.Type = 'SERVICE'
     }
 
+    # setup whether the server is serverless
     if ($isServerless) {
         $ctx.Server.Type = $ServerType.ToUpperInvariant()
         $ctx.Server.IsServerless = $isServerless
+    }
+
+    # setup whether the server is running using kestrel
+    if ($isKestrel) {
+        $ctx.Server.IsKestrel = $isKestrel
     }
 
     # set the IP address details
@@ -392,4 +401,43 @@ function New-PodeAutoRestartServer
             $PodeContext.Tokens.Restart.Cancel()
         }
     }
+}
+
+function Get-PodeListenEndpoints
+{
+    $endpoints = @()
+
+    $PodeContext.Server.Endpoints | ForEach-Object {
+        # get the protocol
+        $_protocol = (Resolve-PodeValue -Check $_.Ssl -TrueValue 'https' -FalseValue 'http')
+
+        # get the ip address
+        $_ip = "$($_.Address)"
+        if (($_ip -ieq '0.0.0.0') -and !$PodeContext.Server.IsKestrel) {
+            $_ip = '*'
+        }
+
+        # get the port
+        $_port = [int]($_.Port)
+        if ($_port -eq 0) {
+            $_port = (Resolve-PodeValue $_.Ssl -TrueValue 8443 -FalseValue 8080)
+        }
+
+        # if this endpoint is https, and not kestrel, generate a self-signed cert or bind an existing one
+        if ($_.Ssl -and !$PodeContext.Server.IsKestrel) {
+            $addr = (Resolve-PodeValue -Check $_.IsIPAddress -TrueValue $_.Address -FalseValue $_.HostName)
+            $selfSigned = $_.Certificate.SelfSigned
+            Set-PodeCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name -Thumbprint $_.Certificate.Thumbprint -SelfSigned:$selfSigned
+        }
+
+        # add endpoint to list
+        $endpoints += @{
+            Prefix = "$($_protocol)://$($_ip):$($_port)/"
+            IP = $_ip
+            Port = $_port
+            HostName = "$($_protocol)://$($_.HostName):$($_port)/"
+        }
+    }
+
+    return $endpoints
 }

@@ -87,7 +87,7 @@ function Get-PodeAccessMiddleware
         param($s)
 
         # ensure the request IP address is allowed
-        if (!(Test-PodeIPAccess -IP $s.Request.RemoteEndPoint.Address)) {
+        if (!(Test-PodeIPAccess -IP $s.RemoteIpAddress)) {
             Set-PodeResponseStatus -Code 403
             return $false
         }
@@ -103,7 +103,7 @@ function Get-PodeLimitMiddleware
         param($s)
 
         # ensure the request IP address has not hit a rate limit
-        if (!(Test-PodeIPLimit -IP $s.Request.RemoteEndPoint.Address)) {
+        if (!(Test-PodeIPLimit -IP $s.RemoteIpAddress)) {
             Set-PodeResponseStatus -Code 429
             return $false
         }
@@ -119,7 +119,7 @@ function Get-PodePublicMiddleware
         param($e)
 
         # get the static file path
-        $info = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+        $info = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol.Scheme -Endpoint $e.Endpoint
         if ([string]::IsNullOrWhiteSpace($info.Path)) {
             return $true
         }
@@ -160,7 +160,7 @@ function Get-PodeRouteValidateMiddleware
             param($s)
 
             # ensure the path has a route
-            $route = Get-PodeRoute -Method $s.Method -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint -CheckWildMethod
+            $route = Get-PodeRoute -Method $s.Method -Route $s.Path -Protocol $s.Protocol.Scheme -Endpoint $s.Endpoint -CheckWildMethod
 
             # if there's no route defined, it's a 404
             if ($null -eq $route) {

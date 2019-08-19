@@ -64,7 +64,7 @@ Start-PodeServer {
         param($event)
 
         # forbid access to the stated IP address
-        if ($event.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
+        if ($event.RemoteIpAddress.IPAddressToString -ieq '10.10.1.8') {
             Set-PodeResponseStatus -Code 403
             return $false
         }

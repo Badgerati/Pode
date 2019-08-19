@@ -72,7 +72,7 @@ function Start-PodeServer
         $Request,
 
         [Parameter()]
-        [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
+        [ValidateSet('', 'AzureFunctions', 'AwsLambda', 'Kestrel')]
         [string]
         $Type,
 

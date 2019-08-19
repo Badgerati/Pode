@@ -76,6 +76,12 @@ docker pull badgerati/pode
 
 Pull Requests, Bug Reports and Feature Requests are welcome! Feel free to help out with Issues and Projects!
 
+To build and install dependencies:
+
+```powershell
+Invoke-Build Build
+```
+
 To run the unit tests, run the following command from the root of the repository (this will auto-install Pester for you):
 
 ```powershell

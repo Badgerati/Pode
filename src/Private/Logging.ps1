@@ -162,14 +162,7 @@ function Write-PodeRequestLog
 {
     param (
         [Parameter(Mandatory=$true)]
-        $Request,
-
-        [Parameter(Mandatory=$true)]
-        $Response,
-
-        [Parameter()]
-        [string]
-        $Path
+        $WebEvent
     )
 
     # do nothing if logging is disabled, or request logging isn't setup
@@ -180,26 +173,29 @@ function Write-PodeRequestLog
 
     # build a request object
     $item = @{
-        Host = $Request.RemoteEndPoint.Address.IPAddressToString
+        Host = $WebEvent.RemoteIpAddress
         RfcUserIdentity = '-'
         User = '-'
         Date = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
         Request = @{
-            Method = $Request.HttpMethod.ToUpperInvariant()
-            Resource = $Path
-            Protocol = "HTTP/$($Request.ProtocolVersion)"
-            Referrer = $Request.UrlReferrer
-            Agent = $Request.UserAgent
+            Method = $WebEvent.Method.ToUpperInvariant()
+            Resource = $WebEvent.Path
+            Protocol = "HTTP/$($WebEvent.Protocol.Version)"
+            Referrer = $WebEvent.Request.UrlReferrer
+            Agent = $WebEvent.Request.Headers['User-Agent']
         }
         Response = @{
-            StatusCode = $Response.StatusCode
-            StatusDescription = $Response.StatusDescription
+            StatusCode = $WebEvent.Response.StatusCode
+            StatusDescription = $WebEvent.Response.StatusDescription
             Size = '-'
         }
     }
 
-    if ($Response.ContentLength64 -gt 0) {
-        $item.Response.Size = $Response.ContentLength64
+    if ($WebEvent.Response.ContentLength64 -gt 0) {
+        $item.Response.Size = $WebEvent.Response.ContentLength64
+    }
+    elseif ($WebEvent.Response.ContentLength -gt 0) {
+        $item.Response.Size = $WebEvent.Response.ContentLength
     }
 
     # add the item to be processed
@@ -227,7 +223,7 @@ function Add-PodeRequestLogEndware
     $WebEvent.OnEnd += @{
         Logic = {
             param($e)
-            Write-PodeRequestLog -Request $e.Request -Response $e.Response -Path $e.Path
+            Write-PodeRequestLog -WebEvent $e
         }
     }
 }
