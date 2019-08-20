@@ -155,7 +155,7 @@ function Write-PodeTextResponse
 
     if (!$PodeContext.Server.IsServerless) {
         if ($PodeContext.Server.IsKestrel) {
-            if (($null -eq $res.Body) -or !$res.Body.CanWrite) {
+            if (($null -eq $res.Body) -or !$res.Body.CanWrite -or $res.HasStarted) {
                 return
             }
         }

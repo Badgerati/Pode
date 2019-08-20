@@ -26,11 +26,11 @@ class PodeKestrelListener
     [Task] AddContext($context) {
         $token = [System.Threading.CancellationTokenSource]::new()
         $h = @{
-            'Context' = $context;
-            'Token'= $token;
+            Context = $context
+            Token = $token
         }
 
-        $task = [PodeTask]::CreateDelayTask($token.Token)
+        $task = [PodeTask]::CreateDelayTask($token)
         $task.Start()
 
         $this.Contexts.Enqueue($h)
@@ -138,6 +138,9 @@ function Start-PodeKestrelServer
             {
                 # get request and response
                 $container = (Wait-PodeTask -Task $Listener.GetContextAsync())
+                if ($container.Token.IsCancellationRequested) {
+                    continue
+                }
 
                 try
                 {

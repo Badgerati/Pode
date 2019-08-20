@@ -19,12 +19,13 @@ Add-Type @"
 
     public sealed class PodeTask
     {
-        public static Task CreateDelayTask(CancellationToken token)
+        public static Task CreateDelayTask(CancellationTokenSource token)
         {
             var task = new Task(() => {
                 try {
-                    var itask = Task.Delay(30000, token);
+                    var itask = Task.Delay(30000, token.Token);
                     itask.Wait();
+                    token.Cancel();
                 }
                 catch { }
             });
@@ -34,18 +35,16 @@ Add-Type @"
 
         public static Task CreateContextTask(ConcurrentQueue<object> contexts)
         {
-            var task = new Task<object>(() => {
+            return (new Task<object>(() => {
                 while (true) {
                     var item = default(object);
                     if (contexts.TryDequeue(out item)) {
                         return item;
                     }
 
-                    Thread.Sleep(25);
+                    Thread.Sleep(10);
                 }
-            });
-
-            return task;
+            }));
         }
     }
 "@
