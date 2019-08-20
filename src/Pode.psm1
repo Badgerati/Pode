@@ -32,7 +32,6 @@ Add-Type @"
             return task;
         }
 
-        //public static Task CreateContextTask(Stack contexts)
         public static Task CreateContextTask(ConcurrentQueue<object> contexts)
         {
             var task = new Task<object>(() => {
@@ -42,7 +41,7 @@ Add-Type @"
                         return item;
                     }
 
-                    Thread.Sleep(100);
+                    Thread.Sleep(25);
                 }
             });
 

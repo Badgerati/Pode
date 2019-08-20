@@ -16,15 +16,6 @@ Start-PodeServer -Threads 2 -Type Kestrel -Browse {
     Add-PodeEndpoint -Address localhost:$Port -Protocol Http
     Add-PodeEndpoint -Address localhost:8090 -Protocol Http
 
-    # allow the local ip and some other ips
-    Add-PodeAccessRule -Access Allow -Type IP -Values @('127.0.0.1', '[::1]')
-    Add-PodeAccessRule -Access Allow -Type IP -Values @('192.169.0.1', '192.168.0.2')
-
-    # deny an ip
-    Add-PodeAccessRule -Access Deny -Type IP -Values 10.10.10.10
-    Add-PodeAccessRule -Access Deny -Type IP -Values '10.10.0.0/24'
-    Add-PodeAccessRule -Access Deny -Type IP -Values all
-
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
