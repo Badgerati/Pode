@@ -36,6 +36,7 @@
         # before we can make a WebHostBuilder we need these
         "./bin/nuget/Microsoft.AspNetCore.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.dll"
         "./bin/nuget/Microsoft.AspNetCore.Hosting.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Hosting.dll"
+        "./bin/nuget/Microsoft.AspNetCore.Authentication.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Authentication.Abstractions.dll"
         "./bin/nuget/Microsoft.AspNetCore.Hosting.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.AspNetCore.Hosting.Abstractions.dll"
         "./bin/nuget/Microsoft.Extensions.Hosting.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.Hosting.Abstractions.dll"
         "./bin/nuget/Microsoft.Extensions.DependencyInjection.Abstractions.2.2.0/lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll"

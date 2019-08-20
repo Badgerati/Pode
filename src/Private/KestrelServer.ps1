@@ -1,5 +1,6 @@
 using namespace System.Threading
 using namespace System.Threading.Tasks
+using namespace System.Collections.Concurrent
 using namespace Microsoft.AspNetCore
 using namespace Microsoft.AspNetCore.Hosting
 using namespace Microsoft.AspNetCore.Builder
@@ -20,9 +21,9 @@ class PodeKestrelListener
         return [PodeKestrelListener]::instance
     }
 
-     [System.Collections.Stack] $Contexts = [System.Collections.Stack]::new(1000)
+    [ConcurrentQueue[object]] $Contexts = [ConcurrentQueue[object]]::new()
 
-     [Task] AddContext($context) {
+    [Task] AddContext($context) {
         $token = [System.Threading.CancellationTokenSource]::new()
         $h = @{
             'Context' = $context;
@@ -32,7 +33,7 @@ class PodeKestrelListener
         $task = [PodeTask]::CreateDelayTask($token.Token)
         $task.Start()
 
-        $this.Contexts.Push($h)
+        $this.Contexts.Enqueue($h)
         return $task
     }
 
@@ -40,10 +41,6 @@ class PodeKestrelListener
         $task = [PodeTask]::CreateContextTask($this.Contexts)
         $task.Start()
         return $task
-    }
-
-    [int] Count() {
-        return $this.Contexts.Count
     }
 }
 
@@ -53,19 +50,16 @@ class PodeKestrelStartup
         $listener = [PodeKestrelListener]::GetInstance()
 
         $r = [RouteHandler]::new([RequestDelegate][PSDelegate]{
-            param(
-                [Parameter()]
-                [DefaultHttpContext]
-                $Context
-            )
+            param([DefaultHttpContext]$context)
 
-            $task = $listener.AddContext($Context)
+            $task = $listener.AddContext($context)
             $task.GetAwaiter()
             return $task
         })
 
         $rb = [RouteBuilder]::new($app, $r)
         [MapRouteRouteBuilderExtensions]::MapRoute($rb, "Pode Sub-Routes", "{*url}") | Out-Null
+
         $routes = $rb.Build()
         [RoutingBuilderExtensions]::UseRouter($app, $routes) | Out-Null
     }
@@ -99,13 +93,10 @@ function Start-PodeKestrelServer
     $builder = [WebHostBuilder]::new()
     $builder = [WebHostBuilderExtensions]::UseStartup($builder, [PodeKestrelStartup])
     $builder = [WebHostBuilderKestrelExtensions]::UseKestrel($builder, [Action[KestrelServerOptions]] {
-        param(
-            [Parameter()]
-            $Options
-        )
+        param($options)
 
         foreach ($endpoint in $endpoints) {
-            $Options.Listen([IPAddress]$endpoint.IP, $endpoint.Port) | Out-Null
+            $options.Listen([IPAddress]$endpoint.IP, $endpoint.Port) | Out-Null
         }
 
         #TODO: Listen on the endpoints supplied - and get certs working

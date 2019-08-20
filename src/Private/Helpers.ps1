@@ -990,6 +990,7 @@ function Test-PodeValidNetworkFailure
     $msgs = @(
         '*network name is no longer available*',
         '*nonexistent network connection*',
+        '*the response has completed*',
         '*broken pipe*'
     )
 

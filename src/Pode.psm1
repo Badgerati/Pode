@@ -1,7 +1,10 @@
 # import pslambda if it's there
 if ($null -ne (Get-Module -Name PSLambda -ListAvailable)) {
     Import-Module -Name PSLambda -RequiredVersion 0.2.0 -Force
-    $env:ASPNETCORE_SUPPRESSSTATUSMESSAGES = 'true'
+
+    if ([string]::IsNullOrWhiteSpace($env:ASPNETCORE_SUPPRESSSTATUSMESSAGES)) {
+        $env:ASPNETCORE_SUPPRESSSTATUSMESSAGES = 'true'
+    }
 }
 
 # add system.web, as some machines seem to not have it pre-loaded
@@ -12,6 +15,7 @@ Add-Type @"
     using System.Threading.Tasks;
     using System.Threading;
     using System.Collections;
+    using System.Collections.Concurrent;
 
     public sealed class PodeTask
     {
@@ -28,14 +32,14 @@ Add-Type @"
             return task;
         }
 
-        public static Task CreateContextTask(Stack contexts)
+        //public static Task CreateContextTask(Stack contexts)
+        public static Task CreateContextTask(ConcurrentQueue<object> contexts)
         {
             var task = new Task<object>(() => {
                 while (true) {
-                    lock(contexts) {
-                        if (contexts.Count > 0) {
-                            return contexts.Pop();
-                        }
+                    var item = default(object);
+                    if (contexts.TryDequeue(out item)) {
+                        return item;
                     }
 
                     Thread.Sleep(100);
