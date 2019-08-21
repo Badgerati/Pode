@@ -469,7 +469,7 @@ function Write-PodeMarkdownResponse
     $mimeType = 'text/markdown'
 
     if ($AsHtml) {
-        if (Test-IsPSCore) {
+        if ($PSVersionTable.PSVersion.Major -ge 7) {
             $mimeType = 'text/html'
             $Value = ($Value | ConvertFrom-Markdown).Html
         }
@@ -1045,11 +1045,6 @@ function Set-PodeViewEngine
     # truncate markdown
     if ($Type -ieq 'Markdown') {
         $Type = 'md'
-    }
-
-    # if markdown, check ps-version
-    if (($Type -ieq 'md') -and ($PSVersionTable.PSVersion.Major -lt 7)) {
-        throw "Rendering Markdown files only works in PowerShell 7+"
     }
 
     # override extension with type
