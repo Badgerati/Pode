@@ -419,6 +419,67 @@ function Write-PodeHtmlResponse
 
 <#
 .SYNOPSIS
+Writes Markdown data to the Response.
+
+.DESCRIPTION
+Writes Markdown data to the Response, with the option to render it as HTML.
+
+.PARAMETER Value
+A String, PSObject, or HashTable value.
+
+.PARAMETER Path
+The path to a Markdown file.
+
+.PARAMETER AsHtml
+If supplied, the Markdown will be converted to HTML.
+
+.EXAMPLE
+Write-PodeMarkdownResponse -Value '# Hello, world!' -AsHtml
+
+.EXAMPLE
+Write-PodeMarkdownResponse -Path 'E:/Site/About.md'
+#>
+function Write-PodeMarkdownResponse
+{
+    [CmdletBinding(DefaultParameterSetName='Value')]
+    param (
+        [Parameter(Mandatory=$true, ParameterSetName='Value')]
+        $Value,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $Path,
+
+        [switch]
+        $AsHtml
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'file' {
+            if (Test-PodePath $Path) {
+                $Value = Get-PodeFileContent -Path $Path
+            }
+        }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        $Value = [string]::Empty
+    }
+
+    $mimeType = 'text/markdown'
+
+    if ($AsHtml) {
+        if (Test-IsPSCore) {
+            $mimeType = 'text/html'
+            $Value = ($Value | ConvertFrom-Markdown).Html
+        }
+    }
+
+    Write-PodeTextResponse -Value $Value -ContentType $mimeType
+}
+
+<#
+.SYNOPSIS
 Writes JSON data to the Response.
 
 .DESCRIPTION
@@ -621,7 +682,18 @@ function Write-PodeViewResponse
     }
 
     # run any engine logic and render it
-    Write-PodeHtmlResponse -Value (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
+    $engine = (Get-PodeViewEngineType -Path $Path)
+    $value = (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
+
+    switch ($engine.ToLowerInvariant()) {
+        'md' {
+            Write-PodeMarkdownResponse -Value $value -AsHtml
+        }
+
+        default {
+            Write-PodeHtmlResponse -Value $value
+        }
+    }
 }
 
 <#
@@ -948,6 +1020,9 @@ A custom extension for the engine's files.
 Set-PodeViewEngine -Type HTML
 
 .EXAMPLE
+Set-PodeViewEngine -Type Markdown
+
+.EXAMPLE
 Set-PodeViewEngine -Type PSHTML -Extension PS1 -ScriptBlock { param($path, $data) /* logic */ }
 #>
 function Set-PodeViewEngine
@@ -967,14 +1042,26 @@ function Set-PodeViewEngine
         $Extension
     )
 
+    # truncate markdown
+    if ($Type -ieq 'Markdown') {
+        $Type = 'md'
+    }
+
+    # if markdown, check ps-version
+    if (($Type -ieq 'md') -and ($PSVersionTable.PSVersion.Major -lt 7)) {
+        throw "Rendering Markdown files only works in PowerShell 7+"
+    }
+
+    # override extension with type
     if ([string]::IsNullOrWhiteSpace($Extension)) {
         $Extension = $Type.ToLowerInvariant()
     }
 
+    # setup view engine config
     $PodeContext.Server.ViewEngine.Type = $Type.ToLowerInvariant()
     $PodeContext.Server.ViewEngine.Extension = $Extension
     $PodeContext.Server.ViewEngine.Script = $ScriptBlock
-    $PodeContext.Server.ViewEngine.IsDynamic = ($Type -ine 'html')
+    $PodeContext.Server.ViewEngine.IsDynamic = (@('html', 'md') -inotcontains $Type)
 }
 
 <#

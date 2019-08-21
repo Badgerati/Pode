@@ -287,8 +287,10 @@ Describe 'Get-PodeContentType' {
             '.man' = 'application/x-troff-man';
             '.manifest' = 'application/x-ms-manifest';
             '.map' = 'text/plain';
+            '.markdown' = 'text/markdown';
             '.master' = 'application/xml';
             '.mbox' = 'application/mbox';
+            '.md' = 'text/markdown';
             '.mda' = 'application/msaccess';
             '.mdb' = 'application/x-msaccess';
             '.mde' = 'application/msaccess';

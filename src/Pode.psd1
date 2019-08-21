@@ -71,6 +71,7 @@
         'Write-PodeFileResponse',
         'Write-PodeCsvResponse',
         'Write-PodeHtmlResponse',
+        'Write-PodeMarkdownResponse',
         'Write-PodeJsonResponse',
         'Write-PodeXmlResponse',
         'Write-PodeViewResponse',
