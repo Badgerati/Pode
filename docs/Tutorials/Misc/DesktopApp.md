@@ -3,7 +3,7 @@
 Normally in Pode you define a server and run it, however if you use the  [`Show-PodeGui`](../../../Functions/Core/Show-PodeGui) function Pode will serve the server up as a desktop application.
 
 !!! warning
-    Currently only supported on Windows due to using WPF.
+    Currently only supported in Windows PowerShell, and PowerShell 7 on Windows due to using WPF.
 
 ## Setting Server to run as Application
 
