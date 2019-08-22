@@ -222,7 +222,7 @@ function New-PodeRunspacePools
     $PodeContext.RunspacePools.Schedules.Open()
 
     # setup gui runspace pool (only for non-ps-core)
-    if (!(Test-IsPSCore)) {
+    if (!((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
         $PodeContext.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         $PodeContext.RunspacePools.Gui.ApartmentState = 'STA'
         $PodeContext.RunspacePools.Gui.Open()

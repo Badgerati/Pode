@@ -363,8 +363,8 @@ function Show-PodeGui
     Test-PodeIsServerless -FunctionName 'Show-PodeGui' -ThrowError
 
     # only valid for Windows PowerShell
-    if (Test-IsPSCore) {
-        throw 'The gui function is currently unavailable for PS Core, and only works for Windows PowerShell'
+    if ((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
+        throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7 on Windows'
     }
 
     # enable the gui and set general settings
