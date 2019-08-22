@@ -264,8 +264,10 @@ function Get-PodeContentType
         '.man' { return 'application/x-troff-man' }
         '.manifest' { return 'application/x-ms-manifest' }
         '.map' { return 'text/plain' }
+        '.markdown' { return 'text/markdown' }
         '.master' { return 'application/xml' }
         '.mbox' { return 'application/mbox' }
+        '.md' { return 'text/markdown' }
         '.mda' { return 'application/msaccess' }
         '.mdb' { return 'application/x-msaccess' }
         '.mde' { return 'application/msaccess' }

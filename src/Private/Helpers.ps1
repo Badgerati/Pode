@@ -23,6 +23,25 @@ function ConvertFrom-PodeFile
     return (Invoke-PodeScriptBlock -ScriptBlock ([scriptblock]::Create($Content)) -Arguments $Data -Return)
 }
 
+function Get-PodeViewEngineType
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+
+    # work out the engine to use when parsing the file
+    $type = $PodeContext.Server.ViewEngine.Type
+
+    $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
+    if (![string]::IsNullOrWhiteSpace($ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
+        $type = $ext
+    }
+
+    return $type
+}
+
 function Get-PodeFileContentUsingViewEngine
 {
     param (
@@ -36,12 +55,7 @@ function Get-PodeFileContentUsingViewEngine
     )
 
     # work out the engine to use when parsing the file
-    $engine = $PodeContext.Server.ViewEngine.Type
-
-    $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
-    if (![string]::IsNullOrWhiteSpace($ext) -and ($ext -ine $PodeContext.Server.ViewEngine.Extension)) {
-        $engine = $ext
-    }
+    $engine = Get-PodeViewEngineType -Path $Path
 
     # setup the content
     $content = [string]::Empty
@@ -50,6 +64,10 @@ function Get-PodeFileContentUsingViewEngine
     switch ($engine.ToLowerInvariant())
     {
         'html' {
+            $content = Get-Content -Path $Path -Raw -Encoding utf8
+        }
+
+        'md' {
             $content = Get-Content -Path $Path -Raw -Encoding utf8
         }
 
