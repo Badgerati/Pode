@@ -431,7 +431,7 @@ A String, PSObject, or HashTable value.
 The path to a Markdown file.
 
 .PARAMETER AsHtml
-If supplied, the Markdown will be converted to HTML.
+If supplied, the Markdown will be converted to HTML. (This is only supported in PS7+)
 
 .EXAMPLE
 Write-PodeMarkdownResponse -Value '# Hello, world!' -AsHtml
