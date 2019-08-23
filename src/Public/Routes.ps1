@@ -667,3 +667,44 @@ function ConvertTo-PodeRoute
         }
     }
 }
+
+function Add-PodePage
+{
+    [CmdletBinding(DefaultParameterSetName='ScriptBlock')]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true, ParameterSetName='ScriptBlock')]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    $logic = $null
+    $arg = $null
+
+    # define the appropriate logic
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
+    {
+        'scriptblock' {
+            $arg = $ScriptBlock
+            $logic = {
+                param($e, $script)
+
+                # invoke the function
+                $result = (. $script)
+
+                # if we have a result, convert it to html
+                if (!(Test-IsEmpty $result)) {
+                    Write-PodeHtmlResponse -Value $result
+                }
+            }
+        }
+    }
+
+    # create the route
+    #TODO: Middleware
+    Add-PodeRoute -Method Get -Path "/$($Name.Trim('/'))" -ArgumentList $arg -ScriptBlock $logic
+}
