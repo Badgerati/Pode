@@ -109,6 +109,8 @@
         'Remove-PodeStaticRoute',
         'Clear-PodeRoutes',
         'Clear-PodeStaticRoutes',
+        'ConvertTo-PodeRoute',
+        'Add-PodePage',
 
         # handlers
         'Add-PodeHandler',
