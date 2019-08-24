@@ -157,6 +157,7 @@
         'Clear-PodeLoggers',
         'Write-PodeErrorLog',
         'Write-PodeLog',
+        'Protect-PodeLogItem',
 
         # core
         'Start-PodeServer',

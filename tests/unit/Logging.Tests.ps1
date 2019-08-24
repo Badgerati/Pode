@@ -114,3 +114,51 @@ Describe 'Get-PodeErrorLoggingName' {
         Get-PodeErrorLoggingName | Should Be '__pode_log_errors__'
     }
 }
+
+Describe 'Protect-PodeLogItem' {
+    $item = 'Password=Hunter2, Email'
+
+    It 'Do nothing with no masks' {
+        $PodeContext = @{ Server = @{ Logging = @{ Masking = @{
+            Patterns = @()
+        }}}}
+
+        Protect-PodeLogItem -Item $item | Should Be $item
+    }
+
+    It 'Mask whole item' {
+        $PodeContext = @{ Server = @{ Logging = @{ Masking = @{
+            Patterns = @('Password\=[a-z0-9]+')
+            Mask = '********'
+        }}}}
+
+        Protect-PodeLogItem -Item $item | Should Be '********, Email'
+    }
+
+    It 'Mask item but keep before' {
+        $PodeContext = @{ Server = @{ Logging = @{ Masking = @{
+            Patterns = @('(?<keep_before>Password\=)[a-z0-9]+')
+            Mask = '********'
+        }}}}
+
+        Protect-PodeLogItem -Item $item | Should Be 'Password=********, Email'
+    }
+
+    It 'Mask item but keep after' {
+        $PodeContext = @{ Server = @{ Logging = @{ Masking = @{
+            Patterns = @('Password\=(?<keep_after>[a-z0-9]+)')
+            Mask = '********'
+        }}}}
+
+        Protect-PodeLogItem -Item $item | Should Be '********Hunter2, Email'
+    }
+
+    It 'Mask item but keep before and after' {
+        $PodeContext = @{ Server = @{ Logging = @{ Masking = @{
+            Patterns = @('(?<keep_before>Password\=)(?<keep_after>[a-z0-9]+)')
+            Mask = '********'
+        }}}}
+
+        Protect-PodeLogItem -Item $item | Should Be 'Password=********Hunter2, Email'
+    }
+}

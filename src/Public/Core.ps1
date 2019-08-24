@@ -29,9 +29,6 @@ The server type, to define how Pode should run and deal with incoming Requests.
 .PARAMETER DisableTermination
 Disables the ability to terminate the Server.
 
-.PARAMETER DisableLogging
-Disables all logging functionality of the Server.
-
 .PARAMETER Browse
 Open the web Server's default endpoint in your defualt browser.
 
@@ -80,9 +77,6 @@ function Start-PodeServer
         $DisableTermination,
 
         [switch]
-        $DisableLogging,
-
-        [switch]
         $Browse
     )
 
@@ -100,8 +94,7 @@ function Start-PodeServer
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-            -ServerType $Type `
-            -DisableLogging:$DisableLogging
+            -ServerType $Type
 
         # set it so ctrl-c can terminate, unless serverless
         if (!$PodeContext.Server.IsServerless) {

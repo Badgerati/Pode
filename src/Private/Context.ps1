@@ -17,10 +17,7 @@ function New-PodeContext
         $Name = $null,
 
         [string]
-        $ServerType,
-
-        [switch]
-        $DisableLogging
+        $ServerType
     )
 
     # set a random server name if one not supplied
@@ -139,12 +136,6 @@ function New-PodeContext
 
     # authnetication methods
     $ctx.Server.Authentications = @{}
-
-    # logging methods and types
-    $ctx.Server.Logging = @{
-        Types = @{}
-        Disabled = $DisableLogging
-    }
 
     # create new cancellation tokens
     $ctx.Tokens = @{
@@ -300,6 +291,16 @@ function Set-PodeServerConfiguration
         Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Include))
         ShowFiles = ([bool]$Configuration.FileMonitor.ShowFiles)
         Files = @()
+    }
+
+    # logging
+    $Context.Server.Logging = @{
+        Enabled = !([bool]$Configuration.Logging.Enable)
+        Masking = @{
+            Patterns = @($Configuration.Logging.Masking.Patterns)
+            Mask = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
+        }
+        Types = @{}
     }
 }
 

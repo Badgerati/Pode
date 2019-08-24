@@ -2,6 +2,7 @@ function Get-PodeLoggingTerminalMethod
 {
     return {
         param($item, $options)
+        $item = ($item | Protect-PodeLogItem)
         $item.ToString() | Out-Default
     }
 }
@@ -10,6 +11,9 @@ function Get-PodeLoggingFileMethod
 {
     return {
         param($item, $options)
+
+        # mask values
+        $item = ($item | Protect-PodeLogItem)
 
         # variables
         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
@@ -155,7 +159,7 @@ function Test-PodeLoggerEnabled
         $Name
     )
 
-    return (!$PodeContext.Server.Logging.Disabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
+    return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
 function Write-PodeRequestLog
@@ -234,20 +238,14 @@ function Add-PodeRequestLogEndware
 
 function Start-PodeLoggingRunspace
 {
-    # skip if there are no loggers configured
-    if ($PodeContext.Server.Logging.Types.Count -eq 0) {
+    # skip if there are no loggers configured, or logging is disabled
+    if (($PodeContext.Server.Logging.Types.Count -eq 0) -or (!$PodeContext.Server.Logging.Enabled)) {
         return
     }
 
     $script = {
         while ($true)
         {
-            # sleep for a 10 minutes if disabled
-            if ($PodeContext.Server.Logging.Disabled) {
-                Start-Sleep -Seconds 600
-                continue
-            }
-
             # if there are no logs to process, just sleep few a few seconds
             if ($PodeContext.LogsToProcess.Count -eq 0) {
                 Start-Sleep -Seconds 5
