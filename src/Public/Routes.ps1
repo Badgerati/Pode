@@ -767,6 +767,10 @@ function Add-PodePage
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
     {
         'scriptblock' {
+            if (Test-IsEmpty $ScriptBlock){
+                throw 'A non-empty ScriptBlock is required to created a Page Route'
+            }
+
             $arg = @($ScriptBlock, $Data)
             $logic = {
                 param($e, $script, $data)
@@ -787,6 +791,7 @@ function Add-PodePage
         }
 
         'file' {
+            $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot -TestPath
             $arg = @($FilePath, $Data)
             $logic = {
                 param($e, $file, $data)

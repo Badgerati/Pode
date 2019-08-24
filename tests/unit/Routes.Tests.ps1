@@ -721,3 +721,36 @@ Describe 'ConvertTo-PodeRoute' {
         Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
     }
 }
+
+Describe 'Add-PodePage' {
+    Mock Add-PodeRoute {}
+
+    It 'Throws error for invalid Name' {
+        { Add-PodePage -Name 'Rick+Morty' -ScriptBlock {} } | Should Throw 'should be a valid alphanumeric'
+    }
+
+    It 'Throws error for invalid ScriptBlock' {
+        { Add-PodePage -Name 'RickMorty' -ScriptBlock {} } | Should Throw 'non-empty scriptblock is required'
+    }
+
+    It 'Throws error for invalid FilePath' {
+        $PodeContext.Server = @{ 'Root' = $pwd }
+        { Add-PodePage -Name 'RickMorty' -FilePath './fake/path' } | Should Throw 'the path does not exist'
+    }
+
+    It 'Call Add-PodeRoute once for ScriptBlock page' {
+        Add-PodePage -Name 'Name' -ScriptBlock { Get-Service }
+        Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
+    }
+
+    It 'Call Add-PodeRoute once for FilePath page' {
+        Mock Get-PodeRelativePath { return $Path }
+        Add-PodePage -Name 'Name' -FilePath './fake/path'
+        Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
+    }
+
+    It 'Call Add-PodeRoute once for FilePath page' {
+        Add-PodePage -Name 'Name' -View 'index'
+        Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
+    }
+}
