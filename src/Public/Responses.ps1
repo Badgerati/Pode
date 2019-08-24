@@ -261,6 +261,9 @@ function Write-PodeFileResponse
         $Cache
     )
 
+    # resolve for relative path
+    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -FailOnDirectory)) {
         return

@@ -137,6 +137,9 @@ function Add-PodeRoute
 
     # if we have a file path supplied, load that path as a scriptblock
     if ($PSCmdlet.ParameterSetName -ieq 'file') {
+        # resolve for relative path
+        $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot
+
         # if file doesn't exist, error
         if (!(Test-PodePath -Path $FilePath -NoStatus)) {
             throw "[$($Method)] $($Path): The FilePath does not exist: $($FilePath)"
@@ -540,7 +543,7 @@ A Module whose exported commands will be converted.
 An override HTTP method to use when generating the Routes. If not supplied, Pode will make a best guess based on the Command's Verb.
 
 .PARAMETER Path
-An optional Path for the Route.
+An optional Path for the Route, to prepend before the Command Name and Module.
 
 .PARAMETER Middleware
 Like normal Routes, an array of Middleware that will be applied to all generated Routes.
@@ -614,6 +617,7 @@ function ConvertTo-PodeRoute
     }
 
     # trim end trailing slashes from the path
+    $Path = Protect-PodeValue -Value $Path -Default '/'
     $Path = $Path.TrimEnd('/')
 
     # create the routes for each of the commands
@@ -666,4 +670,147 @@ function ConvertTo-PodeRoute
             }
         }
     }
+}
+
+<#
+.SYNOPSIS
+Helper function to generate simple GET routes.
+
+.DESCRIPTION
+Helper function to generate simple GET routes from ScritpBlocks, Files, and Views.
+The output is always rendered as HTML.
+
+.PARAMETER Name
+A unique name for the page, that will be used in the Path for the route.
+
+.PARAMETER ScriptBlock
+A ScriptBlock to invoke, where any results will be converted to HTML.
+
+.PARAMETER FilePath
+A FilePath, literal or relative, to a valid HTML file.
+
+.PARAMETER View
+The name of a View to render, this can be HTML or Dynamic.
+
+.PARAMETER Data
+A hashtable of Data to supply to a Dynamic File/View, or to be splatted as arguments for the ScriptBlock.
+
+.PARAMETER Path
+An optional Path for the Route, to prepend before the Name.
+
+.PARAMETER Middleware
+Like normal Routes, an array of Middleware that will be applied to all generated Routes.
+
+.PARAMETER FlashMessages
+If supplied, Views will have any flash messages supplied to them for rendering.
+
+.EXAMPLE
+Add-PodePage -Name Services -ScriptBlock { Get-Service }
+
+.EXAMPLE
+Add-PodePage -Name Index -View 'index'
+
+.EXAMPLE
+Add-PodePage -Name About -FilePath '.\views\about.pode' -Data @{ Date = [DateTime]::UtcNow }
+#>
+function Add-PodePage
+{
+    [CmdletBinding(DefaultParameterSetName='ScriptBlock')]
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true, ParameterSetName='ScriptBlock')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
+
+        [Parameter(Mandatory=$true, ParameterSetName='View')]
+        [string]
+        $View,
+
+        [Parameter()]
+        [hashtable]
+        $Data,
+
+        [Parameter()]
+        [string]
+        $Path = '/',
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter(ParameterSetName='View')]
+        [switch]
+        $FlashMessages
+    )
+
+    $logic = $null
+    $arg = $null
+
+    # ensure the name is a valid alphanumeric
+    if ($Name -inotmatch '^[a-z0-9\-_]+$') {
+        throw "The Page name should be a valid AlphaNumeric value: $($Name)"
+    }
+
+    # trim end trailing slashes from the path
+    $Path = Protect-PodeValue -Value $Path -Default '/'
+    $Path = $Path.TrimEnd('/')
+
+    # define the appropriate logic
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
+    {
+        'scriptblock' {
+            if (Test-IsEmpty $ScriptBlock){
+                throw 'A non-empty ScriptBlock is required to created a Page Route'
+            }
+
+            $arg = @($ScriptBlock, $Data)
+            $logic = {
+                param($e, $script, $data)
+
+                # invoke the function (optional splat data)
+                if (Test-IsEmpty $data) {
+                    $result = (. $script)
+                }
+                else {
+                    $result = (. $script @data)
+                }
+
+                # if we have a result, convert it to html
+                if (!(Test-IsEmpty $result)) {
+                    Write-PodeHtmlResponse -Value $result
+                }
+            }
+        }
+
+        'file' {
+            $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot -TestPath
+            $arg = @($FilePath, $Data)
+            $logic = {
+                param($e, $file, $data)
+                Write-PodeFileResponse -Path $file -ContentType 'text/html' -Data $data
+            }
+        }
+
+        'view' {
+            $arg = @($View, $Data, $FlashMessages)
+            $logic = {
+                param($e, $view, $data, [bool]$flash)
+                Write-PodeViewResponse -Path $view -Data $data -FlashMessages:$flash
+            }
+        }
+    }
+
+    # build the route's path
+    $_path = ("$($Path)/$($Name)" -replace '[/]+', '/')
+
+    # create the route
+    Add-PodeRoute -Method Get -Path $_path -Middleware $Middleware -ArgumentList $arg -ScriptBlock $logic
 }
