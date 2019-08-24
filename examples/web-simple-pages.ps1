@@ -10,11 +10,7 @@ Start-PodeServer -Threads 2 {
 
     Add-PodePage -Name Processes -ScriptBlock { Get-Process }
     Add-PodePage -Name Services -ScriptBlock { Get-Service }
-
-    # make routes for functions - with every route requires authentication
-    #ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless) -Verbose
-
-    # make routes for every exported command in Pester
-    # ConvertTo-PodeRoute -Module Pester -Verbose
+    Add-PodePage -Name Index -View 'simple'
+    Add-PodePage -Name File -FilePath '.\views\simple.pode' -Data @{ 'numbers' = @(1, 2, 3); }
 
 }

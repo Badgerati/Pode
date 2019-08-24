@@ -291,12 +291,14 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Throws error when file path is a directory' {
+        Mock Get-PodeRelativePath { return $Path }
         Mock Test-PodePath { return $true }
         $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{} } }
         { Add-PodeRoute -Method GET -Path '/' -FilePath './path' } | Should Throw 'cannot be a wildcard or directory'
     }
 
     It 'Throws error when file path is a wildcard' {
+        Mock Get-PodeRelativePath { return $Path }
         Mock Test-PodePath { return $true }
         $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{} } }
         { Add-PodeRoute -Method GET -Path '/' -FilePath './path/*' } | Should Throw 'cannot be a wildcard or directory'
@@ -366,6 +368,7 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with simple url and scriptblock from file path' {
+        Mock Get-PodeRelativePath { return $Path }
         Mock Test-PodePath { return $true }
         Mock Use-PodeScript { return { Write-Host 'bye' } }
 
