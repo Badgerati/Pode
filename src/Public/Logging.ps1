@@ -524,3 +524,59 @@ function Write-PodeLog
         Item = $InputObject
     }) | Out-Null
 }
+
+<#
+.SYNOPSIS
+Masks values within a log item to protect sensitive information.
+
+.DESCRIPTION
+Masks values within a log item, or any string, to protect sensitive information.
+Patterns, and the Mask, can be configured via the server.psd1 configuration file.
+
+.PARAMETER Item
+The string Item to mask values.
+
+.EXAMPLE
+$value = Protect-PodeLogItem -Item 'Username=Morty, Password=Hunter2'
+#>
+function Protect-PodeLogItem
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [string]
+        $Item
+    )
+
+    # do nothing if there are no masks
+    if (Test-IsEmpty $PodeContext.Server.Logging.Masking.Patterns) {
+        return $item
+    }
+
+    # attempt to apply each mask
+    foreach ($mask in $PodeContext.Server.Logging.Masking.Patterns) {
+        if ($Item -imatch $mask) {
+            # has both keep before/after
+            if ($Matches.ContainsKey('keep_before') -and $Matches.ContainsKey('keep_after')) {
+                $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
+            }
+
+            # has just keep before
+            elseif ($Matches.ContainsKey('keep_before')) {
+                $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)")
+            }
+
+            # has just keep after
+            elseif ($Matches.ContainsKey('keep_after')) {
+                $Item = ($Item -ireplace $mask, "$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
+            }
+
+            # normal mask
+            else {
+                $Item = ($Item -ireplace $mask, $PodeContext.Server.Logging.Masking.Mask)
+            }
+        }
+    }
+
+    return $Item
+}

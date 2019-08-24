@@ -27,5 +27,14 @@
             Enable = $true
             ShowFiles = $true
         }
+        Logging = @{
+            Masking = @{
+                Patterns = @(
+                    '(?<keep_before>Password=)\w+',
+                    '(?<keep_before>AppleWebKit\/)\d+\.\d+(?(<keep_after)\s+\(KHTML)'
+                )
+                Mask = '--MASKED--'
+            }
+        }
     }
 }

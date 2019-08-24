@@ -4,7 +4,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
-$LOGGING_TYPE = 'Terminal' # Terminal, Fiie, Custom
+$LOGGING_TYPE = 'Terminal' # Terminal, File, Custom
 
 # create a server, and start listening on port 8085
 Start-PodeServer {
