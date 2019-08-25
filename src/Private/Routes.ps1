@@ -210,7 +210,7 @@ function Update-PodeRoutePlaceholders
     }
 
     while ($Path -imatch $placeholder) {
-        $Path = ($Path -ireplace $Matches[0], "(?<$($Matches['tag'])>[\w-_]+?)")
+        $Path = ($Path -ireplace $Matches[0], "(?<$($Matches['tag'])>[^\/]+?)")
     }
 
     return $Path

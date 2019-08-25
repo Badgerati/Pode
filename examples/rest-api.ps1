@@ -23,8 +23,13 @@ Start-PodeServer {
     # returns details for an example user
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
         param($e)
-        $user = Get-DummyUser -UserId $e.Parameters['userId']
-        Write-PodeJsonResponse -Value @{ 'user' = $user; }
+        Write-PodeJsonResponse -Value @{ 'user' = $e.Parameters['userId']; }
+    }
+
+    # returns details for an example user
+    Add-PodeRoute -Method Get -Path '/api/users/:userId/messages' -ScriptBlock {
+        param($e)
+        Write-PodeJsonResponse -Value @{ 'user' = $e.Parameters['userId']; }
     }
 
 }

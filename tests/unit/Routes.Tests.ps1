@@ -117,7 +117,7 @@ Describe 'Get-PodeRoute' {
         }
 
         It 'Returns logic and parameters for parameterised route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[\w-_]+?)' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
             $result = (Get-PodeRoute -Method GET -Route '/123')
 
             $result | Should BeOfType System.Collections.Hashtable
@@ -646,10 +646,10 @@ Describe 'Add-PodeRoute' {
 
         $route = $PodeContext.Server.Routes['get']
         $route | Should Not be $null
-        $route.ContainsKey('/users/(?<userId>[\w-_]+?)') | Should Be $true
-        $route['/users/(?<userId>[\w-_]+?)'] | Should Not Be $null
-        $route['/users/(?<userId>[\w-_]+?)'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-        $route['/users/(?<userId>[\w-_]+?)'].Middleware | Should Be $null
+        $route.ContainsKey('/users/(?<userId>[^\/]+?)') | Should Be $true
+        $route['/users/(?<userId>[^\/]+?)'] | Should Not Be $null
+        $route['/users/(?<userId>[^\/]+?)'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $route['/users/(?<userId>[^\/]+?)'].Middleware | Should Be $null
     }
 
     It 'Adds route with url parameters and querystring' {
@@ -658,10 +658,10 @@ Describe 'Add-PodeRoute' {
 
         $route = $PodeContext.Server.Routes['get']
         $route | Should Not be $null
-        $route.ContainsKey('/users/(?<userId>[\w-_]+?)') | Should Be $true
-        $route['/users/(?<userId>[\w-_]+?)'] | Should Not Be $null
-        $route['/users/(?<userId>[\w-_]+?)'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
-        $route['/users/(?<userId>[\w-_]+?)'].Middleware | Should Be $null
+        $route.ContainsKey('/users/(?<userId>[^\/]+?)') | Should Be $true
+        $route['/users/(?<userId>[^\/]+?)'] | Should Not Be $null
+        $route['/users/(?<userId>[^\/]+?)'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $route['/users/(?<userId>[^\/]+?)'].Middleware | Should Be $null
     }
 }
 
