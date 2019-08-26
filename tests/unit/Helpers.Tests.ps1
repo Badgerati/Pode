@@ -1208,13 +1208,13 @@ Describe 'Close-PodeServer' {
 
     It 'Closes out pode, but with the done flag' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
-        Close-PodeServer -Exit
+        Close-PodeServer -ShowDoneMessage
         Assert-MockCalled Write-Host -Times 1 -Scope It
     }
 
     It 'Closes out pode, but with no done flag if serverless' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'Server'; 'IsServerless' = $true } }
-        Close-PodeServer -Exit
+        Close-PodeServer -ShowDoneMessage
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 }

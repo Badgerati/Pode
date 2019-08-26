@@ -781,7 +781,7 @@ function Close-PodeServer
 {
     param (
         [switch]
-        $Exit
+        $ShowDoneMessage
     )
 
     # stpo all current runspaces
@@ -802,7 +802,7 @@ function Close-PodeServer
     # remove all of the pode temp drives
     Remove-PodePSDrives
 
-    if ($Exit -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -and !$PodeContext.Server.IsServerless) {
+    if ($ShowDoneMessage -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -and !$PodeContext.Server.IsServerless) {
         Write-Host " Done" -ForegroundColor Green
     }
 }

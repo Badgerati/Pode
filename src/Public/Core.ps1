@@ -82,6 +82,7 @@ function Start-PodeServer
 
     # ensure the session is clean
     $PodeContext = $null
+    $ShowDoneMessage = $true
 
     try {
         # configure the server's root path
@@ -128,9 +129,13 @@ function Start-PodeServer
         Write-Host 'Terminating...' -NoNewline -ForegroundColor Yellow
         $PodeContext.Tokens.Cancellation.Cancel()
     }
+    catch {
+        $ShowDoneMessage = $false
+        throw
+    }
     finally {
         # clean the runspaces and tokens
-        Close-PodeServer -Exit
+        Close-PodeServer -ShowDoneMessage:$ShowDoneMessage
 
         # clean the session
         $PodeContext = $null
