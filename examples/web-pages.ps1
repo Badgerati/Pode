@@ -13,8 +13,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 -Browse {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address localhost:$Port -Protocol Http
-    Add-PodeEndpoint -Address localhost:8090 -Protocol Http
+    Add-PodeEndpoint -Address localhost:8090 -Protocol Http -Name '8090Address'
+    Add-PodeEndpoint -Address localhost:$Port -Protocol Http -RedirectTo '8090Address'
 
     # allow the local ip and some other ips
     Add-PodeAccessRule -Access Allow -Type IP -Values @('127.0.0.1', '[::1]')

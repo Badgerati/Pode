@@ -787,8 +787,8 @@ Change the port of the current Request before redirecting.
 .PARAMETER Protocol
 Change the protocol of the current Request before redirecting.
 
-.PARAMETER Domain
-Change the domain name of the current Request before redirecting.
+.PARAMETER Address
+Change the domain address of the current Request before redirecting.
 
 .PARAMETER Moved
 Set the Status Code as "301 Moved", rather than "302 Redirect".
@@ -824,7 +824,7 @@ function Move-PodeResponseUrl
 
         [Parameter(ParameterSetName='Components')]
         [string]
-        $Domain,
+        $Address,
 
         [switch]
         $Moved
@@ -840,8 +840,8 @@ function Move-PodeResponseUrl
         }
 
         # set the domain
-        if ([string]::IsNullOrWhiteSpace($Domain)) {
-            $Domain = $uri.Host
+        if ([string]::IsNullOrWhiteSpace($Address)) {
+            $Address = $uri.Host
         }
 
         # set the port
@@ -855,7 +855,7 @@ function Move-PodeResponseUrl
         }
 
         # combine to form the url
-        $Url = "$($Protocol)://$($Domain)$($PortStr)$($uri.PathAndQuery)"
+        $Url = "$($Protocol)://$($Address)$($PortStr)$($uri.PathAndQuery)"
     }
 
     Set-PodeHeader -Name 'Location' -Value $Url

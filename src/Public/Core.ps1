@@ -431,6 +431,9 @@ A certificate thumbprint to bind onto HTTPS endpoints (Windows only).
 .PARAMETER Name
 An optional name for the endpoint, that can be used with other functions.
 
+.PARAMETER RedirectTo
+The Name of another Endpoint to automatically generate a redirect route for all traffic.
+
 .PARAMETER Force
 Ignore Adminstrator checks for non-localhost endpoints.
 
@@ -473,6 +476,10 @@ function Add-PodeEndpoint
         [Parameter()]
         [string]
         $Name = $null,
+
+        [Parameter()]
+        [string]
+        $RedirectTo = $null,
 
         [switch]
         $Force,
@@ -549,6 +556,22 @@ function Add-PodeEndpoint
 
         # add the new endpoint
         $PodeContext.Server.Endpoints += $obj
+    }
+
+    # if RedirectTo is set, attempt to build a redirecting route
+    if (![string]::IsNullOrWhiteSpace($RedirectTo)) {
+        $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
+
+        # ensure the name exists
+        if (Test-IsEmpty $redir_endpoint) {
+            throw "An endpoint with the name '$($RedirectTo)' has not been defined for redirecting"
+        }
+
+        # build the redirect route
+        Add-PodeRoute -Method * -Path * -Endpoint $obj.RawAddress -Protocol $obj.Protocol -ArgumentList $redir_endpoint -ScriptBlock {
+            param($e, $endpoint)
+            Move-PodeResponseUrl -Address $endpoint.Address -Port $endpoint.Port -Protocol $endpoint.Protocol
+        }
     }
 }
 
