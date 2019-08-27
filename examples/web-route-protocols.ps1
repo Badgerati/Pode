@@ -8,8 +8,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # listen on localhost:8080/8443
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
-    Add-PodeEndpoint -Address *:8443 -Protocol HTTPS
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS
 
     # set view engine to pode
     Set-PodeViewEngine -Type Pode

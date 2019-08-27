@@ -69,7 +69,7 @@ The following full example of Custom authentication will setup and configure aut
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # define a new custom authentication type
     $custom_type = New-PodeAuthType -Custom -ScriptBlock {

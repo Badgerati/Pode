@@ -117,7 +117,7 @@ The following example uses rate limiting, and defines Middleware that will overr
 ```powershell
 Start-PodeServer {
     # attach to port 8080
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # assign rate limiting to localhost, and allow 8 request per 5 seconds
     Add-PodeLimitRule -Type IP -Values @('127.0.0.1', '[::1]') -Limit 8 -Seconds 5

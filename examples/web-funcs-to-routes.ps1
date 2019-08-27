@@ -23,7 +23,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address localhost:8090 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # make routes for functions - with every route requires authentication

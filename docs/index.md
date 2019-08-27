@@ -41,7 +41,7 @@ Below is a quick example of using Pode to create a single REST API endpoint to r
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'pong' }

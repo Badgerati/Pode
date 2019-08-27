@@ -79,7 +79,7 @@ The following example will configure CSRF as default middleware, and supply a to
 *server.ps1*
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost:8080 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
     # setup session and csrf middleware

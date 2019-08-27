@@ -14,7 +14,7 @@ The following example will redirect the user to Google:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/redirect' -ScriptBlock {
         Move-PodeResponseUrl -Url 'https://google.com'
@@ -26,8 +26,8 @@ The below example will redirect the user to the same host/server, but with a dif
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
-    Add-PodeEndpoint -Address *:8086 -Protocol HTTPS
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8086 -Protocol HTTPS
 
     Add-PodeRoute -Method Get -Path '/redirect' -ScriptBlock {
         Move-PodeResponseUrl -Port 8086 -Protocol https
@@ -39,8 +39,8 @@ This final example will redirect every HTTP request, on every action and route, 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
-    Add-PodeEndpoint -Address *:8443 -Protocol HTTPS
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS
 
     Add-PodeRoute -Method * -Path * -Protocol Http -ScriptBlock {
         Move-PodeResponseUrl -Port 8443 -Protocol https

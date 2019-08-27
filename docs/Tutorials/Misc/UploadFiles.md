@@ -62,7 +62,7 @@ The following script is an example Pode server that will save the uploaded file,
 Start-PodeServer {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:8085 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
     Set-PodeViewEngine -Type HTML
 
     # GET request for web page on "localhost:8085/"

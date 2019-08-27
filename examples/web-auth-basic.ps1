@@ -19,7 +19,7 @@ Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ Auth
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:8085 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # setup basic auth (base64> username:password in header)
     New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
