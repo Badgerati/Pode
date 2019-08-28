@@ -1,6 +1,13 @@
 name: Pode CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - '*'
+    - '!gh-pages'
+  pull_request:
+    branches:
+    - '*'
 
 jobs:
   build:
