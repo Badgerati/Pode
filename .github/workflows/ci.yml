@@ -28,4 +28,7 @@ jobs:
 
     - name: Run Pester Tests
       shell: pwsh
+      env:
+        PODE_COVERALLS_TOKEN: ${{ secrets.PODE_COVERALLS_TOKEN }}
+        PODE_RUN_CODE_COVERAGE: ${{ matrix.os == 'windows-latest' }}
       run: Invoke-Build Test

@@ -32,6 +32,16 @@ function Test-PodeBuildIsAppVeyor
     return (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID))
 }
 
+function Test-PodeBuildIsGitHub
+{
+    return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
+}
+
+function Test-PodeBuildCanCodeCoverage
+{
+    return ((Test-PodeBuildIsAppVeyor) -or (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE))
+}
+
 function Test-PodeBuildCommand($cmd)
 {
     $path = $null
@@ -44,6 +54,17 @@ function Test-PodeBuildCommand($cmd)
     }
 
     return (![string]::IsNullOrWhiteSpace($path))
+}
+
+function Get-PodeBuildBranch
+{
+    if (Test-PodeBuildIsAppVeyor) {
+        return $env:APPVEYOR_REPO_BRANCH
+    }
+
+    if (Test-PodeBuildIsGitHub) {
+        return $env:GITHUB_REF
+    }
 }
 
 function Invoke-PodeBuildInstall($name, $version)
@@ -123,7 +144,7 @@ task TestDeps {
     }
 
     # install coveralls
-    if (Test-PodeBuildIsAppVeyor)
+    if (Test-PodeBuildCanCodeCoverage)
     {
         if (((Get-Module -ListAvailable coveralls) | Where-Object { $_.Version -ieq $Versions.Coveralls }) -eq $null) {
             Write-Host 'Installing Coveralls'
@@ -183,8 +204,8 @@ task Test TestDeps, {
 
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
 
-    # if appveyor, run code coverage
-    if (Test-PodeBuildIsAppVeyor) {
+    # if appveyor or github, run code coverage
+    if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
         $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
     }
@@ -207,10 +228,10 @@ task PushAppVeyorTests -If (Test-PodeBuildIsAppVeyor) {
     Push-AppveyorArtifact $TestResultFile
 }
 
-# Synopsis: If AppyVeyor, push code coverage stats
-task PushCodeCoverage -If (Test-PodeBuildIsAppVeyor) {
+# Synopsis: If AppyVeyor or GitHub, push code coverage stats
+task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
-        $coverage = Format-Coverage -PesterResults $Script:TestStatus -CoverallsApiToken $env:PODE_COVERALLS_TOKEN -RootFolder $pwd -BranchName $ENV:APPVEYOR_REPO_BRANCH
+        $coverage = Format-Coverage -PesterResults $Script:TestStatus -CoverallsApiToken $env:PODE_COVERALLS_TOKEN -RootFolder $pwd -BranchName (Get-PodeBuildBranch)
         Publish-Coverage -Coverage $coverage
     }
     catch {
