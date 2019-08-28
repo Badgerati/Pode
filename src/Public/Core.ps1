@@ -578,7 +578,9 @@ function Add-PodeEndpoint
         # build the redirect route
         Add-PodeRoute -Method * -Path * -Endpoint $obj.RawAddress -Protocol $obj.Protocol -ArgumentList $redir_endpoint -ScriptBlock {
             param($e, $endpoint)
-            Move-PodeResponseUrl -Address $endpoint.Address -Port $endpoint.Port -Protocol $endpoint.Protocol
+
+            $addr = Resolve-PodeValue -Check (Test-PodeIPAddressAny -IP $endpoint.Address) -TrueValue 'localhost' -FalseValue $endpoint.Address
+            Move-PodeResponseUrl -Address $addr -Port $endpoint.Port -Protocol $endpoint.Protocol
         }
     }
 }
