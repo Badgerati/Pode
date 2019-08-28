@@ -10,7 +10,7 @@ The following is an example of using the  [`Add-PodeStaticRoute`](../../../../Fu
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
     Add-PodeStaticRoute -Path '/assets' -Source './content/assets'
 }
 ```
@@ -97,7 +97,7 @@ Normally content accessed on a static route is rendered on the browser, but you 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
     Add-PodeStaticRoute -Path '/assets' -Source './content/assets' -DownloadOnly
 }
 ```

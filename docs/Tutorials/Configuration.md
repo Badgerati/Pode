@@ -42,7 +42,7 @@ Then you can get and use the port number via:
 ```powershell
 Start-PodeServer {
     $port = (Get-PodeConfig).Port
-    Add-PodeEndpoint -Address *:$port -Protocol Http
+    Add-PodeEndpoint -Address * -Port $port -Protocol Http
 }
 ```
 

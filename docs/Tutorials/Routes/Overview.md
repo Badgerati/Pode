@@ -16,7 +16,7 @@ To setup and use Routes in Pode you should use the Routing functions. For exampl
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'value' = 'pong'; }
@@ -40,7 +40,7 @@ The following is an example of using data from a request's payload - ie, the dat
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
         param($s)
@@ -75,7 +75,7 @@ The following is an example of using data from a request's query string. To retr
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {
         param($s)
@@ -104,7 +104,7 @@ The following is an example of using values supplied on a request's URL using pa
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/users/:userId' -ScriptBlock {
         param($s)

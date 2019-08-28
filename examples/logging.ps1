@@ -9,7 +9,7 @@ $LOGGING_TYPE = 'Terminal' # Terminal, File, Custom
 # create a server, and start listening on port 8085
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address *:8085 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
     switch ($LOGGING_TYPE.ToLowerInvariant()) {

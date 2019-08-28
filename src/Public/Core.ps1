@@ -417,7 +417,10 @@ Bind an endpoint to listen for incoming Requests.
 Bind an endpoint to listen for incoming Requests. The endpoints can be HTTP, HTTPS, TCP or SMTP, with the option to bind certificates.
 
 .PARAMETER Address
-The IP:Port or Hostname:Port endpoint address.
+The IP/Hostname of the endpoint.
+
+.PARAMETER Port
+The Port number of the endpoint.
 
 .PARAMETER Protocol
 The protocol of the supplied endpoint.
@@ -441,13 +444,13 @@ Ignore Adminstrator checks for non-localhost endpoints.
 Create and bind a self-signed certifcate onto HTTPS endpoints (Windows only).
 
 .EXAMPLE
-Add-PodeEndpoint -Address localhost:8090 -Protocol Http
+Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Protocol Smtp
 
 .EXAMPLE
-Add-PodeEndpoint -Address dev.pode.com:8443 -Protocol Https -SelfSigned
+Add-PodeEndpoint -Address dev.pode.com -Port 8443 -Protocol Https -SelfSigned
 
 .EXAMPLE
 Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
@@ -456,9 +459,13 @@ function Add-PodeEndpoint
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
-        $Address,
+        $Address = 'localhost',
+
+        [Parameter()]
+        [int]
+        $Port = 0,
 
         [Parameter()]
         [ValidateSet('Http', 'Https', 'Smtp', 'Tcp')]
@@ -492,7 +499,8 @@ function Add-PodeEndpoint
     Test-PodeIsServerless -FunctionName 'Add-PodeEndpoint' -ThrowError
 
     # parse the endpoint for host/port info
-    $_endpoint = Get-PodeEndpointInfo -Endpoint $Address
+    $FullAddress = "$($Address):$($Port)"
+    $_endpoint = Get-PodeEndpointInfo -Endpoint $FullAddress
 
     # if a name was supplied, check it is unique
     if (!(Test-IsEmpty $Name) -and
@@ -505,7 +513,7 @@ function Add-PodeEndpoint
     $obj = @{
         Name = $Name
         Address = $null
-        RawAddress = $Address
+        RawAddress = $FullAddress
         Port = $null
         IsIPAddress = $true
         HostName = 'localhost'
@@ -570,7 +578,9 @@ function Add-PodeEndpoint
         # build the redirect route
         Add-PodeRoute -Method * -Path * -Endpoint $obj.RawAddress -Protocol $obj.Protocol -ArgumentList $redir_endpoint -ScriptBlock {
             param($e, $endpoint)
-            Move-PodeResponseUrl -Address $endpoint.Address -Port $endpoint.Port -Protocol $endpoint.Protocol
+
+            $addr = Resolve-PodeValue -Check (Test-PodeIPAddressAny -IP $endpoint.Address) -TrueValue 'localhost' -FalseValue $endpoint.Address
+            Move-PodeResponseUrl -Address $addr -Port $endpoint.Port -Protocol $endpoint.Protocol
         }
     }
 }

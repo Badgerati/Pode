@@ -13,7 +13,7 @@ If you were to use `EPS` engine, and already have the module installed, then the
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # import the EPS module into the runspaces
     Import-PodeModule -Name EPS
@@ -54,7 +54,7 @@ If you were to use `PSHTML` engine, and already have the module installed, then 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # import the PSHTML module into the runspaces
     Import-PodeModule -Name PSHTML

@@ -5,7 +5,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8090
-    Add-PodeEndpoint -Address localhost:8090 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     Add-PodePage -Name Processes -ScriptBlock { Get-Process }

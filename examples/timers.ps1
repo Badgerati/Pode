@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a basic server
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address *:8081 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8081 -Protocol Http
 
     # runs forever, looping every 5secs
     Add-PodeTimer -Name 'forever' -Interval 5 -ScriptBlock {

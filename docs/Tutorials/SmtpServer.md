@@ -8,7 +8,7 @@ To create a Handler for the inbuilt SMTP server you can use the following exampl
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address *:25 -Protocol SMTP
+    Add-PodeEndpoint -Address * -Port 25 -Protocol SMTP
 
     Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
         param($email)

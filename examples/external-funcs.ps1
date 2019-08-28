@@ -8,7 +8,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:8085 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # include the external function module
     Use-PodeScript -Path './modules/external-funcs.psm1'

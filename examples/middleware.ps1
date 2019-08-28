@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address *:$port -Protocol Http
+    Add-PodeEndpoint -Address * -Port $port -Protocol Http
 
     # limit localhost to 5 request per 10 seconds
     Add-PodeLimitRule -Type IP -Values @('127.0.0.1', '[::1]') -Limit 5 -Seconds 10

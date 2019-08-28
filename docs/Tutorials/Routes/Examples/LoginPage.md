@@ -33,7 +33,7 @@ Start-PodeServer -Thread 2 {
 Next, we'll need to use the  [`Add-PodeEndpoint`](../../../../Functions/Core/Add-PodeEndpoint) function to listen on an endpoint and then specify the View Engine as using `.pode` files:
 
 ```powershell
-Add-PodeEndpoint -Address *:8080 -Protocol Http
+Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 Set-PodeViewEngine -Type Pode
 ```
 
@@ -117,7 +117,7 @@ This is the full code for the server above:
 
 ```powershell
 Start-PodeServer -Thread 2 {
-    Add-PodeEndpoint -Address *:8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # use pode template engine
     Set-PodeViewEngine -Type Pode

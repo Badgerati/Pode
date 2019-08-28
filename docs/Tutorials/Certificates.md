@@ -12,10 +12,10 @@ If you are developing/testing a site on HTTPS then Pode can generate and bind qu
 ```powershell
 Start-PodeServer {
     # for an IP:
-    Add-PodeEndpoint -Address *:8443 -Protocol HTTPS -SelfSigned
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS -SelfSigned
 
     # for a hostname:
-    Add-PodeEndpoint -Address foo.bar.com:8443 -Protocol HTTPS -SelfSigned
+    Add-PodeEndpoint -Address foo.bar.com -Port 8443 -Protocol HTTPS -SelfSigned
 }
 ```
 
@@ -26,10 +26,10 @@ To bind an already installed signed certificate, the certificate *must* be insta
 ```powershell
 Start-PodeServer {
     # for an IP:
-    Add-PodeEndpoint -Address *:8443 -Protocol HTTPS -Certificate '*.example.com'
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS -Certificate '*.example.com'
 
     # for a hostname
-    Add-PodeEndpoint -Address foo.example.com:8443 -Protocol HTTPS -Certificate '*.example.com'
+    Add-PodeEndpoint -Address foo.example.com -Port 8443 -Protocol HTTPS -Certificate '*.example.com'
 }
 ```
 
