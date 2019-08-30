@@ -209,3 +209,55 @@ Describe 'Set-PodeSessionCookie' {
         Assert-MockCalled Get-PodeSessionCookieExpiry -Times 1 -Scope It
     }
 }
+
+Describe 'Remove-PodeSession' {
+    It 'Throws an error if sessions are not configured' {
+        Mock Test-PodeSessionsConfigured { return $false }
+        { Remove-PodeSession } | Should Throw 'sessions have not been configured'
+    }
+
+    It 'Does nothing if there is no session' {
+        Mock Test-PodeSessionsConfigured { return $true }
+        Mock Remove-PodeAuthSession {}
+
+        $WebEvent = @{}
+        Remove-PodeSession
+
+        Assert-MockCalled Remove-PodeAuthSession -Times 0 -Scope It
+    }
+
+    It 'Call removes the session' {
+        Mock Test-PodeSessionsConfigured { return $true }
+        Mock Remove-PodeAuthSession {}
+
+        $WebEvent = @{ Session = @{} }
+        Remove-PodeSession
+
+        Assert-MockCalled Remove-PodeAuthSession -Times 1 -Scope It
+    }
+}
+
+Describe 'Save-PodeSession' {
+    It 'Throws an error if sessions are not configured' {
+        Mock Test-PodeSessionsConfigured { return $false }
+        { Save-PodeSession } | Should Throw 'sessions have not been configured'
+    }
+
+    It 'Throws error if there is no session' {
+        Mock Test-PodeSessionsConfigured { return $true }
+        $WebEvent = @{}
+        { Save-PodeSession } | Should Throw 'There is no session available to save'
+    }
+
+    It 'Call saves the session' {
+        Mock Test-PodeSessionsConfigured { return $true }
+        Mock Invoke-PodeScriptBlock {}
+
+        $WebEvent = @{ Session = @{
+            Save = {}
+        } }
+
+        Save-PodeSession
+        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
+    }
+}

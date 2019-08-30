@@ -78,11 +78,7 @@ Describe 'Remove-PodeAuthSession' {
             }
         }
 
-        Remove-PodeAuthSession -Event $event -Options @{
-            Failure = @{
-                Url = 'http://example.com'
-            }
-        }
+        Remove-PodeAuthSession -Event $event
 
         $event.Auth.Count | Should Be 0
         $event.Auth.User | Should Be $null
@@ -106,11 +102,7 @@ Describe 'Remove-PodeAuthSession' {
             }
         }
 
-        Remove-PodeAuthSession -Event $event -Options @{
-            Failure = @{
-                Url = 'http://example.com'
-            }
-        }
+        Remove-PodeAuthSession -Event $event
 
         $event.Auth.Count | Should Be 0
         $event.Auth.User | Should Be $null

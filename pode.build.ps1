@@ -40,7 +40,6 @@ function Test-PodeBuildIsGitHub
 function Test-PodeBuildCanCodeCoverage
 {
     return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
-    #return ((Test-PodeBuildIsAppVeyor) -or (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE))
 }
 
 function Get-PodeBuildService

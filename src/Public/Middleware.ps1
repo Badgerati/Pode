@@ -278,14 +278,7 @@ function Enable-PodeSessionMiddleware
             # assign endware for session to set cookie/storage
             $e.OnEnd += @{
                 Logic = {
-                    param($e)
-
-                    # if auth is in use, then assign to session store
-                    if (!(Test-IsEmpty $e.Auth) -and $e.Auth.Store) {
-                        $e.Session.Data.Auth = $e.Auth
-                    }
-
-                    Invoke-PodeScriptBlock -ScriptBlock $e.Session.Save -Arguments @($e.Session, $true) -Splat
+                    Save-PodeSession -Force
                 }
             }
         }
@@ -299,6 +292,75 @@ function Enable-PodeSessionMiddleware
     }
 
     (New-PodeMiddleware -ScriptBlock $script) | Add-PodeMiddleware -Name '__pode_mw_sessions__'
+}
+
+<#
+.SYNOPSIS
+Remove the current Session, logging it out.
+
+.DESCRIPTION
+Remove the current Session, logging it out. This will remove the session from Storage, and Cookies.
+
+.EXAMPLE
+Remove-PodeSession
+#>
+function Remove-PodeSession
+{
+    [CmdletBinding()]
+    param()
+
+    # if sessions haven't been setup, error
+    if (!(Test-PodeSessionsConfigured)) {
+        throw 'Sessions have not been configured'
+    }
+
+    # error if session is null
+    if ($null -eq $WebEvent.Session) {
+        return
+    }
+
+    # remove the session, and from auth and cookies
+    Remove-PodeAuthSession -Event $WebEvent
+}
+
+<#
+.SYNOPSIS
+Saves the current Session's data.
+
+.DESCRIPTION
+Saves the current Session's data.
+
+.PARAMETER Force
+If supplied, the data will be saved even if nothing has changed.
+
+.EXAMPLE
+Save-PodeSession -Force
+#>
+function Save-PodeSession
+{
+    [CmdletBinding()]
+    param(
+        [switch]
+        $Force
+    )
+
+    # if sessions haven't been setup, error
+    if (!(Test-PodeSessionsConfigured)) {
+        throw 'Sessions have not been configured'
+    }
+
+    # error if session is null
+    if ($null -eq $WebEvent.Session) {
+        throw 'There is no session available to save'
+    }
+
+    # if auth is in use, then assign to session store
+    if (!(Test-IsEmpty $WebEvent.Auth) -and $WebEvent.Auth.Store) {
+        $WebEvent.Session.Data.Auth = $WebEvent.Auth
+    }
+
+    # save the session
+    Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Save -Arguments @($WebEvent.Session, $Force) -Splat
 }
 
 <#
