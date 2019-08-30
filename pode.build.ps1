@@ -10,7 +10,7 @@ param (
 $Versions = @{
     Pester = '4.8.0'
     MkDocs = '1.0.4'
-    Coveralls = '1.0.25'
+    PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
     Checksum = '0.2.0'
     MkDocsTheme = '4.4.0'
@@ -32,6 +32,30 @@ function Test-PodeBuildIsAppVeyor
     return (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID))
 }
 
+function Test-PodeBuildIsGitHub
+{
+    return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
+}
+
+function Test-PodeBuildCanCodeCoverage
+{
+    return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
+    #return ((Test-PodeBuildIsAppVeyor) -or (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE))
+}
+
+function Get-PodeBuildService
+{
+    if (Test-PodeBuildIsAppVeyor) {
+        return 'appveyor'
+    }
+
+    if (Test-PodeBuildIsGitHub) {
+        return 'github-actions'
+    }
+
+    return 'travis-ci'
+}
+
 function Test-PodeBuildCommand($cmd)
 {
     $path = $null
@@ -44,6 +68,18 @@ function Test-PodeBuildCommand($cmd)
     }
 
     return (![string]::IsNullOrWhiteSpace($path))
+}
+
+function Get-PodeBuildBranch
+{
+    if (Test-PodeBuildIsAppVeyor) {
+        $branch = $env:APPVEYOR_REPO_BRANCH
+    }
+    elseif (Test-PodeBuildIsGitHub) {
+        $branch = $env:GITHUB_REF
+    }
+
+    return ($branch -ireplace 'refs\/heads\/', '')
 }
 
 function Invoke-PodeBuildInstall($name, $version)
@@ -122,12 +158,12 @@ task TestDeps {
         Install-Module -Name Pester -Scope CurrentUser -RequiredVersion $Versions.Pester -Force -SkipPublisherCheck
     }
 
-    # install coveralls
-    if (Test-PodeBuildIsAppVeyor)
+    # install PSCoveralls
+    if (Test-PodeBuildCanCodeCoverage)
     {
-        if (((Get-Module -ListAvailable coveralls) | Where-Object { $_.Version -ieq $Versions.Coveralls }) -eq $null) {
-            Write-Host 'Installing Coveralls'
-            Install-Module -Name coveralls -Scope CurrentUser -RequiredVersion $Versions.Coveralls -Force -SkipPublisherCheck
+        if (((Get-Module -ListAvailable PSCoveralls) | Where-Object { $_.Version -ieq $Versions.PSCoveralls }) -eq $null) {
+            Write-Host 'Installing PSCoveralls'
+            Install-Module -Name PSCoveralls -Scope CurrentUser -RequiredVersion $Versions.PSCoveralls -Force -SkipPublisherCheck
         }
     }
 }
@@ -183,13 +219,13 @@ task Test TestDeps, {
 
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
 
-    # if appveyor, run code coverage
-    if (Test-PodeBuildIsAppVeyor) {
+    # if appveyor or github, run code coverage
+    if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
         $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
     }
     else {
-        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -PassThru
+        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
     }
 }, PushAppVeyorTests, PushCodeCoverage, CheckFailedTests
 
@@ -207,11 +243,15 @@ task PushAppVeyorTests -If (Test-PodeBuildIsAppVeyor) {
     Push-AppveyorArtifact $TestResultFile
 }
 
-# Synopsis: If AppyVeyor, push code coverage stats
-task PushCodeCoverage -If (Test-PodeBuildIsAppVeyor) {
+# Synopsis: If AppyVeyor or GitHub, push code coverage stats
+task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
-        $coverage = Format-Coverage -PesterResults $Script:TestStatus -CoverallsApiToken $env:PODE_COVERALLS_TOKEN -RootFolder $pwd -BranchName $ENV:APPVEYOR_REPO_BRANCH
-        Publish-Coverage -Coverage $coverage
+        $service = Get-PodeBuildService
+        $branch = Get-PodeBuildBranch
+
+        Write-Host "Pushing coverage for $($branch) from $($service)"
+        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch
+        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
     }
     catch {
         $_.Exception | Out-Default
