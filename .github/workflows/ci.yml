@@ -30,5 +30,5 @@ jobs:
       shell: pwsh
       env:
         PODE_COVERALLS_TOKEN: ${{ secrets.PODE_COVERALLS_TOKEN }}
-        PODE_RUN_CODE_COVERAGE: ${{ matrix.os == 'windows-latest' }}
+        PODE_RUN_CODE_COVERAGE: ${{ matrix.os == 'ubuntu-latest' }}
       run: Invoke-Build Test

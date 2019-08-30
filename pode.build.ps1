@@ -222,7 +222,7 @@ task Test TestDeps, {
     # if appveyor or github, run code coverage
     if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
-        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -CodeCoverage $srcFiles -PassThru
+        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
     }
     else {
         $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
@@ -250,8 +250,8 @@ task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
         $branch = Get-PodeBuildBranch
 
         Write-Host "Pushing coverage for $($branch) from $($service)"
-        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch -Verbose
-        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN -Verbose
+        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch
+        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
     }
     catch {
         $_.Exception | Out-Default
