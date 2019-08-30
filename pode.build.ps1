@@ -39,7 +39,8 @@ function Test-PodeBuildIsGitHub
 
 function Test-PodeBuildCanCodeCoverage
 {
-    return ((Test-PodeBuildIsAppVeyor) -or (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE))
+    return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
+    #return ((Test-PodeBuildIsAppVeyor) -or (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE))
 }
 
 function Get-PodeBuildService
@@ -245,8 +246,12 @@ task PushAppVeyorTests -If (Test-PodeBuildIsAppVeyor) {
 # Synopsis: If AppyVeyor or GitHub, push code coverage stats
 task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
-        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName (Get-PodeBuildService) -BranchName (Get-PodeBuildBranch)
-        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
+        $service = Get-PodeBuildService
+        $branch = Get-PodeBuildBranch
+
+        Write-Host "Pushing coverage for $($branch) from $($service)"
+        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch -Verbose
+        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN -Verbose
     }
     catch {
         $_.Exception | Out-Default
