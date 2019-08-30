@@ -138,6 +138,8 @@
         'Get-PodeCsrfMiddleware',
         'Initialize-PodeCsrf',
         'Enable-PodeCsrfMiddleware',
+        'Remove-PodeSession',
+        'Save-PodeSession',
 
         # auth
         'New-PodeAuthType',

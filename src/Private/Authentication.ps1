@@ -146,7 +146,8 @@ function Get-PodeAuthMiddlewareScript
 
         # check for logout command
         if ($opts.Logout) {
-            Remove-PodeAuthSession -Event $e -Options $opts
+            Remove-PodeAuthSession -Event $e
+            $opts.Failure.Url = (Protect-PodeValue -Value $opts.Failure.Url -Default $e.Request.Url.AbsolutePath)
             return (Set-PodeAuthStatus -StatusCode 302 -Options $opts)
         }
 
@@ -206,11 +207,7 @@ function Remove-PodeAuthSession
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Event,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Options
+        $Event
     )
 
     # blank out the auth
@@ -219,11 +216,6 @@ function Remove-PodeAuthSession
     # if a session auth is found, blank it
     if (!(Test-IsEmpty $Event.Session.Data.Auth)) {
         $Event.Session.Data.Remove('Auth')
-    }
-
-    # redirect to a failure url, or onto the current path?
-    if ([string]::IsNullOrWhiteSpace($Options.Failure.Url)) {
-        $Options.Failure.Url = $Event.Request.Url.AbsolutePath
     }
 
     # Delete the session (remove from store, blank it, and remove from Response)
