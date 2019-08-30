@@ -50,10 +50,10 @@ function Get-PodeBuildService
     }
 
     if (Test-PodeBuildIsGitHub) {
-        return 'github'
+        return 'github-actions'
     }
 
-    return 'travisci'
+    return 'travis-ci'
 }
 
 function Test-PodeBuildCommand($cmd)
