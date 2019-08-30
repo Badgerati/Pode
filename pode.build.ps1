@@ -10,7 +10,7 @@ param (
 $Versions = @{
     Pester = '4.8.0'
     MkDocs = '1.0.4'
-    Coveralls = '1.0.25'
+    PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
     Checksum = '0.2.0'
     MkDocsTheme = '4.4.0'
@@ -42,6 +42,19 @@ function Test-PodeBuildCanCodeCoverage
     return ((Test-PodeBuildIsAppVeyor) -or (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE))
 }
 
+function Get-PodeBuildService
+{
+    if (Test-PodeBuildIsAppVeyor) {
+        return 'appveyor'
+    }
+
+    if (Test-PodeBuildIsGitHub) {
+        return 'github'
+    }
+
+    return 'travisci'
+}
+
 function Test-PodeBuildCommand($cmd)
 {
     $path = $null
@@ -59,12 +72,13 @@ function Test-PodeBuildCommand($cmd)
 function Get-PodeBuildBranch
 {
     if (Test-PodeBuildIsAppVeyor) {
-        return $env:APPVEYOR_REPO_BRANCH
+        $branch = $env:APPVEYOR_REPO_BRANCH
+    }
+    elseif (Test-PodeBuildIsGitHub) {
+        $branch = $env:GITHUB_REF
     }
 
-    if (Test-PodeBuildIsGitHub) {
-        return $env:GITHUB_REF
-    }
+    return ($branch -ireplace 'refs\/heads\/', '')
 }
 
 function Invoke-PodeBuildInstall($name, $version)
@@ -143,12 +157,12 @@ task TestDeps {
         Install-Module -Name Pester -Scope CurrentUser -RequiredVersion $Versions.Pester -Force -SkipPublisherCheck
     }
 
-    # install coveralls
+    # install PSCoveralls
     if (Test-PodeBuildCanCodeCoverage)
     {
-        if (((Get-Module -ListAvailable coveralls) | Where-Object { $_.Version -ieq $Versions.Coveralls }) -eq $null) {
-            Write-Host 'Installing Coveralls'
-            Install-Module -Name coveralls -Scope CurrentUser -RequiredVersion $Versions.Coveralls -Force -SkipPublisherCheck
+        if (((Get-Module -ListAvailable PSCoveralls) | Where-Object { $_.Version -ieq $Versions.PSCoveralls }) -eq $null) {
+            Write-Host 'Installing PSCoveralls'
+            Install-Module -Name PSCoveralls -Scope CurrentUser -RequiredVersion $Versions.PSCoveralls -Force -SkipPublisherCheck
         }
     }
 }
@@ -207,10 +221,10 @@ task Test TestDeps, {
     # if appveyor or github, run code coverage
     if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
-        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
+        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -CodeCoverage $srcFiles -PassThru
     }
     else {
-        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -PassThru
+        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
     }
 }, PushAppVeyorTests, PushCodeCoverage, CheckFailedTests
 
@@ -231,8 +245,8 @@ task PushAppVeyorTests -If (Test-PodeBuildIsAppVeyor) {
 # Synopsis: If AppyVeyor or GitHub, push code coverage stats
 task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
-        $coverage = Format-Coverage -PesterResults $Script:TestStatus -CoverallsApiToken $env:PODE_COVERALLS_TOKEN -RootFolder $pwd -BranchName (Get-PodeBuildBranch)
-        Publish-Coverage -Coverage $coverage
+        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName (Get-PodeBuildService) -BranchName (Get-PodeBuildBranch)
+        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
     }
     catch {
         $_.Exception | Out-Default
