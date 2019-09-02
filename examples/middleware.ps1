@@ -4,36 +4,38 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
-Server {
+Start-PodeServer {
 
     # listen on localhost:8085
-    listen *:$Port http
+    Add-PodeEndpoint -Address * -Port $port -Protocol Http
 
     # limit localhost to 5 request per 10 seconds
-    limit ip @('127.0.0.1', '[::1]') 5 10
+    Add-PodeLimitRule -Type IP -Values @('127.0.0.1', '[::1]') -Limit 5 -Seconds 10
 
     # override the rate limiting to ignore it
-    middleware -name '@limit' {
+    Add-PodeMiddleware -Name  '__pode_mw_rate_limit__' -ScriptBlock {
         # just continue to next middleware
         return $true
     }
 
     # middleware that runs on specific routes
-    middleware '/users' {
+    Add-PodeMiddleware -Name 'RouteMiddleware' -Route '/users' -ScriptBlock {
         'Middleware for routes!' | Out-Default
         return $true
     }
 
-    # middleware from a hashtable - useful for inbuilt types, like "auth check"
-    middleware @{
+    # middleware from a hashtable/pipeline - useful for inbuilt types
+    $mw = @{
         'Logic' = {
             'Middleware from hashtables!' | Out-Default
             return $true
         };
     }
 
+    $mw | Add-PodeMiddleware -Name 'MiddlewareFromPipe'
+
     # block requests that come from powershell
-    middleware {
+    Add-PodeMiddleware -Name 'BlockPowershell' -ScriptBlock {
         # session parameter which contains the Request/Response, and any other
         # keys added in any prior middleware
         param($session)
@@ -41,7 +43,7 @@ Server {
         # if the user agent is powershell, deny access
         if ($session.Request.UserAgent -ilike '*powershell*') {
             # forbidden
-            status 403
+            Set-PodeResponseStatus -Code 403
 
             # stop processing
             return $false
@@ -59,7 +61,7 @@ Server {
         param($session)
 
         if ($session.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
-            status 403
+            Set-PodeResponseStatus -Code 403
             return $false
         }
 
@@ -68,14 +70,14 @@ Server {
 
     # the reject_ip middleware above is linked to this route,
     # and checked before running the route logic
-    route get '/users' $reject_ip {
-        json @{
+    Add-PodeRoute -Method Get -Path '/users' -Middleware $reject_ip -ScriptBlock {
+        Write-PodeJsonResponse -Value @{
             'Users' = @('John', 'Bill')
         }
     }
 
     # this route has no custom middleware, and just runs the route logic
-    route get '/alive' {
-        json @{ 'Alive' = $true }
+    Add-PodeRoute -Method Get -Path '/alive' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'Alive' = $true }
     }
 }

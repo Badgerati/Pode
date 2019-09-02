@@ -12,38 +12,38 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8090
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8090
-    listen localhost:8090 http
+    Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # set csrf middleware, then either session middleware, or cookie global secret
     switch ($Type.ToLowerInvariant()) {
         'cookie' {
-            cookie secrets global 'rem'
-            middleware (csrf -c middleware)
+            Set-PodeCookieSecret -Value 'rem' -Global
+            Enable-PodeCsrfMiddleware -UseCookies
         }
 
         'session' {
-            middleware (session @{ 'secret' = 'schwifty'; 'duration' = 120; })
-            middleware (csrf middleware)
+            Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
+            Enable-PodeCsrfMiddleware
         }
     }
 
     # GET request for index page, and to make a token
     # this route will work, as GET methods are ignored by CSRF by default
-    route get '/' {
-        $token = (csrf token)
-        view 'index-csrf' -fm @{ 'csrfToken' = $token }
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        $token = (New-PodeCsrfToken)
+        Write-PodeViewResponse -Path 'index-csrf' -Data @{ 'csrfToken' = $token } -FlashMessages
     }
 
     # POST route for form with and without csrf token
-    route post '/token' {
+    Add-PodeRoute -Method Post -Path '/token' -ScriptBlock {
         param($e)
-        redirect '/'
+        Move-PodeResponseUrl -Url '/'
     }
 
 }

@@ -5,34 +5,34 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8080 and 8443
-Server {
+Start-PodeServer {
 
     # listen on localhost:8080/8443
-    listen *:8080 http
-    listen *:8443 https
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS
 
     # set view engine to pode
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page
-    route get '/' -endpoint *:8443 -protocol http {
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+    Add-PodeRoute -Method Get -Path '/' -Endpoint *:8443 -Protocol Http -ScriptBlock {
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request to download a file
-    route get '/download' {
-        attach 'Anger.jpg'
+    Add-PodeRoute -Method Get -Path '/download' -ScriptBlock {
+        Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
     # GET request with parameters
-    route get '/:userId/details' {
+    Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
         param($event)
-        json @{ 'userId' = $event.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
     }
 
     # ALL requests for http only to redirect to https
-    route * * -protocol http {
-        redirect -protocol https -port 8443
+    Add-PodeRoute -Method * -Path * -Protocol Http {
+        Move-PodeResponseUrl -Protocol https -Port 8443
     }
 
-} -FileMonitor
+}

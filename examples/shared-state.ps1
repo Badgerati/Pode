@@ -5,48 +5,48 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a basic server
-Server {
+Start-PodeServer {
 
-    listen *:8085 http
-    logger 'terminal'
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 
     # re-initialise the state
-    state restore './state.json'
+    Restore-PodeState -Path './state.json'
 
     # initialise if there was no file
-    if ($null -eq ($hash = (state get 'hash'))) {
-        $hash = state set 'hash' @{}
+    if ($null -eq ($hash = (Get-PodeState -Name 'hash'))) {
+        $hash = Set-PodeState -Name 'hash' -Value @{}
         $hash['values'] = @()
     }
 
     # create timer to update a hashtable and make it globally accessible
-    timer 'forever' 2 {
+    Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         param($session)
         $hash = $null
 
-        lock $session.Lockable {
-            $hash = (state get 'hash')
+        Lock-PodeObject -Object $session.Lockable {
+            $hash = (Get-PodeState -Name 'hash')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
-            state save './state.json'
+            Save-PodeState -Path './state.json'
         }
     }
 
     # route to retrieve and return the value of the hashtable from global state
-    route get '/get-array' {
+    Add-PodeRoute -Method Get -Path '/array' -ScriptBlock {
         param($session)
 
-        lock $session.Lockable {
-            $hash = (state get 'hash')
-            json $hash
+        Lock-PodeObject -Object $session.Lockable {
+            $hash = (Get-PodeState 'hash')
+            Write-PodeJsonResponse -Value $hash
         }
     }
 
     # route to remove the hashtable from global state
-    route delete '/remove-array' {
+    Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
         param($session)
 
-        lock $session.Lockable {
-            $hash = (state set 'hash' @{})
+        Lock-PodeObject -Object $session.Lockable {
+            $hash = (Set-PodeState -Name 'hash' -Value @{})
             $hash.values = @()
         }
     }

@@ -5,19 +5,19 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 25
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
-    listen localhost smtp
+    Add-PodeEndpoint -Address localhost -Protocol SMTP
 
     # allow the local ip
-    access allow ip 127.0.0.1
+    Add-PodeAccessRule -Access Allow -Type IP -Values 127.0.0.1
 
     # setup an smtp handler
-    handler 'smtp' {
-        param($session)
-        Write-Host $session.From
-        Write-Host $session.To
-        Write-Host $session.Data
+    Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
+        param($e)
+        Write-Host $e.Email.From
+        Write-Host $e.Email.To
+        Write-Host $e.Email.Data
     }
 
 }

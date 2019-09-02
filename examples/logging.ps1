@@ -4,40 +4,46 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+$LOGGING_TYPE = 'Terminal' # Terminal, File, Custom
+
 # create a server, and start listening on port 8085
-Server {
+Start-PodeServer {
 
-    listen *:8085 http
-    engine pode
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    Set-PodeViewEngine -Type Pode
 
-    # termial/cli logger
-    logger terminal
+    switch ($LOGGING_TYPE.ToLowerInvariant()) {
+        'terminal' {
+            New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+        }
 
-    # daily file logger
-    logger file @{
-        'Path' = $null; # default is '<root>/logs'
-        'MaxDays' = 4;
-    }
+        'file' {
+            New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4 | Enable-PodeRequestLogging
+        }
 
-    # custom logger
-    logger -c output {
-        param($event)
-        $event.Log.Request.Protocol | Out-Default
+        'custom' {
+            $type = New-PodeLoggingMethod -Custom -ScriptBlock {
+                param($item)
+                # send request row to S3
+            }
+
+            $type | Enable-PodeRequestLogging
+        }
     }
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' {
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
-    route 'get' '/error' {
-        status 500
+    Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
+        Set-PodeResponseStatus -Code 500
     }
 
     # GET request to download a file
-    route 'get' '/download' {
-        attach 'Anger.jpg'
+    Add-PodeRoute -Method Get -Path '/download' -ScriptBlock {
+        Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
 }

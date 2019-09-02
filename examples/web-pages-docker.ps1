@@ -1,30 +1,30 @@
-Import-Module Pode -Force
+Import-Module Pode -Force -ErrorAction Stop
 
 # create a server, and start listening on port 8085
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on *:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($session)
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
-    route 'get' '/error' {
+    Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
         param($session)
-        status 500
+        Set-PodeResponseStatus -Code 500
     }
 
     # PUT update a file to trigger monitor
-    route 'put' '/file' {
+    Add-PodeRoute -Method Put -Path '/file' -ScriptBlock {
         param($session)
         'Hello, world!' | Out-File -FilePath "$($PodeContext.Server.Root)/file.txt" -Append -Force
     }
 
-} -FileMonitor
+}

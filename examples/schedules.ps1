@@ -5,33 +5,33 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server {
+Start-PodeServer {
 
     # listen on localhost:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # schedule minutely using predefined cron
-    schedule 'predefined' '@minutely' -Limit 2 {
+    Add-PodeSchedule -Name 'predefined' -Cron '@minutely' -Limit 2 -ScriptBlock {
         'hello, world!' | Out-Default
     }
 
     # schedule defined using two cron expressions
-    schedule 'two-crons' @('0/3 * * * *', '0/5 * * * *') {
+    Add-PodeSchedule -Name 'two-crons' -Cron @('0/3 * * * *', '0/5 * * * *') -ScriptBlock {
         'double cron' | Out-Default
     }
 
     # schedule to run every tuesday at midnight
-    schedule 'tuesdays' '0 0 * * TUE' {
+    Add-PodeSchedule -Name 'tuesdays' -Cron '0 0 * * TUE' -ScriptBlock {
         # logic
     }
 
     # schedule to run every 5 past the hour, starting in 2hrs
-    schedule 'hourly-start' '5 * * * *' {
+    Add-PodeSchedule -Name 'hourly-start' -Cron '5 * * * *' -ScriptBlock {
         # logic
     } -StartTime ([DateTime]::Now.AddHours(2))
 
     # schedule to run every 10 minutes, and end in 2hrs
-    schedule 'every-10mins-end' '0/10 * * * *' {
+    Add-PodeSchedule -Name 'every-10mins-end' -Cron '0/10 * * * *' -ScriptBlock {
         # logic
     } -EndTime ([DateTime]::Now.AddHours(2))
 

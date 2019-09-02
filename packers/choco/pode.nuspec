@@ -13,7 +13,7 @@ Pode is a Cross-Platform PowerShell framework for creating web servers to host R
 
 ### Features
 
-* Cross-platform using PowerShell Core (with support for PS4.0+)
+* Cross-platform using PowerShell Core (with support for PS5)
 * Docker support, including images for ARM/Raspberry Pi
 * Azure Functions and AWS Lambda support
 * Listen on a single or multiple IP address/hostnames
@@ -24,13 +24,14 @@ Pode is a Cross-Platform PowerShell framework for creating web servers to host R
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes
 * Async scheduled tasks using cron expressions for short/long-running processes
-* Supports request logging to CLI, Files, and custom loggers to other services like LogStash
+* Supports logging to CLI, Files, and custom logic for other services like LogStash
 * Cross-state variable access across multiple runspaces
 * Restart the server via file monitoring, or defined periods/times
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
 * Middleware and Sessions on web servers, with Flash message and CSRF support
 * Authentication on requests, such as Basic and Windows Active Directory
+* Support for dynamically building Routes from Functions and Modules
 * (Windows) Generate/bind self-signed certificates, and signed certificates
 * (Windows) Open the hosted server as a desktop application
 

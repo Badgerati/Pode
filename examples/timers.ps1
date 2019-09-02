@@ -5,41 +5,41 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a basic server
-Server {
+Start-PodeServer {
 
-    listen *:8081 http
+    Add-PodeEndpoint -Address * -Port 8081 -Protocol Http
 
     # runs forever, looping every 5secs
-    timer 'forever' 5 {
+    Add-PodeTimer -Name 'forever' -Interval 5 -ScriptBlock {
         # logic
     }
 
     # runs forever, but skips the first 3 "loops" - is paused for 15secs then loops every 5secs
-    timer 'pause-first-3' 5 {
+    Add-PodeTimer -Name 'pause-first-3' -Interval 5 -ScriptBlock {
         # logic
-    } -skip 3
+    } -Skip 3
 
     # runs every 5secs, but only runs for 10 "loops" (ie, 50secs)
-    timer 'run-10-times' 5 {
+    Add-PodeTimer -Name 'run-10-times' -Interval 5 -ScriptBlock {
         # logic
-    } -limit 10
+    } -Limit 10
 
     # skip the first 2 loops, then run for 15 loops
-    timer 'pause-then-limit' 5 {
+    Add-PodeTimer -Name 'pause-then-limit' -Interval 5 -ScriptBlock {
         # logic
-    } -skip 2 -limit 15
+    } -Skip 2 -Limit 15
 
     # run once after 2mins
-    timer 'run-once' 120 {
+    Add-PodeTimer -Name 'run-once' -Interval 120 -ScriptBlock {
         # logic
-    } -skip 1 -limit 1
+    } -Skip 1 -Limit 1
 
     # create a new timer via a route
-    route 'get' '/api/timer' {
+    Add-PodeRoute -Method Get -Path '/api/timer' -ScriptBlock {
         param($event)
         $query = $event.Query
 
-        timer $query['Name'] $query['Seconds'] {
+        Add-PodeTimer -Name $query['Name'] -Interval $query['Seconds'] -ScriptBlock {
             # logic
         }
     }

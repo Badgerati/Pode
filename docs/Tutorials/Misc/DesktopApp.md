@@ -1,30 +1,26 @@
 # Desktop Application
 
-Normally in Pode you define a server and run it, however if you use the [`gui`](../../Functions/Core/Gui) function Pode will serve the server up as a desktop application.
+Normally in Pode you define a server and run it, however if you use the  [`Show-PodeGui`](../../../Functions/Core/Show-PodeGui) function Pode will serve the server up as a desktop application.
 
 !!! warning
-    Currently only supported on Windows due to using WPF.
+    Currently only supported in Windows PowerShell, and PowerShell 7 on Windows due to using WPF.
 
 ## Setting Server to run as Application
 
-To serve up you server as a desktop application you can just write you Pode server script as normal. The only difference is you can use the [`gui`](../../Functions/Core/Gui) function to display the application. The make-up of the function is as follows:
+To serve up you server as a desktop application you can just write you Pode server script as normal. The only difference is you can use the  [`Show-PodeGui`](../../../Functions/Core/Show-PodeGui) function to display the application.
 
-```powershell
-gui <name> [-options @{}]
-```
-
-The `gui` *must* have a name supplied - this is the title of the application's window. The options are a `hashtable` that define further features to customise the window.
+The  [`Show-PodeGui`](../../../Functions/Core/Show-PodeGui) function *must* have a Title supplied - this is the title of the application's window.
 
 The following will create a basic web server with a single page, but when the server is run it will pop up as a desktop application:
 
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 
-    gui 'Basic Server'
+    Show-PodeGui -Title 'Basic Server'
 
-    route get '/' {
-        view 'index'
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeViewResponse -Path 'index'
     }
 }
 ```

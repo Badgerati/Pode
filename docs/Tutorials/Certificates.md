@@ -7,31 +7,34 @@ Pode has the ability to generate and bind self-signed certificates (for dev/test
 
 ## Self-Signed
 
-If you are developing/testing a site on HTTPS then Pode can generate and bind quick self-signed certificates. To do this you can pass the value `self` to the `-cert` parameter of the [`listen`](../../Functions/Core/Listen):
+If you are developing/testing a site on HTTPS then Pode can generate and bind quick self-signed certificates. To do this you can pass the `-SelfSigned` swicth to the  [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) functions:
 
 ```powershell
-Server {
+Start-PodeServer {
     # for an IP:
-    listen *:8443 https -cert self
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS -SelfSigned
 
     # for a hostname:
-    listen foo.bar.com:8443 https -cert self
+    Add-PodeEndpoint -Address foo.bar.com -Port 8443 -Protocol HTTPS -SelfSigned
 }
 ```
 
 ## Pre-Installed
 
-To bind an already installed signed certificate, the certificate *must* be installed to `Cert:/LocalMachine/My`. Then you can pass the certificate name/domain to `-cert` parameter; an example for `*.example.com` is as follows:
+To bind an already installed signed certificate, the certificate *must* be installed to `Cert:/LocalMachine/My`. Then you can pass the certificate name/domain to `-Certificate` parameter; an example for `*.example.com` is as follows:
 
 ```powershell
-Server {
+Start-PodeServer {
     # for an IP:
-    listen *:8443 https -cert '*.example.com'
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS -Certificate '*.example.com'
 
     # for a hostname
-    listen foo.example.com:8443 https -cert '*.example.com'
+    Add-PodeEndpoint -Address foo.example.com -Port 8443 -Protocol HTTPS -Certificate '*.example.com'
 }
 ```
+
+!!! tip
+    You could also supply the certificate's thumbprint instead, to the `-CertificateThumbprint` parameter.
 
 ## Clean-Up
 

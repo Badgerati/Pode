@@ -1,38 +1,25 @@
-# Route Overview
+# Overview
 
-Routes in Pode allow you to bind logic that should be invoked when a user calls a certain path on a URL, for a specific HTTP method, against your server. Routes allow you to host REST APIs and Web Pages, as well as using custom middleware for things like authentication.
+Routes in Pode allow you to bind logic that should be invoked when a users call certain paths on a URL, for a specific HTTP method, against your server. Routes allow you to host REST APIs and Web Pages, as well as using custom Middleware for logic such as authentication.
 
-You can also specify static routes, that redirect requests to static content to internal directories.
+You can also create static routes, that redirect requests for static content to internal directories.
 
 Routes can also be bound against a specific protocol or endpoint. This allows you to bind multiple root (`/`) routes against different endpoints - if you're listening to multiple endpoints.
 
 !!! info
     The following HTTP methods are supported by routes in Pode:
-    DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE, and STATIC (for static file routing).
+    DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
 
 ## Usage
 
-To setup and use routes in Pode you should use the [`route`](../../../Function/Core/Route) function. The general make-up of the `route` function is as follows - the former is for HTTP requests, where as the latter is for static content:
+To setup and use Routes in Pode you should use the Routing functions. For example, let's say you want a basic `GET /ping` endpoint to just return `pong` as a JSON response:
 
 ```powershell
-route <method> <route> [<middleware>] <scriptblock> [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-contentType <string>] [-errorType <string>] [-filePath <string>] [-remove]
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
-route static <route> <path> [<defaults>] [-protocol <string>] [-endpoint <string>] [-listenName <string>] [-remove] [-downloadOnly]
-
-# or with aliases:
-route <method> <route> [<middleware>] <scriptblock> [-p <string>] [-e <string>] [-ln <string>] [-ctype <string>] [-etype <string>] [-fp <string>] [-rm]
-
-route static <route> <path> [<defaults>] [-p <string>] [-e <string>] [-ln <string>] [-rm] [-do]
-```
-
-For example, let's say you want a basic `GET /ping` endpoint to just return `pong` as a JSON response:
-
-```powershell
-server {
-    listen *:8080 http
-
-    route get '/ping' {
-        json @{ 'value' = 'pong'; }
+    Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'value' = 'pong'; }
     }
 }
 ```
@@ -52,19 +39,19 @@ The scriptblock for the route will be supplied with a single argument that conta
 The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` hashtable on the supplied web-session to a route's logic. This example will get the `userId` and "find" user, returning the users data:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
-    route post '/users' {
+    Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
         param($s)
 
         # get the user
         $user = Get-DummyUser -UserId $s.Data.userId
 
         # return the user
-        json @{
-            'Username' = $user.username;
-            'Age' = $user.age;
+        Write-PodeJsonResponse -Value @{
+            Username = $user.username
+            Age = $user.age
         }
     }
 }
@@ -87,19 +74,19 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
 The following is an example of using data from a request's query string. To retrieve values from the query string you can use the `.Query` hashtable on the supplied web-session to a route's logic. This example will return a user based on the `userId` supplied:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
-    route get '/users' {
+    Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {
         param($s)
 
         # get the user
         $user = Get-DummyUser -UserId $s.Query['userId']
 
         # return the user
-        json @{
-            'Username' = $user.username;
-            'Age' = $user.age;
+        Write-PodeJsonResponse -Value @{
+            Username = $user.username
+            Age = $user.age
         }
     }
 }
@@ -116,19 +103,19 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users?userId=12345' -Method Get
 The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the `.Parameters` hashtable on the supplied web-session to a route's logic. This example will get the `:userId` and "find" user, returning the users data:
 
 ```powershell
-server {
-    listen *:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
-    route get '/users/:userId' {
+    Add-PodeRoute -Method Get -Path '/users/:userId' -ScriptBlock {
         param($s)
 
         # get the user
         $user = Get-DummyUser -UserId $s.Parameters['userId']
 
         # return the user
-        json @{
-            'Username' = $user.username;
-            'Age' = $user.age;
+        Write-PodeJsonResponse -Value @{
+            Username = $user.username
+            Age = $user.age
         }
     }
 }

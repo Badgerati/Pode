@@ -1,16 +1,16 @@
 # SMTP Server
 
-Pode has an inbuilt SMTP server which will automatically creates a TCP listener on port 25 (unless you specify a different port via the [`listen`](../../Functions/Core/Listen) function).
+Pode has an inbuilt SMTP server which automatically creates a TCP listener on port 25 (unless you specify a different port via the  [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) function).
 
-Unlike with web servers that use the `route` function, SMTP servers use the [`handler`](../../Functions/Core/Handler) function, which lets you specify logic for handling responses from TCP streams. Just note that you can only have one `handler` per `server`.
+Unlike with web servers that use the Route functions, SMTP servers use the Handler functions, which let you specify logic for handling responses from TCP streams.
 
-To create a `handler` for the inbuilt SMTP server you can use the following example:
+To create a Handler for the inbuilt SMTP server you can use the following example:
 
 ```powershell
-Server {
-    listen *:25 smtp
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 25 -Protocol SMTP
 
-    handler smtp {
+    Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
         param($email)
 
         Write-Host $email.From
@@ -20,7 +20,7 @@ Server {
 }
 ```
 
-The SMTP `handler` will be passed the current email object, and this will have the following properties:
+The SMTP Handler will be passed the current email object, and this will have the following properties:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

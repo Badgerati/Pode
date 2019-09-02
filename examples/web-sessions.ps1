@@ -5,30 +5,24 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server {
+Start-PodeServer {
 
     # listen on localhost:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # set view engine to pode renderer
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # setup session details
-    middleware (session @{
-        'Secret' = 'schwifty';  # secret-key used to sign session cookie
-        'Name' = 'pode.sid';    # session cookie name (def: pode.sid)
-        'Duration' = 120;       # duration of the cookie, in seconds
-        'Extend' = $true;       # extend the duration of the cookie on each call
-        'GenerateId' = {        # custom SessionId generator (def: guid)
-            return [System.IO.Path]::GetRandomFileName()
-        };
-    })
+    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator {
+        return [System.IO.Path]::GetRandomFileName()
+    }
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($s)
         $s.Session.Data.Views++
-        view 'simple' -Data @{ 'numbers' = @($s.Session.Data.Views); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @($s.Session.Data.Views); }
     }
 
 }

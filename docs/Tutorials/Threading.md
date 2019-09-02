@@ -1,9 +1,9 @@
 # Threading
 
-By default Pode deals with incoming request synchronously in a single thread. You can increase the number of threads/runspaces that Pode uses to handle requests by using the `-Threads` parameter on your [`Server`](../../Functions/Core/Server):
+By default Pode deals with incoming requests synchronously in a single thread. You can increase the number of threads/runspaces that Pode uses to handle requests by using the `-Threads` parameter on the  [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) function:
 
 ```powershell
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
     # logic
 }
 ```

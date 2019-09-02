@@ -5,45 +5,47 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8090
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8090
-    listen localhost:8090 http
+    Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 
     # set view engine to pode renderer
-    engine html
+    Set-PodeViewEngine -Type HTML
 
     # set a global cookie secret
-    cookie secrets global 'pi'
+    Set-PodeCookieSecret -Value 'pi' -Global
 
     # GET request to set/extend a cookie for the date of the request
-    route get '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         $cookieName = 'current-date'
 
-        if ((cookie exists $cookieName)) {
-            cookie extend $cookieName -ttl 7200 | Out-Null
+        if (Test-PodeCookie -Name $cookieName) {
+            Update-PodeCookieExpiry -Name $cookieName -Duration 7200 | Out-Null
         }
         else {
-            cookie set $cookieName ([datetime]::UtcNow) -ttl 7200 -gs | Out-Null
+            $s = Get-PodeCookieSecret -Global
+            Set-PodeCookie -Name $cookieName -Value ([datetime]::UtcNow) -Duration 7200 -Secret $s | Out-Null
         }
 
-        view 'simple'
+        Write-PodeViewResponse -Path 'simple'
     }
 
     # GET request to remove the date cookie
-    route get '/remove' {
-        cookie remove 'current-date'
+    Add-PodeRoute -Method Get -Path '/remove' -ScriptBlock {
+        Remove-PodeCookie -Name 'current-date'
     }
 
     # GET request to check to signage of the date cookie
-    route get '/check' {
+    Add-PodeRoute -Method Get -Path '/check' -ScriptBlock {
         $cookieName = 'current-date'
 
-        $c1 = cookie get $cookieName
-        $c2 = cookie get $cookieName -gs
-        $ch = cookie check $cookieName -gs
+        $s = Get-PodeCookieSecret -Global
+        $c1 = Get-PodeCookie -Name $cookieName
+        $c2 = Get-PodeCookie -Name $cookieName -Secret $s
+        $ch = Test-PodeCookieSigned -Name $cookieName -Secret $s
 
-        json @{
+        Write-PodeJsonResponse -Value @{
             'SignedValue' = $c1.Value;
             'UnsignedValue' = $c2.Value;
             'Valid' = $ch;
