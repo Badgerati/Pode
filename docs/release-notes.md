@@ -4,18 +4,18 @@
 
 ```plain
 ### Features
-* #228: Support for rendering Markdown as HTML
+* #228: Support for rendering Markdown as HTML (Fully supported in PowerShell 7+)
 * #334: New "ConvertTo-PodeRoute" function to automatically make Routes from Functions/Modules
 * #344: New "Add-PodePage" function to more easily make GET Routes for simple pages
 
 ### Enhancements
 * #328: New "Get-PodeAuthADUser" parameter -NoGroups, to skip retrieving groups from AD
-* #330: Allow for -ArgumentList on Routes, Handlers, Timers, Schedules, etc
+* #330: Allow for -ArgumentList on Routes, Handlers, Timers, Schedules, etc - now they can be more dynamic
 * #341: Allow Show-PodeGui to work under PowerShell 7 on Windows
 * #343: Ability to mask data in logs using Regex
-* #352: On "Add-PodeEndpoint", split the Address into Address/Port parameters
-* #354: Two new functions for Sessions to Save and Remove
-* #355: Support on "Add-PodeEndpoint" for new -RedirectTo parameter
+* #352: On "Add-PodeEndpoint", split the -Address parameter into -Address/-Port parameters
+* #354: Two new functions for Sessions to Save and Remove them
+* #355: Support on "Add-PodeEndpoint" for a -RedirectTo parameter, to automatically build a redirect Route
 
 ### Bugs
 * #312: On Static Routes, don't create a PSDrive when the Source is a File Share
