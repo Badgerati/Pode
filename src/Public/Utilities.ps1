@@ -681,26 +681,24 @@ function Test-IsEmpty
         return $true
     }
 
-    switch ($Value) {
-        { $_ -is [string] } {
-            return [string]::IsNullOrWhiteSpace($Value)
-        }
+    if ($Value -is [string]) {
+        return [string]::IsNullOrWhiteSpace($Value)
+    }
 
-        { $_ -is [array] } {
-            return ($Value.Length -eq 0)
-        }
+    if ($Value -is [array]) {
+        return ($Value.Length -eq 0)
+    }
 
-        { $_ -is [hashtable] } {
-            return ($Value.Count -eq 0)
-        }
+    if ($Value -is [hashtable]) {
+        return ($Value.Count -eq 0)
+    }
 
-        { $_ -is [scriptblock] } {
-            return ($null -eq $Value -or [string]::IsNullOrWhiteSpace($Value.ToString()))
-        }
+    if ($Value -is [scriptblock]) {
+        return ([string]::IsNullOrWhiteSpace($Value.ToString()))
+    }
 
-        { $_ -is [valuetype] } {
-            return $false
-        }
+    if ($Value -is [valuetype]) {
+        return $false
     }
 
     return ([string]::IsNullOrWhiteSpace($Value) -or ((Get-PodeCount $Value) -eq 0))
