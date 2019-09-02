@@ -1,0 +1,4219 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
+    
+    
+      
+        <title>From v0.X to v1.X - Pode</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.0284f74d.css">
+      
+        <link rel="stylesheet" href="../../../assets/stylesheets/application-palette.01803549.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#00bcd4">
+      
+    
+    
+      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../../assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="cyan" data-md-color-accent="cyan">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#from-v0x-to-v1x" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../../.." title="Pode" class="md-header-nav__button md-logo">
+          
+            <img src="../../../images/icon.png" width="24" height="24">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Pode
+            </span>
+            <span class="md-header-nav__topic">
+              
+                From v0.X to v1.X
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/Badgerati/Pode/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    badgerati/pode
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+  
+
+<nav class="md-tabs md-tabs--active" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href="../../.." title="Welcome" class="md-tabs__link">
+        Welcome
+      </a>
+    
+  </li>
+
+      
+        
+      
+        
+  
+  
+    
+    
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../../Functions/Authentication/Add-PodeAuth/" title="Functions" class="md-tabs__link">
+          Functions
+        </a>
+      
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../CLI/" title="Getting Started" class="md-tabs__link md-tabs__link--active">
+          Getting Started
+        </a>
+      
+    </li>
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../../Tutorials/Basics/" title="Tutorials" class="md-tabs__link">
+          Tutorials
+        </a>
+      
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../../.." title="Pode" class="md-nav__button md-logo">
+      
+        <img src="../../../images/icon.png" width="48" height="48">
+      
+    </a>
+    Pode
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/Badgerati/Pode/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    badgerati/pode
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="Welcome" class="md-nav__link">
+      Welcome
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../release-notes/" title="Release Notes" class="md-nav__link">
+      Release Notes
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Functions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Functions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1">
+    
+    <label class="md-nav__link" for="nav-3-1">
+      Authentication
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        Authentication
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Authentication/Add-PodeAuth/" title="Add-PodeAuth" class="md-nav__link">
+      Add-PodeAuth
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Authentication/Add-PodeAuthWindowsAd/" title="Add-PodeAuthWindowsAd" class="md-nav__link">
+      Add-PodeAuthWindowsAd
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Authentication/Clear-PodeAuth/" title="Clear-PodeAuth" class="md-nav__link">
+      Clear-PodeAuth
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware/" title="Get-PodeAuthMiddleware" class="md-nav__link">
+      Get-PodeAuthMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Authentication/New-PodeAuthType/" title="New-PodeAuthType" class="md-nav__link">
+      New-PodeAuthType
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Authentication/Remove-PodeAuth/" title="Remove-PodeAuth" class="md-nav__link">
+      Remove-PodeAuth
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
+    
+    <label class="md-nav__link" for="nav-3-2">
+      Cookies
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        Cookies
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Cookies/Get-PodeCookie/" title="Get-PodeCookie" class="md-nav__link">
+      Get-PodeCookie
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Cookies/Get-PodeCookieSecret/" title="Get-PodeCookieSecret" class="md-nav__link">
+      Get-PodeCookieSecret
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Cookies/Remove-PodeCookie/" title="Remove-PodeCookie" class="md-nav__link">
+      Remove-PodeCookie
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Cookies/Set-PodeCookie/" title="Set-PodeCookie" class="md-nav__link">
+      Set-PodeCookie
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Cookies/Set-PodeCookieSecret/" title="Set-PodeCookieSecret" class="md-nav__link">
+      Set-PodeCookieSecret
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Cookies/Test-PodeCookie/" title="Test-PodeCookie" class="md-nav__link">
+      Test-PodeCookie
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Cookies/Test-PodeCookieSigned/" title="Test-PodeCookieSigned" class="md-nav__link">
+      Test-PodeCookieSigned
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Cookies/Update-PodeCookieExpiry/" title="Update-PodeCookieExpiry" class="md-nav__link">
+      Update-PodeCookieExpiry
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
+    
+    <label class="md-nav__link" for="nav-3-3">
+      Core
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        Core
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Add-PodeEndpoint/" title="Add-PodeEndpoint" class="md-nav__link">
+      Add-PodeEndpoint
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Add-PodeMiddleware/" title="Add-PodeMiddleware" class="md-nav__link">
+      Add-PodeMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Add-PodeSchedule/" title="Add-PodeSchedule" class="md-nav__link">
+      Add-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Add-PodeTimer/" title="Add-PodeTimer" class="md-nav__link">
+      Add-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Clear-PodeMiddleware/" title="Clear-PodeMiddleware" class="md-nav__link">
+      Clear-PodeMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Clear-PodeSchedules/" title="Clear-PodeSchedules" class="md-nav__link">
+      Clear-PodeSchedules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Clear-PodeTimers/" title="Clear-PodeTimers" class="md-nav__link">
+      Clear-PodeTimers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/New-PodeMiddleware/" title="New-PodeMiddleware" class="md-nav__link">
+      New-PodeMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Pode/" title="Pode" class="md-nav__link">
+      Pode
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Remove-PodeMiddleware/" title="Remove-PodeMiddleware" class="md-nav__link">
+      Remove-PodeMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Remove-PodeSchedule/" title="Remove-PodeSchedule" class="md-nav__link">
+      Remove-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Remove-PodeTimer/" title="Remove-PodeTimer" class="md-nav__link">
+      Remove-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Show-PodeGui/" title="Show-PodeGui" class="md-nav__link">
+      Show-PodeGui
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Start-PodeServer/" title="Start-PodeServer" class="md-nav__link">
+      Start-PodeServer
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
+    
+    <label class="md-nav__link" for="nav-3-4">
+      Flash
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-4">
+        Flash
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Flash/Add-PodeFlashMessage/" title="Add-PodeFlashMessage" class="md-nav__link">
+      Add-PodeFlashMessage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Flash/Clear-PodeFlashMessages/" title="Clear-PodeFlashMessages" class="md-nav__link">
+      Clear-PodeFlashMessages
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Flash/Get-PodeFlashMessage/" title="Get-PodeFlashMessage" class="md-nav__link">
+      Get-PodeFlashMessage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Flash/Get-PodeFlashMessageNames/" title="Get-PodeFlashMessageNames" class="md-nav__link">
+      Get-PodeFlashMessageNames
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Flash/Remove-PodeFlashMessage/" title="Remove-PodeFlashMessage" class="md-nav__link">
+      Remove-PodeFlashMessage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Flash/Test-PodeFlashMessage/" title="Test-PodeFlashMessage" class="md-nav__link">
+      Test-PodeFlashMessage
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
+      Handlers
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Handlers
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Handlers/Add-PodeHandler/" title="Add-PodeHandler" class="md-nav__link">
+      Add-PodeHandler
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Handlers/Clear-PodeHandlers/" title="Clear-PodeHandlers" class="md-nav__link">
+      Clear-PodeHandlers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Handlers/Remove-PodeHandler/" title="Remove-PodeHandler" class="md-nav__link">
+      Remove-PodeHandler
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-6" type="checkbox" id="nav-3-6">
+    
+    <label class="md-nav__link" for="nav-3-6">
+      Headers
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-6">
+        Headers
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Headers/Add-PodeHeader/" title="Add-PodeHeader" class="md-nav__link">
+      Add-PodeHeader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Headers/Get-PodeHeader/" title="Get-PodeHeader" class="md-nav__link">
+      Get-PodeHeader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Headers/Set-PodeHeader/" title="Set-PodeHeader" class="md-nav__link">
+      Set-PodeHeader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Headers/Test-PodeHeader/" title="Test-PodeHeader" class="md-nav__link">
+      Test-PodeHeader
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-7" type="checkbox" id="nav-3-7">
+    
+    <label class="md-nav__link" for="nav-3-7">
+      Logging
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-7">
+        Logging
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Add-PodeLogger/" title="Add-PodeLogger" class="md-nav__link">
+      Add-PodeLogger
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Clear-PodeLoggers/" title="Clear-PodeLoggers" class="md-nav__link">
+      Clear-PodeLoggers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Disable-PodeErrorLogging/" title="Disable-PodeErrorLogging" class="md-nav__link">
+      Disable-PodeErrorLogging
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Disable-PodeRequestLogging/" title="Disable-PodeRequestLogging" class="md-nav__link">
+      Disable-PodeRequestLogging
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Enable-PodeErrorLogging/" title="Enable-PodeErrorLogging" class="md-nav__link">
+      Enable-PodeErrorLogging
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Enable-PodeRequestLogging/" title="Enable-PodeRequestLogging" class="md-nav__link">
+      Enable-PodeRequestLogging
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/New-PodeLoggingMethod/" title="New-PodeLoggingMethod" class="md-nav__link">
+      New-PodeLoggingMethod
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Protect-PodeLogItem/" title="Protect-PodeLogItem" class="md-nav__link">
+      Protect-PodeLogItem
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Remove-PodeLogger/" title="Remove-PodeLogger" class="md-nav__link">
+      Remove-PodeLogger
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Write-PodeErrorLog/" title="Write-PodeErrorLog" class="md-nav__link">
+      Write-PodeErrorLog
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Logging/Write-PodeLog/" title="Write-PodeLog" class="md-nav__link">
+      Write-PodeLog
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-8" type="checkbox" id="nav-3-8">
+    
+    <label class="md-nav__link" for="nav-3-8">
+      Middleware
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-8">
+        Middleware
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Add-PodeAccessRule/" title="Add-PodeAccessRule" class="md-nav__link">
+      Add-PodeAccessRule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Add-PodeLimitRule/" title="Add-PodeLimitRule" class="md-nav__link">
+      Add-PodeLimitRule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Enable-PodeCsrfMiddleware/" title="Enable-PodeCsrfMiddleware" class="md-nav__link">
+      Enable-PodeCsrfMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Enable-PodeSessionMiddleware/" title="Enable-PodeSessionMiddleware" class="md-nav__link">
+      Enable-PodeSessionMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Get-PodeCsrfMiddleware/" title="Get-PodeCsrfMiddleware" class="md-nav__link">
+      Get-PodeCsrfMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Initialize-PodeCsrf/" title="Initialize-PodeCsrf" class="md-nav__link">
+      Initialize-PodeCsrf
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/New-PodeCsrfToken/" title="New-PodeCsrfToken" class="md-nav__link">
+      New-PodeCsrfToken
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Remove-PodeSession/" title="Remove-PodeSession" class="md-nav__link">
+      Remove-PodeSession
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Middleware/Save-PodeSession/" title="Save-PodeSession" class="md-nav__link">
+      Save-PodeSession
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-9" type="checkbox" id="nav-3-9">
+    
+    <label class="md-nav__link" for="nav-3-9">
+      Responses
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-9">
+        Responses
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Move-PodeResponseUrl/" title="Move-PodeResponseUrl" class="md-nav__link">
+      Move-PodeResponseUrl
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Read-PodeTcpClient/" title="Read-PodeTcpClient" class="md-nav__link">
+      Read-PodeTcpClient
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Save-PodeRequestFile/" title="Save-PodeRequestFile" class="md-nav__link">
+      Save-PodeRequestFile
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Set-PodeResponseAttachment/" title="Set-PodeResponseAttachment" class="md-nav__link">
+      Set-PodeResponseAttachment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Set-PodeResponseStatus/" title="Set-PodeResponseStatus" class="md-nav__link">
+      Set-PodeResponseStatus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Set-PodeViewEngine/" title="Set-PodeViewEngine" class="md-nav__link">
+      Set-PodeViewEngine
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Use-PodePartialView/" title="Use-PodePartialView" class="md-nav__link">
+      Use-PodePartialView
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeCsvResponse/" title="Write-PodeCsvResponse" class="md-nav__link">
+      Write-PodeCsvResponse
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeFileResponse/" title="Write-PodeFileResponse" class="md-nav__link">
+      Write-PodeFileResponse
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeHtmlResponse/" title="Write-PodeHtmlResponse" class="md-nav__link">
+      Write-PodeHtmlResponse
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeJsonResponse/" title="Write-PodeJsonResponse" class="md-nav__link">
+      Write-PodeJsonResponse
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeMarkdownResponse/" title="Write-PodeMarkdownResponse" class="md-nav__link">
+      Write-PodeMarkdownResponse
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeTcpClient/" title="Write-PodeTcpClient" class="md-nav__link">
+      Write-PodeTcpClient
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeTextResponse/" title="Write-PodeTextResponse" class="md-nav__link">
+      Write-PodeTextResponse
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeViewResponse/" title="Write-PodeViewResponse" class="md-nav__link">
+      Write-PodeViewResponse
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Responses/Write-PodeXmlResponse/" title="Write-PodeXmlResponse" class="md-nav__link">
+      Write-PodeXmlResponse
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-10" type="checkbox" id="nav-3-10">
+    
+    <label class="md-nav__link" for="nav-3-10">
+      Routes
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-10">
+        Routes
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Routes/Add-PodePage/" title="Add-PodePage" class="md-nav__link">
+      Add-PodePage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Routes/Add-PodeRoute/" title="Add-PodeRoute" class="md-nav__link">
+      Add-PodeRoute
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Routes/Add-PodeStaticRoute/" title="Add-PodeStaticRoute" class="md-nav__link">
+      Add-PodeStaticRoute
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Routes/Clear-PodeRoutes/" title="Clear-PodeRoutes" class="md-nav__link">
+      Clear-PodeRoutes
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Routes/Clear-PodeStaticRoutes/" title="Clear-PodeStaticRoutes" class="md-nav__link">
+      Clear-PodeStaticRoutes
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Routes/ConvertTo-PodeRoute/" title="ConvertTo-PodeRoute" class="md-nav__link">
+      ConvertTo-PodeRoute
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Routes/Remove-PodeRoute/" title="Remove-PodeRoute" class="md-nav__link">
+      Remove-PodeRoute
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Routes/Remove-PodeStaticRoute/" title="Remove-PodeStaticRoute" class="md-nav__link">
+      Remove-PodeStaticRoute
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-11" type="checkbox" id="nav-3-11">
+    
+    <label class="md-nav__link" for="nav-3-11">
+      State
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-11">
+        State
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/State/Get-PodeState/" title="Get-PodeState" class="md-nav__link">
+      Get-PodeState
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/State/Remove-PodeState/" title="Remove-PodeState" class="md-nav__link">
+      Remove-PodeState
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/State/Restore-PodeState/" title="Restore-PodeState" class="md-nav__link">
+      Restore-PodeState
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/State/Save-PodeState/" title="Save-PodeState" class="md-nav__link">
+      Save-PodeState
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/State/Set-PodeState/" title="Set-PodeState" class="md-nav__link">
+      Set-PodeState
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/State/Test-PodeState/" title="Test-PodeState" class="md-nav__link">
+      Test-PodeState
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
+    
+    <label class="md-nav__link" for="nav-3-12">
+      Utilities
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-12">
+        Utilities
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Add-PodeEndware/" title="Add-PodeEndware" class="md-nav__link">
+      Add-PodeEndware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Close-PodeDisposable/" title="Close-PodeDisposable" class="md-nav__link">
+      Close-PodeDisposable
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Get-PodeConfig/" title="Get-PodeConfig" class="md-nav__link">
+      Get-PodeConfig
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Get-PodeServerPath/" title="Get-PodeServerPath" class="md-nav__link">
+      Get-PodeServerPath
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Import-PodeModule/" title="Import-PodeModule" class="md-nav__link">
+      Import-PodeModule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Import-PodeSnapIn/" title="Import-PodeSnapIn" class="md-nav__link">
+      Import-PodeSnapIn
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Invoke-PodeScriptBlock/" title="Invoke-PodeScriptBlock" class="md-nav__link">
+      Invoke-PodeScriptBlock
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Lock-PodeObject/" title="Lock-PodeObject" class="md-nav__link">
+      Lock-PodeObject
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Protect-PodeValue/" title="Protect-PodeValue" class="md-nav__link">
+      Protect-PodeValue
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Resolve-PodeValue/" title="Resolve-PodeValue" class="md-nav__link">
+      Resolve-PodeValue
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Start-PodeStopwatch/" title="Start-PodeStopwatch" class="md-nav__link">
+      Start-PodeStopwatch
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Test-IsEmpty/" title="Test-IsEmpty" class="md-nav__link">
+      Test-IsEmpty
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Test-IsPSCore/" title="Test-IsPSCore" class="md-nav__link">
+      Test-IsPSCore
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Test-IsUnix/" title="Test-IsUnix" class="md-nav__link">
+      Test-IsUnix
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Test-IsWindows/" title="Test-IsWindows" class="md-nav__link">
+      Test-IsWindows
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Use-PodeScript/" title="Use-PodeScript" class="md-nav__link">
+      Use-PodeScript
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Use-PodeStream/" title="Use-PodeStream" class="md-nav__link">
+      Use-PodeStream
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Utilities/Wait-PodeTask/" title="Wait-PodeTask" class="md-nav__link">
+      Wait-PodeTask
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
+    
+    <label class="md-nav__link" for="nav-4">
+      Getting Started
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        Getting Started
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../CLI/" title="CLI" class="md-nav__link">
+      CLI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Docker/" title="Docker" class="md-nav__link">
+      Docker
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../FirstApp/" title="Building your first Pode app" class="md-nav__link">
+      Building your first Pode app
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Frontend/" title="Frontend" class="md-nav__link">
+      Frontend
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Installation/" title="Installation" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../KnownIssues/" title="Known Issues" class="md-nav__link">
+      Known Issues
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../LocalModules/" title="Local Modules" class="md-nav__link">
+      Local Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../RunAsService/" title="Running Pode as a Service" class="md-nav__link">
+      Running Pode as a Service
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-9" type="checkbox" id="nav-4-9" checked>
+    
+    <label class="md-nav__link" for="nav-4-9">
+      Migrating
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-9">
+        Migrating
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        From v0.X to v1.X
+      </label>
+    
+    <a href="./" title="From v0.X to v1.X" class="md-nav__link md-nav__link--active">
+      From v0.X to v1.X
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" title="Authentication" class="md-nav__link">
+    Authentication
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#types" title="Types" class="md-nav__link">
+    Types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validators" title="Validators" class="md-nav__link">
+    Validators
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cookies" title="Cookies" class="md-nav__link">
+    Cookies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" title="Configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#psd1" title="PSD1" class="md-nav__link">
+    PSD1
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flash-messages" title="Flash Messages" class="md-nav__link">
+    Flash Messages
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gui" title="GUI" class="md-nav__link">
+    GUI
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handlers" title="Handlers" class="md-nav__link">
+    Handlers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#headers" title="Headers" class="md-nav__link">
+    Headers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" title="Logging" class="md-nav__link">
+    Logging
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods" title="Methods" class="md-nav__link">
+    Methods
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#types_1" title="Types" class="md-nav__link">
+    Types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writing-logs" title="Writing Logs" class="md-nav__link">
+    Writing Logs
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#middleware" title="Middleware" class="md-nav__link">
+    Middleware
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general" title="General" class="md-nav__link">
+    General
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sessions" title="Sessions" class="md-nav__link">
+    Sessions
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#csrf" title="CSRF" class="md-nav__link">
+    CSRF
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#importing-modulesscripts" title="Importing Modules/Scripts" class="md-nav__link">
+    Importing Modules/Scripts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#response-helpers" title="Response Helpers" class="md-nav__link">
+    Response Helpers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routes" title="Routes" class="md-nav__link">
+    Routes
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#normal" title="Normal" class="md-nav__link">
+    Normal
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#static" title="Static" class="md-nav__link">
+    Static
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schedules" title="Schedules" class="md-nav__link">
+    Schedules
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server" title="Server" class="md-nav__link">
+    Server
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state" title="State" class="md-nav__link">
+    State
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timers" title="Timers" class="md-nav__link">
+    Timers
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+    
+    <label class="md-nav__link" for="nav-5">
+      Tutorials
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-5">
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Basics/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Certificates/" title="Certificates" class="md-nav__link">
+      Certificates
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/ImportingModules/" title="Importing Modules/SnapIns" class="md-nav__link">
+      Importing Modules/SnapIns
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Schedules/" title="Schedules" class="md-nav__link">
+      Schedules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/SharedState/" title="Shared State" class="md-nav__link">
+      Shared State
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/SmtpServer/" title="SMTP Server" class="md-nav__link">
+      SMTP Server
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Threading/" title="Threading" class="md-nav__link">
+      Threading
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Timers/" title="Timers" class="md-nav__link">
+      Timers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-10" type="checkbox" id="nav-5-10">
+    
+    <label class="md-nav__link" for="nav-5-10">
+      Authentication
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-10">
+        Authentication
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Authentication/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-10-2" type="checkbox" id="nav-5-10-2">
+    
+    <label class="md-nav__link" for="nav-5-10-2">
+      Inbuilt
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-10-2">
+        Inbuilt
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Authentication/Inbuilt/WindowsAD/" title="Windows AD" class="md-nav__link">
+      Windows AD
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-10-3" type="checkbox" id="nav-5-10-3">
+    
+    <label class="md-nav__link" for="nav-5-10-3">
+      Methods
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-10-3">
+        Methods
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Authentication/Methods/Basic/" title="Basic" class="md-nav__link">
+      Basic
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Authentication/Methods/Custom/" title="Custom" class="md-nav__link">
+      Custom
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Authentication/Methods/Form/" title="Form" class="md-nav__link">
+      Form
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-11" type="checkbox" id="nav-5-11">
+    
+    <label class="md-nav__link" for="nav-5-11">
+      Logging
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-11">
+        Logging
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Logging/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-11-2" type="checkbox" id="nav-5-11-2">
+    
+    <label class="md-nav__link" for="nav-5-11-2">
+      Methods
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-11-2">
+        Methods
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Logging/Methods/Custom/" title="Custom" class="md-nav__link">
+      Custom
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Logging/Methods/File/" title="File" class="md-nav__link">
+      File
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Logging/Methods/Terminal/" title="Terminal" class="md-nav__link">
+      Terminal
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-11-3" type="checkbox" id="nav-5-11-3">
+    
+    <label class="md-nav__link" for="nav-5-11-3">
+      Types
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-11-3">
+        Types
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Logging/Types/Custom/" title="Custom" class="md-nav__link">
+      Custom
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Logging/Types/Errors/" title="Errors" class="md-nav__link">
+      Errors
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Logging/Types/Requests/" title="Requests" class="md-nav__link">
+      Requests
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-12" type="checkbox" id="nav-5-12">
+    
+    <label class="md-nav__link" for="nav-5-12">
+      Middleware
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-12">
+        Middleware
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Middleware/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-12-2" type="checkbox" id="nav-5-12-2">
+    
+    <label class="md-nav__link" for="nav-5-12-2">
+      Types
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-12-2">
+        Types
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Middleware/Types/AccessRules/" title="Access Rules" class="md-nav__link">
+      Access Rules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Middleware/Types/CSRF/" title="CSRF" class="md-nav__link">
+      CSRF
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Middleware/Types/RateLimiting/" title="Rate Limiting" class="md-nav__link">
+      Rate Limiting
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Middleware/Types/Sessions/" title="Sessions" class="md-nav__link">
+      Sessions
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-13" type="checkbox" id="nav-5-13">
+    
+    <label class="md-nav__link" for="nav-5-13">
+      Misc
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-13">
+        Misc
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
+      Cron Expressions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Misc/DesktopApp/" title="Desktop Application" class="md-nav__link">
+      Desktop Application
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Misc/ServerRoot/" title="Server Root" class="md-nav__link">
+      Server Root
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Misc/UploadFiles/" title="Uploading Files" class="md-nav__link">
+      Uploading Files
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-14" type="checkbox" id="nav-5-14">
+    
+    <label class="md-nav__link" for="nav-5-14">
+      Restarting
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-14">
+        Restarting
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Restarting/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-14-2" type="checkbox" id="nav-5-14-2">
+    
+    <label class="md-nav__link" for="nav-5-14-2">
+      Types
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-14-2">
+        Types
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Restarting/Types/AutoRestarting/" title="Auto-Restarting" class="md-nav__link">
+      Auto-Restarting
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Restarting/Types/FileMonitoring/" title="File Monitoring" class="md-nav__link">
+      File Monitoring
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-15" type="checkbox" id="nav-5-15">
+    
+    <label class="md-nav__link" for="nav-5-15">
+      Routes
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-15">
+        Routes
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-15-2" type="checkbox" id="nav-5-15-2">
+    
+    <label class="md-nav__link" for="nav-5-15-2">
+      Examples
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-15-2">
+        Examples
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Examples/LoginPage/" title="Creating a Login Page" class="md-nav__link">
+      Creating a Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Examples/WebPages/" title="Creating a Web Page" class="md-nav__link">
+      Creating a Web Page
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-15-3" type="checkbox" id="nav-5-15-3">
+    
+    <label class="md-nav__link" for="nav-5-15-3">
+      Utilities
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-15-3">
+        Utilities
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Utilities/ContentTypes/" title="Content Types" class="md-nav__link">
+      Content Types
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Utilities/ErrorPages/" title="Error Pages / Status Codes" class="md-nav__link">
+      Error Pages / Status Codes
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Utilities/FlashMessages/" title="Flash Messages" class="md-nav__link">
+      Flash Messages
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Utilities/FunctionsAndModules/" title="Functions and Modules" class="md-nav__link">
+      Functions and Modules
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Utilities/Redirecting/" title="Redirecting" class="md-nav__link">
+      Redirecting
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Utilities/SimplePages/" title="Simple Pages" class="md-nav__link">
+      Simple Pages
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Utilities/StaticContent/" title="Static Content" class="md-nav__link">
+      Static Content
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-16" type="checkbox" id="nav-5-16">
+    
+    <label class="md-nav__link" for="nav-5-16">
+      Serverless
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-16">
+        Serverless
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Serverless/Overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-16-2" type="checkbox" id="nav-5-16-2">
+    
+    <label class="md-nav__link" for="nav-5-16-2">
+      Types
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-5-16-2">
+        Types
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Serverless/Types/AwsLambda/" title="AWS Lambda" class="md-nav__link">
+      AWS Lambda
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Serverless/Types/AzureFunctions/" title="Azure Functions" class="md-nav__link">
+      Azure Functions
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-17" type="checkbox" id="nav-5-17">
+    
+    <label class="md-nav__link" for="nav-5-17">
+      Views
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-17">
+        Views
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Views/Pode/" title="Pode Files" class="md-nav__link">
+      Pode Files
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Tutorials/Views/ThirdParty/" title="Third Party Engines" class="md-nav__link">
+      Third Party Engines
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#authentication" title="Authentication" class="md-nav__link">
+    Authentication
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#types" title="Types" class="md-nav__link">
+    Types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validators" title="Validators" class="md-nav__link">
+    Validators
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cookies" title="Cookies" class="md-nav__link">
+    Cookies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" title="Configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#psd1" title="PSD1" class="md-nav__link">
+    PSD1
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flash-messages" title="Flash Messages" class="md-nav__link">
+    Flash Messages
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gui" title="GUI" class="md-nav__link">
+    GUI
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handlers" title="Handlers" class="md-nav__link">
+    Handlers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#headers" title="Headers" class="md-nav__link">
+    Headers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" title="Logging" class="md-nav__link">
+    Logging
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods" title="Methods" class="md-nav__link">
+    Methods
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#types_1" title="Types" class="md-nav__link">
+    Types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writing-logs" title="Writing Logs" class="md-nav__link">
+    Writing Logs
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#middleware" title="Middleware" class="md-nav__link">
+    Middleware
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general" title="General" class="md-nav__link">
+    General
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sessions" title="Sessions" class="md-nav__link">
+    Sessions
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#csrf" title="CSRF" class="md-nav__link">
+    CSRF
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#importing-modulesscripts" title="Importing Modules/Scripts" class="md-nav__link">
+    Importing Modules/Scripts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#response-helpers" title="Response Helpers" class="md-nav__link">
+    Response Helpers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routes" title="Routes" class="md-nav__link">
+    Routes
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#normal" title="Normal" class="md-nav__link">
+    Normal
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#static" title="Static" class="md-nav__link">
+    Static
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schedules" title="Schedules" class="md-nav__link">
+    Schedules
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server" title="Server" class="md-nav__link">
+    Server
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state" title="State" class="md-nav__link">
+    State
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timers" title="Timers" class="md-nav__link">
+    Timers
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/Badgerati/Pode/edit/master/docs/Getting-Started/Migrating/0X-to-1X.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="from-v0x-to-v1x">From v0.X to v1.X</h1>
+<p>This is a brief guide on migrating from Pode v0.X to Pode v1.X.</p>
+<p>In Pode v1.X all functions were refactored from short syntax (ie, <code>route</code>), to PowerShell syntax (ie, <code>Add-PodeRoute</code>). This means some of the older functions, such as <code>header</code> have now been split out into 4, or more, different functions.</p>
+<p>Also being changed is the <code>pode.json</code> configuration file, which is now a <code>server.&lt;env&gt;.psd1</code> file.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>With all the functions being refactored, the old syntax of not needing to supply parameter names (and relying on position) is gone - for a lot of cases. It's now worth referencing parameters by name (<code>-Name</code>, <code>-ScriptBlock</code>, etc.).</p>
+</div>
+<h2 id="authentication">Authentication</h2>
+<p>(<a href="../../../Tutorials/Authentication/Overview">Tutorial</a>)</p>
+<p>The old <code>auth use</code> has been split into two to make it easier - there are now functions that define authentication types (which retrieve credentials from the request object), and validators (which take the credentials and ensure the user is valid).</p>
+<p>For <code>auth check</code>, this has now been replaced with <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a>, and the hashtable is now function parameters.</p>
+<h3 id="types">Types</h3>
+<p>Using inbuilt authentication types, and creating custom types, is now possible use the <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> function. This function will return valid Basic, Form, or Custom authentication types for use with <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> and <a href="../../../Functions/Authentication/Add-PodeAuthWindowsAd"><code>Add-PodeAuthWindowsAd</code></a>.</p>
+<h3 id="validators">Validators</h3>
+<p>Configuring an authentication validator is now a case of using the <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> function with a <code>-Name</code> and a <code>-ScriptBlock</code>.</p>
+<p>For inbuilt validators, like Windows AD, you can use <a href="../../../Functions/Authentication/Add-PodeAuthWindowsAd"><code>Add-PodeAuthWindowsAd</code></a>.</p>
+<p>In both cases, the <code>-Type</code> parameter comes from using <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Authentication/Add-PodeAuthWindowsAd"><code>Add-PodeAuthWindowsAd</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Authentication/Remove-PodeAuth"><code>Remove-PodeAuth</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Authentication/Clear-PodeAuth"><code>Clear-PodeAuth</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="cookies">Cookies</h2>
+<p>Cookies use to be done via actions following the <code>cookie</code> function, such as <code>cookie set</code>. These actions are now the following functions:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cookie check</td>
+<td><a href="../../../Functions/Cookies/Test-PodeCookieSigned"><code>Test-PodeCookieSigned</code></a></td>
+</tr>
+<tr>
+<td>cookie exists</td>
+<td><a href="../../../Functions/Cookies/Test-PodeCookie"><code>Test-PodeCookie</code></a></td>
+</tr>
+<tr>
+<td>cookie extend</td>
+<td><a href="../../../Functions/Cookies/Update-PodeCookieExpiry"><code>Update-PodeCookieExpiry</code></a></td>
+</tr>
+<tr>
+<td>cookie get</td>
+<td><a href="../../../Functions/Cookies/Get-PodeCookie"><code>Get-PodeCookie</code></a></td>
+</tr>
+<tr>
+<td>cookie remove</td>
+<td><a href="../../../Functions/Cookies/Remove-PodeCookie"><code>Remove-PodeCookie</code></a></td>
+</tr>
+<tr>
+<td>cookie secrets</td>
+<td><a href="../../../Functions/Cookies/Get-PodeCookieSecret"><code>Get-PodeCookieSecret</code></a> and <a href="../../../Functions/Cookies/Set-PodeCookieSecret"><code>Set-PodeCookieSecret</code></a></td>
+</tr>
+<tr>
+<td>cookie set</td>
+<td><a href="../../../Functions/Cookies/Set-PodeCookie"><code>Set-PodeCookie</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="configuration">Configuration</h2>
+<p>(<a href="../../../Tutorials/Configuration">Tutorial</a>)</p>
+<p>The <code>config</code> function has simply been renamed to <a href="../../../Functions/Utilities/Get-PodeConfig"><code>Get-PodeConfig</code></a>.</p>
+<h3 id="psd1">PSD1</h3>
+<p>The <code>pode.&lt;env&gt;.json</code> configuration files have been changed from <code>json</code> to <code>psd1</code> format, and their name changed from <code>pode</code> to <code>server</code>.</p>
+<p>The structure of the file name still uses the environment format: <code>server.&lt;env&gt;.psd1</code>.</p>
+<p>The structure of the file itself is basically a PowerShell hashtable, so the following:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;server&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;fileMonitor&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">true</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>would now be:</p>
+<div class="codehilite"><pre><span></span><span class="p">@{</span>
+    <span class="n">Server</span> <span class="p">=</span> <span class="p">@{</span>
+        <span class="n">FileMonitor</span> <span class="p">=</span> <span class="p">@{</span>
+            <span class="n">Enable</span> <span class="p">=</span> <span class="nv">$true</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="flash-messages">Flash Messages</h2>
+<p>(<a href="../../../Tutorials/Routes/Utilities/FlashMessages">Tutorial</a>)</p>
+<p>Flash messages use to be done via actions following <code>flash</code> function, such as <code>flash add</code>. These actions are now the following functions:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flash add</td>
+<td><a href="../../../Functions/Flash/Add-PodeFlashMessage"><code>Add-PodeFlashMessage</code></a></td>
+</tr>
+<tr>
+<td>flash clear</td>
+<td><a href="../../../Functions/Flash/Clear-PodeFlashMessages"><code>Clear-PodeFlashMessages</code></a></td>
+</tr>
+<tr>
+<td>flash get</td>
+<td><a href="../../../Functions/Flash/Get-PodeFlashMessage"><code>Get-PodeFlashMessage</code></a></td>
+</tr>
+<tr>
+<td>flash keys</td>
+<td><a href="../../../Functions/Flash/Get-PodeFlashMessageNames"><code>Get-PodeFlashMessageNames</code></a></td>
+</tr>
+<tr>
+<td>flash remove</td>
+<td><a href="../../../Functions/Flash/Remove-PodeFlashMessage"><code>Remove-PodeFlashMessage</code></a></td>
+</tr>
+<tr>
+<td>flash test</td>
+<td><a href="../../../Functions/Flash/Test-PodeFlashMessage"><code>Test-PodeFlashMessage</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="gui">GUI</h2>
+<p>(<a href="../../../Tutorials/Misc/DesktopApp">Tutorial</a>)</p>
+<p>The <code>gui</code> function use to take a Name with a hashtable of options. This function has now been renamed to <a href="../../../Functions/Core/Show-PodeGui"><code>Show-PodeGui</code></a>, and the options are all now function parameters.</p>
+<h2 id="handlers">Handlers</h2>
+<p>(<a href="../../../Tutorials/SmtpServer">Tutorial</a>)</p>
+<p>The biggest change the Handlers is that you can now create multiple handlers for each of SMTP, TCP and Service - rather than just one. With this, the new <a href="../../../Functions/Handlers/Add-PodeHandler"><code>Add-PodeHandler</code></a> requires a <code>-Name</code> to be supplied.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Handlers/Add-PodeHandler"><code>Add-PodeHandler</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Handlers/Remove-PodeHandler"><code>Remove-PodeHandler</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Handlers/Clear-PodeHandlers"><code>Clear-PodeHandlers</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="headers">Headers</h2>
+<p>Headers use to be done via actions following the <code>header</code> function, such as <code>header add</code>. These actions are now the following functions:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>header add</td>
+<td><a href="../../../Functions/Headers/Add-PodeHeader"><code>Add-PodeHeader</code></a></td>
+</tr>
+<tr>
+<td>header get</td>
+<td><a href="../../../Functions/Headers/Get-PodeHeader"><code>Get-PodeHeader</code></a></td>
+</tr>
+<tr>
+<td>header set</td>
+<td><a href="../../../Functions/Headers/Set-PodeHeader"><code>Set-PodeHeader</code></a></td>
+</tr>
+<tr>
+<td>header exists</td>
+<td><a href="../../../Functions/Headers/Test-PodeHeader"><code>Test-PodeHeader</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="logging">Logging</h2>
+<p>(<a href="../../../Tutorials/Logging/Overview">Tutorial</a>)</p>
+<p>Logging in Pode has had by far the biggest refactor, so big it's completely different - so it may just be worth looking at the tutorial.</p>
+<p>The old <code>logging</code> used to only support logging Requests, whereas now it can log Requests, Errors, and anything else you feel like! You can also write to a custom log using the new write function.</p>
+<h3 id="methods">Methods</h3>
+<p>Logging methods define how a log item should be logged. The inbuilt File and Terminal logging methods are now reusable, with the ability to now more easily create custom logging methods using <a href="../../../Functions/Logging/New-PodeLoggingMethod"><code>New-PodeLoggingMethod</code></a>. The output from this function can be used when enabling or adding logging types, such as with <a href="../../../Functions/Logging/Add-PodeLogger"><code>Add-PodeLogger</code></a>.</p>
+<h3 id="types_1">Types</h3>
+<p>Request and Error logging are inbuilt logging types that can be enabled using <a href="../../../Functions/Logging/Enable-PodeRequestLogging"><code>Enable-PodeRequestLogging</code></a> and <a href="../../../Functions/Logging/Enable-PodeErrorLogging"><code>Enable-PodeErrorLogging</code></a>. To create a custom logger you can use the <a href="../../../Functions/Logging/Add-PodeLogger"><code>Add-PodeLogger</code></a> function. In each case, the <code>-Method</code> comes from using <a href="../../../Functions/Logging/New-PodeLoggingMethod"><code>New-PodeLoggingMethod</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Logging/Enable-PodeRequestLogging"><code>Enable-PodeRequestLogging</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Logging/Enable-PodeErrorLogging"><code>Enable-PodeErrorLogging</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Logging/Add-PodeLogger"><code>Add-PodeLogger</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Logging/Disable-PodeRequestLogging"><code>Disable-PodeRequestLogging</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Logging/Disable-PodeErrorLogging"><code>Disable-PodeErrorLogging</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Logging/Remove-PodeLogger"><code>Remove-PodeLogger</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Logging/Clear-PodeLoggers"><code>Clear-PodeLoggers</code></a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="writing-logs">Writing Logs</h3>
+<p>You can now write items from anywhere in your server to a custom logger, including the inbuilt Error log.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Logging/Write-PodeErrorLog"><code>Write-PodeErrorLog</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Logging/Write-PodeLog"><code>Write-PodeLog</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="middleware">Middleware</h2>
+<p>(<a href="../../../Tutorials/Middleware/Overview">Tutorial</a>)</p>
+<h3 id="general">General</h3>
+<p>Middleware has changed a fair bit, however, generally you'll just be using the <a href="../../../Functions/Core/Add-PodeMiddleware"><code>Add-PodeMiddleware</code></a> function with a <code>-ScriptBlock</code> which replaces the old <code>middleware</code> function. The only difference now is you're required to supply a <code>-Name</code> for the new <a href="../../../Functions/Core/Remove-PodeMiddleware"><code>Remove-PodeMiddleware</code></a> function.</p>
+<p>There is a new <a href="../../../Functions/Core/New-PodeMiddleware"><code>New-PodeMiddleware</code></a> function which wil return a valid middleware object to re-use - such as piping into <a href="../../../Functions/Core/Add-PodeMiddleware"><code>Add-PodeMiddleware</code></a>, or using as <code>-Middleware</code> for Routes.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Core/Add-PodeMiddleware"><code>Add-PodeMiddleware</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Core/New-PodeMiddleware"><code>New-PodeMiddleware</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Core/Remove-PodeMiddleware"><code>Remove-PodeMiddleware</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions//Clear-PodeMiddlewares"><code>Clear-PodeMiddlewares</code></a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="sessions">Sessions</h3>
+<p>(<a href="../../../Tutorials/Middleware/Types/Sessions">Tutorial</a>)</p>
+<p>The <code>session</code> function has now been replaced by the new <a href="../../../Functions/Middleware/Enable-PodeSessionMiddleware"><code>Enable-PodeSessionMiddleware</code></a> function. With the new function, not only will it automatically enabled session middleware for you, but the old <code>-Options</code> hashtable has now been converted into proper function parameters.</p>
+<h3 id="csrf">CSRF</h3>
+<p>(<a href="../../../Tutorials/Middleware/Types/CSRF">Tutorial</a>)</p>
+<p>The <code>csrf</code> function used to take actions that defined what it did, such as <code>csrf token</code>. Now, each of these actions has been split up into their own functions:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>csrf middleware</td>
+<td><a href="../../../Functions/Middleware/Enable-PodeCsrfMiddleware"><code>Enable-PodeCsrfMiddleware</code></a></td>
+</tr>
+<tr>
+<td>csrf setup</td>
+<td><a href="../../../Functions/Middleware/Initialize-PodeCsrf"><code>Initialize-PodeCsrf</code></a></td>
+</tr>
+<tr>
+<td>csrf check</td>
+<td><a href="../../../Functions/Middleware/Get-PodeCsrfMiddleware"><code>Get-PodeCsrfMiddleware</code></a></td>
+</tr>
+<tr>
+<td>csrf token</td>
+<td><a href="../../../Functions/Middleware/New-PodeCsrfToken"><code>New-PodeCsrfToken</code></a></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Similar to the old setup, the <a href="../../../Functions/Middleware/Initialize-PodeCsrf"><code>Initialize-PodeCsrf</code></a> function must be called before you can use <a href="../../../Functions/Middleware/Get-PodeCsrfMiddleware"><code>Get-PodeCsrfMiddleware</code></a> or <a href="../../../Functions/Middleware/New-PodeCsrfToken"><code>New-PodeCsrfToken</code></a>. The <a href="../../../Functions/Middleware/Enable-PodeCsrfMiddleware"><code>Enable-PodeCsrfMiddleware</code></a> does automatically call <a href="../../../Functions/Middleware/Initialize-PodeCsrf"><code>Initialize-PodeCsrf</code></a>  as well as configure CSRF globally.</p>
+</div>
+<h2 id="importing-modulesscripts">Importing Modules/Scripts</h2>
+<p>(<a href="../../../Tutorials/ImportingModules">Tutorial</a>)</p>
+<p>The functions to import and load Modules, Scripts and SnapIns have all changed to the following:</p>
+<table>
+<thead>
+<tr>
+<th>Old</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>import</td>
+<td><a href="../../../Functions/Utilities/Import-PodeModule"><code>Import-PodeModule</code></a> and <a href="../../../Functions/Utilities/Import-PodeSnapIn"><code>Import-PodeSnapIn</code></a></td>
+</tr>
+<tr>
+<td>load</td>
+<td><a href="../../../Functions/Utilities/Use-PodeScript"><code>Use-PodeScript</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="response-helpers">Response Helpers</h2>
+<p>The old response helpers have all been updated:</p>
+<table>
+<thead>
+<tr>
+<th>Old</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>engine</td>
+<td><a href="../../../Functions/Responses/Set-PodeViewEngine"><code>Set-PodeViewEngine</code></a></td>
+</tr>
+<tr>
+<td>view</td>
+<td><a href="../../../Functions/Responses/Write-PodeViewResponse"><code>Write-PodeViewResponse</code></a></td>
+</tr>
+<tr>
+<td>json</td>
+<td><a href="../../../Functions/Responses/Write-PodeJsonResponse"><code>Write-PodeJsonResponse</code></a></td>
+</tr>
+<tr>
+<td>text</td>
+<td><a href="../../../Functions/Responses/Write-PodeTextResponse"><code>Write-PodeTextResponse</code></a></td>
+</tr>
+<tr>
+<td>xml</td>
+<td><a href="../../../Functions/Responses/Write-PodeXmlResponse"><code>Write-PodeXmlResponse</code></a></td>
+</tr>
+<tr>
+<td>csv</td>
+<td><a href="../../../Functions/Responses/Write-PodeCsvResponse"><code>Write-PodeCsvResponse</code></a></td>
+</tr>
+<tr>
+<td>html</td>
+<td><a href="../../../Functions/Responses/Write-PodeHtmlResponse"><code>Write-PodeHtmlResponse</code></a></td>
+</tr>
+<tr>
+<td>file</td>
+<td><a href="../../../Functions/Responses/Write-PodeFileResponse"><code>Write-PodeFileResponse</code></a></td>
+</tr>
+<tr>
+<td>attach</td>
+<td><a href="../../../Functions/Responses/Set-PodeResponseAttachment"><code>Set-PodeResponseAttachment</code></a></td>
+</tr>
+<tr>
+<td>save</td>
+<td><a href="../../../Functions/Responses/Save-PodeRequestFile"><code>Save-PodeRequestFile</code></a></td>
+</tr>
+<tr>
+<td>status</td>
+<td><a href="../../../Functions/Responses/Set-PodeResponseStatus"><code>Set-PodeResponseStatus</code></a></td>
+</tr>
+<tr>
+<td>include</td>
+<td><a href="../../../Functions/Responses/Use-PodePartialView"><code>Use-PodePartialView</code></a></td>
+</tr>
+<tr>
+<td>redirect</td>
+<td><a href="../../../Functions/Responses/Move-PodeResponseUrl"><code>Move-PodeResponseUrl</code></a></td>
+</tr>
+<tr>
+<td>tcp</td>
+<td><a href="../../../Functions/Responses/Write-PodeTcpClient"><code>Write-PodeTcpClient</code></a> and <a href="../../../Functions/Responses/Read-PodeTcpClient"><code>Read-PodeTcpClient</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="routes">Routes</h2>
+<p>(<a href="../../../Tutorials/Routes/Overview">Tutorial</a>)</p>
+<h3 id="normal">Normal</h3>
+<p>Normal routes defined via <code>route</code> can now be done using <a href="../../../Functions/Routes/Add-PodeRoute"><code>Add-PodeRoute</code></a>. The parameters are practically the same, such as <code>-Method</code>, <code>-Path</code> and <code>-ScriptBlock</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Routes/Add-PodeRoute"><code>Add-PodeRoute</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Routes/Remove-PodeRoute"><code>Remove-PodeRoute</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Routes/Clear-PodeRoutes"><code>Clear-PodeRoutes</code></a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="static">Static</h3>
+<p>Static routes that used to be setup using <code>route static</code> are now setup using the new <a href="../../../Functions/Routes/Add-PodeStaticRoute"><code>Add-PodeStaticRoute</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Routes/Add-PodeStaticRoute"><code>Add-PodeStaticRoute</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Routes/Remove-PodeStaticRoute"><code>Remove-PodeStaticRoute</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Routes/Clear-PodeStaticRoutes"><code>Clear-PodeStaticRoutes</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="schedules">Schedules</h2>
+<p>(<a href="../../../Tutorials/Schedules">Tutorial</a>)</p>
+<p>Schedules haven't changed too much, though there are now some new functions to remove and clear schedules. The main one is that <code>schedule</code> has been changed to <a href="../../../Functions/Core/Add-PodeSchedule"><code>Add-PodeSchedule</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Core/Add-PodeSchedule"><code>Add-PodeSchedule</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Core/Remove-PodeSchedule"><code>Remove-PodeSchedule</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Core/Clear-PodeSchedules"><code>Clear-PodeSchedules</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="server">Server</h2>
+<p>(<a href="../../../Tutorials/Basics">Tutorial</a>)</p>
+<p>The <code>server</code> function has had a fair overhaul. A lot of the parameters which were old/legacy have now been removed - such as <code>-Port</code>, <code>-IP</code>, and all of the <code>-Http</code> swicthes.</p>
+<p>The <code>server</code> function itself has been renamed to <a href="../../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a>.</p>
+<h2 id="state">State</h2>
+<p>(<a href="../../../Tutorials/SharedState">Tutorial</a>)</p>
+<p>The shared state use to be done via actions following the <code>state</code> function, such as <code>state set</code>. These actions are now the following functions:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>state set</td>
+<td><a href="../../../Functions/State/Set-PodeState"><code>Set-PodeState</code></a></td>
+</tr>
+<tr>
+<td>state get</td>
+<td><a href="../../../Functions/State/Get-PodeState"><code>Get-PodeState</code></a></td>
+</tr>
+<tr>
+<td>state remove</td>
+<td><a href="../../../Functions/State/Remove-PodeState"><code>Remove-PodeState</code></a></td>
+</tr>
+<tr>
+<td>state save</td>
+<td><a href="../../../Functions/State/Save-PodeState"><code>Save-PodeState</code></a></td>
+</tr>
+<tr>
+<td>state restore</td>
+<td><a href="../../../Functions/State/Restore-PodeState"><code>Restore-PodeState</code></a></td>
+</tr>
+<tr>
+<td>state test</td>
+<td><a href="../../../Functions/State/Test-PodeState"><code>Test-PodeState</code></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="timers">Timers</h2>
+<p>(<a href="../../../Tutorials/Timers">Tutorial</a>)</p>
+<p>Timers haven't changed too much, though there are now some new functions to remove and clear timers. The main one is that <code>timer</code> has been changed to <a href="../../../Functions/Core/Add-PodeTimer"><code>Add-PodeTimer</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th>Functions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../Functions/Core/Add-PodeTimer"><code>Add-PodeTimer</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Core/Remove-PodeTimer"><code>Remove-PodeTimer</code></a></td>
+</tr>
+<tr>
+<td><a href="../../../Functions/Core/Clear-PodeTimers"><code>Clear-PodeTimers</code></a></td>
+</tr>
+</tbody>
+</table>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../RunAsService/" title="Running Pode as a Service" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Running Pode as a Service
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../../../Tutorials/Basics/" title="Basics" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Basics
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/badgerati" class="md-footer-social__link fa fa-github"></a>
+    
+      <a href="https://twitter.com/badgerati" class="md-footer-social__link fa fa-twitter"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../assets/javascripts/application.245445c6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
+      
+    
+  </body>
+</html>
