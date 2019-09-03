@@ -68,6 +68,6 @@ Start-PodeServer {
 
 ## More Tutorials
 
-* To see how to create web pages using Pode, [see here](../../Tutorials/Routes/WebPages)
-* To see how to do basic login/logout pages, [see here](../../Tutorials/Routes/LoginPage)
+* To see how to create web pages using Pode, [see here](../../Tutorials/Routes/Examples/WebPages)
+* To see how to do basic login/logout pages, [see here](../../Tutorials/Routes/Examples/LoginPage)
 * For more tutorials, [see here](../../Tutorials/Basics)
