@@ -52,6 +52,12 @@ function New-PodeContext
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
 
+    # basic logging setup
+    $ctx.Server.Logging = @{
+        Enabled = $true
+        Types = @{}
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
