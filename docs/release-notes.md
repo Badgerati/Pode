@@ -1,5 +1,13 @@
 # Release Notes
 
+## v1.0.1
+
+```plain
+### Bugs
+* #367: If a "server.psd1" file is not present, Logging will not work
+* #368: Logging will attempt to mask everything if no mask patterns are supplied
+```
+
 ## v1.0.0
 
 ```plain
