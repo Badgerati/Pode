@@ -265,7 +265,7 @@ function Open-PodeConfiguration
 
     # check the path exists, and load the config
     if (Test-PodePath -Path $configPath -NoStatus) {
-        $config = Import-PowerShellDataFile -Path $configPath
+        $config = Import-PowerShellDataFile -Path $configPath -ErrorAction Stop
         Set-PodeServerConfiguration -Configuration $config.Server -Context $Context
         Set-PodeWebConfiguration -Configuration $config.Web -Context $Context
     }
@@ -297,7 +297,7 @@ function Set-PodeServerConfiguration
     $Context.Server.Logging = @{
         Enabled = !([bool]$Configuration.Logging.Enable)
         Masking = @{
-            Patterns = @($Configuration.Logging.Masking.Patterns)
+            Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
             Mask = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
         }
         Types = @{}
