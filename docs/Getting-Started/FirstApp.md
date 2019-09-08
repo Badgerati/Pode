@@ -1,6 +1,6 @@
 # Building your first Pode app
 
-!!! note
+!!! important
     Before starting, ensure you've [installed](../Installation) Pode.
 
 The following steps will run you through creating your first Pode app, and give you an overview to some of the basic features.
@@ -16,7 +16,7 @@ The following steps will run you through creating your first Pode app, and give 
     * The `init` action will ask for some input, leave everything as default (just press enter).
 
 ```powershell
-λ  pode init
+PS> pode init
 name (my-first-pode-app):
 version (1.0.0):
 description:
@@ -30,35 +30,35 @@ Success, saved package.json
 
 ## REST Server
 
-* Within your `server.ps1` file, first you need to create the [`server`](../../Functions/Core/Server). This is where the main script will go that defines how the server should function:
+* Within your `server.ps1` file, first you need to start the Server. This is where the main script will go that defines how the server should function:
 
 ```powershell
-server {
+Start-PodeServer {
     # logic
 }
 ```
 
-* Now we have our server, we need to get it to [`listen`](../../Functions/Core/Listen) on an endpoint. This will allow us to receive requests and respond to them. The below tells your server to listen on `localhost` and port `8080` for HTTP requests:
+* Now we have our server, we need to get it to listen on an endpoint. This will allow us to receive requests and respond to them. The below tells your server to listen on `localhost` and port `8080` for HTTP requests:
 
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 }
 ```
 
 * Our simple server will have a single GET [`route`](../../Tutorials/Routes/Overview); it will be invoked when the root (`/`) of the server is called (ie: `http://localhost:8080/`). This route will respond with a simple JSON response:
 
 ```powershell
-server {
-    listen localhost:8080 http
+Start-PodeServer {
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 
-    route get '/' {
-        json @{ 'value' = 'Hello, world!' }
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'value' = 'Hello, world!' }
     }
 }
 ```
 
-* Save the file, and run `pode start` (or `./server.ps1`) from the console. This will start the server listening on `localhost:8080`. When `http://localhost:8080/` is hit, the server will respond with:
+* Save the file, and run `pode start` (or `./server.ps1`) from the terminal. This will start the server listening on `localhost:8080`. When `http://localhost:8080/` is hit, the server will respond with:
 
 ```json
 {
@@ -68,6 +68,6 @@ server {
 
 ## More Tutorials
 
-* To see how to create web pages using Pode, [see here](../../Tutorials/Routes/WebPages)
-* To see how to do basic login/logout pages, [see here](../../Tutorials/Routes/LoginPage)
+* To see how to create web pages using Pode, [see here](../../Tutorials/Routes/Examples/WebPages)
+* To see how to do basic login/logout pages, [see here](../../Tutorials/Routes/Examples/LoginPage)
 * For more tutorials, [see here](../../Tutorials/Basics)

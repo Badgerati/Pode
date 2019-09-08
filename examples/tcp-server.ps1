@@ -5,18 +5,18 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8999
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
-    listen *:8999 tcp
+    Add-PodeEndpoint -Address * -Port 8999 -Protocol TCP
 
     # allow the local ip
-    access allow ip 127.0.0.1
+    Add-PodeAccessRule -Access Allow -Type IP -Values 127.0.0.1
 
     # setup a tcp handler
-    handler 'tcp' {
-        param($session)
-        tcp write 'gief data'
-        $msg = (tcp read)
+    Add-PodeHandler -Type Tcp -Name 'Main' -ScriptBlock {
+        param($e)
+        Write-PodeTcpClient -Message 'gief data'
+        $msg = (Read-PodeTcpClient)
         Write-Host $msg
     }
 

@@ -1,6 +1,6 @@
 # CLI
 
-Pode has some commands that you can utilise from the CLI - when your in a PowerShell terminal, or `pwsh` session. These commands help you to initialise, start, test, build, or install any packages for your repo/server.
+Pode has some commands that you can utilise from a PowerShell terminal, or `pwsh` session. These commands help you to initialise, start, test, build, or install any packages for your repo/server.
 
 All of these commands are centered around the `package.json` format - similar to that of Node.js and Yarn.
 

@@ -26,61 +26,146 @@
     Description = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '3.0'
+    PowerShellVersion = '5.0'
+
+    # Assemblies that must be loaded prior to importing this module
+    RequiredAssemblies = @('System.Web')
 
     # Functions to export from this Module
     FunctionsToExport = @(
-        'Route',
-        'Handler',
-        'Tcp',
-        'Server',
-        'Engine',
-        'Html',
-        'Json',
-        'View',
-        'Xml',
-        'Pode',
-        'Timer',
-        'Logger',
-        'Csv',
+        # cookies
+        'Get-PodeCookie',
+        'Get-PodeCookieSecret',
+        'Remove-PodeCookie',
+        'Set-PodeCookie',
+        'Set-PodeCookieSecret',
+        'Test-PodeCookie',
+        'Test-PodeCookieSigned',
+        'Update-PodeCookieExpiry',
+
+        # flash
+        'Add-PodeFlashMessage',
+        'Clear-PodeFlashMessages',
+        'Get-PodeFlashMessage',
+        'Get-PodeFlashMessageNames',
+        'Remove-PodeFlashMessage',
+        'Test-PodeFlashMessage',
+
+        # headers
+        'Add-PodeHeader',
+        'Test-PodeHeader',
+        'Get-PodeHeader',
+        'Set-PodeHeader',
+
+        # state
+        'Set-PodeState',
+        'Get-PodeState',
+        'Remove-PodeState',
+        'Save-PodeState',
+        'Restore-PodeState',
+        'Test-PodeState',
+
+        # response helpers
+        'Set-PodeResponseAttachment',
+        'Write-PodeTextResponse',
+        'Write-PodeFileResponse',
+        'Write-PodeCsvResponse',
+        'Write-PodeHtmlResponse',
+        'Write-PodeMarkdownResponse',
+        'Write-PodeJsonResponse',
+        'Write-PodeXmlResponse',
+        'Write-PodeViewResponse',
+        'Set-PodeResponseStatus',
+        'Move-PodeResponseUrl',
+        'Write-PodeTcpClient',
+        'Read-PodeTcpClient',
+        'Save-PodeRequestFile',
+        'Set-PodeViewEngine',
+        'Use-PodePartialView',
+
+        # utility helpers
+        'Wait-PodeTask',
+        'Close-PodeDisposable',
+        'Lock-PodeObject',
+        'Get-PodeServerPath',
+        'Start-PodeStopwatch',
+        'Use-PodeStream',
+        'Use-PodeScript',
+        'Get-PodeConfig',
+        'Add-PodeEndware',
+        'Import-PodeModule',
+        'Protect-PodeValue',
+        'Resolve-PodeValue',
+        'Invoke-PodeScriptBlock',
         'Test-IsUnix',
         'Test-IsWindows',
         'Test-IsPSCore',
-        'Test-Empty',
-        'Status',
-        'Redirect',
-        'Include',
-        'Lock',
-        'State',
-        'Listen',
-        'Access',
-        'Limit',
-        'Stopwatch',
-        'Dispose',
-        'Stream',
-        'Schedule',
-        'Middleware',
-        'Endware',
-        'Session',
-        'Invoke-ScriptBlock',
-        'Auth',
-        'Attach',
-        'Script',
-        'Import',
-        'Coalesce',
-        'Save',
-        'Get-PodeConfiguration',
-        'Root',
-        'Flash',
-        'Await',
-        'Load',
-        'Config',
-        'Cookie',
-        'Csrf',
-        'Gui',
-        'Text',
-        'File',
-        'Header'
+        'Test-IsEmpty',
+
+        # routes
+        'Add-PodeRoute',
+        'Add-PodeStaticRoute',
+        'Remove-PodeRoute',
+        'Remove-PodeStaticRoute',
+        'Clear-PodeRoutes',
+        'Clear-PodeStaticRoutes',
+        'ConvertTo-PodeRoute',
+        'Add-PodePage',
+
+        # handlers
+        'Add-PodeHandler',
+        'Remove-PodeHandler',
+        'Clear-PodeHandlers',
+
+        # schedules
+        'Add-PodeSchedule',
+        'Remove-PodeSchedule',
+        'Clear-PodeSchedule',
+
+        # timers
+        'Add-PodeTimer',
+        'Remove-PodeTimer',
+        'Clear-PodeTimers',
+
+        # middleware
+        'Add-PodeMiddleware',
+        'Remove-PodeMiddleware',
+        'Clear-PodeMiddleware',
+        'Add-PodeAccessRule',
+        'Add-PodeLimitRule',
+        'Enable-PodeSessionMiddleware',
+        'New-PodeCsrfToken',
+        'Get-PodeCsrfMiddleware',
+        'Initialize-PodeCsrf',
+        'Enable-PodeCsrfMiddleware',
+        'Remove-PodeSession',
+        'Save-PodeSession',
+
+        # auth
+        'New-PodeAuthType',
+        'Add-PodeAuth',
+        'Add-PodeAuthWindowsAd',
+        'Remove-PodeAuth',
+        'Get-PodeAuthMiddleware',
+
+        # logging
+        'New-PodeLoggingMethod',
+        'Enable-PodeRequestLogging',
+        'Enable-PodeErrorLogging',
+        'Disable-PodeRequestLogging',
+        'Disable-PodeErrorLogging',
+        'Add-PodeLogger',
+        'Remove-PodeLogger',
+        'Clear-PodeLoggers',
+        'Write-PodeErrorLog',
+        'Write-PodeLog',
+        'Protect-PodeLogItem',
+
+        # core
+        'Start-PodeServer',
+        'Show-PodeGui',
+        'Add-PodeEndpoint',
+        'Pode'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

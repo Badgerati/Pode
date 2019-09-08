@@ -15,25 +15,25 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # ----------------------------------
 
 # create a server, flagged to generate a self-signed cert for dev/testing
-Server {
+Start-PodeServer {
 
     # bind to ip/port and set as https with self-signed cert
-    listen *:8443 https -cert self
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS -SelfSigned
     #listen "pode.foo.com:8443" https -cert self
 
     # set view engine for web pages
-    engine pode
+    Set-PodeViewEngine -Type Pode
 
     # GET request for web page at "/"
-    route 'get' '/' {
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($session)
-        view 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
+        Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
-    route 'get' '/error' {
+    Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
         param($session)
-        status 500
+        Set-PodeResponseStatus -Code 500
     }
 
 }

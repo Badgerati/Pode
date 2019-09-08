@@ -5,8 +5,9 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # runs the logic once, then exits
-Server {
+Start-PodeServer {
 
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
     Write-Host 'hello, world!'
 
 }

@@ -5,19 +5,19 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Server -Threads 2 {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    listen *:8085 http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # log requests to the terminal
-    logger terminal
+    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 
     # import the EPS module to each runspace
-    import eps
+    Import-PodeModule -Name EPS
 
     # set view engine to EPS renderer
-    engine eps {
+    Set-PodeViewEngine -Type EPS -ScriptBlock {
         param($path, $data)
 
         if ($null -eq $data) {
@@ -29,8 +29,8 @@ Server -Threads 2 {
     }
 
     # GET request for web page on "localhost:8085/"
-    route 'get' '/' {
-        view 'index' -Data @{ 'numbers' = @(1, 2, 3); 'date' = [DateTime]::UtcNow; }
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeViewResponse -Path 'index' -Data @{ 'numbers' = @(1, 2, 3); 'date' = [DateTime]::UtcNow; }
     }
 
-} -FileMonitor
+}

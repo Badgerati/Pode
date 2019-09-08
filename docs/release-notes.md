@@ -1,5 +1,67 @@
 # Release Notes
 
+## v1.0.1
+
+```plain
+### Bugs
+* #367: If a "server.psd1" file is not present, Logging will not work
+* #368: Logging will attempt to mask everything if no mask patterns are supplied
+```
+
+## v1.0.0
+
+```plain
+### Features
+* #228: Support for rendering Markdown as HTML (Fully supported in PowerShell 7+)
+* #334: New "ConvertTo-PodeRoute" function to automatically make Routes from Functions/Modules
+* #344: New "Add-PodePage" function to more easily make GET Routes for simple pages
+
+### Enhancements
+* #328: New "Get-PodeAuthADUser" parameter -NoGroups, to skip retrieving groups from AD
+* #330: Allow for -ArgumentList on Routes, Handlers, Timers, Schedules, etc - now they can be more dynamic
+* #341: Allow Show-PodeGui to work under PowerShell 7 on Windows
+* #343: Ability to mask data in logs using Regex
+* #352: On "Add-PodeEndpoint", split the -Address parameter into -Address/-Port parameters
+* #354: Two new functions for Sessions to Save and Remove them
+* #355: Support on "Add-PodeEndpoint" for a -RedirectTo parameter, to automatically build a redirect Route
+
+### Bugs
+* #312: On Static Routes, don't create a PSDrive when the Source is a File Share
+* #318: For Cron Expressions, split the DayOfWeek and DayOfMonth
+* #324: Setting Authentication middleware globally didn't save the Session object
+* #347: Route parameters fail if the value contains a dot, or other special characters
+* #351: Stop the "Done" message appearing when the server errors
+
+### Packaging
+* #338: Update the version of MkDocs Material Theme to v4.4.0
+* #349: Update the Dockerfiles to PowerShell 6.2.2
+
+### Internal Code
+* #279, #279, #287, #289, #290, #291, #292, #294, #295, #296, #297, #305, #306, #314, #315
+    - Convert all functions to PowerShell Syntax
+* #303: Change from using "pode.<env>.json" files to "server.<env>.psd1" files
+
+### Documentation
+* #299: Rebuild Documentation's Functions section using PlatyPS
+* #316: Write a migration guide for going from v0.X to v1.0
+* #321: Go through all documentation, ensuring it's up-to-date with new Syntax
+```
+
+## v0.32.0
+
+```plain
+### Enhancements
+* #270: Support on `gui` to specify the width and height of the window
+* #280: Support when file monitoring to output the files that caused the server to restart
+* #282: New actions on `state` to save and restore to to/from a file
+
+### Bugs
+* #271: Fix in `Convert-PodePathPatternsToRegex` when converting file names - thanks @Fraham!
+
+### Documentation
+* #284: Notes in documention about referencing JSON payload data in PowerShell 4/5
+```
+
 ## v0.31.0
 
 ```plain
