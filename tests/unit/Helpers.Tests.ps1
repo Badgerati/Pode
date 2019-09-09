@@ -1326,3 +1326,57 @@ Describe 'Get-PodeCount' {
         }
     }
 }
+
+Describe 'Convert-PodePathSeparators' {
+    Context 'Null' {
+        It 'Null'{
+            Convert-PodePathSeparators -Path $null | Should Be $null
+        }
+    }
+
+    Context 'String' {
+        It 'Empty' {
+            Convert-PodePathSeparators -Path '' | Should Be $null
+            Convert-PodePathSeparators -Path ' ' | Should Be $null
+        }
+
+        It 'Value' {
+            Convert-PodePathSeparators -Path 'anyValue' | Should Be 'anyValue'
+            Convert-PodePathSeparators -Path 1 | Should Be 1
+        }
+
+        It 'Path' {
+            Convert-PodePathSeparators -Path 'one/Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+            Convert-PodePathSeparators -Path 'one\Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+
+            Convert-PodePathSeparators -Path 'one/two/Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+            Convert-PodePathSeparators -Path 'one\two\Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+            Convert-PodePathSeparators -Path 'one/two\Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+            Convert-PodePathSeparators -Path 'one\two/Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+        }
+    }
+
+    Context 'Array'{
+        It  'Null'{
+            Convert-PodePathSeparators -Path @($null) | Should Be $null
+            Convert-PodePathSeparators -Path @($null, $null) | Should Be $null
+        }
+
+        It 'Single' {
+            Convert-PodePathSeparators -Path @('noSeperators') | Should Be @('noSeperators')
+            Convert-PodePathSeparators -Path @('some/Seperators') | Should Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
+            Convert-PodePathSeparators -Path @('some\Seperators') | Should Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
+
+            Convert-PodePathSeparators -Path @('') | Should Be $null
+            Convert-PodePathSeparators -Path @(' ') | Should Be $null
+        }
+
+        It 'Double' {
+            Convert-PodePathSeparators -Path @('noSeperators1', 'noSeperators2') | Should Be @('noSeperators1', 'noSeperators2')
+            Convert-PodePathSeparators -Path @('some/Seperators', 'some\Seperators') | Should Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators", "some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
+
+            Convert-PodePathSeparators -Path @('', ' ') | Should Be $null
+            Convert-PodePathSeparators -Path @(' ', '') | Should Be $null
+        }
+    }
+}
