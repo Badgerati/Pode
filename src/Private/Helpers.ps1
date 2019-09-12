@@ -423,6 +423,10 @@ function Get-PodeIPAddressesForHostname
         $Type
     )
 
+    if (!(Test-PodeHostname -Hostname $Hostname)) {
+        return $Hostname
+    }
+
     # get the ip addresses for the hostname
     $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
 

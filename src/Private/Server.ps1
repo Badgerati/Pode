@@ -49,7 +49,9 @@ function Start-PodeInternalServer
             }
 
             { $_ -ieq 'HTTP' -or $_ -ieq 'HTTPS' } {
-                Start-PodeWebServer -Browse:$Browse
+                #TODO: make a specific type
+                Start-PodeSocketServer
+                #Start-PodeWebServer -Browse:$Browse
             }
 
             'SERVICE' {
