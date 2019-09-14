@@ -1,6 +1,9 @@
 function Start-PodeSocketServer
 {
-    #Add-Type -Path 'C:\Projects\Pode\src\Listener\bin\Debug\netstandard2.0\Listener.dll' -ErrorAction Stop
+    param (
+        [switch]
+        $Browse
+    )
 
     # work out which endpoints to listen on
     $endpoints = @()
@@ -12,9 +15,6 @@ function Start-PodeSocketServer
         $_ip = [string]($_.Address)
         $_ip = (Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1)
         $_ip = (Get-PodeIPAddress $_ip)
-        #if ($_ip -ieq '0.0.0.0') {
-        #    $_ip = '*'
-        #}
 
         # get the port
         $_port = [int]($_.Port)
@@ -115,7 +115,8 @@ function Start-PodeSocketServer
                 #$stream.Flush()
 
                 # close socket stream
-                Close-PodeDisposable -Disposable $socket -Close
+                Close-PodeSocket -Socket $socket
+                #Close-PodeDisposable -Disposable $socket -Close
                 'here4' | Out-Default
             }
             'here5' | Out-Default
@@ -158,7 +159,7 @@ function Start-PodeSocketServer
             throw $_.Exception
         }
         finally {
-            if ($null -ne $PodeContext.Server.Listener) {
+            if ($null -ne $PodeContext.Server.Sockets.Socket) {
                 #if ($Listener.IsListening) {
                 #    $Listener.Stop()
                 #}
@@ -171,7 +172,7 @@ function Start-PodeSocketServer
         }
     }
 
-    #Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript
     #Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
@@ -179,5 +180,10 @@ function Start-PodeSocketServer
 
     $endpoints | ForEach-Object {
         Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
+    }
+
+    # browse to the first endpoint, if flagged
+    if ($Browse) {
+        Start-Process $endpoints[0].HostName
     }
 }

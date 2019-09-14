@@ -68,13 +68,12 @@ function New-PodeContext
     }
 
     # set the server default type
-    $ctx.Server.Type = ([string]::Empty)
+    $ctx.Server.Type = $ServerType.ToUpperInvariant()
     if ($Interval -gt 0) {
         $ctx.Server.Type = 'SERVICE'
     }
 
     if ($isServerless) {
-        $ctx.Server.Type = $ServerType.ToUpperInvariant()
         $ctx.Server.IsServerless = $isServerless
     }
 
@@ -203,7 +202,7 @@ function New-PodeRunspacePools
 
     # setup main runspace pool
     $threadsCounts = @{
-        Default = 1
+        Default = 2
         Timer = 1
         Log = 1
         Schedule = 1

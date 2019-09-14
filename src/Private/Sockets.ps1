@@ -1,5 +1,15 @@
-function Initialize-PodeSocketListener([IPAddress] $Address, [int] $Port)
+function Initialize-PodeSocketListener
 {
+    param(
+        [Parameter(Mandatory=$true)]
+        [ipaddress]
+        $Address,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Port
+    )
+
     $PodeContext.Server.Sockets = @{
         Socket = $null
         Queue = [System.Collections.Generic.List[System.Net.Sockets.Socket]]::new()
@@ -34,17 +44,39 @@ function Get-PodeSocket
     return $socket
 }
 
+function Close-PodeSocket
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Net.Sockets.Socket]
+        $Socket
+    )
+
+    if ($Socket.Connected) {
+        $Socket.Shutdown([System.Net.Sockets.SocketShutdown]::Both)
+    }
+
+    Close-PodeDisposable -Disposable $Socket -Close
+}
+
 function Close-PodeSocketListener
 {
-    for ($i = $PodeContext.Server.Sockets.Queue.Count -1; $i -le 0; $i--) {
-        $PodeContext.Server.Sockets.Queue[$i].Dispose()
+    for ($i = $PodeContext.Server.Sockets.Queue.Count - 1; $i -ge 0; $i--) {
+        Close-PodeSocket -Socket $PodeContext.Server.Sockets.Queue[$i]
     }
 
     $PodeContext.Server.Sockets.Queue.Clear()
+    Close-PodeSocket -Socket $PodeContext.Server.Sockets.Socket
 }
 
-function Invoke-PodeSocketAccept($Arguments)
+function Invoke-PodeSocketAccept
 {
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Net.Sockets.SocketAsyncEventArgs]
+        $Arguments
+    )
+
     $Arguments.AcceptSocket = $null
     $raised = $false
 
@@ -60,8 +92,14 @@ function Invoke-PodeSocketAccept($Arguments)
     }
 }
 
-function Invoke-PodeSocketProcessAccept($Arguments)
+function Invoke-PodeSocketProcessAccept
 {
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Net.Sockets.SocketAsyncEventArgs]
+        $Arguments
+    )
+
     $accepted = $null
     if ($Arguments.SocketError -eq [System.Net.Sockets.SocketError]::Success) {
         $accepted = $Arguments.AcceptSocket
@@ -76,7 +114,13 @@ function Invoke-PodeSocketProcessAccept($Arguments)
     Register-PodeSocket -Socket $accepted
 }
 
-function Register-PodeSocket($Socket)
+function Register-PodeSocket
 {
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Net.Sockets.Socket]
+        $Socket
+    )
+
     $PodeContext.Server.Sockets.Queue.Add($Socket)
 }

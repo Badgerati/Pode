@@ -69,9 +69,9 @@ function Start-PodeServer
         $Request,
 
         [Parameter()]
-        [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
+        [ValidateSet('', 'AzureFunctions', 'AwsLambda', 'Pode')]
         [string]
-        $Type,
+        $Type = [string]::Empty,
 
         [switch]
         $DisableTermination,
@@ -549,12 +549,16 @@ function Add-PodeEndpoint
 
     if (!$exists) {
         # has an endpoint already been defined for smtp/tcp?
-        if (@('smtp', 'tcp') -icontains $Protocol -and $Protocol -ieq $PodeContext.Server.Type) {
+        if ((@('smtp', 'tcp') -icontains $Protocol) -and ($Protocol -ieq $PodeContext.Server.Type)) {
             throw "An endpoint for $($Protocol.ToUpperInvariant()) has already been defined"
         }
 
         # set server type, ensure we aren't trying to change the server's type
         $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
+        if (($Protocol -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
+            $_type = 'pode'
+        }
+
         if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
             $PodeContext.Server.Type = $_type
         }

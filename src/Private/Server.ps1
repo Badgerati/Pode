@@ -48,10 +48,12 @@ function Start-PodeInternalServer
                 Start-PodeTcpServer
             }
 
-            { $_ -ieq 'HTTP' -or $_ -ieq 'HTTPS' } {
-                #TODO: make a specific type
-                Start-PodeSocketServer
-                #Start-PodeWebServer -Browse:$Browse
+            { ($_ -ieq 'HTTP') -or ($_ -ieq 'HTTPS') } {
+                Start-PodeWebServer -Browse:$Browse
+            }
+
+            'PODE' {
+                Start-PodeSocketServer -Browse:$Browse
             }
 
             'SERVICE' {
