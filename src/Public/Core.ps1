@@ -472,13 +472,26 @@ function Add-PodeEndpoint
         [string]
         $Protocol,
 
-        [Parameter()]
+        [Parameter(Mandatory=$true, ParameterSetName='CertName')]
         [string]
         $Certificate = $null,
 
-        [Parameter()]
+        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
         [string]
         $CertificateThumbprint = $null,
+
+        [Parameter(Mandatory=$true, ParameterSetName='CertFile')]
+        [string]
+        $CertificateFile = $null,
+
+        [Parameter(ParameterSetName='CertFile')]
+        [string]
+        $CertificatePassword = $null,
+
+        [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
+        [Parameter()]
+        [X509Certificate]
+        $RawCertificate = $null,
 
         [Parameter()]
         [string]
@@ -491,6 +504,7 @@ function Add-PodeEndpoint
         [switch]
         $Force,
 
+        [Parameter(ParameterSetName='CertSelf')]
         [switch]
         $SelfSigned
     )
@@ -522,6 +536,7 @@ function Add-PodeEndpoint
         Certificate = @{
             Name = $Certificate
             Thumbprint = $CertificateThumbprint
+            Raw = $RawCertificate
             SelfSigned = $SelfSigned
         }
     }
@@ -547,6 +562,28 @@ function Add-PodeEndpoint
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
+    # if we're dealing with a certificate file, attempt to import it
+    if ($PSCmdlet.ParameterSetName -ieq 'certfile') {
+        # fail if protocol is not https
+        if ($Protocol -ine 'https') {
+            throw "Certificate supplied for non-HTTPS endpoint"
+        }
+
+        $_path = Get-PodeRelativePath -Path $CertificateFile -JoinRoot -Resolve
+
+        if ([string]::IsNullOrWhiteSpace($CertificatePassword)) {
+            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path)
+        }
+        else {
+            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path, $CertificatePassword)
+        }
+
+        # fail if the cert is expired
+        if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
+            throw "The certificate '$($CertificateFile)' has expired: $($obj.Certificate.Raw.NotAfter)"
+        }
+    }
+
     if (!$exists) {
         # has an endpoint already been defined for smtp/tcp?
         if ((@('smtp', 'tcp') -icontains $Protocol) -and ($Protocol -ieq $PodeContext.Server.Type)) {
@@ -555,7 +592,7 @@ function Add-PodeEndpoint
 
         # set server type, ensure we aren't trying to change the server's type
         $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
-        if (($Protocol -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
+        if (($_type -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
             $_type = 'pode'
         }
 

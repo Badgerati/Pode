@@ -110,6 +110,10 @@ function Restart-PodeInternalServer
         # clear endpoints
         $PodeContext.Server.Endpoints = @()
 
+        # clear the sockets
+        $PodeContext.Server.Sockets.Listeners = @()
+        $PodeContext.Server.Sockets.Queue.Clear()
+
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
             Type = 'html'

@@ -1015,6 +1015,29 @@ function Test-PodeValidNetworkFailure
     return ($null -ne $match)
 }
 
+function Get-PodeEncodingFromContentType
+{
+    param(
+        [Parameter()]
+        [string]
+        $ContentType
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
+        return [System.Text.Encoding]::UTF8
+    }
+
+    $parts = $ContentType -isplit ';'
+
+    foreach ($part in $parts) {
+        if ($part.Trim().StartsWith('charset')) {
+            return [System.Text.Encoding]::GetEncoding(($part -isplit '=')[1].Trim())
+        }
+    }
+
+    return [System.Text.Encoding]::UTF8
+}
+
 function ConvertFrom-PodeRequestContent
 {
     param (
@@ -1050,6 +1073,10 @@ function ConvertFrom-PodeRequestContent
             }
 
             'azurefunctions' {
+                $Content = $Request.RawBody
+            }
+
+            'pode' {
                 $Content = $Request.RawBody
             }
 
@@ -1842,10 +1869,18 @@ function Set-PodeServerHeader
     param (
         [Parameter()]
         [string]
-        $Type
+        $Type,
+
+        [switch]
+        $AllowEmptyType
     )
 
-    Set-PodeHeader -Name 'Server' -Value "Pode - $($Type)"
+    $name = 'Pode'
+    if (![string]::IsNullOrWhiteSpace($Type) -or $AllowEmptyType) {
+        $name += " - $($Type)"
+    }
+
+    Set-PodeHeader -Name 'Server' -Value $name
 }
 
 function Get-PodeHandler

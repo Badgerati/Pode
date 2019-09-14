@@ -230,8 +230,8 @@ function Get-PodeCookieMiddleware
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_cookie_parsing__' -ScriptBlock {
         param($e)
 
-        # if it's not serverless, return
-        if (!$PodeContext.Server.IsServerless) {
+        # if it's not serverless or pode, return
+        if (!$PodeContext.Server.IsServerless -and ($PodeContext.Server.Type -ine 'pode')) {
             return $true
         }
 

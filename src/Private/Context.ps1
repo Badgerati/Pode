@@ -80,6 +80,12 @@ function New-PodeContext
     # set the IP address details
     $ctx.Server.Endpoints = @()
 
+    # set socket details for pode server
+    $ctx.Server.Sockets = @{
+        Listeners = @()
+        Queue = [System.Collections.Generic.List[hashtable]]::new(100)
+    }
+
     # setup gui details
     $ctx.Server.Gui = @{}
 

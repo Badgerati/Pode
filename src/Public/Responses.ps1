@@ -39,7 +39,7 @@ function Set-PodeResponseAttachment
         Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
         # if serverless, get the content raw and return
-        if ($PodeContext.Server.IsServerless) {
+        if (!$WebEvent.Streamed) {
             if (Test-IsPSCore) {
                 $content = (Get-Content -Path $Path -Raw -AsByteStream)
             }
@@ -142,7 +142,7 @@ function Write-PodeTextResponse
 
     # if the response stream isn't writable, return
     $res = $WebEvent.Response
-    if (($null -eq $res) -or (!$PodeContext.Server.IsServerless -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite))) {
+    if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite))) {
         return
     }
 
@@ -163,7 +163,7 @@ function Write-PodeTextResponse
     }
 
     # if we're serverless, set the string as the body
-    if ($PodeContext.Server.IsServerless) {
+    if (!$WebEvent.Streamed) {
         if ($isStringValue) {
             $res.Body = $Value
         }

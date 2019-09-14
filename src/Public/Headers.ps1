@@ -27,7 +27,7 @@ function Add-PodeHeader
         $Value
     )
 
-    if ($PodeContext.Server.IsServerless) {
+    if ($PodeContext.Server.Type -ine 'http') {
         $WebEvent.Response.Headers[$Name] = $Value
     }
     else {
@@ -85,7 +85,7 @@ function Get-PodeHeader
         $Name
     )
 
-    if ($PodeContext.Server.IsServerless) {
+    if ($PodeContext.Server.Type -ine 'http') {
         $header = $WebEvent.Request.Headers.$Name
     }
     else {
@@ -124,7 +124,7 @@ function Set-PodeHeader
         $Value
     )
 
-    if ($PodeContext.Server.IsServerless) {
+    if ($PodeContext.Server.Type -ine 'http') {
         $WebEvent.Response.Headers[$Name] = $Value
     }
     else {
