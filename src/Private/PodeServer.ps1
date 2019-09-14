@@ -69,10 +69,6 @@ function Start-PodeSocketServer
     # script for listening out for incoming requests
     $listenScript = {
         param (
-            #[Parameter(Mandatory=$true)]
-            #[ValidateNotNull()]
-            #$Listener,
-
             [Parameter(Mandatory=$true)]
             [int]
             $ThreadId
@@ -88,18 +84,10 @@ function Start-PodeSocketServer
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 'here2' | Out-Default
-                # get request and response
-                #$Listener.Count | Out-Default
-
-                $socket = $null
+                # wait for a socket to be connected
                 while ($null -eq $socket) {
-                    #$listener.Count() | Out-Default
-                    #$PodeContext.Server.Sockets.Queue.Count | Out-Default
-                    #$socket = $listener.GetSocket()
                     $socket = Get-PodeSocket
-                    #$socket | Out-Default
                     if ($null -eq $socket) {
-                        #Start-Sleep -Seconds 1
                         Start-Sleep -Milliseconds 10
                     }
                 }
@@ -130,24 +118,14 @@ function Start-PodeSocketServer
     }
 
     # start the runspace for listening on x-number of threads
-    'add1' | Out-Default
     1..$PodeContext.Threads | ForEach-Object {
         Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
             -Parameters @{ 'ThreadId' = $_ }
-            #-Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
-    'add2' | Out-Default
 
     # script to keep web server listening until cancelled
     $waitScript = {
-        #param (
-        #    [Parameter(Mandatory=$true)]
-        #    [ValidateNotNull()]
-        #    $Listener
-        #)
-
-        try
-        {
+        try {
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 Start-Sleep -Seconds 1
@@ -160,20 +138,12 @@ function Start-PodeSocketServer
         }
         finally {
             if ($null -ne $PodeContext.Server.Sockets.Socket) {
-                #if ($Listener.IsListening) {
-                #    $Listener.Stop()
-                #}
-
-                'closing1' | Out-Default
                 Close-PodeSocketListener
-                #Close-PodeDisposable -Disposable $PodeContext.Server.Listener
-                'closing2' | Out-Default
             }
         }
     }
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript
-    #Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
     Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
