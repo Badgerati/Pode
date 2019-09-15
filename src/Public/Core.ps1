@@ -431,6 +431,15 @@ A certificate name to find and bind onto HTTPS endpoints (Windows only).
 .PARAMETER CertificateThumbprint
 A certificate thumbprint to bind onto HTTPS endpoints (Windows only).
 
+.PARAMETER CertificateFile
+The path to a certificate that can be use to enable HTTPS (Cross-platform)
+
+.PARAMETER CertificatePassword
+The password for the certificate referenced in CertificateFile (Cross-platform)
+
+.PARAMETER RawCertificate
+The raw X509 certificate that can be use to enable HTTPS (Cross-platform)
+
 .PARAMETER Name
 An optional name for the endpoint, that can be used with other functions.
 

@@ -476,6 +476,7 @@ function Write-PodeErrorLog
     $item['Server'] = $env:COMPUTERNAME
     $item['Level'] = $Level
     $item['Date'] = [datetime]::Now
+    $item['ThreadId'] = [int]$ThreadId
 
     # add the item to be processed
     $PodeContext.LogsToProcess.Add(@{

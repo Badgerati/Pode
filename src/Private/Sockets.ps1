@@ -26,13 +26,13 @@ function Initialize-PodeSocketListenerEndpoint
     }
 }
 
-function Start-PodeSocketListeners
+function Register-PodeSocketListenerEvents
 {
     for ($i = 0; $i -lt $PodeContext.Server.Sockets.Listeners.Length; $i++) {
         $socketArgs = [System.Net.Sockets.SocketAsyncEventArgs]::new()
         $socketArgs.UserToken = $PodeContext.Server.Sockets.Listeners[$i]
 
-        Register-ObjectEvent -InputObject $socketArgs -EventName 'Completed' -SourceIdentifier "PodeListenerSocketCompleted_$($i)" -SupportEvent -Action {
+        Register-ObjectEvent -InputObject $socketArgs -EventName 'Completed' -SourceIdentifier (Get-PodeSocketListenerEventName -Id $i) -SupportEvent -Action {
             Invoke-PodeSocketProcessAccept -Arguments $Event.SourceEventArgs
         }
 
@@ -42,13 +42,15 @@ function Start-PodeSocketListeners
 
 function Get-PodeSocketContext
 {
-    if ($PodeContext.Server.Sockets.Queue.Count -eq 0) {
-        return $null
-    }
+    Lock-PodeObject -Object $PodeContext.Server.Sockets.Queue -Return -ScriptBlock {
+        if ($PodeContext.Server.Sockets.Queue.Count -eq 0) {
+            return $null
+        }
 
-    $context = $PodeContext.Server.Sockets.Queue[0]
-    $PodeContext.Server.Sockets.Queue.RemoveAt(0)
-    return $context
+        $context = $PodeContext.Server.Sockets.Queue[0]
+        $PodeContext.Server.Sockets.Queue.RemoveAt(0)
+        return $context
+    }
 }
 
 function Close-PodeSocket
@@ -78,8 +80,9 @@ function Close-PodeSocketListener
 
     $PodeContext.Server.Sockets.Queue.Clear()
 
-    # close all open listeners
-    for ($i = $PodeContext.Server.Sockets.Listeners.Count - 1; $i -ge 0; $i--) {
+    # close all open listeners and unbind events
+    for ($i = $PodeContext.Server.Sockets.Listeners.Length - 1; $i -ge 0; $i--) {
+        Unregister-Event -SourceIdentifier (Get-PodeSocketListenerEventName -Id $i) -Force
         Close-PodeSocket -Socket $PodeContext.Server.Sockets.Listeners[$i].Socket -Shutdown
     }
 
@@ -151,9 +154,22 @@ function Register-PodeSocketContext
         Close-PodeSocket -Socket $Socket -Shutdown
     }
 
-    $PodeContext.Server.Sockets.Queue.Add(@{
-        Socket = $Socket
-        Certificate = $Certificate
-        Protocol = $Protocol
-    })
+    Lock-PodeObject -Object $PodeContext.Server.Sockets.Queue -ScriptBlock {
+        $PodeContext.Server.Sockets.Queue.Add(@{
+            Socket = $Socket
+            Certificate = $Certificate
+            Protocol = $Protocol
+        })
+    }
+}
+
+function Get-PodeSocketListenerEventName
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Id
+    )
+
+    return "PodeListenerSocketCompleted_$($Id)"
 }

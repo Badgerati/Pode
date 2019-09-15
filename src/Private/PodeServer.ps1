@@ -67,8 +67,8 @@ function Start-PodeSocketServer
 
         try
         {
-            # start the listeners
-            Start-PodeSocketListeners
+            # start the listener events
+            Register-PodeSocketListenerEvents
 
             # create general defaults
             $encoder = New-Object System.Text.ASCIIEncoding
@@ -171,10 +171,6 @@ function Start-PodeSocketServer
 
                     # add logging endware for post-request
                     Add-PodeRequestLogEndware -WebEvent $WebEvent
-
-                    #$WebEvent | Out-Default
-                    #$WebEvent.Request | Out-Default
-                    #$WebEvent.Request.Headers | Out-Default
 
                     # invoke middleware
                     if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
