@@ -102,38 +102,42 @@ Describe 'Restart-PodeInternalServer' {
 
     It 'Resetting the server values' {
         $PodeContext = @{
-            'Tokens' = @{
-                'Cancellation' = New-Object System.Threading.CancellationTokenSource;
-                'Restart' = New-Object System.Threading.CancellationTokenSource;
+            Tokens = @{
+                Cancellation = New-Object System.Threading.CancellationTokenSource;
+                Restart = New-Object System.Threading.CancellationTokenSource;
             };
-            'Server' = @{
-                'Routes' =@{
-                    'GET' = @{ 'key' = 'value' };
-                    'POST' = @{ 'key' = 'value' };
+            Server = @{
+                Routes =@{
+                    GET = @{ 'key' = 'value' };
+                    POST = @{ 'key' = 'value' };
                 };
-                'Handlers' = @{
-                    'TCP' = @{ };
+                Handlers = @{
+                    TCP = @{ };
                 };
-                'Logging' = @{
-                    'Types' = @{ 'key' = 'value' };
+                Logging = @{
+                    Types = @{ 'key' = 'value' };
                 };
-                'Middleware' = @{ 'key' = 'value' };
-                'Endware' = @{ 'key' = 'value' };
-                'ViewEngine' = @{
-                    'Type' = 'pode';
-                    'Extension' = 'pode';
-                    'Script' = $null;
-                    'IsDynamic' = $true;
+                Middleware = @{ 'key' = 'value' };
+                Endware = @{ 'key' = 'value' };
+                ViewEngine = @{
+                    Type = 'pode';
+                    Extension = 'pode';
+                    Script = $null;
+                    IsDynamic = $true;
                 };
-                'Cookies' = @{
-                    'Session' = @{ 'key' = 'value' };
+                Cookies = @{
+                    Session = @{ 'key' = 'value' };
                 };
-                'Authentications' = @{ 'key' = 'value' };
-                'State' = @{ 'key' = 'value' };
-                'Configuration' = @{ 'key' = 'value' };
+                Authentications = @{ 'key' = 'value' };
+                State = @{ 'key' = 'value' };
+                Configuration = @{ 'key' = 'value' };
+                Sockets = @{
+                    Listeners = @()
+                    Queue = [System.Collections.Generic.List[hashtable]]::new()
+                }
             };
-            'Timers' = @{ 'key' = 'value' }
-            'Schedules' = @{ 'key' = 'value' };
+            Timers = @{ 'key' = 'value' }
+            Schedules = @{ 'key' = 'value' };
         }
 
         Restart-PodeInternalServer | Out-Null
