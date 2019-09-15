@@ -44,32 +44,18 @@ function Start-PodeSocketServer
         }
     }
 
-    # create the listener on the needed endpoints
-    $e = $endpoints[0]
-    Initialize-PodeSocketListener -Address $e.Address -Port $e.Port -Certificate $e.Certificate
-
-    # try
-    # {
-    #     # start listening on defined endpoints
-    #     $endpoints | ForEach-Object {
-    #         $listener.Prefixes.Add($_.Prefix)
-    #     }
-
-    #     $listener.Start()
-    # }
-    # catch {
-    #     $_ | Write-PodeErrorLog
-
-    #     if ($null -ne $Listener) {
-    #         if ($Listener.IsListening) {
-    #             $Listener.Stop()
-    #         }
-
-    #         Close-PodeDisposable -Disposable $Listener -Close
-    #     }
-
-    #     throw $_.Exception
-    # }
+    try
+    {
+        # register endpoints on the listener
+        $endpoints | ForEach-Object {
+            Initialize-PodeSocketListenerEndpoint -Address $_.Address -Port $_.Port -Certificate $_.Certificate
+        }
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+        Close-PodeSocketListener
+        throw $_.Exception
+    }
 
     # script for listening out for incoming requests
     $listenScript = {
@@ -266,9 +252,7 @@ function Start-PodeSocketServer
             throw $_.Exception
         }
         finally {
-            if ($PodeContext.Server.Sockets.Listeners.Length -gt 0) {
-                Close-PodeSocketListener
-            }
+            Close-PodeSocketListener
         }
     }
 

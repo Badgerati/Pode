@@ -9,6 +9,7 @@ Start-PodeServer -Type Pode {
 
     # listen
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8095 -Protocol Http
     #Add-PodeEndpoint -Address * -Port 8090 -CertificateFile './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Https
 
     # log requests to the terminal

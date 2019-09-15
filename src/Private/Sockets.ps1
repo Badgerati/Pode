@@ -1,4 +1,4 @@
-function Initialize-PodeSocketListener
+function Initialize-PodeSocketListenerEndpoint
 {
     param(
         [Parameter(Mandatory=$true)]
@@ -17,6 +17,7 @@ function Initialize-PodeSocketListener
     $endpoint = [IPEndpoint]::new($Address, $Port)
     $socket = [System.Net.Sockets.Socket]::new($endpoint.AddressFamily, [System.Net.Sockets.SocketType]::Stream, [System.Net.Sockets.ProtocolType]::Tcp)
     $socket.Bind($endpoint)
+    $socket.Listen([int]::MaxValue)
 
     $PodeContext.Server.Sockets.Listeners += @{
         Socket = $socket
@@ -28,8 +29,6 @@ function Initialize-PodeSocketListener
 function Start-PodeSocketListeners
 {
     for ($i = 0; $i -lt $PodeContext.Server.Sockets.Listeners.Length; $i++) {
-        $PodeContext.Server.Sockets.Listeners[$i].Socket.Listen([int]::MaxValue)
-
         $socketArgs = [System.Net.Sockets.SocketAsyncEventArgs]::new()
         $socketArgs.UserToken = $PodeContext.Server.Sockets.Listeners[$i]
 
