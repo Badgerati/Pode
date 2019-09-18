@@ -80,10 +80,17 @@ function New-PodeContext
     # set the IP address details
     $ctx.Server.Endpoints = @()
 
+    # general encoding for the server
+    $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
+
     # set socket details for pode server
     $ctx.Server.Sockets = @{
         Listeners = @()
-        Queue = [System.Collections.Generic.List[hashtable]]::new(100)
+        MaxConnections = 500
+        Queues = @{
+            Contexts = [System.Collections.Generic.List[hashtable]]::new(100)
+            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
+        }
     }
 
     # setup gui details
