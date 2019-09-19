@@ -281,7 +281,9 @@ function Invoke-PodeSocketHandler
     # write the response headers
     if ($WebEvent.Response.Headers.Count -gt 0) {
         foreach ($key in $WebEvent.Response.Headers.Keys) {
-            $res_msg += "$($key): $($WebEvent.Response.Headers[$key])$([Environment]::NewLine)"
+            foreach ($value in $WebEvent.Response.Headers[$key]) {
+                $res_msg += "$($key): $($value)$([Environment]::NewLine)"
+            }
         }
     }
 
