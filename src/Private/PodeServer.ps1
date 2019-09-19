@@ -88,9 +88,6 @@ function Start-PodeSocketServer
 
         try
         {
-            #if ($ThreadId -eq 1) {
-            #    Register-PodeSocketListenerEvents
-            #}
             Start-PodeSocketListener
 
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
@@ -104,6 +101,7 @@ function Start-PodeSocketServer
                     }
                 }
 
+                $ThreadId | Out-Default
                 Invoke-PodeSocketHandler -Context $context
             }
         }
@@ -273,7 +271,8 @@ function Invoke-PodeSocketHandler
         $protocol = 'HTTP/1.1'
     }
 
-    $res_msg = "$($protocol) $($WebEvent.Response.StatusCode) $($WebEvent.Response.StatusDescription)$([Environment]::NewLine)"
+    $newLine = "`r`n"
+    $res_msg = "$($protocol) $($WebEvent.Response.StatusCode) $($WebEvent.Response.StatusDescription)$($newLine)"
 
     # set response headers before adding
     Set-PodeServerResponseHeaders -WebEvent $WebEvent
@@ -282,12 +281,12 @@ function Invoke-PodeSocketHandler
     if ($WebEvent.Response.Headers.Count -gt 0) {
         foreach ($key in $WebEvent.Response.Headers.Keys) {
             foreach ($value in $WebEvent.Response.Headers[$key]) {
-                $res_msg += "$($key): $($value)$([Environment]::NewLine)"
+                $res_msg += "$($key): $($value)$($newLine)"
             }
         }
     }
 
-    $res_msg += [Environment]::NewLine
+    $res_msg += $newLine
 
     # write the response body
     if (![string]::IsNullOrWhiteSpace($WebEvent.Response.Body)) {
@@ -346,23 +345,31 @@ function Get-PodeServerRequestDetails
     )
 
     # parse the request headers
-    $req_lines = ($Content -isplit [System.Environment]::NewLine)
+    $newLine = "`r`n"
+    if ($Content.Contains($newLine)) {
+        $newLine = "`n"
+    }
+
+    $req_lines = ($Content -isplit $newLine)
+    $req_lines = @(foreach ($line in $req_lines) {
+        $line.Trim()
+    })
 
     # first line is the request info
     $req_line_info = ($req_lines[0] -isplit '\s+')
     if ($req_line_info.Length -ne 3) {
-        throw [System.Net.Http.HttpRequestException]::new('Invalid request line')
+        throw [System.Net.Http.HttpRequestException]::new("Invalid request line: $($req_lines[0]) [$($req_line_info.Length)]")
     }
 
     $req_method = $req_line_info[0]
     if (@('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE') -inotcontains $req_method) {
-        throw [System.Net.Http.HttpRequestException]::new('Invalid request HTTP method')
+        throw [System.Net.Http.HttpRequestException]::new("Invalid request HTTP method: $($req_method)")
     }
 
     $req_query = $req_line_info[1]
     $req_proto = $req_line_info[2]
     if (!$req_proto.StartsWith('HTTP/')) {
-        throw [System.Net.Http.HttpRequestException]::new('Invalid request version')
+        throw [System.Net.Http.HttpRequestException]::new("Invalid request version: $($req_proto)")
     }
 
     # then, read the headers
@@ -382,7 +389,7 @@ function Get-PodeServerRequestDetails
     }
 
     # then set the request body
-    $req_body = ($req_lines[($req_body_index)..($req_lines.Length - 1)] -join [System.Environment]::NewLine)
+    $req_body = ($req_lines[($req_body_index)..($req_lines.Length - 1)] -join $newLine)
 
     # build required URI details
     $req_uri = [uri]::new("$($Protocol)://$($req_headers['Host'])$($req_query)")
