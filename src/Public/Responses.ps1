@@ -149,7 +149,7 @@ function Write-PodeTextResponse
     # set a cache value
     if ($Cache) {
         Set-PodeHeader -Name 'Cache-Control' -Value "max-age=$($MaxAge), must-revalidate"
-        Set-PodeHeader -Name 'Expires' -Value ([datetime]::UtcNow.AddSeconds($MaxAge).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'"))
+        Set-PodeHeader -Name 'Expires' -Value ([datetime]::UtcNow.AddSeconds($MaxAge).ToString("r", [CultureInfo]::InvariantCulture))
     }
 
     # specify the content-type if supplied (adding utf-8 if missing)

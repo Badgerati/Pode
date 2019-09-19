@@ -101,7 +101,6 @@ function Start-PodeSocketServer
                     }
                 }
 
-                $ThreadId | Out-Default
                 Invoke-PodeSocketHandler -Context $context
             }
         }
@@ -165,6 +164,7 @@ function Invoke-PodeSocketHandler
         # reset with basic event data
         $WebEvent = @{
             OnEnd = @()
+            Auth = @{}
             Response = @{
                 Headers = @{}
                 ContentLength64 = 0
@@ -173,10 +173,22 @@ function Invoke-PodeSocketHandler
                 StatusCode = 200
                 StatusDescription = 'OK'
             }
+            Request = @{}
             Lockable = $PodeContext.Lockable
+            Path = $null
+            Method = $null
+            Query = $null
+            Protocol = $Context.Protocol
+            Endpoint = $null
             ContentType = $null
             ErrorType = $null
+            Cookies = $null
+            PendingCookies = @{}
             Streamed = $false
+            Parameters = $null
+            Data = $null
+            Files = $null
+
         }
 
         # set pode in server response header
@@ -196,44 +208,24 @@ function Invoke-PodeSocketHandler
         $req_info = Get-PodeServerRequestDetails -Content $req_msg -Protocol $Context.Protocol
 
         # set the rest of the event data
-        $WebEvent = @{
-            OnEnd = @()
-            Auth = @{}
-            Response = @{
-                Headers = @{}
-                ContentLength64 = 0
-                ContentType = $null
-                Body = $null
-                StatusCode = 200
-                StatusDescription = 'OK'
-            }
-            Request = @{
-                RawBody = $req_info.Body
-                Headers = $req_info.Headers
-                Url = $req_info.Uri
-                UrlReferrer = $req_info.Headers['Referer']
-                UserAgent = $req_info.Headers['User-Agent']
-                HttpMethod = $req_info.Method
-                RemoteEndPoint = $Context.Socket.RemoteEndPoint
-                Protocol = $req_info.Protocol
-                ProtocolVersion = ($req_info.Protocol -isplit '/')[1]
-                ContentEncoding = (Get-PodeEncodingFromContentType -ContentType $req_info.Headers['Content-Type'])
-            }
-            Lockable = $PodeContext.Lockable
-            Path = $req_info.Uri.AbsolutePath
-            Method = $req_info.Method.ToLowerInvariant()
-            Query = [System.Web.HttpUtility]::ParseQueryString($req_info.Query)
-            Protocol = $Context.Protocol
-            Endpoint = $req_info.Headers['Host']
-            ContentType = $req_info.Headers['Content-Type']
-            ErrorType = $null
-            Cookies = $null
-            PendingCookies = @{}
-            Streamed = $false
-            Parameters = $null
-            Data = $null
-            Files = $null
+        $WebEvent.Request = @{
+            RawBody = $req_info.Body
+            Headers = $req_info.Headers
+            Url = $req_info.Uri
+            UrlReferrer = $req_info.Headers['Referer']
+            UserAgent = $req_info.Headers['User-Agent']
+            HttpMethod = $req_info.Method
+            RemoteEndPoint = $Context.Socket.RemoteEndPoint
+            Protocol = $req_info.Protocol
+            ProtocolVersion = ($req_info.Protocol -isplit '/')[1]
+            ContentEncoding = (Get-PodeEncodingFromContentType -ContentType $req_info.Headers['Content-Type'])
         }
+
+        $WebEvent.Path = $req_info.Uri.AbsolutePath
+        $WebEvent.Method = $req_info.Method.ToLowerInvariant()
+        $WebEvent.Query = [System.Web.HttpUtility]::ParseQueryString($req_info.Query)
+        $WebEvent.Endpoint = $req_info.Headers['Host']
+        $WebEvent.ContentType = $req_info.Headers['Content-Type']
 
         # add logging endware for post-request
         Add-PodeRequestLogEndware -WebEvent $WebEvent
@@ -290,10 +282,16 @@ function Invoke-PodeSocketHandler
 
     # write the response body
     if (![string]::IsNullOrWhiteSpace($WebEvent.Response.Body)) {
-        $res_msg += $WebEvent.Response.Body
+        if ($WebEvent.Response.Body -is [string]) {
+            $res_msg += $WebEvent.Response.Body
+        }
     }
 
     $buffer = $PodeContext.Server.Encoding.GetBytes($res_msg)
+    if ($WebEvent.Response.Body -is [byte[]]) {
+        $buffer += $WebEvent.Response.Body
+    }
+
     Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
     $stream.Flush()
 
@@ -318,6 +316,10 @@ function Set-PodeServerResponseHeaders
     }
 
     # add content-length
+    if (($WebEvent.Response.ContentLength64 -eq 0) -and ![string]::IsNullOrEmpty($WebEvent.Response.Body)) {
+        $WebEvent.Response.ContentLength64 = $WebEvent.Response.Body.Length
+    }
+
     if ($WebEvent.Response.ContentLength64 -gt 0) {
         Set-PodeHeader -Name 'Content-Length' -Value $WebEvent.Response.ContentLength64
     }
@@ -329,7 +331,7 @@ function Set-PodeServerResponseHeaders
     Set-PodeHeader -Name 'Date' -Value ([DateTime]::UtcNow.ToString("r", [CultureInfo]::InvariantCulture))
 
     # state to close the connection (no support for keep-alive yet)
-    Set-PodeHeader -Name 'Connection' -Value 'Close'
+    Set-PodeHeader -Name 'Connection' -Value 'close'
 }
 
 function Get-PodeServerRequestDetails

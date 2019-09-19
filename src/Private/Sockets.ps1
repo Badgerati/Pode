@@ -169,7 +169,7 @@ function Invoke-PodeSocketProcessAccept
     Invoke-PodeSocketAccept -Listener $listener
 
     # if not success, close this accept socket and accept again
-    if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success)) {
+    if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success) -or ($accepted.Available -eq 0)) {
         # close socket
         if ($null -ne $accepted) {
             $accepted.Close()
