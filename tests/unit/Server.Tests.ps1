@@ -133,7 +133,10 @@ Describe 'Restart-PodeInternalServer' {
                 Configuration = @{ 'key' = 'value' };
                 Sockets = @{
                     Listeners = @()
-                    Queue = [System.Collections.Generic.List[hashtable]]::new()
+                    Queues = @{
+                        Contexts = [System.Collections.Generic.List[hashtable]]::new()
+                        Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
+                    }
                 }
             };
             Timers = @{ 'key' = 'value' }
