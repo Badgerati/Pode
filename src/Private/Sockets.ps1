@@ -110,7 +110,6 @@ function Close-PodeSocketListener
 
         # close all open listeners and unbind events
         for ($i = $PodeContext.Server.Sockets.Listeners.Length - 1; $i -ge 0; $i--) {
-            Unregister-Event -SourceIdentifier (Get-PodeSocketListenerConnectionEventName -Id $i) -Force
             Close-PodeSocket -Socket $PodeContext.Server.Sockets.Listeners[$i].Socket -Shutdown
         }
 
@@ -170,7 +169,7 @@ function Invoke-PodeSocketProcessAccept
     Invoke-PodeSocketAccept -Listener $listener
 
     # if not success, close this accept socket and accept again
-    if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success) -or ($accepted.Available -le 0)) {
+    if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success)) {
         # close socket
         if ($null -ne $accepted) {
             $accepted.Close()

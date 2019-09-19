@@ -70,8 +70,9 @@ function Start-PodeSocketServer
             # start the listener events
             if ($ThreadId -eq 1) {
                 Register-PodeSocketListenerEvents
-                Start-PodeSocketListener
             }
+
+            Start-PodeSocketListener
 
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {

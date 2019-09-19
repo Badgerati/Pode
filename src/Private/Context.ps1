@@ -86,7 +86,7 @@ function New-PodeContext
     # set socket details for pode server
     $ctx.Server.Sockets = @{
         Listeners = @()
-        MaxConnections = 500
+        MaxConnections = 20
         Queues = @{
             Contexts = [System.Collections.Generic.List[hashtable]]::new(100)
             Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()

@@ -9,7 +9,7 @@
     <owners>Badgerati</owners>
     <summary>Pode is a Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites.</summary>
     <description>
-Pode is a Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.
+Pode is a Cross-Platform framework, completely written in PowerShell, for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.
 
 ### Features
 
