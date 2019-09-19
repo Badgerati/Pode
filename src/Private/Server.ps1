@@ -114,7 +114,7 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Sockets.Listeners = @()
         $PodeContext.Server.Sockets.Queues.Contexts.Clear()
         $PodeContext.Server.Sockets.Queues.Connections.Clear()
-        $PodeContext.Server.Sockets.MaxConnections = 5000
+        $PodeContext.Server.Sockets.Queues.Accepts.Clear()
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{

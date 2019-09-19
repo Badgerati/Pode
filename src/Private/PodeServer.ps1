@@ -57,6 +57,28 @@ function Start-PodeSocketServer
         throw $_.Exception
     }
 
+    # script for receiving socket data
+    $receiveScript = {
+        try
+        {
+            # start the accept events
+            Register-PodeSocketListenerAcceptEvents
+
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+            {
+                Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(10))
+            }
+        }
+        catch [System.OperationCanceledException] {}
+        catch {
+            'RECEIVE-EEK!' | Out-Default
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+    }
+
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $receiveScript
+
     # script for listening out for incoming requests
     $listenScript = {
         param (
@@ -69,7 +91,7 @@ function Start-PodeSocketServer
         {
             # start the listener events
             if ($ThreadId -eq 1) {
-                Register-PodeSocketListenerEvents
+                Register-PodeSocketListenerConnectionEvents
                 Start-PodeSocketListener
             }
 

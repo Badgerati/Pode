@@ -27,7 +27,7 @@ function Initialize-PodeSocketListenerEndpoint
     }
 }
 
-function New-PodeSocketListenerEvent
+function New-PodeSocketListenerConnectionEvent
 {
     param(
         [Parameter()]
@@ -44,6 +44,7 @@ function New-PodeSocketListenerEvent
         }
 
         Register-ObjectEvent -InputObject $socketArgs -EventName 'Completed' -SourceIdentifier (Get-PodeSocketListenerConnectionEventName -Id $Index) -SupportEvent -Action {
+            'EventConnection' | Out-Default
             Invoke-PodeSocketProcessAccept -Arguments $Event.SourceEventArgs
         }
 
@@ -51,12 +52,46 @@ function New-PodeSocketListenerEvent
     }
 }
 
-function Register-PodeSocketListenerEvents
+function New-PodeSocketListenerAcceptEvent
+{
+    param(
+        [Parameter()]
+        [int]
+        $Index = 0
+    )
+
+    Lock-PodeObject -Object $PodeContext.Server.Sockets -Return -ScriptBlock {
+        $socketArgs = [System.Net.Sockets.SocketAsyncEventArgs]::new()
+
+        if ($Index -eq 0) {
+            $PodeContext.Server.Sockets.MaxAccepts++
+            $Index = $PodeContext.Server.Sockets.MaxAccepts
+        }
+
+        Register-ObjectEvent -InputObject $socketArgs -EventName 'Completed' -SourceIdentifier (Get-PodeSocketListenerAcceptEventName -Id $Index) -SupportEvent -Action {
+            'EventAccept' | Out-Default
+            Invoke-PodeSocketProcessReceive -Arguments $Event.SourceEventArgs
+        }
+
+        return $socketArgs
+    }
+}
+
+function Register-PodeSocketListenerConnectionEvents
 {
     # populate the connections pool
     foreach ($i in (1..$PodeContext.Server.Sockets.MaxConnections)) {
-        $socketArgs = New-PodeSocketListenerEvent -Index $i
+        $socketArgs = New-PodeSocketListenerConnectionEvent -Index $i
         $PodeContext.Server.Sockets.Queues.Connections.Enqueue($socketArgs)
+    }
+}
+
+function Register-PodeSocketListenerAcceptEvents
+{
+    # populate the accepts pool
+    foreach ($i in (1..$PodeContext.Server.Sockets.MaxAccepts)) {
+        $socketArgs = New-PodeSocketListenerAcceptEvent -Index $i
+        $PodeContext.Server.Sockets.Queues.Accepts.Enqueue($socketArgs)
     }
 }
 
@@ -108,9 +143,8 @@ function Close-PodeSocketListener
 
         $PodeContext.Server.Sockets.Queues.Contexts.Clear()
 
-        # close all open listeners and unbind events
+        # close all open listeners
         for ($i = $PodeContext.Server.Sockets.Listeners.Length - 1; $i -ge 0; $i--) {
-            Unregister-Event -SourceIdentifier (Get-PodeSocketListenerConnectionEventName -Id $i) -Force
             Close-PodeSocket -Socket $PodeContext.Server.Sockets.Listeners[$i].Socket -Shutdown
         }
 
@@ -128,29 +162,29 @@ function Invoke-PodeSocketAccept
         $Listener
     )
 
-    # pop args from queue (or create a new one)
-    $arguments = $null
-    if (!$PodeContext.Server.Sockets.Queues.Connections.TryDequeue([ref]$arguments)) {
-        $arguments = New-PodeSocketListenerEvent
+    # pop accept args from queue (or create a new one)
+    $acpt_arguments = $null
+    if (!$PodeContext.Server.Sockets.Queues.Accepts.TryDequeue([ref]$acpt_arguments)) {
+        $acpt_arguments = New-PodeSocketListenerAcceptEvent
     }
 
-    $arguments.AcceptSocket = $null
-    $arguments.UserToken = $Listener
+    $acpt_arguments.AcceptSocket = $null
+    $acpt_arguments.UserToken = $Listener
     $raised = $false
 
     try {
-        $raised = $arguments.UserToken.Socket.AcceptAsync($arguments)
+        $raised = $acpt_arguments.UserToken.Socket.AcceptAsync($acpt_arguments)
     }
     catch [System.ObjectDisposedException] {
         return
     }
 
     if (!$raised) {
-        Invoke-PodeSocketProcessAccept -Arguments $arguments
+        Invoke-PodeSocketProcessAccept -Arguments $acpt_arguments
     }
 }
 
-function Invoke-PodeSocketProcessAccept
+function Invoke-PodeSocketReceive
 {
     param(
         [Parameter(Mandatory=$true)]
@@ -158,6 +192,30 @@ function Invoke-PodeSocketProcessAccept
         $Arguments
     )
 
+    $raised = $false
+
+    try {
+        'ReceiveAsync' | Out-Default
+        $raised = $Arguments.AcceptSocket.ReceiveAsync($Arguments)
+    }
+    catch [System.ObjectDisposedException] {
+        return
+    }
+
+    if (!$raised) {
+        Invoke-PodeSocketProcessReceive -Arguments $Arguments
+    }
+}
+
+function Invoke-PodeSocketProcessReceive
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Net.Sockets.SocketAsyncEventArgs]
+        $Arguments
+    )
+
+    'ProcessReceive' | Out-Default
     # get the socket and listener
     $accepted = $Arguments.AcceptSocket
     $listener = $Arguments.UserToken
@@ -166,11 +224,7 @@ function Invoke-PodeSocketProcessAccept
     $Arguments.AcceptSocket = $null
     $Arguments.UserToken = $null
 
-    # start accepting connections again for the listener
-    Invoke-PodeSocketAccept -Listener $listener
-
-    # if not success, close this accept socket and accept again
-    if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success) -or ($accepted.Available -le 0)) {
+    if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success)) {
         # close socket
         if ($null -ne $accepted) {
             $accepted.Close()
@@ -183,7 +237,60 @@ function Invoke-PodeSocketProcessAccept
 
     # add args back to pool
     $PodeContext.Server.Sockets.Queues.Connections.Enqueue($Arguments)
+
+    # register the socket to be received
     Register-PodeSocketContext -Socket $accepted -Certificate $listener.Certificate -Protocol $listener.Protocol
+}
+
+function Invoke-PodeSocketProcessAccept
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Net.Sockets.SocketAsyncEventArgs]
+        $Arguments
+    )
+
+    'ProcessAccept' | Out-Default
+    # get the socket and listener
+    $accepted = $Arguments.AcceptSocket
+    $listener = $Arguments.UserToken
+
+    # reset the socket args
+    $Arguments.AcceptSocket = $null
+    $Arguments.UserToken = $null
+
+    # start accepting connections again for the listener
+    Invoke-PodeSocketAccept -Listener $listener
+
+    # if not success, close this accept socket and accept again
+    #if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success) -or ($accepted.Available -le 0)) {
+    if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success)) {
+        # close socket
+        if ($null -ne $accepted) {
+            $accepted.Close()
+        }
+
+        # add args back to pool
+        $PodeContext.Server.Sockets.Queues.Accepts.Enqueue($Arguments)
+        return
+    }
+
+    # pop connection args from queue (or create a new one)
+    $conn_arguments = $null
+    if (!$PodeContext.Server.Sockets.Queues.Connections.TryDequeue([ref]$conn_arguments)) {
+        $conn_arguments = New-PodeSocketListenerConnectionEvent
+    }
+
+    # pass args from accept to connection
+    $conn_arguments.UserToken = $listener
+    $conn_arguments.AcceptSocket = $accepted
+
+    # add args back to pool
+    $PodeContext.Server.Sockets.Queues.Accepts.Enqueue($Arguments)
+
+    # register the socket to be received
+    Invoke-PodeSocketReceive -Arguments $conn_arguments
+    #Register-PodeSocketContext -Socket $accepted -Certificate $listener.Certificate -Protocol $listener.Protocol
 }
 
 function Register-PodeSocketContext
@@ -206,6 +313,7 @@ function Register-PodeSocketContext
         Close-PodeSocket -Socket $Socket -Shutdown
     }
 
+    'RegisterSocket' | Out-Default
     Lock-PodeObject -Object $PodeContext.Server.Sockets.Queues.Contexts -ScriptBlock {
         $PodeContext.Server.Sockets.Queues.Contexts.Add(@{
             Socket = $Socket
@@ -226,6 +334,17 @@ function Get-PodeSocketListenerConnectionEventName
     return "PodeListenerConnectionSocketCompleted_$($Id)"
 }
 
+function Get-PodeSocketListenerAcceptEventName
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Id
+    )
+
+    return "PodeListenerAcceptSocketCompleted_$($Id)"
+}
+
 function Invoke-PodeSocketHandler
 {
     param(
@@ -236,6 +355,7 @@ function Invoke-PodeSocketHandler
 
     try
     {
+        'ProcessPode' | Out-Default
         # reset with basic event data
         $WebEvent = @{
             OnEnd = @()
