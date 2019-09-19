@@ -141,6 +141,7 @@ function Start-PodeSocketServer
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript
 
     # state where we're running
+    Write-Host 'Note: This server type is experimental' -ForegroundColor Magenta
     Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
 
     $endpoints | ForEach-Object {
@@ -254,6 +255,9 @@ function Invoke-PodeSocketHandler
         }
     }
     catch [System.OperationCanceledException] {}
+    catch [System.Net.Http.HttpRequestException] {
+        Set-PodeResponseStatus -Code 400 -Exception $_
+    }
     catch {
         $_ | Write-PodeErrorLog
         Set-PodeResponseStatus -Code 500 -Exception $_
@@ -344,9 +348,20 @@ function Get-PodeServerRequestDetails
 
     # first line is the request info
     $req_line_info = ($req_lines[0] -isplit '\s+')
+    if ($req_line_info.Length -ne 3) {
+        throw [System.Net.Http.HttpRequestException]::new('Invalid request line')
+    }
+
     $req_method = $req_line_info[0]
+    if (@('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE') -inotcontains $req_method) {
+        throw [System.Net.Http.HttpRequestException]::new('Invalid request HTTP method')
+    }
+
     $req_query = $req_line_info[1]
     $req_proto = $req_line_info[2]
+    if (!$req_proto.StartsWith('HTTP/')) {
+        throw [System.Net.Http.HttpRequestException]::new('Invalid request version')
+    }
 
     # then, read the headers
     $req_headers = @{}
