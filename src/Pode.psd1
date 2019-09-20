@@ -29,7 +29,7 @@
     PowerShellVersion = '5.0'
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @('System.Web')
+    RequiredAssemblies = @('System.Web', 'System.Net.Http')
 
     # Functions to export from this Module
     FunctionsToExport = @(

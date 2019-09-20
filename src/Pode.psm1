@@ -1,4 +1,5 @@
 Add-Type -AssemblyName System.Web
+Add-Type -AssemblyName System.Net.Http
 
 # import everything if in a runspace
 if ($PODE_SCOPE_RUNSPACE) {
