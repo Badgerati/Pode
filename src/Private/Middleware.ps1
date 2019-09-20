@@ -251,7 +251,7 @@ function Get-PodeCookieMiddleware
         $e.Cookies = @{}
 
         foreach ($cookie in $cookies) {
-            $atoms = @($cookie -split '=')
+            $atoms = $cookie.Split('=', 2)
 
             $value = [string]::Empty
             if ($atoms.Length -gt 1) {

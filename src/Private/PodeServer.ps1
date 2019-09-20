@@ -169,7 +169,7 @@ function Invoke-PodeSocketHandler
                 Headers = @{}
                 ContentLength64 = 0
                 ContentType = $null
-                Body = $null
+                OutputStream = New-Object -TypeName System.IO.MemoryStream
                 StatusCode = 200
                 StatusDescription = 'OK'
             }
@@ -182,13 +182,12 @@ function Invoke-PodeSocketHandler
             Endpoint = $null
             ContentType = $null
             ErrorType = $null
-            Cookies = $null
+            Cookies = @{}
             PendingCookies = @{}
-            Streamed = $false
             Parameters = $null
             Data = $null
             Files = $null
-
+            Streamed = $true
         }
 
         # set pode in server response header
@@ -203,13 +202,15 @@ function Invoke-PodeSocketHandler
 
         # read the request headers
         $bytes = New-Object byte[] $Context.Socket.Available
-        $bytesRead = (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $Context.Socket.Available))
-        $req_msg = $PodeContext.Server.Encoding.GetString($bytes, 0, $bytesRead)
-        $req_info = Get-PodeServerRequestDetails -Content $req_msg -Protocol $Context.Protocol
+        (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $Context.Socket.Available)) | Out-Null
+        $req_info = Get-PodeServerRequestDetails -Bytes $bytes -Protocol $Context.Protocol
 
         # set the rest of the event data
         $WebEvent.Request = @{
-            RawBody = $req_info.Body
+            Body = @{
+                Value = $req_info.Body
+                Bytes = $req_info.RawBody
+            }
             Headers = $req_info.Headers
             Url = $req_info.Uri
             UrlReferrer = $req_info.Headers['Referer']
@@ -253,51 +254,52 @@ function Invoke-PodeSocketHandler
         Set-PodeResponseStatus -Code 500 -Exception $_
     }
 
-    # invoke endware specifc to the current web event
-    $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
-    Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
+    try {
+        # invoke endware specifc to the current web event
+        $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
+        Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
 
-    # write the response line
-    $protocol = $req_info.Protocol
-    if ([string]::IsNullOrWhiteSpace($protocol)) {
-        $protocol = 'HTTP/1.1'
-    }
+        # write the response line
+        $protocol = $req_info.Protocol
+        if ([string]::IsNullOrWhiteSpace($protocol)) {
+            $protocol = 'HTTP/1.1'
+        }
 
-    $newLine = "`r`n"
-    $res_msg = "$($protocol) $($WebEvent.Response.StatusCode) $($WebEvent.Response.StatusDescription)$($newLine)"
+        $newLine = "`r`n"
+        $res_msg = "$($protocol) $($WebEvent.Response.StatusCode) $($WebEvent.Response.StatusDescription)$($newLine)"
 
-    # set response headers before adding
-    Set-PodeServerResponseHeaders -WebEvent $WebEvent
+        # set response headers before adding
+        Set-PodeServerResponseHeaders -WebEvent $WebEvent
 
-    # write the response headers
-    if ($WebEvent.Response.Headers.Count -gt 0) {
-        foreach ($key in $WebEvent.Response.Headers.Keys) {
-            foreach ($value in $WebEvent.Response.Headers[$key]) {
-                $res_msg += "$($key): $($value)$($newLine)"
+        # write the response headers
+        if ($WebEvent.Response.Headers.Count -gt 0) {
+            foreach ($key in $WebEvent.Response.Headers.Keys) {
+                foreach ($value in $WebEvent.Response.Headers[$key]) {
+                    $res_msg += "$($key): $($value)$($newLine)"
+                }
             }
         }
+
+        $res_msg += $newLine
+
+        # stream response output
+        $buffer = $PodeContext.Server.Encoding.GetBytes($res_msg)
+        Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
+        $WebEvent.Response.OutputStream.WriteTo($stream)
+        $stream.Flush()
     }
+    catch [System.Management.Automation.MethodInvocationException] { }
+    finally {
+        # close socket stream
+        if ($null -ne $WebEvent.Response.OutputStream) {
+            Close-PodeDisposable -Disposable $WebEvent.Response.OutputStream -Close -CheckNetwork
+        }
 
-    $res_msg += $newLine
-
-    # write the response body
-    if (![string]::IsNullOrWhiteSpace($WebEvent.Response.Body)) {
-        if ($WebEvent.Response.Body -is [string]) {
-            $res_msg += $WebEvent.Response.Body
+        if ($null -ne $Context.Socket) {
+            $Context.Socket.Shutdown([System.Net.Sockets.SocketShutdown]::Both)
+            $Context.Socket.Close()
         }
     }
-
-    $buffer = $PodeContext.Server.Encoding.GetBytes($res_msg)
-    if ($WebEvent.Response.Body -is [byte[]]) {
-        $buffer += $WebEvent.Response.Body
-    }
-
-    Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
-    $stream.Flush()
-
-    # close socket stream
-    $Context.Socket.Shutdown([System.Net.Sockets.SocketShutdown]::Both)
-    $Context.Socket.Close()
 }
 
 function Set-PodeServerResponseHeaders
@@ -316,8 +318,8 @@ function Set-PodeServerResponseHeaders
     }
 
     # add content-length
-    if (($WebEvent.Response.ContentLength64 -eq 0) -and ![string]::IsNullOrEmpty($WebEvent.Response.Body)) {
-        $WebEvent.Response.ContentLength64 = $WebEvent.Response.Body.Length
+    if (($WebEvent.Response.ContentLength64 -eq 0) -and ($WebEvent.Response.OutputStream.Length -gt 0)) {
+        $WebEvent.Response.ContentLength64 = $WebEvent.Response.OutputStream.Length
     }
 
     if ($WebEvent.Response.ContentLength64 -gt 0) {
@@ -338,38 +340,38 @@ function Get-PodeServerRequestDetails
 {
     param(
         [Parameter()]
-        [string]
-        $Content,
+        [byte[]]
+        $Bytes,
 
         [Parameter(Mandatory=$true)]
         [string]
         $Protocol
     )
 
+    # convert array to string
+    $Content = $PodeContext.Server.Encoding.GetString($bytes, 0, $bytes.Length)
+
     # parse the request headers
     $newLine = "`r`n"
-    if ($Content.Contains($newLine)) {
+    if (!$Content.Contains($newLine)) {
         $newLine = "`n"
     }
 
     $req_lines = ($Content -isplit $newLine)
-    $req_lines = @(foreach ($line in $req_lines) {
-        $line.Trim()
-    })
 
     # first line is the request info
-    $req_line_info = ($req_lines[0] -isplit '\s+')
+    $req_line_info = ($req_lines[0].Trim() -isplit '\s+')
     if ($req_line_info.Length -ne 3) {
         throw [System.Net.Http.HttpRequestException]::new("Invalid request line: $($req_lines[0]) [$($req_line_info.Length)]")
     }
 
-    $req_method = $req_line_info[0]
+    $req_method = $req_line_info[0].Trim()
     if (@('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE') -inotcontains $req_method) {
         throw [System.Net.Http.HttpRequestException]::new("Invalid request HTTP method: $($req_method)")
     }
 
-    $req_query = $req_line_info[1]
-    $req_proto = $req_line_info[2]
+    $req_query = $req_line_info[1].Trim()
+    $req_proto = $req_line_info[2].Trim()
     if (!$req_proto.StartsWith('HTTP/')) {
         throw [System.Net.Http.HttpRequestException]::new("Invalid request version: $($req_proto)")
     }
@@ -378,7 +380,7 @@ function Get-PodeServerRequestDetails
     $req_headers = @{}
     $req_body_index = 0
     for ($i = 1; $i -le $req_lines.Length -1; $i++) {
-        $line = $req_lines[$i]
+        $line = $req_lines[$i].Trim()
         if ([string]::IsNullOrWhiteSpace($line)) {
             $req_body_index = $i + 1
             break
@@ -392,6 +394,7 @@ function Get-PodeServerRequestDetails
 
     # then set the request body
     $req_body = ($req_lines[($req_body_index)..($req_lines.Length - 1)] -join $newLine)
+    $req_body_bytes = $bytes[($bytes.Length - $req_body.Length)..($bytes.Length - 1)]
 
     # build required URI details
     $req_uri = [uri]::new("$($Protocol)://$($req_headers['Host'])$($req_query)")
@@ -403,6 +406,7 @@ function Get-PodeServerRequestDetails
         Protocol = $req_proto
         Headers = $req_headers
         Body = $req_body
+        RawBody = $req_body_bytes
         Uri = $req_uri
     }
 }

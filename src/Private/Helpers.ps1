@@ -1055,8 +1055,8 @@ function ConvertFrom-PodeRequestContent
 
     # result object for data/files
     $Result = @{
-        'Data' = @{};
-        'Files' = @{};
+        Data = @{}
+        Files = @{}
     }
 
     # if there is no content-type then do nothing
@@ -1077,7 +1077,7 @@ function ConvertFrom-PodeRequestContent
             }
 
             'pode' {
-                $Content = $Request.RawBody
+                $Content = $Request.Body.Value
             }
 
             default {
@@ -1116,7 +1116,13 @@ function ConvertFrom-PodeRequestContent
 
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
-            $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            if ($PodeContext.Server.Type -ieq 'pode') {
+                $Content = $Request.Body.Bytes
+            }
+            else {
+                $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            }
+
             $Lines = Get-PodeByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
 
             # get the indexes for boundary lines (start and end)
@@ -1190,10 +1196,10 @@ function Get-PodeContentTypeAndBoundary
     )
 
     $obj = @{
-        'ContentType' = [string]::Empty;
-        'Boundary' = @{
-            'Start' = [string]::Empty;
-            'End' = [string]::Empty;
+        ContentType = [string]::Empty;
+        Boundary = @{
+            Start = [string]::Empty;
+            End = [string]::Empty;
         }
     }
 
