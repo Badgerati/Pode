@@ -15,7 +15,7 @@ take you back to the login page.
 #>
 
 # create a server, and start listening on port 8085
-Start-PodeServer -Threads 5 -Type Pode {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http

@@ -12,7 +12,6 @@ function Start-PodeSocketServer
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
-        (Get-PodeQueryMiddleware),
         (Get-PodeCookieMiddleware)
     )
 
@@ -224,9 +223,13 @@ function Invoke-PodeSocketHandler
 
         $WebEvent.Path = $req_info.Uri.AbsolutePath
         $WebEvent.Method = $req_info.Method.ToLowerInvariant()
-        $WebEvent.Query = [System.Web.HttpUtility]::ParseQueryString($req_info.Query)
         $WebEvent.Endpoint = $req_info.Headers['Host']
         $WebEvent.ContentType = $req_info.Headers['Content-Type']
+
+        $WebEvent.Query = [System.Web.HttpUtility]::ParseQueryString($req_info.Query)
+        if ($null -eq $WebEvent.Query) {
+            $WebEvent.Query = @{}
+        }
 
         # add logging endware for post-request
         Add-PodeRequestLogEndware -WebEvent $WebEvent
