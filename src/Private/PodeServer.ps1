@@ -1,3 +1,5 @@
+using namespace System.Security.Authentication
+
 function Start-PodeSocketServer
 {
     param (
@@ -196,7 +198,8 @@ function Invoke-PodeSocketHandler
         $stream = [System.Net.Sockets.NetworkStream]::new($Context.Socket, $true)
         if ($null -ne $Context.Certificate) {
             $stream = [System.Net.Security.SslStream]::new($stream, $false)
-            $stream.AuthenticateAsServer($Context.Certificate, $false, $false)
+            $prots = [SslProtocols]::Ssl3 -bor [SslProtocols]::Tls12
+            $stream.AuthenticateAsServer($Context.Certificate, $false, $prots, $false)
         }
 
         # read the request headers
