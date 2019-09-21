@@ -1,11 +1,38 @@
-using namespace System.Security.Authentication
-
 function Start-PodeSocketServer
 {
     param (
         [switch]
         $Browse
     )
+
+    # setup the callback for sockets
+    $PodeContext.Server.Sockets.Ssl.Callback = [System.Net.Security.RemoteCertificateValidationCallback]{
+        param(
+            [Parameter()]
+            [object]
+            $Sender,
+
+            [Parameter()]
+            [X509Certificate]
+            $Certificate,
+
+            [Parameter()]
+            [System.Security.Cryptography.X509Certificates.X509Chain]
+            $Chain,
+
+            [Parameter()]
+            [System.Net.Security.SslPolicyErrors]
+            $SslPolicyErrors
+        )
+
+        # if there is no client cert, just allow it
+        if ($null -eq $Certificate) {
+            return $true
+        }
+
+        # if we have a cert, but there are errors, fail
+        return ($SslPolicyErrors -ne [System.Net.Security.SslPolicyErrors]::None)
+    }
 
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
@@ -196,13 +223,23 @@ function Invoke-PodeSocketHandler
 
         # make the stream (use an ssl stream if we have a cert)
         $stream = [System.Net.Sockets.NetworkStream]::new($Context.Socket, $true)
+
         if ($null -ne $Context.Certificate) {
-            $stream = [System.Net.Security.SslStream]::new($stream, $false)
-            $prots = [SslProtocols]::Ssl3 -bor [SslProtocols]::Tls12
-            $stream.AuthenticateAsServer($Context.Certificate, $false, $prots, $false)
+            $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.Sockets.Ssl.Callback)
+            $stream.AuthenticateAsServer($Context.Certificate, $true, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
         }
 
-        # read the request headers
+        # read the request headers - prepare for the dodgest of hacks ever. I apologise profusely.
+        try {
+            $bytes = New-Object byte[] 0
+            $Context.Socket.Receive($bytes) | Out-Null
+        }
+        catch {
+            $err = [System.Net.Http.HttpRequestException]::new()
+            $err.Data.Add('PodeStatusCode', 408)
+            throw $err
+        }
+
         $bytes = New-Object byte[] $Context.Socket.Available
         (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $Context.Socket.Available)) | Out-Null
         $req_info = Get-PodeServerRequestDetails -Bytes $bytes -Protocol $Context.Protocol
@@ -253,7 +290,12 @@ function Invoke-PodeSocketHandler
     }
     catch [System.OperationCanceledException] {}
     catch [System.Net.Http.HttpRequestException] {
-        Set-PodeResponseStatus -Code 400 -Exception $_
+        $code = [int]($_.Exception.Data['PodeStatusCode'])
+        if ($code -le 0) {
+            $code = 400
+        }
+
+        Set-PodeResponseStatus -Code $code -Exception $_
     }
     catch {
         $_ | Write-PodeErrorLog

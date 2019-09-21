@@ -1461,6 +1461,23 @@ function Convert-PodePathPatternsToRegex
     return "^$($joined)$"
 }
 
+function ConvertTo-PodeSslProtocols
+{
+    param(
+        [Parameter()]
+        [ValidateSet('Ssl2', 'Ssl3', 'Tls', 'Tls11', 'Tls12', 'Tls13')]
+        [string[]]
+        $Protocols
+    )
+
+    $protos = 0
+    foreach ($protocol in $Protocols) {
+        $protos = [int]($protos -bor [System.Security.Authentication.SslProtocols]::$protocol)
+    }
+
+    return [System.Security.Authentication.SslProtocols]($protos)
+}
+
 function Get-PodeModulePath
 {
     # if there's 1 module imported already, use that

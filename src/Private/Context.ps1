@@ -58,6 +58,21 @@ function New-PodeContext
         Types = @{}
     }
 
+    # set socket details for pode server
+    $ctx.Server.Sockets = @{
+        Listeners = @()
+        MaxConnections = 20
+        Ssl = @{
+            Callback = $null
+            Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
+        }
+        ReceiveTimeout = 100
+        Queues = @{
+            Contexts = [System.Collections.Generic.List[hashtable]]::new(100)
+            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
+        }
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -82,16 +97,6 @@ function New-PodeContext
 
     # general encoding for the server
     $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
-
-    # set socket details for pode server
-    $ctx.Server.Sockets = @{
-        Listeners = @()
-        MaxConnections = 20
-        Queues = @{
-            Contexts = [System.Collections.Generic.List[hashtable]]::new(100)
-            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
-        }
-    }
 
     # setup gui details
     $ctx.Server.Gui = @{}
@@ -319,6 +324,15 @@ function Set-PodeServerConfiguration
             Mask = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
         }
         Types = @{}
+    }
+
+    # sockets
+    if (!(Test-IsEmpty $Configuration.Sockets.Ssl.Protocols)) {
+        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Sockets.Ssl.Protocols)
+    }
+
+    if ([int]$Configuration.Sockets.ReceiveTimeout -gt 0) {
+        $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.Sockets.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
     }
 }
 

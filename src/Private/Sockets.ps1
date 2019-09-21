@@ -17,6 +17,7 @@ function Initialize-PodeSocketListenerEndpoint
     $endpoint = [IPEndpoint]::new($Address, $Port)
     $socket = [System.Net.Sockets.Socket]::new($endpoint.AddressFamily, [System.Net.Sockets.SocketType]::Stream, [System.Net.Sockets.ProtocolType]::Tcp)
     $socket.SetSocketOption([System.Net.Sockets.SocketOptionLevel]::Socket, [System.Net.Sockets.SocketOptionName]::KeepAlive, $false)
+    $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
     $socket.Bind($endpoint)
     $socket.Listen([int]::MaxValue)
 
