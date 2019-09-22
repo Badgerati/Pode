@@ -31,7 +31,7 @@ function Start-PodeSocketServer
         }
 
         # if we have a cert, but there are errors, fail
-        return $true #($SslPolicyErrors -ne [System.Net.Security.SslPolicyErrors]::)
+        return ($SslPolicyErrors -ne [System.Net.Security.SslPolicyErrors]::None)
     }
 
     # setup any inbuilt middleware
@@ -80,7 +80,7 @@ function Start-PodeSocketServer
         }
     }
     catch {
-        $_ | Write-PodeErrorLog
+        $_ | Write-PodeErrorLog -CheckInnerException
         Close-PodeSocketListener
         throw $_.Exception
     }
@@ -99,7 +99,7 @@ function Start-PodeSocketServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $_ | Write-PodeErrorLog
+            $_ | Write-PodeErrorLog -CheckInnerException
             throw $_.Exception
         }
     }
@@ -134,7 +134,7 @@ function Start-PodeSocketServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $_ | Write-PodeErrorLog
+            $_ | Write-PodeErrorLog -CheckInnerException
             throw $_.Exception
         }
     }
@@ -148,14 +148,13 @@ function Start-PodeSocketServer
     # script to keep web server listening until cancelled
     $waitScript = {
         try {
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-            {
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Seconds 1
             }
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $_ | Write-PodeErrorLog
+            $_ | Write-PodeErrorLog -CheckInnerException
             throw $_.Exception
         }
         finally {
@@ -226,7 +225,7 @@ function Invoke-PodeSocketHandler
 
         if ($null -ne $Context.Certificate) {
             $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.Sockets.Ssl.Callback)
-            $stream.AuthenticateAsServer($Context.Certificate, $false, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
+            $stream.AuthenticateAsServer($Context.Certificate, $true, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
         }
 
         # read the request headers - prepare for the dodgest of hacks ever. I apologise profusely.
@@ -298,7 +297,7 @@ function Invoke-PodeSocketHandler
         Set-PodeResponseStatus -Code $code -Exception $_
     }
     catch {
-        $_ | Write-PodeErrorLog
+        $_ | Write-PodeErrorLog -CheckInnerException
         Set-PodeResponseStatus -Code 500 -Exception $_
     }
 

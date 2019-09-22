@@ -416,6 +416,9 @@ An ErrorRecord to write.
 .PARAMETER Level
 The Level of the error being logged.
 
+.PARAMETER CheckInnerException
+If supplied, any exceptions are check for inner exceptions. If one is present, this is also logged.
+
 .EXAMPLE
 try { /* logic */ } catch { $_ | Write-PodeErrorLog }
 
@@ -438,7 +441,11 @@ function Write-PodeErrorLog
         [ValidateNotNullOrEmpty()]
         [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
         [string]
-        $Level = 'Error'
+        $Level = 'Error',
+
+        [Parameter(ParameterSetName='Exception')]
+        [switch]
+        $CheckInnerException
     )
 
     # do nothing if logging is disabled, or error logging isn't setup
@@ -483,6 +490,11 @@ function Write-PodeErrorLog
         Name = $name
         Item = $item
     }) | Out-Null
+
+    # for exceptions, check the inner exception
+    if ($CheckInnerException -and ($null -ne $Exception.InnerException)) {
+        $Exception.InnerException | Write-PodeErrorLog
+    }
 }
 
 <#
