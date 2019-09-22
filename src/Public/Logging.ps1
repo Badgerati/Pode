@@ -492,7 +492,7 @@ function Write-PodeErrorLog
     }) | Out-Null
 
     # for exceptions, check the inner exception
-    if ($CheckInnerException -and ($null -ne $Exception.InnerException)) {
+    if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
         $Exception.InnerException | Write-PodeErrorLog
     }
 }

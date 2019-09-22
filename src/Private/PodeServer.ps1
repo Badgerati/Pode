@@ -92,10 +92,9 @@ function Start-PodeSocketServer
             # start the listener events
             Register-PodeSocketListenerEvents
 
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-            {
-                Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(10))
-            }
+            #while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            #    Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(10))
+            #}
         }
         catch [System.OperationCanceledException] {}
         catch {
