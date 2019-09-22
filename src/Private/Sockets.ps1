@@ -70,15 +70,7 @@ function Start-PodeSocketListener
 
 function Get-PodeSocketContext
 {
-    Lock-PodeObject -Object $PodeContext.Server.Sockets.Queues.Contexts -Return -ScriptBlock {
-        if ($PodeContext.Server.Sockets.Queues.Contexts.Count -eq 0) {
-            return $null
-        }
-
-        $context = $PodeContext.Server.Sockets.Queues.Contexts[0]
-        $PodeContext.Server.Sockets.Queues.Contexts.RemoveAt(0)
-        return $context
-    }
+    return $PodeContext.Server.Sockets.Queues.Contexts.Take($PodeContext.Tokens.Cancellation.Token)
 }
 
 function Close-PodeSocket
@@ -103,11 +95,12 @@ function Close-PodeSocketListener
 {
     try {
         # close all open sockets
-        for ($i = $PodeContext.Server.Sockets.Queues.Contexts.Count - 1; $i -ge 0; $i--) {
-            Close-PodeSocket -Socket $PodeContext.Server.Sockets.Queues.Contexts[$i] -Shutdown
+        $arr = $PodeContext.Server.Sockets.Queues.Contexts.ToArray()
+        for ($i = $arr.Length - 1; $i -ge 0; $i--) {
+            Close-PodeSocket -Socket $arr[$i] -Shutdown
         }
 
-        $PodeContext.Server.Sockets.Queues.Contexts.Clear()
+        $PodeContext.Server.Sockets.Queues.Contexts.Dispose()
 
         # close all open listeners and unbind events
         for ($i = $PodeContext.Server.Sockets.Listeners.Length - 1; $i -ge 0; $i--) {
@@ -206,13 +199,11 @@ function Register-PodeSocketContext
         Close-PodeSocket -Socket $Socket -Shutdown
     }
 
-    Lock-PodeObject -Object $PodeContext.Server.Sockets.Queues.Contexts -ScriptBlock {
-        $PodeContext.Server.Sockets.Queues.Contexts.Add(@{
-            Socket = $Socket
-            Certificate = $Certificate
-            Protocol = $Protocol
-        })
-    }
+    $PodeContext.Server.Sockets.Queues.Contexts.Add(@{
+        Socket = $Socket
+        Certificate = $Certificate
+        Protocol = $Protocol
+    }, $PodeContext.Tokens.Cancellation.Token)
 }
 
 function Get-PodeSocketListenerConnectionEventName

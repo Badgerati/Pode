@@ -91,10 +91,9 @@ function Start-PodeSocketServer
         {
             # start the listener events
             Register-PodeSocketListenerEvents
-
-            #while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-            #    Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(10))
-            #}
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(0))
+            }
         }
         catch [System.OperationCanceledException] {}
         catch {
@@ -103,7 +102,7 @@ function Start-PodeSocketServer
         }
     }
 
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $eventScript
+    Add-PodeRunspace -Type 'Events' -ScriptBlock $eventScript
 
     # script for listening out for incoming requests
     $listenScript = {
@@ -120,14 +119,7 @@ function Start-PodeSocketServer
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # wait for a socket to be connected
-                $context = $null
-                while ($null -eq $context) {
-                    $context = Get-PodeSocketContext
-                    if ($null -eq $context) {
-                        Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(10))
-                    }
-                }
-
+                $context = Get-PodeSocketContext
                 Invoke-PodeSocketHandler -Context $context
             }
         }

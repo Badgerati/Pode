@@ -618,7 +618,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Schedules', 'Gui')]
+        [ValidateSet('Main', 'Events', 'Schedules', 'Gui')]
         [string]
         $Type,
 
@@ -652,10 +652,10 @@ function Add-PodeRunspace
         }
         else {
             $PodeContext.Runspaces += @{
-                'Pool' = $Type;
-                'Runspace' = $ps;
-                'Status' = $ps.BeginInvoke();
-                'Stopped' = $false;
+                Pool = $Type;
+                Runspace = $ps;
+                Status = $ps.BeginInvoke();
+                Stopped = $false;
             }
         }
     }
