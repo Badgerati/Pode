@@ -226,7 +226,7 @@ function Invoke-PodeSocketHandler
 
         if ($null -ne $Context.Certificate) {
             $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.Sockets.Ssl.Callback)
-            $stream.AuthenticateAsServer($Context.Certificate, $true, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
+            $stream.AuthenticateAsServer($Context.Certificate, $false, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
         }
 
         # read the request headers - prepare for the dodgest of hacks ever. I apologise profusely.
