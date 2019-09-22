@@ -31,7 +31,7 @@ function Start-PodeSocketServer
         }
 
         # if we have a cert, but there are errors, fail
-        return ($SslPolicyErrors -ne [System.Net.Security.SslPolicyErrors]::None)
+        return $true #($SslPolicyErrors -ne [System.Net.Security.SslPolicyErrors]::)
     }
 
     # setup any inbuilt middleware
