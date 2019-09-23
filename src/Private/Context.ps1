@@ -61,14 +61,14 @@ function New-PodeContext
     # set socket details for pode server
     $ctx.Server.Sockets = @{
         Listeners = @()
-        MaxConnections = 20
+        MaxConnections = 0
         Ssl = @{
             Callback = $null
             Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
         }
         ReceiveTimeout = 100
         Queues = @{
-            Contexts = [System.Collections.Concurrent.BlockingCollection[hashtable]]::new([System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new())
+            Contexts = [System.Collections.Generic.List[hashtable]]::new(100)
             Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
         }
     }

@@ -112,7 +112,7 @@ function Restart-PodeInternalServer
 
         # clear the sockets
         $PodeContext.Server.Sockets.Listeners = @()
-        $PodeContext.Server.Sockets.Queues.Contexts = [System.Collections.Concurrent.BlockingCollection[hashtable]]::new([System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new())
+        $PodeContext.Server.Sockets.Queues.Contexts.Clear()
         $PodeContext.Server.Sockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
 
         # set view engine back to default

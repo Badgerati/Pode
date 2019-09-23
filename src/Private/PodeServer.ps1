@@ -80,29 +80,31 @@ function Start-PodeSocketServer
         }
     }
     catch {
-        $_ | Write-PodeErrorLog -CheckInnerException
+        $_ | Write-PodeErrorLog
+        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeSocketListener
         throw $_.Exception
     }
 
     # script for accepting sockets
-    $eventScript = {
+    <#$eventScript = {
         try
         {
             # start the listener events
             Register-PodeSocketListenerEvents
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(0))
+                Get-Job | Wait-Job -Force
             }
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $_ | Write-PodeErrorLog -CheckInnerException
+            $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
             throw $_.Exception
         }
     }
 
-    Add-PodeRunspace -Type 'Events' -ScriptBlock $eventScript
+    Add-PodeRunspace -Type 'Events' -ScriptBlock $eventScript#>
 
     # script for listening out for incoming requests
     $listenScript = {
@@ -116,16 +118,28 @@ function Start-PodeSocketServer
         {
             Start-PodeSocketListener
 
+            [System.Threading.Thread]::CurrentThread.IsBackground = $true
+            [System.Threading.Thread]::CurrentThread.Priority = [System.Threading.ThreadPriority]::Lowest
+
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 # wait for a socket to be connected
-                $context = Get-PodeSocketContext
-                Invoke-PodeSocketHandler -Context $context
+                #Get-Job | Wait-Job -Force
+                $context = $null
+                while ($null -eq $context) {
+                #    $context = Get-PodeSocketContext
+                #    if ($null -eq $context) {
+                        Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(60))
+                #    }
+                }
+
+                #Invoke-PodeSocketHandler -Context $context
             }
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $_ | Write-PodeErrorLog -CheckInnerException
+            $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
             throw $_.Exception
         }
     }
@@ -145,7 +159,8 @@ function Start-PodeSocketServer
         }
         catch [System.OperationCanceledException] {}
         catch {
-            $_ | Write-PodeErrorLog -CheckInnerException
+            $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
             throw $_.Exception
         }
         finally {
@@ -288,7 +303,8 @@ function Invoke-PodeSocketHandler
         Set-PodeResponseStatus -Code $code -Exception $_
     }
     catch {
-        $_ | Write-PodeErrorLog -CheckInnerException
+        $_ | Write-PodeErrorLog
+        $_.Exception | Write-PodeErrorLog -CheckInnerException
         Set-PodeResponseStatus -Code 500 -Exception $_
     }
 

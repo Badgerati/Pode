@@ -44,9 +44,9 @@ function New-PodeSocketListenerEvent
             $Index = $PodeContext.Server.Sockets.MaxConnections
         }
 
-        Register-ObjectEvent -InputObject $socketArgs -EventName 'Completed' -SourceIdentifier (Get-PodeSocketListenerConnectionEventName -Id $Index) -SupportEvent -Action {
+        Register-ObjectEvent -InputObject $socketArgs -EventName 'Completed' -SourceIdentifier (Get-PodeSocketListenerConnectionEventName -Id $Index) -Action {
             Invoke-PodeSocketProcessAccept -Arguments $Event.SourceEventArgs
-        }
+        } | Out-Null
 
         return $socketArgs
     }
@@ -70,7 +70,15 @@ function Start-PodeSocketListener
 
 function Get-PodeSocketContext
 {
-    return $PodeContext.Server.Sockets.Queues.Contexts.Take($PodeContext.Tokens.Cancellation.Token)
+    Lock-PodeObject -Object $PodeContext.Server.Sockets.Queues.Contexts -Return -ScriptBlock {
+        if ($PodeContext.Server.Sockets.Queues.Contexts.Count -eq 0) {
+            return $null
+        }
+
+        $context = $PodeContext.Server.Sockets.Queues.Contexts[0]
+        $PodeContext.Server.Sockets.Queues.Contexts.RemoveAt(0)
+        return $context
+    }
 }
 
 function Close-PodeSocket
@@ -95,12 +103,11 @@ function Close-PodeSocketListener
 {
     try {
         # close all open sockets
-        $arr = $PodeContext.Server.Sockets.Queues.Contexts.ToArray()
-        for ($i = $arr.Length - 1; $i -ge 0; $i--) {
-            Close-PodeSocket -Socket $arr[$i] -Shutdown
+        for ($i = $PodeContext.Server.Sockets.Queues.Contexts.Count - 1; $i -ge 0; $i--) {
+            Close-PodeSocket -Socket $PodeContext.Server.Sockets.Queues.Contexts[$i] -Shutdown
         }
 
-        $PodeContext.Server.Sockets.Queues.Contexts.Dispose()
+        $PodeContext.Server.Sockets.Queues.Contexts.Clear()
 
         # close all open listeners and unbind events
         for ($i = $PodeContext.Server.Sockets.Listeners.Length - 1; $i -ge 0; $i--) {
@@ -154,6 +161,7 @@ function Invoke-PodeSocketProcessAccept
     # get the socket and listener
     $accepted = $Arguments.AcceptSocket
     $listener = $Arguments.UserToken
+    $errors = $Arguments.SocketError
 
     # reset the socket args
     $Arguments.AcceptSocket = $null
@@ -163,7 +171,7 @@ function Invoke-PodeSocketProcessAccept
     Invoke-PodeSocketAccept -Listener $listener
 
     # if not success, close this accept socket and accept again
-    if (($null -eq $accepted) -or ($Arguments.SocketError -ne [System.Net.Sockets.SocketError]::Success) -or ($accepted.Available -eq 0)) {
+    if (($null -eq $accepted) -or ($errors -ne [System.Net.Sockets.SocketError]::Success)) {
         # close socket
         if ($null -ne $accepted) {
             $accepted.Close()
@@ -176,7 +184,14 @@ function Invoke-PodeSocketProcessAccept
 
     # add args back to pool
     $PodeContext.Server.Sockets.Queues.Connections.Enqueue($Arguments)
-    Register-PodeSocketContext -Socket $accepted -Certificate $listener.Certificate -Protocol $listener.Protocol
+
+    Invoke-PodeSocketHandler -Context @{
+        Socket = $accepted
+        Certificate = $listener.Certificate
+        Protocol = $listener.Protocol
+    }
+
+    #Register-PodeSocketContext -Socket $accepted -Certificate $listener.Certificate -Protocol $listener.Protocol
 }
 
 function Register-PodeSocketContext
@@ -199,11 +214,13 @@ function Register-PodeSocketContext
         Close-PodeSocket -Socket $Socket -Shutdown
     }
 
-    $PodeContext.Server.Sockets.Queues.Contexts.Add(@{
-        Socket = $Socket
-        Certificate = $Certificate
-        Protocol = $Protocol
-    }, $PodeContext.Tokens.Cancellation.Token)
+    Lock-PodeObject -Object $PodeContext.Server.Sockets.Queues.Contexts -ScriptBlock {
+        $PodeContext.Server.Sockets.Queues.Contexts.Add(@{
+            Socket = $Socket
+            Certificate = $Certificate
+            Protocol = $Protocol
+        })
+    }
 }
 
 function Get-PodeSocketListenerConnectionEventName
