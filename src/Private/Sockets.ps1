@@ -52,32 +52,10 @@ function New-PodeSocketListenerEvent
     }
 }
 
-function Register-PodeSocketListenerEvents
-{
-    # populate the connections pool
-    foreach ($i in (1..$PodeContext.Server.Sockets.MaxConnections)) {
-        $socketArgs = New-PodeSocketListenerEvent -Index $i
-        $PodeContext.Server.Sockets.Queues.Connections.Enqueue($socketArgs)
-    }
-}
-
 function Start-PodeSocketListener
 {
     foreach ($listener in $PodeContext.Server.Sockets.Listeners) {
         Invoke-PodeSocketAccept -Listener $listener
-    }
-}
-
-function Get-PodeSocketContext
-{
-    Lock-PodeObject -Object $PodeContext.Server.Sockets.Queues.Contexts -Return -ScriptBlock {
-        if ($PodeContext.Server.Sockets.Queues.Contexts.Count -eq 0) {
-            return $null
-        }
-
-        $context = $PodeContext.Server.Sockets.Queues.Contexts[0]
-        $PodeContext.Server.Sockets.Queues.Contexts.RemoveAt(0)
-        return $context
     }
 }
 
@@ -189,37 +167,6 @@ function Invoke-PodeSocketProcessAccept
         Socket = $accepted
         Certificate = $listener.Certificate
         Protocol = $listener.Protocol
-    }
-
-    #Register-PodeSocketContext -Socket $accepted -Certificate $listener.Certificate -Protocol $listener.Protocol
-}
-
-function Register-PodeSocketContext
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [System.Net.Sockets.Socket]
-        $Socket,
-
-        [Parameter()]
-        [X509Certificate]
-        $Certificate,
-
-        [Parameter()]
-        [string]
-        $Protocol
-    )
-
-    if (!$Socket.Connected) {
-        Close-PodeSocket -Socket $Socket -Shutdown
-    }
-
-    Lock-PodeObject -Object $PodeContext.Server.Sockets.Queues.Contexts -ScriptBlock {
-        $PodeContext.Server.Sockets.Queues.Contexts.Add(@{
-            Socket = $Socket
-            Certificate = $Certificate
-            Protocol = $Protocol
-        })
     }
 }
 

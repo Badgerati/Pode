@@ -86,26 +86,6 @@ function Start-PodeSocketServer
         throw $_.Exception
     }
 
-    # script for accepting sockets
-    <#$eventScript = {
-        try
-        {
-            # start the listener events
-            Register-PodeSocketListenerEvents
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                Get-Job | Wait-Job -Force
-            }
-        }
-        catch [System.OperationCanceledException] {}
-        catch {
-            $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw $_.Exception
-        }
-    }
-
-    Add-PodeRunspace -Type 'Events' -ScriptBlock $eventScript#>
-
     # script for listening out for incoming requests
     $listenScript = {
         param (
@@ -123,17 +103,7 @@ function Start-PodeSocketServer
 
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
-                # wait for a socket to be connected
-                #Get-Job | Wait-Job -Force
-                $context = $null
-                while ($null -eq $context) {
-                #    $context = Get-PodeSocketContext
-                #    if ($null -eq $context) {
-                        Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(60))
-                #    }
-                }
-
-                #Invoke-PodeSocketHandler -Context $context
+                Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(60))
             }
         }
         catch [System.OperationCanceledException] {}
@@ -230,8 +200,15 @@ function Invoke-PodeSocketHandler
         $stream = [System.Net.Sockets.NetworkStream]::new($Context.Socket, $true)
 
         if ($null -ne $Context.Certificate) {
-            $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.Sockets.Ssl.Callback)
-            $stream.AuthenticateAsServer($Context.Certificate, $true, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
+            try {
+                $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.Sockets.Ssl.Callback)
+                $stream.AuthenticateAsServer($Context.Certificate, $true, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
+            }
+            catch {
+                # immediately close http connections
+                Close-PodeSocket -Socket $Context.Socket -Shutdown
+                return
+            }
         }
 
         # read the request headers - prepare for the dodgest of hacks ever. I apologise profusely.
@@ -349,10 +326,7 @@ function Invoke-PodeSocketHandler
             Close-PodeDisposable -Disposable $WebEvent.Response.OutputStream -Close -CheckNetwork
         }
 
-        if ($null -ne $Context.Socket) {
-            $Context.Socket.Shutdown([System.Net.Sockets.SocketShutdown]::Both)
-            $Context.Socket.Close()
-        }
+        Close-PodeSocket -Socket $Context.Socket -Shutdown
     }
 }
 

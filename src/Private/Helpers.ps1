@@ -618,7 +618,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Events', 'Schedules', 'Gui')]
+        [ValidateSet('Main', 'Schedules', 'Gui')]
         [string]
         $Type,
 

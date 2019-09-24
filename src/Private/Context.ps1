@@ -178,7 +178,6 @@ function New-PodeContext
     # runspace pools
     $ctx.RunspacePools = @{
         Main = $null
-        Events = $null
         Schedules = $null
         Gui = $null
     }
@@ -231,9 +230,6 @@ function New-PodeRunspacePools
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $PodeContext.Threads
     $PodeContext.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
     $PodeContext.RunspacePools.Main.Open()
-
-    $PodeContext.RunspacePools.Events = [runspacefactory]::CreateRunspacePool(1, 2, $PodeContext.RunspaceState, $Host)
-    $PodeContext.RunspacePools.Events.Open()
 
     # setup schedule runspace pool
     $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $PodeContext.RunspaceState, $Host)
