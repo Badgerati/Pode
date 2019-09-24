@@ -326,13 +326,13 @@ function Set-PodeServerConfiguration
         Types = @{}
     }
 
-    # sockets
-    if (!(Test-IsEmpty $Configuration.Sockets.Ssl.Protocols)) {
-        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Sockets.Ssl.Protocols)
+    # sockets (pode)
+    if (!(Test-IsEmpty $Configuration.Pode.Ssl.Protocols)) {
+        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Pode.Ssl.Protocols)
     }
 
-    if ([int]$Configuration.Sockets.ReceiveTimeout -gt 0) {
-        $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.Sockets.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
+    if ([int]$Configuration.Pode.ReceiveTimeout -gt 0) {
+        $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.Pode.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
     }
 }
 

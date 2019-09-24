@@ -38,7 +38,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Docker support, including images for ARM/Raspberry Pi
 * Azure Functions and AWS Lambda support
 * Listen on a single or multiple IP address/hostnames
-* Support for HTTP, HTTPS, TCP and SMTP
+* Support for HTTP, HTTPS, TCP and SMTP (Experimental cross-platform support for HTTPS)
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
 * Multi-thread support for incoming requests
