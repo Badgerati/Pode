@@ -18,7 +18,7 @@ The following is a set of guidelines for contributing to Pode on GitHub. These a
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the Pode's [Code of Conduct](../CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+This project and everyone participating in it is governed by the Pode's [Code of Conduct](../.github/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## I just have a Question
 
