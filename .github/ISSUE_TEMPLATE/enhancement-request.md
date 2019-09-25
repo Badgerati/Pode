@@ -1,5 +1,5 @@
 ---
-name: Enhancement  Request
+name: Enhancement Request
 about: Suggest an enhancement for an existing feature.
 title: ''
 labels: 'enhancement :arrow_up:'
