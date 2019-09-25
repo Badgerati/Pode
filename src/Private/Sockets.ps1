@@ -62,13 +62,17 @@ function Start-PodeSocketListener
 function Close-PodeSocket
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [System.Net.Sockets.Socket]
         $Socket,
 
         [switch]
         $Shutdown
     )
+
+    if ($null -eq $Socket) {
+        return
+    }
 
     if ($Shutdown -and $Socket.Connected) {
         $Socket.Shutdown([System.Net.Sockets.SocketShutdown]::Both)
