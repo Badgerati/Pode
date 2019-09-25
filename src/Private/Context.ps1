@@ -58,6 +58,21 @@ function New-PodeContext
         Types = @{}
     }
 
+    # set socket details for pode server
+    $ctx.Server.Sockets = @{
+        Listeners = @()
+        MaxConnections = 0
+        Ssl = @{
+            Callback = $null
+            Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
+        }
+        ReceiveTimeout = 100
+        Queues = @{
+            Contexts = [System.Collections.Generic.List[hashtable]]::new(100)
+            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
+        }
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -68,18 +83,20 @@ function New-PodeContext
     }
 
     # set the server default type
-    $ctx.Server.Type = ([string]::Empty)
+    $ctx.Server.Type = $ServerType.ToUpperInvariant()
     if ($Interval -gt 0) {
         $ctx.Server.Type = 'SERVICE'
     }
 
     if ($isServerless) {
-        $ctx.Server.Type = $ServerType.ToUpperInvariant()
         $ctx.Server.IsServerless = $isServerless
     }
 
     # set the IP address details
     $ctx.Server.Endpoints = @()
+
+    # general encoding for the server
+    $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
 
     # setup gui details
     $ctx.Server.Gui = @{}
@@ -203,7 +220,7 @@ function New-PodeRunspacePools
 
     # setup main runspace pool
     $threadsCounts = @{
-        Default = 1
+        Default = 3
         Timer = 1
         Log = 1
         Schedule = 1
@@ -307,6 +324,15 @@ function Set-PodeServerConfiguration
             Mask = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
         }
         Types = @{}
+    }
+
+    # sockets (pode)
+    if (!(Test-IsEmpty $Configuration.Pode.Ssl.Protocols)) {
+        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Pode.Ssl.Protocols)
+    }
+
+    if ([int]$Configuration.Pode.ReceiveTimeout -gt 0) {
+        $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.Pode.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
     }
 }
 

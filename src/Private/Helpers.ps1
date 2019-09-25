@@ -423,6 +423,10 @@ function Get-PodeIPAddressesForHostname
         $Type
     )
 
+    if (!(Test-PodeHostname -Hostname $Hostname)) {
+        return $Hostname
+    }
+
     # get the ip addresses for the hostname
     $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
 
@@ -648,10 +652,10 @@ function Add-PodeRunspace
         }
         else {
             $PodeContext.Runspaces += @{
-                'Pool' = $Type;
-                'Runspace' = $ps;
-                'Status' = $ps.BeginInvoke();
-                'Stopped' = $false;
+                Pool = $Type;
+                Runspace = $ps;
+                Status = $ps.BeginInvoke();
+                Stopped = $false;
             }
         }
     }
@@ -1011,6 +1015,29 @@ function Test-PodeValidNetworkFailure
     return ($null -ne $match)
 }
 
+function Get-PodeEncodingFromContentType
+{
+    param(
+        [Parameter()]
+        [string]
+        $ContentType
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
+        return [System.Text.Encoding]::UTF8
+    }
+
+    $parts = $ContentType -isplit ';'
+
+    foreach ($part in $parts) {
+        if ($part.Trim().StartsWith('charset')) {
+            return [System.Text.Encoding]::GetEncoding(($part -isplit '=')[1].Trim())
+        }
+    }
+
+    return [System.Text.Encoding]::UTF8
+}
+
 function ConvertFrom-PodeRequestContent
 {
     param (
@@ -1028,8 +1055,8 @@ function ConvertFrom-PodeRequestContent
 
     # result object for data/files
     $Result = @{
-        'Data' = @{};
-        'Files' = @{};
+        Data = @{}
+        Files = @{}
     }
 
     # if there is no content-type then do nothing
@@ -1047,6 +1074,10 @@ function ConvertFrom-PodeRequestContent
 
             'azurefunctions' {
                 $Content = $Request.RawBody
+            }
+
+            'pode' {
+                $Content = $Request.Body.Value
             }
 
             default {
@@ -1085,7 +1116,13 @@ function ConvertFrom-PodeRequestContent
 
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
-            $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            if ($PodeContext.Server.Type -ieq 'pode') {
+                $Content = $Request.Body.Bytes
+            }
+            else {
+                $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            }
+
             $Lines = Get-PodeByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
 
             # get the indexes for boundary lines (start and end)
@@ -1159,10 +1196,10 @@ function Get-PodeContentTypeAndBoundary
     )
 
     $obj = @{
-        'ContentType' = [string]::Empty;
-        'Boundary' = @{
-            'Start' = [string]::Empty;
-            'End' = [string]::Empty;
+        ContentType = [string]::Empty;
+        Boundary = @{
+            Start = [string]::Empty;
+            End = [string]::Empty;
         }
     }
 
@@ -1422,6 +1459,23 @@ function Convert-PodePathPatternsToRegex
     }
 
     return "^$($joined)$"
+}
+
+function ConvertTo-PodeSslProtocols
+{
+    param(
+        [Parameter()]
+        [ValidateSet('Ssl2', 'Ssl3', 'Tls', 'Tls11', 'Tls12', 'Tls13')]
+        [string[]]
+        $Protocols
+    )
+
+    $protos = 0
+    foreach ($protocol in $Protocols) {
+        $protos = [int]($protos -bor [System.Security.Authentication.SslProtocols]::$protocol)
+    }
+
+    return [System.Security.Authentication.SslProtocols]($protos)
 }
 
 function Get-PodeModulePath
@@ -1838,10 +1892,18 @@ function Set-PodeServerHeader
     param (
         [Parameter()]
         [string]
-        $Type
+        $Type,
+
+        [switch]
+        $AllowEmptyType
     )
 
-    Set-PodeHeader -Name 'Server' -Value "Pode - $($Type)"
+    $name = 'Pode'
+    if (![string]::IsNullOrWhiteSpace($Type) -or $AllowEmptyType) {
+        $name += " - $($Type)"
+    }
+
+    Set-PodeHeader -Name 'Server' -Value $name
 }
 
 function Get-PodeHandler

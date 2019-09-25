@@ -84,10 +84,10 @@ function Get-PodeInbuiltMiddleware
 function Get-PodeAccessMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_access__' -ScriptBlock {
-        param($s)
+        param($e)
 
         # ensure the request IP address is allowed
-        if (!(Test-PodeIPAccess -IP $s.Request.RemoteEndPoint.Address)) {
+        if (!(Test-PodeIPAccess -IP $e.Request.RemoteEndPoint.Address)) {
             Set-PodeResponseStatus -Code 403
             return $false
         }
@@ -100,10 +100,10 @@ function Get-PodeAccessMiddleware
 function Get-PodeLimitMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
-        param($s)
+        param($e)
 
         # ensure the request IP address has not hit a rate limit
-        if (!(Test-PodeIPLimit -IP $s.Request.RemoteEndPoint.Address)) {
+        if (!(Test-PodeIPLimit -IP $e.Request.RemoteEndPoint.Address)) {
             Set-PodeResponseStatus -Code 429
             return $false
         }
@@ -157,10 +157,10 @@ function Get-PodeRouteValidateMiddleware
     return @{
         Name = '__pode_mw_route_validation__'
         Logic = {
-            param($s)
+            param($e)
 
             # ensure the path has a route
-            $route = Get-PodeRoute -Method $s.Method -Route $s.Path -Protocol $s.Protocol -Endpoint $s.Endpoint -CheckWildMethod
+            $route = Get-PodeRoute -Method $e.Method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
 
             # if there's no route defined, it's a 404
             if ($null -eq $route) {
@@ -169,15 +169,15 @@ function Get-PodeRouteValidateMiddleware
             }
 
             # set the route parameters
-            $WebEvent.Parameters = $route.Parameters
+            $e.Parameters = $route.Parameters
 
             # override the content type from the route if it's not empty
             if (![string]::IsNullOrWhiteSpace($route.ContentType)) {
-                $WebEvent.ContentType = $route.ContentType
+                $e.ContentType = $route.ContentType
             }
 
             # set the content type for any pages for the route if it's not empty
-            $WebEvent.ErrorType = $route.ErrorType
+            $e.ErrorType = $route.ErrorType
 
             # route exists
             return $true
@@ -211,11 +211,11 @@ function Get-PodeBodyMiddleware
 function Get-PodeQueryMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_query_parsing__' -ScriptBlock {
-        param($s)
+        param($e)
 
         try {
             # set the query string from the request
-            $s.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $s.Request.QueryString)
+            $e.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $e.Request.QueryString)
             return $true
         }
         catch {
@@ -230,8 +230,8 @@ function Get-PodeCookieMiddleware
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_cookie_parsing__' -ScriptBlock {
         param($e)
 
-        # if it's not serverless, return
-        if (!$PodeContext.Server.IsServerless) {
+        # if it's not serverless or pode, return
+        if (!$PodeContext.Server.IsServerless -and ($PodeContext.Server.Type -ine 'pode')) {
             return $true
         }
 
@@ -251,7 +251,7 @@ function Get-PodeCookieMiddleware
         $e.Cookies = @{}
 
         foreach ($cookie in $cookies) {
-            $atoms = @($cookie -split '=')
+            $atoms = $cookie.Split('=', 2)
 
             $value = [string]::Empty
             if ($atoms.Length -gt 1) {
