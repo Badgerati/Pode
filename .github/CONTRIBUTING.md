@@ -15,6 +15,16 @@ The following is a set of guidelines for contributing to Pode on GitHub. These a
   * [Pull Requests](#pull-requests)
   * [Testing](#testing)
   * [Documentation](#documentation)
+* [Styleguide](#styleguide)
+  * [Code](#code)
+  * [Comments](#comments)
+    * [General](#general)
+    * [Help](#help)
+  * [PowerShell Commandlets](#powershell-commandlets)
+    * [Foreach-Objech](#foreach-object)
+    * [Where-Object](#where-object)
+    * [Select-Object](#select-object)
+    * [Measure-Object](#measure-object)
 
 ## Code of Conduct
 
@@ -80,4 +90,104 @@ To see the docs you'll need to have the [`Invoke-Build`](https://github.com/nigh
 
 ```powershell
 Invoke-Build Docs
+```
+
+## Styleguide
+
+### Code
+
+In general, observe the coding style used within the file/project and mimic that as best as you can. Some standards that are typical are:
+
+* Bracers (`{}`) on the function header should be on a new line.
+* Bracers  (`{}`) should be on the same line of other calls, such as `foreach`, `if`, etc.
+* **Never** use inline parameters on functions. Such as: `function New-Function($param1, $param2)`
+  * Always use the param block within the function.
+  * Ensure public functions always declare `[CmdletBinding()]` attribute.
+  * Ensure parameter names, types, and attributes are declared on new lines - not all on one line.
+* **Never** use the following commandlets ([see below](#powershell-commandlets) for details):
+  * `Foreach-Object`
+  * `Where-Object`
+  * `Select-Object`
+  * `Measure-Object`
+
+### Comments
+
+#### General
+
+Comments are always useful for new people reading code. Where possible, try to place comments that describe what some code-block is doing (or why it's there).
+
+* Try not to write a comment for every line of code, as it makes the code messy and harder to read.
+* Try to avoid comments such as, on a `foreach`, of `this line loops through the users`.
+
+#### Help
+
+On public functions, new and existing, these should always have Help comments:
+
+* Help comments should be placed above the function header.
+* Help comments should be updated if a new parameter is added to/removed from the function.
+
+### PowerShell Commandlets
+
+For performance reasons, the following PowerShell commandlets should be avoided at all costs. Instead use the replacement stated for each.
+
+#### Foreach-Object
+
+Instead of using the `Foreach-Object` commandlet, please use the `foreach` keyword. This is orders of magnitude more performant than `Foreach-Object`.
+
+```powershell
+# instead of this
+@(1, 2, 3) | Foreach-Object {
+    # do stuff
+}
+
+# do this instead
+foreach ($i in @(1, 2, 3)) {
+    # do stuff
+}
+```
+
+#### Where-Object
+
+Instead of using the `Where-Object` commandlet, please use the `foreach` adn `if` keywords. This is orders of magnitude more performant than `Where-Object`.
+
+```powershell
+# instead of this
+$array = @(1, 2, 3, 1, 3, 4) | Where-Object {$_ -eq 1 }
+
+# do this instead
+$array = @(foreach ($i in @(1, 2, 3, 1, 3, 4)) {
+    if ($i -eq 1) {
+        $i
+    }
+})
+```
+
+#### Select-Object
+
+Instead of using the `Select-Object` commandlet to expand a property, or to select the first/last elements, please use the following. These is orders of magnitude more performant than `Measure-Object`.
+
+```powershell
+# instead of these
+$services | Select-Object -ExpandProperty Name
+$services | Select-Object -First 1
+$services | Select-Object -Last 1
+
+# use these instead
+($services).Name
+(@($services))[0] # first item
+(@($services))[-1] # last item
+```
+
+#### Measure-Object
+
+Instead of using the `Measure-Object` commandlet, please use either the `.Length` or `.Count` properties. These is orders of magnitude more performant than `Measure-Object`.
+
+```powershell
+# instead of these
+(@(1, 2, 3) | Measure-Object).Count
+(@{ Name = 'Rick' } | Measure-Object).Count
+
+# use these instead
+(@(1, 2, 3)).Length
+(@{ Name = 'Rick' }).Count
 ```
