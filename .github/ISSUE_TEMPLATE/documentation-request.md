@@ -7,8 +7,8 @@ assignees: ''
 
 ---
 
-**Describe the documentation change you'd like**
+### Describe the Change
 A clear and concise description of the edit.
 
-**Additional context**
+### Additional Context
 Add any other context or screenshots about the enhancement request here.

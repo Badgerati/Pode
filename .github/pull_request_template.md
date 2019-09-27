@@ -1,11 +1,11 @@
-**Description of what's been changed**
+### Description of the Change
 A clear and concise description of what has been changed.
 
-**Does it fix an existing issue?**
+### Related Issue
 A link/reference to the GitHub issue.
 
-**Examples**
+### Examples
 If relevant, include any examples of using what you have changed.
 
-**Additional context**
+### Additional Context
 Add any other context or screenshots about the pull request request here.
