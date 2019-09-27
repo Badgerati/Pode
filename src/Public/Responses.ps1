@@ -4,14 +4,21 @@ Attaches a file onto the Response for downloading.
 
 .DESCRIPTION
 Attaches a file from the "/public", and static Routes, onto the Response for downloading.
+If the supplied path is not in the Static Routes but is a literal/relative path, then this file is used instead.
 
 .PARAMETER Path
 The Path to a static file relative to the "/public" directory, or a static Route.
-
-If the supplied Path doesn't match any custom static Route, the Pode will look in the "/public" directory.
+If the supplied Path doesn't match any custom static Route, then Pode will look in the "/public" directory.
+Failing this, if the file path exists as a literal/relative file, then this file is used as a fall back.
 
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './image.png'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path 'c:/content/accounts.xlsx'
 #>
 function Set-PodeResponseAttachment
 {
@@ -23,15 +30,24 @@ function Set-PodeResponseAttachment
     )
 
     # only attach files from public/static-route directories when path is relative
-    $Path = (Get-PodeStaticRoutePath -Route $Path).Path
+    $_path = (Get-PodeStaticRoutePath -Route $Path).Path
+
+    # if there's no path, check the original path (in case it's literal/relative)
+    if (!(Test-PodePath $_path -NoStatus)) {
+        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+
+        if (Test-PodePath $Path -NoStatus) {
+            $_path = $Path
+        }
+    }
 
     # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path)) {
+    if (!(Test-PodePath $_path)) {
         return
     }
 
-    $filename = Get-PodeFileName -Path $Path
-    $ext = Get-PodeFileExtension -Path $Path -TrimPeriod
+    $filename = Get-PodeFileName -Path $_path
+    $ext = Get-PodeFileExtension -Path $_path -TrimPeriod
 
     try {
         # setup the content type and disposition
@@ -41,10 +57,10 @@ function Set-PodeResponseAttachment
         # if serverless, get the content raw and return
         if (!$WebEvent.Streamed) {
             if (Test-IsPSCore) {
-                $content = (Get-Content -Path $Path -Raw -AsByteStream)
+                $content = (Get-Content -Path $_path -Raw -AsByteStream)
             }
             else {
-                $content = (Get-Content -Path $Path -Raw -Encoding byte)
+                $content = (Get-Content -Path $_path -Raw -Encoding byte)
             }
 
             $WebEvent.Response.Body = $content
@@ -53,7 +69,6 @@ function Set-PodeResponseAttachment
         # else if normal, stream the content back
         else {
             # setup the response details and headers
-            $WebEvent.Response.ContentLength64 = $fs.Length
             $WebEvent.Response.SendChunked = $false
 
             # set file as an attachment on the response
@@ -61,7 +76,8 @@ function Set-PodeResponseAttachment
             $read = 0
 
             # open up the file as a stream
-            $fs = (Get-Item $Path).OpenRead()
+            $fs = (Get-Item $_path).OpenRead()
+            $WebEvent.Response.ContentLength64 = $fs.Length
 
             while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
                 $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
