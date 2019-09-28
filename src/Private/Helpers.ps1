@@ -1237,8 +1237,8 @@ function ConvertFrom-PodeNameValueToHashTable
     return $ht
 }
 
-function Get-PodeCount {
-    [CmdletBinding()]
+function Get-PodeCount
+{
     param (
         [Parameter()]
         $Object
