@@ -29,14 +29,14 @@ Install-Module -Name Pode
 
 Pode can run on *nix environments, therefore it only makes sense for there to be Docker images for you to use! The images use PowerShell Core on either an Ubuntu Xenial image (default), or an ARM32 image (for Raspberry Pis).
 
-* To pull down the default Pode image you can do:
+* To pull down the latest Pode image you can do:
 
 ```powershell
 # for latest
 docker pull badgerati/pode:latest
 
 # or the following for a specific version:
-docker pull badgerati/pode:0.29.0
+docker pull badgerati/pode:1.0.1
 ```
 
 * To pull down the ARM32 Pode image you can do:
@@ -46,7 +46,33 @@ docker pull badgerati/pode:0.29.0
 docker pull badgerati/pode:latest-arm32
 
 # or the following for a specific version:
-docker pull badgerati/pode:0.29.0-arm32
+docker pull badgerati/pode:1.0.1-arm32
+```
+
+Once pulled, you can [view here](../Docker) on how to use the image.
+
+## GitHub Package Registry
+
+You can also get the Pode docker image from the GitHub Package Registry! The images are the same as the ones hosted in Docker.
+
+* To pull down the latest Pode image you can do:
+
+```powershell
+# for latest
+docker pull docker.pkg.github.com/badgerati/pode/pode:latest
+
+# or the following for a specific version:
+docker pull docker.pkg.github.com/badgerati/pode/pode:1.0.1
+```
+
+* To pull down the ARM32 Pode image you can do:
+
+```powershell
+# for latest
+docker pull docker.pkg.github.com/badgerati/pode/pode:latest-arm32
+
+# or the following for a specific version:
+docker pull docker.pkg.github.com/badgerati/pode/pode:1.0.1-arm32
 ```
 
 Once pulled, you can [view here](../Docker) on how to use the image.

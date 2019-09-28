@@ -17,6 +17,9 @@ The default Pode image is an Ubuntu Xenial image with PowerShell Core and Pode i
 # pull down the pode image
 FROM badgerati/pode:latest
 
+# or use the following for GitHub
+# FROM docker.pkg.github.com/badgerati/pode/pode:latest
+
 # copy over the local files to the container
 COPY . /usr/src/app/
 
@@ -34,6 +37,9 @@ Pode also has an image for ARM32, meaning you can run Pode on Raspberry Pis. An 
 ```dockerfile
 # pull down the pode image
 FROM badgerati/pode:latest-arm32
+
+# or use the following for GitHub
+# FROM docker.pkg.github.com/badgerati/pode/pode:latest-arm32
 
 # copy over the local files to the container
 COPY . /usr/src/app/

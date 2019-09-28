@@ -103,6 +103,7 @@ function Stop-PodeFileMonitor
 function Get-PodeFileMonitorName
 {
     param (
+        [Parameter(Mandatory=$true)]
         [ValidateSet('Create', 'Delete', 'Update')]
         [string]
         $Type

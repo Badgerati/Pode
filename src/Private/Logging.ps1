@@ -115,6 +115,7 @@ function Get-PodeLoggingInbuiltType
                 $row = @(
                     "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
                     "Level: $($item.Level)",
+                    "ThreadId: $($item.ThreadId)",
                     "Server: $($item.Server)",
                     "Category: $($item.Category)",
                     "Message: $($item.Message)",

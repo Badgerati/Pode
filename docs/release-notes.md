@@ -1,5 +1,20 @@
 # Release Notes
 
+## v1.1.0
+
+```plain
+### Features
+* #376: *Experimental* support for cross-platform HTTPS!
+
+### Bugs
+* #372: Fixed an issue when getting the length of strings in `Get-PodeCount` (thanks @Fraham!)
+* #384: Fixed `Set-PodeResponseAttachment` not setting the ContentLength (plus support of literal paths)
+
+### Packaging
+* #375: Update the Dockerfiles to PowerShell 6.2.3
+* #253: Publish the Docker images on the GitHub Package Registry
+```
+
 ## v1.0.1
 
 ```plain

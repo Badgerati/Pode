@@ -114,10 +114,11 @@ function Start-PodeWebServer
                         ErrorType = $null
                         Cookies = $request.Cookies
                         PendingCookies = @{}
+                        Streamed = $true
                     }
 
                     # set pode in server response header
-                    Set-PodeServerHeader
+                    Set-PodeServerHeader -AllowEmptyType
 
                     # add logging endware for post-request
                     Add-PodeRequestLogEndware -WebEvent $WebEvent

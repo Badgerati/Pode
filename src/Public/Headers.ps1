@@ -27,11 +27,22 @@ function Add-PodeHeader
         $Value
     )
 
-    if ($PodeContext.Server.IsServerless) {
-        $WebEvent.Response.Headers[$Name] = $Value
-    }
-    else {
-        $WebEvent.Response.AppendHeader($Name, $Value) | Out-Null
+    switch ($PodeContext.Server.Type) {
+        'http' {
+            $WebEvent.Response.AppendHeader($Name, $Value) | Out-Null
+        }
+
+        'pode' {
+            if (!$WebEvent.Response.Headers.ContainsKey($Name)) {
+                $WebEvent.Response.Headers[$Name] = @()
+            }
+
+            $WebEvent.Response.Headers[$Name] += $Value
+        }
+
+        default {
+            $WebEvent.Response.Headers[$Name] = $Value
+        }
     }
 }
 
@@ -85,7 +96,7 @@ function Get-PodeHeader
         $Name
     )
 
-    if ($PodeContext.Server.IsServerless) {
+    if ($PodeContext.Server.Type -ine 'http') {
         $header = $WebEvent.Request.Headers.$Name
     }
     else {
@@ -124,10 +135,18 @@ function Set-PodeHeader
         $Value
     )
 
-    if ($PodeContext.Server.IsServerless) {
-        $WebEvent.Response.Headers[$Name] = $Value
-    }
-    else {
-        $WebEvent.Response.AddHeader($Name, $Value) | Out-Null
+
+    switch ($PodeContext.Server.Type) {
+        'http' {
+            $WebEvent.Response.AddHeader($Name, $Value) | Out-Null
+        }
+
+        'pode' {
+            $WebEvent.Response.Headers[$Name] = @($Value)
+        }
+
+        default {
+            $WebEvent.Response.Headers[$Name] = $Value
+        }
     }
 }
