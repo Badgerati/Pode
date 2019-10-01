@@ -50,9 +50,9 @@ You can raise new issues, for bugs, enhancements, feature ideas; or you can sele
 
 ### Branch Names
 
-Branches should be named after the issue you are working on, such as `Issue-123`.
+Branches should be named after the issue you are working on, such as `Issue-123`. If you're working on an issue that hasn't been raised (such as a typo, tests, docs, etc), branch names should be descriptive.
 
-If you're working on an issue that hasn't been raised (such as a typo, tests, docs, etc), branch names should be descriptive.
+When branching, please create your branches from `develop` - unless another branch is far more appropriate.
 
 ### Pull Requests
 

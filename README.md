@@ -73,6 +73,8 @@ docker pull badgerati/pode
 
 ## Contributing
 
+> The full contributing guide can be [found here](https://github.com/Badgerati/Pode/blob/develop/.github/CONTRIBUTING.md)
+
 Pull Requests, Bug Reports and Feature Requests are welcome! Feel free to help out with Issues and Projects!
 
 To run the unit tests, run the following command from the root of the repository (this will auto-install Pester for you):
