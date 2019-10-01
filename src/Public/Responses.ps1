@@ -11,6 +11,10 @@ The Path to a static file relative to the "/public" directory, or a static Route
 If the supplied Path doesn't match any custom static Route, then Pode will look in the "/public" directory.
 Failing this, if the file path exists as a literal/relative file, then this file is used as a fall back.
 
+.PARAMETER ContentType
+Manually specify the content type of the response rather than infering it from the attachment's file extension.
+The supplied value must match the valid ContentType format, e.g. application/json
+
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
 
@@ -19,6 +23,9 @@ Set-PodeResponseAttachment -Path './image.png'
 
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'c:/content/accounts.xlsx'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './data.txt' -ContentType 'application/json'
 #>
 function Set-PodeResponseAttachment
 {
@@ -26,7 +33,11 @@ function Set-PodeResponseAttachment
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $Path
+        $Path,
+
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [string]
+        $ContentType
     )
 
     # only attach files from public/static-route directories when path is relative
@@ -51,7 +62,12 @@ function Set-PodeResponseAttachment
 
     try {
         # setup the content type and disposition
-        $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
+        if (!$ContentType) {
+            $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
+        }
+        else {
+            $WebEvent.Response.ContentType = $ContentType
+        }
         Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
         # if serverless, get the content raw and return
@@ -610,7 +626,7 @@ function Write-PodeXmlResponse
                 $Value = @(foreach ($v in $Value) {
                     New-Object psobject -Property $v
                 })
-        
+
                 $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
             }
         }
