@@ -26,8 +26,6 @@ Set-PodeResponseAttachment -Path 'c:/content/accounts.xlsx'
 
 .EXAMPLE
 Set-PodeResponseAttachment -Path './data.txt' -ContentType 'application/json'
-
-This command specifies that the content stored in data.txt should be considered as JSON data rather than plain text.
 #>
 function Set-PodeResponseAttachment
 {
