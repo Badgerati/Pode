@@ -84,7 +84,9 @@ Invoke-Build Test
 Where possible, please add new, or update, Pode's documentation. This documentation is in the form of:
 
 * The main `/docs` directory. These are markdown files that are built using mkdocs. The `/docs/Functions` directory is excluded as these are compiled using PlatyPS.
-* All functions within the `/src/Public` directory need to have documentation.
+* All functions within the `/src/Public` directory need to have help comment documentation added/updated.
+  * Synopsis and Parameter descriptions should be descriptive.
+  * Examples should only contain a single line of code to use the function. (This is due a limitation in PlatyPS where it currently doesn't support multi-line examples).
 
 To see the docs you'll need to have the [`Invoke-Build`](https://github.com/nightroman/Invoke-Build) installed, then you can run the following:
 
@@ -101,7 +103,7 @@ In general, observe the coding style used within the file/project and mimic that
 * Bracers (`{}`) on the function header should be on a new line.
 * Bracers  (`{}`) should be on the same line of other calls, such as `foreach`, `if`, etc.
 * **Never** use inline parameters on functions. Such as: `function New-Function($param1, $param2)`
-  * Always use the param block within the function.
+  * Always use the `param` block within the function.
   * Ensure public functions always declare `[CmdletBinding()]` attribute.
   * Ensure parameter names, types, and attributes are declared on new lines - not all on one line.
 * **Never** use the following commandlets ([see below](#powershell-commandlets) for details):
@@ -123,8 +125,10 @@ Comments are always useful for new people reading code. Where possible, try to p
 
 On public functions, new and existing, these should always have Help comments:
 
-* Help comments should be placed above the function header.
-* Help comments should be updated if a new parameter is added to/removed from the function.
+* They should be placed above the function header.
+* They should be updated if a new parameter is added to/removed from the function.
+* Parameter descriptions should be descriptive.
+* Examples should only contain a single line of code to use the function. (This is due a limitation in PlatyPS where it currently doesn't support multi-line examples).
 
 ### PowerShell Commandlets
 
