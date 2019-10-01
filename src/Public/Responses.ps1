@@ -37,7 +37,7 @@ function Set-PodeResponseAttachment
         [string]
         $Path,
 
-        [ValidatePattern('\w+\/[\w.-]+')]
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
         [string]
         $ContentType
     )
