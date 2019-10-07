@@ -98,27 +98,27 @@ function Get-PodeAuthInbuiltMethod
                 $result = Get-PodeAuthADUser -Fqdn $options.Fqdn -Username $username -Password $password -NoGroups:$noGroups
 
                 # if there's a message, fail and return the message
-                if (!(Test-IsEmpty $result.Message)) {
+                if (!(Test-PodeIsEmpty $result.Message)) {
                     return $result
                 }
 
                 # if there's no user, then, err, oops
-                if (Test-IsEmpty $result.User) {
+                if (Test-PodeIsEmpty $result.User) {
                     return @{ Message = 'An unexpected error occured' }
                 }
 
                 # if there are no groups/users supplied, return the user
-                if ((Test-IsEmpty $options.Users) -and (Test-IsEmpty $options.Groups)){
+                if ((Test-PodeIsEmpty $options.Users) -and (Test-PodeIsEmpty $options.Groups)){
                     return $result
                 }
 
                 # before checking supplied groups, is the user in the supplied list of authorised users?
-                if (!(Test-IsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
+                if (!(Test-PodeIsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
                     return $result
                 }
 
                 # if there are groups supplied, check the user is a member of one
-                if (!(Test-IsEmpty $options.Groups)) {
+                if (!(Test-PodeIsEmpty $options.Groups)) {
                     foreach ($group in $options.Groups) {
                         if (@($result.User.Groups) -icontains $group) {
                             return $result
@@ -142,7 +142,7 @@ function Get-PodeAuthMiddlewareScript
 
         # route options for using sessions
         $storeInSession = !$opts.Sessionless
-        $usingSessions = (!(Test-IsEmpty $e.Session))
+        $usingSessions = (!(Test-PodeIsEmpty $e.Session))
 
         # check for logout command
         if ($opts.Logout) {
@@ -152,14 +152,14 @@ function Get-PodeAuthMiddlewareScript
         }
 
         # if the session already has a user/isAuth'd, then skip auth
-        if ($usingSessions -and !(Test-IsEmpty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
+        if ($usingSessions -and !(Test-PodeIsEmpty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
             $e.Auth = $e.Session.Data.Auth
             return (Set-PodeAuthStatus -Options $opts)
         }
 
         # check if the auto-login flag is set, in which case just return
         if ($opts.AutoLogin) {
-            if (!(Test-IsEmpty $e.Session.Data.Auth)) {
+            if (!(Test-PodeIsEmpty $e.Session.Data.Auth)) {
                 Remove-PodeSessionCookie -Session $e.Session
             }
 
@@ -184,7 +184,7 @@ function Get-PodeAuthMiddlewareScript
         }
 
         # if there is no result, return false (failed auth)
-        if ((Test-IsEmpty $result) -or (Test-IsEmpty $result.User)) {
+        if ((Test-PodeIsEmpty $result) -or (Test-PodeIsEmpty $result.User)) {
             return (Set-PodeAuthStatus `
                 -StatusCode (Protect-PodeValue -Value $result.Code -Default 401) `
                 -Description $result.Message `
@@ -214,7 +214,7 @@ function Remove-PodeAuthSession
     $Event.Auth = @{}
 
     # if a session auth is found, blank it
-    if (!(Test-IsEmpty $Event.Session.Data.Auth)) {
+    if (!(Test-PodeIsEmpty $Event.Session.Data.Auth)) {
         $Event.Session.Data.Remove('Auth')
     }
 
@@ -295,7 +295,7 @@ function Get-PodeAuthADUser
 
         # validate the user's AD creds
         $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($Fqdn)", "$($Username)", "$($Password)")
-        if (Test-IsEmpty $ad.distinguishedName) {
+        if (Test-PodeIsEmpty $ad.distinguishedName) {
             return @{ Message = 'Invalid credentials supplied' }
         }
 
@@ -304,7 +304,7 @@ function Get-PodeAuthADUser
         $query.filter = "(&(objectCategory=person)(samaccountname=$($Username)))"
 
         $user = $query.FindOne().Properties
-        if (Test-IsEmpty $user) {
+        if (Test-PodeIsEmpty $user) {
             return @{ Message = 'User not found in Active Directory' }
         }
 
@@ -325,7 +325,7 @@ function Get-PodeAuthADUser
         }
     }
     finally {
-        if (!(Test-IsEmpty $ad.distinguishedName)) {
+        if (!(Test-PodeIsEmpty $ad.distinguishedName)) {
             Close-PodeDisposable -Disposable $query
             Close-PodeDisposable -Disposable $ad -Close
         }

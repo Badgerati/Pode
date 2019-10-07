@@ -108,7 +108,7 @@ function ConvertFrom-PodeCronExpression
 
     # check predefineds
     $predef = Get-PodeCronPredefined
-    if (!(Test-IsEmpty $predef[$Expression])) {
+    if (!(Test-PodeIsEmpty $predef[$Expression])) {
         $Expression = $predef[$Expression]
     }
 

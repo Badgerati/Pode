@@ -297,7 +297,7 @@ function Use-PodeScript
     # we have a path, if it's a directory/wildcard then loop over all files
     if (![string]::IsNullOrWhiteSpace($_path)) {
         $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps1'
-        if (!(Test-IsEmpty $_paths)) {
+        if (!(Test-PodeIsEmpty $_paths)) {
             foreach ($_path in $_paths) {
                 Use-PodeScript -Path $_path
             }
@@ -423,7 +423,7 @@ function Import-PodeModule
         'path' {
             $Path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
             $paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps*1'
-            if (!(Test-IsEmpty $paths)) {
+            if (!(Test-PodeIsEmpty $paths)) {
                 foreach ($_path in $paths) {
                     Import-PodeModule -Path $_path -Now:$Now
                 }
@@ -482,7 +482,7 @@ function Import-PodeSnapIn
     )
 
     # if non-windows or core, fail
-    if ((Test-IsPSCore) -or (Test-IsUnix)) {
+    if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
         throw 'SnapIns are only supported on Windows PowerShell'
     }
 
@@ -524,7 +524,7 @@ function Protect-PodeValue
         $Default
     )
 
-    return (Resolve-PodeValue -Check (Test-IsEmpty $Value) -TrueValue $Default -FalseValue $Value)
+    return (Resolve-PodeValue -Check (Test-PodeIsEmpty $Value) -TrueValue $Default -FalseValue $Value)
 }
 
 <#
@@ -666,9 +666,9 @@ Tests if a value is empty - the value can be of any type.
 The value to test.
 
 .EXAMPLE
-if (Test-IsEmpty @{}) { /* logic */ }
+if (Test-PodeIsEmpty @{}) { /* logic */ }
 #>
-function Test-IsEmpty
+function Test-PodeIsEmpty
 {
     [CmdletBinding()]
     [OutputType([bool])]
@@ -712,9 +712,9 @@ Tests if the the current session is running in PowerShell Core.
 Tests if the the current session is running in PowerShell Core.
 
 .EXAMPLE
-if (Test-IsPSCore) { /* logic */ }
+if (Test-PodeIsPSCore) { /* logic */ }
 #>
-function Test-IsPSCore
+function Test-PodeIsPSCore
 {
     [CmdletBinding()]
     [OutputType([bool])]
@@ -731,9 +731,9 @@ Tests if the current OS is Unix.
 Tests if the current OS is Unix.
 
 .EXAMPLE
-if (Test-IsUnix) { /* logic */ }
+if (Test-PodeIsUnix) { /* logic */ }
 #>
-function Test-IsUnix
+function Test-PodeIsUnix
 {
     [CmdletBinding()]
     [OutputType([bool])]
@@ -750,9 +750,9 @@ Tests if the current OS is Windows.
 Tests if the current OS is Windows.
 
 .EXAMPLE
-if (Test-IsWindows) { /* logic */ }
+if (Test-PodeIsWindows) { /* logic */ }
 #>
-function Test-IsWindows
+function Test-PodeIsWindows
 {
     [CmdletBinding()]
     [OutputType([bool])]

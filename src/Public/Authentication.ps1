@@ -76,7 +76,7 @@ function New-PodeAuthType
 
         [Parameter(Mandatory=$true, ParameterSetName='Custom')]
         [ValidateScript({
-            if (Test-IsEmpty $_) {
+            if (Test-PodeIsEmpty $_) {
                 throw "A non-empty ScriptBlock is required for the Custom authentication type"
             }
 
@@ -159,7 +159,7 @@ function Add-PodeAuth
 
         [Parameter(Mandatory=$true)]
         [ValidateScript({
-            if (Test-IsEmpty $_) {
+            if (Test-PodeIsEmpty $_) {
                 throw "A non-empty ScriptBlock is required for the authentication method"
             }
 
@@ -179,7 +179,7 @@ function Add-PodeAuth
     }
 
     # ensure the Type contains a scriptblock
-    if (Test-IsEmpty $Type.ScriptBlock) {
+    if (Test-PodeIsEmpty $Type.ScriptBlock) {
         throw "The supplied Type for the '$($Name)' authentication method requires a valid ScriptBlock"
     }
 
@@ -256,7 +256,7 @@ function Add-PodeAuthWindowsAd
 
     # Check PowerShell/OS version
     $version = $PSVersionTable.PSVersion
-    if ((Test-IsUnix) -or ($version.Major -eq 6 -and $version.Minor -eq 0)) {
+    if ((Test-PodeIsUnix) -or ($version.Major -eq 6 -and $version.Minor -eq 0)) {
         throw 'Windows AD authentication is currently only supported on Windows PowerShell, and Windows PowerShell Core v6.1+'
     }
 
@@ -266,7 +266,7 @@ function Add-PodeAuthWindowsAd
     }
 
     # ensure the Type contains a scriptblock
-    if (Test-IsEmpty $Type.ScriptBlock) {
+    if (Test-PodeIsEmpty $Type.ScriptBlock) {
         throw "The supplied Type for the '$($Name)' Windows AD authentication method requires a valid ScriptBlock"
     }
 

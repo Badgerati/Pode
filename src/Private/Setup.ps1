@@ -10,7 +10,7 @@ function Invoke-PodePackageScript
         return
     }
 
-    if (Test-IsPSCore) {
+    if (Test-PodeIsPSCore) {
         pwsh.exe /c "$($ActionScript)"
     }
     else {

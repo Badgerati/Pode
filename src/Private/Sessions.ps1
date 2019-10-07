@@ -54,7 +54,7 @@ function Get-PodeSessionCookie
 
     # get the cookie from the request
     $cookie = Get-PodeCookie -Name $Name -Secret $Secret
-    if (Test-IsEmpty $cookie) {
+    if (Test-PodeIsEmpty $cookie) {
         return $null
     }
 
@@ -108,7 +108,7 @@ function Test-PodeSessionCookieDataHash
         $Session
     )
 
-    if (Test-IsEmpty $Session.DataHash) {
+    if (Test-PodeIsEmpty $Session.DataHash) {
         return $false
     }
 
@@ -229,7 +229,7 @@ function Set-PodeSessionCookieInMemClearDown
     # cleardown expired inmem session every 10 minutes
     Add-PodeSchedule -Name '__pode_session_inmem_cleanup__' -Cron '0/10 * * * *' -ScriptBlock {
         $store = $PodeContext.Server.Cookies.Session.Store
-        if (Test-IsEmpty $store.Memory) {
+        if (Test-PodeIsEmpty $store.Memory) {
             return
         }
 
@@ -245,5 +245,5 @@ function Set-PodeSessionCookieInMemClearDown
 
 function Test-PodeSessionsConfigured
 {
-    return (!(Test-IsEmpty $PodeContext.Server.Cookies.Session))
+    return (!(Test-PodeIsEmpty $PodeContext.Server.Cookies.Session))
 }

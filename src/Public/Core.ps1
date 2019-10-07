@@ -86,7 +86,7 @@ function Start-PodeServer
 
     try {
         # configure the server's root path
-        if (!(Test-IsEmpty $RootPath)) {
+        if (!(Test-PodeIsEmpty $RootPath)) {
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
@@ -361,7 +361,7 @@ function Show-PodeGui
     Test-PodeIsServerless -FunctionName 'Show-PodeGui' -ThrowError
 
     # only valid for Windows PowerShell
-    if ((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
+    if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
         throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7 on Windows'
     }
 
@@ -526,7 +526,7 @@ function Add-PodeEndpoint
     $_endpoint = Get-PodeEndpointInfo -Endpoint $FullAddress
 
     # if a name was supplied, check it is unique
-    if (!(Test-IsEmpty $Name) -and
+    if (!(Test-PodeIsEmpty $Name) -and
         (Get-PodeCount ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
     {
         throw "An endpoint with the name '$($Name)' has already been defined"
@@ -621,7 +621,7 @@ function Add-PodeEndpoint
         $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
 
         # ensure the name exists
-        if (Test-IsEmpty $redir_endpoint) {
+        if (Test-PodeIsEmpty $redir_endpoint) {
             throw "An endpoint with the name '$($RedirectTo)' has not been defined for redirecting"
         }
 
@@ -1011,7 +1011,7 @@ function Add-PodeMiddleware
     }
 
     # ensure we have a script to run
-    if (Test-IsEmpty $InputObject.Logic) {
+    if (Test-PodeIsEmpty $InputObject.Logic) {
         throw "[Middleware]: No logic supplied in ScriptBlock"
     }
 
@@ -1069,7 +1069,7 @@ function New-PodeMiddleware
         Arguments = $ArgumentList
     }
 
-    if (Test-IsEmpty $HashTable.Logic) {
+    if (Test-PodeIsEmpty $HashTable.Logic) {
         throw "[Middleware]: No logic supplied in ScriptBlock"
     }
 

@@ -97,10 +97,10 @@
         'Protect-PodeValue',
         'Resolve-PodeValue',
         'Invoke-PodeScriptBlock',
-        'Test-IsUnix',
-        'Test-IsWindows',
-        'Test-IsPSCore',
-        'Test-IsEmpty',
+        'Test-PodeIsUnix',
+        'Test-PodeIsWindows',
+        'Test-PodeIsPSCore',
+        'Test-PodeIsEmpty',
 
         # routes
         'Add-PodeRoute',

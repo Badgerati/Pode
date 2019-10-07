@@ -1,7 +1,7 @@
 function Start-PodeTcpServer
 {
     # ensure we have service handlers
-    if (Test-IsEmpty (Get-PodeHandler -Type Tcp)) {
+    if (Test-PodeIsEmpty (Get-PodeHandler -Type Tcp)) {
         throw 'No TCP handlers have been defined'
     }
 

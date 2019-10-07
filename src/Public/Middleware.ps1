@@ -205,7 +205,7 @@ function Enable-PodeSessionMiddleware
     }
 
     # ensure the override store has the required methods
-    if (!(Test-IsEmpty $Storage)) {
+    if (!(Test-PodeIsEmpty $Storage)) {
         $members = @($Storage | Get-Member | Select-Object -ExpandProperty Name)
         @('delete', 'get', 'set') | ForEach-Object {
             if ($members -inotcontains $_) {
@@ -215,7 +215,7 @@ function Enable-PodeSessionMiddleware
     }
 
     # if no custom storage, use the inmem one
-    if (Test-IsEmpty $Storage) {
+    if (Test-PodeIsEmpty $Storage) {
         $Storage = (Get-PodeSessionCookieInMemStore)
         Set-PodeSessionCookieInMemClearDown
     }
@@ -355,7 +355,7 @@ function Save-PodeSession
     }
 
     # if auth is in use, then assign to session store
-    if (!(Test-IsEmpty $WebEvent.Auth) -and $WebEvent.Auth.Store) {
+    if (!(Test-PodeIsEmpty $WebEvent.Auth) -and $WebEvent.Auth.Store) {
         $WebEvent.Session.Data.Auth = $WebEvent.Auth
     }
 
@@ -489,7 +489,7 @@ function Initialize-PodeCsrf
     if ($UseCookies) {
         $Secret = (Protect-PodeValue -Value $Secret -Default (Get-PodeCookieSecret -Global))
 
-        if (Test-IsEmpty $Secret) {
+        if (Test-PodeIsEmpty $Secret) {
             throw "When using cookies for CSRF, a Secret is required. You can either supply a Secret, or set the Cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
         }
     }
@@ -551,7 +551,7 @@ function Enable-PodeCsrfMiddleware
 
         # if the current route method is ignored, just return
         $ignored = @($PodeContext.Server.Cookies.Csrf.IgnoredMethods)
-        if (!(Test-IsEmpty $ignored) -and ($ignored -icontains $e.Method)) {
+        if (!(Test-PodeIsEmpty $ignored) -and ($ignored -icontains $e.Method)) {
             return $true
         }
 

@@ -109,7 +109,7 @@ function Get-PodeFlashMessage
     $v = @($WebEvent.Session.Data.Flash[$Name])
     $WebEvent.Session.Data.Flash.Remove($Name)
 
-    if (Test-IsEmpty $v) {
+    if (Test-PodeIsEmpty $v) {
         return @()
     }
 

@@ -72,7 +72,7 @@ function Set-PodeResponseAttachment
 
         # if serverless, get the content raw and return
         if (!$WebEvent.Streamed) {
-            if (Test-IsPSCore) {
+            if (Test-PodeIsPSCore) {
                 $content = (Get-Content -Path $_path -Raw -AsByteStream)
             }
             else {
@@ -318,7 +318,7 @@ function Write-PodeFileResponse
 
     # this is a static file
     else {
-        if (Test-IsPSCore) {
+        if (Test-PodeIsPSCore) {
             $content = (Get-Content -Path $Path -Raw -AsByteStream)
         }
         else {
@@ -377,7 +377,7 @@ function Write-PodeCsvResponse
                     New-Object psobject -Property $v
                 })
 
-                if (Test-IsPSCore) {
+                if (Test-PodeIsPSCore) {
                     $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
                 }
                 else {

@@ -273,7 +273,7 @@ function ConvertTo-PodeRouteRegex
 
 function Get-PodeStaticRouteDefaults
 {
-    if (!(Test-IsEmpty $PodeContext.Server.Web.Static.Defaults)) {
+    if (!(Test-PodeIsEmpty $PodeContext.Server.Web.Static.Defaults)) {
         return @($PodeContext.Server.Web.Static.Defaults)
     }
 

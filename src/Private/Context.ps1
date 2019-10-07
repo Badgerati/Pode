@@ -21,7 +21,7 @@ function New-PodeContext
     )
 
     # set a random server name if one not supplied
-    if (Test-IsEmpty $Name) {
+    if (Test-PodeIsEmpty $Name) {
         $Name = Get-PodeRandomName
     }
 
@@ -78,7 +78,7 @@ function New-PodeContext
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
-    if (!(Test-IsEmpty $ctx.Server.Configuration.Server.Root)) {
+    if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
@@ -236,7 +236,7 @@ function New-PodeRunspacePools
     $PodeContext.RunspacePools.Schedules.Open()
 
     # setup gui runspace pool (only for non-ps-core)
-    if (!((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
+    if (!((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
         $PodeContext.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         $PodeContext.RunspacePools.Gui.ApartmentState = 'STA'
         $PodeContext.RunspacePools.Gui.Open()
@@ -279,7 +279,7 @@ function Open-PodeConfiguration
     $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'server.psd1' -Root $ServerRoot)
 
     # check to see if an environmental config exists (if the env var is set)
-    if (!(Test-IsEmpty $env:PODE_ENVIRONMENT)) {
+    if (!(Test-PodeIsEmpty $env:PODE_ENVIRONMENT)) {
         $_path = (Join-PodeServerRoot -Folder '.' -FilePath "server.$($env:PODE_ENVIRONMENT).psd1" -Root $ServerRoot)
         if (Test-PodePath -Path $_path -NoStatus) {
             $configPath = $_path
@@ -327,7 +327,7 @@ function Set-PodeServerConfiguration
     }
 
     # sockets (pode)
-    if (!(Test-IsEmpty $Configuration.Pode.Ssl.Protocols)) {
+    if (!(Test-PodeIsEmpty $Configuration.Pode.Ssl.Protocols)) {
         $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Pode.Ssl.Protocols)
     }
 

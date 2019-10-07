@@ -162,7 +162,7 @@ function Restore-PodeState
         return
     }
 
-    if (Test-IsPSCore) {
+    if (Test-PodeIsPSCore) {
         $PodeContext.Server.State = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
     }
     else {
