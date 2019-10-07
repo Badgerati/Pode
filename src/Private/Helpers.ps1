@@ -1089,6 +1089,12 @@ function ConvertFrom-PodeRequestContent
         if ([string]::IsNullOrWhiteSpace($Content)) {
             return $Result
         }
+
+        # check if there is a defined custom body parser
+        if ($PodeContext.Server.BodyParsers.ContainsKey($MetaData.ContentType)) {
+            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.BodyParsers[$MetaData.ContentType] -Arguments $Content -Return)
+            return $Result
+        }
     }
 
     # run action for the content type
