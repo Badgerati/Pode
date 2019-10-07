@@ -2,8 +2,9 @@
 
 !!! warning
     Binding existing, and generating self-signed certificates is only supported on *Windows*.
+    For cross-platform HTTPS support [see here](../PodeServer).
 
-Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing - already installed - certificates for HTTPS. If Pode detects that the `IP:Port` or `Hostname:Port` binding already has a certificate bound, then Pode will re-use that certificate and will not create a new self-signed certificate, or bind a new certificate.
+Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing - already installed - certificates for HTTPS on Windows, using the default Server type. If Pode detects that the `IP:Port` or `Hostname:Port` binding already has a certificate bound, then Pode will re-use that certificate and will not create a new self-signed certificate, or bind a new certificate.
 
 ## Self-Signed
 

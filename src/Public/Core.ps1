@@ -69,9 +69,9 @@ function Start-PodeServer
         $Request,
 
         [Parameter()]
-        [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
+        [ValidateSet('', 'AzureFunctions', 'AwsLambda', 'Pode')]
         [string]
-        $Type,
+        $Type = [string]::Empty,
 
         [switch]
         $DisableTermination,
@@ -431,6 +431,15 @@ A certificate name to find and bind onto HTTPS endpoints (Windows only).
 .PARAMETER CertificateThumbprint
 A certificate thumbprint to bind onto HTTPS endpoints (Windows only).
 
+.PARAMETER CertificateFile
+The path to a certificate that can be use to enable HTTPS (Cross-platform)
+
+.PARAMETER CertificatePassword
+The password for the certificate referenced in CertificateFile (Cross-platform)
+
+.PARAMETER RawCertificate
+The raw X509 certificate that can be use to enable HTTPS (Cross-platform)
+
 .PARAMETER Name
 An optional name for the endpoint, that can be used with other functions.
 
@@ -472,13 +481,26 @@ function Add-PodeEndpoint
         [string]
         $Protocol,
 
-        [Parameter()]
+        [Parameter(Mandatory=$true, ParameterSetName='CertName')]
         [string]
         $Certificate = $null,
 
-        [Parameter()]
+        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
         [string]
         $CertificateThumbprint = $null,
+
+        [Parameter(Mandatory=$true, ParameterSetName='CertFile')]
+        [string]
+        $CertificateFile = $null,
+
+        [Parameter(ParameterSetName='CertFile')]
+        [string]
+        $CertificatePassword = $null,
+
+        [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
+        [Parameter()]
+        [X509Certificate]
+        $RawCertificate = $null,
 
         [Parameter()]
         [string]
@@ -491,6 +513,7 @@ function Add-PodeEndpoint
         [switch]
         $Force,
 
+        [Parameter(ParameterSetName='CertSelf')]
         [switch]
         $SelfSigned
     )
@@ -522,6 +545,7 @@ function Add-PodeEndpoint
         Certificate = @{
             Name = $Certificate
             Thumbprint = $CertificateThumbprint
+            Raw = $RawCertificate
             SelfSigned = $SelfSigned
         }
     }
@@ -547,14 +571,40 @@ function Add-PodeEndpoint
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
+    # if we're dealing with a certificate file, attempt to import it
+    if ($PSCmdlet.ParameterSetName -ieq 'certfile') {
+        # fail if protocol is not https
+        if ($Protocol -ine 'https') {
+            throw "Certificate supplied for non-HTTPS endpoint"
+        }
+
+        $_path = Get-PodeRelativePath -Path $CertificateFile -JoinRoot -Resolve
+
+        if ([string]::IsNullOrWhiteSpace($CertificatePassword)) {
+            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path)
+        }
+        else {
+            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path, $CertificatePassword)
+        }
+
+        # fail if the cert is expired
+        if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
+            throw "The certificate '$($CertificateFile)' has expired: $($obj.Certificate.Raw.NotAfter)"
+        }
+    }
+
     if (!$exists) {
         # has an endpoint already been defined for smtp/tcp?
-        if (@('smtp', 'tcp') -icontains $Protocol -and $Protocol -ieq $PodeContext.Server.Type) {
+        if ((@('smtp', 'tcp') -icontains $Protocol) -and ($Protocol -ieq $PodeContext.Server.Type)) {
             throw "An endpoint for $($Protocol.ToUpperInvariant()) has already been defined"
         }
 
         # set server type, ensure we aren't trying to change the server's type
         $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
+        if (($_type -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
+            $_type = 'pode'
+        }
+
         if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
             $PodeContext.Server.Type = $_type
         }

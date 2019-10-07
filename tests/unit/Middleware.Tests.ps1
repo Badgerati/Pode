@@ -317,7 +317,12 @@ Describe 'Get-PodeRouteValidateMiddleware' {
     }
 
     It 'Returns a ScriptBlock and invokes it as true, overriding the content type' {
-        $WebEvent = @{ 'Parameters' = @{}; 'ContentType' = 'text/plain' }
+        $WebEvent = @{
+            Parameters = @{};
+            ContentType = 'text/plain'
+            Method = 'GET'
+            Path = '/'
+        }
 
         $r = Get-PodeRouteValidateMiddleware
         $r.Name | Should Be '__pode_mw_route_validation__'
@@ -329,11 +334,7 @@ Describe 'Get-PodeRouteValidateMiddleware' {
             'ContentType' = 'application/json';
         } }
 
-        (. $r.Logic @{
-            'Method' = 'GET';
-            'Path' = '/';
-        }) | Should Be $true
-
+        (. $r.Logic $WebEvent) | Should Be $true
         $WebEvent.ContentType | Should Be 'application/json'
     }
 

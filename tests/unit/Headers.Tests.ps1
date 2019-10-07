@@ -4,7 +4,7 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 Describe 'Test-PodeHeader' {
     Context 'WebServer' {
-        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         It 'Returns true' {
             $WebEvent = @{ 'Request' = @{
@@ -34,7 +34,7 @@ Describe 'Test-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
 
         It 'Returns true' {
             $WebEvent = @{ 'Request' = @{
@@ -66,7 +66,7 @@ Describe 'Test-PodeHeader' {
 
 Describe 'Get-PodeHeader' {
     Context 'WebServer' {
-        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         It 'Returns null for no value' {
             $WebEvent = @{ 'Request' = @{
@@ -101,7 +101,7 @@ Describe 'Get-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
 
         It 'Returns null for no value' {
             $WebEvent = @{ 'Request' = @{
@@ -138,7 +138,7 @@ Describe 'Get-PodeHeader' {
 
 Describe 'Set-PodeHeader' {
     Context 'WebServer' {
-        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         It 'Sets a header to response' {
             $script:WebEvent = @{ 'Response' = @{
@@ -156,7 +156,7 @@ Describe 'Set-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
 
         It 'Sets a header to response' {
             $script:WebEvent = @{ 'Response' = @{
@@ -192,7 +192,7 @@ Describe 'Set-PodeServerHeader' {
 
 Describe 'Add-PodeHeader' {
     Context 'WebServer' {
-        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         It 'Adds a header to response' {
             $script:WebEvent = @{ 'Response' = @{
@@ -210,7 +210,7 @@ Describe 'Add-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
 
         It 'Adds a header to response' {
             $script:WebEvent = @{ 'Response' = @{

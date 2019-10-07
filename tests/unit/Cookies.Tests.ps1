@@ -333,6 +333,8 @@ Describe 'Set-PodeCookie' {
 
 Describe 'Update-PodeCookieExpiry' {
     It 'Updates the expiry based on TTL' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+
         $script:WebEvent = @{ 'Response' = @{
             'Headers' = @{}
         };
@@ -356,6 +358,8 @@ Describe 'Update-PodeCookieExpiry' {
     It 'Updates the expiry based on TTL, using cookie from request' {
         Mock Get-PodeCookie { return @{ 'Name' = 'test'; 'Expires' = [datetime]::UtcNow } }
 
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+
         $script:WebEvent = @{ 'Response' = @{
             'Headers' = @{}
         };
@@ -375,6 +379,8 @@ Describe 'Update-PodeCookieExpiry' {
     }
 
     It 'Updates the expiry based on Expiry' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+
         $script:WebEvent = @{ 'Response' = @{
             'Headers' = @{}
         };
@@ -396,6 +402,8 @@ Describe 'Update-PodeCookieExpiry' {
     }
 
     It 'Expiry remains unchanged on 0 TTL' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+
         $ttl = [datetime]::UtcNow
 
         $script:WebEvent = @{ 'Response' = @{
@@ -419,6 +427,8 @@ Describe 'Update-PodeCookieExpiry' {
     }
 
     It 'Expiry remains unchanged on negative TTL' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+
         $ttl = [datetime]::UtcNow
 
         $script:WebEvent = @{ 'Response' = @{
@@ -444,6 +454,8 @@ Describe 'Update-PodeCookieExpiry' {
 
 Describe 'Remove-PodeCookie' {
     It 'Flags the cookie for removal' {
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+
         $WebEvent = @{ 'Response' = @{
             'Headers' = @{}
         };
@@ -467,6 +479,8 @@ Describe 'Remove-PodeCookie' {
 
     It 'Flags the cookie for removal, using a cookie from the request' {
         Mock Get-PodeCookie { return @{ 'Name' = 'test'; 'Discard' = $false; 'Expires' = [datetime]::UtcNow } }
+
+        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         $WebEvent = @{ 'Response' = @{
             'Headers' = @{}

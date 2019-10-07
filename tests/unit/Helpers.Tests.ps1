@@ -1262,3 +1262,121 @@ Describe 'Get-PodeEndpointUrl' {
         Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'https://stuff.com:8443'
     }
 }
+
+Describe 'Get-PodeCount' {
+    Context 'Null' {
+        It 'Null value'{
+            Get-PodeCount $null | Should Be 0
+        }
+    }
+    Context 'String'{
+        It 'Empty' {
+            Get-PodeCount '' | Should Be 0
+        }
+
+        It 'Whitespace' {
+            Get-PodeCount ' ' | Should Be 1
+            Get-PodeCount '   ' | Should Be 3
+        }
+    }
+
+    Context 'Numbers'{
+        It 'Number'{
+            Get-PodeCount 2 | Should Be 1
+        }
+    }
+
+    Context 'Array' {
+        It 'Empty'{
+            Get-PodeCount @() | Should Be 0
+        }
+
+        It 'One'{
+            Get-PodeCount @(4) | Should Be 1
+            Get-PodeCount @('data') | Should Be 1
+            Get-PodeCount @(@(3)) | Should Be 1
+            Get-PodeCount @(@{}) | Should Be 1
+        }
+
+        It 'Two'{
+            Get-PodeCount @(4, 7) | Should Be 2
+            Get-PodeCount @('data', 9) | Should Be 2
+            Get-PodeCount @(@(3), @()) | Should Be 2
+            Get-PodeCount @(@{}, @{}) | Should Be 2
+        }
+    }
+
+    Context 'Hashtable' {
+        It 'Empty'{
+            Get-PodeCount @{} | Should Be 0
+        }
+
+        It 'One'{
+            Get-PodeCount @{'testElement1'=4} | Should Be 1
+            Get-PodeCount @{'testElement1'='test'} | Should Be 1
+            Get-PodeCount @{'testElement1'=@()} | Should Be 1
+            Get-PodeCount @{'testElement1'=@{"insideElement"="won't count"}} | Should Be 1
+        }
+
+        It 'Two'{
+            Get-PodeCount @{'testElement1'=4; 'testElement2'=10} | Should Be 2
+            Get-PodeCount @{'testElement1'='test'; 'testElement2'=10} | Should Be 2
+            Get-PodeCount @{'testElement1'=@(); 'testElement2'=@(9)} | Should Be 2
+            Get-PodeCount @{'testElement1'=@{"insideElement"="won't count"}; 'testElement2'=@('testing')} | Should Be 2
+        }
+    }
+}
+
+Describe 'Convert-PodePathSeparators' {
+    Context 'Null' {
+        It 'Null'{
+            Convert-PodePathSeparators -Path $null | Should Be $null
+        }
+    }
+
+    Context 'String' {
+        It 'Empty' {
+            Convert-PodePathSeparators -Path '' | Should Be $null
+            Convert-PodePathSeparators -Path ' ' | Should Be $null
+        }
+
+        It 'Value' {
+            Convert-PodePathSeparators -Path 'anyValue' | Should Be 'anyValue'
+            Convert-PodePathSeparators -Path 1 | Should Be 1
+        }
+
+        It 'Path' {
+            Convert-PodePathSeparators -Path 'one/Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+            Convert-PodePathSeparators -Path 'one\Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+
+            Convert-PodePathSeparators -Path 'one/two/Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+            Convert-PodePathSeparators -Path 'one\two\Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+            Convert-PodePathSeparators -Path 'one/two\Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+            Convert-PodePathSeparators -Path 'one\two/Seperators' | Should Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
+        }
+    }
+
+    Context 'Array'{
+        It  'Null'{
+            Convert-PodePathSeparators -Path @($null) | Should Be $null
+            Convert-PodePathSeparators -Path @($null, $null) | Should Be $null
+        }
+
+        It 'Single' {
+            Convert-PodePathSeparators -Path @('noSeperators') | Should Be @('noSeperators')
+            Convert-PodePathSeparators -Path @('some/Seperators') | Should Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
+            Convert-PodePathSeparators -Path @('some\Seperators') | Should Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
+
+            Convert-PodePathSeparators -Path @('') | Should Be $null
+            Convert-PodePathSeparators -Path @(' ') | Should Be $null
+        }
+
+        It 'Double' {
+            Convert-PodePathSeparators -Path @('noSeperators1', 'noSeperators2') | Should Be @('noSeperators1', 'noSeperators2')
+            Convert-PodePathSeparators -Path @('some/Seperators', 'some\Seperators') | Should Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators", "some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
+
+            Convert-PodePathSeparators -Path @('', ' ') | Should Be $null
+            Convert-PodePathSeparators -Path @(' ', '') | Should Be $null
+        }
+    }
+}

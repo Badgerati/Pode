@@ -48,8 +48,12 @@ function Start-PodeInternalServer
                 Start-PodeTcpServer
             }
 
-            { $_ -ieq 'HTTP' -or $_ -ieq 'HTTPS' } {
+            { ($_ -ieq 'HTTP') -or ($_ -ieq 'HTTPS') } {
                 Start-PodeWebServer -Browse:$Browse
+            }
+
+            'PODE' {
+                Start-PodeSocketServer -Browse:$Browse
             }
 
             'SERVICE' {
@@ -105,6 +109,11 @@ function Restart-PodeInternalServer
 
         # clear endpoints
         $PodeContext.Server.Endpoints = @()
+
+        # clear the sockets
+        $PodeContext.Server.Sockets.Listeners = @()
+        $PodeContext.Server.Sockets.Queues.Contexts.Clear()
+        $PodeContext.Server.Sockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
