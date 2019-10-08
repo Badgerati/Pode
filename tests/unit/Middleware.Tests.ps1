@@ -626,3 +626,47 @@ Describe 'Clear-PodeMiddleware' {
         $PodeContext.Server.Middleware.Length | Should Be 0
     }
 }
+
+Describe 'Add-PodeBodyParser' {
+    It 'Fails because a script is already defined' {
+        $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{} } }
+        { Add-PodeBodyParser -ContentType 'text/xml' -ScriptBlock {} } | Should Not Throw
+        { Add-PodeBodyParser -ContentType 'text/xml' -ScriptBlock {} } | Should Throw 'already a body parser'
+    }
+
+    It 'Fails on an invalid content-type' {
+        $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{} } }
+        { Add-PodeBodyParser -ContentType 'text_xml' -ScriptBlock {} } | Should Throw "Cannot validate argument on parameter 'ContentType'"
+    }
+
+    It 'Adds a script for a content-type' {
+        $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{} } }
+        { Add-PodeBodyParser -ContentType 'text/xml' -ScriptBlock {} } | Should Not Throw
+        $PodeContext.Server.BodyParsers.ContainsKey('text/xml') | Should Be $true
+    }
+}
+
+Describe 'Remove-PodeBodyParser' {
+    It 'Fails on an invalid content-type' {
+        $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{} } }
+        { Remove-PodeBodyParser -ContentType 'text_xml' } | Should Throw "Cannot validate argument on parameter 'ContentType'"
+    }
+
+    It 'Does nothing if no script set for content-type' {
+        $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{
+            'text/xml' = {}
+        } } }
+
+        { Remove-PodeBodyParser -ContentType 'text/yaml' } | Should Not Throw
+        $PodeContext.Server.BodyParsers.ContainsKey('text/xml') | Should Be $true
+    }
+
+    It 'Removes the script for the content-type' {
+        $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{
+            'text/xml' = {}
+        } } }
+
+        { Remove-PodeBodyParser -ContentType 'text/xml' } | Should Not Throw
+        $PodeContext.Server.BodyParsers.ContainsKey('text/xml') | Should Be $false
+    }
+}
