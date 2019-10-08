@@ -612,7 +612,7 @@ Describe 'Test-PodeValidNetworkFailure' {
 Describe 'ConvertFrom-PodeRequestContent' {
     Context 'Valid values' {
         It 'Returns xml data' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
             $value = '<root><value>test</value></root>'
 
             Mock Read-PodeStreamToEnd { return $value }
@@ -627,7 +627,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
             $value = '{ "value": "test" }'
 
             Mock Read-PodeStreamToEnd { return $value }
@@ -641,7 +641,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns csv data' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
             $value = "value`ntest"
 
             Mock Read-PodeStreamToEnd { return $value }
@@ -655,7 +655,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns original data' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
             $value = "test"
 
             Mock Read-PodeStreamToEnd { return $value }
@@ -666,7 +666,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data for azure-functions' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'AzureFunctions' } }
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'AzureFunctions'; 'BodyParsers' = @{} } }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
@@ -678,7 +678,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data for aws-lambda' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'AwsLambda' } }
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'AwsLambda'; 'BodyParsers' = @{} } }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
