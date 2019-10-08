@@ -138,6 +138,7 @@ Describe 'Restart-PodeInternalServer' {
                         Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
                     }
                 }
+                BodyParsers = @{}
             };
             Timers = @{ 'key' = 'value' }
             Schedules = @{ 'key' = 'value' };
