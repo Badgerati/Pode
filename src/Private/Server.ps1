@@ -107,6 +107,9 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Middleware = @()
         $PodeContext.Server.Endware = @()
 
+        # clear misc
+        $PodeContext.Server.BodyParsers.Clear()
+
         # clear endpoints
         $PodeContext.Server.Endpoints = @()
 

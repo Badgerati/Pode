@@ -171,6 +171,7 @@ function New-PodeContext
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()
+    $ctx.Server.BodyParsers = @{}
 
     # endware that needs to run
     $ctx.Server.Endware = @()

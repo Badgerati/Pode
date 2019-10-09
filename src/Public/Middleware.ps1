@@ -572,3 +572,72 @@ function Enable-PodeCsrfMiddleware
 
     (New-PodeMiddleware -ScriptBlock $script) | Add-PodeMiddleware -Name '__pode_mw_csrf__'
 }
+
+<#
+.SYNOPSIS
+Adds a custom body parser middleware.
+
+.DESCRIPTION
+Adds a custom body parser middleware script for a content-type, which will be used if a payload is sent with a Request.
+
+.PARAMETER ContentType
+The ContentType of the custom body parser.
+
+.PARAMETER ScriptBlock
+The ScriptBlock that will parse the body content, and return the result.
+
+.EXAMPLE
+Add-PodeBodyParser -ContentType 'application/json' -ScriptBlock { param($body) /* parsing logic */ }
+#>
+function Add-PodeBodyParser
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [string]
+        $ContentType,
+
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # if a parser for the type already exists, fail
+    if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
+        throw "There is already a body parser defined for the $($ContentType) content-type"
+    }
+
+    $PodeContext.Server.BodyParsers[$ContentType] = $ScriptBlock
+}
+
+<#
+.SYNOPSIS
+Removes a custom body parser.
+
+.DESCRIPTION
+Removes a custom body parser middleware script for a content-type.
+
+.PARAMETER ContentType
+The ContentType of the custom body parser.
+
+.EXAMPLE
+Remove-PodeBodyParser -ContentType 'application/json'
+#>
+function Remove-PodeBodyParser
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [string]
+        $ContentType
+    )
+
+    # if there's no parser for the type, return
+    if (!$PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
+        return
+    }
+
+    $PodeContext.Server.BodyParsers.Remove($ContentType) | Out-Null
+}
