@@ -68,6 +68,11 @@ function Start-PodeInternalServer
                 Start-PodeAwsLambdaServer -Data $Request
             }
         }
+
+        # start web sockets if enabled
+        if ($PodeContext.Server.WebSockets.Enabled) {
+            Start-PodeSignalServer
+        }
     }
     catch {
         throw $_.Exception
@@ -115,8 +120,12 @@ function Restart-PodeInternalServer
 
         # clear the sockets
         $PodeContext.Server.Sockets.Listeners = @()
-        $PodeContext.Server.Sockets.Queues.Contexts.Clear()
         $PodeContext.Server.Sockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
+
+        # clear the websockets
+        $PodeContext.Server.WebSockets.Listeners = @()
+        $PodeContext.Server.WebSockets.Queues.Sockets.Clear()
+        $PodeContext.Server.WebSockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{

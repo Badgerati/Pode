@@ -19,7 +19,7 @@ function Start-PodeWebServer
 
     # work out which endpoints to listen on
     $endpoints = @()
-    $PodeContext.Server.Endpoints | ForEach-Object {
+    @(Get-PodeEndpoints -Type Http) | ForEach-Object {
         # get the protocol
         $_protocol = (Resolve-PodeValue -Check $_.Ssl -TrueValue 'https' -FalseValue 'http')
 

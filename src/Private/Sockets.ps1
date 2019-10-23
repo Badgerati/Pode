@@ -2,6 +2,11 @@ function Initialize-PodeSocketListenerEndpoint
 {
     param(
         [Parameter(Mandatory=$true)]
+        [ValidateSet('Sockets', 'WebSockets')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory=$true)]
         [ipaddress]
         $Address,
 
@@ -21,30 +26,40 @@ function Initialize-PodeSocketListenerEndpoint
     $socket.Bind($endpoint)
     $socket.Listen([int]::MaxValue)
 
-    $PodeContext.Server.Sockets.Listeners += @{
+    $protocol = (Resolve-PodeValue -Check ($null -eq $Certificate) -TrueValue 'http' -FalseValue 'https')
+    if ($Type -ieq 'WebSockets') {
+        $protocol = (Resolve-PodeValue -Check ($null -eq $Certificate) -TrueValue 'ws' -FalseValue 'wss')
+    }
+
+    return @{
+        Type = $Type
         Socket = $socket
         Certificate = $Certificate
-        Protocol = (Resolve-PodeValue -Check ($null -eq $Certificate) -TrueValue 'http' -FalseValue 'https')
+        Protocol = $protocol
     }
 }
 
 function New-PodeSocketListenerEvent
 {
     param(
+        [Parameter(Mandatory=$true)]
+        $Listener,
+
         [Parameter()]
         [int]
         $Index = 0
     )
 
-    Lock-PodeObject -Object $PodeContext.Server.Sockets -Return -ScriptBlock {
+    Lock-PodeObject -Object $PodeContext.Server[$Listener.Type] -Return -ScriptBlock {
         $socketArgs = [System.Net.Sockets.SocketAsyncEventArgs]::new()
 
         if ($Index -eq 0) {
-            $PodeContext.Server.Sockets.MaxConnections++
-            $Index = $PodeContext.Server.Sockets.MaxConnections
+            $PodeContext.Server[$Listener.Type].MaxConnections++
+            $Index = $PodeContext.Server[$Listener.Type].MaxConnections
         }
 
-        Register-ObjectEvent -InputObject $socketArgs -EventName 'Completed' -SourceIdentifier (Get-PodeSocketListenerConnectionEventName -Id $Index) -Action {
+        $name = (Get-PodeSocketListenerConnectionEventName -Type $Listener.Type -Id $Index)
+        Register-ObjectEvent -InputObject $socketArgs -EventName 'Completed' -SourceIdentifier $name -Action {
             Invoke-PodeSocketProcessAccept -Arguments $Event.SourceEventArgs
         } | Out-Null
 
@@ -54,7 +69,13 @@ function New-PodeSocketListenerEvent
 
 function Start-PodeSocketListener
 {
-    foreach ($listener in $PodeContext.Server.Sockets.Listeners) {
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable[]]
+        $Listeners
+    )
+
+    foreach ($listener in $Listeners) {
         Invoke-PodeSocketAccept -Listener $listener
     }
 }
@@ -83,20 +104,29 @@ function Close-PodeSocket
 
 function Close-PodeSocketListener
 {
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Sockets', 'WebSockets')]
+        [string]
+        $Type
+    )
+
     try {
         # close all open sockets
-        for ($i = $PodeContext.Server.Sockets.Queues.Contexts.Count - 1; $i -ge 0; $i--) {
-            Close-PodeSocket -Socket $PodeContext.Server.Sockets.Queues.Contexts[$i] -Shutdown
-        }
+        if ($Type -ieq 'WebSockets') {
+            for ($i = $PodeContext.Server[$Type].Queues.Sockets.Count - 1; $i -ge 0; $i--) {
+                Close-PodeSocket -Socket $PodeContext.Server[$Type].Queues.Sockets[$i].Socket -Shutdown
+            }
 
-        $PodeContext.Server.Sockets.Queues.Contexts.Clear()
+            $PodeContext.Server[$Type].Queues.Sockets.Clear()
+        }
 
         # close all open listeners and unbind events
-        for ($i = $PodeContext.Server.Sockets.Listeners.Length - 1; $i -ge 0; $i--) {
-            Close-PodeSocket -Socket $PodeContext.Server.Sockets.Listeners[$i].Socket -Shutdown
+        for ($i = $PodeContext.Server[$Type].Listeners.Length - 1; $i -ge 0; $i--) {
+            Close-PodeSocket -Socket $PodeContext.Server[$Type].Listeners[$i].Socket -Shutdown
         }
 
-        $PodeContext.Server.Sockets.Listeners = @()
+        $PodeContext.Server[$Type].Listeners = @()
     }
     catch {
         $_.Exception | Out-Default
@@ -112,8 +142,8 @@ function Invoke-PodeSocketAccept
 
     # pop args from queue (or create a new one)
     $arguments = $null
-    if (!$PodeContext.Server.Sockets.Queues.Connections.TryDequeue([ref]$arguments)) {
-        $arguments = New-PodeSocketListenerEvent
+    if (!$PodeContext.Server[$Listener.Type].Queues.Connections.TryDequeue([ref]$arguments)) {
+        $arguments = New-PodeSocketListenerEvent -Listener $Listener
     }
 
     $arguments.AcceptSocket = $null
@@ -160,27 +190,150 @@ function Invoke-PodeSocketProcessAccept
         }
 
         # add args back to pool
-        $PodeContext.Server.Sockets.Queues.Connections.Enqueue($Arguments)
+        $PodeContext.Server[$listener.Type].Queues.Connections.Enqueue($Arguments)
         return
     }
 
     # add args back to pool
-    $PodeContext.Server.Sockets.Queues.Connections.Enqueue($Arguments)
+    $PodeContext.Server[$listener.Type].Queues.Connections.Enqueue($Arguments)
 
-    Invoke-PodeSocketHandler -Context @{
-        Socket = $accepted
-        Certificate = $listener.Certificate
-        Protocol = $listener.Protocol
+    switch ($listener.Type.ToLowerInvariant()) {
+        'sockets' {
+            Invoke-PodeSocketHandler -Context @{
+                Socket = $accepted
+                Certificate = $listener.Certificate
+                Protocol = $listener.Protocol
+            }
+        }
+
+        'websockets' {
+            Invoke-PodeWebSocketHandler -Context @{
+                Socket = $accepted
+                Certificate = $listener.Certificate
+                Protocol = $listener.Protocol
+            }
+        }
     }
+}
+
+function Get-PodeSocketCertifcateCallback
+{
+    return ([System.Net.Security.RemoteCertificateValidationCallback]{
+        param(
+            [Parameter()]
+            [object]
+            $Sender,
+
+            [Parameter()]
+            [X509Certificate]
+            $Certificate,
+
+            [Parameter()]
+            [System.Security.Cryptography.X509Certificates.X509Chain]
+            $Chain,
+
+            [Parameter()]
+            [System.Net.Security.SslPolicyErrors]
+            $SslPolicyErrors
+        )
+
+        # if there is no client cert, just allow it
+        if ($null -eq $Certificate) {
+            return $true
+        }
+
+        # if we have a cert, but there are errors, fail
+        return ($SslPolicyErrors -ne [System.Net.Security.SslPolicyErrors]::None)
+    })
 }
 
 function Get-PodeSocketListenerConnectionEventName
 {
     param (
         [Parameter(Mandatory=$true)]
+        [ValidateSet('Sockets', 'WebSockets')]
+        [string]
+        $Type,
+
+        [Parameter(Mandatory=$true)]
         [int]
         $Id
     )
 
-    return "PodeListenerConnectionSocketCompleted_$($Id)"
+    return "PodeListenerConnection$($Type)Completed_$($Id)"
+}
+
+function Get-PodeServerRequestDetails
+{
+    param(
+        [Parameter()]
+        [byte[]]
+        $Bytes,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Protocol
+    )
+
+    # convert array to string
+    $Content = $PodeContext.Server.Encoding.GetString($bytes, 0, $bytes.Length)
+
+    # parse the request headers
+    $newLine = "`r`n"
+    if (!$Content.Contains($newLine)) {
+        $newLine = "`n"
+    }
+
+    $req_lines = ($Content -isplit $newLine)
+
+    # first line is the request info
+    $req_line_info = ($req_lines[0].Trim() -isplit '\s+')
+    if ($req_line_info.Length -ne 3) {
+        throw [System.Net.Http.HttpRequestException]::new("Invalid request line: $($req_lines[0]) [$($req_line_info.Length)]")
+    }
+
+    $req_method = $req_line_info[0].Trim()
+    if (@('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE') -inotcontains $req_method) {
+        throw [System.Net.Http.HttpRequestException]::new("Invalid request HTTP method: $($req_method)")
+    }
+
+    $req_query = $req_line_info[1].Trim()
+    $req_proto = $req_line_info[2].Trim()
+    if (!$req_proto.StartsWith('HTTP/')) {
+        throw [System.Net.Http.HttpRequestException]::new("Invalid request version: $($req_proto)")
+    }
+
+    # then, read the headers
+    $req_headers = @{}
+    $req_body_index = 0
+    for ($i = 1; $i -le $req_lines.Length -1; $i++) {
+        $line = $req_lines[$i].Trim()
+        if ([string]::IsNullOrWhiteSpace($line)) {
+            $req_body_index = $i + 1
+            break
+        }
+
+        $index = $line.IndexOf(':')
+        $name = $line.Substring(0, $index).Trim()
+        $value = $line.Substring($index + 1).Trim()
+        $req_headers[$name] = $value
+    }
+
+    # then set the request body
+    $req_body = ($req_lines[($req_body_index)..($req_lines.Length - 1)] -join $newLine)
+    $req_body_bytes = $bytes[($bytes.Length - $req_body.Length)..($bytes.Length - 1)]
+
+    # build required URI details
+    $req_uri = [uri]::new("$($Protocol)://$($req_headers['Host'])$($req_query)")
+
+    # return the details
+    return @{
+        Method = $req_method
+        Query = $req_query
+        Protocol = $req_proto
+        Headers = $req_headers
+        Body = $req_body
+        RawBody = $req_body_bytes
+        Uri = $req_uri
+    }
 }

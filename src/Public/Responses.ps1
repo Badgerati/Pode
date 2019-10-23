@@ -1212,3 +1212,27 @@ function Use-PodePartialView
     # run any engine logic
     return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
 }
+
+function Send-PodeSignal
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Data,
+
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $ClientId
+    )
+
+    $PodeContext.Server.WebSockets.Queues.Messages.Enqueue(@{
+        Value = ($Data | ConvertTo-Json -Compress)
+        ClientId = $ClientId
+        Path = $Path
+    })
+}

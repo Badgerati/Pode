@@ -29,6 +29,19 @@ function Invoke-PodeSHA256Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
+function Invoke-PodeSHA1Hash
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Value
+    )
+
+    $crypto = [System.Security.Cryptography.SHA1]::Create()
+    return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
+}
+
 function Get-PodeRandomBytes
 {
     param (
