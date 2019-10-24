@@ -184,13 +184,7 @@ function Start-PodeSignalServer
     }
 
     Add-PodeRunspace -Type 'Signals' -ScriptBlock $waitScript
-
-    # state where we're running
-    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
-
-    $endpoints | ForEach-Object {
-        Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
-    }
+    return @($endpoints.HostName)
 }
 
 function Invoke-PodeWebSocketHandler
@@ -212,7 +206,6 @@ function Invoke-PodeWebSocketHandler
                 $stream.AuthenticateAsServer($Context.Certificate, $false, $PodeContext.Server.WebSockets.Ssl.Protocols, $false)
             }
             catch {
-                $_.Exception | Out-Default
                 # immediately close http connections
                 Close-PodeSocket -Socket $Context.Socket -Shutdown
                 return

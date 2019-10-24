@@ -198,15 +198,10 @@ function Start-PodeWebServer
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
-    # state where we're running
-    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
-
-    $endpoints | ForEach-Object {
-        Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
-    }
-
     # browse to the first endpoint, if flagged
     if ($Browse) {
         Start-Process $endpoints[0].HostName
     }
+
+    return @($endpoints.HostName)
 }
