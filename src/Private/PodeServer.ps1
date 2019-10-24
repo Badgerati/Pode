@@ -60,7 +60,7 @@ function Start-PodeSocketServer
     catch {
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
-        Close-PodeSocketListener -Type WebSockets
+        Close-PodeSocketListener -Type Sockets
         throw $_.Exception
     }
 
@@ -112,7 +112,7 @@ function Start-PodeSocketServer
             throw $_.Exception
         }
         finally {
-            Close-PodeSocketListener -Type WebSockets
+            Close-PodeSocketListener -Type Sockets
         }
     }
 

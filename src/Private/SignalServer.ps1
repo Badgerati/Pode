@@ -209,9 +209,10 @@ function Invoke-PodeWebSocketHandler
         if ($null -ne $Context.Certificate) {
             try {
                 $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.WebSockets.Ssl.Callback)
-                $stream.AuthenticateAsServer($Context.Certificate, $true, $PodeContext.Server.WebSockets.Ssl.Protocols, $false)
+                $stream.AuthenticateAsServer($Context.Certificate, $false, $PodeContext.Server.WebSockets.Ssl.Protocols, $false)
             }
             catch {
+                $_.Exception | Out-Default
                 # immediately close http connections
                 Close-PodeSocket -Socket $Context.Socket -Shutdown
                 return
