@@ -1,9 +1,18 @@
 <html>
     <head>
-        <title>HTML Page</title>
-        <link rel="stylesheet" type="text/css" href="/styles/simple.css">
+        <title>WebSockets</title>
+        <link rel="stylesheet" type="text/css" href="/styles/websockets.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script type="text/javascript" src="/scripts/websockets.js"></script>
     </head>
     <body>
-        Hello, world! This is an HTML page!
+        <h1>Example of using a WebSockets</h1>
+        <p>Clicking submit will broadcast the message to all connected clients - try opening this page on multiple, and different, browsers!</p>
+        <form id='bc-form'>
+            <input type='text' name='message' placeholder='Enter any random text' />
+            <input type='submit' value='Broadcast!' />
+        </form>
+
+        <div id='messages'></div>
     </body>
 </html>

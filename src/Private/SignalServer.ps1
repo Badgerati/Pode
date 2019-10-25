@@ -261,6 +261,7 @@ function Invoke-PodeWebSocketHandler
             'Connection' = 'Upgrade'
             'Upgrade' = 'websocket'
             'Sec-WebSocket-Accept' = Invoke-PodeSHA1Hash -Value "$($secSocketKey)$($magicGuid)"
+            'X-Pode-ClientId' = $clientId
         }
 
         # write the response line
