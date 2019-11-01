@@ -11,7 +11,7 @@ WebSockets allow you to send messages directly from your server to connected cli
 
 ### Listening
 
-On the server side, the only real work required is to register a new endpoint to listen on. To do this you can use the normal [`Add-PodeEndpoint`] function, but with a protocol of either `Ws` or `Wss`:
+On the server side, the only real work required is to register a new endpoint to listen on. To do this you can use the normal [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) function, but with a protocol of either `Ws` or `Wss`:
 
 ```powershell
 Add-PodeEndpoint -Address * -Port 8091 -Protocol Ws
@@ -22,7 +22,7 @@ Add-PodeEndpoint -Address * -Port 8091 -CertificateFile './path/cert.pfx' -Certi
 
 ### Broadcasting
 
-To broadcast a message from the server to all connected clients you can use the [`Send-PodeSignal`] function. You can either send raw JSON data, or you can pass a HashTable/PSObject and it will be converted to JSON for you.
+To broadcast a message from the server to all connected clients you can use the [`Send-PodeSignal`](../../Functions/Responses/Send-PodeSignal) function. You can either send raw JSON data, or you can pass a HashTable/PSObject and it will be converted to JSON for you.
 
 To broadcast some data to all clients from a POST route, you could use the following. This will get some message from one of the clients, and then broadcast it to every other client:
 
@@ -65,6 +65,8 @@ $(document).ready(() => {
 ## Full Example
 
 > This full example is a cut-down version of the one found in `/examples/web-signal.ps1` of the main repository.
+
+If you open this example on multiple browsers, sending messages will be automatically received by all browsers without using async javascript!
 
 The file structure for these files is:
 
