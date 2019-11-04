@@ -19,7 +19,7 @@ Pode is a Cross-Platform framework, *completely written in PowerShell*, to creat
 * Azure Functions and AWS Lambda support
 * Listen on a single or multiple IP address/hostnames
 * Cross-platform support for HTTP, HTTPS, TCP and SMTP
-* Cross-platform support for WebSockets, and secure WebSockets
+* Cross-platform support for server-to-client WebSockets, including secure WebSockets
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
 * Multi-thread support for incoming requests

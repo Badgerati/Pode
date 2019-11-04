@@ -39,7 +39,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Azure Functions and AWS Lambda support
 * Listen on a single or multiple IP address/hostnames
 * Cross-platform support for HTTP, HTTPS, TCP and SMTP
-* Cross-platform support for WebSockets, and secure WebSockets
+* Cross-platform support for server-to-client WebSockets, including secure WebSockets
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
 * Multi-thread support for incoming requests
