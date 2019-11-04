@@ -567,7 +567,7 @@ Writes JSON data to the Response.
 Writes JSON data to the Response, setting the content type accordingly.
 
 .PARAMETER Value
-A String, PSObject, or HashTable value.
+A String, PSObject, or HashTable value. For non-string values, they will be converted to JSON.
 
 .PARAMETER Path
 The path to a JSON file.
@@ -1211,4 +1211,65 @@ function Use-PodePartialView
 
     # run any engine logic
     return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
+}
+
+<#
+.SYNOPSIS
+Broadcasts a message to connected WebSocket clients.
+
+.DESCRIPTION
+Broadcasts a message to all, or some, connected WebSocket clients. You can specify a path to send messages to, or a specific ClientId.
+
+.PARAMETER Value
+A String, PSObject, or HashTable value. For non-string values, they will be converted to JSON.
+
+.PARAMETER Path
+The Path of connected clients to send the message.
+
+.PARAMETER ClientId
+A specific ClientId of a connected client to send a message. Not currently used.
+
+.PARAMETER Depth
+The Depth to generate the JSON document - the larger this value the worse performance gets.
+
+.EXAMPLE
+Send-PodeSignal -Value @{ Message = 'Hello, world!' }
+
+.EXAMPLE
+Send-PodeSignal -Value @{ Data = @(123, 100, 101) } -Path '/response-charts'
+#>
+function Send-PodeSignal
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        $Value,
+
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $ClientId,
+
+        [Parameter()]
+        [int]
+        $Depth = 10
+    )
+
+    if ($Value -isnot [string]) {
+        if ($Depth -le 0) {
+            $Value = ($Value | ConvertTo-Json -Compress)
+        }
+        else {
+            $Value = ($Value | ConvertTo-Json -Depth $Depth -Compress)
+        }
+    }
+
+    $PodeContext.Server.WebSockets.Queues.Messages.Enqueue(@{
+        Value = $Value
+        ClientId = $ClientId
+        Path = $Path
+    })
 }

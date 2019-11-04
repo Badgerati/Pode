@@ -38,22 +38,24 @@ function Start-PodeInternalServer
         }
 
         # start the appropriate server
+        $endpoints = @()
+
         switch ($_type)
         {
             'SMTP' {
-                Start-PodeSmtpServer
+                $endpoints += (Start-PodeSmtpServer)
             }
 
             'TCP' {
-                Start-PodeTcpServer
+                $endpoints += (Start-PodeTcpServer)
             }
 
             { ($_ -ieq 'HTTP') -or ($_ -ieq 'HTTPS') } {
-                Start-PodeWebServer -Browse:$Browse
+                $endpoints += (Start-PodeWebServer -Browse:$Browse)
             }
 
             'PODE' {
-                Start-PodeSocketServer -Browse:$Browse
+                $endpoints += (Start-PodeSocketServer -Browse:$Browse)
             }
 
             'SERVICE' {
@@ -66,6 +68,19 @@ function Start-PodeInternalServer
 
             'AWSLAMBDA' {
                 Start-PodeAwsLambdaServer -Data $Request
+            }
+        }
+
+        # start web sockets if enabled
+        if ($PodeContext.Server.WebSockets.Enabled) {
+            $endpoints += (Start-PodeSignalServer)
+        }
+
+        # state what endpoints are being listened on
+        if ($endpoints.Length -gt 0) {
+            Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
+            $endpoints | ForEach-Object {
+                Write-Host "`t- $($_)" -ForegroundColor Yellow
             }
         }
     }
@@ -115,8 +130,12 @@ function Restart-PodeInternalServer
 
         # clear the sockets
         $PodeContext.Server.Sockets.Listeners = @()
-        $PodeContext.Server.Sockets.Queues.Contexts.Clear()
         $PodeContext.Server.Sockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
+
+        # clear the websockets
+        $PodeContext.Server.WebSockets.Listeners = @()
+        $PodeContext.Server.WebSockets.Queues.Sockets.Clear()
+        $PodeContext.Server.WebSockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
