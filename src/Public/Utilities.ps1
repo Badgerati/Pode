@@ -761,3 +761,28 @@ function Test-IsWindows
     $v = Get-PodePSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
+
+<#
+.SYNOPSIS
+Writes a message to the main Host.
+
+.DESCRIPTION
+Due to Pode's use of runspaces, this will write a given message back to the main Host.
+
+.PARAMETER Message
+The Message to write.
+
+.EXAMPLE
+'Hello, world!' | Write-PodeHost
+#>
+function Write-PodeHost
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Message
+    )
+
+    $Message | Out-Default
+}
