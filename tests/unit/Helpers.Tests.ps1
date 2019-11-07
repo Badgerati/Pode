@@ -1380,3 +1380,17 @@ Describe 'Convert-PodePathSeparators' {
         }
     }
 }
+
+Describe 'Write-PodeHost' {
+    Mock Out-Default {}
+
+    It 'Writes a message to the Host by parameters' {
+        Write-PodeHost -Message 'Hello'
+        Assert-MockCalled Out-Default -Scope It -Times 1
+    }
+
+    It 'Writes a message to the Host by pipeline' {
+        'Hello' | Write-PodeHost
+        Assert-MockCalled Out-Default -Scope It -Times 1
+    }
+}
