@@ -102,7 +102,7 @@
         'Test-IsWindows',
         'Test-IsPSCore',
         'Test-IsEmpty',
-        'Write-PodeHost',
+        'Out-PodeHost',
 
         # routes
         'Add-PodeRoute',
