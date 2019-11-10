@@ -665,6 +665,9 @@ The number of "invokes" to skip before the Timer actually runs.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Timer's ScriptBlock.
 
+.PARAMETER OnStart
+If supplied, the timer will trigger when the server starts.
+
 .EXAMPLE
 Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
 
@@ -703,7 +706,10 @@ function Add-PodeTimer
 
         [Parameter()]
         [object[]]
-        $ArgumentList
+        $ArgumentList,
+
+        [switch]
+        $OnStart
     )
 
     # error if serverless
@@ -746,6 +752,7 @@ function Add-PodeTimer
         NextTick = $NextTick
         Script = $ScriptBlock
         Arguments = $ArgumentList
+        OnStart = $OnStart
     }
 }
 
@@ -820,6 +827,9 @@ A DateTime for when the Schedule should stop triggering, and be removed.
 .PARAMETER ArgumentList
 A hashtable of arguments to supply to the Schedule's ScriptBlock.
 
+.PARAMETER OnStart
+If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
+
 .EXAMPLE
 Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
 
@@ -862,7 +872,10 @@ function Add-PodeSchedule
 
         [Parameter()]
         [hashtable]
-        $ArgumentList
+        $ArgumentList,
+
+        [switch]
+        $OnStart
     )
 
     # error if serverless
@@ -898,6 +911,7 @@ function Add-PodeSchedule
         Countable = ($Limit -gt 0)
         Script = $ScriptBlock
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
+        OnStart = $OnStart
     }
 }
 

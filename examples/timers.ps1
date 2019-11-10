@@ -11,7 +11,7 @@ Start-PodeServer {
 
     # runs forever, looping every 5secs
     Add-PodeTimer -Name 'forever' -Interval 5 -ScriptBlock {
-        # logic
+        'Hello, world' | Out-PodeHost
     }
 
     # runs forever, but skips the first 3 "loops" - is paused for 15secs then loops every 5secs

@@ -764,25 +764,28 @@ function Test-IsWindows
 
 <#
 .SYNOPSIS
-Writes a message to the main Host.
+Outputs an object to the main Host.
 
 .DESCRIPTION
-Due to Pode's use of runspaces, this will write a given message back to the main Host.
+Due to Pode's use of runspaces, this will output a given object back to the main Host.
 
-.PARAMETER Message
-The Message to write.
+.PARAMETER InputObject
+The object to output.
 
 .EXAMPLE
-'Hello, world!' | Write-PodeHost
+'Hello, world!' | Out-PodeHost
+
+.EXAMPLE
+@{ Name = 'Rick' } | Out-PodeHost
 #>
-function Write-PodeHost
+function Out-PodeHost
 {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [string]
-        $Message
+        [object]
+        $InputObject
     )
 
-    $Message | Out-Default
+    $InputObject | Out-Default
 }
