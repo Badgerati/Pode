@@ -61,9 +61,29 @@ Start-PodeServer {
 }
 ```
 
-The `-Name` of the authentication method must be unique. The `-Type` comes from  [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType), and can also be pied in.
+The `-Name` of the authentication method must be unique. The `-Type` comes from  [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType), and can also be piped in.
 
-The `-ScriptBlock` is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a `User` needs to be returned from the script as `@{ User = $user }`. If `$null`, or a null user is returned then the script is assumed to have failed - meaning the user will have failed authentication.
+The `-ScriptBlock` is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a `User` needs to be returned from the script as `@{ User = $user }`. If `$null`, or a null user, is returned then the script is assumed to have failed - meaning the user will have failed authentication, and a 401 response is returned.
+
+#### Custom Message and Status
+
+When authenticating a user in Pode, any failures will return a 401 response with a generic message. You can inform Pode to return a custom message/status from [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) by returning a relevant hashtable.
+
+You can return a custom status code as follows:
+
+```powershell
+New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    return @{ Code = 403 }
+}
+```
+
+or a custom message as follows, which can be used with a custom status code or on its own:
+
+```powershell
+New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    return @{ Message = 'Custom authentication failed message' }
+}
+```
 
 ### Get-PodeAuthMiddleware
 
