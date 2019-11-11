@@ -727,7 +727,8 @@ function Test-PodeTerminationPressed
         $Key = Get-PodeConsoleKey
     }
 
-    return ($null -ne $Key -and $Key.Key -ieq 'c' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
+    return (($null -ne $Key) -and ($Key.Key -ieq 'c') -and
+        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
 function Test-PodeRestartPressed
@@ -741,7 +742,8 @@ function Test-PodeRestartPressed
         $Key = Get-PodeConsoleKey
     }
 
-    return ($null -ne $Key -and $Key.Key -ieq 'r' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
+    return (($null -ne $Key) -and ($Key.Key -ieq 'r') -and
+        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
 function Start-PodeTerminationListener
