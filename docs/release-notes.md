@@ -1,5 +1,26 @@
 # Release Notes
 
+## v1.2.0
+
+```plain
+### Features
+* #395: Built-in support for using Server-to-Client websockets
+* #389: Support for defining custom body/payload parsers for specific ContentTypes
+
+### Enhancements
+* #401: Support for running a Schedule/Timer's logic when the server starts/restarts
+* #400: Helper wrapper method `Out-PodeHost` to output data to the main host terminal
+* #390: Support for setting a Status Code on all "Write-Pode[Type]Response" functions
+* #386: Support to set a fixed ContentType on `Set-PodeResponseAttachment` (thanks @Windos!)
+* #383: If a called route exists but for a different HTTP method, then return a 405 not a 404
+* #382: Support on Unix environments to terminate/restart a server using Shift+C/R
+
+### Documentation
+* #405: How to create a server that has endpoints accessible externally
+* #399: Reference to the literal parameter names on Schedules
+* #396: How to return a custom Status Code and/or message from an Authenticator
+```
+
 ## v1.1.0
 
 ```plain
