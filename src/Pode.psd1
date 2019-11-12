@@ -82,6 +82,7 @@
         'Save-PodeRequestFile',
         'Set-PodeViewEngine',
         'Use-PodePartialView',
+        'Send-PodeSignal',
 
         # utility helpers
         'Wait-PodeTask',
@@ -101,6 +102,7 @@
         'Test-IsWindows',
         'Test-IsPSCore',
         'Test-IsEmpty',
+        'Out-PodeHost',
 
         # routes
         'Add-PodeRoute',
@@ -176,7 +178,8 @@
             Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
                 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform', 'access-control',
                 'file-monitoring', 'multithreaded', 'rate-limiting', 'cron', 'schedule', 'middleware', 'session',
-                'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi', 'aws-lambda', 'azure-functions')
+                'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi', 'aws-lambda',
+                'azure-functions', 'websockets')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

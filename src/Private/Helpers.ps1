@@ -618,7 +618,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Schedules', 'Gui')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui')]
         [string]
         $Type,
 
@@ -727,7 +727,8 @@ function Test-PodeTerminationPressed
         $Key = Get-PodeConsoleKey
     }
 
-    return ($null -ne $Key -and $Key.Key -ieq 'c' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
+    return (($null -ne $Key) -and ($Key.Key -ieq 'c') -and
+        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
 function Test-PodeRestartPressed
@@ -741,7 +742,8 @@ function Test-PodeRestartPressed
         $Key = Get-PodeConsoleKey
     }
 
-    return ($null -ne $Key -and $Key.Key -ieq 'r' -and $Key.Modifiers -band [ConsoleModifiers]::Control)
+    return (($null -ne $Key) -and ($Key.Key -ieq 'r') -and
+        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
 function Start-PodeTerminationListener
@@ -1087,6 +1089,12 @@ function ConvertFrom-PodeRequestContent
 
         # if there is no content then do nothing
         if ([string]::IsNullOrWhiteSpace($Content)) {
+            return $Result
+        }
+
+        # check if there is a defined custom body parser
+        if ($PodeContext.Server.BodyParsers.ContainsKey($MetaData.ContentType)) {
+            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.BodyParsers[$MetaData.ContentType] -Arguments $Content -Return)
             return $Result
         }
     }

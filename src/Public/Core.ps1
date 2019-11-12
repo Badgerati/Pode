@@ -477,7 +477,7 @@ function Add-PodeEndpoint
         $Port = 0,
 
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
         [string]
         $Protocol,
 
@@ -540,7 +540,7 @@ function Add-PodeEndpoint
         Port = $null
         IsIPAddress = $true
         HostName = 'localhost'
-        Ssl = ($Protocol -ieq 'https')
+        Ssl = (@('https', 'wss') -icontains $Protocol)
         Protocol = $Protocol
         Certificate = @{
             Name = $Certificate
@@ -574,8 +574,8 @@ function Add-PodeEndpoint
     # if we're dealing with a certificate file, attempt to import it
     if ($PSCmdlet.ParameterSetName -ieq 'certfile') {
         # fail if protocol is not https
-        if ($Protocol -ine 'https') {
-            throw "Certificate supplied for non-HTTPS endpoint"
+        if (@('https', 'wss') -inotcontains $Protocol) {
+            throw "Certificate supplied for non-HTTPS/WSS endpoint"
         }
 
         $_path = Get-PodeRelativePath -Path $CertificateFile -JoinRoot -Resolve
@@ -600,16 +600,21 @@ function Add-PodeEndpoint
         }
 
         # set server type, ensure we aren't trying to change the server's type
-        $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
-        if (($_type -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
-            $_type = 'pode'
+        if (@('ws', 'wss') -icontains $Protocol) {
+            $PodeContext.Server.WebSockets.Enabled = $true
         }
+        else {
+            $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
+            if (($_type -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
+                $_type = 'pode'
+            }
 
-        if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
-            $PodeContext.Server.Type = $_type
-        }
-        elseif ($PodeContext.Server.Type -ine $_type) {
-            throw "Cannot add $($Protocol.ToUpperInvariant()) endpoint when already listening to $($PodeContext.Server.Type.ToUpperInvariant()) endpoints"
+            if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
+                $PodeContext.Server.Type = $_type
+            }
+            elseif ($PodeContext.Server.Type -ine $_type) {
+                throw "Cannot add $($Protocol.ToUpperInvariant()) endpoint when already listening to $($PodeContext.Server.Type.ToUpperInvariant()) endpoints"
+            }
         }
 
         # add the new endpoint
@@ -660,6 +665,9 @@ The number of "invokes" to skip before the Timer actually runs.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Timer's ScriptBlock.
 
+.PARAMETER OnStart
+If supplied, the timer will trigger when the server starts.
+
 .EXAMPLE
 Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
 
@@ -698,7 +706,10 @@ function Add-PodeTimer
 
         [Parameter()]
         [object[]]
-        $ArgumentList
+        $ArgumentList,
+
+        [switch]
+        $OnStart
     )
 
     # error if serverless
@@ -741,6 +752,7 @@ function Add-PodeTimer
         NextTick = $NextTick
         Script = $ScriptBlock
         Arguments = $ArgumentList
+        OnStart = $OnStart
     }
 }
 
@@ -815,6 +827,9 @@ A DateTime for when the Schedule should stop triggering, and be removed.
 .PARAMETER ArgumentList
 A hashtable of arguments to supply to the Schedule's ScriptBlock.
 
+.PARAMETER OnStart
+If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
+
 .EXAMPLE
 Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
 
@@ -857,7 +872,10 @@ function Add-PodeSchedule
 
         [Parameter()]
         [hashtable]
-        $ArgumentList
+        $ArgumentList,
+
+        [switch]
+        $OnStart
     )
 
     # error if serverless
@@ -893,6 +911,7 @@ function Add-PodeSchedule
         Countable = ($Limit -gt 0)
         Script = $ScriptBlock
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
+        OnStart = $OnStart
     }
 }
 
