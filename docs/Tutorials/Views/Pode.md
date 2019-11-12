@@ -94,7 +94,7 @@ This next quick example allows you to include content from another view:
 ```html
 <!-- /views/index.pode -->
 <html>
-    $(Use-PodePartialView -Path 'shared/head')
+    $(Use-PodePartialView -Path 'shared/head' -data @{ 'Title' = 'Include Example'})
 
     <body>
         <span>$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss');)</span>
@@ -103,7 +103,7 @@ This next quick example allows you to include content from another view:
 
 <!-- /views/shared/head.pode -->
 <head>
-    <title>Include Example</title>
+    <title>$($data.Title)</title>
 </head>
 ```
 
