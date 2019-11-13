@@ -22,8 +22,9 @@ function Start-PodeTimerRunspace
             $_remove = @()
             $_now = [DateTime]::Now
 
-            $PodeContext.Timers.Values | Where-Object { $_.NextTick -le $_now } | ForEach-Object {
+            $PodeContext.Timers.Values | Where-Object { $_.OnStart -or ($_.NextTick -le $_now) } | ForEach-Object {
                 $run = $true
+                $_.OnStart = $false
 
                 # increment total number of runs for timer (do we still need to count?)
                 if ($_.Countable) {

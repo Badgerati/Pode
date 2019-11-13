@@ -11,6 +11,10 @@ The Path to a static file relative to the "/public" directory, or a static Route
 If the supplied Path doesn't match any custom static Route, then Pode will look in the "/public" directory.
 Failing this, if the file path exists as a literal/relative file, then this file is used as a fall back.
 
+.PARAMETER ContentType
+Manually specify the content type of the response rather than infering it from the attachment's file extension.
+The supplied value must match the valid ContentType format, e.g. application/json
+
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
 
@@ -19,6 +23,9 @@ Set-PodeResponseAttachment -Path './image.png'
 
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'c:/content/accounts.xlsx'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path './data.txt' -ContentType 'application/json'
 #>
 function Set-PodeResponseAttachment
 {
@@ -26,7 +33,11 @@ function Set-PodeResponseAttachment
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $Path
+        $Path,
+
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [string]
+        $ContentType
     )
 
     # only attach files from public/static-route directories when path is relative
@@ -51,7 +62,12 @@ function Set-PodeResponseAttachment
 
     try {
         # setup the content type and disposition
-        $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
+        if (!$ContentType) {
+            $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
+        }
+        else {
+            $WebEvent.Response.ContentType = $ContentType
+        }
         Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
         # if serverless, get the content raw and return
@@ -108,6 +124,9 @@ The content type of the data being written.
 .PARAMETER MaxAge
 The maximum age to cache the value on the browser, in seconds.
 
+.PARAMETER StatusCode
+The status code to set against the response.
+
 .PARAMETER Cache
 Should the value be cached by browsers, or not?
 
@@ -119,6 +138,9 @@ Write-PodeTextResponse -Value '{"name": "Rick"}' -ContentType 'application/json'
 
 .EXAMPLE
 Write-PodeTextResponse -Bytes (Get-Content -Path ./some/image.png -Raw -AsByteStream) -Cache -MaxAge 1800
+
+.EXAMPLE
+Write-PodeTextResponse -Value 'Untitled Text Response' -StatusCode 418
 #>
 function Write-PodeTextResponse
 {
@@ -140,12 +162,21 @@ function Write-PodeTextResponse
         [int]
         $MaxAge = 3600,
 
+        [Parameter()]
+        [int]
+        $StatusCode = 200,
+
         [switch]
         $Cache
     )
 
     $isStringValue = ($PSCmdlet.ParameterSetName -ieq 'string')
     $isByteValue = ($PSCmdlet.ParameterSetName -ieq 'bytes')
+
+    # set the status code of the response, but only if it's not 200 (to prevent overriding)
+    if ($StatusCode -ne 200) {
+        Set-PodeResponseStatus -Code $StatusCode -NoErrorPage
+    }
 
     # if there's nothing to write, return
     if ($isStringValue -and [string]::IsNullOrWhiteSpace($Value)) {
@@ -238,6 +269,9 @@ The content type of the file's contents - this overrides the file's extension.
 .PARAMETER MaxAge
 The maximum age to cache the file's content on the browser, in seconds.
 
+.PARAMETER StatusCode
+The status code to set against the response.
+
 .PARAMETER Cache
 Should the file's content be cached by browsers, or not?
 
@@ -252,6 +286,9 @@ Write-PodeFileResponse -Path 'C:/Files/Stuff.txt' -ContentType 'application/json
 
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Views/Index.pode' -Data @{ Counter = 2 }
+
+.EXAMPLE
+Write-PodeFileResponse -Path 'C:/Files/Stuff.txt' -StatusCode 201
 #>
 function Write-PodeFileResponse
 {
@@ -272,6 +309,10 @@ function Write-PodeFileResponse
         [Parameter()]
         [int]
         $MaxAge = 3600,
+
+        [Parameter()]
+        [int]
+        $StatusCode = 200,
 
         [switch]
         $Cache
@@ -297,7 +338,7 @@ function Write-PodeFileResponse
         $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
 
         $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
-        Write-PodeTextResponse -Value $content -ContentType $ContentType
+        Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
     }
 
     # this is a static file
@@ -310,7 +351,7 @@ function Write-PodeFileResponse
         }
 
         $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt))
-        Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -Cache:$Cache
+        Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
     }
 }
 
@@ -326,6 +367,9 @@ A String, PSObject, or HashTable value.
 
 .PARAMETER Path
 The path to a CSV file.
+
+.PARAMETER StatusCode
+The status code to set against the response.
 
 .EXAMPLE
 Write-PodeCsvResponse -Value "Name`nRick"
@@ -345,7 +389,11 @@ function Write-PodeCsvResponse
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
-        $Path
+        $Path,
+
+        [Parameter()]
+        [int]
+        $StatusCode = 200
     )
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -377,7 +425,7 @@ function Write-PodeCsvResponse
         $Value = [string]::Empty
     }
 
-    Write-PodeTextResponse -Value $Value -ContentType 'text/csv'
+    Write-PodeTextResponse -Value $Value -ContentType 'text/csv' -StatusCode $StatusCode
 }
 
 <#
@@ -392,6 +440,9 @@ A String, PSObject, or HashTable value.
 
 .PARAMETER Path
 The path to a HTML file.
+
+.PARAMETER StatusCode
+The status code to set against the response.
 
 .EXAMPLE
 Write-PodeHtmlResponse -Value '<html><body>Hello!</body></html>'
@@ -411,7 +462,11 @@ function Write-PodeHtmlResponse
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
-        $Path
+        $Path,
+
+        [Parameter()]
+        [int]
+        $StatusCode = 200
     )
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -433,7 +488,7 @@ function Write-PodeHtmlResponse
         $Value = [string]::Empty
     }
 
-    Write-PodeTextResponse -Value $Value -ContentType 'text/html'
+    Write-PodeTextResponse -Value $Value -ContentType 'text/html' -StatusCode $StatusCode
 }
 
 <#
@@ -448,6 +503,9 @@ A String, PSObject, or HashTable value.
 
 .PARAMETER Path
 The path to a Markdown file.
+
+.PARAMETER StatusCode
+The status code to set against the response.
 
 .PARAMETER AsHtml
 If supplied, the Markdown will be converted to HTML. (This is only supported in PS7+)
@@ -468,6 +526,10 @@ function Write-PodeMarkdownResponse
         [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
         $Path,
+
+        [Parameter()]
+        [int]
+        $StatusCode = 200,
 
         [switch]
         $AsHtml
@@ -494,7 +556,7 @@ function Write-PodeMarkdownResponse
         }
     }
 
-    Write-PodeTextResponse -Value $Value -ContentType $mimeType
+    Write-PodeTextResponse -Value $Value -ContentType $mimeType -StatusCode $StatusCode
 }
 
 <#
@@ -505,7 +567,7 @@ Writes JSON data to the Response.
 Writes JSON data to the Response, setting the content type accordingly.
 
 .PARAMETER Value
-A String, PSObject, or HashTable value.
+A String, PSObject, or HashTable value. For non-string values, they will be converted to JSON.
 
 .PARAMETER Path
 The path to a JSON file.
@@ -513,11 +575,14 @@ The path to a JSON file.
 .PARAMETER Depth
 The Depth to generate the JSON document - the larger this value the worse performance gets.
 
+.PARAMETER StatusCode
+The status code to set against the response.
+
 .EXAMPLE
 Write-PodeJsonResponse -Value '{"name": "Rick"}'
 
 .EXAMPLE
-Write-PodeJsonResponse -Value @{ Name = 'Rick' }
+Write-PodeJsonResponse -Value @{ Name = 'Rick' } -StatusCode 201
 
 .EXAMPLE
 Write-PodeJsonResponse -Path 'E:/Files/Names.json'
@@ -535,7 +600,11 @@ function Write-PodeJsonResponse
 
         [Parameter()]
         [int]
-        $Depth = 10
+        $Depth = 10,
+
+        [Parameter()]
+        [int]
+        $StatusCode = 200
     )
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -561,7 +630,7 @@ function Write-PodeJsonResponse
         $Value = '{}'
     }
 
-    Write-PodeTextResponse -Value $Value -ContentType 'application/json'
+    Write-PodeTextResponse -Value $Value -ContentType 'application/json' -StatusCode $StatusCode
 }
 
 <#
@@ -577,11 +646,14 @@ A String, PSObject, or HashTable value.
 .PARAMETER Path
 The path to an XML file.
 
+.PARAMETER StatusCode
+The status code to set against the response.
+
 .EXAMPLE
 Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
 
 .EXAMPLE
-Write-PodeXmlResponse -Value @{ Name = 'Rick' }
+Write-PodeXmlResponse -Value @{ Name = 'Rick' } -StatusCode 201
 
 .EXAMPLE
 Write-PodeXmlResponse -Path 'E:/Files/Names.xml'
@@ -595,7 +667,11 @@ function Write-PodeXmlResponse
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
-        $Path
+        $Path,
+
+        [Parameter()]
+        [int]
+        $StatusCode = 200
     )
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -610,7 +686,7 @@ function Write-PodeXmlResponse
                 $Value = @(foreach ($v in $Value) {
                     New-Object psobject -Property $v
                 })
-        
+
                 $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
             }
         }
@@ -620,7 +696,7 @@ function Write-PodeXmlResponse
         $Value = [string]::Empty
     }
 
-    Write-PodeTextResponse -Value $Value -ContentType 'text/xml'
+    Write-PodeTextResponse -Value $Value -ContentType 'text/xml' -StatusCode $StatusCode
 }
 
 <#
@@ -635,6 +711,9 @@ The path to a View, relative to the "/views" directory. (Extension is optional).
 
 .PARAMETER Data
 Any dynamic data to supply to a dynamic View.
+
+.PARAMETER StatusCode
+The status code to set against the response.
 
 .PARAMETER FlashMessages
 Automatically supply all Flash messages in the current session to the View.
@@ -659,6 +738,10 @@ function Write-PodeViewResponse
         [Parameter()]
         [hashtable]
         $Data = @{},
+
+        [Parameter()]
+        [int]
+        $StatusCode = 200,
 
         [switch]
         $FlashMessages
@@ -706,11 +789,11 @@ function Write-PodeViewResponse
 
     switch ($engine.ToLowerInvariant()) {
         'md' {
-            Write-PodeMarkdownResponse -Value $value -AsHtml
+            Write-PodeMarkdownResponse -Value $value -StatusCode $StatusCode -AsHtml
         }
 
         default {
-            Write-PodeHtmlResponse -Value $value
+            Write-PodeHtmlResponse -Value $value -StatusCode $StatusCode
         }
     }
 }
@@ -1128,4 +1211,65 @@ function Use-PodePartialView
 
     # run any engine logic
     return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
+}
+
+<#
+.SYNOPSIS
+Broadcasts a message to connected WebSocket clients.
+
+.DESCRIPTION
+Broadcasts a message to all, or some, connected WebSocket clients. You can specify a path to send messages to, or a specific ClientId.
+
+.PARAMETER Value
+A String, PSObject, or HashTable value. For non-string values, they will be converted to JSON.
+
+.PARAMETER Path
+The Path of connected clients to send the message.
+
+.PARAMETER ClientId
+A specific ClientId of a connected client to send a message. Not currently used.
+
+.PARAMETER Depth
+The Depth to generate the JSON document - the larger this value the worse performance gets.
+
+.EXAMPLE
+Send-PodeSignal -Value @{ Message = 'Hello, world!' }
+
+.EXAMPLE
+Send-PodeSignal -Value @{ Data = @(123, 100, 101) } -Path '/response-charts'
+#>
+function Send-PodeSignal
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        $Value,
+
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $ClientId,
+
+        [Parameter()]
+        [int]
+        $Depth = 10
+    )
+
+    if ($Value -isnot [string]) {
+        if ($Depth -le 0) {
+            $Value = ($Value | ConvertTo-Json -Compress)
+        }
+        else {
+            $Value = ($Value | ConvertTo-Json -Depth $Depth -Compress)
+        }
+    }
+
+    $PodeContext.Server.WebSockets.Queues.Messages.Enqueue(@{
+        Value = $Value
+        ClientId = $ClientId
+        Path = $Path
+    })
 }

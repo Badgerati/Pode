@@ -162,8 +162,23 @@ function Get-PodeRouteValidateMiddleware
             # ensure the path has a route
             $route = Get-PodeRoute -Method $e.Method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
 
-            # if there's no route defined, it's a 404
+            # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
             if ($null -eq $route) {
+                # check if a route exists for another method
+                $methods = @('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
+                $routes = @(foreach ($method in $methods) {
+                    $r = Get-PodeRoute -Method $method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+                    if ($null -ne $r) {
+                        $r
+                    }
+                })
+
+                if (($null -ne $routes) -and ($routes.Length -gt 0)) {
+                    Set-PodeResponseStatus -Code 405
+                    return $false
+                }
+
+                # otheriwse, it's a 404
                 Set-PodeResponseStatus -Code 404
                 return $false
             }

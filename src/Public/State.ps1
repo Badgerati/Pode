@@ -103,7 +103,7 @@ function Remove-PodeState
 Saves the current shared state to a supplied JSON file.
 
 .DESCRIPTION
-Saves the current shared state to a supplied JSON file. WHen using this function, it's recommended to wrap it in a Lock-PodeObject block.
+Saves the current shared state to a supplied JSON file. When using this function, it's recommended to wrap it in a Lock-PodeObject block.
 
 .PARAMETER Path
 The path to a JSON file which the current state will be saved to.

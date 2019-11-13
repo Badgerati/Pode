@@ -38,6 +38,18 @@ Start-PodeServer {
 }
 ```
 
+### Arguments
+
+You can supply custom arguments to your schedules by using the `-ArgumentList` parameter. Unlike other features, for schedules the `-ArgumentList` is a hashtable; this is done because parameters to the `-ScriptBlock` are splatted in, and the parameter names are literal.
+
+For example, the first parameter to a schedule is always `$Event` - this contains the `.Lockable` object. Other parameters come from any Key/Values contained with the optional `-ArgumentList`:
+
+```powershell
+Add-PodeSchedule -Name 'date' -Cron '@minutely' -ArgumentList @{ Name = 'Rick'; Environment = 'Multiverse' } -ScriptBlock {
+    param($Event, $Name, $Environment)
+}
+```
+
 ## Delayed Start
 
 The `-StartTime <datetime>` parameter will cause the Schedule to only be triggered after the date/time defined. For example, if you have a schedule set to trigger at 00:05 every Tuesday, and you pass `-StartTime [DateTime]::Now.AddMonths(2)`, then the schedule will only start trigger on Tuesdays in 2 months time.

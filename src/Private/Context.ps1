@@ -68,7 +68,22 @@ function New-PodeContext
         }
         ReceiveTimeout = 100
         Queues = @{
-            Contexts = [System.Collections.Generic.List[hashtable]]::new(100)
+            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
+        }
+    }
+
+    $ctx.Server.WebSockets = @{
+        Enabled = $false
+        Listeners = @()
+        MaxConnections = 0
+        Ssl = @{
+            Callback = $null
+            Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
+        }
+        ReceiveTimeout = 100
+        Queues = @{
+            Sockets = @{}
+            Messages = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
             Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
         }
     }
@@ -171,6 +186,7 @@ function New-PodeContext
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()
+    $ctx.Server.BodyParsers = @{}
 
     # endware that needs to run
     $ctx.Server.Endware = @()
@@ -178,6 +194,7 @@ function New-PodeContext
     # runspace pools
     $ctx.RunspacePools = @{
         Main = $null
+        Signals = $null
         Schedules = $null
         Gui = $null
     }
@@ -230,6 +247,10 @@ function New-PodeRunspacePools
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $PodeContext.Threads
     $PodeContext.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
     $PodeContext.RunspacePools.Main.Open()
+
+    # setup signal runspace pool
+    $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads + 2), $PodeContext.RunspaceState, $Host)
+    $PodeContext.RunspacePools.Signals.Open()
 
     # setup schedule runspace pool
     $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $PodeContext.RunspaceState, $Host)
@@ -425,4 +446,28 @@ function New-PodeAutoRestartServer
             $PodeContext.Tokens.Restart.Cancel()
         }
     }
+}
+
+function Get-PodeEndpoints
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Http', 'Ws')]
+        [string]
+        $Type
+    )
+
+    $endpoints = $null
+
+    switch ($Type.ToLowerInvariant()) {
+        'http' {
+            $endpoints = @($PodeContext.Server.Endpoints | Where-Object { @('http', 'https') -icontains $_.Protocol })
+        }
+
+        'ws' {
+            $endpoints = @($PodeContext.Server.Endpoints | Where-Object { @('ws', 'wss') -icontains $_.Protocol })
+        }
+    }
+
+    return $endpoints
 }

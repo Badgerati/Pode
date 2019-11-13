@@ -6,33 +6,7 @@ function Start-PodeSocketServer
     )
 
     # setup the callback for sockets
-    $PodeContext.Server.Sockets.Ssl.Callback = [System.Net.Security.RemoteCertificateValidationCallback]{
-        param(
-            [Parameter()]
-            [object]
-            $Sender,
-
-            [Parameter()]
-            [X509Certificate]
-            $Certificate,
-
-            [Parameter()]
-            [System.Security.Cryptography.X509Certificates.X509Chain]
-            $Chain,
-
-            [Parameter()]
-            [System.Net.Security.SslPolicyErrors]
-            $SslPolicyErrors
-        )
-
-        # if there is no client cert, just allow it
-        if ($null -eq $Certificate) {
-            return $true
-        }
-
-        # if we have a cert, but there are errors, fail
-        return ($SslPolicyErrors -ne [System.Net.Security.SslPolicyErrors]::None)
-    }
+    $PodeContext.Server.Sockets.Ssl.Callback = Get-PodeSocketCertifcateCallback
 
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
@@ -48,7 +22,7 @@ function Start-PodeSocketServer
 
     # work out which endpoints to listen on
     $endpoints = @()
-    $PodeContext.Server.Endpoints | ForEach-Object {
+    @(Get-PodeEndpoints -Type Http) | ForEach-Object {
         # get the protocol
         $_protocol = (Resolve-PodeValue -Check $_.Ssl -TrueValue 'https' -FalseValue 'http')
 
@@ -76,13 +50,17 @@ function Start-PodeSocketServer
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            Initialize-PodeSocketListenerEndpoint -Address $_.Address -Port $_.Port -Certificate $_.Certificate
+            $PodeContext.Server.Sockets.Listeners += (Initialize-PodeSocketListenerEndpoint `
+                -Type Sockets `
+                -Address $_.Address `
+                -Port $_.Port `
+                -Certificate $_.Certificate)
         }
     }
     catch {
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
-        Close-PodeSocketListener
+        Close-PodeSocketListener -Type Sockets
         throw $_.Exception
     }
 
@@ -96,7 +74,7 @@ function Start-PodeSocketServer
 
         try
         {
-            Start-PodeSocketListener
+            Start-PodeSocketListener -Listeners $PodeContext.Server.Sockets.Listeners
 
             [System.Threading.Thread]::CurrentThread.IsBackground = $true
             [System.Threading.Thread]::CurrentThread.Priority = [System.Threading.ThreadPriority]::Lowest
@@ -134,24 +112,18 @@ function Start-PodeSocketServer
             throw $_.Exception
         }
         finally {
-            Close-PodeSocketListener
+            Close-PodeSocketListener -Type Sockets
         }
     }
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript
 
-    # state where we're running
-    Write-Host 'Note: This server type is experimental' -ForegroundColor Magenta
-    Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
-
-    $endpoints | ForEach-Object {
-        Write-Host "`t- $($_.HostName)" -ForegroundColor Yellow
-    }
-
     # browse to the first endpoint, if flagged
     if ($Browse) {
         Start-Process $endpoints[0].HostName
     }
+
+    return @($endpoints.HostName)
 }
 
 function Invoke-PodeSocketHandler
@@ -362,79 +334,4 @@ function Set-PodeServerResponseHeaders
 
     # state to close the connection (no support for keep-alive yet)
     Set-PodeHeader -Name 'Connection' -Value 'close'
-}
-
-function Get-PodeServerRequestDetails
-{
-    param(
-        [Parameter()]
-        [byte[]]
-        $Bytes,
-
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Protocol
-    )
-
-    # convert array to string
-    $Content = $PodeContext.Server.Encoding.GetString($bytes, 0, $bytes.Length)
-
-    # parse the request headers
-    $newLine = "`r`n"
-    if (!$Content.Contains($newLine)) {
-        $newLine = "`n"
-    }
-
-    $req_lines = ($Content -isplit $newLine)
-
-    # first line is the request info
-    $req_line_info = ($req_lines[0].Trim() -isplit '\s+')
-    if ($req_line_info.Length -ne 3) {
-        throw [System.Net.Http.HttpRequestException]::new("Invalid request line: $($req_lines[0]) [$($req_line_info.Length)]")
-    }
-
-    $req_method = $req_line_info[0].Trim()
-    if (@('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE') -inotcontains $req_method) {
-        throw [System.Net.Http.HttpRequestException]::new("Invalid request HTTP method: $($req_method)")
-    }
-
-    $req_query = $req_line_info[1].Trim()
-    $req_proto = $req_line_info[2].Trim()
-    if (!$req_proto.StartsWith('HTTP/')) {
-        throw [System.Net.Http.HttpRequestException]::new("Invalid request version: $($req_proto)")
-    }
-
-    # then, read the headers
-    $req_headers = @{}
-    $req_body_index = 0
-    for ($i = 1; $i -le $req_lines.Length -1; $i++) {
-        $line = $req_lines[$i].Trim()
-        if ([string]::IsNullOrWhiteSpace($line)) {
-            $req_body_index = $i + 1
-            break
-        }
-
-        $index = $line.IndexOf(':')
-        $name = $line.Substring(0, $index).Trim()
-        $value = $line.Substring($index + 1).Trim()
-        $req_headers[$name] = $value
-    }
-
-    # then set the request body
-    $req_body = ($req_lines[($req_body_index)..($req_lines.Length - 1)] -join $newLine)
-    $req_body_bytes = $bytes[($bytes.Length - $req_body.Length)..($bytes.Length - 1)]
-
-    # build required URI details
-    $req_uri = [uri]::new("$($Protocol)://$($req_headers['Host'])$($req_query)")
-
-    # return the details
-    return @{
-        Method = $req_method
-        Query = $req_query
-        Protocol = $req_proto
-        Headers = $req_headers
-        Body = $req_body
-        RawBody = $req_body_bytes
-        Uri = $req_uri
-    }
 }

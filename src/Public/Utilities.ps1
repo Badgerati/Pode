@@ -761,3 +761,31 @@ function Test-IsWindows
     $v = Get-PodePSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
+
+<#
+.SYNOPSIS
+Outputs an object to the main Host.
+
+.DESCRIPTION
+Due to Pode's use of runspaces, this will output a given object back to the main Host.
+
+.PARAMETER InputObject
+The object to output.
+
+.EXAMPLE
+'Hello, world!' | Out-PodeHost
+
+.EXAMPLE
+@{ Name = 'Rick' } | Out-PodeHost
+#>
+function Out-PodeHost
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [object]
+        $InputObject
+    )
+
+    $InputObject | Out-Default
+}

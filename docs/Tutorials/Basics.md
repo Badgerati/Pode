@@ -21,3 +21,4 @@ The above server will start a basic HTTP listener on port 8080. To start the ser
 
 !!! tip
     Once Pode has started, you can exit out at any time using `Ctrl+C`. You can also restart the server by using `Ctrl+R`.
+    On Unix, you can also use `Shuft+C` and `Shift+R`
