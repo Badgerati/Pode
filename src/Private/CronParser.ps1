@@ -164,7 +164,9 @@ function ConvertFrom-PodeCronExpression
         }
 
         # replace * with min/max constraint
-        $_atom = $_atom -ireplace '\*', ($_constraint -join '-')
+        if ($_atom -ieq '*') {
+            $_atom = ($_constraint -join '-')
+        }
 
         # parse the atom for either a literal, range, array, or interval
         # literal
@@ -198,7 +200,7 @@ function ConvertFrom-PodeCronExpression
                 $interval = '1'
             }
 
-            if ([string]::IsNullOrWhiteSpace($start) -or $start -ieq '*') {
+            if ([string]::IsNullOrWhiteSpace($start) -or ($start -ieq '*')) {
                 $start = '0'
             }
 
