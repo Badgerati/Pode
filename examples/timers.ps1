@@ -12,7 +12,7 @@ Start-PodeServer {
     # runs forever, looping every 5secs
     Add-PodeTimer -Name 'forever' -Interval 5 -ScriptBlock {
         'Hello, world' | Out-PodeHost
-    }
+    } -Limit 5
 
     # runs forever, but skips the first 3 "loops" - is paused for 15secs then loops every 5secs
     Add-PodeTimer -Name 'pause-first-3' -Interval 5 -ScriptBlock {
@@ -42,6 +42,11 @@ Start-PodeServer {
         Add-PodeTimer -Name $query['Name'] -Interval $query['Seconds'] -ScriptBlock {
             # logic
         }
+    }
+
+    # adhoc invoke a timer's logic
+    Add-PodeRoute -Method Get -Path '/api/run' -ScriptBlock {
+        Invoke-PodeTimer -Name 'forever'
     }
 
 }
