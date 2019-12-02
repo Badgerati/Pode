@@ -124,7 +124,7 @@ Start-PodeServer {
             $hash = (Get-PodeState -Name 'hash')
 
             # add a random number
-            $hash['values'] += (Get-Random -Minimum 0 -Maximum 10)
+            $hash.values += (Get-Random -Minimum 0 -Maximum 10)
 
             # save the state to file
             Save-PodeState -Path './state.json'

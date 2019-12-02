@@ -1,5 +1,18 @@
 # Release Notes
 
+## v1.2.1
+
+```plain
+### Enhancements
+* #415: New functions for invoking Timer and Schedules adhoc
+
+### Bugs
+* #416: Fix for using `*/INT` in cron-expressions
+
+### Documentation
+* #418: Docs and examples typo fixes
+```
+
 ## v1.2.0
 
 ```plain

@@ -209,6 +209,47 @@ Describe 'ConvertFrom-PodeCronExpression' {
             $cron.DayOfMonth.Constraints[1] | Should Be 31
             $cron.DayOfMonth.Random | Should Be $false
         }
+
+        It 'Returns a valid cron object for expression using wildcard' {
+            $cron = ConvertFrom-PodeCronExpression -Expression '*/10 * * * 2'
+
+            $cron.Month.Values | Should Be $null
+            $cron.Month.Range.Min | Should Be 1
+            $cron.Month.Range.Max | Should Be 12
+            $cron.Month.Constraints[0] | Should Be 1
+            $cron.Month.Constraints[1] | Should Be 12
+            $cron.Month.Random | Should Be $false
+
+            $cron.DayOfWeek.Values | Should Be 2
+            $cron.DayOfWeek.Range.Min | Should Be $null
+            $cron.DayOfWeek.Range.Max | Should Be $null
+            $cron.DayOfWeek.Constraints[0] | Should Be 0
+            $cron.DayOfWeek.Constraints[1] | Should Be 6
+            $cron.DayOfWeek.Random | Should Be $false
+
+            $cron.Minute.Values | Should Be @(0, 10, 20, 30, 40, 50)
+            $cron.Minute.Range.Min | Should Be $null
+            $cron.Minute.Range.Max | Should Be $null
+            $cron.Minute.Constraints[0] | Should Be 0
+            $cron.Minute.Constraints[1] | Should Be 59
+            $cron.Minute.Random | Should Be $false
+
+            $cron.Hour.Values | Should Be $null
+            $cron.Hour.Range.Min | Should Be 0
+            $cron.Hour.Range.Max | Should Be 23
+            $cron.Hour.Constraints[0] | Should Be 0
+            $cron.Hour.Constraints[1] | Should Be 23
+            $cron.Hour.Random | Should Be $false
+
+            $cron.Random | Should Be $false
+
+            $cron.DayOfMonth.Values | Should Be $null
+            $cron.DayOfMonth.Range.Min | Should Be 1
+            $cron.DayOfMonth.Range.Max | Should Be 31
+            $cron.DayOfMonth.Constraints[0] | Should Be 1
+            $cron.DayOfMonth.Constraints[1] | Should Be 31
+            $cron.DayOfMonth.Random | Should Be $false
+        }
     }
 }
 
