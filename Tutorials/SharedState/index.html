@@ -653,6 +653,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
+      Invoke-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Core/Invoke-PodeTimer/" title="Invoke-PodeTimer" class="md-nav__link">
+      Invoke-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Core/New-PodeMiddleware/" title="New-PodeMiddleware" class="md-nav__link">
       New-PodeMiddleware
     </a>
@@ -3476,7 +3500,7 @@
             <span class="nv">$hash</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-PodeState</span> <span class="n">-Name</span> <span class="s1">&#39;hash&#39;</span><span class="p">)</span>
 
             <span class="c"># add a random number</span>
-            <span class="nv">$hash</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">]</span> <span class="p">+=</span> <span class="p">(</span><span class="nb">Get-Random</span> <span class="n">-Minimum</span> <span class="n">0</span> <span class="n">-Maximum</span> <span class="n">10</span><span class="p">)</span>
+            <span class="nv">$hash</span><span class="p">.</span><span class="n">values</span> <span class="p">+=</span> <span class="p">(</span><span class="nb">Get-Random</span> <span class="n">-Minimum</span> <span class="n">0</span> <span class="n">-Maximum</span> <span class="n">10</span><span class="p">)</span>
 
             <span class="c"># save the state to file</span>
             <span class="nb">Save-PodeState</span> <span class="n">-Path</span> <span class="s1">&#39;./state.json&#39;</span>

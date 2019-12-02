@@ -653,6 +653,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
+      Invoke-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Invoke-PodeTimer/" title="Invoke-PodeTimer" class="md-nav__link">
+      Invoke-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Core/New-PodeMiddleware/" title="New-PodeMiddleware" class="md-nav__link">
       New-PodeMiddleware
     </a>
@@ -3240,7 +3264,7 @@
 <li><a href="../Types/FileMonitoring"><strong>File Monitoring</strong></a>: This will watch for file changes, and if enabled will trigger the server to restart.</li>
 <li><a href="../Types/AutoRestarting"><strong>Auto-Restarting</strong></a>: Defined within the <code>server.psd1</code> configuration file, you can set schedules for the server to automatically restart.</li>
 </ol>
-<p>When the server restarts, it will re-invoke the <code>scripblock</code> supplied to the  <a href="../../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> function. This means the best approach to reload new modules/scripts it to dot-source your scripts into your server, as any changes to the main <code>scriptblock</code> will <strong>not</strong> take place.</p>
+<p>When the server restarts, it will re-invoke the <code>-ScriptBlock</code> supplied to the <a href="../../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> function. This means the best approach to reload new modules/scripts it to dot-source/<a href="../../../Functions/Utilities/Use-PodeScript"><code>Use-PodeScript</code></a> your scripts into your server, as any changes to the main <code>scriptblock</code> will <strong>not</strong> take place.</p>
                 
                   
                 
