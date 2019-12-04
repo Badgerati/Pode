@@ -11,7 +11,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # include the external function module
-    Use-PodeScript -Path './modules/external-funcs.psm1'
+    Import-PodeModule -Path './modules/external-funcs.psm1'
 
     # GET request for "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

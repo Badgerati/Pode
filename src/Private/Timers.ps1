@@ -19,10 +19,11 @@ function Start-PodeTimerRunspace
     $script = {
         while ($true)
         {
-            $_remove = @()
             $_now = [DateTime]::Now
 
-            $PodeContext.Timers.Values | Where-Object { $_.OnStart -or ($_.NextTick -le $_now) } | ForEach-Object {
+            $PodeContext.Timers.Values | Where-Object {
+                ($_.OnStart -or ($_.NextTick -le $_now)) -and !$_.Completed
+            } | ForEach-Object {
                 $run = $true
                 $_.OnStart = $false
 
@@ -35,26 +36,14 @@ function Start-PodeTimerRunspace
                 # check if we have hit the limit, and remove
                 if ($run -and ($_.Limit -ne 0) -and ($_.Count -gt $_.Limit)) {
                     $run = $false
-                    $_remove += $_.Name
+                    $_.Completed = $true
                 }
 
                 if ($run) {
-                    try {
-                        $_event = @{ Lockable = $PodeContext.Lockable }
-                        $_args = @($_event) + @($_.Arguments)
-                        Invoke-PodeScriptBlock -ScriptBlock $_.Script -Arguments $_args -Scoped -Splat
-                    }
-                    catch {
-                        $Error[0]
-                    }
+                    Invoke-PodeInternalTimer -Timer $_
                 }
 
                 $_.NextTick = $_now.AddSeconds($_.Interval)
-            }
-
-            # remove any timers
-            $_remove | ForEach-Object {
-                $PodeContext.Timers.Remove($_)
             }
 
             Start-Sleep -Seconds 1
@@ -62,4 +51,21 @@ function Start-PodeTimerRunspace
     }
 
     Add-PodeRunspace -Type 'Main' -ScriptBlock $script
+}
+
+function Invoke-PodeInternalTimer
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        $Timer
+    )
+
+    try {
+        $_event = @{ Lockable = $PodeContext.Lockable }
+        $_args = @($_event) + @($Timer.Arguments)
+        Invoke-PodeScriptBlock -ScriptBlock $Timer.Script -Arguments $_args -Scoped -Splat
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+    }
 }

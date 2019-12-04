@@ -35,4 +35,9 @@ Start-PodeServer {
         # logic
     } -EndTime ([DateTime]::Now.AddHours(2))
 
+    # adhoc invoke a schedule's logic
+    Add-PodeRoute -Method Get -Path '/api/run' -ScriptBlock {
+        Invoke-PodeSchedule -Name 'predefined'
+    }
+
 }

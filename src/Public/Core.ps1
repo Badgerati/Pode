@@ -753,7 +753,39 @@ function Add-PodeTimer
         Script = $ScriptBlock
         Arguments = $ArgumentList
         OnStart = $OnStart
+        Completed = $false
     }
+}
+
+<#
+.SYNOPSIS
+Adhoc invoke a Timer's logic.
+
+.DESCRIPTION
+Adhoc invoke a Timer's logic outside of its defined interval. This invocation doesn't count towards the Timer's limit.
+
+.PARAMETER Name
+The Name of the Timer.
+
+.EXAMPLE
+Invoke-PodeTimer -Name 'timer-name'
+#>
+function Invoke-PodeTimer
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Name
+    )
+
+    # ensure the timer exists
+    if (!$PodeContext.Timers.ContainsKey($Name)) {
+        throw "Timer '$($Name)' does not exist"
+    }
+
+    # run timer logic
+    Invoke-PodeInternalTimer -Timer ($PodeContext.Timers[$Name])
 }
 
 <#
@@ -912,7 +944,39 @@ function Add-PodeSchedule
         Script = $ScriptBlock
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart = $OnStart
+        Completed = $false
     }
+}
+
+<#
+.SYNOPSIS
+Adhoc invoke a Schedule's logic.
+
+.DESCRIPTION
+Adhoc invoke a Schedule's logic outside of its defined cron-expression. This invocation doesn't count towards the Schedule's limit.
+
+.PARAMETER Name
+The Name of the Schedule.
+
+.EXAMPLE
+Invoke-PodeSchedule -Name 'schedule-name'
+#>
+function Invoke-PodeSchedule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Name
+    )
+
+    # ensure the schedule exists
+    if (!$PodeContext.Schedules.ContainsKey($Name)) {
+        throw "Schedule '$($Name)' does not exist"
+    }
+
+    # run schedule logic
+    Invoke-PodeInternalScheduleLogic -Schedule ($PodeContext.Schedules[$Name])
 }
 
 <#
