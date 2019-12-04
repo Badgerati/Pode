@@ -1164,3 +1164,17 @@ Describe 'Get-PodeRouteByUrl' {
         $Result | Should Be $routeNeitherSet
     }
 }
+
+Describe 'Get-PodeRoutes'{
+    It 'Returns logic and parameters for parameterised route' {
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
+        $result = (@(Get-PodeRoutes))
+
+        $result.Count | Should Be 1
+
+        $result = $result[0]
+
+        $result | Should BeOfType System.Collections.Hashtable
+        $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
+    }
+}

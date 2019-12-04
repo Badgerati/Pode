@@ -814,3 +814,42 @@ function Add-PodePage
     # create the route
     Add-PodeRoute -Method Get -Path $_path -Middleware $Middleware -ArgumentList $arg -ScriptBlock $logic
 }
+
+<#
+.SYNOPSIS
+Gets all the routes.
+
+.DESCRIPTION
+Gets all the routes. Returns a list of routes with each element containing a hashtable with the following properties Method, Path, Endpoint, Protocol, Middleware, ContentType, ErrorType, Arguments, Logic
+
+.EXAMPLE
+Get-PodeRoutes
+#>
+
+function Get-PodeRoutes {
+    param ()
+
+    $routes = @()
+
+    foreach ($method in $PodeContext.Server.Routes.Keys) {
+        $PodeContext.Server.Routes[$method] | ForEach-Object {
+            foreach ($path in $_.Keys) {
+                $_[$path] | ForEach-Object {
+                    $routes += @{
+                        'Method'      = $method;
+                        'Path'        = $path;
+                        'Endpoint'    = $_.Endpoint;
+                        'Protocol'    = $_.Protocol;
+                        'Middleware'  = $_.Middleware;
+                        'ContentType' = $_.ContentType;
+                        'ErrorType'   = $_.ErrorType;
+                        'Arguments'   = $_.ArgumentList;
+                        'Logic'       = $_.Logic;
+                    }
+                }
+            }
+        }
+    }
+
+    return $routes
+}
