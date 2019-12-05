@@ -15,6 +15,8 @@ Start-PodeServer {
         'hello, world!' | Out-Default
     }
 
+    Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './scripts/schedule.ps1'
+
     # schedule defined using two cron expressions
     Add-PodeSchedule -Name 'two-crons' -Cron @('0/3 * * * *', '0/5 * * * *') -ScriptBlock {
         'double cron' | Out-Default

@@ -665,6 +665,9 @@ The number of "invokes" to skip before the Timer actually runs.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Timer's ScriptBlock.
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Timer's logic.
+
 .PARAMETER OnStart
 If supplied, the timer will trigger when the server starts.
 
@@ -682,7 +685,7 @@ Add-PodeTimer -Name 'Args' -Interval 2 -ScriptBlock { /* logic */ } -ArgumentLis
 #>
 function Add-PodeTimer
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Script')]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -692,7 +695,7 @@ function Add-PodeTimer
         [int]
         $Interval,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
         [scriptblock]
         $ScriptBlock,
 
@@ -703,6 +706,10 @@ function Add-PodeTimer
         [Parameter()]
         [int]
         $Skip = 0,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
 
         [Parameter()]
         [object[]]
@@ -733,6 +740,11 @@ function Add-PodeTimer
     # is the skip valid?
     if ($Skip -lt 0) {
         throw "[Timer] $($Name): Cannot have a negative skip value"
+    }
+
+    # if we have a file path supplied, load that path as a scriptblock
+    if ($PSCmdlet.ParameterSetName -ieq 'file') {
+        $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
     # calculate the next tick time (based on Skip)
@@ -859,6 +871,9 @@ A DateTime for when the Schedule should stop triggering, and be removed.
 .PARAMETER ArgumentList
 A hashtable of arguments to supply to the Schedule's ScriptBlock.
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Schedule's logic.
+
 .PARAMETER OnStart
 If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
 
@@ -876,7 +891,7 @@ Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -Ar
 #>
 function Add-PodeSchedule
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Script')]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -886,7 +901,7 @@ function Add-PodeSchedule
         [string[]]
         $Cron,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
         [scriptblock]
         $ScriptBlock,
 
@@ -901,6 +916,10 @@ function Add-PodeSchedule
         [Parameter()]
         [DateTime]
         $EndTime,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
 
         [Parameter()]
         [hashtable]
@@ -930,6 +949,11 @@ function Add-PodeSchedule
 
     if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -lt $StartTime)) {
         throw "[Schedule] $($Name): Cannot have a StartTime after the EndTime"
+    }
+
+    # if we have a file path supplied, load that path as a scriptblock
+    if ($PSCmdlet.ParameterSetName -ieq 'file') {
+        $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
     # add the schedule
