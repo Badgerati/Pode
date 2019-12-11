@@ -1933,3 +1933,27 @@ function Get-PodeHandler
 
     return $PodeContext.Server.Handlers[$Type][$Name]
 }
+
+function Convert-PodeFileToScriptBlock
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FilePath
+    )
+
+    # resolve for relative path
+    $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot
+
+    # if file doesn't exist, error
+    if (!(Test-PodePath -Path $FilePath -NoStatus)) {
+        throw "The FilePath supplied does not exist: $($FilePath)"
+    }
+
+    # if the path is a wildcard or directory, error
+    if (!(Test-PodePathIsFile -Path $FilePath -FailOnWildcard)) {
+        throw "The FilePath supplied cannot be a wildcard or a directory: $($FilePath)"
+    }
+
+    return ([scriptblock](Use-PodeScript -Path $FilePath))
+}
