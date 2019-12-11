@@ -13,9 +13,18 @@ function Start-PodeInternalServer
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 
-        # create the runspace state, execute the server logic, and start the runspaces
+        # create the shared runspace state
         New-PodeRunspaceState
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
+
+        # get the server's script and invoke it - to set up routes, timers, middleware, etc
+        $_script = $PodeContext.Server.Logic
+        if (Test-PodePath -Path $PodeContext.Server.LogicPath -NoStatus) {
+            $_script = Convert-PodeFileToScriptBlock -FilePath $PodeContext.Server.LogicPath
+        }
+
+        Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
+
+        # start the runspace pools for web, schedules, etc
         New-PodeRunspacePools
 
         # create timer/schedules for auto-restarting

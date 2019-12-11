@@ -8,6 +8,10 @@ Starts a Pode Server with the supplied ScriptBlock.
 .PARAMETER ScriptBlock
 The main logic for the Server.
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Server's logic.
+The directory of this file will be used as the Server's root path - unless a specific -RootPath is supplied.
+
 .PARAMETER Interval
 For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
 
@@ -32,6 +36,9 @@ Disables the ability to terminate the Server.
 .PARAMETER Browse
 Open the web Server's default endpoint in your defualt browser.
 
+.PARAMETER CurrentPath
+Sets the Server's root path to be the current working path - for -FilePath only.
+
 .EXAMPLE
 Start-PodeServer { /* logic */ }
 
@@ -43,11 +50,15 @@ Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' { /* logic */ }
 #>
 function Start-PodeServer
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Script')]
     param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=0, ParameterSetName='Script')]
         [scriptblock]
         $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
 
         [Parameter()]
         [int]
@@ -77,7 +88,10 @@ function Start-PodeServer
         $DisableTermination,
 
         [switch]
-        $Browse
+        $Browse,
+
+        [switch]
+        $CurrentPath
     )
 
     # ensure the session is clean
@@ -85,13 +99,30 @@ function Start-PodeServer
     $ShowDoneMessage = $true
 
     try {
+        # if we have a filepath, resolve it - and extract a root path from it
+        if ($PSCmdlet.ParameterSetName -ieq 'file') {
+            $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath
+
+            # if not already supplied, set root path
+            if ([string]::IsNullOrWhiteSpace($RootPath)) {
+                if ($CurrentPath) {
+                    $RootPath = $PWD.Path
+                }
+                else {
+                    $RootPath = Split-Path -Parent -Path $FilePath
+                }
+            }
+        }
+
         # configure the server's root path
         if (!(Test-IsEmpty $RootPath)) {
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
         # create main context object
-        $PodeContext = New-PodeContext -ScriptBlock $ScriptBlock `
+        $PodeContext = New-PodeContext `
+            -ScriptBlock $ScriptBlock `
+            -FilePath $FilePath `
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
