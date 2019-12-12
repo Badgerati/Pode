@@ -1,21 +1,32 @@
 function New-PodeContext
 {
+    [CmdletBinding()]
     param (
+        [Parameter()]
         [scriptblock]
         $ScriptBlock,
 
+        [Parameter()]
+        [string]
+        $FilePath,
+
+        [Parameter()]
         [int]
         $Threads = 1,
 
+        [Parameter()]
         [int]
         $Interval = 0,
 
+        [Parameter()]
         [string]
         $ServerRoot,
 
+        [Parameter()]
         [string]
         $Name = $null,
 
+        [Parameter()]
         [string]
         $ServerType
     )
@@ -49,6 +60,7 @@ function New-PodeContext
     # set the server name, logic and root
     $ctx.Server.Name = $Name
     $ctx.Server.Logic = $ScriptBlock
+    $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
 

@@ -11,30 +11,24 @@ To create a new Schedule in your server you use the Schedule functions.
 To create a basic Schedule, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeSchedule -Name 'date' -Cron '5 0 * * TUE' -ScriptBlock {
-        Write-Host "$([DateTime]::Now)"
-    }
+Add-PodeSchedule -Name 'date' -Cron '5 0 * * TUE' -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
 }
 ```
 
 Whereas the following will create the same schedule, but will only trigger the schedule 4 times due to the `-Limit` value supplied:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeSchedule -Name 'date' -Cron '5 0 * * TUE' -Limit 4 -ScriptBlock {
-        Write-Host "$([DateTime]::Now)"
-    }
+Add-PodeSchedule -Name 'date' -Cron '5 0 * * TUE' -Limit 4 -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
 }
 ```
 
 You can also supply multiple cron expressions for the same Schedule. For example, the following will trigger the same schedule every minute and every hour:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeSchedule -Name 'date' -Cron @('@minutely', '@hourly') -ScriptBlock {
-        Write-Host "$([DateTime]::Now)"
-    }
+Add-PodeSchedule -Name 'date' -Cron @('@minutely', '@hourly') -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
 }
 ```
 
@@ -57,12 +51,10 @@ The `-StartTime <datetime>` parameter will cause the Schedule to only be trigger
 The following will create a Schedule that triggers at 16:00 every Friday, and is delayed by 1 year:
 
 ```powershell
-Start-PodeServer {
-    $start = [DateTime]::Now.AddYears(1)
+$start = [DateTime]::Now.AddYears(1)
 
-    Add-PodeSchedule -Name 'date' -Cron '0 16 * * FRI' -StartTime $start {
-        Write-Host "$([DateTime]::Now)"
-    }
+Add-PodeSchedule -Name 'date' -Cron '0 16 * * FRI' -StartTime $start -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
 }
 ```
 
@@ -73,11 +65,27 @@ The `-EndTime <datetime>` parameter will cause the Schedule to cease triggering 
 The following will create a Schedule that triggers at 16:00 every Friday, and stops triggering in 1 year:
 
 ```powershell
-Start-PodeServer {
-    $end = [DateTime]::Now.AddYears(1)
+$end = [DateTime]::Now.AddYears(1)
 
-    Add-PodeSchedule -Name 'date' -Cron '0 16 * * FRI' -EndTime $end -ScriptBlock {
-        Write-Host "$([DateTime]::Now)"
-    }
+Add-PodeSchedule -Name 'date' -Cron '0 16 * * FRI' -EndTime $end -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
 }
+```
+
+## Script from File
+
+You normally define a schedule's script using the `-ScriptBlock` parameter however, you can also reference a file with the required scriptblock using `-FilePath`. Using the `-FilePath` parameter will dot-source a scriptblock from the file, and set it as the schedule's script.
+
+For example, to create a schedule from a file that will output `Hello, world` every minute:
+
+* File.ps1
+```powershell
+{
+    'Hello, world!' | Out-PodeHost
+}
+```
+
+* Timer
+```powershell
+Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './Schedules/File.ps1'
 ```

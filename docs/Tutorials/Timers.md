@@ -12,10 +12,8 @@ To create a new Timer in your server you use the Timer functions.
 To create a basic Timer, the following example will work; this will loop every 5 seconds outputting the date/time:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeTimer -Name 'date' -Interval 5 -ScriptBlock {
-        Write-Host "$([DateTime]::Now)"
-    }
+Add-PodeTimer -Name 'date' -Interval 5 -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
 }
 ```
 
@@ -26,10 +24,8 @@ The `-Skip <int>` parameter will cause the Timer to skip its first initial trigg
 The following will create a Timer that runs every 10 seconds, and skips the first 5 iterations:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeTimer -Name 'date' -Interval 10 -Skip 5 -ScriptBlock {
-        Write-Host "$([DateTime]::Now)"
-    }
+Add-PodeTimer -Name 'date' -Interval 10 -Skip 5 -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
 }
 ```
 
@@ -40,9 +36,25 @@ Normally a Timer will run forever, or at least until you terminate the server. S
 The following will run every 20 seconds, and will only run 3 times:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeTimer -Name 'date' -Interval 20 -Limit 3 -ScriptBlock {
-        Write-Host "$([DateTime]::Now)"
-    }
+Add-PodeTimer -Name 'date' -Interval 20 -Limit 3 -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
 }
+```
+
+## Script from File
+
+You normally define a timer's script using the `-ScriptBlock` parameter however, you can also reference a file with the required scriptblock using `-FilePath`. Using the `-FilePath` parameter will dot-source a scriptblock from the file, and set it as the timer's script.
+
+For example, to create a timer from a file that will output `Hello, world` every 2secs:
+
+* File.ps1
+```powershell
+{
+    'Hello, world!' | Out-PodeHost
+}
+```
+
+* Timer
+```powershell
+Add-PodeTimer -Name 'from-file' -Interval 2 -FilePath './Timers/File.ps1'
 ```
