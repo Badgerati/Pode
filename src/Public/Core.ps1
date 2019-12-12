@@ -90,6 +90,7 @@ function Start-PodeServer
         [switch]
         $Browse,
 
+        [Parameter(ParameterSetName='File')]
         [switch]
         $CurrentPath
     )
