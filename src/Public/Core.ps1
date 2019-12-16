@@ -877,6 +877,70 @@ function Clear-PodeTimers
 
 <#
 .SYNOPSIS
+Edits an existing Timer.
+
+.DESCRIPTION
+Edits an existing Timer's properties, such as interval or scriptblock.
+
+.PARAMETER Name
+The Name of the Timer.
+
+.PARAMETER Interval
+The new Interval for the Timer in seconds.
+
+.PARAMETER ScriptBlock
+The new ScriptBlock for the Timer.
+
+.PARAMETER ArgumentList
+Any new Arguments for the Timer.
+
+.EXAMPLE
+Edit-PodeTimer -Name 'Hello' -Interval 10
+#>
+function Edit-PodeTimer
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [int]
+        $Interval = 0,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
+    )
+
+    # ensure the timer exists
+    if (!$PodeContext.Timers.ContainsKey($Name)) {
+        throw "Timer '$($Name)' does not exist"
+    }
+
+    # edit interval if supplied
+    if ($Interval -gt 0) {
+        $PodeContext.Timers[$Name].Interval = $Interval
+    }
+
+    # edit scriptblock if supplied
+    if (!(Test-IsEmpty $ScriptBlock)) {
+        $PodeContext.Timers[$Name].Script = $ScriptBlock
+    }
+
+    # edit arguments if supplied
+    if (!(Test-IsEmpty $ArgumentList)) {
+        $PodeContext.Timers[$Name].Arguments = $ArgumentList
+    }
+}
+
+<#
+.SYNOPSIS
 Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
 
 .DESCRIPTION
@@ -1076,6 +1140,73 @@ function Clear-PodeSchedules
     param()
 
     $PodeContext.Schedules.Clear()
+}
+
+<#
+.SYNOPSIS
+Edits an existing Schedule.
+
+.DESCRIPTION
+Edits an existing Schedule's properties, such an cron expressions or scriptblock.
+
+.PARAMETER Name
+The Name of the Schedule.
+
+.PARAMETER Cron
+Any new Cron Expressions for the Schedule.
+
+.PARAMETER ScriptBlock
+The new ScriptBlock for the Schedule.
+
+.PARAMETER ArgumentList
+Any new Arguments for the Schedule.
+
+.EXAMPLE
+Edit-PodeSchedule -Name 'Hello' -Cron '@minutely'
+
+.EXAMPLE
+Edit-PodeSchedule -Name 'Hello' -Cron @('@hourly', '0 0 * * TUE')
+#>
+function Edit-PodeSchedule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Cron,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [hashtable]
+        $ArgumentList
+    )
+
+    # ensure the schedule exists
+    if (!$PodeContext.Schedules.ContainsKey($Name)) {
+        throw "Schedule '$($Name)' does not exist"
+    }
+
+    # edit cron if supplied
+    if (!(Test-IsEmpty $Cron)) {
+        $PodeContext.Schedules[$Name].Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+    }
+
+    # edit scriptblock if supplied
+    if (!(Test-IsEmpty $ScriptBlock)) {
+        $PodeContext.Schedules[$Name].Script = $ScriptBlock
+    }
+
+    # edit arguments if supplied
+    if (!(Test-IsEmpty $ArgumentList)) {
+        $PodeContext.Schedules[$Name].Arguments = $ArgumentList
+    }
 }
 
 <#
