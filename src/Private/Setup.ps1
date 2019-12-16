@@ -10,12 +10,7 @@ function Invoke-PodePackageScript
         return
     }
 
-    if (Test-IsPSCore) {
-        pwsh.exe /c "$($ActionScript)"
-    }
-    else {
-        powershell.exe /c "$($ActionScript)"
-    }
+    Invoke-Expression -Command $ActionScript
 }
 
 function Install-PodeLocalModules
