@@ -119,3 +119,27 @@ Describe 'Clear-PodeTimers' {
         $PodeContext.Timers.Count | Should Be 0
     }
 }
+
+Describe 'Edit-PodeTimer' {
+    It 'Adds a new timer, then edits the interval' {
+        $PodeContext = @{ 'Timers' = @{}; }
+        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' }
+        $PodeContext.Timers['test1'].Interval | Should Be 1
+        $PodeContext.Timers['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+
+        Edit-PodeTimer -Name 'test1' -Interval 3
+        $PodeContext.Timers['test1'].Interval | Should Be 3
+        $PodeContext.Timers['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+    }
+
+    It 'Adds a new timer, then edits the script' {
+        $PodeContext = @{ 'Timers' = @{}; }
+        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' }
+        $PodeContext.Timers['test1'].Interval | Should Be 1
+        $PodeContext.Timers['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+
+        Edit-PodeTimer -Name 'test1' -ScriptBlock { Write-Host 'hello2' }
+        $PodeContext.Timers['test1'].Interval | Should Be 1
+        $PodeContext.Timers['test1'].Script.ToString() | Should Be ({ Write-Host 'hello2' }).ToString()
+    }
+}

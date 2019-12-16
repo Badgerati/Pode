@@ -162,3 +162,27 @@ Describe 'Clear-PodeSchedules' {
         $PodeContext.Schedules.Count | Should Be 0
     }
 }
+
+Describe 'Edit-PodeSchedule' {
+    It 'Adds a new schedule, then edits the cron' {
+        $PodeContext = @{ 'Schedules' = @{}; }
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello1' }
+        $PodeContext.Schedules['test1'].Crons.Length | Should Be 1
+        $PodeContext.Schedules['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+
+        Edit-PodeSchedule -Name 'test1' -Cron @('@minutely', '@hourly')
+        $PodeContext.Schedules['test1'].Crons.Length | Should Be 2
+        $PodeContext.Schedules['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+    }
+
+    It 'Adds a new schedule, then edits the script' {
+        $PodeContext = @{ 'Schedules' = @{}; }
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello1' }
+        $PodeContext.Schedules['test1'].Crons.Length | Should Be 1
+        $PodeContext.Schedules['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+
+        Edit-PodeSchedule -Name 'test1' -ScriptBlock { Write-Host 'hello2' }
+        $PodeContext.Schedules['test1'].Crons.Length | Should Be 1
+        $PodeContext.Schedules['test1'].Script.ToString() | Should Be ({ Write-Host 'hello2' }).ToString()
+    }
+}
