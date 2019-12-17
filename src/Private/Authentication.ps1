@@ -185,8 +185,19 @@ function Get-PodeAuthMiddlewareScript
 
         # if there is no result, return false (failed auth)
         if ((Test-IsEmpty $result) -or (Test-IsEmpty $result.User)) {
+            $_code = (Protect-PodeValue -Value $result.Code -Default 401)
+
+            if (![string]::IsNullOrWhiteSpace($auth.Type.Name) -and ($_code -eq 401)) {
+                $_wwwAuth = $auth.Type.Name
+                if (![string]::IsNullOrWhiteSpace($auth.Type.Realm)) {
+                    $_wwwAuth += " realm=`"$($auth.Type.Realm)`""
+                }
+
+                Set-PodeHeader -Name 'WWW-Authenticate' -Value $_wwwAuth
+            }
+
             return (Set-PodeAuthStatus `
-                -StatusCode (Protect-PodeValue -Value $result.Code -Default 401) `
+                -StatusCode $_code `
                 -Description $result.Message `
                 -Options $opts)
         }

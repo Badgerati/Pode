@@ -32,6 +32,12 @@ The ScriptBlock to retrieve user credentials.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Authentication type's ScriptBlock.
 
+.PARAMETER Name
+The Name of an Authentication type - such as Basic or NTLM.
+
+.PARAMETER Realm
+The name of scope of the protected area.
+
 .EXAMPLE
 $basic_auth = New-PodeAuthType -Basic
 
@@ -87,13 +93,23 @@ function New-PodeAuthType
 
         [Parameter(ParameterSetName='Custom')]
         [hashtable]
-        $ArgumentList
+        $ArgumentList,
+
+        [Parameter()]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Realm
     )
 
     # configure the auth type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'basic' {
             return @{
+                Name = (Protect-PodeValue -Value $Name -Default 'Basic')
+                Realm = $Realm
                 ScriptBlock = (Get-PodeAuthBasicType)
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
@@ -104,6 +120,8 @@ function New-PodeAuthType
 
         'form' {
             return @{
+                Name = (Protect-PodeValue -Value $Name -Default 'Form')
+                Realm = $Realm
                 ScriptBlock = (Get-PodeAuthFormType)
                 Arguments = @{
                     Fields = @{
@@ -116,6 +134,8 @@ function New-PodeAuthType
 
         'custom' {
             return @{
+                Name = $Name
+                Realm = $Realm
                 ScriptBlock = $ScriptBlock
                 Arguments = $ArgumentList
             }
