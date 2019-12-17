@@ -26,7 +26,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthType -Basic -Realm 'WOOP' | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthType -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
