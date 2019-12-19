@@ -125,6 +125,7 @@
         'Clear-PodeSchedule',
         'Invoke-PodeSchedule',
         'Edit-PodeSchedule',
+        'Set-PodeScheduleConcurrency',
 
         # timers
         'Add-PodeTimer',
