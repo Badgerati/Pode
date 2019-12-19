@@ -65,7 +65,7 @@ The `-Name` of the authentication method must be unique. The `-Type` comes from 
 
 The `-ScriptBlock` is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a `User` object needs to be returned from the script as `@{ User = $user }`. If `$null`, or a null user, is returned then the script is assumed to have failed - meaning the user will have failed authentication, and a 401 response is returned.
 
-#### Custom Message and Status
+#### Custom Status and Headers
 
 When authenticating a user in Pode, any failures will return a 401 response with a generic message. You can inform Pode to return a custom message/status from [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) by returning the relevant hashtable values.
 
@@ -77,7 +77,7 @@ New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
 }
 ```
 
-or a custom message as follows, which can be used with a custom status code or on its own:
+or a custom message (the status description) as follows, which can be used with a custom status code or on its own:
 
 ```powershell
 New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
@@ -85,9 +85,21 @@ New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
 }
 ```
 
+You can also set custom headers on the response; these will be set regardless if authentication fails or succeeds:
+
+```powershell
+New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    return @{
+        Headers = @{
+            HeaderName = 'HeaderValue'
+        }
+    }
+}
+```
+
 #### Authenticate Type/Realm
 
-When authentication fails, and a 401 response is returned, then Pode will also attempt to Response back to the client with a `WWW-Authenticate` header. For the inbuilt types, such as Basic, this Header will always be returned on a 401 response.
+When authentication fails, and a 401 response is returned, then Pode will also attempt to Response back to the client with a `WWW-Authenticate` header (if you've manually set this header using the custom headers from above, then the custom header will be used instead). For the inbuilt types, such as Basic, this Header will always be returned on a 401 response.
 
 You can set the `-Name` and `-Realm` of the header using the [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function. If no Name is supplied, then the header will not be returned - also if there is no Realm, then this will not be added onto the header.
 
