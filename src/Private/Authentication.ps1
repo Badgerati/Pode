@@ -16,12 +16,12 @@ function Get-PodeAuthBasicType
         $atoms = $header -isplit '\s+'
         if ($atoms[0] -ine $options.HeaderTag) {
             return @{
-                Message = "Header is not $($options.HeaderTag) Authorization"
+                Message = "Header is not for $($options.HeaderTag) Authorization"
                 Code = 400
             }
         }
 
-        # decode the aut header
+        # decode the auth header
         try {
             $enc = [System.Text.Encoding]::GetEncoding($options.Encoding)
         }
@@ -187,18 +187,18 @@ function Get-PodeAuthMiddlewareScript
         if ((Test-IsEmpty $result) -or (Test-IsEmpty $result.User)) {
             $_code = (Protect-PodeValue -Value $result.Code -Default 401)
 
-            if (![string]::IsNullOrWhiteSpace($auth.Type.Name) -and ($_code -eq 401)) {
-                $_wwwAuth = $auth.Type.Name
-                if (![string]::IsNullOrWhiteSpace($auth.Type.Realm)) {
-                    $_wwwAuth += " realm=`"$($auth.Type.Realm)`""
+            # set the www-auth header
+            if (($_code -eq 401) -and (($null -eq $result.Headers) -or !$result.Headers.ContainsKey('WWW-Authenticate'))) {
+                $_wwwHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Type.Name -Realm $auth.Type.Realm
+                if (![string]::IsNullOrWhiteSpace($_wwwHeader)) {
+                    Set-PodeHeader -Name 'WWW-Authenticate' -Value $_wwwHeader
                 }
-
-                Set-PodeHeader -Name 'WWW-Authenticate' -Value $_wwwAuth
             }
 
             return (Set-PodeAuthStatus `
                 -StatusCode $_code `
                 -Description $result.Message `
+                -Headers $result.Headers `
                 -Options $opts)
         }
 
@@ -209,8 +209,32 @@ function Get-PodeAuthMiddlewareScript
         $e.Auth.Store = $storeInSession
 
         # continue
-        return (Set-PodeAuthStatus -Options $opts)
+        return (Set-PodeAuthStatus -Headers $result.Headers -Options $opts)
     }
+}
+
+function Get-PodeAuthWwwHeaderValue
+{
+    param(
+        [Parameter()]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Realm
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        return [string]::Empty
+    }
+
+    $header = $Name
+    if (![string]::IsNullOrWhiteSpace($Realm)) {
+        $header += " realm=`"$($Realm)`""
+    }
+
+    return $header
 }
 
 function Remove-PodeAuthSession
@@ -246,8 +270,19 @@ function Set-PodeAuthStatus
 
         [Parameter()]
         [hashtable]
+        $Headers,
+
+        [Parameter()]
+        [hashtable]
         $Options
     )
+
+    # if we have any headers, set them
+    if (($null -ne $Headers) -and ($Headers.Count -gt 0)) {
+        foreach ($name in $Headers.Keys) {
+            Set-PodeHeader -Name $name -Value $Headers[$name]
+        }
+    }
 
     # if a statuscode supplied, assume failure
     if ($StatusCode -gt 0)
