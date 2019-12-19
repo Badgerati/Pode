@@ -1092,7 +1092,7 @@ function Set-PodeScheduleConcurrency
 
     # error if <=0
     if ($Maximum -le 0) {
-        throw "Maximum concurrent schedules must be >=0 but got: $($Maximum)"
+        throw "Maximum concurrent schedules must be >=1 but got: $($Maximum)"
     }
 
     # ensure max > min
