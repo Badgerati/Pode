@@ -1070,6 +1070,43 @@ function Add-PodeSchedule
 
 <#
 .SYNOPSIS
+Set the maximum number of concurrent schedules.
+
+.DESCRIPTION
+Set the maximum number of concurrent schedules.
+
+.PARAMETER Maximum
+The Maximum number of schdules to run.
+
+.EXAMPLE
+Set-PodeScheduleConcurrency -Maximum 25
+#>
+function Set-PodeScheduleConcurrency
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Maximum
+    )
+
+    # error if <=0
+    if ($Maximum -le 0) {
+        throw "Maximum concurrent schedules must be >=1 but got: $($Maximum)"
+    }
+
+    # ensure max > min
+    $_min = $PodeContext.RunspacePools.Schedules.GetMinRunspaces()
+    if ($_min -gt $Maximum) {
+        throw "Maximum concurrent schedules cannot be less than the minimum of $($_min) but got: $($Maximum)"
+    }
+
+    # set the max schedules
+    $PodeContext.RunspacePools.Schedules.SetMaxRunspaces($Maximum)
+}
+
+<#
+.SYNOPSIS
 Adhoc invoke a Schedule's logic.
 
 .DESCRIPTION

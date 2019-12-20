@@ -265,7 +265,7 @@ function New-PodeRunspacePools
     $PodeContext.RunspacePools.Signals.Open()
 
     # setup schedule runspace pool
-    $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 2, $PodeContext.RunspaceState, $Host)
+    $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 10, $PodeContext.RunspaceState, $Host)
     $PodeContext.RunspacePools.Schedules.Open()
 
     # setup gui runspace pool (only for non-ps-core)

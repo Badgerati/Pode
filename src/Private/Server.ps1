@@ -16,6 +16,9 @@ function Start-PodeInternalServer
         # create the shared runspace state
         New-PodeRunspaceState
 
+        # start the runspace pools for web, schedules, etc
+        New-PodeRunspacePools
+
         # get the server's script and invoke it - to set up routes, timers, middleware, etc
         $_script = $PodeContext.Server.Logic
         if (Test-PodePath -Path $PodeContext.Server.LogicPath -NoStatus) {
@@ -23,9 +26,6 @@ function Start-PodeInternalServer
         }
 
         Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
-
-        # start the runspace pools for web, schedules, etc
-        New-PodeRunspacePools
 
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
