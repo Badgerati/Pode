@@ -1,5 +1,20 @@
 # Release Notes
 
+## v1.3.0
+
+```plain
+### Enhancements
+* #421: Adds a new `-FilePath` parameter to the `Add-PodeTimer` and `Add-PodeSchedule` functions
+* #422: Adds a new `-FilePath` parameter to the `Start-PodeServer` function
+* #423: New `Edit-PodeSchedule` and `Edit-PodeSchedule` functions
+* #431: Support for the `WWW-Authenticate` header on failed Authentication (401) responses
+* #433: Support in custom Authentication types to allow returning extra Headers on the response
+* #435: New `Set-PodeScheduleConcurrency` function to set the max number of concurrent schedules
+
+### Bugs
+* #429: Running `pode start` failed to invoke server script on some platforms
+```
+
 ## v1.2.1
 
 ```plain
