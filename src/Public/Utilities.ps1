@@ -412,7 +412,7 @@ function Import-PodeModule
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'name' {
             $modulePath = Join-PodeServerRoot -Folder (Join-PodePaths @('ps_modules', $Name))
-            if ([string]::IsNullOrWhiteSpace($modulePath)) {
+            if (Test-PodePath -Path $modulePath -NoStatus) {
                 $Path = (Get-ChildItem (Join-PodePaths @($modulePath, '*', "$($Name).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
             }
             else {

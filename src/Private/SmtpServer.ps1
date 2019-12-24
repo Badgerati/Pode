@@ -172,7 +172,7 @@ function Start-PodeSmtpServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeContext.Threads | ForEach-Object {
+    1..$PodeContext.Threads.Web | ForEach-Object {
         Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
             -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
