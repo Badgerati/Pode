@@ -46,7 +46,7 @@ function New-PodeContext
 
     # basic context object
     $ctx = New-Object -TypeName psobject |
-        Add-Member -MemberType NoteProperty -Name Threads -Value $Threads -PassThru |
+        Add-Member -MemberType NoteProperty -Name Threads -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
@@ -68,6 +68,12 @@ function New-PodeContext
     $ctx.Server.Logging = @{
         Enabled = $true
         Types = @{}
+    }
+
+    # set thread counts
+    $ctx.Threads = @{
+        Web = $Threads
+        Schedules = 10
     }
 
     # set socket details for pode server
@@ -256,23 +262,32 @@ function New-PodeRunspacePools
         Misc = 1
     }
 
-    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $PodeContext.Threads
+    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $PodeContext.Threads.Web
     $PodeContext.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
-    $PodeContext.RunspacePools.Main.Open()
 
     # setup signal runspace pool
-    $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads + 2), $PodeContext.RunspaceState, $Host)
-    $PodeContext.RunspacePools.Signals.Open()
+    $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.Web + 2), $PodeContext.RunspaceState, $Host)
 
     # setup schedule runspace pool
-    $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, 10, $PodeContext.RunspaceState, $Host)
-    $PodeContext.RunspacePools.Schedules.Open()
+    $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
 
     # setup gui runspace pool (only for non-ps-core)
     if (!((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
         $PodeContext.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         $PodeContext.RunspacePools.Gui.ApartmentState = 'STA'
-        $PodeContext.RunspacePools.Gui.Open()
+    }
+}
+
+function Open-PodeRunspacePools
+{
+    if ($PodeContext.Server.IsServerless) {
+        return
+    }
+
+    foreach ($key in $PodeContext.RunspacePools.Keys) {
+        if ($null -ne $PodeContext.RunspacePools[$key]) {
+            $PodeContext.RunspacePools[$key].Open()
+        }
     }
 }
 

@@ -1096,13 +1096,20 @@ function Set-PodeScheduleConcurrency
     }
 
     # ensure max > min
-    $_min = $PodeContext.RunspacePools.Schedules.GetMinRunspaces()
+    $_min = 1
+    if ($null -ne $PodeContext.RunspacePools.Schedules) {
+        $_min = $PodeContext.RunspacePools.Schedules.GetMinRunspaces()
+    }
+
     if ($_min -gt $Maximum) {
         throw "Maximum concurrent schedules cannot be less than the minimum of $($_min) but got: $($Maximum)"
     }
 
     # set the max schedules
-    $PodeContext.RunspacePools.Schedules.SetMaxRunspaces($Maximum)
+    $PodeContext.Threads.Schedules = $Maximum
+    if ($null -ne $PodeContext.RunspacePools.Schedules) {
+        $PodeContext.RunspacePools.Schedules.SetMaxRunspaces($Maximum)
+    }
 }
 
 <#
