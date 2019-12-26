@@ -10,9 +10,11 @@
 * #431: Support for the `WWW-Authenticate` header on failed Authentication (401) responses
 * #433: Support in custom Authentication types to allow returning extra Headers on the response
 * #435: New `Set-PodeScheduleConcurrency` function to set the max number of concurrent schedules
+* #440: Adds support in the `package.json` for custom PowerShell Repositories
 
 ### Bugs
 * #429: Running `pode start` failed to invoke server script on some platforms
+* #441: Fixes an issue where local modules failed to resolve correct path
 ```
 
 ## v1.2.1
