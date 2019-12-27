@@ -328,6 +328,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v130" title="v1.3.0" class="md-nav__link">
+    v1.3.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v121" title="v1.2.1" class="md-nav__link">
     v1.2.1
   </a>
@@ -927,6 +934,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../Functions/Core/Edit-PodeSchedule/" title="Edit-PodeSchedule" class="md-nav__link">
+      Edit-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Functions/Core/Edit-PodeTimer/" title="Edit-PodeTimer" class="md-nav__link">
+      Edit-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Functions/Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
       Invoke-PodeSchedule
     </a>
@@ -1001,6 +1032,18 @@
   <li class="md-nav__item">
     <a href="../Functions/Core/Remove-PodeTimer/" title="Remove-PodeTimer" class="md-nav__link">
       Remove-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Functions/Core/Set-PodeScheduleConcurrency/" title="Set-PodeScheduleConcurrency" class="md-nav__link">
+      Set-PodeScheduleConcurrency
     </a>
   </li>
 
@@ -3508,6 +3551,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v130" title="v1.3.0" class="md-nav__link">
+    v1.3.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v121" title="v1.2.1" class="md-nav__link">
     v1.2.1
   </a>
@@ -3772,6 +3822,22 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v130">v1.3.0</h2>
+<div class="codehilite"><pre><span></span>### <span class="nv">Enhancements</span>
+<span class="o">*</span> <span class="sc">#421</span>: <span class="nv">Adds</span> <span class="nv">a</span> <span class="nv">new</span> `<span class="o">-</span><span class="nv">FilePath</span>` <span class="nv">parameter</span> <span class="nv">to</span> <span class="nv">the</span> `<span class="nv">Add</span><span class="o">-</span><span class="nv">PodeTimer</span>` <span class="nv">and</span> `<span class="nv">Add</span><span class="o">-</span><span class="nv">PodeSchedule</span>` <span class="nv">functions</span>
+<span class="o">*</span> <span class="sc">#422</span>: <span class="nv">Adds</span> <span class="nv">a</span> <span class="nv">new</span> `<span class="o">-</span><span class="nv">FilePath</span>` <span class="nv">parameter</span> <span class="nv">to</span> <span class="nv">the</span> `<span class="nv">Start</span><span class="o">-</span><span class="nv">PodeServer</span>` <span class="nv">function</span>
+<span class="o">*</span> <span class="sc">#423</span>: <span class="nv">New</span> `<span class="nv">Edit</span><span class="o">-</span><span class="nv">PodeSchedule</span>` <span class="nv">and</span> `<span class="nv">Edit</span><span class="o">-</span><span class="nv">PodeSchedule</span>` <span class="nv">functions</span>
+<span class="o">*</span> <span class="sc">#431</span>: <span class="nv">Support</span> <span class="k">for</span> <span class="nv">the</span> `<span class="nv">WWW</span><span class="o">-</span><span class="nv">Authenticate</span>` <span class="nv">header</span> <span class="nv">on</span> <span class="nv">failed</span> <span class="nv">Authentication</span> <span class="ss">(</span><span class="mi">401</span><span class="ss">)</span> <span class="nv">responses</span>
+<span class="o">*</span> <span class="sc">#433</span>: <span class="nv">Support</span> <span class="nv">in</span> <span class="nv">custom</span> <span class="nv">Authentication</span> <span class="nv">types</span> <span class="nv">to</span> <span class="nv">allow</span> <span class="nv">returning</span> <span class="nv">extra</span> <span class="nv">Headers</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">response</span>
+<span class="o">*</span> <span class="sc">#435</span>: <span class="nv">New</span> `<span class="nv">Set</span><span class="o">-</span><span class="nv">PodeScheduleConcurrency</span>` <span class="nv">function</span> <span class="nv">to</span> <span class="nv">set</span> <span class="nv">the</span> <span class="nv">max</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">concurrent</span> <span class="nv">schedules</span>
+<span class="o">*</span> <span class="sc">#440</span>: <span class="nv">Adds</span> <span class="nv">support</span> <span class="nv">in</span> <span class="nv">the</span> `<span class="nv">package</span>.<span class="nv">json</span>` <span class="k">for</span> <span class="nv">custom</span> <span class="nv">PowerShell</span> <span class="nv">Repositories</span>
+
+### <span class="nv">Bugs</span>
+<span class="o">*</span> <span class="sc">#429</span>: <span class="nv">Running</span> `<span class="nv">pode</span> <span class="nv">start</span>` <span class="nv">failed</span> <span class="nv">to</span> <span class="nv">invoke</span> <span class="nv">server</span> <span class="nv">script</span> <span class="nv">on</span> <span class="nv">some</span> <span class="nv">platforms</span>
+<span class="o">*</span> <span class="sc">#441</span>: <span class="nv">Fixes</span> <span class="nv">an</span> <span class="nv">issue</span> <span class="nv">where</span> <span class="nv">local</span> <span class="nv">modules</span> <span class="nv">failed</span> <span class="nv">to</span> <span class="nv">resolve</span> <span class="nv">correct</span> <span class="nv">path</span>
+</pre></div>
+
+
 <h2 id="v121">v1.2.1</h2>
 <div class="codehilite"><pre><span></span>### <span class="nv">Enhancements</span>
 <span class="o">*</span> <span class="sc">#415</span>: <span class="nv">New</span> <span class="nv">functions</span> <span class="k">for</span> <span class="nv">invoking</span> <span class="nv">Timer</span> <span class="nv">and</span> <span class="nv">Schedules</span> <span class="nv">adhoc</span>

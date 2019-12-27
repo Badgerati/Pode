@@ -653,6 +653,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Core/Edit-PodeSchedule/" title="Edit-PodeSchedule" class="md-nav__link">
+      Edit-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Core/Edit-PodeTimer/" title="Edit-PodeTimer" class="md-nav__link">
+      Edit-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
       Invoke-PodeSchedule
     </a>
@@ -727,6 +751,18 @@
   <li class="md-nav__item">
     <a href="../../Functions/Core/Remove-PodeTimer/" title="Remove-PodeTimer" class="md-nav__link">
       Remove-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Core/Set-PodeScheduleConcurrency/" title="Set-PodeScheduleConcurrency" class="md-nav__link">
+      Set-PodeScheduleConcurrency
     </a>
   </li>
 
@@ -3328,10 +3364,10 @@
                 
                 
                 <h1 id="local-modules">Local Modules</h1>
-<p>To save installing PowerShell modules globally, Pode allows you to specify modules in the <code>package.json</code> file; these modules will be downloaded into a <code>ps_modules</code> folder at the root of your server.</p>
+<p>To save installing PowerShell modules globally, Pode allows you to specify modules in the <code>package.json</code> file. These modules will be downloaded into a <code>ps_modules</code> folder at the root of your server.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>Pode will only download modules from the PowerShell Gallery. This is only a basic implementation, if you wish to download from other locations, we'd recommend looking at other tools such as <a href="https://github.com/RamblingCookieMonster/PSDepend/"><code>PSDepend</code></a> or <a href="https://github.com/mkht/pspm"><code>PSPM</code></a></p>
+<p>Pode will only download modules from registered PowerShell Repositories - such as the PowerShell Gallery. This is only a basic implementation, if you wish to download from other locations, such as GitHub, we'd recommend looking at other tools such as <a href="https://github.com/Badgerati/Parcel"><code>Parcel</code></a>, <a href="https://github.com/RamblingCookieMonster/PSDepend/"><code>PSDepend</code></a> or <a href="https://github.com/mkht/pspm"><code>PSPM</code></a></p>
 </div>
 <h2 id="packagejson">Package.json</h2>
 <p>Within your server's <code>package.json</code> file, you can specify a <code>modules</code> and <code>devModules</code> section with a list of modules and their versions to download:</p>
@@ -3346,7 +3382,25 @@
 </pre></div>
 
 
-<p>The <code>"latest"</code> version will always install the latest version of the module. When installing, if Pode detects a different version already downloaded then it will be removed.</p>
+<p>You can also use an expanded format where you can specify custom repositories as well. If you use this format, or the above, and don't specify a repository then the PSGallery is used by default:</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;modules&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;eps&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.5.0&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;repository&quot;</span><span class="p">:</span> <span class="s2">&quot;CustomGallery&quot;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;devModules&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;pester&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;latest&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;repository&quot;</span><span class="p">:</span> <span class="s2">&quot;PSGallery&quot;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>The <code>"latest"</code> version will always install the latest version of the module. When installing the modules, if Pode detects a different version is already downloaded then it will be removed.</p>
 <h2 id="pode-install">Pode Install</h2>
 <p>When you have modules defined within your <code>package.jon</code> file, then calling <code>pode install</code> from the CLI will automatically download any defined modules. Using <code>pode -d install</code> will also install the modules, but will also install the dev-modules.</p>
 <p>These modules will be downloaded into a <code>ps_modules</code> directory at the root of your server. For example, using the above <code>package.json</code> and calling <code>pode -d install</code> will create the following directory structure:</p>

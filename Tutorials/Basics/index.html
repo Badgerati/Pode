@@ -653,6 +653,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Core/Edit-PodeSchedule/" title="Edit-PodeSchedule" class="md-nav__link">
+      Edit-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Core/Edit-PodeTimer/" title="Edit-PodeTimer" class="md-nav__link">
+      Edit-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
       Invoke-PodeSchedule
     </a>
@@ -727,6 +751,18 @@
   <li class="md-nav__item">
     <a href="../../Functions/Core/Remove-PodeTimer/" title="Remove-PodeTimer" class="md-nav__link">
       Remove-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Core/Set-PodeScheduleConcurrency/" title="Set-PodeScheduleConcurrency" class="md-nav__link">
+      Set-PodeScheduleConcurrency
     </a>
   </li>
 
@@ -2192,9 +2228,52 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Basics
+      </label>
+    
     <a href="./" title="Basics" class="md-nav__link md-nav__link--active">
       Basics
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#terminating" title="Terminating" class="md-nav__link">
+    Terminating
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#restarting" title="Restarting" class="md-nav__link">
+    Restarting
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#script-from-file" title="Script from File" class="md-nav__link">
+    Script from File
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -3241,6 +3320,36 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#terminating" title="Terminating" class="md-nav__link">
+    Terminating
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#restarting" title="Restarting" class="md-nav__link">
+    Restarting
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#script-from-file" title="Script from File" class="md-nav__link">
+    Script from File
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3255,29 +3364,70 @@
                 
                 
                 <h1 id="basics">Basics</h1>
-<p>All of your main server logic must be set using the  <a href="../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> block:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="c"># attach to port 8080</span>
-    <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="p">*</span> <span class="n">-Port</span> <span class="n">8080</span> <span class="n">-Protocol</span> <span class="n">Http</span>
-
-    <span class="c"># logic for routes, timers, schedules, etc</span>
-<span class="p">}</span>
-</pre></div>
-
-
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>You can only start one server in your script</p>
 </div>
-<p>The above server will start a basic HTTP listener on port 8080. To start the server you can either:</p>
+<p>The script for your server should be set in the <a href="../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> function, via the <code>-ScriptBlock</code> parameter. The following example will listen over HTTP on port 8080, and expose a simple HTML page of running processes at <code>http://localhost:8080/processes</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
+    <span class="c"># attach to port 8080 for http</span>
+    <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="p">*</span> <span class="n">-Port</span> <span class="n">8080</span> <span class="n">-Protocol</span> <span class="n">Http</span>
+
+    <span class="c"># a simple page for displaying services</span>
+    <span class="nb">Add-PodePage</span> <span class="n">-Name</span> <span class="s1">&#39;processes&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span> <span class="nb">Get-Process</span> <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>To start the server you can either:</p>
 <ul>
 <li>Directly run the <code>./server.ps1</code> script, or</li>
 <li>If you've created a <code>package.json</code> file, ensure the <code>./server.ps1</code> script is set as your <code>main</code> or <code>scripts/start</code>, then just run <code>pode start</code> (more <a href="../../Getting-Started/CLI">here</a>)</li>
 </ul>
+<h2 id="terminating">Terminating</h2>
+<p>Once your Pode server has started, you can terminate it at any time using <code>Ctrl+C</code>. If you want to disable your server from being terminated then use the <code>-DisableTermination</code> switch on the <a href="../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> function.</p>
+<h2 id="restarting">Restarting</h2>
+<p>You can restart your Pode server by using <code>Ctrl+R</code>, or on Unix you can also use <code>Shift+C</code> and <code>Shift+R</code> as well. When the server restarts it will only re-invoke the initial <code>-ScriptBlock</code>, so any changes made to this main scriptblock will <em>not</em> be reflected - you'll need to terminate and start your server again.</p>
+<h2 id="script-from-file">Script from File</h2>
+<p>You can also define your server's scriptblock in a separate file, and use it via the <code>-FilePath</code> parameter on the <a href="../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> function.</p>
+<p>Using this approach there are 2 ways to start you server:</p>
+<ol>
+<li>You can put your scriptblock into a separate file, and put your <a href="../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> call into another script. This other script is then what you call on the CLI.</li>
+<li>You can directly call <a href="../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> on the CLI.</li>
+</ol>
+<p>When you call <a href="../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> directly on the CLI, then your server's root path will be set to directory of that file. You can override this behaviour by either defining a path via <code>-RootPath</code>, or by telling the server to use the current working path as root via <code>-CurrentPath</code>.</p>
+<p>For example, the following is a file that contains the same scriptblock for the server at the top of this page. Following that are the two ways to run the server - the first is via another script, and the second is directly from the CLI:</p>
+<ul>
+<li>File.ps1</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="c"># attach to port 8080 for http</span>
+    <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="p">*</span> <span class="n">-Port</span> <span class="n">8080</span> <span class="n">-Protocol</span> <span class="n">Http</span>
+
+    <span class="c"># a simple page for displaying services</span>
+    <span class="nb">Add-PodePage</span> <span class="n">-Name</span> <span class="s1">&#39;processes&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span> <span class="nb">Get-Process</span> <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<ul>
+<li>Server.ps1 (start via script)</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="n">-FilePath</span> <span class="s1">&#39;./File.ps1&#39;</span>
+</pre></div>
+
+
+<p>then use <code>./Server.ps1</code> on the CLI.</p>
+<ul>
+<li>CLI (start from CLI)</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="n">PS</span><span class="p">&gt;</span> <span class="nb">Start-PodeServer</span> <span class="n">-FilePath</span> <span class="s1">&#39;./File.ps1&#39;</span>
+</pre></div>
+
+
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Once Pode has started, you can exit out at any time using <code>Ctrl+C</code>. You can also restart the server by using <code>Ctrl+R</code>.
-On Unix, you can also use <code>Shuft+C</code> and <code>Shift+R</code></p>
+<p>Normally when you restart your Pode server any changes to the main scriptblock don't reflect. However, if you reference a file instead, then restarting the server will reload the scriptblock from that file - so any changes will reflect.</p>
 </div>
                 
                   

@@ -653,6 +653,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Core/Edit-PodeSchedule/" title="Edit-PodeSchedule" class="md-nav__link">
+      Edit-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Edit-PodeTimer/" title="Edit-PodeTimer" class="md-nav__link">
+      Edit-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
       Invoke-PodeSchedule
     </a>
@@ -727,6 +751,18 @@
   <li class="md-nav__item">
     <a href="../../../Functions/Core/Remove-PodeTimer/" title="Remove-PodeTimer" class="md-nav__link">
       Remove-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Set-PodeScheduleConcurrency/" title="Set-PodeScheduleConcurrency" class="md-nav__link">
+      Set-PodeScheduleConcurrency
     </a>
   </li>
 
@@ -2399,8 +2435,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#custom-message-and-status" title="Custom Message and Status" class="md-nav__link">
-    Custom Message and Status
+  <a href="#custom-status-and-headers" title="Custom Status and Headers" class="md-nav__link">
+    Custom Status and Headers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authenticate-typerealm" title="Authenticate Type/Realm" class="md-nav__link">
+    Authenticate Type/Realm
   </a>
   
 </li>
@@ -3353,8 +3396,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#custom-message-and-status" title="Custom Message and Status" class="md-nav__link">
-    Custom Message and Status
+  <a href="#custom-status-and-headers" title="Custom Status and Headers" class="md-nav__link">
+    Custom Status and Headers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authenticate-typerealm" title="Authenticate Type/Realm" class="md-nav__link">
+    Authenticate Type/Realm
   </a>
   
 </li>
@@ -3413,12 +3463,12 @@
 <p>Authentication can either be sessionless (requiring validation on every request), or session-persistent (only requiring validation once, and then checks against a session signed-cookie).</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
-<p>To use session-persistent authentication you will also need to use Session Middleware.</p>
+<p>To use session-persistent authentication you will also need to use <a href="../../Middleware/Types/Sessions">Session Middleware</a>.</p>
 </div>
-<p>To setup and use authentication in Pode you need to use the  <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> and  <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> functions, as well as the  <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> function for defining authentication Middleware.</p>
+<p>To setup and use authentication in Pode you need to use the <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> and <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> functions, as well as the <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> function for defining authentication Middleware.</p>
 <h2 id="functions">Functions</h2>
 <h3 id="new-podeauthtype">New-PodeAuthType</h3>
-<p>The  <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> function allows you to create and configure Basic/Form authentication types, or you can create your own Custom authentication types. These types can then be used on the  <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> function.</p>
+<p>The <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> function allows you to create and configure Basic/Form authentication types, or you can create your own Custom authentication types. These types can then be used on the <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> function.</p>
 <p>An example of creating Basic/Form authentication is as follows:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nv">$basic_auth</span> <span class="p">=</span> <span class="nb">New-PodeAuthType</span> <span class="n">-Basic</span>
@@ -3427,7 +3477,7 @@
 </pre></div>
 
 
-<p>Where as the following example defines a Custom type that retrieves the user credentials from Headers:</p>
+<p>Where as the following example defines a Custom type that retrieves the user's credentials from the Request's Payload:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nv">$custom_type</span> <span class="p">=</span> <span class="nb">New-PodeAuthType</span> <span class="n">-Custom</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">)</span>
@@ -3450,8 +3500,8 @@
 
 
 <h3 id="add-podeauth">Add-PodeAuth</h3>
-<p>The  <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> function allows you to add authentication methods to your server. You can have many methods configured, defining which one to validate against using the  <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> function.</p>
-<p>An example of using  <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> for Basic authentication is as follows:</p>
+<p>The <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> function allows you to add authentication methods to your server. You can have many methods configured, defining which one to validate against using the <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> function.</p>
+<p>An example of using <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> for Basic authentication is as follows:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">New-PodeAuthType</span> <span class="n">-Basic</span> <span class="p">|</span> <span class="nb">Add-PodeAuth</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
         <span class="k">param</span><span class="p">(</span><span class="nv">$username</span><span class="p">,</span> <span class="nv">$pass</span><span class="p">)</span>
@@ -3462,10 +3512,10 @@
 </pre></div>
 
 
-<p>The <code>-Name</code> of the authentication method must be unique. The <code>-Type</code> comes from  <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a>, and can also be piped in.</p>
-<p>The <code>-ScriptBlock</code> is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a <code>User</code> needs to be returned from the script as <code>@{ User = $user }</code>. If <code>$null</code>, or a null user, is returned then the script is assumed to have failed - meaning the user will have failed authentication, and a 401 response is returned.</p>
-<h4 id="custom-message-and-status">Custom Message and Status</h4>
-<p>When authenticating a user in Pode, any failures will return a 401 response with a generic message. You can inform Pode to return a custom message/status from <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> by returning a relevant hashtable.</p>
+<p>The <code>-Name</code> of the authentication method must be unique. The <code>-Type</code> comes from the object returned via the <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> function, and can also be piped in.</p>
+<p>The <code>-ScriptBlock</code> is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a <code>User</code> object needs to be returned from the script as <code>@{ User = $user }</code>. If <code>$null</code>, or a null user, is returned then the script is assumed to have failed - meaning the user will have failed authentication, and a 401 response is returned.</p>
+<h4 id="custom-status-and-headers">Custom Status and Headers</h4>
+<p>When authenticating a user in Pode, any failures will return a 401 response with a generic message. You can inform Pode to return a custom message/status from <a href="../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> by returning the relevant hashtable values.</p>
 <p>You can return a custom status code as follows:</p>
 <div class="codehilite"><pre><span></span><span class="nb">New-PodeAuthType</span> <span class="n">-Basic</span> <span class="p">|</span> <span class="nb">Add-PodeAuth</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
     <span class="k">return</span> <span class="p">@{</span> <span class="n">Code</span> <span class="p">=</span> <span class="n">403</span> <span class="p">}</span>
@@ -3473,16 +3523,44 @@
 </pre></div>
 
 
-<p>or a custom message as follows, which can be used with a custom status code or on its own:</p>
+<p>or a custom message (the status description) as follows, which can be used with a custom status code or on its own:</p>
 <div class="codehilite"><pre><span></span><span class="nb">New-PodeAuthType</span> <span class="n">-Basic</span> <span class="p">|</span> <span class="nb">Add-PodeAuth</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
     <span class="k">return</span> <span class="p">@{</span> <span class="n">Message</span> <span class="p">=</span> <span class="s1">&#39;Custom authentication failed message&#39;</span> <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
+<p>You can also set custom headers on the response; these will be set regardless if authentication fails or succeeds:</p>
+<div class="codehilite"><pre><span></span><span class="nb">New-PodeAuthType</span> <span class="n">-Basic</span> <span class="p">|</span> <span class="nb">Add-PodeAuth</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="p">@{</span>
+        <span class="n">Headers</span> <span class="p">=</span> <span class="p">@{</span>
+            <span class="n">HeaderName</span> <span class="p">=</span> <span class="s1">&#39;HeaderValue&#39;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h4 id="authenticate-typerealm">Authenticate Type/Realm</h4>
+<p>When authentication fails, and a 401 response is returned, then Pode will also attempt to Response back to the client with a <code>WWW-Authenticate</code> header (if you've manually set this header using the custom headers from above, then the custom header will be used instead). For the inbuilt types, such as Basic, this Header will always be returned on a 401 response.</p>
+<p>You can set the <code>-Name</code> and <code>-Realm</code> of the header using the <a href="../../../Functions/Authentication/New-PodeAuthType"><code>New-PodeAuthType</code></a> function. If no Name is supplied, then the header will not be returned - also if there is no Realm, then this will not be added onto the header.</p>
+<p>For example, if you setup Basic authenticate with a custom Realm as follows:</p>
+<div class="codehilite"><pre><span></span><span class="nb">New-PodeAuthType</span> <span class="n">-Basic</span> <span class="n">-Realm</span> <span class="s1">&#39;Enter creds to access site&#39;</span>
+</pre></div>
+
+
+<p>Then on a 401 response the <code>WWW-Authenticate</code> header will look as follows:</p>
+<div class="codehilite"><pre><span></span><span class="n">WWW</span><span class="o">-</span><span class="n">Authenticate</span><span class="p">:</span> <span class="n">Basic</span> <span class="n">realm</span><span class="o">=</span><span class="ss">&quot;Enter creds to access site&quot;</span>
+</pre></div>
+
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If no Realm was set then it would just look as follows: <code>WWW-Authenticate: Basic</code></p>
+</div>
 <h3 id="get-podeauthmiddleware">Get-PodeAuthMiddleware</h3>
-<p>The  <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> function allows you to define which authentication method to validate a Request against. It returns valid Middleware, meaning you can either use it on specific Routes, or globally for all routes as Middleware. If this action fails, then a 401 response is returned.</p>
-<p>An example of using  <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> against Basic authentication is as follows. The first example sets up global middleware, whereas the second example sets up custom Route Middleware:</p>
+<p>The <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> function allows you to define which authentication method to validate a Request against. It returns valid Middleware, meaning you can either use it on specific Routes, or globally for all routes as global Middleware. If this action fails, then a 401 response is returned.</p>
+<p>An example of using <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> against Basic authentication is as follows. The first example sets up global middleware, whereas the second example sets up custom Route Middleware:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="c"># 1. apply as global middleware</span>
     <span class="nb">Get-PodeAuthMiddleware</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="p">|</span> <span class="nb">Add-PodeMiddleware</span> <span class="n">-Name</span> <span class="s1">&#39;GlobalAuthValidation&#39;</span>
@@ -3496,9 +3574,9 @@
 
 
 <p>On success, it will allow the Route logic to be invoked. If Session Middleware has been configured then an authenticated session is also created for future requests, using a signed session-cookie.</p>
-<p>When the user makes another call using the same authenticated session and that cookie is present, then  <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> will detect the already authenticated session and skip validation. If you're using sessions and you don't want to check the session, or store the user against a session, then use the <code>-Sessionless</code> switch.</p>
+<p>When the user makes another call using the same authenticated session and that cookie is present, then <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> will detect the already authenticated session and skip validation. If you're using sessions and you don't want to check the session, or store the user against a session, then use the <code>-Sessionless</code> switch.</p>
 <h2 id="users">Users</h2>
-<p>After successful validation, an <code>Auth</code> object will be created for use against the current web event. This <code>Auth</code> object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from  <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> is invoked).</p>
+<p>After successful validation, an <code>Auth</code> object will be created for use against the current web event. This <code>Auth</code> object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from <a href="../../../Functions/Authentication/Get-PodeAuthMiddleware"><code>Get-PodeAuthMiddleware</code></a> is invoked).</p>
 <p>The <code>Auth</code> object will also contain:</p>
 <table>
 <thead>
@@ -3527,7 +3605,7 @@
     <span class="k">param</span><span class="p">(</span><span class="nv">$e</span><span class="p">)</span>
 
     <span class="nb">Write-PodeViewResponse</span> <span class="n">-Path</span> <span class="s1">&#39;index&#39;</span> <span class="n">-Data</span> <span class="p">@{</span>
-        <span class="s1">&#39;Username&#39;</span> <span class="p">=</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Auth</span><span class="p">.</span><span class="n">User</span><span class="p">.</span><span class="n">Name</span><span class="p">;</span>
+        <span class="s1">&#39;Username&#39;</span> <span class="p">=</span> <span class="nv">$e</span><span class="p">.</span><span class="n">Auth</span><span class="p">.</span><span class="n">User</span><span class="p">.</span><span class="n">Name</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>

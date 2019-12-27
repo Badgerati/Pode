@@ -653,6 +653,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Functions/Core/Edit-PodeSchedule/" title="Edit-PodeSchedule" class="md-nav__link">
+      Edit-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Edit-PodeTimer/" title="Edit-PodeTimer" class="md-nav__link">
+      Edit-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Functions/Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
       Invoke-PodeSchedule
     </a>
@@ -727,6 +751,18 @@
   <li class="md-nav__item">
     <a href="../../../Functions/Core/Remove-PodeTimer/" title="Remove-PodeTimer" class="md-nav__link">
       Remove-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Functions/Core/Set-PodeScheduleConcurrency/" title="Set-PodeScheduleConcurrency" class="md-nav__link">
+      Set-PodeScheduleConcurrency
     </a>
   </li>
 
@@ -2967,6 +3003,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#script-from-file" title="Script from File" class="md-nav__link">
+    Script from File
+  </a>
+  
+</li>
+      
       
       
       
@@ -3324,6 +3367,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#script-from-file" title="Script from File" class="md-nav__link">
+    Script from File
+  </a>
+  
+</li>
+      
       
       
       
@@ -3455,6 +3505,25 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.</p>
 
 <p>The following request will invoke the above route:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="s1">&#39;http://localhost:8080/users/12345&#39;</span> <span class="n">-Method</span> <span class="n">Get</span>
+</pre></div>
+
+
+<h2 id="script-from-file">Script from File</h2>
+<p>You normally define a route's script using the <code>-ScriptBlock</code> parameter however, you can also reference a file with the required scriptblock using <code>-FilePath</code>. Using the <code>-FilePath</code> parameter will dot-source a scriptblock from the file, and set it as the route's script.</p>
+<p>For example, to create a route from a file that will write a simple JSON response on a route:</p>
+<ul>
+<li>File.ps1</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="nb">Write-PodeJsonResponse</span> <span class="n">-Value</span> <span class="p">@{</span> <span class="s1">&#39;value&#39;</span> <span class="p">=</span> <span class="s1">&#39;pong&#39;</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<ul>
+<li>Timer</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Get</span> <span class="n">-Path</span> <span class="s1">&#39;/ping&#39;</span> <span class="n">-FilePath</span> <span class="s1">&#39;./Routes/File.ps1&#39;</span>
 </pre></div>
                 
                   

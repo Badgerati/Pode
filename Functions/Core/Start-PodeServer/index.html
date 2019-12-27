@@ -657,6 +657,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../Edit-PodeSchedule/" title="Edit-PodeSchedule" class="md-nav__link">
+      Edit-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Edit-PodeTimer/" title="Edit-PodeTimer" class="md-nav__link">
+      Edit-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
       Invoke-PodeSchedule
     </a>
@@ -741,6 +765,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Set-PodeScheduleConcurrency/" title="Set-PodeScheduleConcurrency" class="md-nav__link">
+      Set-PodeScheduleConcurrency
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Show-PodeGui/" title="Show-PodeGui" class="md-nav__link">
       Show-PodeGui
     </a>
@@ -790,6 +826,26 @@
   <a href="#syntax" title="SYNTAX" class="md-nav__link">
     SYNTAX
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#script-default" title="Script (Default)" class="md-nav__link">
+    Script (Default)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file" title="File" class="md-nav__link">
+    File
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -850,8 +906,22 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-currentpath" title="-CurrentPath" class="md-nav__link">
+    -CurrentPath
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-disabletermination" title="-DisableTermination" class="md-nav__link">
     -DisableTermination
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-filepath" title="-FilePath" class="md-nav__link">
+    -FilePath
   </a>
   
 </li>
@@ -3446,6 +3516,26 @@
     SYNTAX
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#script-default" title="Script (Default)" class="md-nav__link">
+    Script (Default)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file" title="File" class="md-nav__link">
+    File
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3505,8 +3595,22 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-currentpath" title="-CurrentPath" class="md-nav__link">
+    -CurrentPath
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-disabletermination" title="-DisableTermination" class="md-nav__link">
     -DisableTermination
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-filepath" title="-FilePath" class="md-nav__link">
+    -FilePath
   </a>
   
 </li>
@@ -3623,8 +3727,15 @@
 <h2 id="synopsis">SYNOPSIS</h2>
 <p>Starts a Pode Server with the supplied ScriptBlock.</p>
 <h2 id="syntax">SYNTAX</h2>
-<div class="codehilite"><pre><span></span><span class="k">Start</span><span class="o">-</span><span class="n">PodeServer</span> <span class="p">[</span><span class="o">-</span><span class="n">ScriptBlock</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">ScriptBlock</span><span class="o">&gt;</span> <span class="p">[[</span><span class="o">-</span><span class="nb">Interval</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">Int32</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[[</span><span class="o">-</span><span class="n">Name</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[[</span><span class="o">-</span><span class="n">Threads</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">Int32</span><span class="o">&gt;</span><span class="p">]</span>
- <span class="p">[[</span><span class="o">-</span><span class="n">RootPath</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[[</span><span class="o">-</span><span class="n">Request</span><span class="p">]</span> <span class="o">&lt;</span><span class="k">Object</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[[</span><span class="o">-</span><span class="k">Type</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">DisableTermination</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Browse</span><span class="p">]</span>
+<h3 id="script-default">Script (Default)</h3>
+<div class="codehilite"><pre><span></span><span class="k">Start</span><span class="o">-</span><span class="n">PodeServer</span> <span class="p">[</span><span class="o">-</span><span class="n">ScriptBlock</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">ScriptBlock</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">-</span><span class="nb">Interval</span> <span class="o">&lt;</span><span class="n">Int32</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Name</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Threads</span> <span class="o">&lt;</span><span class="n">Int32</span><span class="o">&gt;</span><span class="p">]</span>
+ <span class="p">[</span><span class="o">-</span><span class="n">RootPath</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Request</span> <span class="o">&lt;</span><span class="k">Object</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="k">Type</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">DisableTermination</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Browse</span><span class="p">]</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">CommonParameters</span><span class="o">&gt;</span><span class="p">]</span>
+</pre></div>
+
+
+<h3 id="file">File</h3>
+<div class="codehilite"><pre><span></span><span class="k">Start</span><span class="o">-</span><span class="n">PodeServer</span> <span class="o">-</span><span class="n">FilePath</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">-</span><span class="nb">Interval</span> <span class="o">&lt;</span><span class="n">Int32</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Name</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Threads</span> <span class="o">&lt;</span><span class="n">Int32</span><span class="o">&gt;</span><span class="p">]</span>
+ <span class="p">[</span><span class="o">-</span><span class="n">RootPath</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Request</span> <span class="o">&lt;</span><span class="k">Object</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="k">Type</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">DisableTermination</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">Browse</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">CurrentPath</span><span class="p">]</span>
  <span class="p">[</span><span class="o">&lt;</span><span class="n">CommonParameters</span><span class="o">&gt;</span><span class="p">]</span>
 </pre></div>
 
@@ -3662,6 +3773,20 @@
 </pre></div>
 
 
+<h3 id="-currentpath">-CurrentPath</h3>
+<p>Sets the Server's root path to be the current working path - for -FilePath only.</p>
+<div class="codehilite"><pre><span></span><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">File</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</pre></div>
+
+
 <h3 id="-disabletermination">-DisableTermination</h3>
 <p>Disables the ability to terminate the Server.</p>
 <div class="codehilite"><pre><span></span><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
@@ -3676,6 +3801,21 @@
 </pre></div>
 
 
+<h3 id="-filepath">-FilePath</h3>
+<p>A literal, or relative, path to a file containing a ScriptBlock for the Server's logic.
+The directory of this file will be used as the Server's root path - unless a specific -RootPath is supplied.</p>
+<div class="codehilite"><pre><span></span><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">File</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</pre></div>
+
+
 <h3 id="-interval">-Interval</h3>
 <p>For 'Service' type Servers, will invoke the ScriptBlock every X seconds.</p>
 <div class="codehilite"><pre><span></span><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Int32</span>
@@ -3683,7 +3823,7 @@
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -3697,7 +3837,7 @@
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -3711,7 +3851,7 @@
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">6</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -3725,7 +3865,7 @@
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -3735,7 +3875,7 @@
 <h3 id="-scriptblock">-ScriptBlock</h3>
 <p>The main logic for the Server.</p>
 <div class="codehilite"><pre><span></span><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ScriptBlock</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Script</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">True</span>
@@ -3753,7 +3893,7 @@
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -3767,7 +3907,7 @@
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">7</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">string</span><span class="p p-Indicator">]</span><span class="l l-Scalar l-Scalar-Plain">::Empty</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>

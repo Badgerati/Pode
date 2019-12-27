@@ -653,6 +653,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/Core/Edit-PodeSchedule/" title="Edit-PodeSchedule" class="md-nav__link">
+      Edit-PodeSchedule
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Core/Edit-PodeTimer/" title="Edit-PodeTimer" class="md-nav__link">
+      Edit-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
       Invoke-PodeSchedule
     </a>
@@ -727,6 +751,18 @@
   <li class="md-nav__item">
     <a href="../../Functions/Core/Remove-PodeTimer/" title="Remove-PodeTimer" class="md-nav__link">
       Remove-PodeTimer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Functions/Core/Set-PodeScheduleConcurrency/" title="Set-PodeScheduleConcurrency" class="md-nav__link">
+      Set-PodeScheduleConcurrency
     </a>
   </li>
 
@@ -2316,6 +2352,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#script-from-file" title="Script from File" class="md-nav__link">
+    Script from File
+  </a>
+  
+</li>
+      
       
       
       
@@ -3334,6 +3377,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#script-from-file" title="Script from File" class="md-nav__link">
+    Script from File
+  </a>
+  
+</li>
+      
       
       
       
@@ -3354,33 +3404,27 @@
                 
                 
                 <h1 id="schedules">Schedules</h1>
-<p>A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process.</p>
+<p>A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, this can be changed by using the <a href="../../Functions/Core/Set-PodeScheduleConcurrency"><code>Set-PodeScheduleConcurrency</code></a> function.</p>
 <p>Schedule triggers are defined using <a href="../Misc/CronExpressions"><code>cron expressions</code></a>, basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a defined end time.</p>
 <h2 id="create-a-schedule">Create a Schedule</h2>
 <p>To create a new Schedule in your server you use the Schedule functions.</p>
 <p>To create a basic Schedule, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;5 0 * * TUE&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
-        <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
-    <span class="p">}</span>
+<div class="codehilite"><pre><span></span><span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;5 0 * * TUE&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <p>Whereas the following will create the same schedule, but will only trigger the schedule 4 times due to the <code>-Limit</code> value supplied:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;5 0 * * TUE&#39;</span> <span class="n">-Limit</span> <span class="n">4</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
-        <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
-    <span class="p">}</span>
+<div class="codehilite"><pre><span></span><span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;5 0 * * TUE&#39;</span> <span class="n">-Limit</span> <span class="n">4</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
 <span class="p">}</span>
 </pre></div>
 
 
 <p>You can also supply multiple cron expressions for the same Schedule. For example, the following will trigger the same schedule every minute and every hour:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="p">@(</span><span class="s1">&#39;@minutely&#39;</span><span class="p">,</span> <span class="s1">&#39;@hourly&#39;</span><span class="p">)</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
-        <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
-    <span class="p">}</span>
+<div class="codehilite"><pre><span></span><span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="p">@(</span><span class="s1">&#39;@minutely&#39;</span><span class="p">,</span> <span class="s1">&#39;@hourly&#39;</span><span class="p">)</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -3397,12 +3441,10 @@
 <h2 id="delayed-start">Delayed Start</h2>
 <p>The <code>-StartTime &lt;datetime&gt;</code> parameter will cause the Schedule to only be triggered after the date/time defined. For example, if you have a schedule set to trigger at 00:05 every Tuesday, and you pass <code>-StartTime [DateTime]::Now.AddMonths(2)</code>, then the schedule will only start trigger on Tuesdays in 2 months time.</p>
 <p>The following will create a Schedule that triggers at 16:00 every Friday, and is delayed by 1 year:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nv">$start</span> <span class="p">=</span> <span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="nv">$start</span> <span class="p">=</span> <span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
 
-    <span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;0 16 * * FRI&#39;</span> <span class="n">-StartTime</span> <span class="nv">$start</span> <span class="p">{</span>
-        <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
-    <span class="p">}</span>
+<span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;0 16 * * FRI&#39;</span> <span class="n">-StartTime</span> <span class="nv">$start</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -3410,13 +3452,30 @@
 <h2 id="defined-end">Defined End</h2>
 <p>The <code>-EndTime &lt;datetime&gt;</code> parameter will cause the Schedule to cease triggering after the date/time defined. For example, if you have a schedule set to trigger at 00:05 every Tuesday, and you pass <code>-EndTime [DateTime]::Now.AddMonths(2)</code>, then the schedule will stop triggering in 2 months time.</p>
 <p>The following will create a Schedule that triggers at 16:00 every Friday, and stops triggering in 1 year:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nv">$end</span> <span class="p">=</span> <span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="nv">$end</span> <span class="p">=</span> <span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
 
-    <span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;0 16 * * FRI&#39;</span> <span class="n">-EndTime</span> <span class="nv">$end</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
-        <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
-    <span class="p">}</span>
+<span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;date&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;0 16 * * FRI&#39;</span> <span class="n">-EndTime</span> <span class="nv">$end</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="nb">Write-Host</span> <span class="s2">&quot;</span><span class="p">$(</span><span class="no">[DateTime]</span><span class="p">::</span><span class="n">Now</span><span class="p">)</span><span class="s2">&quot;</span>
 <span class="p">}</span>
+</pre></div>
+
+
+<h2 id="script-from-file">Script from File</h2>
+<p>You normally define a schedule's script using the <code>-ScriptBlock</code> parameter however, you can also reference a file with the required scriptblock using <code>-FilePath</code>. Using the <code>-FilePath</code> parameter will dot-source a scriptblock from the file, and set it as the schedule's script.</p>
+<p>For example, to create a schedule from a file that will output <code>Hello, world</code> every minute:</p>
+<ul>
+<li>File.ps1</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;Hello, world!&#39;</span> <span class="p">|</span> <span class="nb">Out-PodeHost</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<ul>
+<li>Timer</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="nb">Add-PodeSchedule</span> <span class="n">-Name</span> <span class="s1">&#39;from-file&#39;</span> <span class="n">-Cron</span> <span class="s1">&#39;@minutely&#39;</span> <span class="n">-FilePath</span> <span class="s1">&#39;./Schedules/File.ps1&#39;</span>
 </pre></div>
                 
                   
