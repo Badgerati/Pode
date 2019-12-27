@@ -13,10 +13,20 @@ function Start-PodeInternalServer
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 
-        # create the runspace state, execute the server logic, and start the runspaces
+        # create the shared runspace state
         New-PodeRunspaceState
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logic -NoNewClosure
+
+        # get the server's script and invoke it - to set up routes, timers, middleware, etc
+        $_script = $PodeContext.Server.Logic
+        if (Test-PodePath -Path $PodeContext.Server.LogicPath -NoStatus) {
+            $_script = Convert-PodeFileToScriptBlock -FilePath $PodeContext.Server.LogicPath
+        }
+
+        Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
+
+        # start the runspace pools for web, schedules, etc
         New-PodeRunspacePools
+        Open-PodeRunspacePools
 
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
@@ -78,7 +88,7 @@ function Start-PodeInternalServer
 
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
-            Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads) thread(s)]:" -ForegroundColor Yellow
+            Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.Web) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
                 Write-Host "`t- $($_)" -ForegroundColor Yellow
             }

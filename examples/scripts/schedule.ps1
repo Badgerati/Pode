@@ -1,0 +1,3 @@
+{
+    'Hello, there!' | Out-PodeHost
+}

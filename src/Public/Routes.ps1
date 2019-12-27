@@ -137,20 +137,7 @@ function Add-PodeRoute
 
     # if we have a file path supplied, load that path as a scriptblock
     if ($PSCmdlet.ParameterSetName -ieq 'file') {
-        # resolve for relative path
-        $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot
-
-        # if file doesn't exist, error
-        if (!(Test-PodePath -Path $FilePath -NoStatus)) {
-            throw "[$($Method)] $($Path): The FilePath does not exist: $($FilePath)"
-        }
-
-        # if the path is a wildcard or directory, error
-        if (!(Test-PodePathIsFile -Path $FilePath -FailOnWildcard)) {
-            throw "[$($Method)] $($Path): The FilePath cannot be a wildcard or directory: $($FilePath)"
-        }
-
-        $ScriptBlock = [scriptblock](Use-PodeScript -Path $FilePath)
+        $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
     # ensure supplied middlewares are either a scriptblock, or a valid hashtable

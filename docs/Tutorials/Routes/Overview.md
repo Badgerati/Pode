@@ -126,3 +126,21 @@ The following request will invoke the above route:
 ```powershell
 Invoke-WebRequest -Uri 'http://localhost:8080/users/12345' -Method Get
 ```
+
+## Script from File
+
+You normally define a route's script using the `-ScriptBlock` parameter however, you can also reference a file with the required scriptblock using `-FilePath`. Using the `-FilePath` parameter will dot-source a scriptblock from the file, and set it as the route's script.
+
+For example, to create a route from a file that will write a simple JSON response on a route:
+
+* File.ps1
+```powershell
+{
+    Write-PodeJsonResponse -Value @{ 'value' = 'pong'; }
+}
+```
+
+* Timer
+```powershell
+Add-PodeRoute -Method Get -Path '/ping' -FilePath './Routes/File.ps1'
+```

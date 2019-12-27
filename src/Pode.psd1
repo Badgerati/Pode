@@ -124,12 +124,15 @@
         'Remove-PodeSchedule',
         'Clear-PodeSchedule',
         'Invoke-PodeSchedule',
+        'Edit-PodeSchedule',
+        'Set-PodeScheduleConcurrency',
 
         # timers
         'Add-PodeTimer',
         'Remove-PodeTimer',
         'Clear-PodeTimers',
         'Invoke-PodeTimer',
+        'Edit-PodeTimer',
 
         # middleware
         'Add-PodeMiddleware',

@@ -14,6 +14,8 @@ Start-PodeServer {
         'Hello, world' | Out-PodeHost
     } -Limit 5
 
+    Add-PodeTimer -Name 'from-file' -Interval 2 -FilePath './scripts/timer.ps1'
+
     # runs forever, but skips the first 3 "loops" - is paused for 15secs then loops every 5secs
     Add-PodeTimer -Name 'pause-first-3' -Interval 5 -ScriptBlock {
         # logic

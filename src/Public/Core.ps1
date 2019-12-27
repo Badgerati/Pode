@@ -8,6 +8,10 @@ Starts a Pode Server with the supplied ScriptBlock.
 .PARAMETER ScriptBlock
 The main logic for the Server.
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Server's logic.
+The directory of this file will be used as the Server's root path - unless a specific -RootPath is supplied.
+
 .PARAMETER Interval
 For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
 
@@ -32,6 +36,9 @@ Disables the ability to terminate the Server.
 .PARAMETER Browse
 Open the web Server's default endpoint in your defualt browser.
 
+.PARAMETER CurrentPath
+Sets the Server's root path to be the current working path - for -FilePath only.
+
 .EXAMPLE
 Start-PodeServer { /* logic */ }
 
@@ -43,11 +50,15 @@ Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' { /* logic */ }
 #>
 function Start-PodeServer
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Script')]
     param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=0, ParameterSetName='Script')]
         [scriptblock]
         $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
 
         [Parameter()]
         [int]
@@ -77,7 +88,11 @@ function Start-PodeServer
         $DisableTermination,
 
         [switch]
-        $Browse
+        $Browse,
+
+        [Parameter(ParameterSetName='File')]
+        [switch]
+        $CurrentPath
     )
 
     # ensure the session is clean
@@ -85,13 +100,30 @@ function Start-PodeServer
     $ShowDoneMessage = $true
 
     try {
+        # if we have a filepath, resolve it - and extract a root path from it
+        if ($PSCmdlet.ParameterSetName -ieq 'file') {
+            $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath
+
+            # if not already supplied, set root path
+            if ([string]::IsNullOrWhiteSpace($RootPath)) {
+                if ($CurrentPath) {
+                    $RootPath = $PWD.Path
+                }
+                else {
+                    $RootPath = Split-Path -Parent -Path $FilePath
+                }
+            }
+        }
+
         # configure the server's root path
         if (!(Test-IsEmpty $RootPath)) {
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
         # create main context object
-        $PodeContext = New-PodeContext -ScriptBlock $ScriptBlock `
+        $PodeContext = New-PodeContext `
+            -ScriptBlock $ScriptBlock `
+            -FilePath $FilePath `
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
@@ -665,6 +697,9 @@ The number of "invokes" to skip before the Timer actually runs.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Timer's ScriptBlock.
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Timer's logic.
+
 .PARAMETER OnStart
 If supplied, the timer will trigger when the server starts.
 
@@ -682,7 +717,7 @@ Add-PodeTimer -Name 'Args' -Interval 2 -ScriptBlock { /* logic */ } -ArgumentLis
 #>
 function Add-PodeTimer
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Script')]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -692,7 +727,7 @@ function Add-PodeTimer
         [int]
         $Interval,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
         [scriptblock]
         $ScriptBlock,
 
@@ -703,6 +738,10 @@ function Add-PodeTimer
         [Parameter()]
         [int]
         $Skip = 0,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
 
         [Parameter()]
         [object[]]
@@ -733,6 +772,11 @@ function Add-PodeTimer
     # is the skip valid?
     if ($Skip -lt 0) {
         throw "[Timer] $($Name): Cannot have a negative skip value"
+    }
+
+    # if we have a file path supplied, load that path as a scriptblock
+    if ($PSCmdlet.ParameterSetName -ieq 'file') {
+        $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
     # calculate the next tick time (based on Skip)
@@ -833,6 +877,70 @@ function Clear-PodeTimers
 
 <#
 .SYNOPSIS
+Edits an existing Timer.
+
+.DESCRIPTION
+Edits an existing Timer's properties, such as interval or scriptblock.
+
+.PARAMETER Name
+The Name of the Timer.
+
+.PARAMETER Interval
+The new Interval for the Timer in seconds.
+
+.PARAMETER ScriptBlock
+The new ScriptBlock for the Timer.
+
+.PARAMETER ArgumentList
+Any new Arguments for the Timer.
+
+.EXAMPLE
+Edit-PodeTimer -Name 'Hello' -Interval 10
+#>
+function Edit-PodeTimer
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [int]
+        $Interval = 0,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
+    )
+
+    # ensure the timer exists
+    if (!$PodeContext.Timers.ContainsKey($Name)) {
+        throw "Timer '$($Name)' does not exist"
+    }
+
+    # edit interval if supplied
+    if ($Interval -gt 0) {
+        $PodeContext.Timers[$Name].Interval = $Interval
+    }
+
+    # edit scriptblock if supplied
+    if (!(Test-IsEmpty $ScriptBlock)) {
+        $PodeContext.Timers[$Name].Script = $ScriptBlock
+    }
+
+    # edit arguments if supplied
+    if (!(Test-IsEmpty $ArgumentList)) {
+        $PodeContext.Timers[$Name].Arguments = $ArgumentList
+    }
+}
+
+<#
+.SYNOPSIS
 Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
 
 .DESCRIPTION
@@ -859,6 +967,9 @@ A DateTime for when the Schedule should stop triggering, and be removed.
 .PARAMETER ArgumentList
 A hashtable of arguments to supply to the Schedule's ScriptBlock.
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Schedule's logic.
+
 .PARAMETER OnStart
 If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
 
@@ -876,7 +987,7 @@ Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -Ar
 #>
 function Add-PodeSchedule
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Script')]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -886,7 +997,7 @@ function Add-PodeSchedule
         [string[]]
         $Cron,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
         [scriptblock]
         $ScriptBlock,
 
@@ -901,6 +1012,10 @@ function Add-PodeSchedule
         [Parameter()]
         [DateTime]
         $EndTime,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
 
         [Parameter()]
         [hashtable]
@@ -932,6 +1047,11 @@ function Add-PodeSchedule
         throw "[Schedule] $($Name): Cannot have a StartTime after the EndTime"
     }
 
+    # if we have a file path supplied, load that path as a scriptblock
+    if ($PSCmdlet.ParameterSetName -ieq 'file') {
+        $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
+    }
+
     # add the schedule
     $PodeContext.Schedules[$Name] = @{
         Name = $Name
@@ -945,6 +1065,50 @@ function Add-PodeSchedule
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart = $OnStart
         Completed = $false
+    }
+}
+
+<#
+.SYNOPSIS
+Set the maximum number of concurrent schedules.
+
+.DESCRIPTION
+Set the maximum number of concurrent schedules.
+
+.PARAMETER Maximum
+The Maximum number of schdules to run.
+
+.EXAMPLE
+Set-PodeScheduleConcurrency -Maximum 25
+#>
+function Set-PodeScheduleConcurrency
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Maximum
+    )
+
+    # error if <=0
+    if ($Maximum -le 0) {
+        throw "Maximum concurrent schedules must be >=1 but got: $($Maximum)"
+    }
+
+    # ensure max > min
+    $_min = 1
+    if ($null -ne $PodeContext.RunspacePools.Schedules) {
+        $_min = $PodeContext.RunspacePools.Schedules.GetMinRunspaces()
+    }
+
+    if ($_min -gt $Maximum) {
+        throw "Maximum concurrent schedules cannot be less than the minimum of $($_min) but got: $($Maximum)"
+    }
+
+    # set the max schedules
+    $PodeContext.Threads.Schedules = $Maximum
+    if ($null -ne $PodeContext.RunspacePools.Schedules) {
+        $PodeContext.RunspacePools.Schedules.SetMaxRunspaces($Maximum)
     }
 }
 
@@ -1020,6 +1184,73 @@ function Clear-PodeSchedules
     param()
 
     $PodeContext.Schedules.Clear()
+}
+
+<#
+.SYNOPSIS
+Edits an existing Schedule.
+
+.DESCRIPTION
+Edits an existing Schedule's properties, such an cron expressions or scriptblock.
+
+.PARAMETER Name
+The Name of the Schedule.
+
+.PARAMETER Cron
+Any new Cron Expressions for the Schedule.
+
+.PARAMETER ScriptBlock
+The new ScriptBlock for the Schedule.
+
+.PARAMETER ArgumentList
+Any new Arguments for the Schedule.
+
+.EXAMPLE
+Edit-PodeSchedule -Name 'Hello' -Cron '@minutely'
+
+.EXAMPLE
+Edit-PodeSchedule -Name 'Hello' -Cron @('@hourly', '0 0 * * TUE')
+#>
+function Edit-PodeSchedule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Cron,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [hashtable]
+        $ArgumentList
+    )
+
+    # ensure the schedule exists
+    if (!$PodeContext.Schedules.ContainsKey($Name)) {
+        throw "Schedule '$($Name)' does not exist"
+    }
+
+    # edit cron if supplied
+    if (!(Test-IsEmpty $Cron)) {
+        $PodeContext.Schedules[$Name].Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+    }
+
+    # edit scriptblock if supplied
+    if (!(Test-IsEmpty $ScriptBlock)) {
+        $PodeContext.Schedules[$Name].Script = $ScriptBlock
+    }
+
+    # edit arguments if supplied
+    if (!(Test-IsEmpty $ArgumentList)) {
+        $PodeContext.Schedules[$Name].Arguments = $ArgumentList
+    }
 }
 
 <#
