@@ -42,7 +42,7 @@ Pode is a Cross-Platform framework, completely written in PowerShell, for creati
     <docsUrl>https://badgerati.github.io/Pode</docsUrl>
     <bugTrackerUrl>https://github.com/Badgerati/Pode/issues</bugTrackerUrl>
     <tags>powershell web server rest api http tcp smtp listener webpages json html unix cross-platform file-monitoring multithreaded cron schedule middleware session authentication active-directory csrf lambda aws azure functions websockets</tags>
-    <copyright>Copyright 2017-2019</copyright>
+    <copyright>Copyright 2017-2020</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <iconUrl>https://cdn.rawgit.com/Badgerati/Pode/master/images/icon.png</iconUrl>
