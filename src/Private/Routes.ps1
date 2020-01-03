@@ -307,7 +307,7 @@ function Test-PodeRouteAndError
 
     $found = @($PodeContext.Server.Routes[$Method][$Path])
 
-    if (($found | Where-Object { $_.Protocol -ieq $Protocol -and $_.Endpoint -ieq $Endpoint } | Measure-Object).Count -eq 0) {
+    if (($found | Where-Object { ($_.Protocol -ieq $Protocol) -and ($_.Endpoint -ieq $Endpoint) } | Measure-Object).Count -eq 0) {
         return
     }
 
@@ -361,6 +361,57 @@ function Get-PodeEndpointByName
     }
 
     return $found
+}
+
+function Find-PodeEndpoints
+{
+    param(
+        [Parameter()]
+        [ValidateSet('', 'Http', 'Https')]
+        [string]
+        $Protocol,
+
+        [Parameter()]
+        [string]
+        $Endpoint,
+
+        [Parameter()]
+        [string[]]
+        $EndpointName
+    )
+
+    $endpoints = @()
+
+    # just use a single endpoint/protocol
+    if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+        $endpoints += @{
+            Protocol = $Protocol
+            Address = $Endpoint
+        }
+    }
+
+    # get all defined endpoints by name
+    else {
+        foreach ($name in @($EndpointName)) {
+            $_endpoint = Get-PodeEndpointByName -EndpointName $name -ThrowError
+            if ($null -ne $_endpoint) {
+                $endpoints += @{
+                    Protocol = $_endpoint.Protocol
+                    Address = $_endpoint.RawAddress
+                }
+            }
+        }
+    }
+
+    # convert the endpoint's address into host:port format
+    foreach ($_endpoint in $endpoints) {
+        if (![string]::IsNullOrWhiteSpace($_endpoint.Address)) {
+            $_addr = Get-PodeEndpointInfo -Endpoint $_endpoint.Address -AnyPortOnZero
+            $_endpoint.Address = "$($_addr.Host):$($_addr.Port)"
+        }
+    }
+
+    return $endpoints
 }
 
 function Convert-PodeFunctionVerbToHttpMethod
