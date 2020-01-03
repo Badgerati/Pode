@@ -344,9 +344,13 @@ function Get-PodeEndpointByName
     }
 
     # ensure it exists
-    $found = ($PodeContext.Server.Endpoints | Where-Object {
-        $_.Name -ieq $EndpointName
-    } | Select-Object -First 1)
+    $found = $(foreach ($i in $PodeContext.Server.Endpoints) {
+            if ($i.name -ieq $EndpointName) {
+                $i
+                break
+            }
+        }
+    )
 
     if ($null -eq $found) {
         if ($ThrowError) {
@@ -368,31 +372,11 @@ function Convert-PodeFunctionVerbToHttpMethod
     )
 
     # if empty, just return default
-    $DefaultMethod = 'POST'
-    if ([string]::IsNullOrWhiteSpace($Verb)) {
-        return $DefaultMethod
+    switch ($Verb) {
+        { $_ -iin @('Find', 'Format', 'Get', 'Join', 'Search', 'Select', 'Split', 'Measure', 'Ping', 'Test', 'Trace') } { 'GET' }
+        { $_ -iin @('Set') } { 'PUT' }
+        { $_ -iin @('Rename', 'Edit', 'Update') } { 'PATCH' }
+        { $_ -iin @('Clear', 'Close', 'Exit', 'Hide', 'Remove', 'Undo', 'Dismount', 'Unpublish', 'Disable', 'Uninstall', 'Unregister') } { 'DELETE' }
+        Default { 'POST' }
     }
-
-    # GET method
-    if (@('Find', 'Format', 'Get', 'Join', 'Search', 'Select', 'Split', 'Measure', 'Ping', 'Test', 'Trace') -icontains $Verb) {
-        return 'GET'
-    }
-
-    # PUT method
-    if (@('Set') -icontains $Verb) {
-        return 'PUT'
-    }
-
-    # PATCH method
-    if (@('Rename', 'Edit', 'Update') -icontains $Verb) {
-        return 'PATCH'
-    }
-
-    # DELETE method
-    if (@('Clear', 'Close', 'Exit', 'Hide', 'Remove', 'Undo', 'Dismount', 'Unpublish', 'Disable', 'Uninstall', 'Unregister') -icontains $Verb) {
-        return 'DELETE'
-    }
-
-    # default method is POST
-    return $DefaultMethod
 }
