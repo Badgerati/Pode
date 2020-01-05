@@ -4,14 +4,14 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 $now = [datetime]::UtcNow
 
-Describe 'Get-PodeSessionCookie' {
+Describe 'Get-PodeSession' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Get-PodeSessionCookie -Name $null } | Should Throw 'because it is an empty string'
+            { Get-PodeSession -Session @{ Name = $null } } | Should Throw 'because it is an empty string'
         }
 
         It 'Throws an empry string value error' {
-            { Get-PodeSessionCookie -Name ([string]::Empty) } | Should Throw 'because it is an empty string'
+            { Get-PodeSession -Session @{ Name = [string]::Empty } } | Should Throw 'because it is an empty string'
         }
     }
 
@@ -22,12 +22,12 @@ Describe 'Get-PodeSessionCookie' {
             $PodeContext = @{
                 'Server' = @{ 'Cookies' = @{ 'Session' = @{
                     'Name' = 'pode.sid';
-                    'SecretKey' = 'key';
+                    'Secret' = 'key';
                     'Info' = @{ 'Duration' = 60; };
                 } } }
             }
 
-            $data = Get-PodeSessionCookie -Name 'pode.sid' -Secret 'key'
+            $data = Get-PodeSession -Session @{ Name = 'pode.sid' }
             $data | Should Be $null
         }
 
@@ -41,12 +41,12 @@ Describe 'Get-PodeSessionCookie' {
             $PodeContext = @{
                 'Server' = @{ 'Cookies' = @{ 'Session' = @{
                     'Name' = 'pode.sid';
-                    'SecretKey' = 'key';
+                    'Secret' = 'key';
                     'Info' = @{ 'Duration' = 60; };
                 } } }
             }
 
-            $data = Get-PodeSessionCookie -Name 'pode.sid' -Secret 'key'
+            $data = Get-PodeSession -Session @{ Name = 'pode.sid' }
             $data | Should Be $null
         }
 
@@ -60,12 +60,12 @@ Describe 'Get-PodeSessionCookie' {
             $PodeContext = @{
                 'Server' = @{ 'Cookies' = @{ 'Session' = @{
                     'Name' = 'pode.sid';
-                    'SecretKey' = 'key';
+                    'Secret' = 'key';
                     'Info' = @{ 'Duration' = 60; };
                 } } }
             }
 
-            $data = Get-PodeSessionCookie -Name 'pode.sid' -Secret 'key'
+            $data = Get-PodeSession -Session @{ Name = 'pode.sid' }
             $data | Should Not Be $null
             $data.Id | Should Be 'value'
             $data.Name | Should Be 'pode.sid'
@@ -74,21 +74,21 @@ Describe 'Get-PodeSessionCookie' {
     }
 }
 
-Describe 'Set-PodeSessionCookieDataHash' {
+Describe 'Set-PodeSessionDataHash' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Set-PodeSessionCookieDataHash -Session $null } | Should Throw 'argument is null'
+            { Set-PodeSessionDataHash -Session $null } | Should Throw 'argument is null'
         }
     }
 
     Context 'Valid parameters' {
         It 'Sets a hash for no data' {
             $Session = @{}
-            Set-PodeSessionCookieDataHash -Session $Session
+            Set-PodeSessionDataHash -Session $Session
             $Session.Data | Should Not Be $null
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json -Depth 10 -Compress)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data | ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
 
             $Session.DataHash | Should Be $hash
@@ -96,11 +96,11 @@ Describe 'Set-PodeSessionCookieDataHash' {
 
         It 'Sets a hash for data' {
             $Session = @{ 'Data' = @{ 'Counter' = 2; } }
-            Set-PodeSessionCookieDataHash -Session $Session
+            Set-PodeSessionDataHash -Session $Session
             $Session.Data | Should Not Be $null
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json -Depth 10 -Compress)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data | ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
 
             $Session.DataHash | Should Be $hash
@@ -108,20 +108,20 @@ Describe 'Set-PodeSessionCookieDataHash' {
     }
 }
 
-Describe 'New-PodeSessionCookie' {
+Describe 'New-PodeSession' {
     Mock 'Invoke-PodeScriptBlock' { return 'value' }
 
     It 'Creates a new session object' {
         $PodeContext = @{
             'Server' = @{ 'Cookies' = @{ 'Session' = @{
                 'Name' = 'pode.sid';
-                'SecretKey' = 'key';
+                'Secret' = 'key';
                 'Info' = @{ 'Duration' = 60; };
                 'GenerateId' = {}
             } } }
         }
 
-        $session = New-PodeSessionCookie
+        $session = New-PodeSession
 
         $session | Should Not Be $null
         $session.Id | Should Be 'value'
@@ -137,22 +137,22 @@ Describe 'New-PodeSessionCookie' {
     }
 }
 
-Describe 'Test-PodeSessionCookieDataHash' {
+Describe 'Test-PodeSessionDataHash' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Test-PodeSessionCookieDataHash -Session $null } | Should Throw 'argument is null'
+            { Test-PodeSessionDataHash -Session $null } | Should Throw 'argument is null'
         }
     }
 
     Context 'Valid parameters' {
         It 'Returns false for no hash set' {
             $Session = {}
-            Test-PodeSessionCookieDataHash -Session $Session | Should Be $false
+            Test-PodeSessionDataHash -Session $Session | Should Be $false
         }
 
         It 'Returns false for invalid hash' {
             $Session = @{ 'DataHash' = 'fake' }
-            Test-PodeSessionCookieDataHash -Session $Session | Should Be $false
+            Test-PodeSessionDataHash -Session $Session | Should Be $false
         }
 
         It 'Returns true for a valid hash' {
@@ -165,14 +165,14 @@ Describe 'Test-PodeSessionCookieDataHash' {
             $hash = [System.Convert]::ToBase64String($hash)
             $Session.DataHash = $hash
 
-            Test-PodeSessionCookieDataHash -Session $Session | Should Be $true
+            Test-PodeSessionDataHash -Session $Session | Should Be $true
         }
     }
 }
 
-Describe 'Get-PodeSessionCookieInMemStore' {
+Describe 'Get-PodeSessionInMemStore' {
     It 'Returns a valid storage object' {
-        $store = Get-PodeSessionCookieInMemStore
+        $store = Get-PodeSessionInMemStore
         $store | Should Not Be $null
 
         $members = @(($store | Get-Member).Name)
@@ -183,19 +183,19 @@ Describe 'Get-PodeSessionCookieInMemStore' {
     }
 }
 
-Describe 'Set-PodeSessionCookieInMemClearDown' {
+Describe 'Set-PodeSessionInMemClearDown' {
     It 'Adds a new schedule for clearing down' {
         $PodeContext = @{ 'Schedules' = @{}}
-        Set-PodeSessionCookieInMemClearDown
+        Set-PodeSessionInMemClearDown
         $PodeContext.Schedules.Count | Should Be 1
         $PodeContext.Schedules.Contains('__pode_session_inmem_cleanup__') | Should Be $true
     }
 }
 
-Describe 'Set-PodeSessionCookie' {
+Describe 'Set-PodeSession' {
     It 'Sets a new cookie on the response' {
         Mock Set-PodeCookie { }
-        Mock Get-PodeSessionCookieExpiry { return ([datetime]::UtcNow) }
+        Mock Get-PodeSessionExpiry { return ([datetime]::UtcNow) }
 
         $session = @{
             'Name' = 'name';
@@ -203,10 +203,10 @@ Describe 'Set-PodeSessionCookie' {
             'Cookie' = @{};
         }
 
-        Set-PodeSessionCookie -Session $session
+        Set-PodeSession -Session $session
 
         Assert-MockCalled Set-PodeCookie -Times 1 -Scope It
-        Assert-MockCalled Get-PodeSessionCookieExpiry -Times 1 -Scope It
+        Assert-MockCalled Get-PodeSessionExpiry -Times 1 -Scope It
     }
 }
 

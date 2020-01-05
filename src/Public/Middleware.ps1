@@ -159,13 +159,13 @@ Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator
 #>
 function Enable-PodeSessionMiddleware
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Cookies')]
     param (
         [Parameter(Mandatory=$true)]
         [string]
         $Secret,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Cookies')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name = 'pode.sid',
@@ -192,12 +192,22 @@ function Enable-PodeSessionMiddleware
         [switch]
         $Extend,
 
+        [Parameter(ParameterSetName='Cookies')]
         [switch]
         $HttpOnly,
 
         [switch]
-        $Secure
+        $Secure,
+
+        [Parameter(ParameterSetName='Headers')]
+        [switch]
+        $UseHeaders
     )
+
+    # for headers, for the name
+    if ($UseHeaders) {
+        $Name = 'X-Pode-SessionId'
+    }
 
     # check that session logic hasn't already been initialised
     if (Test-PodeSessionsConfigured) {
@@ -216,8 +226,8 @@ function Enable-PodeSessionMiddleware
 
     # if no custom storage, use the inmem one
     if (Test-IsEmpty $Storage) {
-        $Storage = (Get-PodeSessionCookieInMemStore)
-        Set-PodeSessionCookieInMemClearDown
+        $Storage = (Get-PodeSessionInMemStore)
+        Set-PodeSessionInMemClearDown
     }
 
     # set options against server context
@@ -231,66 +241,12 @@ function Enable-PodeSessionMiddleware
             Extend = $Extend
             Secure = $Secure
             HttpOnly = $HttpOnly
+            UseHeaders = $UseHeaders
         }
     }
 
     # return scriptblock for the session middleware
-    $script = {
-        param($e)
-
-        # if session already set, return
-        if ($e.Session) {
-            return $true
-        }
-
-        try
-        {
-            # get the session cookie
-            $_sessionInfo = $PodeContext.Server.Cookies.Session
-            $e.Session = Get-PodeSessionCookie -Name $_sessionInfo.Name -Secret $_sessionInfo.Secret
-
-            # if no session on browser, create a new one
-            if (!$e.Session) {
-                $e.Session = (New-PodeSessionCookie)
-                $new = $true
-            }
-
-            # get the session's data
-            elseif ($null -ne ($data = $_sessionInfo.Store.Get($e.Session.Id))) {
-                $e.Session.Data = $data
-                Set-PodeSessionCookieDataHash -Session $e.Session
-            }
-
-            # session not in store, create a new one
-            else {
-                $e.Session = (New-PodeSessionCookie)
-                $new = $true
-            }
-
-            # add helper methods to session
-            Set-PodeSessionCookieHelpers -Session $e.Session
-
-            # add cookie to response if it's new or extendible
-            if ($new -or $e.Session.Cookie.Extend) {
-                Set-PodeSessionCookie -Session $e.Session
-            }
-
-            # assign endware for session to set cookie/storage
-            $e.OnEnd += @{
-                Logic = {
-                    Save-PodeSession -Force
-                }
-            }
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-            return $false
-        }
-
-        # move along
-        return $true
-    }
-
+    $script = Get-PodeSessionMiddleware
     (New-PodeMiddleware -ScriptBlock $script) | Add-PodeMiddleware -Name '__pode_mw_sessions__'
 }
 
