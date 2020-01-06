@@ -128,13 +128,13 @@ Enables Middleware for creating, retrieving and using Sessions within Pode.
 Enables Middleware for creating, retrieving and using Sessions within Pode. With support for defining Session duration, and custom Storage.
 
 .PARAMETER Secret
-A secret to use when signing Session cookies.
+A secret to use when signing Sessions.
 
 .PARAMETER Name
-The name of the cookie Sessions use.
+The name of the Session's cookie. (For headers this is fixed to X-Pode-SessionId)
 
 .PARAMETER Duration
-The duration a Session cookie should last for, before being expired.
+The duration a Session should last for, before being expired.
 
 .PARAMETER Generator
 A custom ScriptBlock to generate a random unique SessionId. The value returned must be a String.
@@ -143,7 +143,7 @@ A custom ScriptBlock to generate a random unique SessionId. The value returned m
 A custom PSObject that defines methods for Delete, Get, and Set. This allow you to store Sessions in custom Storage such as Redis.
 
 .PARAMETER Extend
-If supplied, the Session's cookie will have its duration extended on each successful Request.
+If supplied, the Sessions will have their durations extended on each successful Request.
 
 .PARAMETER HttpOnly
 If supplied, the Session cookie will only be accessible to browsers.
@@ -151,11 +151,20 @@ If supplied, the Session cookie will only be accessible to browsers.
 .PARAMETER Secure
 If supplied, the Session cookie will only be accessible over HTTPS Requests.
 
+.PARAMETER Strict
+If supplied, the supplie Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
+.PARAMETER UseHeaders
+If supplied, Sessions will be send back in an X-Pode-SessionId header on the Response.
+
 .EXAMPLE
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
 
 .EXAMPLE
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator { return [System.IO.Path]::GetRandomFileName() }
+
+.EXAMPLE
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -UseHeaders -Strict
 #>
 function Enable-PodeSessionMiddleware
 {
@@ -196,6 +205,7 @@ function Enable-PodeSessionMiddleware
         [switch]
         $HttpOnly,
 
+        [Parameter(ParameterSetName='Cookies')]
         [switch]
         $Secure,
 
@@ -207,7 +217,7 @@ function Enable-PodeSessionMiddleware
         $UseHeaders
     )
 
-    # for headers, for the name
+    # for headers, set afixed name
     if ($UseHeaders) {
         $Name = 'X-Pode-SessionId'
     }
