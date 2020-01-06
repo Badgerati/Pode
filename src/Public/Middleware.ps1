@@ -335,6 +335,52 @@ function Save-PodeSession
 
 <#
 .SYNOPSIS
+Returns the currently authenticated SessionId.
+
+.DESCRIPTION
+Returns the currently authenticated SessionId. If there's no session, or it's not authenticated, then null is returned instead.
+You can also have the SessionId returned as signed as well.
+
+.PARAMETER Signed
+If supplied, the returned SessionId will also be signed.
+
+.EXAMPLE
+$sessionId = Get-PodeSessionId
+#>
+function Get-PodeSessionId
+{
+    [CmdletBinding()]
+    param(
+        [switch]
+        $Signed
+    )
+
+    $sessionId = $null
+
+    # only return session if authenticated
+    if (!(Test-IsEmpty $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
+        $sessionId = $WebEvent.Session.Id
+
+        # do they want the session signed?
+        if ($Signed) {
+            $strict = $PodeContext.Server.Cookies.Session.Info.Strict
+            $secret = $PodeContext.Server.Cookies.Session.Secret
+
+            # covert secret to strict mode
+            if ($strict) {
+                $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
+            }
+
+            # sign the value if we have a secret
+            $sessionId = (Invoke-PodeValueSign -Value $sessionId -Secret $secret)
+        }
+    }
+
+    return $sessionId
+}
+
+<#
+.SYNOPSIS
 Creates and returns a new secure token for use with CSRF.
 
 .DESCRIPTION

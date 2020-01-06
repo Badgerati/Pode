@@ -56,6 +56,7 @@
         'Test-PodeHeader',
         'Get-PodeHeader',
         'Set-PodeHeader',
+        'Test-PodeHeaderSigned',
 
         # state
         'Set-PodeState',
@@ -147,6 +148,7 @@
         'Enable-PodeCsrfMiddleware',
         'Remove-PodeSession',
         'Save-PodeSession',
+        'Get-PodeSessionId',
 
         # auth
         'New-PodeAuthType',

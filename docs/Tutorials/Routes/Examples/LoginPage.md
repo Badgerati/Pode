@@ -23,8 +23,6 @@ server.ps1
 To start off this script, you'll need to have the main  [`Start-PodeServer`](../../../../Functions/Core/Start-PodeServer) function; here we'll use 2 threads to handle requests:
 
 ```powershell
-Import-Module Pode
-
 Start-PodeServer -Thread 2 {
     # the rest of the logic goes here!
 }
