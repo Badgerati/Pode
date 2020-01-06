@@ -9,13 +9,13 @@ This example shows how to use session authentication on REST APIs using Headers.
 The example used here is Basic authentication.
 
 Login:
-$session = (Invoke-WebRequest -Uri http://localhost:8085/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['X-Pode-SessionId']
+$session = (Invoke-WebRequest -Uri http://localhost:8085/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['X-Pode-SessionId'][0]
 
 Users:
-Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ 'X-Pode-SessionId' = $session }
+Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ 'X-Pode-SessionId' = "$session" }
 
 Logout:
-Invoke-WebRequest -Uri http://localhost:8085/logout -Method Post -Headers @{ 'X-Pode-SessionId' = $session }
+Invoke-WebRequest -Uri http://localhost:8085/logout -Method Post -Headers @{ 'X-Pode-SessionId' = "$session" }
 #>
 
 # create a server, and start listening on port 8085
@@ -28,7 +28,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # setup session details
-    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -UseHeaders
+    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -UseHeaders -Strict
 
     # setup basic auth (base64> username:password in header)
     New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {

@@ -199,6 +199,9 @@ function Enable-PodeSessionMiddleware
         [switch]
         $Secure,
 
+        [switch]
+        $Strict,
+
         [Parameter(ParameterSetName='Headers')]
         [switch]
         $UseHeaders
@@ -240,6 +243,7 @@ function Enable-PodeSessionMiddleware
             Duration = $Duration
             Extend = $Extend
             Secure = $Secure
+            Strict = $Strict
             HttpOnly = $HttpOnly
             UseHeaders = $UseHeaders
         }

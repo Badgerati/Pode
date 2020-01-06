@@ -13,7 +13,7 @@ function New-PodeSession
     return $sid
 }
 
-function ConvertTo-PodeSessionSecureSecret
+function ConvertTo-PodeSessionStrictSecret
 {
     param(
         [Parameter(Mandatory=$true)]
@@ -34,17 +34,19 @@ function Set-PodeSession
     )
 
     $secure = [bool]($Session.Cookie.Secure)
+    $strict = [bool]($Session.Cookie.Strict)
     $discard = [bool]($Session.Cookie.Discard)
     $httpOnly = [bool]($Session.Cookie.HttpOnly)
     $useHeaders = [bool]($Session.Cookie.UseHeaders)
     $secret = $PodeContext.Server.Cookies.Session.Secret
 
+    # covert secret to strict mode
+    if ($strict) {
+        $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
+    }
+
     # set session on header
     if ($useHeaders) {
-        if ($secure) {
-            $secret = ConvertTo-PodeSessionSecureSecret -Secret $secret
-        }
-
         Set-PodeHeader -Name $Session.Name -Value $Session.Id -Secret $secret
     }
 
@@ -74,12 +76,13 @@ function Get-PodeSession
     $value = $null
     $name = $Session.Name
 
+    # covert secret to strict mode
+    if ($Session.Info.Strict) {
+        $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
+    }
+
     # session from header
     if ($Session.Info.UseHeaders) {
-        if ($Session.Info.Secure) {
-            $secret = ConvertTo-PodeSessionSecureSecret -Secret $secret
-        }
-
         # check that the header is validly signed
         if (!(Test-PodeHeaderSigned -Name $Session.Name -Secret $secret)) {
             return $null

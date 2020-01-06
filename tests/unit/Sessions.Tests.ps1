@@ -46,7 +46,7 @@ Describe 'Get-PodeSession' {
                 } } }
             }
 
-            $data = Get-PodeSession -Session @{ Name = 'pode.sid' }
+            $data = Get-PodeSession -Session @{ Name = 'pode.sid'; Secret = 'key'; Info = @{ Duration = 60; }; }
             $data | Should Be $null
         }
 
@@ -65,7 +65,7 @@ Describe 'Get-PodeSession' {
                 } } }
             }
 
-            $data = Get-PodeSession -Session @{ Name = 'pode.sid' }
+            $data = Get-PodeSession -Session @{ Name = 'pode.sid'; Secret = 'key'; Info = @{ Duration = 60; }; }
             $data | Should Not Be $null
             $data.Id | Should Be 'value'
             $data.Name | Should Be 'pode.sid'
@@ -146,7 +146,7 @@ Describe 'Test-PodeSessionDataHash' {
 
     Context 'Valid parameters' {
         It 'Returns false for no hash set' {
-            $Session = {}
+            $Session = @{}
             Test-PodeSessionDataHash -Session $Session | Should Be $false
         }
 
