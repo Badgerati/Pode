@@ -55,7 +55,7 @@ New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
 
 ## Login and Logout
 
-The first two routes will be two POST routes to login/logout a user. This first route will authenticate the user, and then respond back with a session in the response's `X-Pode-SessionId` header:
+The first two routes will be two POST routes to login/logout a user. This first route will authenticate the user, and then respond back with a session in the response's `pode.sid` header:
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/login' -Middleware (Get-PodeAuthMiddleware -Name 'Login')
@@ -63,7 +63,7 @@ Add-PodeRoute -Method Post -Path '/login' -Middleware (Get-PodeAuthMiddleware -N
 
 For the login endpoint, you would the request and supply the normal `Authorization` header.
 
-The second route will require the session to be sent in the request's `X-Pode-SessionId` header, and will expire and destory the session:
+The second route will require the session to be sent in the request's `pode.sid` header, and will expire and destory the session:
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/logout' -Middleware (Get-PodeAuthMiddleware -Name 'Login' -Logout)
@@ -73,7 +73,7 @@ The first route on success will return with a 200 response, the logout route wil
 
 ## Routes
 
-This is a very basic POST route, but it will return a list of users if a valid `X-Pode-SessionId` header has been supplied on the request:
+This is a very basic POST route, but it will return a list of users if a valid `pode.sid` header has been supplied on the request:
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
@@ -103,7 +103,7 @@ If you use the exact endpoint and dummy credentials above, then the follow are c
 This call will authenticate and create a session:
 
 ```powershell
-$session = (Invoke-WebRequest -Uri http://localhost:8080/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['X-Pode-SessionId'][0]
+$session = (Invoke-WebRequest -Uri http://localhost:8080/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['pode.sid'][0]
 ```
 
 ### Users
@@ -111,7 +111,7 @@ $session = (Invoke-WebRequest -Uri http://localhost:8080/login -Method Post -Hea
 This call will use the above session from logging in, and return a list of users:
 
 ```powershell
-Invoke-RestMethod -Uri http://localhost:8080/users -Method Post -Headers @{ 'X-Pode-SessionId' = "$session" }
+Invoke-RestMethod -Uri http://localhost:8080/users -Method Post -Headers @{ 'pode.sid' = "$session" }
 ```
 
 ### Logout
@@ -119,5 +119,5 @@ Invoke-RestMethod -Uri http://localhost:8080/users -Method Post -Headers @{ 'X-P
 This call will use the same session, but will time it out:
 
 ```powershell
-Invoke-WebRequest -Uri http://localhost:8085/logout -Method Post -Headers @{ 'X-Pode-SessionId' = "$session" }
+Invoke-WebRequest -Uri http://localhost:8085/logout -Method Post -Headers @{ 'pode.sid' = "$session" }
 ```

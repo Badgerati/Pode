@@ -32,7 +32,7 @@ Start-PodeServer {
 }
 ```
 
-When using headers, the name of the header in the request/response is fixed to `X-Pode-SessionId`. When you make an initial request to authenticate some user, the `X-Pode-SessionId` header will be returned in the response. You can then use the value of this header in subsequent requests for the authenticated user, and then make a call using the session one last time against some route to expire the session - or just let it automatically expire.
+When using headers, the default name of the session header in the request/response is `pode.sid` - this can be customised using the `-Name` parameter. When you make an initial request to authenticate some user, the `pode.sid` header will be returned in the response. You can then use the value of this header in subsequent requests for the authenticated user, and then make a call using the session one last time against some route to expire the session - or just let it automatically expire.
 
 ## SessionIds
 

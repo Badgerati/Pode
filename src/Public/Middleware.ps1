@@ -131,7 +131,7 @@ Enables Middleware for creating, retrieving and using Sessions within Pode. With
 A secret to use when signing Sessions.
 
 .PARAMETER Name
-The name of the Session's cookie. (For headers this is fixed to X-Pode-SessionId)
+The name of the cookie/header used for the Session.
 
 .PARAMETER Duration
 The duration a Session should last for, before being expired.
@@ -155,7 +155,7 @@ If supplied, the Session cookie will only be accessible over HTTPS Requests.
 If supplied, the supplie Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
 .PARAMETER UseHeaders
-If supplied, Sessions will be send back in an X-Pode-SessionId header on the Response.
+If supplied, Sessions will be sent back in a header on the Response with the Name supplied.
 
 .EXAMPLE
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
@@ -174,7 +174,7 @@ function Enable-PodeSessionMiddleware
         [string]
         $Secret,
 
-        [Parameter(ParameterSetName='Cookies')]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name = 'pode.sid',
@@ -216,11 +216,6 @@ function Enable-PodeSessionMiddleware
         [switch]
         $UseHeaders
     )
-
-    # for headers, set afixed name
-    if ($UseHeaders) {
-        $Name = 'X-Pode-SessionId'
-    }
 
     # check that session logic hasn't already been initialised
     if (Test-PodeSessionsConfigured) {

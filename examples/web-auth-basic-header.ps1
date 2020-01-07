@@ -9,13 +9,13 @@ This example shows how to use session authentication on REST APIs using Headers.
 The example used here is Basic authentication.
 
 Login:
-$session = (Invoke-WebRequest -Uri http://localhost:8085/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['X-Pode-SessionId'][0]
+$session = (Invoke-WebRequest -Uri http://localhost:8085/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['pode.sid']
 
 Users:
-Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ 'X-Pode-SessionId' = "$session" }
+Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ 'pode.sid' = "$session" }
 
 Logout:
-Invoke-WebRequest -Uri http://localhost:8085/logout -Method Post -Headers @{ 'X-Pode-SessionId' = "$session" }
+Invoke-WebRequest -Uri http://localhost:8085/logout -Method Post -Headers @{ 'pode.sid' = "$session" }
 #>
 
 # create a server, and start listening on port 8085
@@ -54,7 +54,7 @@ Start-PodeServer -Threads 2 {
     # POST request to logout
     Add-PodeRoute -Method Post -Path '/logout' -Middleware (Get-PodeAuthMiddleware -Name 'Login' -Logout)
 
-    # POST request to get list of users - the X-Pode-SessionId header is expected
+    # POST request to get list of users - the "pode.sid" header is expected
     Add-PodeRoute -Method Post -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
