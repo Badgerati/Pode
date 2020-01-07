@@ -4,6 +4,9 @@ Session Middleware is supported on web requests and responses in the form of sig
 
 The duration of the session-cookie/header can be specified, as well as whether to extend the duration each time on each request. A secret-key to sign sessions can be supplied, as well as the ability to specify custom data stores - the default is in-mem, custom could be anything like Redis/MongoDB.
 
+!!! note
+    Using sessions via headers is best used with REST APIs and the CLI. It's not advised to use them for normal websites, as browsers don't send back response headers in new requests - unlike cookies.
+
 ## Usage
 
 To initialise sessions in Pode you use the [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. This function will configure and automatically create Middleware to enable sessions. By default sessions are set using cookies, but support is also available for headers.
