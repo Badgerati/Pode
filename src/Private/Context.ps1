@@ -185,10 +185,12 @@ function New-PodeContext
 
     # cookies and session logic
     $ctx.Server.Cookies = @{
-        Session = @{}
         Csrf = @{}
         Secrets = @{}
     }
+
+    # sessions
+    $ctx.Server.Sessions = @{}
 
     # authnetication methods
     $ctx.Server.Authentications = @{}

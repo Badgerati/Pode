@@ -143,12 +143,19 @@ function Get-PodeAuthMiddlewareScript
         # route options for using sessions
         $storeInSession = !$opts.Sessionless
         $usingSessions = (!(Test-IsEmpty $e.Session))
+        $useHeaders = [bool]($e.Session.Properties.UseHeaders)
 
         # check for logout command
         if ($opts.Logout) {
             Remove-PodeAuthSession -Event $e
-            $opts.Failure.Url = (Protect-PodeValue -Value $opts.Failure.Url -Default $e.Request.Url.AbsolutePath)
-            return (Set-PodeAuthStatus -StatusCode 302 -Options $opts)
+
+            if ($useHeaders) {
+                return (Set-PodeAuthStatus -StatusCode 401)
+            }
+            else {
+                $opts.Failure.Url = (Protect-PodeValue -Value $opts.Failure.Url -Default $e.Request.Url.AbsolutePath)
+                return (Set-PodeAuthStatus -StatusCode 302 -Options $opts)
+            }
         }
 
         # if the session already has a user/isAuth'd, then skip auth
@@ -158,9 +165,9 @@ function Get-PodeAuthMiddlewareScript
         }
 
         # check if the auto-login flag is set, in which case just return
-        if ($opts.AutoLogin) {
+        if ($opts.AutoLogin -and !$useHeaders) {
             if (!(Test-IsEmpty $e.Session.Data.Auth)) {
-                Remove-PodeSessionCookie -Session $e.Session
+                Revoke-PodeSession -Session $e.Session
             }
 
             return $true
@@ -254,7 +261,7 @@ function Remove-PodeAuthSession
     }
 
     # Delete the session (remove from store, blank it, and remove from Response)
-    Remove-PodeSessionCookie -Session $Event.Session
+    Revoke-PodeSession -Session $Event.Session
 }
 
 function Set-PodeAuthStatus

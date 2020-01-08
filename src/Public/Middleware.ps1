@@ -128,13 +128,13 @@ Enables Middleware for creating, retrieving and using Sessions within Pode.
 Enables Middleware for creating, retrieving and using Sessions within Pode. With support for defining Session duration, and custom Storage.
 
 .PARAMETER Secret
-A secret to use when signing Session cookies.
+A secret to use when signing Sessions.
 
 .PARAMETER Name
-The name of the cookie Sessions use.
+The name of the cookie/header used for the Session.
 
 .PARAMETER Duration
-The duration a Session cookie should last for, before being expired.
+The duration a Session should last for, before being expired.
 
 .PARAMETER Generator
 A custom ScriptBlock to generate a random unique SessionId. The value returned must be a String.
@@ -143,7 +143,7 @@ A custom ScriptBlock to generate a random unique SessionId. The value returned m
 A custom PSObject that defines methods for Delete, Get, and Set. This allow you to store Sessions in custom Storage such as Redis.
 
 .PARAMETER Extend
-If supplied, the Session's cookie will have its duration extended on each successful Request.
+If supplied, the Sessions will have their durations extended on each successful Request.
 
 .PARAMETER HttpOnly
 If supplied, the Session cookie will only be accessible to browsers.
@@ -151,15 +151,24 @@ If supplied, the Session cookie will only be accessible to browsers.
 .PARAMETER Secure
 If supplied, the Session cookie will only be accessible over HTTPS Requests.
 
+.PARAMETER Strict
+If supplied, the supplie Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
+.PARAMETER UseHeaders
+If supplied, Sessions will be sent back in a header on the Response with the Name supplied.
+
 .EXAMPLE
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
 
 .EXAMPLE
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator { return [System.IO.Path]::GetRandomFileName() }
+
+.EXAMPLE
+Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -UseHeaders -Strict
 #>
 function Enable-PodeSessionMiddleware
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Cookies')]
     param (
         [Parameter(Mandatory=$true)]
         [string]
@@ -192,11 +201,20 @@ function Enable-PodeSessionMiddleware
         [switch]
         $Extend,
 
+        [Parameter(ParameterSetName='Cookies')]
         [switch]
         $HttpOnly,
 
+        [Parameter(ParameterSetName='Cookies')]
         [switch]
-        $Secure
+        $Secure,
+
+        [switch]
+        $Strict,
+
+        [Parameter(ParameterSetName='Headers')]
+        [switch]
+        $UseHeaders
     )
 
     # check that session logic hasn't already been initialised
@@ -216,12 +234,12 @@ function Enable-PodeSessionMiddleware
 
     # if no custom storage, use the inmem one
     if (Test-IsEmpty $Storage) {
-        $Storage = (Get-PodeSessionCookieInMemStore)
-        Set-PodeSessionCookieInMemClearDown
+        $Storage = (Get-PodeSessionInMemStore)
+        Set-PodeSessionInMemClearDown
     }
 
     # set options against server context
-    $PodeContext.Server.Cookies.Session = @{
+    $PodeContext.Server.Sessions = @{
         Name = $Name
         Secret = $Secret
         GenerateId = (Protect-PodeValue -Value $Generator -Default { return (New-PodeGuid) })
@@ -230,67 +248,14 @@ function Enable-PodeSessionMiddleware
             Duration = $Duration
             Extend = $Extend
             Secure = $Secure
+            Strict = $Strict
             HttpOnly = $HttpOnly
+            UseHeaders = $UseHeaders
         }
     }
 
     # return scriptblock for the session middleware
-    $script = {
-        param($e)
-
-        # if session already set, return
-        if ($e.Session) {
-            return $true
-        }
-
-        try
-        {
-            # get the session cookie
-            $_sessionInfo = $PodeContext.Server.Cookies.Session
-            $e.Session = Get-PodeSessionCookie -Name $_sessionInfo.Name -Secret $_sessionInfo.Secret
-
-            # if no session on browser, create a new one
-            if (!$e.Session) {
-                $e.Session = (New-PodeSessionCookie)
-                $new = $true
-            }
-
-            # get the session's data
-            elseif ($null -ne ($data = $_sessionInfo.Store.Get($e.Session.Id))) {
-                $e.Session.Data = $data
-                Set-PodeSessionCookieDataHash -Session $e.Session
-            }
-
-            # session not in store, create a new one
-            else {
-                $e.Session = (New-PodeSessionCookie)
-                $new = $true
-            }
-
-            # add helper methods to session
-            Set-PodeSessionCookieHelpers -Session $e.Session
-
-            # add cookie to response if it's new or extendible
-            if ($new -or $e.Session.Cookie.Extend) {
-                Set-PodeSessionCookie -Session $e.Session
-            }
-
-            # assign endware for session to set cookie/storage
-            $e.OnEnd += @{
-                Logic = {
-                    Save-PodeSession -Force
-                }
-            }
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-            return $false
-        }
-
-        # move along
-        return $true
-    }
-
+    $script = Get-PodeSessionMiddleware
     (New-PodeMiddleware -ScriptBlock $script) | Add-PodeMiddleware -Name '__pode_mw_sessions__'
 }
 
@@ -361,6 +326,52 @@ function Save-PodeSession
 
     # save the session
     Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Save -Arguments @($WebEvent.Session, $Force) -Splat
+}
+
+<#
+.SYNOPSIS
+Returns the currently authenticated SessionId.
+
+.DESCRIPTION
+Returns the currently authenticated SessionId. If there's no session, or it's not authenticated, then null is returned instead.
+You can also have the SessionId returned as signed as well.
+
+.PARAMETER Signed
+If supplied, the returned SessionId will also be signed.
+
+.EXAMPLE
+$sessionId = Get-PodeSessionId
+#>
+function Get-PodeSessionId
+{
+    [CmdletBinding()]
+    param(
+        [switch]
+        $Signed
+    )
+
+    $sessionId = $null
+
+    # only return session if authenticated
+    if (!(Test-IsEmpty $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
+        $sessionId = $WebEvent.Session.Id
+
+        # do they want the session signed?
+        if ($Signed) {
+            $strict = $PodeContext.Server.Sessions.Info.Strict
+            $secret = $PodeContext.Server.Sessions.Secret
+
+            # covert secret to strict mode
+            if ($strict) {
+                $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
+            }
+
+            # sign the value if we have a secret
+            $sessionId = (Invoke-PodeValueSign -Value $sessionId -Secret $secret)
+        }
+    }
+
+    return $sessionId
 }
 
 <#

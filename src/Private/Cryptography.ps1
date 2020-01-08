@@ -90,3 +90,57 @@ function New-PodeGuid
     # return a normal guid
     return ([guid]::NewGuid()).ToString()
 }
+
+function Invoke-PodeValueSign
+{
+    param (
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Value,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Secret
+    )
+
+    return "s:$($Value).$(Invoke-PodeHMACSHA256Hash -Value $Value -Secret $Secret)"
+}
+
+function Invoke-PodeValueUnsign
+{
+    param (
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Value,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Secret
+    )
+
+    # the signed value must start with "s:"
+    if (!$Value.StartsWith('s:')) {
+        return $null
+    }
+
+    # the signed value mised contain a dot - splitting value and signature
+    $Value = $Value.Substring(2)
+    $periodIndex = $Value.LastIndexOf('.')
+    if ($periodIndex -eq -1) {
+        return $null
+    }
+
+    # get the raw value and signature
+    $raw = $Value.Substring(0, $periodIndex)
+    $sig = $Value.Substring($periodIndex + 1)
+
+    if ((Invoke-PodeHMACSHA256Hash -Value $raw -Secret $Secret) -ne $sig) {
+        return $null
+    }
+
+    return $raw
+}

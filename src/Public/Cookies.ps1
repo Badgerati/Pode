@@ -75,7 +75,7 @@ function Set-PodeCookie
 
     # sign the value if we have a secret
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeCookieSign -Value $Value -Secret $Secret)
+        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret)
     }
 
     # create a new cookie
@@ -148,7 +148,7 @@ function Get-PodeCookie
 
     # if a secret was supplied, attempt to unsign the cookie
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $value = (Invoke-PodeCookieUnsign -Signature $cookie.Value -Secret $Secret)
+        $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret)
         if (![string]::IsNullOrWhiteSpace($value)) {
             $cookie.Value = $value
         }
@@ -256,7 +256,7 @@ function Test-PodeCookieSigned
         return $false
     }
 
-    $value = (Invoke-PodeCookieUnsign -Signature $cookie.Value -Secret $Secret)
+    $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret)
     return (![string]::IsNullOrWhiteSpace($value))
 }
 
