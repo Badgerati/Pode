@@ -34,7 +34,7 @@ The server type, to define how Pode should run and deal with incoming Requests.
 Disables the ability to terminate the Server.
 
 .PARAMETER Browse
-Open the web Server's default endpoint in your defualt browser.
+Open the web Server's default endpoint in your default browser.
 
 .PARAMETER CurrentPath
 Sets the Server's root path to be the current working path - for -FilePath only.
@@ -171,6 +171,129 @@ function Start-PodeServer
 
         # clean the session
         $PodeContext = $null
+    }
+}
+
+<#
+.SYNOPSIS
+Helper wrapper function to start a Pode web server for a static website at the current directory.
+
+.DESCRIPTION
+Helper wrapper function to start a Pode web server for a static website at the current directory.
+
+.PARAMETER Threads
+The numbers of threads to use for requests.
+
+.PARAMETER RootPath
+An override for the Server's root path.
+
+.PARAMETER Address
+The IP/Hostname of the endpoint.
+
+.PARAMETER Port
+The Port number of the endpoint.
+
+.PARAMETER Https
+Start the server using HTTPS.
+
+.PARAMETER CertificateFile
+The path to a certificate that can be use to enable HTTPS.
+
+.PARAMETER CertificatePassword
+The password for the certificate referenced in CertificateFile.
+
+.PARAMETER RawCertificate
+The raw X509 certificate that can be use to enable HTTPS.
+
+.PARAMETER Path
+The URI path for the static Route.
+
+.PARAMETER Defaults
+An array of default pages to display, such as 'index.html'.
+
+.PARAMETER DownloadOnly
+When supplied, all static content on this Route will be attached as downloads - rather than rendered.
+
+.PARAMETER Browse
+Open the web server's default endpoint in your default browser.
+
+.EXAMPLE
+Start-PodeStaticServer
+
+.EXAMPLE
+Start-PodeStaticServer -Address '127.0.0.3' -Port 8000
+
+.EXAMPLE
+Start-PodeStaticServer -Path '/installers' -DownloadOnly
+#>
+function Start-PodeStaticServer
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [int]
+        $Threads = 3,
+
+        [Parameter()]
+        [string]
+        $RootPath = $PWD,
+
+        [Parameter()]
+        [string]
+        $Address = 'localhost',
+
+        [Parameter()]
+        [int]
+        $Port = 0,
+
+        [Parameter(ParameterSetName='Https')]
+        [switch]
+        $Https,
+
+        [Parameter(ParameterSetName='Https')]
+        [string]
+        $CertificateFile = $null,
+
+        [Parameter(ParameterSetName='Https')]
+        [string]
+        $CertificatePassword = $null,
+
+        [Parameter(ParameterSetName='Https')]
+        [Parameter()]
+        [X509Certificate]
+        $RawCertificate = $null,
+
+        [Parameter()]
+        [string]
+        $Path = '/',
+
+        [Parameter()]
+        [string[]]
+        $Defaults,
+
+        [switch]
+        $DownloadOnly,
+
+        [switch]
+        $Browse
+    )
+
+    Start-PodeServer -RootPath $RootPath -Threads $Threads -Type Pode -Browse:$Browse -ScriptBlock {
+        # add either an http or https endpoint
+        if ($Https) {
+            if ($null -eq $RawCertificate) {
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -CertificateFile $CertificateFile -CertificatePassword $CertificatePassword
+            }
+            else {
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -RawCertificate $RawCertificate
+            }
+        }
+        else {
+            Add-PodeEndpoint -Address $Address -Port $Port -Protocol Http
+        }
+
+        # add the static route
+        Add-PodeStaticRoute -Path $Path -Source (Get-PodeServerPath) -Defaults $Defaults -DownloadOnly:$DownloadOnly
     }
 }
 

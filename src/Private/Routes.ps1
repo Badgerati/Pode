@@ -118,6 +118,7 @@ function Get-PodeStaticRoutePath
 
     # attempt to get a static route for the path
     $found = Get-PodeRoute -Method 'static' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+    $havePublicDir = (![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public']))
     $path = $null
     $download = $false
 
@@ -126,7 +127,7 @@ function Get-PodeStaticRoutePath
         # is the found route set as download only?
         if ($found.Download) {
             $download = $true
-            $path = (Join-Path $found.Path (Protect-PodeValue -Value $found.File -Default ([string]::Empty)))
+            $found.File = (Protect-PodeValue -Value $found.File -Default ([string]::Empty))
         }
 
         # if there's no file, we need to check defaults
@@ -150,15 +151,15 @@ function Get-PodeStaticRoutePath
         $path = (Join-Path $found.Path $found.File)
     }
 
-    # else, use the public static directory (but only if path is a file, and a public dir is present)
-    elseif ((Test-PodePathIsFile $Route) -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public'])) {
+    # use the public static directory (but only if path is a file, and a public dir is present)
+    if ($havePublicDir -and (Test-PodePathIsFile $Route) -and !(Test-PodePath -Path $path -NoStatus)) {
         $path = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
     }
 
     # return the route details
     return @{
-        Path = $path;
-        Download = $download;
+        Path = $path
+        Download = $download
     }
 }
 

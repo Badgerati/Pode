@@ -172,6 +172,7 @@
 
         # core
         'Start-PodeServer',
+        'Start-PodeStaticServer',
         'Show-PodeGui',
         'Add-PodeEndpoint',
         'Pode'
