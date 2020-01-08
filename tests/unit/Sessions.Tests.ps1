@@ -20,11 +20,14 @@ Describe 'Get-PodeSession' {
             $WebEvent = @{ 'Cookies' = @{} }
 
             $PodeContext = @{
-                'Server' = @{ 'Cookies' = @{ 'Session' = @{
-                    'Name' = 'pode.sid';
-                    'Secret' = 'key';
-                    'Info' = @{ 'Duration' = 60; };
-                } } }
+                'Server' = @{
+                    'Cookies' = @{}
+                    'Sessions' = @{
+                        'Name' = 'pode.sid';
+                        'Secret' = 'key';
+                        'Info' = @{ 'Duration' = 60; };
+                    }
+                }
             }
 
             $data = Get-PodeSession -Session @{ Name = 'pode.sid' }
@@ -39,11 +42,14 @@ Describe 'Get-PodeSession' {
             } }
 
             $PodeContext = @{
-                'Server' = @{ 'Cookies' = @{ 'Session' = @{
-                    'Name' = 'pode.sid';
-                    'Secret' = 'key';
-                    'Info' = @{ 'Duration' = 60; };
-                } } }
+                'Server' = @{
+                    'Cookies' = @{}
+                    'Sessions' = @{
+                        'Name' = 'pode.sid';
+                        'Secret' = 'key';
+                        'Info' = @{ 'Duration' = 60; };
+                    }
+                }
             }
 
             $data = Get-PodeSession -Session @{ Name = 'pode.sid'; Secret = 'key'; Info = @{ Duration = 60; }; }
@@ -58,18 +64,21 @@ Describe 'Get-PodeSession' {
             } }
 
             $PodeContext = @{
-                'Server' = @{ 'Cookies' = @{ 'Session' = @{
-                    'Name' = 'pode.sid';
-                    'Secret' = 'key';
-                    'Info' = @{ 'Duration' = 60; };
-                } } }
+                'Server' = @{
+                    'Cookies' = @{}
+                    'Sessions' = @{
+                        'Name' = 'pode.sid';
+                        'Secret' = 'key';
+                        'Info' = @{ 'Duration' = 60; };
+                    }
+                }
             }
 
             $data = Get-PodeSession -Session @{ Name = 'pode.sid'; Secret = 'key'; Info = @{ Duration = 60; }; }
             $data | Should Not Be $null
             $data.Id | Should Be 'value'
             $data.Name | Should Be 'pode.sid'
-            $data.Cookie.Duration | Should Be 60
+            $data.Properties.Duration | Should Be 60
         }
     }
 }
@@ -113,12 +122,15 @@ Describe 'New-PodeSession' {
 
     It 'Creates a new session object' {
         $PodeContext = @{
-            'Server' = @{ 'Cookies' = @{ 'Session' = @{
-                'Name' = 'pode.sid';
-                'Secret' = 'key';
-                'Info' = @{ 'Duration' = 60; };
-                'GenerateId' = {}
-            } } }
+            'Server' = @{
+                'Cookies' = @{}
+                'Sessions' = @{
+                    'Name' = 'pode.sid';
+                    'Secret' = 'key';
+                    'Info' = @{ 'Duration' = 60; };
+                    'GenerateId' = {}
+                }
+            }
         }
 
         $session = New-PodeSession
@@ -127,7 +139,7 @@ Describe 'New-PodeSession' {
         $session.Id | Should Be 'value'
         $session.Name | Should Be 'pode.sid'
         $session.Data.Count | Should Be 0
-        $session.Cookie.Duration | Should Be 60
+        $session.Properties.Duration | Should Be 60
 
         $crypto = [System.Security.Cryptography.SHA256]::Create()
         $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($session.Data| ConvertTo-Json -Depth 10 -Compress)))

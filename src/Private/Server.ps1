@@ -156,7 +156,7 @@ function Restart-PodeInternalServer
         }
 
         # clear up cookie sessions
-        $PodeContext.Server.Cookies.Session.Clear()
+        $PodeContext.Server.Sessions.Clear()
 
         # clear up authentication methods
         $PodeContext.Server.Authentications.Clear()

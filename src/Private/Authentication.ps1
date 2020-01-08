@@ -143,7 +143,7 @@ function Get-PodeAuthMiddlewareScript
         # route options for using sessions
         $storeInSession = !$opts.Sessionless
         $usingSessions = (!(Test-IsEmpty $e.Session))
-        $useHeaders = [bool]($e.Session.Cookie.UseHeaders)
+        $useHeaders = [bool]($e.Session.Properties.UseHeaders)
 
         # check for logout command
         if ($opts.Logout) {

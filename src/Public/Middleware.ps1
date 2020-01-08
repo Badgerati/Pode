@@ -239,7 +239,7 @@ function Enable-PodeSessionMiddleware
     }
 
     # set options against server context
-    $PodeContext.Server.Cookies.Session = @{
+    $PodeContext.Server.Sessions = @{
         Name = $Name
         Secret = $Secret
         GenerateId = (Protect-PodeValue -Value $Generator -Default { return (New-PodeGuid) })
@@ -358,8 +358,8 @@ function Get-PodeSessionId
 
         # do they want the session signed?
         if ($Signed) {
-            $strict = $PodeContext.Server.Cookies.Session.Info.Strict
-            $secret = $PodeContext.Server.Cookies.Session.Secret
+            $strict = $PodeContext.Server.Sessions.Info.Strict
+            $secret = $PodeContext.Server.Sessions.Secret
 
             # covert secret to strict mode
             if ($strict) {

@@ -1,15 +1,15 @@
 function New-PodeSession
 {
     $sid = @{
-        Name = $PodeContext.Server.Cookies.Session.Name
-        Id = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cookies.Session.GenerateId -Return)
-        Cookie = $PodeContext.Server.Cookies.Session.Info
+        Name = $PodeContext.Server.Sessions.Name
+        Id = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.GenerateId -Return)
+        Properties = $PodeContext.Server.Sessions.Info
         Data = @{}
     }
 
     Set-PodeSessionDataHash -Session $sid
 
-    $sid.Cookie.TimeStamp = [DateTime]::UtcNow
+    $sid.Properties.TimeStamp = [DateTime]::UtcNow
     return $sid
 }
 
@@ -33,12 +33,12 @@ function Set-PodeSession
         $Session
     )
 
-    $secure = [bool]($Session.Cookie.Secure)
-    $strict = [bool]($Session.Cookie.Strict)
-    $discard = [bool]($Session.Cookie.Discard)
-    $httpOnly = [bool]($Session.Cookie.HttpOnly)
-    $useHeaders = [bool]($Session.Cookie.UseHeaders)
-    $secret = $PodeContext.Server.Cookies.Session.Secret
+    $secure = [bool]($Session.Properties.Secure)
+    $strict = [bool]($Session.Properties.Strict)
+    $discard = [bool]($Session.Properties.Discard)
+    $httpOnly = [bool]($Session.Properties.HttpOnly)
+    $useHeaders = [bool]($Session.Properties.UseHeaders)
+    $secret = $PodeContext.Server.Sessions.Secret
 
     # covert secret to strict mode
     if ($strict) {
@@ -115,15 +115,14 @@ function Get-PodeSession
     }
 
     # generate the session data
-    #TODO: rename Cookie
     $data = @{
         Name = $name
         Id = $value
-        Cookie = $Session.Info
+        Properties = $Session.Info
         Data = @{}
     }
 
-    $data.Cookie.TimeStamp = $timeStamp
+    $data.Properties.TimeStamp = $timeStamp
     return $data
 }
 
@@ -137,7 +136,7 @@ function Revoke-PodeSession
     )
 
     # remove from cookie
-    if (!$Session.Cookie.UseHeaders) {
+    if (!$Session.Properties.UseHeaders) {
         Remove-PodeCookie -Name $Session.Name
     }
 
@@ -188,12 +187,12 @@ function Get-PodeSessionExpiry
         $Session
     )
 
-    if ($null -eq $Session.Cookie) {
+    if ($null -eq $Session.Properties) {
         return [DateTime]::MinValue
     }
 
-    $expiry = (Resolve-PodeValue -Check ([bool]$Session.Cookie.Extend) -TrueValue ([DateTime]::UtcNow) -FalseValue $Session.Cookie.TimeStamp)
-    $expiry = $expiry.AddSeconds($Session.Cookie.Duration)
+    $expiry = (Resolve-PodeValue -Check ([bool]$Session.Properties.Extend) -TrueValue ([DateTime]::UtcNow) -FalseValue $Session.Properties.TimeStamp)
+    $expiry = $expiry.AddSeconds($Session.Properties.Duration)
     return $expiry
 }
 
@@ -224,7 +223,7 @@ function Set-PodeSessionHelpers
         $expiry = (Get-PodeSessionExpiry -Session $session)
 
         # save session data to store
-        $PodeContext.Server.Cookies.Session.Store.Set($session.Id, $session.Data, $expiry)
+        $PodeContext.Server.Sessions.Store.Set($session.Id, $session.Data, $expiry)
 
         # update session's data hash
         Set-PodeSessionDataHash -Session $session
@@ -235,7 +234,7 @@ function Set-PodeSessionHelpers
         param($session)
 
         # remove data from store
-        $PodeContext.Server.Cookies.Session.Store.Delete($session.Id)
+        $PodeContext.Server.Sessions.Store.Delete($session.Id)
 
         # clear session
         $session.Clear()
@@ -292,7 +291,7 @@ function Set-PodeSessionInMemClearDown
 
     # cleardown expired inmem session every 10 minutes
     Add-PodeSchedule -Name '__pode_session_inmem_cleanup__' -Cron '0/10 * * * *' -ScriptBlock {
-        $store = $PodeContext.Server.Cookies.Session.Store
+        $store = $PodeContext.Server.Sessions.Store
         if (Test-IsEmpty $store.Memory) {
             return
         }
@@ -309,7 +308,7 @@ function Set-PodeSessionInMemClearDown
 
 function Test-PodeSessionsConfigured
 {
-    return (!(Test-IsEmpty $PodeContext.Server.Cookies.Session))
+    return (!(Test-IsEmpty $PodeContext.Server.Sessions))
 }
 
 function Get-PodeSessionMiddleware
@@ -325,7 +324,7 @@ function Get-PodeSessionMiddleware
         try
         {
             # get the session from cookie/header
-            $e.Session = Get-PodeSession -Session $PodeContext.Server.Cookies.Session
+            $e.Session = Get-PodeSession -Session $PodeContext.Server.Sessions
 
             # if no session found, create a new one on the current web event
             if (!$e.Session) {
@@ -334,7 +333,7 @@ function Get-PodeSessionMiddleware
             }
 
             # get the session's data
-            elseif ($null -ne ($data = $PodeContext.Server.Cookies.Session.Store.Get($e.Session.Id))) {
+            elseif ($null -ne ($data = $PodeContext.Server.Sessions.Store.Get($e.Session.Id))) {
                 $e.Session.Data = $data
                 Set-PodeSessionDataHash -Session $e.Session
             }
@@ -349,7 +348,7 @@ function Get-PodeSessionMiddleware
             Set-PodeSessionHelpers -Session $e.Session
 
             # add session to response if it's new or extendible
-            if ($new -or $e.Session.Cookie.Extend) {
+            if ($new -or $e.Session.Properties.Extend) {
                 Set-PodeSession -Session $e.Session
             }
 
