@@ -1,5 +1,20 @@
 # Release Notes
 
+## v1.4.0
+
+```plain
+### Enhancements
+* #447: Sessions can now be used via Headers for better CLI support
+* #448: `-EndpointName` on routes can now take an array of endpoint names
+* #454: New wrapper function, `Start-PodeStaticServer`, for simple static websites
+
+### Bugs
+* #446: Fixes functions that were not in accordence with Coding Guidelines (thanks @jhainau!)
+
+### Documentation
+* #445: Improved documentation on using CSRF middleware
+```
+
 ## v1.3.0
 
 ```plain
