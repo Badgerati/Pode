@@ -791,6 +791,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../Functions/Core/Start-PodeStaticServer/" title="Start-PodeStaticServer" class="md-nav__link">
+      Start-PodeStaticServer
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1015,6 +1027,18 @@
   <li class="md-nav__item">
     <a href="../../../../Functions/Headers/Test-PodeHeader/" title="Test-PodeHeader" class="md-nav__link">
       Test-PodeHeader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../Functions/Headers/Test-PodeHeaderSigned/" title="Test-PodeHeaderSigned" class="md-nav__link">
+      Test-PodeHeaderSigned
     </a>
   </li>
 
@@ -1267,6 +1291,18 @@
   <li class="md-nav__item">
     <a href="../../../../Functions/Middleware/Get-PodeCsrfMiddleware/" title="Get-PodeCsrfMiddleware" class="md-nav__link">
       Get-PodeCsrfMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../Functions/Middleware/Get-PodeSessionId/" title="Get-PodeSessionId" class="md-nav__link">
+      Get-PodeSessionId
     </a>
   </li>
 
@@ -2764,43 +2800,23 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#functions" title="Functions" class="md-nav__link">
-    Functions
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-podecsrfmiddleware" title="Enable-PodeCsrfMiddleware" class="md-nav__link">
-    Enable-PodeCsrfMiddleware
+  <a href="#middleware" title="Middleware" class="md-nav__link">
+    Middleware
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#initialize-podecsrf" title="Initialize-PodeCsrf" class="md-nav__link">
-    Initialize-PodeCsrf
+      
+        <li class="md-nav__item">
+  <a href="#routes" title="Routes" class="md-nav__link">
+    Routes
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#get-podecsrfmiddleware" title="Get-PodeCsrfMiddleware" class="md-nav__link">
-    Get-PodeCsrfMiddleware
+      
+        <li class="md-nav__item">
+  <a href="#tokens" title="Tokens" class="md-nav__link">
+    Tokens
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#new-podecsrftoken" title="New-PodeCsrfToken" class="md-nav__link">
-    New-PodeCsrfToken
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3070,6 +3086,18 @@
   <li class="md-nav__item">
     <a href="../../../Routes/Examples/LoginPage/" title="Creating a Login Page" class="md-nav__link">
       Creating a Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Routes/Examples/RestApiSessions/" title="REST APIs and Sessions" class="md-nav__link">
+      REST APIs and Sessions
     </a>
   </li>
 
@@ -3369,43 +3397,23 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#functions" title="Functions" class="md-nav__link">
-    Functions
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-podecsrfmiddleware" title="Enable-PodeCsrfMiddleware" class="md-nav__link">
-    Enable-PodeCsrfMiddleware
+  <a href="#middleware" title="Middleware" class="md-nav__link">
+    Middleware
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#initialize-podecsrf" title="Initialize-PodeCsrf" class="md-nav__link">
-    Initialize-PodeCsrf
+      
+        <li class="md-nav__item">
+  <a href="#routes" title="Routes" class="md-nav__link">
+    Routes
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#get-podecsrfmiddleware" title="Get-PodeCsrfMiddleware" class="md-nav__link">
-    Get-PodeCsrfMiddleware
+      
+        <li class="md-nav__item">
+  <a href="#tokens" title="Tokens" class="md-nav__link">
+    Tokens
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#new-podecsrftoken" title="New-PodeCsrfToken" class="md-nav__link">
-    New-PodeCsrfToken
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3436,45 +3444,40 @@
                 
                 
                 <h1 id="csrf">CSRF</h1>
-<p>Pode has inbuilt support for CSRF middleware validation and tokens on web requests, where the secret to generate/validate the token can be stored in either sessions or signed cookies. When configured, the middleware will check for, and validate, a CSRF token the on a web request for valid routes - with support to ignore specific HTTP methods. If a route fails CSRF validation, then Pode will return a 403 status code.</p>
+<p>Pode has inbuilt support for CSRF validation using tokens on web requests. The secret used to generate/validate the tokens can be stored in either sessions or signed cookies. When configured, the middleware will check for, and validate, a CSRF token the on a web request for valid routes - with support to ignore specific HTTP methods. If a route fails CSRF validation, then Pode will return a 403 status code.</p>
 <h2 id="usage">Usage</h2>
-<p>To use CSRF in Pode, you can use the CSRF functions. These functions allow you to generate CSRF tokens, as well as two methods of returning valid middleware.</p>
-<p>The <code>-IgnoreMethods</code> array can either be empty, to run validation on every route, or can be formed of the following HTTP methods: DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, TRACE.</p>
-<p>The <code>-Secret</code> is used for signing the cookie that might be used, and is only required when <code>-Cookie</code> is also supplied.</p>
-<h2 id="functions">Functions</h2>
-<h3 id="enable-podecsrfmiddleware">Enable-PodeCsrfMiddleware</h3>
-<p>This function will configure how CSRF will work in Pode, as well as automatically create the Middleware. You can also configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.</p>
-<p>The below will setup default CSRF middleware, which will use sessions (so session middleware is required), and will ignore the default HTTP methods of GET, HEAD, OPTIONS, TRACE:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Secret</span> <span class="s1">&#39;vegeta&#39;</span>
+<p>In Pode you can either validate CSRF using global middleware, or you can assign local Route middleware for specifc routes instead. The tokens needed for validation can be generated in a route and returned in the response as a hidden input element, or other payload options.</p>
+<p>By default Pode's CSRF middleware will validate on every route, except for GET, HEAD, OPTIONS, and TRACE routes. The random secret used to generate tokens can be stored using either sessions or cookies.</p>
+<p>During the verification process, the middleware will attempt to extract the CSRF token from either of the query string, payload or header. In all scenarios the name of the of the token <em>should always</em> be <code>pode.csrf</code>.</p>
+<h2 id="middleware">Middleware</h2>
+<p>To setup global CSRF middleware in Pode you can use the <a href="../../../../Functions/Middleware/Enable-PodeCsrfMiddleware"><code>Enable-PodeCsrfMiddleware</code></a> function. This will let you configure how CSRF works, as well as add the middleware to Pode for you.</p>
+<p>You can use the <code>-IgnoreMethods</code> parameter to supply a custom array of HTTP methods that validation should skip. If you supply this an empty array (<code>-IgnoreMethods @()</code>) then CSRF will run on all routes - even GET, HEAD, OPTIONS, and TRACE.</p>
+<p>The secret used to generate a token is, by default, stored using sessions (so you'll need session middleware enabled). You can use cookies by supplying the <code>-Cookie</code> switch and the <code>-Secret</code> parameter to sign the cookies (this secret is different to the internal random secret CSRF uses to make tokens).</p>
+<p>The below code will setup default CSRF middleware, which will store the random secret using sessions (so session middleware is required), and will ignore the default HTTP methods of GET, HEAD, OPTIONS, TRACE:</p>
+<div class="codehilite"><pre><span></span><span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Secret</span> <span class="s1">&#39;toss-a-coin&#39;</span>
 <span class="nb">Enable-PodeCsrfMiddleware</span>
 </pre></div>
 
 
-<h3 id="initialize-podecsrf">Initialize-PodeCsrf</h3>
-<p>Similar to the  <a href="../../../../Functions/Middleware/Enable-PodeCsrfMiddleware"><code>Enable-PodeCsrfMiddleware</code></a> function, this function configures how CSRF will work in Pode. You can configure HTTP methods that CSRF should ignore, and not run validation, as well as whether or not CSRF should store the secret in sessions or using cookies.</p>
-<p>This function is to be used when you want to use the  <a href="../../../../Functions/Middleware/Get-PodeCsrfMiddleware"><code>Get-PodeCsrfMiddleware</code></a> function, for more dynamic control of CSRF verification.</p>
-<p>Below, we'll setup CSRF to work on cookies, and only ignore GET routes:</p>
-<div class="codehilite"><pre><span></span><span class="nb">Initialize-PodeCsrf</span> <span class="n">-IgnoreMethods</span> <span class="p">@(</span><span class="s1">&#39;Get&#39;</span><span class="p">)</span> <span class="n">-Secret</span> <span class="s1">&#39;secret-key&#39;</span> <span class="n">-UseCookies</span>
-</pre></div>
-
-
-<h3 id="get-podecsrfmiddleware">Get-PodeCsrfMiddleware</h3>
-<p>The  <a href="../../../../Functions/Middleware/Get-PodeCsrfMiddleware"><code>Get-PodeCsrfMiddleware</code></a> function is similar to the  <a href="../../../../Functions/Middleware/Get-PodeCsrfMiddleware"><code>Get-PodeCsrfMiddleware</code></a> function, but is designed so you can use it on Routes so SRF verification can be used more dynamically. By default the CSRF middleware will ignore GET routes, however the  <a href="../../../../Functions/Middleware/Get-PodeCsrfMiddleware"><code>Get-PodeCsrfMiddleware</code></a> middleware skips this method validation - meaning you could use it on a GET route and it will require a valid CSRF token.</p>
-<p>Unlike the  <a href="../../../../Functions/Middleware/Enable-PodeCsrfMiddleware"><code>Enable-PodeCsrfMiddleware</code></a> function however, you cannot configure HTTP methods to ignore or whether to use sessions/cookies. Therefore, in order to use this action you are required to use the  <a href="../../../../Functions/Middleware/Enable-PodeCsrfMiddleware"><code>Enable-PodeCsrfMiddleware</code></a> action first.</p>
-<p>The below will run CSRF validation on the GET route, even though the setup is configured to ignore GET routes:</p>
+<p>Once enabled, you can then use the <a href="../../../../Functions/Middleware/New-PodeCsrfToken"><code>New-PodeCsrfToken</code></a> function to generate CSRF tokens (see <a href="#tokens">below</a>).</p>
+<h2 id="routes">Routes</h2>
+<p>If you only wish to have CSRF checks on specific routes, then you can use the <a href="../../../../Functions/Middleware/Get-PodeCsrfMiddleware"><code>Get-PodeCsrfMiddleware</code></a> function. The function will return CSRF middleware that you can assign to the <code>-Middleware</code> on routes.</p>
+<p>However, if you use this approach you will first need to initialise CSRF - so you can generate tokens, and specify where the random secrets are stored. To do this, you can use the <a href="../../../../Functions/Middleware/Initialize-PodeCsrf"><code>Initialize-PodeCsrf</code></a> function.</p>
+<p>The below code will intialise CSRF to work using cookies. it will then create a route and pass the CSRF middleware to it explicitly:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">Initialize-PodeCsrf</span> <span class="n">-IgnoreMethods</span> <span class="p">@(</span><span class="s1">&#39;Get&#39;</span><span class="p">)</span>
+    <span class="nb">Initialize-PodeCsrf</span> <span class="n">-Secret</span> <span class="s1">&#39;to-your-witcher&#39;</span> <span class="n">-UseCookies</span>
 
-    <span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Get</span> <span class="n">-Path</span> <span class="s1">&#39;/messages&#39;</span> <span class="n">-Middleware</span> <span class="p">(</span><span class="nb">Get-PodeCsrfMiddleware</span><span class="p">)</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
-        <span class="c"># logic</span>
+    <span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Post</span> <span class="n">-Path</span> <span class="s1">&#39;/users&#39;</span> <span class="n">-Middleware</span> <span class="p">(</span><span class="nb">Get-PodeCsrfMiddleware</span><span class="p">)</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+        <span class="nb">Write-PodeJsonResponse</span> <span class="n">-Value</span> <span class="p">@{</span> <span class="n">Users</span> <span class="p">=</span> <span class="p">@()</span> <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<h3 id="new-podecsrftoken">New-PodeCsrfToken</h3>
-<p>The  <a href="../../../../Functions/Middleware/New-PodeCsrfToken"><code>New-PodeCsrfToken</code></a> function allows you to generate tokens. It will randomly generate a token that you can use in your web-pages, such as in hidden form inputs or meta elements for AJAX requests. The token itself is formed using a secure random secret key, and a random salt.</p>
-<p>To generate the token, you can use the following example:</p>
+<p>Once initialised, you can then use the <a href="../../../../Functions/Middleware/New-PodeCsrfToken"><code>New-PodeCsrfToken</code></a> function to generate CSRF tokens (see <a href="#tokens">below</a>).</p>
+<h2 id="tokens">Tokens</h2>
+<p>The <a href="../../../../Functions/Middleware/New-PodeCsrfToken"><code>New-PodeCsrfToken</code></a> function allows you to generate tokens. It will randomly generate a token that you can use in your web-pages, such as in hidden form inputs or meta elements for AJAX requests. The token itself is formed using a secure random secret key, and a random salt.</p>
+<p>To generate the token, you could use the following example:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Secret</span> <span class="s1">&#39;vegeta&#39;</span>
     <span class="nb">Enable-PodeCsrfMiddleware</span>
@@ -3488,7 +3491,7 @@
 
 <p>This will return a token as a <code>string</code> value. When you set this token in a hidden form input, the name of the input <em>must</em> be <code>pode.csrf</code>. The same applies to when sending the token via AJAX requests - in the query string, payload or header, the token should be named as <code>pode.csrf</code>.</p>
 <h2 id="example">Example</h2>
-<p>The following example will configure CSRF as default middleware, and supply a token for the <code>&lt;form&gt;</code> in the index page. The POST route will require the token to be supplied, otherwise a 403 status code will be returned.</p>
+<p>The following example will configure CSRF as global middleware, and supply a token for the <code>&lt;form&gt;</code> in the index page. The POST route will require the token to be supplied, otherwise a 403 status code will be returned.</p>
 <p><em>server.ps1</em></p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="n">localhost</span> <span class="n">-Port</span> <span class="n">8080</span> <span class="n">-Protocol</span> <span class="n">Http</span>

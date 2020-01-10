@@ -791,6 +791,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../Functions/Core/Start-PodeStaticServer/" title="Start-PodeStaticServer" class="md-nav__link">
+      Start-PodeStaticServer
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1015,6 +1027,18 @@
   <li class="md-nav__item">
     <a href="../../../../Functions/Headers/Test-PodeHeader/" title="Test-PodeHeader" class="md-nav__link">
       Test-PodeHeader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../Functions/Headers/Test-PodeHeaderSigned/" title="Test-PodeHeaderSigned" class="md-nav__link">
+      Test-PodeHeaderSigned
     </a>
   </li>
 
@@ -1267,6 +1291,18 @@
   <li class="md-nav__item">
     <a href="../../../../Functions/Middleware/Get-PodeCsrfMiddleware/" title="Get-PodeCsrfMiddleware" class="md-nav__link">
       Get-PodeCsrfMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../Functions/Middleware/Get-PodeSessionId/" title="Get-PodeSessionId" class="md-nav__link">
+      Get-PodeSessionId
     </a>
   </li>
 
@@ -2789,21 +2825,48 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#generate-sessionids" title="Generate SessionIds" class="md-nav__link">
-    Generate SessionIds
+  <a href="#cookies" title="Cookies" class="md-nav__link">
+    Cookies
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#storage" title="Storage" class="md-nav__link">
-    Storage
+  <a href="#headers" title="Headers" class="md-nav__link">
+    Headers
   </a>
   
 </li>
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sessionids" title="SessionIds" class="md-nav__link">
+    SessionIds
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strict" title="Strict" class="md-nav__link">
+    Strict
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#storage" title="Storage" class="md-nav__link">
+    Storage
+  </a>
   
 </li>
       
@@ -3062,6 +3125,18 @@
   <li class="md-nav__item">
     <a href="../../../Routes/Examples/LoginPage/" title="Creating a Login Page" class="md-nav__link">
       Creating a Login Page
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../Routes/Examples/RestApiSessions/" title="REST APIs and Sessions" class="md-nav__link">
+      REST APIs and Sessions
     </a>
   </li>
 
@@ -3362,21 +3437,48 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#generate-sessionids" title="Generate SessionIds" class="md-nav__link">
-    Generate SessionIds
+  <a href="#cookies" title="Cookies" class="md-nav__link">
+    Cookies
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#storage" title="Storage" class="md-nav__link">
-    Storage
+  <a href="#headers" title="Headers" class="md-nav__link">
+    Headers
   </a>
   
 </li>
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sessionids" title="SessionIds" class="md-nav__link">
+    SessionIds
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strict" title="Strict" class="md-nav__link">
+    Strict
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#storage" title="Storage" class="md-nav__link">
+    Storage
+  </a>
   
 </li>
       
@@ -3420,11 +3522,16 @@
                 
                 
                 <h1 id="sessions">Sessions</h1>
-<p>Session Middleware is supported on web requests and responses in the form of signed-cookies and server-side data storage. When configured, the middleware will check for a session-cookie on the request; if a cookie is not found on the request, or the session is not in the store, then a new session is created and attached to the response. If there is a session, then the appropriate data is loaded from the store.</p>
-<p>The age of the session-cookie can be specified, as well as whether to extend the duration each time on each request. A secret-key to sign cookies can be supplied, as well as the ability to specify custom data stores - the default is in-mem, custom could be anything like Redis/MongoDB.</p>
+<p>Session Middleware is supported on web requests and responses in the form of signed-cookies/headers and server-side data storage. When configured, the middleware will check for a session-cookie/header on the request; if a cookie/header is not found on the request, or the session is not in the store, then a new session is created and attached to the response. If there is a session, then the appropriate data is loaded from the store.</p>
+<p>The duration of the session-cookie/header can be specified, as well as whether to extend the duration each time on each request. A secret-key to sign sessions can be supplied, as well as the ability to specify custom data stores - the default is in-mem, custom could be anything like Redis/MongoDB.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Using sessions via headers is best used with REST APIs and the CLI. It's not advised to use them for normal websites, as browsers don't send back response headers in new requests - unlike cookies.</p>
+</div>
 <h2 id="usage">Usage</h2>
-<p>To intialise sessions in Pode you use the  <a href="../../../../Functions/Middleware/Enable-PodeSessionMiddleware"><code>Enable-PodeSessionMiddleware</code></a> function. This function will configure and automatically create Middleware to enable sessions.</p>
-<p>The following is an example of how to setup session middleware:</p>
+<p>To initialise sessions in Pode you use the <a href="../../../../Functions/Middleware/Enable-PodeSessionMiddleware"><code>Enable-PodeSessionMiddleware</code></a> function. This function will configure and automatically create Middleware to enable sessions. By default sessions are set using cookies, but support is also available for headers.</p>
+<h3 id="cookies">Cookies</h3>
+<p>The following is an example of how to setup session middleware using cookies:</p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Secret</span> <span class="s1">&#39;schwifty&#39;</span> <span class="n">-Duration</span> <span class="n">120</span> <span class="n">-Extend</span> <span class="n">-Generator</span> <span class="p">{</span>
         <span class="k">return</span> <span class="no">[System.IO.Path]</span><span class="p">::</span><span class="n">GetRandomFileName</span><span class="p">()</span>
@@ -3433,9 +3540,25 @@
 </pre></div>
 
 
-<h3 id="generate-sessionids">Generate SessionIds</h3>
-<p>If supplied, the <code>-Generator</code> is a <code>scriptblock</code> that must return a valid string. The string itself should be a random unique value, that can be used as a unique session identifier. If no <code>-Generator</code> script is supplied, then the default <code>SessionId</code> is a <code>GUID</code>.</p>
-<h3 id="storage">Storage</h3>
+<p>The default name of the session cookie is <code>pode.sid</code>, but this can be customised using the <code>-Name</code> parameter.</p>
+<h3 id="headers">Headers</h3>
+<p>Sessions are also supported using headers - useful for CLI requests. The following example will enable sessions use headers instead of cookies:</p>
+<div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>
+    <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Secret</span> <span class="s1">&#39;schwifty&#39;</span> <span class="n">-Duration</span> <span class="n">120</span> <span class="n">-Extend</span> <span class="n">-UseHeaders</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>When using headers, the default name of the session header in the request/response is <code>pode.sid</code> - this can be customised using the <code>-Name</code> parameter. When you make an initial request to authenticate some user, the <code>pode.sid</code> header will be returned in the response. You can then use the value of this header in subsequent requests for the authenticated user, and then make a call using the session one last time against some route to expire the session - or just let it automatically expire.</p>
+<h2 id="sessionids">SessionIds</h2>
+<p>The inbuilt SessionId generator used for sessions is a GUID, but you can supply a custom generator using the <code>-Generator</code> parameter.</p>
+<p>If supplied, the <code>-Generator</code> is a <code>scriptblock</code> that must return a valid string. The string itself should be a random unique value, that can be used as a unique session identifier.</p>
+<p>Within a route, or middleware, you can get the current authenticated sessionId using <a href="../../../../Functions/Middleware/Get-PodeSessionId"><code>Get-PodeSessionId</code></a>. If there is no session, or the session is not authenticated, then <code>$null</code> is returned. This function can also returned the fully signed sessionId as well.</p>
+<h3 id="strict">Strict</h3>
+<p>You can flag sessions as being strict using the <code>-Strict</code> switch. Strict sessions will extend the signing process by also using the client's UserAgent and RemoteIPAddress, to help prevent session sharing on different browsers/consoles.</p>
+<p>You can supply the secret value as normal, Pode will automatically extend it for you.</p>
+<h2 id="storage">Storage</h2>
+<p>The inbuilt storage for sessions is a simple In-Memory store - with auto-cleanup for expired sessions.</p>
 <p>If supplied, the <code>-Storage</code> parameter is a <code>psobject</code> with the following required <code>ScriptMethod</code> members:</p>
 <div class="codehilite"><pre><span></span><span class="no">[hashtable]</span> <span class="n">Get</span><span class="p">(</span><span class="no">[string]</span> <span class="nv">$sessionId</span><span class="p">)</span>
 <span class="no">[void]</span>      <span class="n">Set</span><span class="p">(</span><span class="no">[string]</span> <span class="nv">$sessionId</span><span class="p">,</span> <span class="no">[hashtable]</span> <span class="nv">$data</span><span class="p">,</span> <span class="no">[datetime]</span> <span class="nv">$expiry</span><span class="p">)</span>
@@ -3443,7 +3566,6 @@
 </pre></div>
 
 
-<p>If no <code>-Storage</code> is supplied, then a default in-memory store is used - with auto-cleanup for expired sessions.</p>
 <p>For example, the <code>Delete</code> method could be done as follows:</p>
 <div class="codehilite"><pre><span></span><span class="nv">$store</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">-TypeName</span> <span class="n">psobject</span>
 
@@ -3451,13 +3573,11 @@
     <span class="k">param</span><span class="p">(</span><span class="nv">$sessionId</span><span class="p">)</span>
     <span class="nb">Remove-RedisKey</span> <span class="nv">$sessionId</span> <span class="p">|</span> <span class="nb">Out-Null</span>
 <span class="p">}</span>
-
-<span class="k">return</span> <span class="nv">$store</span>
 </pre></div>
 
 
 <h2 id="session-data">Session Data</h2>
-<p>To add data to a session you can utilise the <code>.Session.Data</code> object within the web event object supplied to a Route - or other Middleware. The data will be saved at the end of the route logic automatically using Endware. When a request comes in using the same session, the data is loaded from the store.</p>
+<p>To add data to a session you can utilise the <code>.Session.Data</code> object within the web event object supplied to a Route - or other Middleware. The data will be saved at the end of the route automatically using Endware. When a request is made using the same sessionId, the data is loaded from the store.</p>
 <h3 id="example">Example</h3>
 <p>An example of using sessions in a Route to increment a views counter could be done as follows (the counter will continue to increment on each call to the route until the session expires after 2mins):</p>
 <div class="codehilite"><pre><span></span><span class="nb">Start-PodeServer</span> <span class="p">{</span>

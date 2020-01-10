@@ -328,6 +328,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v140" title="v1.4.0" class="md-nav__link">
+    v1.4.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v130" title="v1.3.0" class="md-nav__link">
     v1.3.0
   </a>
@@ -1072,6 +1079,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Functions/Core/Start-PodeStaticServer/" title="Start-PodeStaticServer" class="md-nav__link">
+      Start-PodeStaticServer
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1296,6 +1315,18 @@
   <li class="md-nav__item">
     <a href="../Functions/Headers/Test-PodeHeader/" title="Test-PodeHeader" class="md-nav__link">
       Test-PodeHeader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Functions/Headers/Test-PodeHeaderSigned/" title="Test-PodeHeaderSigned" class="md-nav__link">
+      Test-PodeHeaderSigned
     </a>
   </li>
 
@@ -1548,6 +1579,18 @@
   <li class="md-nav__item">
     <a href="../Functions/Middleware/Get-PodeCsrfMiddleware/" title="Get-PodeCsrfMiddleware" class="md-nav__link">
       Get-PodeCsrfMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Functions/Middleware/Get-PodeSessionId/" title="Get-PodeSessionId" class="md-nav__link">
+      Get-PodeSessionId
     </a>
   </li>
 
@@ -3269,6 +3312,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../Tutorials/Routes/Examples/RestApiSessions/" title="REST APIs and Sessions" class="md-nav__link">
+      REST APIs and Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../Tutorials/Routes/Examples/WebPages/" title="Creating a Web Page" class="md-nav__link">
       Creating a Web Page
     </a>
@@ -3551,6 +3606,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v140" title="v1.4.0" class="md-nav__link">
+    v1.4.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v130" title="v1.3.0" class="md-nav__link">
     v1.3.0
   </a>
@@ -3822,6 +3884,20 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v140">v1.4.0</h2>
+<div class="codehilite"><pre><span></span>### <span class="nv">Enhancements</span>
+<span class="o">*</span> <span class="sc">#447</span>: <span class="nv">Sessions</span> <span class="nv">can</span> <span class="nv">now</span> <span class="nv">be</span> <span class="nv">used</span> <span class="nv">via</span> <span class="nv">Headers</span> <span class="k">for</span> <span class="nv">better</span> <span class="nv">CLI</span> <span class="nv">support</span>
+<span class="o">*</span> <span class="sc">#448</span>: `<span class="o">-</span><span class="nv">EndpointName</span>` <span class="nv">on</span> <span class="nv">routes</span> <span class="nv">can</span> <span class="nv">now</span> <span class="nv">take</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">endpoint</span> <span class="nv">names</span>
+<span class="o">*</span> <span class="sc">#454</span>: <span class="nv">New</span> <span class="nv">wrapper</span> <span class="nv">function</span>, `<span class="nv">Start</span><span class="o">-</span><span class="nv">PodeStaticServer</span>`, <span class="k">for</span> <span class="nv">simple</span> <span class="nv">static</span> <span class="nv">websites</span>
+
+### <span class="nv">Bugs</span>
+<span class="o">*</span> <span class="sc">#446</span>: <span class="nv">Fixes</span> <span class="nv">functions</span> <span class="nv">that</span> <span class="nv">were</span> <span class="nv">not</span> <span class="nv">in</span> <span class="nv">accordence</span> <span class="nv">with</span> <span class="nv">Coding</span> <span class="nv">Guidelines</span> <span class="ss">(</span><span class="nv">thanks</span> @<span class="nv">jhainau</span><span class="o">!</span><span class="ss">)</span>
+
+### <span class="nv">Documentation</span>
+<span class="o">*</span> <span class="sc">#445</span>: <span class="nv">Improved</span> <span class="nv">documentation</span> <span class="nv">on</span> <span class="nv">using</span> <span class="nv">CSRF</span> <span class="nv">middleware</span>
+</pre></div>
+
+
 <h2 id="v130">v1.3.0</h2>
 <div class="codehilite"><pre><span></span>### <span class="nv">Enhancements</span>
 <span class="o">*</span> <span class="sc">#421</span>: <span class="nv">Adds</span> <span class="nv">a</span> <span class="nv">new</span> `<span class="o">-</span><span class="nv">FilePath</span>` <span class="nv">parameter</span> <span class="nv">to</span> <span class="nv">the</span> `<span class="nv">Add</span><span class="o">-</span><span class="nv">PodeTimer</span>` <span class="nv">and</span> `<span class="nv">Add</span><span class="o">-</span><span class="nv">PodeSchedule</span>` <span class="nv">functions</span>

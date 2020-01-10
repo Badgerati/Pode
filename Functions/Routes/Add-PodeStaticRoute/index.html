@@ -793,6 +793,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Core/Start-PodeStaticServer/" title="Start-PodeStaticServer" class="md-nav__link">
+      Start-PodeStaticServer
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1017,6 +1029,18 @@
   <li class="md-nav__item">
     <a href="../../Headers/Test-PodeHeader/" title="Test-PodeHeader" class="md-nav__link">
       Test-PodeHeader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Headers/Test-PodeHeaderSigned/" title="Test-PodeHeaderSigned" class="md-nav__link">
+      Test-PodeHeaderSigned
     </a>
   </li>
 
@@ -1269,6 +1293,18 @@
   <li class="md-nav__item">
     <a href="../../Middleware/Get-PodeCsrfMiddleware/" title="Get-PodeCsrfMiddleware" class="md-nav__link">
       Get-PodeCsrfMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Middleware/Get-PodeSessionId/" title="Get-PodeSessionId" class="md-nav__link">
+      Get-PodeSessionId
     </a>
   </li>
 
@@ -3175,6 +3211,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Examples/RestApiSessions/" title="REST APIs and Sessions" class="md-nav__link">
+      REST APIs and Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Tutorials/Routes/Examples/WebPages/" title="Creating a Web Page" class="md-nav__link">
       Creating a Web Page
     </a>
@@ -3632,7 +3680,7 @@
 <p>Add a static Route for rendering static content.</p>
 <h2 id="syntax">SYNTAX</h2>
 <div class="codehilite"><pre><span></span><span class="k">Add</span><span class="o">-</span><span class="n">PodeStaticRoute</span> <span class="p">[</span><span class="o">-</span><span class="n">Path</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">-</span><span class="k">Source</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">[[</span><span class="o">-</span><span class="n">Protocol</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[[</span><span class="o">-</span><span class="n">Endpoint</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span>
- <span class="p">[[</span><span class="o">-</span><span class="n">EndpointName</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[[</span><span class="o">-</span><span class="k">Defaults</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="p">[]</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">DownloadOnly</span><span class="p">]</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">CommonParameters</span><span class="o">&gt;</span><span class="p">]</span>
+ <span class="p">[[</span><span class="o">-</span><span class="n">EndpointName</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="p">[]</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[[</span><span class="o">-</span><span class="k">Defaults</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="p">[]</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">DownloadOnly</span><span class="p">]</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">CommonParameters</span><span class="o">&gt;</span><span class="p">]</span>
 </pre></div>
 
 
@@ -3699,8 +3747,8 @@ You can also define default pages to display.</p>
 
 
 <h3 id="-endpointname">-EndpointName</h3>
-<p>The EndpointName of an Endpoint to bind the static Route against.</p>
-<div class="codehilite"><pre><span></span><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<p>The EndpointName of an Endpoint(s) to bind the static Route against.</p>
+<div class="codehilite"><pre><span></span><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String[]</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 

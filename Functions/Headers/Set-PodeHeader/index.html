@@ -793,6 +793,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Core/Start-PodeStaticServer/" title="Start-PodeStaticServer" class="md-nav__link">
+      Start-PodeStaticServer
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1088,6 +1100,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-secret" title="-Secret" class="md-nav__link">
+    -Secret
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-value" title="-Value" class="md-nav__link">
     -Value
   </a>
@@ -1153,6 +1172,18 @@
   <li class="md-nav__item">
     <a href="../Test-PodeHeader/" title="Test-PodeHeader" class="md-nav__link">
       Test-PodeHeader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../Test-PodeHeaderSigned/" title="Test-PodeHeaderSigned" class="md-nav__link">
+      Test-PodeHeaderSigned
     </a>
   </li>
 
@@ -1405,6 +1436,18 @@
   <li class="md-nav__item">
     <a href="../../Middleware/Get-PodeCsrfMiddleware/" title="Get-PodeCsrfMiddleware" class="md-nav__link">
       Get-PodeCsrfMiddleware
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../Middleware/Get-PodeSessionId/" title="Get-PodeSessionId" class="md-nav__link">
+      Get-PodeSessionId
     </a>
   </li>
 
@@ -3126,6 +3169,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../../Tutorials/Routes/Examples/RestApiSessions/" title="REST APIs and Sessions" class="md-nav__link">
+      REST APIs and Sessions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../../Tutorials/Routes/Examples/WebPages/" title="Creating a Web Page" class="md-nav__link">
       Creating a Web Page
     </a>
@@ -3464,6 +3519,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-secret" title="-Secret" class="md-nav__link">
+    -Secret
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-value" title="-Value" class="md-nav__link">
     -Value
   </a>
@@ -3533,7 +3595,7 @@
 <h2 id="synopsis">SYNOPSIS</h2>
 <p>Sets a header on the Response, clearing all current values for the header.</p>
 <h2 id="syntax">SYNTAX</h2>
-<div class="codehilite"><pre><span></span><span class="k">Set</span><span class="o">-</span><span class="n">PodeHeader</span> <span class="p">[</span><span class="o">-</span><span class="n">Name</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">-</span><span class="n">Value</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">CommonParameters</span><span class="o">&gt;</span><span class="p">]</span>
+<div class="codehilite"><pre><span></span><span class="k">Set</span><span class="o">-</span><span class="n">PodeHeader</span> <span class="p">[</span><span class="o">-</span><span class="n">Name</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">-</span><span class="n">Value</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="p">[[</span><span class="o">-</span><span class="n">Secret</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">CommonParameters</span><span class="o">&gt;</span><span class="p">]</span>
 </pre></div>
 
 
@@ -3554,6 +3616,20 @@
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">True</span>
 <span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</pre></div>
+
+
+<h3 id="-secret">-Secret</h3>
+<p>If supplied, the secret with which to sign the header's value.</p>
+<div class="codehilite"><pre><span></span><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
