@@ -24,7 +24,7 @@ The protocol this Route should be bound against.
 The endpoint this Route should be bound against.
 
 .PARAMETER EndpointName
-The EndpointName of an Endpoint this Route should be bound against.
+The EndpointName of an Endpoint(s) this Route should be bound against.
 
 .PARAMETER ContentType
 The content type the Route should use when parsing any payloads.
@@ -84,7 +84,7 @@ function Add-PodeRoute
         $Endpoint,
 
         [Parameter()]
-        [string]
+        [string[]]
         $EndpointName,
 
         [Parameter()]
@@ -114,21 +114,13 @@ function Add-PodeRoute
     $Path = Update-PodeRouteSlashes -Path $Path
     $Path = Update-PodeRoutePlaceholders -Path $Path
 
-    # if an EndpointName was supplied, find it and use it
-    $_endpoint = Get-PodeEndpointByName -EndpointName $EndpointName -ThrowError
-    if ($null -ne $_endpoint) {
-        $Protocol = $_endpoint.Protocol
-        $Endpoint = $_endpoint.RawAddress
-    }
+    # get endpoints from name, or use single passed endpoint/protocol
+    $endpoints = Find-PodeEndpoints -Endpoint $Endpoint -Protocol $Protocol -EndpointName $EndpointName
 
-    # if we have an endpoint, set any appropriate wildcards
-    if (!(Test-IsEmpty $Endpoint)) {
-        $_endpoint = Get-PodeEndpointInfo -Endpoint $Endpoint -AnyPortOnZero
-        $Endpoint = "$($_endpoint.Host):$($_endpoint.Port)"
+    # ensure the route doesn't already exist for each endpoint
+    foreach ($_endpoint in $endpoints) {
+        Test-PodeRouteAndError -Method $Method -Path $Path -Protocol $_endpoint.Protocol -Endpoint $_endpoint.Address
     }
-
-    # ensure route doesn't already exist
-    Test-PodeRouteAndError -Method $Method -Path $Path -Protocol $Protocol -Endpoint $Endpoint
 
     # if middleware, scriptblock and file path are all null/empty, error
     if ((Test-IsEmpty $Middleware) -and (Test-IsEmpty $ScriptBlock) -and (Test-IsEmpty $FilePath)) {
@@ -192,15 +184,17 @@ function Add-PodeRoute
 
     # add the route
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
-    $PodeContext.Server.Routes[$Method][$Path] += @(@{
-        Logic = $ScriptBlock
-        Middleware = $Middleware
-        Protocol = $Protocol
-        Endpoint = $Endpoint.Trim()
-        ContentType = $ContentType
-        ErrorType = $ErrorContentType
-        Arguments = $ArgumentList
-    })
+    foreach ($_endpoint in $endpoints) {
+        $PodeContext.Server.Routes[$Method][$Path] += @(@{
+            Logic = $ScriptBlock
+            Middleware = $Middleware
+            Protocol = $_endpoint.Protocol
+            Endpoint = $_endpoint.Address.Trim()
+            ContentType = $ContentType
+            ErrorType = $ErrorContentType
+            Arguments = $ArgumentList
+        })
+    }
 }
 
 <#
@@ -223,7 +217,7 @@ The protocol this static Route should be bound against.
 The endpoint this static Route should be bound against.
 
 .PARAMETER EndpointName
-The EndpointName of an Endpoint to bind the static Route against.
+The EndpointName of an Endpoint(s) to bind the static Route against.
 
 .PARAMETER Defaults
 An array of default pages to display, such as 'index.html'.
@@ -262,7 +256,7 @@ function Add-PodeStaticRoute
         $Endpoint,
 
         [Parameter()]
-        [string]
+        [string[]]
         $EndpointName,
 
         [Parameter()]
@@ -285,21 +279,13 @@ function Add-PodeStaticRoute
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path -Static
 
-    # if an EndpointName was supplied, find it and use it
-    $_endpoint = Get-PodeEndpointByName -EndpointName $EndpointName -ThrowError
-    if ($null -ne $_endpoint) {
-        $Protocol = $_endpoint.Protocol
-        $Endpoint = $_endpoint.RawAddress
-    }
+    # get endpoints from name, or use single passed endpoint/protocol
+    $endpoints = Find-PodeEndpoints -Endpoint $Endpoint -Protocol $Protocol -EndpointName $EndpointName
 
-    # if we have an endpoint, set any appropriate wildcards
-    if (!(Test-IsEmpty $Endpoint)) {
-        $_endpoint = Get-PodeEndpointInfo -Endpoint $Endpoint -AnyPortOnZero
-        $Endpoint = "$($_endpoint.Host):$($_endpoint.Port)"
+    # ensure the route doesn't already exist for each endpoint
+    foreach ($_endpoint in $endpoints) {
+        Test-PodeRouteAndError -Method $Method -Path $Path -Protocol $_endpoint.Protocol -Endpoint $_endpoint.Address
     }
-
-    # ensure route doesn't already exist
-    Test-PodeRouteAndError -Method $Method -Path $Path -Protocol $Protocol -Endpoint $Endpoint
 
     # if static, ensure the path exists at server root
     $Source = Get-PodeRelativePath -Path $Source -JoinRoot
@@ -315,15 +301,16 @@ function Add-PodeStaticRoute
         $Defaults = Get-PodeStaticRouteDefaults
     }
 
-    # add the route path
-    $PodeContext.Server.Routes[$Method][$Path] += @(@{
-        Path = $Source
-        Defaults = $Defaults
-        Protocol = $Protocol
-        Endpoint = $Endpoint.Trim()
-        Download = $DownloadOnly
-    })
-
+    # add the static route for each endpoint
+    foreach ($_endpoint in $endpoints) {
+        $PodeContext.Server.Routes[$Method][$Path] += @(@{
+            Path = $Source
+            Defaults = $Defaults
+            Protocol = $_endpoint.Protocol
+            Endpoint = $_endpoint.Address.Trim()
+            Download = $DownloadOnly
+        })
+    }
 }
 
 <#

@@ -67,7 +67,7 @@ Describe 'Get-PodeAuthMiddlewareScript' {
 
 Describe 'Remove-PodeAuthSession' {
     It 'Removes the user, and kills the session' {
-        Mock Remove-PodeSessionCookie {}
+        Mock Revoke-PodeSession {}
 
         $event = @{
             Auth = @{ User = @{} }
@@ -84,11 +84,11 @@ Describe 'Remove-PodeAuthSession' {
         $event.Auth.User | Should Be $null
         $event.Session.Data.Auth | Should be $null
 
-        Assert-MockCalled Remove-PodeSessionCookie -Times 1 -Scope It
+        Assert-MockCalled Revoke-PodeSession -Times 1 -Scope It
     }
 
     It 'Removes the user, and kills the session, redirecting to root' {
-        Mock Remove-PodeSessionCookie {}
+        Mock Revoke-PodeSession {}
 
         $event = @{
             Auth = @{ User = @{} }
@@ -108,6 +108,6 @@ Describe 'Remove-PodeAuthSession' {
         $event.Auth.User | Should Be $null
         $event.Session.Data.Auth | Should be $null
 
-        Assert-MockCalled Remove-PodeSessionCookie -Times 1 -Scope It
+        Assert-MockCalled Revoke-PodeSession -Times 1 -Scope It
     }
 }

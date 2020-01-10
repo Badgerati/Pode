@@ -37,40 +37,40 @@ Describe 'Test-PodeCookieSigned' {
     }
 
     It 'Throws error for no secret being passed' {
-        Mock Invoke-PodeCookieUnsign { return $null }
+        Mock Invoke-PodeValueUnsign { return $null }
 
         $WebEvent = @{ 'Cookies' = @{
             'test' = @{ 'Value' = 'example' }
         } }
 
         { Test-PodeCookieSigned -Name 'test' } | Should Throw 'argument is null'
-        Assert-MockCalled Invoke-PodeCookieUnsign -Times 0 -Scope It
+        Assert-MockCalled Invoke-PodeValueUnsign -Times 0 -Scope It
     }
 
     It 'Returns false for invalid signed cookie' {
-        Mock Invoke-PodeCookieUnsign { return $null }
+        Mock Invoke-PodeValueUnsign { return $null }
 
         $WebEvent = @{ 'Cookies' = @{
             'test' = @{ 'Value' = 'example' }
         } }
 
         Test-PodeCookieSigned -Name 'test' -Secret 'key' | Should Be $false
-        Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
     }
 
     It 'Returns true for valid signed cookie' {
-        Mock Invoke-PodeCookieUnsign { return 'value' }
+        Mock Invoke-PodeValueUnsign { return 'value' }
 
         $WebEvent = @{ 'Cookies' = @{
             'test' = @{ 'Value' = 'example' }
         } }
 
         Test-PodeCookieSigned -Name 'test' -Secret 'key' | Should Be $true
-        Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
     }
 
     It 'Returns true for valid signed cookie, using global secret' {
-        Mock Invoke-PodeCookieUnsign { return 'value' }
+        Mock Invoke-PodeValueUnsign { return 'value' }
 
         $PodeContext = @{ 'Server' = @{
             'Cookies' = @{ 'Secrets' = @{
@@ -83,7 +83,7 @@ Describe 'Test-PodeCookieSigned' {
         } }
 
         Test-PodeCookieSigned -Name 'test' -Secret (Get-PodeCookieSecret -Global) | Should Be $true
-        Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
     }
 }
 
@@ -115,7 +115,7 @@ Describe 'Get-PodeCookie' {
     }
 
     It 'Returns a cookie, with secret but not valid signed' {
-        Mock Invoke-PodeCookieUnsign { return $null }
+        Mock Invoke-PodeValueUnsign { return $null }
 
         $WebEvent = @{ 'Cookies' = @{
             'test' = @{ 'Value' = 'example' }
@@ -125,11 +125,11 @@ Describe 'Get-PodeCookie' {
         $c | Should Not Be $null
         $c.Value | Should Be 'example'
 
-        Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
     }
 
     It 'Returns a cookie, with secret but valid signed' {
-        Mock Invoke-PodeCookieUnsign { return 'some-id' }
+        Mock Invoke-PodeValueUnsign { return 'some-id' }
 
         $WebEvent = @{ 'Cookies' = @{
             'test' = @{ 'Value' = 'example' }
@@ -139,11 +139,11 @@ Describe 'Get-PodeCookie' {
         $c | Should Not Be $null
         $c.Value | Should Be 'some-id'
 
-        Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
     }
 
     It 'Returns a cookie, with secret but valid signed, using global secret' {
-        Mock Invoke-PodeCookieUnsign { return 'some-id' }
+        Mock Invoke-PodeValueUnsign { return 'some-id' }
 
         $PodeContext = @{ 'Server' = @{
             'Cookies' = @{ 'Secrets' = @{
@@ -159,7 +159,7 @@ Describe 'Get-PodeCookie' {
         $c | Should Not Be $null
         $c.Value | Should Be 'some-id'
 
-        Assert-MockCalled Invoke-PodeCookieUnsign -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
     }
 }
 
@@ -193,7 +193,7 @@ Describe 'Set-PodeCookie' {
     }
 
     It 'Adds signed cookie to response' {
-        Mock Invoke-PodeCookieSign { return 'some-id' }
+        Mock Invoke-PodeValueSign { return 'some-id' }
 
         $script:WebEvent = @{ 'Response' = @{
             'Headers' = @{}
@@ -217,11 +217,11 @@ Describe 'Set-PodeCookie' {
         $h = $WebEvent.Response.Headers['Set-Cookie']
         $h | Should Not Be $null
 
-        Assert-MockCalled Invoke-PodeCookieSign -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeValueSign -Times 1 -Scope It
     }
 
     It 'Adds signed cookie to response' {
-        Mock Invoke-PodeCookieSign { return 'some-id' }
+        Mock Invoke-PodeValueSign { return 'some-id' }
 
         $PodeContext = @{ 'Server' = @{
             'Cookies' = @{ 'Secrets' = @{
@@ -251,7 +251,7 @@ Describe 'Set-PodeCookie' {
         $h = $WebEvent.Response.Headers['Set-Cookie']
         $h | Should Not Be $null
 
-        Assert-MockCalled Invoke-PodeCookieSign -Times 1 -Scope It
+        Assert-MockCalled Invoke-PodeValueSign -Times 1 -Scope It
     }
 
     It 'Adds cookie to response with options' {
@@ -502,66 +502,66 @@ Describe 'Remove-PodeCookie' {
     }
 }
 
-Describe 'Invoke-PodeCookieSign' {
+Describe 'Invoke-PodeValueSign' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Invoke-PodeCookieSign -Value $null -Secret 'key' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeValueSign -Value $null -Secret 'key' } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws empty value error' {
-            { Invoke-PodeCookieSign -Value '' -Secret 'key' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeValueSign -Value '' -Secret 'key' } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws null secret error' {
-            { Invoke-PodeCookieSign -Value 'value' -Secret $null } | Should Throw 'argument is null or empty'
+            { Invoke-PodeValueSign -Value 'value' -Secret $null } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws empty secret error' {
-            { Invoke-PodeCookieSign -Value 'value' -Secret '' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeValueSign -Value 'value' -Secret '' } | Should Throw 'argument is null or empty'
         }
     }
 
     Context 'Valid parameters' {
         It 'Returns signed encrypted data' {
-            Invoke-PodeCookieSign -Value 'value' -Secret 'key' | Should Be 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE='
+            Invoke-PodeValueSign -Value 'value' -Secret 'key' | Should Be 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE='
         }
     }
 }
 
-Describe 'Invoke-PodeCookieUnsign' {
+Describe 'Invoke-PodeValueUnsign' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Invoke-PodeCookieUnsign -Signature $null -Secret 'key' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeValueUnsign -Value $null -Secret 'key' } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws empty value error' {
-            { Invoke-PodeCookieUnsign -Signature '' -Secret 'key' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeValueUnsign -Value '' -Secret 'key' } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws null secret error' {
-            { Invoke-PodeCookieUnsign -Signature 'value' -Secret $null } | Should Throw 'argument is null or empty'
+            { Invoke-PodeValueUnsign -Value 'value' -Secret $null } | Should Throw 'argument is null or empty'
         }
 
         It 'Throws empty secret error' {
-            { Invoke-PodeCookieUnsign -Signature 'value' -Secret '' } | Should Throw 'argument is null or empty'
+            { Invoke-PodeValueUnsign -Value 'value' -Secret '' } | Should Throw 'argument is null or empty'
         }
     }
 
     Context 'Valid parameters' {
         It 'Returns signed encrypted data' {
-            Invoke-PodeCookieUnsign -Signature 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=' -Secret 'key' | Should Be 'value'
+            Invoke-PodeValueUnsign -Value 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=' -Secret 'key' | Should Be 'value'
         }
 
         It 'Returns null for unsign data with no tag' {
-            Invoke-PodeCookieUnsign -Signature 'value' -Secret 'key' | Should Be $null
+            Invoke-PodeValueUnsign -Value 'value' -Secret 'key' | Should Be $null
         }
 
         It 'Returns null for unsign data with no period' {
-            Invoke-PodeCookieUnsign -Signature 's:value' -Secret 'key' | Should Be $null
+            Invoke-PodeValueUnsign -Value 's:value' -Secret 'key' | Should Be $null
         }
 
         It 'Returns null for invalid signing' {
-            Invoke-PodeCookieUnsign -Signature 's:value.random' -Secret 'key' | Should Be $null
+            Invoke-PodeValueUnsign -Value 's:value.random' -Secret 'key' | Should Be $null
         }
     }
 }

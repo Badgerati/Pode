@@ -20,7 +20,7 @@
     Author = 'Matthew Kelly (Badgerati)'
 
     # Copyright statement for this module
-    Copyright = 'Copyright (c) 2017-2019 Matthew Kelly (Badgerati), licensed under the MIT License.'
+    Copyright = 'Copyright (c) 2017-2020 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
     Description = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
@@ -56,6 +56,7 @@
         'Test-PodeHeader',
         'Get-PodeHeader',
         'Set-PodeHeader',
+        'Test-PodeHeaderSigned',
 
         # state
         'Set-PodeState',
@@ -147,6 +148,7 @@
         'Enable-PodeCsrfMiddleware',
         'Remove-PodeSession',
         'Save-PodeSession',
+        'Get-PodeSessionId',
 
         # auth
         'New-PodeAuthType',
@@ -170,6 +172,7 @@
 
         # core
         'Start-PodeServer',
+        'Start-PodeStaticServer',
         'Show-PodeGui',
         'Add-PodeEndpoint',
         'Pode'

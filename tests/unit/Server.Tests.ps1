@@ -125,9 +125,8 @@ Describe 'Restart-PodeInternalServer' {
                     Script = $null;
                     IsDynamic = $true;
                 };
-                Cookies = @{
-                    Session = @{ 'key' = 'value' };
-                };
+                Cookies = @{};
+                Sessions = @{ 'key' = 'value' };
                 Authentications = @{ 'key' = 'value' };
                 State = @{ 'key' = 'value' };
                 Configuration = @{ 'key' = 'value' };
@@ -156,7 +155,7 @@ Describe 'Restart-PodeInternalServer' {
         $PodeContext.Server.Logging.Types.Count | Should Be 0
         $PodeContext.Server.Middleware.Count | Should Be 0
         $PodeContext.Server.Endware.Count | Should Be 0
-        $PodeContext.Server.Cookies.Session.Count | Should Be 0
+        $PodeContext.Server.Sessions.Count | Should Be 0
         $PodeContext.Server.Authentications.Count | Should Be 0
         $PodeContext.Server.State.Count | Should Be 0
         $PodeContext.Server.Configuration | Should Be $null

@@ -118,6 +118,7 @@ function Get-PodeStaticRoutePath
 
     # attempt to get a static route for the path
     $found = Get-PodeRoute -Method 'static' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+    $havePublicDir = (![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public']))
     $path = $null
     $download = $false
 
@@ -126,7 +127,7 @@ function Get-PodeStaticRoutePath
         # is the found route set as download only?
         if ($found.Download) {
             $download = $true
-            $path = (Join-Path $found.Path (Protect-PodeValue -Value $found.File -Default ([string]::Empty)))
+            $found.File = (Protect-PodeValue -Value $found.File -Default ([string]::Empty))
         }
 
         # if there's no file, we need to check defaults
@@ -150,15 +151,15 @@ function Get-PodeStaticRoutePath
         $path = (Join-Path $found.Path $found.File)
     }
 
-    # else, use the public static directory (but only if path is a file, and a public dir is present)
-    elseif ((Test-PodePathIsFile $Route) -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public'])) {
+    # use the public static directory (but only if path is a file, and a public dir is present)
+    if ($havePublicDir -and (Test-PodePathIsFile $Route) -and !(Test-PodePath -Path $path -NoStatus)) {
         $path = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
     }
 
     # return the route details
     return @{
-        Path = $path;
-        Download = $download;
+        Path = $path
+        Download = $download
     }
 }
 
@@ -307,7 +308,7 @@ function Test-PodeRouteAndError
 
     $found = @($PodeContext.Server.Routes[$Method][$Path])
 
-    if (($found | Where-Object { $_.Protocol -ieq $Protocol -and $_.Endpoint -ieq $Endpoint } | Measure-Object).Count -eq 0) {
+    if (($found | Where-Object { ($_.Protocol -ieq $Protocol) -and ($_.Endpoint -ieq $Endpoint) } | Measure-Object).Count -eq 0) {
         return
     }
 
@@ -344,9 +345,13 @@ function Get-PodeEndpointByName
     }
 
     # ensure it exists
-    $found = ($PodeContext.Server.Endpoints | Where-Object {
-        $_.Name -ieq $EndpointName
-    } | Select-Object -First 1)
+    $found = $(foreach ($i in $PodeContext.Server.Endpoints) {
+            if ($i.name -ieq $EndpointName) {
+                $i
+                break
+            }
+        }
+    )
 
     if ($null -eq $found) {
         if ($ThrowError) {
@@ -359,6 +364,57 @@ function Get-PodeEndpointByName
     return $found
 }
 
+function Find-PodeEndpoints
+{
+    param(
+        [Parameter()]
+        [ValidateSet('', 'Http', 'Https')]
+        [string]
+        $Protocol,
+
+        [Parameter()]
+        [string]
+        $Endpoint,
+
+        [Parameter()]
+        [string[]]
+        $EndpointName
+    )
+
+    $endpoints = @()
+
+    # just use a single endpoint/protocol
+    if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+        $endpoints += @{
+            Protocol = $Protocol
+            Address = $Endpoint
+        }
+    }
+
+    # get all defined endpoints by name
+    else {
+        foreach ($name in @($EndpointName)) {
+            $_endpoint = Get-PodeEndpointByName -EndpointName $name -ThrowError
+            if ($null -ne $_endpoint) {
+                $endpoints += @{
+                    Protocol = $_endpoint.Protocol
+                    Address = $_endpoint.RawAddress
+                }
+            }
+        }
+    }
+
+    # convert the endpoint's address into host:port format
+    foreach ($_endpoint in $endpoints) {
+        if (![string]::IsNullOrWhiteSpace($_endpoint.Address)) {
+            $_addr = Get-PodeEndpointInfo -Endpoint $_endpoint.Address -AnyPortOnZero
+            $_endpoint.Address = "$($_addr.Host):$($_addr.Port)"
+        }
+    }
+
+    return $endpoints
+}
+
 function Convert-PodeFunctionVerbToHttpMethod
 {
     param (
@@ -368,31 +424,11 @@ function Convert-PodeFunctionVerbToHttpMethod
     )
 
     # if empty, just return default
-    $DefaultMethod = 'POST'
-    if ([string]::IsNullOrWhiteSpace($Verb)) {
-        return $DefaultMethod
+    switch ($Verb) {
+        { $_ -iin @('Find', 'Format', 'Get', 'Join', 'Search', 'Select', 'Split', 'Measure', 'Ping', 'Test', 'Trace') } { 'GET' }
+        { $_ -iin @('Set') } { 'PUT' }
+        { $_ -iin @('Rename', 'Edit', 'Update') } { 'PATCH' }
+        { $_ -iin @('Clear', 'Close', 'Exit', 'Hide', 'Remove', 'Undo', 'Dismount', 'Unpublish', 'Disable', 'Uninstall', 'Unregister') } { 'DELETE' }
+        Default { 'POST' }
     }
-
-    # GET method
-    if (@('Find', 'Format', 'Get', 'Join', 'Search', 'Select', 'Split', 'Measure', 'Ping', 'Test', 'Trace') -icontains $Verb) {
-        return 'GET'
-    }
-
-    # PUT method
-    if (@('Set') -icontains $Verb) {
-        return 'PUT'
-    }
-
-    # PATCH method
-    if (@('Rename', 'Edit', 'Update') -icontains $Verb) {
-        return 'PATCH'
-    }
-
-    # DELETE method
-    if (@('Clear', 'Close', 'Exit', 'Hide', 'Remove', 'Undo', 'Dismount', 'Unpublish', 'Disable', 'Uninstall', 'Unregister') -icontains $Verb) {
-        return 'DELETE'
-    }
-
-    # default method is POST
-    return $DefaultMethod
 }
