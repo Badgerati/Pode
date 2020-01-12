@@ -175,7 +175,11 @@
         'Start-PodeStaticServer',
         'Show-PodeGui',
         'Add-PodeEndpoint',
-        'Pode'
+        'Pode',
+
+        # openapi
+        'Enable-PodeOpenApiRoute',
+        'Enable-PodeSwaggerRoute'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

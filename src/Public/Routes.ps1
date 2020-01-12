@@ -101,7 +101,10 @@ function Add-PodeRoute
 
         [Parameter()]
         [object[]]
-        $ArgumentList
+        $ArgumentList,
+
+        [switch]
+        $PassThru
     )
 
     # split route on '?' for query
@@ -182,10 +185,10 @@ function Add-PodeRoute
         }
     }
 
-    # add the route
+    # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
-    foreach ($_endpoint in $endpoints) {
-        $PodeContext.Server.Routes[$Method][$Path] += @(@{
+    $newRoutes = @(foreach ($_endpoint in $endpoints) {
+        @{
             Logic = $ScriptBlock
             Middleware = $Middleware
             Protocol = $_endpoint.Protocol
@@ -193,7 +196,14 @@ function Add-PodeRoute
             ContentType = $ContentType
             ErrorType = $ErrorContentType
             Arguments = $ArgumentList
-        })
+        }
+    })
+
+    $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
+
+    # return the routes?
+    if ($PassThru) {
+        return $newRoutes
     }
 }
 

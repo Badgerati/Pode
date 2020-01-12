@@ -1517,6 +1517,11 @@ function Get-PodeModuleRootPath
     return (Split-Path -Parent -Path $PodeContext.Server.PodeModulePath)
 }
 
+function Get-PodeModuleMiscPath
+{
+    return (Join-Path (Get-PodeModuleRootPath) 'Misc')
+}
+
 function Get-PodeUrl
 {
     return "$($WebEvent.Protocol)://$($WebEvent.Endpoint)$($WebEvent.Path)"
@@ -1619,7 +1624,7 @@ function Get-PodeErrorPage
 
     # if there's no custom page found, attempt to find an inbuilt page
     if ([string]::IsNullOrWhiteSpace($path)) {
-        $podeRoot = Join-Path (Get-PodeModuleRootPath) 'Misc'
+        $podeRoot = Get-PodeModuleMiscPath
         $path = Find-PodeFileForContentType -Path $podeRoot -Name 'default-error-page' -ContentType $ContentType -Engine 'pode'
     }
 

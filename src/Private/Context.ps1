@@ -192,6 +192,12 @@ function New-PodeContext
     # sessions
     $ctx.Server.Sessions = @{}
 
+    # swagger and openapi
+    $ctx.Server.OpenAPI = @{
+        Path = $null
+        Title = $null
+    }
+
     # authnetication methods
     $ctx.Server.Authentications = @{}
 

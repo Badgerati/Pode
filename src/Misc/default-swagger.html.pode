@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title>$($data.Title)</title>
+        <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css">
+        <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+        <script type="text/javascript">
+            window.onload = function() {
+                SwaggerUIBundle({
+                    deepLinking: true,
+                    dom_id: '#swagger-ui',
+                    showExtensions: true,
+                    showCommonExtensions: true,
+                    url: '$($data.OpenApiPath)'
+                });
+            };
+        </script>
+    </head>
+    <body>
+        <div id="swagger-ui"></div>
+    </body>
+</html>
