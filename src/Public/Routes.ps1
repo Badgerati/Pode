@@ -115,6 +115,7 @@ function Add-PodeRoute
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path
+    $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
     $Path = Update-PodeRoutePlaceholders -Path $Path
 
     # get endpoints from name, or use single passed endpoint/protocol
@@ -196,6 +197,12 @@ function Add-PodeRoute
             ContentType = $ContentType
             ErrorType = $ErrorContentType
             Arguments = $ArgumentList
+            OpenApi = @{
+                Path = $OpenApiPath
+                Responses = @{}
+                Parameters = @()
+                RequestBody = @{}
+            }
         }
     })
 

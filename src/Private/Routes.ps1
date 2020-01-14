@@ -217,6 +217,27 @@ function Update-PodeRoutePlaceholders
     return $Path
 }
 
+function ConvertTo-PodeOpenApiRoutePath
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+
+    # replace placeholder parameters with regex
+    $placeholder = '\:(?<tag>[\w]+)'
+    if ($Path -imatch $placeholder) {
+        $Path = [regex]::Escape($Path)
+    }
+
+    while ($Path -imatch $placeholder) {
+        $Path = ($Path -ireplace $Matches[0], "{$($Matches['tag'])}")
+    }
+
+    return $Path
+}
+
 function Update-PodeRouteSlashes
 {
     param (

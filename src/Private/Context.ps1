@@ -196,6 +196,9 @@ function New-PodeContext
     $ctx.Server.OpenAPI = @{
         Path = $null
         Title = $null
+        components = @{
+            schemas = @{}
+        }
     }
 
     # authnetication methods

@@ -179,7 +179,9 @@
 
         # openapi
         'Enable-PodeOpenApiRoute',
-        'Enable-PodeSwaggerRoute'
+        'Enable-PodeSwaggerRoute',
+        'Add-PodeOpenApiRouteResponse',
+        'Set-PodeOpenApiRouteMetaData'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

@@ -138,6 +138,9 @@ function Restart-PodeInternalServer
         # clear endpoints
         $PodeContext.Server.Endpoints = @()
 
+        # clear openapi
+        $PodeContext.Server.OpenAPI.Clear()
+
         # clear the sockets
         $PodeContext.Server.Sockets.Listeners = @()
         $PodeContext.Server.Sockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
