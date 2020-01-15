@@ -48,14 +48,14 @@ function Enable-PodeOpenApiRoute
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock {
         param($e, $meta)
         $def = @{
-            'openapi' = '3.0.2'
+            openapi = '3.0.2'
         }
 
         # metadata
         $def['info'] = @{
-            'title' = $meta.Title
-            'version' = $meta.Version
-            'description' = $meta.Description
+            title = $meta.Title
+            version = $meta.Version
+            description = $meta.Description
         }
 
         # paths
@@ -90,11 +90,15 @@ function Enable-PodeOpenApiRoute
                     deprecated = $route.OpenApi.Deprecated
                     responses = $route.OpenApi.Responses
                     parameters = $route.OpenApi.Parameters
+                    requestBody = $route.OpenApi.RequestBody
                 }
             }
         }
 
-        # write
+        # remove all null values (swagger hates them)
+        $def | Remove-PodeNullKeysFromHashtable
+
+        # write the openapi definition
         Write-PodeJsonResponse -Value $def
     }
 }
@@ -116,6 +120,10 @@ function Add-PodeOpenApiRouteResponse
         [string]
         $Description,
 
+        [Parameter()]
+        [hashtable[]]
+        $Schemas,
+
         [switch]
         $PassThru
     )
@@ -124,9 +132,15 @@ function Add-PodeOpenApiRouteResponse
         $Description = Get-PodeStatusDescription -StatusCode $StatusCode
     }
 
+    $contents = ($Schemas | ConvertFrom-PodeOpenApiContentTypeSchema)
+
     foreach ($r in @($Route)) {
         $r.OpenApi.Responses["$($StatusCode)"] = @{
             description = $Description
+        }
+
+        if ($null -ne $contents) {
+            $r.OpenApi.Responses["$($StatusCode)"]['content'] = $contents
         }
     }
 
@@ -148,16 +162,41 @@ function Set-PodeOpenApiRouteRequest
         [hashtable[]]
         $Parameters,
 
+        [Parameter()]
+        [hashtable]
+        $RequestBody,
+
         [switch]
         $PassThru
     )
 
     foreach ($r in @($Route)) {
         $r.OpenApi.Parameters = @($Parameters)
+        $r.OpenApi.RequestBody = $RequestBody
     }
 
     if ($PassThru) {
         return $Route
+    }
+}
+
+function New-PodeOpenApiRouteRequestBody
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [hashtable[]]
+        $Schemas,
+
+        [switch]
+        $Required
+    )
+
+    $contents = ($Schemas | ConvertFrom-PodeOpenApiContentTypeSchema)
+
+    return @{
+        required = $Required.IsPresent
+        content = $contents
     }
 }
 
@@ -169,15 +208,88 @@ function Add-PodeOpenApiComponentSchema
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
-        [hashtable[]]
-        $Properties
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable]
+        $Schema
     )
 
-    $PodeContext.Server.OpenAPI.components.schemas[$Name] = @{
-        type = 'object'
-        properties = (ConvertFrom-PodeOpenApiComponentSchemaProperties -Properties $Properties)
+    $PodeContext.Server.OpenAPI.components.schemas[$Name] = $Schema
+}
+
+function New-PodeOpenApiSchema
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(ParameterSetName='Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName='Object')]
+        [switch]
+        $Object,
+
+        [Parameter(ParameterSetName='String')]
+        [switch]
+        $String,
+
+        [Parameter(ParameterSetName='Integer')]
+        [switch]
+        $Integer,
+
+        [Parameter(ParameterSetName='Boolean')]
+        [switch]
+        $Boolean,
+
+        [Parameter()]
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [string]
+        $ContentType,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Object')]
+        [hashtable[]]
+        $Properties,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Array')]
+        [ValidateSet('Boolean', 'Integer', 'String')]
+        [string]
+        $ItemType,
+
+        [Parameter(ParameterSetName='String')]
+        [Parameter(ParameterSetName='Integer')]
+        [ValidateSet('', 'Binary', 'Byte', 'Date', 'DateTime', 'Int32', 'Int64', 'Time', 'Uuid')]
+        [string]
+        $Format
+    )
+
+    $schema = @{
+        type = $PSCmdlet.ParameterSetName.ToLowerInvariant()
     }
+
+    # array type schema
+    if ($Array) {
+        $schema['items'] = @{
+            type = $ItemType.ToLowerInvariant()
+        }
+    }
+
+    # object type schema
+    elseif ($Object) {
+        $schema['properties']  = (ConvertFrom-PodeOpenApiComponentSchemaProperties -Properties $Properties)
+        $schema['required'] = @(($Properties | Where-Object { $_.required }).name)
+    }
+
+    # string/int type schemas
+    elseif ($Integer -or $String) {
+        $schema['format'] = $Format.ToLowerInvariant()
+    }
+
+    if (![string]::IsNullOrWhiteSpace($ContentType)) {
+        $schema = @{
+            "$($ContentType)" = $schema
+        }
+    }
+
+    return $schema
 }
 
 function New-PodeOpenApiSchemaProperty
@@ -200,10 +312,20 @@ function New-PodeOpenApiSchemaProperty
         [switch]
         $Boolean,
 
+        [Parameter(ParameterSetName='Array')]
+        [switch]
+        $Array,
+
         [Parameter(ParameterSetName='String')]
         [Parameter(ParameterSetName='Integer')]
         [ValidateSet('', 'Binary', 'Byte', 'Date', 'DateTime', 'Int32', 'Int64', 'Time', 'Uuid')]
+        [string]
         $Format,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Array')]
+        [ValidateSet('Boolean', 'Integer', 'String')]
+        [string]
+        $ItemType,
 
         [Parameter()]
         [object]
@@ -225,14 +347,27 @@ function New-PodeOpenApiSchemaProperty
         type = $PSCmdlet.ParameterSetName.ToLowerInvariant()
     }
 
-    # add enums if supplied
+    # add example if supplied
     if ($null -ne $Example) {
         $prop['example'] = $Example
     }
 
+    # if array add item type
+    if ($Array) {
+        $prop['items'] = @{
+            type = $ItemType.ToLowerInvariant()
+        }
+    }
+
     # add format if supplied
-    if (!$Boolean -and !(Test-IsEmpty $Format)) {
-        $prop['format'] = $Format
+    if (!(Test-IsEmpty $Format)) {
+        if ($String -or $Integer) {
+            $prop['format'] = $Format.ToLowerInvariant()
+        }
+
+        if ($Array) {
+            $prop.items['format'] = $Format.ToLowerInvariant()
+        }
     }
 
     return $prop
@@ -266,6 +401,7 @@ function New-PodeOpenApiRouteRequestParameter
         [Parameter(ParameterSetName='String')]
         [Parameter(ParameterSetName='Integer')]
         [ValidateSet('', 'Binary', 'Byte', 'Date', 'DateTime', 'Int32', 'Int64', 'Time', 'Uuid')]
+        [string]
         $Format,
 
         [Parameter(ParameterSetName='String')]
@@ -299,7 +435,7 @@ function New-PodeOpenApiRouteRequestParameter
     # base parameter object
     $param = @{
         name = $Name
-        in = $In
+        in = $In.ToLowerInvariant()
         required = $Required.IsPresent
         deprecated = $Deprecated.IsPresent
         description = $Description
@@ -315,7 +451,7 @@ function New-PodeOpenApiRouteRequestParameter
 
     # add format if supplied
     if (!$Boolean -and !(Test-IsEmpty $Format)) {
-        $param.schema['format'] = $Format
+        $param.schema['format'] = $Format.ToLowerInvariant()
     }
 
     # add default if supplied

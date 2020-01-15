@@ -25,11 +25,43 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{ Name = 'Rick' }
+        param($e)
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Parameters['userId'] }
     } -PassThru |
         Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOpenApiRouteRequest -Parameters @(
             New-PodeOpenApiRouteRequestParameter -Integer -Name 'userId' -In Path -Required
         ) -PassThru |
-        Add-PodeOpenApiRouteResponse -Status 200
+        Add-PodeOpenApiRouteResponse -StatusCode 200 -Description 'A list of users' -Schemas @(
+            New-PodeOpenApiSchema -Object -ContentType 'application/json' -Properties @(
+                New-PodeOpenApiSchemaProperty -Name 'Name' -String
+                New-PodeOpenApiSchemaProperty -Name 'UserId' -Integer
+            )
+        )
+
+
+    Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
+        param($e)
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Query['userId'] }
+    } -PassThru |
+        Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Users' -PassThru |
+        Set-PodeOpenApiRouteRequest -Parameters @(
+            New-PodeOpenApiRouteRequestParameter -Integer -Name 'userId' -In Query -Required
+        ) -PassThru |
+        Add-PodeOpenApiRouteResponse -StatusCode 200 -Description 'A list of users'
+
+
+    Add-PodeRoute -Method Post -Path '/api/users' -ScriptBlock {
+        param($e)
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
+    } -PassThru |
+        Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Users' -PassThru |
+        Set-PodeOpenApiRouteRequest -RequestBody (
+            New-PodeOpenApiRouteRequestBody -Required -Schemas @(
+                New-PodeOpenApiSchema -Object -ContentType 'application/json' -Properties @(
+                    New-PodeOpenApiSchemaProperty -Name 'userId' -Integer -Required
+                )
+            )
+        ) -PassThru |
+        Add-PodeOpenApiRouteResponse -StatusCode 200 -Description 'A list of users'
 }

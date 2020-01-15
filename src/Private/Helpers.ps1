@@ -924,6 +924,25 @@ function Remove-PodeEmptyItemsFromArray
     return @(@($Array -ne ([string]::Empty)) -ne $null)
 }
 
+function Remove-PodeNullKeysFromHashtable
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $Hashtable
+    )
+
+    ($Hashtable.Clone()).Keys | ForEach-Object {
+        if ($null -eq $Hashtable[$_]) {
+            $Hashtable.Remove($_) | Out-Null
+        }
+
+        if ($Hashtable[$_] -is [hashtable]) {
+            $Hashtable[$_] | Remove-PodeNullKeysFromHashtable
+        }
+    }
+}
+
 function Join-PodePaths
 {
     param (

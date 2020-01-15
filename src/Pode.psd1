@@ -181,6 +181,12 @@
         'Enable-PodeOpenApiRoute',
         'Enable-PodeSwaggerRoute',
         'Add-PodeOpenApiRouteResponse',
+        'Set-PodeOpenApiRouteRequest',
+        'New-PodeOpenApiRouteRequestBody',
+        'Add-PodeOpenApiComponentSchema',
+        'New-PodeOpenApiSchema',
+        'New-PodeOpenApiSchemaProperty',
+        'New-PodeOpenApiRouteRequestParameter',
         'Set-PodeOpenApiRouteMetaData'
     )
 
@@ -193,7 +199,7 @@
                 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform', 'access-control',
                 'file-monitoring', 'multithreaded', 'rate-limiting', 'cron', 'schedule', 'middleware', 'session',
                 'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets')
+                'azure-functions', 'websockets', 'swagger', 'openapi')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'
