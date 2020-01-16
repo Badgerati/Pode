@@ -32,7 +32,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
             $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 0
+            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
             $PodeContext.Server.Endpoints[0].Name | Should Be ([string]::Empty)
             $PodeContext.Server.Endpoints[0].HostName | Should Be 'foo.com'
             $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
@@ -46,7 +46,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
             $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 0
+            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
             $PodeContext.Server.Endpoints[0].Name | Should Be 'Example'
             $PodeContext.Server.Endpoints[0].HostName | Should Be 'foo.com'
             $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
@@ -59,7 +59,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
             $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 0
+            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
             $PodeContext.Server.Endpoints[0].HostName | Should Be 'foo.com'
             $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
             $PodeContext.Server.Endpoints[0].RawAddress | Should Be 'foo.com:0'
@@ -84,7 +84,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
             $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 0
+            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
             $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }
@@ -96,7 +96,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
             $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 0
+            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
             $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
             $PodeContext.Server.Endpoints[0].RawAddress | Should Be 'all:0'
@@ -109,7 +109,7 @@ Describe 'Add-PodeEndpoint' {
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
             $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 0
+            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
             $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
             $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
         }

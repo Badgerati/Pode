@@ -194,6 +194,7 @@ function Add-PodeRoute
             Middleware = $Middleware
             Protocol = $_endpoint.Protocol
             Endpoint = $_endpoint.Address.Trim()
+            EndpointName = @($EndpointName)
             ContentType = $ContentType
             ErrorType = $ErrorContentType
             Arguments = $ArgumentList

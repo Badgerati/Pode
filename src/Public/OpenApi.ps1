@@ -58,6 +58,17 @@ function Enable-PodeOpenApiRoute
             description = $meta.Description
         }
 
+        # servers
+        $def['servers'] = $null
+        if (@($PodeContext.Server.Endpoints).Length -gt 1) {
+            $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints) {
+                @{
+                    url = $endpoint.Url
+                    description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
+                }
+            })
+        }
+
         # paths
         $def['paths'] = @{}
         $filter = "^$($meta.Filter)"
@@ -70,7 +81,8 @@ function Enable-PodeOpenApiRoute
                 }
 
                 # the current route
-                $route = $PodeContext.Server.Routes[$method][$path]
+                $routes = @($PodeContext.Server.Routes[$method][$path])
+                $route = $routes[0]
 
                 # do nothing if it has no responses set
                 if ($route.OpenApi.Responses.Count -eq 0) {
@@ -78,12 +90,12 @@ function Enable-PodeOpenApiRoute
                 }
 
                 # add path to defintion
-                if ($null -eq $def['paths'][$route.OpenApi.Path]) {
-                    $def['paths'][$route.OpenApi.Path] = @{}
+                if ($null -eq $def.paths[$route.OpenApi.Path]) {
+                    $def.paths[$route.OpenApi.Path] = @{}
                 }
 
                 # add path's http method to defintition
-                $def['paths'][$route.OpenApi.Path][$method] = @{
+                $def.paths[$route.OpenApi.Path][$method] = @{
                     summary = $route.OpenApi.Summary
                     description = $route.OpenApi.Description
                     tags = @($route.OpenApi.Tags)
@@ -91,6 +103,22 @@ function Enable-PodeOpenApiRoute
                     responses = $route.OpenApi.Responses
                     parameters = $route.OpenApi.Parameters
                     requestBody = $route.OpenApi.RequestBody
+                    servers = $null
+                }
+
+                # add any custom server endpoints for route
+                foreach ($route in $routes) {
+                    if ([string]::IsNullOrWhiteSpace($route.Endpoint) -or ($route.Endpoint -ieq '*:*')) {
+                        continue
+                    }
+
+                    if ($null -eq $def.paths[$route.OpenApi.Path][$method].servers) {
+                        $def.paths[$route.OpenApi.Path][$method].servers = @()
+                    }
+
+                    $def.paths[$route.OpenApi.Path][$method].servers += @{
+                        url = "$($route.Protocol)://$($route.Endpoint)"
+                    }
                 }
             }
         }
@@ -125,22 +153,30 @@ function Add-PodeOpenApiRouteResponse
         $Schemas,
 
         [switch]
+        $Default,
+
+        [switch]
         $PassThru
     )
 
-    if ([string]::IsNullOrWhiteSpace($Description)) {
+    if (!$Default -and [string]::IsNullOrWhiteSpace($Description)) {
         $Description = Get-PodeStatusDescription -StatusCode $StatusCode
+    }
+
+    $code = "$($StatusCode)"
+    if ($Default) {
+        $code = 'default'
     }
 
     $contents = ($Schemas | ConvertFrom-PodeOpenApiContentTypeSchema)
 
     foreach ($r in @($Route)) {
-        $r.OpenApi.Responses["$($StatusCode)"] = @{
+        $r.OpenApi.Responses[$code] = @{
             description = $Description
         }
 
         if ($null -ne $contents) {
-            $r.OpenApi.Responses["$($StatusCode)"]['content'] = $contents
+            $r.OpenApi.Responses[$code]['content'] = $contents
         }
     }
 

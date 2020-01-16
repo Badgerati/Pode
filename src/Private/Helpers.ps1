@@ -355,8 +355,8 @@ function Get-PodeEndpointInfo
 
     # return the info
     return @{
-        'Host' = $_host;
-        'Port' = (Resolve-PodeValue -Check ($AnyPortOnZero -and $_port -eq 0) -TrueValue '*' -FalseValue $_port);
+        Host = $_host
+        Port = (Resolve-PodeValue -Check ($AnyPortOnZero -and ($_port -eq 0)) -TrueValue '*' -FalseValue $_port)
     }
 }
 
@@ -1907,16 +1907,31 @@ function Get-PodeEndpointUrl
         $Endpoint = $PodeContext.Server.Endpoints[0]
     }
 
-    # work out the protocol
-    $protocol = (Resolve-PodeValue -Check $Endpoint.Ssl -TrueValue 'https' -FalseValue 'http')
-
-    # grab the port number
-    $port = $Endpoint.Port
-    if ($port -eq 0) {
-        $port = (Resolve-PodeValue -Check $Endpoint.Ssl -TrueValue 8443 -FalseValue 8080)
+    $url = $Endpoint.Url
+    if ([string]::IsNullOrWhiteSpace($url)) {
+        $url = "$($Endpoint.Protocol)://$($Endpoint.HostName):$($Endpoint.Port)"
     }
 
-    return "$($protocol)://$($Endpoint.HostName):$($port)"
+    return $url
+}
+
+function Get-PodeDefaultPort
+{
+    param(
+        [Parameter()]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [string]
+        $Protocol
+    )
+
+    return (@{
+        Http    = 8080
+        Https   = 8443
+        Smtp    = 25
+        Tcp     = 9001
+        Ws      = 9080
+        Wss     = 9443
+    })[$Protocol.ToLowerInvariant()]
 }
 
 function Set-PodeServerHeader

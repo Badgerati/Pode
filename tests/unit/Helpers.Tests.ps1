@@ -1223,9 +1223,9 @@ Describe 'Get-PodeEndpointUrl' {
     It 'Returns default endpoint url' {
         $PodeContext = @{ Server = @{
             Endpoints = @(@{
-                Ssl = $true
                 Port = 6000
                 Hostname = 'thing.com'
+                Protocol = 'https'
             })
         } }
 
@@ -1234,9 +1234,9 @@ Describe 'Get-PodeEndpointUrl' {
 
     It 'Returns a passed endpoint url' {
         $endpoint = @{
-            Ssl = $false
             Port = 7000
             Hostname = 'stuff.com'
+            Protocol = 'http'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'http://stuff.com:7000'
@@ -1244,9 +1244,9 @@ Describe 'Get-PodeEndpointUrl' {
 
     It 'Returns a passed endpoint url, with default port for http' {
         $endpoint = @{
-            Ssl = $false
-            Port = 0
+            Port = 8080
             Hostname = 'stuff.com'
+            Protocol = 'http'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'http://stuff.com:8080'
@@ -1254,9 +1254,17 @@ Describe 'Get-PodeEndpointUrl' {
 
     It 'Returns a passed endpoint url, with default port for https' {
         $endpoint = @{
-            Ssl = $true
-            Port = 0
+            Port = 8443
             Hostname = 'stuff.com'
+            Protocol = 'https'
+        }
+
+        Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'https://stuff.com:8443'
+    }
+
+    It 'Returns a passed endpoint url, using raw url' {
+        $endpoint = @{
+            Url = 'https://stuff.com:8443'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'https://stuff.com:8443'

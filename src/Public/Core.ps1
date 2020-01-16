@@ -665,6 +665,10 @@ function Add-PodeEndpoint
         [string]
         $RedirectTo = $null,
 
+        [Parameter()]
+        [string]
+        $Description,
+
         [switch]
         $Force,
 
@@ -690,13 +694,15 @@ function Add-PodeEndpoint
     # new endpoint object
     $obj = @{
         Name = $Name
+        Description = $Description
         Address = $null
         RawAddress = $FullAddress
         Port = $null
         IsIPAddress = $true
         HostName = 'localhost'
+        Url = $null
         Ssl = (@('https', 'wss') -icontains $Protocol)
-        Protocol = $Protocol
+        Protocol = $Protocol.ToLowerInvariant()
         Certificate = @{
             Name = $Certificate
             Thumbprint = $CertificateThumbprint
@@ -713,8 +719,14 @@ function Add-PodeEndpoint
 
     $obj.IsIPAddress = (Test-PodeIPAddress -IP $obj.Address -IPOnly)
 
-    # set the port for the context
+    # set the port for the context, if 0 use a default port for protocol
     $obj.Port = $_endpoint.Port
+    if (([int]$obj.Port) -eq 0) {
+        $obj.Port = Get-PodeDefaultPort -Protocol $Protocol
+    }
+
+    # set the url of this endpoint
+    $obj.Url = "$($obj.Protocol)://$($obj.HostName):$($obj.Port)/"
 
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {

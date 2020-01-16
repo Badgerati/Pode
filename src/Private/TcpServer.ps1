@@ -7,9 +7,6 @@ function Start-PodeTcpServer
 
     # grab the relavant port
     $port = $PodeContext.Server.Endpoints[0].Port
-    if ($port -eq 0) {
-        $port = 9001
-    }
 
     # get the IP address for the server
     $ipAddress = $PodeContext.Server.Endpoints[0].Address
