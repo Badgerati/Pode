@@ -568,7 +568,10 @@ function Enable-PodeSwaggerRoute
 
         [Parameter()]
         [string]
-        $Title
+        $Title,
+
+        [switch]
+        $DarkMode
     )
 
     # error if there's no OpenAPI path
@@ -584,12 +587,13 @@ function Enable-PodeSwaggerRoute
     }
 
     # add the swagger route
-    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ScriptBlock {
-        param($e)
+    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList @{ DarkMode = $DarkMode } -ScriptBlock {
+        param($e, $meta)
         $podeRoot = Get-PodeModuleMiscPath
         Write-PodeFileResponse -Path (Join-Path $podeRoot 'default-swagger.html.pode') -Data @{
             Title = $PodeContext.Server.OpenAPI.Title
             OpenApiPath = $PodeContext.Server.OpenAPI.Path
+            DarkMode = $meta.DarkMode
         }
     }
 }

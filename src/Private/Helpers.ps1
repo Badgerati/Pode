@@ -932,13 +932,13 @@ function Remove-PodeNullKeysFromHashtable
         $Hashtable
     )
 
-    ($Hashtable.Clone()).Keys | ForEach-Object {
-        if ($null -eq $Hashtable[$_]) {
-            $Hashtable.Remove($_) | Out-Null
+    foreach ($key in ($Hashtable.Clone()).Keys) {
+        if ($null -eq $Hashtable[$key]) {
+            $Hashtable.Remove($key) | Out-Null
         }
 
-        if ($Hashtable[$_] -is [hashtable]) {
-            $Hashtable[$_] | Remove-PodeNullKeysFromHashtable
+        if ($Hashtable[$key] -is [hashtable]) {
+            $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
         }
     }
 }

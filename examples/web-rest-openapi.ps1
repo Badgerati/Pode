@@ -8,7 +8,7 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     Enable-PodeOpenApiRoute -Title 'OpenAPI Example' -Filter '/api/'
-    Enable-PodeSwaggerRoute
+    Enable-PodeSwaggerRoute -DarkMode
 
 
     Add-PodeRoute -Method Get -Path "/api/resources" -EndpointName 'user' -ScriptBlock {
