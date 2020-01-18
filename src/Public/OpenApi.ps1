@@ -75,6 +75,23 @@ function Enable-PodeOpenApiRoute
             })
         }
 
+        # components
+        $def['components'] = @{}
+
+        # auth/security components
+        if ($PodeContext.Server.Authentications.Count -gt 0) {
+            $def.components['securitySchemas'] = @{}
+
+            foreach ($authName in $PodeContext.Server.Authentications.Keys) {
+                $authType = $PodeContext.Server.Authentications[$authName].Type
+
+                $def.components.securitySchemas[($authName -replace '\s+', '')] = @{
+                    type = $authType.Scheme.ToLowerInvariant()
+                    scheme = $authType.Name.ToLowerInvariant()
+                }
+            }
+        }
+
         # paths
         $def['paths'] = @{}
         $filter = "^$($meta.Filter)"
@@ -120,6 +137,7 @@ function Enable-PodeOpenApiRoute
                     parameters = $route.OpenApi.Parameters
                     requestBody = $route.OpenApi.RequestBody
                     servers = $null
+                    security = @($route.OpenApi.Authentication)
                 }
 
                 # add any custom server endpoints for route
@@ -194,6 +212,42 @@ function Add-PodeOpenApiRouteResponse
         if ($null -ne $contents) {
             $r.OpenApi.Responses[$code]['content'] = $contents
         }
+    }
+
+    if ($PassThru) {
+        return $Route
+    }
+}
+
+function Set-PodeOpenApiRouteAuth
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [switch]
+        $PassThru
+    )
+
+    foreach ($n in @($Name)) {
+        if (!$PodeContext.Server.Authentications.ContainsKey($n)) {
+            throw "Authentication method does not exist: $($n)"
+        }
+    }
+
+    foreach ($r in @($Route)) {
+        $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
+            @{
+                "$($n -replace '\s+', '')" = @()
+            }
+        })
     }
 
     if ($PassThru) {

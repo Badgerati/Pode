@@ -39,9 +39,11 @@
                     color: #CCCCCC !important;
                 }
 
-                .swagger-ui svg.arrow
+                .swagger-ui svg.arrow,
+                .swagger-ui button.unlocked
                 {
                     fill: #CCCCCC;
+                    opacity: 1 !important;
                 }
 
                 .swagger-ui .scheme-container

@@ -203,6 +203,7 @@ function Add-PodeRoute
                 Responses = @{}
                 Parameters = @()
                 RequestBody = @{}
+                Authentication = @()
             }
         }
     })

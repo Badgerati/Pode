@@ -11,10 +11,24 @@ Start-PodeServer {
     Enable-PodeSwaggerRoute -DarkMode
 
 
-    Add-PodeRoute -Method Get -Path "/api/resources" -EndpointName 'user' -ScriptBlock {
+    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+        return @{
+            User = @{
+                ID ='M0R7Y302'
+                Name = 'Morty'
+                Type = 'Human'
+            }
+        }
+    }
+
+
+    $auth = (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless)
+
+    Add-PodeRoute -Method Get -Path "/api/resources" -Middleware $auth -EndpointName 'user' -ScriptBlock {
         Set-PodeResponseStatus -Code 200
     } -PassThru |
         Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Resources' -PassThru |
+        Set-PodeOpenApiRouteAuth -Name 'Validate' -PassThru |
         Add-PodeOpenApiRouteResponse -StatusCode 200 -PassThru |
         Add-PodeOpenApiRouteResponse -StatusCode 404
 
@@ -54,11 +68,12 @@ Start-PodeServer {
         Add-PodeOpenApiRouteResponse -StatusCode 200 -Description 'A list of users'
 
 
-    Add-PodeRoute -Method Post -Path '/api/users' -ScriptBlock {
+    Add-PodeRoute -Method Post -Path '/api/users' -Middleware $auth -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
     } -PassThru |
         Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Users' -PassThru |
+        Set-PodeOpenApiRouteAuth -Name 'Validate' -PassThru |
         Set-PodeOpenApiRouteRequest -RequestBody (
             New-PodeOpenApiRouteRequestBody -Required -Schemas @(
                 New-PodeOpenApiSchema -Object -ContentType 'application/json' -Properties @(
