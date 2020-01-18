@@ -30,7 +30,10 @@ function Enable-PodeOpenApiRoute
 
         [Parameter()]
         [string]
-        $Description
+        $Description,
+
+        [switch]
+        $RestrictRoutes
     )
 
     # initialise openapi info
@@ -42,11 +45,14 @@ function Enable-PodeOpenApiRoute
         Version = $Version
         Description = $Description
         Filter = $Filter
+        RestrictRoutes = $RestrictRoutes
     }
 
     # add the OpenAPI route
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock {
         param($e, $meta)
+
+        # set the openapi version
         $def = @{
             openapi = '3.0.2'
         }
@@ -60,7 +66,7 @@ function Enable-PodeOpenApiRoute
 
         # servers
         $def['servers'] = $null
-        if (@($PodeContext.Server.Endpoints).Length -gt 1) {
+        if (!$meta.RestrictRoutes -and (@($PodeContext.Server.Endpoints).Length -gt 1)) {
             $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints) {
                 @{
                     url = $endpoint.Url
@@ -82,6 +88,16 @@ function Enable-PodeOpenApiRoute
 
                 # the current route
                 $routes = @($PodeContext.Server.Routes[$method][$path])
+                if ($meta.RestrictRoutes) {
+                    $routes = @(Get-PodeRoutesByUrl -Routes $routes -Protocol $e.Protocol -Endpoint $e.Endpoint)
+                }
+
+                # continue if no routes
+                if (($routes.Length -eq 0) -or ($null -eq $routes[0])) {
+                    continue
+                }
+
+                # get the first route for base definition
                 $route = $routes[0]
 
                 # do nothing if it has no responses set

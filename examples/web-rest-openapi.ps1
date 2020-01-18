@@ -7,7 +7,7 @@ Start-PodeServer {
 
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    Enable-PodeOpenApiRoute -Title 'OpenAPI Example' -Filter '/api/'
+    Enable-PodeOpenApiRoute -Title 'OpenAPI Example' -Filter '/api/' -RestrictRoutes
     Enable-PodeSwaggerRoute -DarkMode
 
 

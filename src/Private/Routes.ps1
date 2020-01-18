@@ -167,7 +167,7 @@ function Get-PodeRouteByUrl
 {
     param (
         [Parameter()]
-        [object[]]
+        [hashtable[]]
         $Routes,
 
         [Parameter()]
@@ -179,8 +179,35 @@ function Get-PodeRouteByUrl
         $Endpoint
     )
 
-    # get the value routes
-    $rs = @(foreach ($route in $Routes) {
+    # get the routes
+    $rs = @(Get-PodeRoutesByUrl -Routes $Routes -Protocol $Protocol -Endpoint $Endpoint)
+
+    # return null if empty
+    if (($rs.Length -eq 0) -or ($null -eq $rs[0])) {
+        return $null
+    }
+
+    return @($rs | Sort-Object -Property { $_.Protocol }, { $_.Endpoint } -Descending)[0]
+}
+
+function Get-PodeRoutesByUrl
+{
+    param (
+        [Parameter()]
+        [hashtable[]]
+        $Routes,
+
+        [Parameter()]
+        [string]
+        $Protocol,
+
+        [Parameter()]
+        [string]
+        $Endpoint
+    )
+
+    # get the routes for the protocol/endpoint
+    return @(foreach ($route in $Routes) {
         if (
             (($route.Protocol -ieq $Protocol) -or [string]::IsNullOrWhiteSpace($route.Protocol)) -and
             ([string]::IsNullOrWhiteSpace($route.Endpoint) -or ($Endpoint -ilike $route.Endpoint))
@@ -188,12 +215,6 @@ function Get-PodeRouteByUrl
             $route
         }
     })
-
-    if ($null -eq $rs[0]) {
-        return $null
-    }
-
-    return @($rs | Sort-Object -Property { $_.Protocol }, { $_.Endpoint } -Descending)[0]
 }
 
 function Update-PodeRoutePlaceholders

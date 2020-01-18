@@ -913,7 +913,7 @@ function Join-PodeServerRoot
 function Remove-PodeEmptyItemsFromArray
 {
     param (
-        [Parameter()]
+        [Parameter(ValueFromPipeline=$true)]
         $Array
     )
 
