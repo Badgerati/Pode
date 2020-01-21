@@ -200,7 +200,10 @@ function Add-PodeRoute
             Arguments = $ArgumentList
             OpenApi = @{
                 Path = $OpenApiPath
-                Responses = @{}
+                Responses = @{
+                    '200' = @{ description = 'OK' }
+                    'default' = @{ description = 'Internal server error' }
+                }
                 Parameters = @()
                 RequestBody = @{}
                 Authentication = @()

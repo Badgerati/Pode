@@ -7,8 +7,8 @@ Start-PodeServer {
 
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    Enable-PodeOpenApiRoute -Title 'OpenAPI Example' -Filter '/api/' -RestrictRoutes
-    Enable-PodeSwaggerRoute -DarkMode
+    Enable-PodeOpenApi -Title 'OpenAPI Example' -Filter '/api/' -RestrictRoutes
+    Enable-PodeSwagger -DarkMode
 
 
     New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
@@ -27,59 +27,57 @@ Start-PodeServer {
     Add-PodeRoute -Method Get -Path "/api/resources" -Middleware $auth -EndpointName 'user' -ScriptBlock {
         Set-PodeResponseStatus -Code 200
     } -PassThru |
-        Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Resources' -PassThru |
-        Set-PodeOpenApiRouteAuth -Name 'Validate' -PassThru |
-        Add-PodeOpenApiRouteResponse -StatusCode 200 -PassThru |
-        Add-PodeOpenApiRouteResponse -StatusCode 404
+        Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Resources' -PassThru |
+        Set-PodeOAAuth -Name 'Validate' -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -PassThru |
+        Add-PodeOAResponse -StatusCode 404
 
 
     Add-PodeRoute -Method Post -Path "/api/resources" -ScriptBlock {
         Set-PodeResponseStatus -Code 200
     } -PassThru |
-        Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Resources' -PassThru |
-        Add-PodeOpenApiRouteResponse -StatusCode 200 -PassThru |
-        Add-PodeOpenApiRouteResponse -StatusCode 404
+        Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Resources' -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -PassThru |
+        Add-PodeOAResponse -StatusCode 404
 
 
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Parameters['userId'] }
     } -PassThru |
-        Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Users' -PassThru |
-        Set-PodeOpenApiRouteRequest -Parameters @(
-            New-PodeOpenApiRouteRequestParameter -Integer -Name 'userId' -In Path -Required
+        Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
+        Set-PodeOARequest -Parameters @(
+            (New-PodeOAIntProperty -Name 'userId' -Required | New-PodeOARequestParameter -In Path)
         ) -PassThru |
-        Add-PodeOpenApiRouteResponse -StatusCode 200 -Description 'A list of users' -Schemas @(
-            New-PodeOpenApiSchema -Object -ContentType 'application/json' -Properties @(
-                New-PodeOpenApiSchemaProperty -Name 'Name' -String
-                New-PodeOpenApiSchemaProperty -Name 'UserId' -Integer
-            )
-        )
+        Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -Schemas @{
+            'application/json' = (New-PodeOAObjectProperty -Properties @(
+                (New-PodeOAStringProperty -Name 'Name'),
+                (New-PodeOAIntProperty -Name 'UserId')
+            ))
+        }
 
 
     Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Query['userId'] }
     } -PassThru |
-        Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Users' -PassThru |
-        Set-PodeOpenApiRouteRequest -Parameters @(
-            New-PodeOpenApiRouteRequestParameter -Integer -Name 'userId' -In Query -Required
+        Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
+        Set-PodeOARequest -Parameters @(
+            (New-PodeOAIntProperty -Name 'userId' -Required | New-PodeOARequestParameter -In Query)
         ) -PassThru |
-        Add-PodeOpenApiRouteResponse -StatusCode 200 -Description 'A list of users'
+        Add-PodeOAResponse -StatusCode 200 -Description 'A user object'
 
 
     Add-PodeRoute -Method Post -Path '/api/users' -Middleware $auth -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
     } -PassThru |
-        Set-PodeOpenApiRouteMetaData -Summary 'A cool summary' -Tags 'Users' -PassThru |
-        Set-PodeOpenApiRouteAuth -Name 'Validate' -PassThru |
-        Set-PodeOpenApiRouteRequest -RequestBody (
-            New-PodeOpenApiRouteRequestBody -Required -Schemas @(
-                New-PodeOpenApiSchema -Object -ContentType 'application/json' -Properties @(
-                    New-PodeOpenApiSchemaProperty -Name 'userId' -Integer -Required
-                )
-            )
+        Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
+        Set-PodeOAAuth -Name 'Validate' -PassThru |
+        Set-PodeOARequest -RequestBody (
+            New-PodeOARequestBody -Required -Schemas @{
+                'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object)
+            }
         ) -PassThru |
-        Add-PodeOpenApiRouteResponse -StatusCode 200 -Description 'A list of users'
+        Add-PodeOAResponse -StatusCode 200 -Description 'A user object'
 }
