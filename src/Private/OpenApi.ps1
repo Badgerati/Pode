@@ -1,19 +1,3 @@
-# function ConvertFrom-PodeOAComponentSchemaProperties
-# {
-#     param(
-#         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-#         [hashtable[]]
-#         $Properties
-#     )
-
-#     $props = @{}
-#     foreach ($prop in $Properties) {
-#         $props[$prop.name] = $prop
-#     }
-
-#     return $props
-# }
-
 function ConvertTo-PodeOAContentTypeSchema
 {
     param(
@@ -33,15 +17,103 @@ function ConvertTo-PodeOAContentTypeSchema
         }
     }
 
-    # convert each content schema to openapi format
-    $contents = @{}
+    # convert each schema to openapi format
+    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas)
+}
+
+function ConvertTo-PodeOAHeaderSchema
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $Schemas
+    )
+
+    if (Test-IsEmpty $Schemas) {
+        return $null
+    }
+
+    # convert each schema to openapi format
+    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas)
+}
+
+function ConvertTo-PodeOAObjectSchema
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $Schemas
+    )
+
+    # convert each schema to openapi format
+    $obj = @{}
     foreach ($type in $Schemas.Keys) {
-        $contents[$type] = @{
-            schema = ($Schemas[$type] | ConvertTo-PodeOASchemaProperty)
+        $obj[$type] = @{
+            schema = $null
+        }
+
+        # add a shared component schema reference
+        if ($Schemas[$type] -is [string]) {
+            if (!(Test-PodeOAComponentSchema -Name $Schemas[$type])) {
+                throw "The OpenApi component schema doesn't exist: $($Schemas[$type])"
+            }
+
+            $obj[$type].schema = @{
+                '$ref' = "#/components/schemas/$($Schemas[$type])"
+            }
+        }
+
+        # add a set schema object
+        else {
+            $obj[$type].schema = ($Schemas[$type] | ConvertTo-PodeOASchemaProperty)
         }
     }
 
-    return $contents
+    return $obj
+}
+
+function Test-PodeOAComponentSchema
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.OpenAPI.components.schemas.ContainsKey($Name)
+}
+
+function Test-PodeOAComponentResponse
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.OpenAPI.components.responses.ContainsKey($Name)
+}
+
+function Test-PodeOAComponentRequestBody
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.OpenAPI.components.requestBodies.ContainsKey($Name)
+}
+
+function Test-PodeOAComponentParameter
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.OpenAPI.components.parameters.ContainsKey($Name)
 }
 
 function ConvertTo-PodeOASchemaProperty

@@ -198,7 +198,12 @@ function New-PodeContext
         Title = $null
         components = @{
             schemas = @{}
+            responses = @{}
+            securitySchemas = @{}
+            requestBodies = @{}
+            parameters = @{}
         }
+        security = @()
     }
 
     # authnetication methods

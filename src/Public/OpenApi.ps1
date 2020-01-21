@@ -76,12 +76,10 @@ function Enable-PodeOpenApi
         }
 
         # components
-        $def['components'] = @{}
+        $def['components'] = $PodeContext.Server.OpenAPI.components
 
         # auth/security components
         if ($PodeContext.Server.Authentications.Count -gt 0) {
-            $def.components['securitySchemas'] = @{}
-
             foreach ($authName in $PodeContext.Server.Authentications.Keys) {
                 $authType = $PodeContext.Server.Authentications[$authName].Type
 
@@ -90,6 +88,8 @@ function Enable-PodeOpenApi
                     scheme = $authType.Name.ToLowerInvariant()
                 }
             }
+
+            $def['security'] = $PodeContext.Server.OpenAPI.security
         }
 
         # paths
@@ -167,7 +167,7 @@ function Enable-PodeOpenApi
 
 function Add-PodeOAResponse
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Schema')]
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [ValidateNotNullOrEmpty()]
@@ -178,13 +178,21 @@ function Add-PodeOAResponse
         [int]
         $StatusCode,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Schema')]
         [hashtable]
-        $Schemas,
+        $ContentSchemas,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Schema')]
+        [hashtable]
+        $HeaderSchemas,
+
+        [Parameter(ParameterSetName='Schema')]
         [string]
         $Description = $null,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Reference')]
+        [string]
+        $Reference,
 
         [switch]
         $Default,
@@ -193,29 +201,99 @@ function Add-PodeOAResponse
         $PassThru
     )
 
+    # set a general description for the status code
     if (!$Default -and [string]::IsNullOrWhiteSpace($Description)) {
         $Description = Get-PodeStatusDescription -StatusCode $StatusCode
     }
 
+    # override status code with default
     $code = "$($StatusCode)"
     if ($Default) {
         $code = 'default'
     }
 
-    $content = $null
-    if ($null -ne $Schemas) {
-        $content = ($Schemas | ConvertTo-PodeOAContentTypeSchema)
+    # schemas or component reference?
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'schema' {
+            # build any content-type schemas
+            $content = $null
+            if ($null -ne $ContentSchemas) {
+                $content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+            }
+
+            # build any header schemas
+            $headers = $null
+            if ($null -ne $HeaderSchemas) {
+                $headers = ($HeaderSchemas | ConvertTo-PodeOAHeaderSchema)
+            }
+        }
+
+        'reference' {
+            if (!(Test-PodeOAComponentResponse -Name $Reference)) {
+                throw "The OpenApi component response doesn't exist: $($Reference)"
+            }
+        }
     }
 
+    # add the respones to the routes
     foreach ($r in @($Route)) {
-        $r.OpenApi.Responses[$code] = @{
-            description = $Description
-            content = $content
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'schema' {
+                $r.OpenApi.Responses[$code] = @{
+                    description = $Description
+                    content = $content
+                    headers = $headers
+                }
+            }
+
+            'reference' {
+                $r.OpenApi.Responses[$code] = @{
+                    '$ref' = "#/components/responses/$($Reference)"
+                }
+            }
         }
     }
 
     if ($PassThru) {
         return $Route
+    }
+}
+
+function Add-PodeOAComponentResponse
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [hashtable]
+        $ContentSchemas,
+
+        [Parameter()]
+        [hashtable]
+        $HeaderSchemas,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Description
+    )
+
+    $content = $null
+    if ($null -ne $ContentSchemas) {
+        $content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+    }
+
+    $headers = $null
+    if ($null -ne $HeaderSchemas) {
+        $headers = ($HeaderSchemas | ConvertTo-PodeOAHeaderSchema)
+    }
+
+    $PodeContext.Server.OpenAPI.components.responses[$Name] = @{
+        description = $Description
+        content = $content
+        headers = $headers
     }
 }
 
@@ -255,6 +333,28 @@ function Set-PodeOAAuth
     }
 }
 
+function Set-PodeOAGlobalAuth
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    foreach ($n in @($Name)) {
+        if (!$PodeContext.Server.Authentications.ContainsKey($n)) {
+            throw "Authentication method does not exist: $($n)"
+        }
+    }
+
+    $PodeContext.Server.OpenAPI.security = @(foreach ($n in @($Name)) {
+        @{
+            "$($n -replace '\s+', '')" = @()
+        }
+    })
+}
+
 function Set-PodeOARequest
 {
     [CmdletBinding()]
@@ -288,24 +388,43 @@ function Set-PodeOARequest
 
 function New-PodeOARequestBody
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Schema')]
     param(
-        [Parameter()]
+        [Parameter(Mandatory=$true, ParameterSetName='Reference')]
+        [string]
+        $Reference,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Schema')]
         [hashtable]
         $Schemas,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Schema')]
         [string]
         $Description = $null,
 
+        [Parameter(ParameterSetName='Schema')]
         [switch]
         $Required
     )
 
-    return @{
-        required = $Required.IsPresent
-        description = $Description
-        content = ($Schemas | ConvertTo-PodeOAContentTypeSchema)
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'schema' {
+            return @{
+                required = $Required.IsPresent
+                description = $Description
+                content = ($Schemas | ConvertTo-PodeOAContentTypeSchema)
+            }
+        }
+
+        'reference' {
+            if (!(Test-PodeOAComponentRequestBody -Name $Reference)) {
+                throw "The OpenApi component request body doesn't exist: $($Reference)"
+            }
+
+            return = @{
+                '$ref' = "#/components/requestBodies/$($Reference)"
+            }
+        }
     }
 }
 
@@ -322,145 +441,56 @@ function Add-PodeOAComponentSchema
         $Schema
     )
 
-    $PodeContext.Server.OpenAPI.components.schemas[$Name] = $Schema
+    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
 }
 
-# function New-PodeOASchema
-# {
-#     [CmdletBinding()]
-#     param(
-#         [Parameter()]
-#         [ValidatePattern('^\w+\/[\w\.\+-]+$')]
-#         [string[]]
-#         $ContentType,
+function Add-PodeOAComponentRequestBody
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
 
-#         [Parameter(Mandatory=$true)]
-#         [hashtable[]]
-#         $Properties
-#     )
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable]
+        $Schemas,
 
-#     $schema = @{
-#         type = $PSCmdlet.ParameterSetName.ToLowerInvariant()
-#     }
+        [Parameter()]
+        [string]
+        $Description = $null,
 
-#     # array type schema
-#     if ($Array) {
-#         $schema['items'] = @{
-#             type = $ItemType.ToLowerInvariant()
-#             format = $Format.ToLowerInvariant()
-#         }
-#     }
+        [Parameter()]
+        [switch]
+        $Required
+    )
 
-#     # object type schema
-#     elseif ($Object) {
-#         $schema['properties']  = (ConvertFrom-PodeOAComponentSchemaProperties -Properties $Properties)
-#         $schema['required'] = @(($Properties | Where-Object { $_.required }).name)
-#     }
+    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = @{
+        required = $Required.IsPresent
+        description = $Description
+        content = ($Schemas | ConvertTo-PodeOAContentTypeSchema)
+    }
+}
 
-#     # string/int type schemas
-#     elseif ($Integer -or $Number -or $String) {
-#         $schema['format'] = $Format.ToLowerInvariant()
-#     }
+function Add-PodeOAComponentParameter
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable]
+        $Parameter,
 
-#     if (![string]::IsNullOrWhiteSpace($ContentType)) {
-#         $schema = @{
-#             "$($ContentType)" = $schema
-#         }
-#     }
+        [Parameter()]
+        [string]
+        $Name
+    )
 
-#     return $schema
-# }
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        $Name = $Parameter.name
+    }
 
-# function New-PodeOASchemaProperty
-# {
-#     [CmdletBinding()]
-#     param(
-#         [Parameter(Mandatory=$true)]
-#         [string]
-#         $Name,
-
-#         [Parameter(ParameterSetName='String')]
-#         [switch]
-#         $String,
-
-#         [Parameter(ParameterSetName='Integer')]
-#         [switch]
-#         $Integer,
-
-#         [Parameter(ParameterSetName='Boolean')]
-#         [switch]
-#         $Boolean,
-
-#         [Parameter(ParameterSetName='Array')]
-#         [switch]
-#         $Array,
-
-#         [Parameter(ParameterSetName='String')]
-#         [Parameter(ParameterSetName='Integer')]
-#         [ValidateSet('', 'Binary', 'Byte', 'Date', 'DateTime', 'Int32', 'Int64', 'Time', 'Uuid')]
-#         [string]
-#         $Format,
-
-#         [Parameter(Mandatory=$true, ParameterSetName='Array')]
-#         [ValidateSet('Boolean', 'Integer', 'String')]
-#         [string]
-#         $ItemType,
-
-#         [Parameter()]
-#         [object]
-#         $Example,
-
-#         [Parameter()]
-#         [string]
-#         $Description,
-
-#         [switch]
-#         $Required
-#     )
-
-#     # base property object
-#     $prop = @{
-#         name = $Name
-#         required = $Required.IsPresent
-#         description = $Description
-#         type = $PSCmdlet.ParameterSetName.ToLowerInvariant()
-#     }
-
-#     # add example if supplied
-#     if ($null -ne $Example) {
-#         $prop['example'] = $Example
-#     }
-
-#     # if array add item type
-#     if ($Array) {
-#         $prop['items'] = @{
-#             type = $ItemType.ToLowerInvariant()
-#         }
-#     }
-
-#     # add format if supplied
-#     if (!(Test-IsEmpty $Format)) {
-#         if ($String -or $Integer) {
-#             $prop['format'] = $Format.ToLowerInvariant()
-#         }
-
-#         if ($Array) {
-#             $prop.items['format'] = $Format.ToLowerInvariant()
-#         }
-#     }
-
-#     return $prop
-# }
-
-
-
-
-
-
-
-
-
-
+    $PodeContext.Server.OpenAPI.components.responses[$Name] = $Parameter
+}
 
 function New-PodeOAIntProperty
 {
@@ -683,31 +713,35 @@ function New-PodeOAObjectProperty
     return $param
 }
 
-
-
-
-
-
-
-
-
-
-
-
 function New-PodeOARequestParameter
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Reference')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Schema')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
         [string]
         $In,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName='Schema')]
         [ValidateNotNull()]
         [hashtable]
-        $Property
+        $Property,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Reference')]
+        [string]
+        $Reference
     )
+
+    # return a reference
+    if ($PSCmdlet.ParameterSetName -ieq 'reference') {
+        if (!(Test-PodeOAComponentParameter -Name $Reference)) {
+            throw "The OpenApi component request parameter doesn't exist: $($Reference)"
+        }
+
+        return = @{
+            '$ref' = "#/components/parameters/$($Reference)"
+        }
+    }
 
     # non-object/array only
     if (@('array', 'object') -icontains $Property.type) {

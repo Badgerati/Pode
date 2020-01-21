@@ -22,23 +22,30 @@ Start-PodeServer {
     }
 
 
-    $auth = (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless)
+    Add-PodeOAComponentResponse -Name 'OK' -Description 'A user object' -ContentSchemas @{
+        'application/json' = (New-PodeOAObjectProperty -Properties @(
+            (New-PodeOAStringProperty -Name 'Name'),
+            (New-PodeOAIntProperty -Name 'UserId')
+        ))
+    }
 
-    Add-PodeRoute -Method Get -Path "/api/resources" -Middleware $auth -EndpointName 'user' -ScriptBlock {
-        Set-PodeResponseStatus -Code 200
+
+    Get-PodeAuthMiddleware -Name 'Validate' -Sessionless | Add-PodeMiddleware -Name 'AuthMiddleware' -Route '/api/*'
+    Set-PodeOAGlobalAuth -Name 'Validate'
+
+
+    Add-PodeRoute -Method Get -Path "/api/resources" -EndpointName 'user' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = 123 }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Resources' -PassThru |
-        Set-PodeOAAuth -Name 'Validate' -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -PassThru |
-        Add-PodeOAResponse -StatusCode 404
+        Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 
 
     Add-PodeRoute -Method Post -Path "/api/resources" -ScriptBlock {
-        Set-PodeResponseStatus -Code 200
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = 123 }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Resources' -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -PassThru |
-        Add-PodeOAResponse -StatusCode 404
+        Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 
 
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
@@ -49,12 +56,7 @@ Start-PodeServer {
         Set-PodeOARequest -Parameters @(
             (New-PodeOAIntProperty -Name 'userId' -Required | New-PodeOARequestParameter -In Path)
         ) -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -ContentSchemas @{
-            'application/json' = (New-PodeOAObjectProperty -Properties @(
-                (New-PodeOAStringProperty -Name 'Name'),
-                (New-PodeOAIntProperty -Name 'UserId')
-            ))
-        }
+        Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 
 
     Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
@@ -65,19 +67,18 @@ Start-PodeServer {
         Set-PodeOARequest -Parameters @(
             (New-PodeOAIntProperty -Name 'userId' -Required | New-PodeOARequestParameter -In Query)
         ) -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'A user object'
+        Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 
 
-    Add-PodeRoute -Method Post -Path '/api/users' -Middleware $auth -ScriptBlock {
+    Add-PodeRoute -Method Post -Path '/api/users' -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
-        Set-PodeOAAuth -Name 'Validate' -PassThru |
         Set-PodeOARequest -RequestBody (
             New-PodeOARequestBody -Required -Schemas @{
                 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object)
             }
         ) -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'A user object'
+        Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 }
