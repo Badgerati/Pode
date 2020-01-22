@@ -413,6 +413,18 @@ function New-PodeOAIntProperty
         $Default = 0,
 
         [Parameter()]
+        [int]
+        $Minimum = [int]::MinValue,
+
+        [Parameter()]
+        [int]
+        $Maximum = [int]::MaxValue,
+
+        [Parameter()]
+        [int]
+        $MultiplesOf = 0,
+
+        [Parameter()]
         [string]
         $Description,
 
@@ -441,6 +453,18 @@ function New-PodeOAIntProperty
         default = $Default
     }
 
+    if ($Minimum -ne [int]::MinValue) {
+        $param['minimum'] = $Minimum
+    }
+
+    if ($Maximum -ne [int]::MaxValue) {
+        $param['maximum'] = $Maximum
+    }
+
+    if ($MultiplesOf -ne 0) {
+        $param['multipleOf'] = $MultiplesOf
+    }
+
     return $param
 }
 
@@ -460,6 +484,18 @@ function New-PodeOANumberProperty
         [Parameter()]
         [double]
         $Default = 0,
+
+        [Parameter()]
+        [double]
+        $Minimum = [double]::MinValue,
+
+        [Parameter()]
+        [double]
+        $Maximum = [double]::MaxValue,
+
+        [Parameter()]
+        [double]
+        $MultiplesOf = 0,
 
         [Parameter()]
         [string]
@@ -487,25 +523,53 @@ function New-PodeOANumberProperty
         default = $Default
     }
 
+    if ($Minimum -ne [double]::MinValue) {
+        $param['minimum'] = $Minimum
+    }
+
+    if ($Maximum -ne [double]::MaxValue) {
+        $param['maximum'] = $Maximum
+    }
+
+    if ($MultiplesOf -ne 0) {
+        $param['multipleOf'] = $MultiplesOf
+    }
+
     return $param
 }
 
 function New-PodeOAStringProperty
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Inbuilt')]
     param(
         [Parameter()]
         [string]
         $Name,
 
-        [Parameter()]
-        [ValidateSet('', 'Base64', 'Binary', 'Byte', 'Date', 'Date-Time', 'Email', 'Password', 'Time', 'Uuid', 'Zip-Code')]
+        [Parameter(ParameterSetName='Inbuilt')]
+        [ValidateSet('', 'Binary', 'Byte', 'Date', 'Date-Time', 'Password')]
         [string]
         $Format,
+
+        [Parameter(ParameterSetName='Custom')]
+        [string]
+        $CustomFormat,
 
         [Parameter()]
         [string]
         $Default = $null,
+
+        [Parameter()]
+        [int]
+        $MinLength = [int]::MinValue,
+
+        [Parameter()]
+        [int]
+        $MaxLength = [int]::MaxValue,
+
+        [Parameter()]
+        [string]
+        $Pattern = $null,
 
         [Parameter()]
         [string]
@@ -521,6 +585,11 @@ function New-PodeOAStringProperty
         $Array
     )
 
+    $_format = $Format
+    if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
+        $_format = $CustomFormat
+    }
+
     $param = @{
         name = $Name
         type = 'string'
@@ -529,8 +598,17 @@ function New-PodeOAStringProperty
         required = $Required.IsPresent
         deprecated = $Deprecated.IsPresent
         description = $Description
-        format = $Format.ToLowerInvariant()
+        format = $_format.ToLowerInvariant()
+        pattern = $Pattern
         default = $Default
+    }
+
+    if ($MinLength -ne [int]::MinValue) {
+        $param['minLength'] = $MinLength
+    }
+
+    if ($MaxLength -ne [int]::MaxValue) {
+        $param['maxLength'] = $MaxLength
     }
 
     return $param
