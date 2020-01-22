@@ -14,7 +14,7 @@ function Enable-PodeOpenApi
 
         [Parameter()]
         [string]
-        $Filter = '/',
+        $Route = '/',
 
         [Parameter()]
         [object[]]
@@ -44,121 +44,24 @@ function Enable-PodeOpenApi
         Title = $Title
         Version = $Version
         Description = $Description
-        Filter = $Filter
+        Route = $Route
         RestrictRoutes = $RestrictRoutes
     }
 
     # add the OpenAPI route
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock {
         param($e, $meta)
+        $strict = $meta.RestrictRoutes
 
-        # set the openapi version
-        $def = @{
-            openapi = '3.0.2'
-        }
-
-        # metadata
-        $def['info'] = @{
-            title = $meta.Title
-            version = $meta.Version
-            description = $meta.Description
-        }
-
-        # servers
-        $def['servers'] = $null
-        if (!$meta.RestrictRoutes -and (@($PodeContext.Server.Endpoints).Length -gt 1)) {
-            $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints) {
-                @{
-                    url = $endpoint.Url
-                    description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
-                }
-            })
-        }
-
-        # components
-        $def['components'] = $PodeContext.Server.OpenAPI.components
-
-        # auth/security components
-        if ($PodeContext.Server.Authentications.Count -gt 0) {
-            foreach ($authName in $PodeContext.Server.Authentications.Keys) {
-                $authType = $PodeContext.Server.Authentications[$authName].Type
-
-                $def.components.securitySchemas[($authName -replace '\s+', '')] = @{
-                    type = $authType.Scheme.ToLowerInvariant()
-                    scheme = $authType.Name.ToLowerInvariant()
-                }
-            }
-
-            $def['security'] = $PodeContext.Server.OpenAPI.security
-        }
-
-        # paths
-        $def['paths'] = @{}
-        $filter = "^$($meta.Filter)"
-
-        foreach ($method in $PodeContext.Server.Routes.Keys) {
-            foreach ($path in $PodeContext.Server.Routes[$method].Keys) {
-                # does it match the filter?
-                if ($path -inotmatch $filter) {
-                    continue
-                }
-
-                # the current route
-                $routes = @($PodeContext.Server.Routes[$method][$path])
-                if ($meta.RestrictRoutes) {
-                    $routes = @(Get-PodeRoutesByUrl -Routes $routes -Protocol $e.Protocol -Endpoint $e.Endpoint)
-                }
-
-                # continue if no routes
-                if (($routes.Length -eq 0) -or ($null -eq $routes[0])) {
-                    continue
-                }
-
-                # get the first route for base definition
-                $route = $routes[0]
-
-                # do nothing if it has no responses set
-                if ($route.OpenApi.Responses.Count -eq 0) {
-                    continue
-                }
-
-                # add path to defintion
-                if ($null -eq $def.paths[$route.OpenApi.Path]) {
-                    $def.paths[$route.OpenApi.Path] = @{}
-                }
-
-                # add path's http method to defintition
-                $def.paths[$route.OpenApi.Path][$method] = @{
-                    summary = $route.OpenApi.Summary
-                    description = $route.OpenApi.Description
-                    tags = @($route.OpenApi.Tags)
-                    deprecated = $route.OpenApi.Deprecated
-                    responses = $route.OpenApi.Responses
-                    parameters = $route.OpenApi.Parameters
-                    requestBody = $route.OpenApi.RequestBody
-                    servers = $null
-                    security = @($route.OpenApi.Authentication)
-                }
-
-                # add any custom server endpoints for route
-                foreach ($route in $routes) {
-                    if ([string]::IsNullOrWhiteSpace($route.Endpoint) -or ($route.Endpoint -ieq '*:*')) {
-                        continue
-                    }
-
-                    if ($null -eq $def.paths[$route.OpenApi.Path][$method].servers) {
-                        $def.paths[$route.OpenApi.Path][$method].servers = @()
-                    }
-
-                    $def.paths[$route.OpenApi.Path][$method].servers += @{
-                        url = "$($route.Protocol)://$($route.Endpoint)"
-                    }
-                }
-            }
-        }
-
-        # remove all null values (swagger hates them)
-        $def | Remove-PodeNullKeysFromHashtable
+        # generate the openapi definition
+        $def = Get-PodeOpenApiDefinition `
+            -Title $meta.Title `
+            -Description $meta.Description `
+            -Version $meta.Version `
+            -Route $meta.Route `
+            -Protocol $e.Protocol `
+            -Endpoint $e.Endpoint `
+            -RestrictRoutes:$strict
 
         # write the openapi definition
         Write-PodeJsonResponse -Value $def -Depth 20

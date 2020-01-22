@@ -178,3 +178,142 @@ function ConvertTo-PodeOASchemaObjectProperty
 
     return $schema
 }
+
+function Get-PodeOpenApiDefinition
+{
+    param(
+        [Parameter()]
+        [string]
+        $Title,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [string]
+        $Version,
+
+        [Parameter()]
+        [string]
+        $Route,
+
+        [Parameter()]
+        $Protocol,
+
+        [Parameter()]
+        $Endpoint,
+
+        [switch]
+        $RestrictRoutes
+    )
+
+    # set the openapi version
+    $def = @{
+        openapi = '3.0.2'
+    }
+
+    # metadata
+    $def['info'] = @{
+        title = $Title
+        version = $Version
+        description = $Description
+    }
+
+    # servers
+    $def['servers'] = $null
+    if (!$RestrictRoutes -and (@($PodeContext.Server.Endpoints).Length -gt 1)) {
+        $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints) {
+            @{
+                url = $endpoint.Url
+                description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
+            }
+        })
+    }
+
+    # components
+    $def['components'] = $PodeContext.Server.OpenAPI.components
+
+    # auth/security components
+    if ($PodeContext.Server.Authentications.Count -gt 0) {
+        foreach ($authName in $PodeContext.Server.Authentications.Keys) {
+            $authType = $PodeContext.Server.Authentications[$authName].Type
+
+            $def.components.securitySchemas[($authName -replace '\s+', '')] = @{
+                type = $authType.Scheme.ToLowerInvariant()
+                scheme = $authType.Name.ToLowerInvariant()
+            }
+        }
+
+        $def['security'] = $PodeContext.Server.OpenAPI.security
+    }
+
+    # paths
+    $def['paths'] = @{}
+    $filter = "^$($Route)"
+
+    foreach ($method in $PodeContext.Server.Routes.Keys) {
+        foreach ($path in $PodeContext.Server.Routes[$method].Keys) {
+            # does it match the route?
+            if ($path -inotmatch $filter) {
+                continue
+            }
+
+            # the current route
+            $_routes = @($PodeContext.Server.Routes[$method][$path])
+            if ($RestrictRoutes) {
+                $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -Protocol $Protocol -Endpoint $Endpoint)
+            }
+
+            # continue if no routes
+            if (($_routes.Length -eq 0) -or ($null -eq $_routes[0])) {
+                continue
+            }
+
+            # get the first route for base definition
+            $_route = $_routes[0]
+
+            # do nothing if it has no responses set
+            if ($_route.OpenApi.Responses.Count -eq 0) {
+                continue
+            }
+
+            # add path to defintion
+            if ($null -eq $def.paths[$_route.OpenApi.Path]) {
+                $def.paths[$_route.OpenApi.Path] = @{}
+            }
+
+            # add path's http method to defintition
+            $def.paths[$_route.OpenApi.Path][$method] = @{
+                summary = $_route.OpenApi.Summary
+                description = $_route.OpenApi.Description
+                tags = @($_route.OpenApi.Tags)
+                deprecated = $_route.OpenApi.Deprecated
+                responses = $_route.OpenApi.Responses
+                parameters = $_route.OpenApi.Parameters
+                requestBody = $_route.OpenApi.RequestBody
+                servers = $null
+                security = @($_route.OpenApi.Authentication)
+            }
+
+            # add any custom server endpoints for route
+            foreach ($_route in $_routes) {
+                if ([string]::IsNullOrWhiteSpace($_route.Endpoint) -or ($_route.Endpoint -ieq '*:*')) {
+                    continue
+                }
+
+                if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers) {
+                    $def.paths[$_route.OpenApi.Path][$method].servers = @()
+                }
+
+                $def.paths[$_route.OpenApi.Path][$method].servers += @{
+                    url = "$($_route.Protocol)://$($_route.Endpoint)"
+                }
+            }
+        }
+    }
+
+    # remove all null values (swagger hates them)
+    $def | Remove-PodeNullKeysFromHashtable
+    return $def
+}

@@ -7,7 +7,7 @@ Start-PodeServer {
 
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    Enable-PodeOpenApi -Title 'OpenAPI Example' -Filter '/api/' -RestrictRoutes
+    Enable-PodeOpenApi -Title 'OpenAPI Example' -Route '/api/' -RestrictRoutes
     Enable-PodeSwagger -DarkMode
 
 
@@ -80,4 +80,31 @@ Start-PodeServer {
             }
         ) -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Description 'A user object'
+
+
+    Add-PodeRoute -Method Put -Path '/api/users' -ScriptBlock {
+        param($e)
+
+        $users = @()
+        foreach ($id in $e.Data) {
+            $users += @{
+                Name = (New-Guid).Guid
+                UserIdd = $id
+            }
+        }
+
+        Write-PodeJsonResponse -Value $users
+    } -PassThru |
+        Set-PodeOARouteInfo -Tags 'Users' -PassThru |
+        Set-PodeOARequest -RequestBody (
+            New-PodeOARequestBody -Required -Schemas @{
+                'application/json' = (New-PodeOAIntProperty -Name 'userId' -Array)
+            }
+        ) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'A list of users' -ContentSchemas @{
+            'application/json' = (New-PodeOAObjectProperty -Array -Properties @(
+                (New-PodeOAStringProperty -Name 'Name'),
+                (New-PodeOAIntProperty -Name 'UserId')
+            ))
+        }
 }
