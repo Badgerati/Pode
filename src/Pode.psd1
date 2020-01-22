@@ -178,16 +178,24 @@
         'Pode',
 
         # openapi
-        'Enable-PodeOpenApiRoute',
-        'Enable-PodeSwaggerRoute',
-        'Add-PodeOpenApiRouteResponse',
-        'Set-PodeOpenApiRouteRequest',
-        'New-PodeOpenApiRouteRequestBody',
-        'Add-PodeOpenApiComponentSchema',
-        'New-PodeOpenApiSchema',
-        'New-PodeOpenApiSchemaProperty',
-        'New-PodeOpenApiRouteRequestParameter',
-        'Set-PodeOpenApiRouteMetaData'
+        'Enable-PodeOpenApi',
+        'Add-PodeOAResponse',
+        'Add-PodeOAComponentResponse',
+        'Set-PodeOAAuth',
+        'Set-PodeOAGlobalAuth',
+        'Set-PodeOARequest',
+        'New-PodeOARequestBody',
+        'Add-PodeOAComponentSchema',
+        'Add-PodeOAComponentRequestBody',
+        'Add-PodeOAComponentParameter',
+        'New-PodeOAIntProperty',
+        'New-PodeOANumberProperty',
+        'New-PodeOAStringProperty',
+        'New-PodeOABoolProperty',
+        'New-PodeOAObjectProperty',
+        'New-PodeOARequestParameter',
+        'Set-PodeOARouteInfo',
+        'Enable-PodeSwagger'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
