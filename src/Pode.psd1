@@ -195,7 +195,8 @@
         'New-PodeOAObjectProperty',
         'New-PodeOARequestParameter',
         'Set-PodeOARouteInfo',
-        'Enable-PodeSwagger'
+        'Enable-PodeSwagger',
+        'Enable-PodeReDoc'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
@@ -207,7 +208,7 @@
                 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform', 'access-control',
                 'file-monitoring', 'multithreaded', 'rate-limiting', 'cron', 'schedule', 'middleware', 'session',
                 'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets', 'swagger', 'openapi')
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'redoc')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

@@ -9,6 +9,7 @@ Start-PodeServer {
 
     Enable-PodeOpenApi -Title 'OpenAPI Example' -Route '/api/' -RestrictRoutes
     Enable-PodeSwagger -DarkMode
+    Enable-PodeReDoc -DarkMode
 
 
     New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {

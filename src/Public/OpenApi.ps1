@@ -838,3 +838,48 @@ function Enable-PodeSwagger
         }
     }
 }
+
+function Enable-PodeReDoc
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path = '/redoc',
+
+        [Parameter()]
+        [string]
+        $OpenApiPath,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter()]
+        [string]
+        $Title
+    )
+
+    # error if there's no OpenAPI path
+    $OpenApiPath = Protect-PodeValue -Value $OpenApiPath -Default $PodeContext.Server.OpenAPI.Path
+    if ([string]::IsNullOrWhiteSpace($OpenApiPath)) {
+        throw "No OpenAPI path supplied for ReDoc to use"
+    }
+
+    # fail if no title
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
+    if ([string]::IsNullOrWhiteSpace($Title)) {
+        throw "No title supplied for ReDoc page"
+    }
+
+    # add the redoc route
+    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ScriptBlock {
+        param($e)
+        $podeRoot = Get-PodeModuleMiscPath
+        Write-PodeFileResponse -Path (Join-Path $podeRoot 'default-redoc.html.pode') -Data @{
+            Title = $PodeContext.Server.OpenAPI.Title
+            OpenApiPath = $PodeContext.Server.OpenAPI.Path
+        }
+    }
+}

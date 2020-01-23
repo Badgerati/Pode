@@ -37,7 +37,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Cross-platform using PowerShell Core (with support for PS5)
 * Docker support, including images for ARM/Raspberry Pi
 * Azure Functions and AWS Lambda support
-* OpenAPI and Swagger support
+* OpenAPI, Swagger, and ReDoc support
 * Listen on a single or multiple IP address/hostnames
 * Cross-platform support for HTTP, HTTPS, TCP and SMTP
 * Cross-platform support for server-to-client WebSockets, including secure WebSockets
