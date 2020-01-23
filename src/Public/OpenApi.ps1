@@ -8,11 +8,6 @@ function Enable-PodeOpenApi
         $Path = '/openapi',
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $SwaggerPath = '/swagger',
-
-        [Parameter()]
         [string]
         $Route = '/',
 
@@ -379,13 +374,13 @@ function Add-PodeOAComponentParameter
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [hashtable]
-        $Parameter,
-
         [Parameter()]
         [string]
-        $Name
+        $Name,
+
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable]
+        $Parameter
     )
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
@@ -801,7 +796,7 @@ function Enable-PodeSwagger
 
         [Parameter()]
         [string]
-        $OpenApiPath,
+        $OpenApi,
 
         [Parameter()]
         [object[]]
@@ -816,8 +811,8 @@ function Enable-PodeSwagger
     )
 
     # error if there's no OpenAPI path
-    $OpenApiPath = Protect-PodeValue -Value $OpenApiPath -Default $PodeContext.Server.OpenAPI.Path
-    if ([string]::IsNullOrWhiteSpace($OpenApiPath)) {
+    $OpenApi = Protect-PodeValue -Value $OpenApi -Default $PodeContext.Server.OpenAPI.Path
+    if ([string]::IsNullOrWhiteSpace($OpenApi)) {
         throw "No OpenAPI path supplied for Swagger to use"
     }
 
@@ -833,7 +828,7 @@ function Enable-PodeSwagger
         $podeRoot = Get-PodeModuleMiscPath
         Write-PodeFileResponse -Path (Join-Path $podeRoot 'default-swagger.html.pode') -Data @{
             Title = $PodeContext.Server.OpenAPI.Title
-            OpenApiPath = $PodeContext.Server.OpenAPI.Path
+            OpenApi = $PodeContext.Server.OpenAPI.Path
             DarkMode = $meta.DarkMode
         }
     }
@@ -850,7 +845,7 @@ function Enable-PodeReDoc
 
         [Parameter()]
         [string]
-        $OpenApiPath,
+        $OpenApi,
 
         [Parameter()]
         [object[]]
@@ -862,8 +857,8 @@ function Enable-PodeReDoc
     )
 
     # error if there's no OpenAPI path
-    $OpenApiPath = Protect-PodeValue -Value $OpenApiPath -Default $PodeContext.Server.OpenAPI.Path
-    if ([string]::IsNullOrWhiteSpace($OpenApiPath)) {
+    $OpenApi = Protect-PodeValue -Value $OpenApi -Default $PodeContext.Server.OpenAPI.Path
+    if ([string]::IsNullOrWhiteSpace($OpenApi)) {
         throw "No OpenAPI path supplied for ReDoc to use"
     }
 
@@ -879,7 +874,7 @@ function Enable-PodeReDoc
         $podeRoot = Get-PodeModuleMiscPath
         Write-PodeFileResponse -Path (Join-Path $podeRoot 'default-redoc.html.pode') -Data @{
             Title = $PodeContext.Server.OpenAPI.Title
-            OpenApiPath = $PodeContext.Server.OpenAPI.Path
+            OpenApi = $PodeContext.Server.OpenAPI.Path
         }
     }
 }
