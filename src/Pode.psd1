@@ -193,7 +193,7 @@
         'New-PodeOAStringProperty',
         'New-PodeOABoolProperty',
         'New-PodeOAObjectProperty',
-        'New-PodeOARequestParameter',
+        'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
         'Enable-PodeSwagger',
         'Enable-PodeReDoc'

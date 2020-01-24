@@ -317,3 +317,29 @@ function Get-PodeOpenApiDefinition
     $def | Remove-PodeNullKeysFromHashtable
     return $def
 }
+
+function ConvertTo-PodeOAPropertyFromCmdletParameter
+{
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [System.Management.Automation.ParameterMetadata]
+        $Parameter
+    )
+
+    if ($Parameter.SwitchParameter -or ($Parameter.ParameterType.Name -ieq 'boolean')) {
+        New-PodeOABoolProperty -Name $Parameter.Name
+    }
+    else {
+        switch ($Parameter.ParameterType.Name) {
+            { @('int32', 'int64') -icontains $_ } {
+                New-PodeOAIntProperty -Name $Parameter.Name -Format $_
+            }
+
+            { @('double', 'float') -icontains $_ } {
+                New-PodeOANumberProperty -Name $Parameter.Name -Format $_
+            }
+        }
+    }
+
+    New-PodeOAStringProperty -Name $Parameter.Name
+}

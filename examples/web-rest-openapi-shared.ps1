@@ -7,7 +7,7 @@ Start-PodeServer {
 
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    Enable-PodeOpenApi -Title 'OpenAPI Example' -Route '/api/' -RestrictRoutes
+    Enable-PodeOpenApi -Title 'OpenAPI Example' -Route '/api/*' -RestrictRoutes
     Enable-PodeSwagger -DarkMode
 
 
@@ -54,7 +54,7 @@ Start-PodeServer {
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -Parameters @(
-            (New-PodeOAIntProperty -Name 'userId' -Required | New-PodeOARequestParameter -In Path)
+            (New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In Path)
         ) -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 
@@ -65,7 +65,7 @@ Start-PodeServer {
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -Parameters @(
-            (New-PodeOAIntProperty -Name 'userId' -Required | New-PodeOARequestParameter -In Query)
+            (New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In Query)
         ) -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 

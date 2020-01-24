@@ -9,7 +9,7 @@ function Enable-PodeOpenApi
 
         [Parameter()]
         [string]
-        $Route = '/',
+        $Route = '/*',
 
         [Parameter()]
         [object[]]
@@ -689,7 +689,7 @@ function New-PodeOAObjectProperty
     return $param
 }
 
-function New-PodeOARequestParameter
+function ConvertTo-PodeOAParameter
 {
     [CmdletBinding(DefaultParameterSetName='Reference')]
     param(

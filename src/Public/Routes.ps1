@@ -590,7 +590,7 @@ function ConvertTo-PodeRoute
         Import-PodeModule -Name $Module -Now
 
         Write-Verbose "Getting exported commands from module"
-        $ModuleCommands = (Get-Module -Name $Module).ExportedCommands.Keys
+        $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys
 
         # if commands were supplied validate them - otherwise use all exported ones
         if (Test-IsEmpty $Commands) {
@@ -646,7 +646,7 @@ function ConvertTo-PodeRoute
         $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
 
         # create the route
-        Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -ArgumentList $cmd -ScriptBlock {
+        $route = (Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -ArgumentList $cmd -ScriptBlock {
             param($e, $cmd)
 
             # either get params from the QueryString or Payload
@@ -663,6 +663,35 @@ function ConvertTo-PodeRoute
             # if we have a result, convert it to json
             if (!(Test-IsEmpty $result)) {
                 Write-PodeJsonResponse -Value $result -Depth 1
+            }
+        } -PassThru)
+
+        # set the metadata of the function
+        $help = Get-Help -Name $cmd
+        $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
+
+        # set the routes parameters (get = query, everything else = payload)
+        $params = (Get-Command -Name $cmd).Parameters
+
+        if (($null -ne $params) -and ($params.Count -gt 0)) {
+            if ($_method -ieq 'get') {
+                $route | Set-PodeOARequest -Parameters @(
+                    foreach ($key in $params.Keys) {
+                        $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter | ConvertTo-PodeOAParameter -In Query
+                    }
+                )
+            }
+
+            else {
+                $route | Set-PodeOARequest -RequestBody (
+                    New-PodeOARequestBody -ContentSchemas @{
+                        'application/json' = (New-PodeOAObjectProperty -Array -Properties @(
+                            foreach ($key in $params.Keys) {
+                                $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
+                            }
+                        ))
+                    }
+                )
             }
         }
     }
