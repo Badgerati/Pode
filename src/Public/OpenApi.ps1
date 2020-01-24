@@ -32,6 +32,7 @@ function Enable-PodeOpenApi
     )
 
     # initialise openapi info
+    $PodeContext.Server.OpenAPI.Enabled = $true
     $PodeContext.Server.OpenAPI.Title = $Title
     $PodeContext.Server.OpenAPI.Path = $Path
 

@@ -194,6 +194,7 @@ function New-PodeContext
 
     # swagger and openapi
     $ctx.Server.OpenAPI = @{
+        Enabled = $false
         Path = $null
         Title = $null
         components = @{

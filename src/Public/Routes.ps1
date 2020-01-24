@@ -666,32 +666,35 @@ function ConvertTo-PodeRoute
             }
         } -PassThru)
 
-        # set the metadata of the function
-        $help = Get-Help -Name $cmd
-        $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
+        # setup for openapi if enabled
+        if ($PodeContext.Server.OpenAPI.Enabled) {
+            # set the openapi metadata of the function
+            $help = Get-Help -Name $cmd
+            $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
 
-        # set the routes parameters (get = query, everything else = payload)
-        $params = (Get-Command -Name $cmd).Parameters
+            # set the routes parameters (get = query, everything else = payload)
+            $params = (Get-Command -Name $cmd).Parameters
 
-        if (($null -ne $params) -and ($params.Count -gt 0)) {
-            if ($_method -ieq 'get') {
-                $route | Set-PodeOARequest -Parameters @(
-                    foreach ($key in $params.Keys) {
-                        $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter | ConvertTo-PodeOAParameter -In Query
-                    }
-                )
-            }
+            if (($null -ne $params) -and ($params.Count -gt 0)) {
+                if ($_method -ieq 'get') {
+                    $route | Set-PodeOARequest -Parameters @(
+                        foreach ($key in $params.Keys) {
+                            $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter | ConvertTo-PodeOAParameter -In Query
+                        }
+                    )
+                }
 
-            else {
-                $route | Set-PodeOARequest -RequestBody (
-                    New-PodeOARequestBody -ContentSchemas @{
-                        'application/json' = (New-PodeOAObjectProperty -Array -Properties @(
-                            foreach ($key in $params.Keys) {
-                                $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
-                            }
-                        ))
-                    }
-                )
+                else {
+                    $route | Set-PodeOARequest -RequestBody (
+                        New-PodeOARequestBody -ContentSchemas @{
+                            'application/json' = (New-PodeOAObjectProperty -Array -Properties @(
+                                foreach ($key in $params.Keys) {
+                                    $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
+                                }
+                            ))
+                        }
+                    )
+                }
             }
         }
     }
