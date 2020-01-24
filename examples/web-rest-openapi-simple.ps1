@@ -42,7 +42,7 @@ Start-PodeServer {
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
     } -PassThru |
         Set-PodeOARequest -RequestBody (
-            New-PodeOARequestBody -Required -Schemas @{
+            New-PodeOARequestBody -Required -ContentSchemas @{
                 'application/json' = (New-PodeOAObjectProperty -Properties @(
                     (New-PodeOAStringProperty -Name 'Name'),
                     (New-PodeOAIntProperty -Name 'UserId')

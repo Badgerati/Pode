@@ -76,7 +76,7 @@ Start-PodeServer {
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -RequestBody (
-            New-PodeOARequestBody -Required -Schemas @{
+            New-PodeOARequestBody -Required -ContentSchemas @{
                 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object)
             }
         ) -PassThru |

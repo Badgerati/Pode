@@ -76,7 +76,7 @@ Start-PodeServer {
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOAAuth -Name 'Validate' -PassThru |
         Set-PodeOARequest -RequestBody (
-            New-PodeOARequestBody -Required -Schemas @{
+            New-PodeOARequestBody -Required -ContentSchemas @{
                 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object)
             }
         ) -PassThru |
@@ -98,7 +98,7 @@ Start-PodeServer {
     } -PassThru |
         Set-PodeOARouteInfo -Tags 'Users' -PassThru |
         Set-PodeOARequest -RequestBody (
-            New-PodeOARequestBody -Required -Schemas @{
+            New-PodeOARequestBody -Required -ContentSchemas @{
                 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Array)
             }
         ) -PassThru |

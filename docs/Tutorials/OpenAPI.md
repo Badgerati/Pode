@@ -27,8 +27,6 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 * If you have multiple endpoints, then the servers section will be included
 * Any authentication will be included, but won't be bound to any routes
 
-
-
 ## Authentication
 
 If your API requires the same authentication on every route, then the quickest way to define global authentication is to use the [`Set-PodeOAGlobalAuth`] function. This takes an array of authentication names:
@@ -46,31 +44,90 @@ Get-PodeAuthMiddleware -Name 'Validate' -Sessionless | Add-PodeMiddleware -Name 
 Set-PodeOAGlobalAuth -Name 'Validate'
 ```
 
-
-
-
-
-
-
 ## Routes
 
-lorem
+To extend the definition of a route, you can use the `-PassThru` switch on the [`Add-PodeRoute`] function. This will cause the route that was created to be returned, so you can pass it down the pipe into more OpenAPI functions.
+
+To add metadata to a route's definition you can use the [`Set-PodeOARouteInfo`] function. This will allow you to define a summary/description for the route, as well as tags for grouping:
+
+```powershell
+Add-PodeRoute -Method Get -Path "/api/resources" -ScriptBlock {
+    Set-PodeResponseStatus -Code 200
+} -PassThru |
+    Set-PodeOARouteInfo -Summary 'Retrieve some resources' -Tags 'Resources'
+```
+
+Each of the following OpenAPI functions have a `-PassThru` switch, allowing you to chain many of them together.
 
 ### Responses
 
-lorem
+You can define multiple responses for a route, but only one of each status code, using the [`Add-PodeOAResponse`] function. You can either just define the response and status code; with a custom description; or with a schema defining the payload of the response.
+
+The following is an example of defining a simple 200 and 404 responses on a route:
+
+```powershell
+Add-PodeRoute -Method Get -Path "/api/user/:userId" -ScriptBlock {
+    # logic
+} -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -PassThru |
+    Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
+```
+
+Whereas the following is a more complex definition, which also defines the responses JSON payload. This payload is defined as an object with a string Name, and integer UserId:
+
+```powershell
+Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
+    param($e)
+    Write-PodeJsonResponse -Value @{
+        Name = 'Rick'
+        UserId = $e.Parameters['userId']
+    }
+} -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -ContentSchemas @{
+        'application/json' = (New-PodeOAObjectProperty -Properties @(
+            (New-PodeOAStringProperty -Name 'Name'),
+            (New-PodeOAIntProperty -Name 'UserId')
+        ))
+    }
+```
+
+the JSON response payload defined is as follows:
+
+```json
+{
+    "Name": [string],
+    "UserId": [integer]
+}
+```
 
 ### Requests
 
-lorem
+#### Parameters
+
+You can add route parameter definitions, such as parameters used in the path/querystring, by using the [`Set-PodeOARequest`] function.
+
+#### Payload
+
+TODO: lorem
 
 ### Authentication
 
-lorem
+To add the authentication used on a route's definition you can pipe the route into the [`Set-PodeOAAuth`] function. This function takes the name of an authentication type being used on the route.
 
+```powershell
+# add the auth type
+New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    return @{ User = @{} }
+}
 
+$auth = (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless)
 
-
+# define a route that uses the auth type
+Add-PodeRoute -Method Get -Path "/api/resources" -Middleware $auth -ScriptBlock {
+    Set-PodeResponseStatus -Code 200
+} -PassThru |
+    Set-PodeOAAuth -Name 'Validate'
+```
 
 ## Components
 
@@ -78,7 +135,33 @@ You can define reusable OpenAPI components in Pode. Currently supported are Sche
 
 ### Schemas
 
-lorem
+To define a reusable schema that can be used in request bodies, and responses, you can use the [`Add-PodeOAComponentSchema`] function. You'll need to supply a Name, and a Schema that can be reused.
+
+The following is an example of defining a schema which is a object of Name, UserId, and Age:
+
+```powershell
+# define a reusable schema user object
+Add-PodeOAComponentSchema -Name 'UserSchema' -Schema (
+    New-PodeOAObjectProperty -Properties @(
+        (New-PodeOAStringProperty -Name 'Name'),
+        (New-PodeOAIntProperty -Name 'UserId'),
+        (New-PodeOAIntProperty -Name 'Age')
+    )
+)
+
+# reuse the above schema in a response
+Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
+    param($e)
+    Write-PodeJsonResponse -Value @{
+        Name = 'Rick'
+        UserId = $e.Parameters['userId']
+        Age = 42
+    }
+} -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Description 'A list of users' -ContentSchemas @{
+        'application/json' = 'UserSchema'
+    }
+```
 
 ### Request Bodies
 
@@ -88,7 +171,7 @@ The following is an example of defining a JSON object that a Name, UserId, and a
 
 ```powershell
 # define a reusable request body
-Add-PodeOAComponentRequestBody -Name 'UserBody' -Required -Schemas @{
+Add-PodeOAComponentRequestBody -Name 'UserBody' -Required -ContentSchemas @{
     'application/json' = (New-PodeOAObjectProperty -Properties @(
         (New-PodeOAStringProperty -Name 'Name'),
         (New-PodeOAIntProperty -Name 'UserId'),
@@ -170,12 +253,6 @@ the JSON response payload defined is as follows:
     }
 ]
 ```
-
-
-
-
-
-
 
 ## Swagger and ReDoc
 

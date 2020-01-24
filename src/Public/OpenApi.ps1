@@ -294,7 +294,7 @@ function New-PodeOARequestBody
 
         [Parameter(Mandatory=$true, ParameterSetName='Schema')]
         [hashtable]
-        $Schemas,
+        $ContentSchemas,
 
         [Parameter(ParameterSetName='Schema')]
         [string]
@@ -310,7 +310,7 @@ function New-PodeOARequestBody
             return @{
                 required = $Required.IsPresent
                 description = $Description
-                content = ($Schemas | ConvertTo-PodeOAContentTypeSchema)
+                content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
             }
         }
 
@@ -352,7 +352,7 @@ function Add-PodeOAComponentRequestBody
 
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
-        $Schemas,
+        $ContentSchemas,
 
         [Parameter()]
         [string]
@@ -366,7 +366,7 @@ function Add-PodeOAComponentRequestBody
     $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = @{
         required = $Required.IsPresent
         description = $Description
-        content = ($Schemas | ConvertTo-PodeOAContentTypeSchema)
+        content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
     }
 }
 
