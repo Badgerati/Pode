@@ -104,11 +104,71 @@ the JSON response payload defined is as follows:
 
 #### Parameters
 
-You can add route parameter definitions, such as parameters used in the path/querystring, by using the [`Set-PodeOARequest`] function.
+You can set route parameter definitions, such as parameters passed in the path/query, by using the [`Set-PodeOARequest`] function with the `-Parameters` parameter. The parameter takes an array of properties converted into parameters, using the [`New-PodeOARequestParameter`] function.
+
+For example, to create some integer `userId` parameter that is supplied in the path of the request, the following will work:
+
+```powershell
+Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
+    param($e)
+    Write-PodeJsonResponse -Value @{
+        Name = 'Rick'
+        UserId = $e.Parameters['userId']
+    }
+} -PassThru |
+    Set-PodeOARequest -Parameters @(
+        (New-PodeOAIntProperty -Name 'userId' -Required | New-PodeOARequestParameter -In Path)
+    )
+```
+
+Whereas you could use the next example to define 2 query parameters, both strings:
+
+```powershell
+Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
+    param($e)
+    Write-PodeJsonResponse -Value @{
+        Name = 'Rick'
+        UserId = $e.Query['name']
+    }
+} -PassThru |
+    Set-PodeOARequest -Parameters @(
+        (New-PodeOAStringProperty -Name 'name' -Required | New-PodeOARequestParameter -In Query),
+        (New-PodeOAStringProperty -Name 'city' -Required | New-PodeOARequestParameter -In Query)
+    )
+```
 
 #### Payload
 
-TODO: lorem
+You can set request payload schemas by using the [`Set-PodeOARequest`] function, with the `-RequestBody` parameter. The request body can be defined using the [`New-PodeOARequestBody`] function, and supplying schema definitions for content types - this works in very much a similar way to defining responses above.
+
+For example, to define a request JSON payload of some `userId` and `name` you could use the following:
+
+```powershell
+Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
+    param($e)
+    Write-PodeJsonResponse -Value @{
+        Name = $e.Data.name
+        UserId = $e.Data.userId
+    }
+} -PassThru |
+    Set-PodeOARequest -RequestBody (
+        New-PodeOARequestBody -Required -ContentSchemas @{
+            'application/json' = (New-PodeOAObjectProperty -Properties @(
+                (New-PodeOAStringProperty -Name 'name'),
+                (New-PodeOAIntProperty -Name 'userId')
+            ))
+        }
+    )
+```
+
+The expected payload would look as follows:
+
+```json
+{
+    "name": [string],
+    "userId": [integer]
+}
+```
 
 ### Authentication
 
