@@ -179,16 +179,12 @@ function ConvertTo-PodeOASchemaObjectProperty
     return $schema
 }
 
-function Get-PodeOpenApiDefinition
+function Get-PodeOpenApiDefinitionInternal
 {
     param(
-        [Parameter()]
+        [Parameter(Mandatory=$true)]
         [string]
         $Title,
-
-        [Parameter()]
-        [string]
-        $Description,
 
         [Parameter()]
         [string]
@@ -196,7 +192,11 @@ function Get-PodeOpenApiDefinition
 
         [Parameter()]
         [string]
-        $Route,
+        $Description,
+
+        [Parameter()]
+        [string]
+        $RouteFilter,
 
         [Parameter()]
         $Protocol,
@@ -250,7 +250,7 @@ function Get-PodeOpenApiDefinition
 
     # paths
     $def['paths'] = @{}
-    $filter = "^$($Route)"
+    $filter = "^$($RouteFilter)"
 
     foreach ($method in $PodeContext.Server.Routes.Keys) {
         foreach ($path in $PodeContext.Server.Routes[$method].Keys) {

@@ -7,40 +7,40 @@ function Enable-PodeOpenApi
         [string]
         $Path = '/openapi',
 
-        [Parameter()]
-        [string]
-        $Route = '/*',
-
-        [Parameter()]
-        [object[]]
-        $Middleware,
-
         [Parameter(Mandatory=$true)]
         [string]
         $Title,
 
         [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [string]
-        $Version = '0.0.1',
+        $Version = '0.0.0',
 
         [Parameter()]
         [string]
         $Description,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $RouteFilter = '/*',
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
 
         [switch]
         $RestrictRoutes
     )
 
     # initialise openapi info
-    $PodeContext.Server.OpenAPI.Enabled = $true
     $PodeContext.Server.OpenAPI.Title = $Title
     $PodeContext.Server.OpenAPI.Path = $Path
 
     $meta = @{
-        Title = $Title
         Version = $Version
         Description = $Description
-        Route = $Route
+        RouteFilter = $RouteFilter
         RestrictRoutes = $RestrictRoutes
     }
 
@@ -50,11 +50,11 @@ function Enable-PodeOpenApi
         $strict = $meta.RestrictRoutes
 
         # generate the openapi definition
-        $def = Get-PodeOpenApiDefinition `
-            -Title $meta.Title `
-            -Description $meta.Description `
+        $def = Get-PodeOpenApiDefinitionInternal `
+            -Title $PodeContext.Server.OpenAPI.Title `
             -Version $meta.Version `
-            -Route $meta.Route `
+            -Description $meta.Description `
+            -RouteFilter $meta.RouteFilter `
             -Protocol $e.Protocol `
             -Endpoint $e.Endpoint `
             -RestrictRoutes:$strict
@@ -62,6 +62,47 @@ function Enable-PodeOpenApi
         # write the openapi definition
         Write-PodeJsonResponse -Value $def -Depth 20
     }
+}
+
+function Get-PodeOpenApiDefinition
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Title,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Version,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $RouteFilter = '/*',
+
+        [switch]
+        $RestrictRoutes
+    )
+
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
+    $Version = Protect-PodeValue -Value $Version -Default $PodeContext.Server.OpenAPI.Version
+    $Description = Protect-PodeValue -Value $Description -Default $PodeContext.Server.OpenAPI.Description
+
+    # generate the openapi definition
+    return (Get-PodeOpenApiDefinitionInternal `
+        -Title $Title `
+        -Version $Version `
+        -Description $Description `
+        -RouteFilter $RouteFilter `
+        -Protocol $WebEvent.Protocol `
+        -Endpoint $WebEvent.Endpoint `
+        -RestrictRoutes:$RestrictRoutes)
 }
 
 function Add-PodeOAResponse
@@ -819,17 +860,25 @@ function Enable-PodeSwagger
 
     # fail if no title
     $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
+    $Title = Protect-PodeValue -Value $Title -Default 'Swagger'
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No title supplied for Swagger page"
     }
 
+    # setup meta info
+    $meta = @{
+        Title = $Title
+        OpenApi = $OpenApi
+        DarkMode = $DarkMode
+    }
+
     # add the swagger route
-    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList @{ DarkMode = $DarkMode } -ScriptBlock {
+    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
         param($e, $meta)
         $podeRoot = Get-PodeModuleMiscPath
         Write-PodeFileResponse -Path (Join-Path $podeRoot 'default-swagger.html.pode') -Data @{
-            Title = $PodeContext.Server.OpenAPI.Title
-            OpenApi = $PodeContext.Server.OpenAPI.Path
+            Title = $meta.Title
+            OpenApi = $meta.OpenApi
             DarkMode = $meta.DarkMode
         }
     }
@@ -865,17 +914,25 @@ function Enable-PodeReDoc
 
     # fail if no title
     $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
+    $Title = Protect-PodeValue -Value $Title -Default 'ReDoc'
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No title supplied for ReDoc page"
     }
 
-    # add the redoc route
-    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ScriptBlock {
-        param($e)
+    # setup meta info
+    $meta = @{
+        Title = $Title
+        OpenApi = $OpenApi
+        DarkMode = $DarkMode
+    }
+
+    # add the swagger route
+    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
+        param($e, $meta)
         $podeRoot = Get-PodeModuleMiscPath
         Write-PodeFileResponse -Path (Join-Path $podeRoot 'default-redoc.html.pode') -Data @{
-            Title = $PodeContext.Server.OpenAPI.Title
-            OpenApi = $PodeContext.Server.OpenAPI.Path
+            Title = $meta.Title
+            OpenApi = $meta.OpenApi
         }
     }
 }

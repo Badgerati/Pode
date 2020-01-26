@@ -5,7 +5,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Name 'user'
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Name 'admin'
 
-    Enable-PodeOpenApi -Title 'OpenAPI Example' -Route '/api/*' -RestrictRoutes
+    Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
     Enable-PodeSwagger -DarkMode
 
 

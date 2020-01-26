@@ -179,6 +179,7 @@
 
         # openapi
         'Enable-PodeOpenApi',
+        'Get-PodeOpenApiDefintion',
         'Add-PodeOAResponse',
         'Add-PodeOAComponentResponse',
         'Set-PodeOAAuth',

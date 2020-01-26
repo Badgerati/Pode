@@ -38,6 +38,9 @@ A literal, or relative, path to a file containing a ScriptBlock for the Route's 
 .PARAMETER ArgumentList
 An array of arguments to supply to the Route's ScriptBlock.
 
+.PARAMETER PassThru
+If supplied, the route created will be returned so it can be passed through a pipe.
+
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
@@ -547,6 +550,9 @@ Like normal Routes, an array of Middleware that will be applied to all generated
 .PARAMETER NoVerb
 If supplied, the Command's Verb will not be included in the Route's path.
 
+.PARAMETER NoOpenApi
+If supplied, no OpenAPI definitions will be generated for the routes created.
+
 .EXAMPLE
 ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware (Get-PodeAuthMiddleware -Name 'auth-name' -Sessionless)
 
@@ -582,7 +588,10 @@ function ConvertTo-PodeRoute
         $Middleware,
 
         [switch]
-        $NoVerb
+        $NoVerb,
+
+        [switch]
+        $NoOpenApi
     )
 
     # if a module was supplied, import it - then validate the commands
@@ -666,36 +675,32 @@ function ConvertTo-PodeRoute
             }
         } -PassThru)
 
-        # setup for openapi if enabled
-        if ($PodeContext.Server.OpenAPI.Enabled) {
-            # set the openapi metadata of the function
-            $help = Get-Help -Name $cmd
-            $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
+        # set the openapi metadata of the function, unless told to skip
+        if ($NoOpenApi) {
+            continue
+        }
 
-            # set the routes parameters (get = query, everything else = payload)
-            $params = (Get-Command -Name $cmd).Parameters
+        $help = Get-Help -Name $cmd
+        $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
 
-            if (($null -ne $params) -and ($params.Count -gt 0)) {
-                if ($_method -ieq 'get') {
-                    $route | Set-PodeOARequest -Parameters @(
-                        foreach ($key in $params.Keys) {
-                            $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter | ConvertTo-PodeOAParameter -In Query
-                        }
-                    )
-                }
+        # set the routes parameters (get = query, everything else = payload)
+        $params = (Get-Command -Name $cmd).Parameters
+        if (($null -eq $params) -or ($params.Count -eq 0)) {
+            continue
+        }
 
-                else {
-                    $route | Set-PodeOARequest -RequestBody (
-                        New-PodeOARequestBody -ContentSchemas @{
-                            'application/json' = (New-PodeOAObjectProperty -Array -Properties @(
-                                foreach ($key in $params.Keys) {
-                                    $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
-                                }
-                            ))
-                        }
-                    )
-                }
-            }
+        $props = @(foreach ($key in $params.Keys) {
+            $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
+        })
+
+        if ($_method -ieq 'get') {
+            $route | Set-PodeOARequest -Parameters @(foreach ($prop in $props) { $prop | ConvertTo-PodeOAParameter -In Query })
+        }
+
+        else {
+            $route | Set-PodeOARequest -RequestBody (
+                New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAObjectProperty -Array -Properties $props) }
+            )
         }
     }
 }

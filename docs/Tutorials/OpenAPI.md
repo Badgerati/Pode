@@ -6,14 +6,20 @@ You can simply enable OpenAPI in Pode, and a very simple definition will be gene
 
 ## Enabling OpenAPI
 
-To enable support for generating OpenAPI definitions you'll need to use the [`Enable-PodeOpenApi`](../../Functions/OpenApi/Enable-PodeOpenApi) function. This will allow you to set a title and version for your API, as well as a custom path to fetch the definition - the default is at `/openapi`.
+To enable support for generating OpenAPI definitions you'll need to use the [`Enable-PodeOpenApi`](../../Functions/OpenApi/Enable-PodeOpenApi) function. This will allow you to set a title and version for your API. You can also set a default route to retrieve the OpenAPI definition for tools like Swagger or ReDoc, the default is at `/openapi`.
 
 You can also set a route filter (such as `/api/*`, the default is `/*` for everything), so only those routes are included in the definition.
 
 An example of enabling OpenAPI is a follows:
 
 ```powershell
-Enable-PodeOpenApi -Title 'My Awesome API' -Version 9.0.0.1 -Route '/api/*'
+Enable-PodeOpenApi -Title 'My Awesome API' -Version 9.0.0.1
+```
+
+An example of setting the OpenAPI route is a follows. This will create a route accessible at `/docs/openapi`:
+
+```powershell
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My Awesome API' -Version 9.0.0.1
 ```
 
 ### Default Setup
@@ -26,6 +32,21 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 * Although routes will be included, no request bodies, parameters or response payloads will be defined
 * If you have multiple endpoints, then the servers section will be included
 * Any authentication will be included, but won't be bound to any routes
+
+### Get Definition
+
+Instead of defining a route to return the definition, you can write the definition to the response whenever you want, and in any route, using the [`Get-PodeOpenApiDefinition`] function. This could be useful in certain scenarios like in Azure Functions, where you can enable OpenAPI, and then write the definition to the response of a GET request if some query parameter is set; eg: `?openapi=1`.
+
+For example:
+
+```powershell
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+    param($e)
+    if ($e.Query.openapi -eq 1) {
+        Get-PodeOpenApiDefinition | Write-PodeJsonResponse
+    }
+}
+```
 
 ## Authentication
 
