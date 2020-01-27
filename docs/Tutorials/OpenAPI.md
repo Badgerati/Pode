@@ -35,7 +35,7 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 
 ### Get Definition
 
-Instead of defining a route to return the definition, you can write the definition to the response whenever you want, and in any route, using the [`Get-PodeOpenApiDefinition`] function. This could be useful in certain scenarios like in Azure Functions, where you can enable OpenAPI, and then write the definition to the response of a GET request if some query parameter is set; eg: `?openapi=1`.
+Instead of defining a route to return the definition, you can write the definition to the response whenever you want, and in any route, using the [`Get-PodeOpenApiDefinition`](../../Functions/OpenApi/Get-PodeOpenApiDefinition) function. This could be useful in certain scenarios like in Azure Functions, where you can enable OpenAPI, and then write the definition to the response of a GET request if some query parameter is set; eg: `?openapi=1`.
 
 For example:
 
@@ -335,6 +335,186 @@ the JSON response payload defined is as follows:
         "UserId": [integer]
     }
 ]
+```
+
+## Properties
+
+Properties are used to create all Parameters and Schemas in OpenAPI. You can use the simple types on their own, or you can combine multiple of them together to form complex objects.
+
+### Simple Types
+
+There are 4 simple property types: Integers, Numbers, Strings, and Booleans. Each of which can be created using the following functions:
+
+* [`New-PodeOAIntProperty`]
+* [`New-PodeOANumberProperty`]
+* [`New-PodeOAStringProperty`]
+* [`New-PodeOABoolProperty`]
+
+These properties can be created with a Name, and other flags such as Required and/or a Description:
+
+```powershell
+# simple integer
+New-PodeOAIntProperty -Name 'userId'
+
+# a float number with a max value of 100
+New-PodeOANumberProperty -Name 'ratio' -Format Float -Maximum 100
+
+# a string with a default value
+New-PodeOAStringProperty -Name 'type' -Default 'admin'
+
+# a boolean that's required
+New-PodeOABoolProperty -Name 'enabled' -Required
+```
+
+On their own, like above, the simple properties don't really do much. However, you can combine that together to make complex objects/arrays as defined below.
+
+### Arrays
+
+There isn't a dedicated function to create an array property, instead there is an `-Array` swicth on each of the propery functions - both Object and the above simple properties.
+
+If you supply the `-Array` switch to any of the above simple properties, this will define an array of that type - the `-Name` parameter can also be omitted if only a simple array if required.
+
+For example, the below will define an integer array:
+
+```powershell
+New-PodeOAIntProperty -Array
+```
+
+When used in a Response, this could return the following JSON example:
+
+```json
+[
+    0,
+    1,
+    2
+]
+```
+
+### Objects
+
+An object property is a combination of multiple other properties - both simple, array of more objects.
+
+There are two ways to define objects:
+
+1. Similar to arrays, you can use the `-Object` switch on the simple properties.
+2. You can use the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function to combine multiple properties.
+
+#### Simple
+
+If you use the `-Object` switch on the simple property function, this will automatically wrap the property as an object. The Name for this is required.
+
+For example, the below will define a simple `userId` integer object:
+
+```powershell
+New-PodeOAIntProperty -Name 'userId' -Object
+```
+
+In a response as JSON, this could look as follows:
+
+```json
+{
+    "userId": 0
+}
+```
+
+Furthermore, you can also supply both `-Array` and `-Object` switches:
+
+```powershell
+New-PodeOAIntProperty -Name 'userId' -Object -Array
+```
+
+This wil result in something like the following JSON:
+
+```json
+{
+    "userId": [ 0, 1, 2 ]
+}
+```
+
+#### Complex
+
+Unlike the `-Object` switch that simply converts a single property into an object, the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function can combine and convert multiple properties.
+
+For example, the following will create an object using an Integer, String, and a Boolean:
+
+```powershell
+New-PodeOAObjectProperty -Properties @(
+    (New-PodeOAIntProperty -Name 'userId'),
+    (New-PodeOAStringProperty -Name 'name'),
+    (New-PodeOABoolProperty -Name 'enabled')
+)
+```
+
+As JSON, this could look as follows:
+
+```json
+{
+    "userId": 0,
+    "name": "Gary Goodspeed",
+    "enabled": true
+}
+```
+
+You can also supply the `-Array` switch to the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function. This will result in an array of objects. For example, if we took the above:
+
+```powershell
+New-PodeOAObjectProperty -Array -Properties @(
+    (New-PodeOAIntProperty -Name 'userId'),
+    (New-PodeOAStringProperty -Name 'name'),
+    (New-PodeOABoolProperty -Name 'enabled')
+)
+```
+
+As JSON, this could look as follows:
+
+```json
+[
+    {
+        "userId": 0,
+        "name": "Gary Goodspeed",
+        "enabled": true
+    },
+    {
+        "userId": 1,
+        "name": "Kevin",
+        "enabled": false
+    }
+]
+```
+
+You can also combine objects into other objects:
+
+```powershell
+$usersArray = New-PodeOAObjectProperty -Name 'users' -Array -Properties @(
+    (New-PodeOAIntProperty -Name 'userId'),
+    (New-PodeOAStringProperty -Name 'name'),
+    (New-PodeOABoolProperty -Name 'enabled')
+)
+
+New-PodeOAObjectProperty -Properties @(
+    (New-PodeOAIntProperty -Name 'found'),
+    $usersArray
+)
+```
+
+As JSON, this could look as follows:
+
+```json
+{
+    "found": 2,
+    "users": [
+        {
+            "userId": 0,
+            "name": "Gary Goodspeed",
+            "enabled": true
+        },
+        {
+            "userId": 1,
+            "name": "Kevin",
+            "enabled": false
+        }
+    ]
+}
 ```
 
 ## Swagger and ReDoc
