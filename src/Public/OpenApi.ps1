@@ -1,3 +1,40 @@
+<#
+.SYNOPSIS
+Enables the OpenAPI default route in Pode.
+
+.DESCRIPTION
+Enables the OpenAPI default route in Pode, as well as setting up details like Title and API Version.
+
+.PARAMETER Path
+An optional custom route path to access the OpenAPI definition. (Default: /openapi)
+
+.PARAMETER Title
+The Title of the API.
+
+.PARAMETER Version
+The Version of the API. (Default: 0.0.0)
+
+.PARAMETER Description
+A Description of the API.
+
+.PARAMETER RouteFilter
+An optional route filter for routes that should be included in the definition. (Default: /*)
+
+.PARAMETER Middleware
+Like normal Routes, an array of Middleware that will be applied to the route.
+
+.PARAMETER RestrictRoutes
+If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
+
+.EXAMPLE
+Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
+
+.EXAMPLE
+Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*' -RestrictRoutes
+
+.EXAMPLE
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My API' -Version '1.0.0'
+#>
 function Enable-PodeOpenApi
 {
     [CmdletBinding()]
@@ -64,6 +101,31 @@ function Enable-PodeOpenApi
     }
 }
 
+<#
+.SYNOPSIS
+Gets the OpenAPI definition.
+
+.DESCRIPTION
+Gets the OpenAPI definition for custom use in routes, or other functions.
+
+.PARAMETER Title
+The Title of the API. (Default: the title supplied in Enable-PodeOpenApi)
+
+.PARAMETER Version
+The Version of the API. (Default: the version supplied in Enable-PodeOpenApi)
+
+.PARAMETER Description
+A Description of the API. (Default: the description supplied into Enable-PodeOpenApi)
+
+.PARAMETER RouteFilter
+An optional route filter for routes that should be included in the definition. (Default: /*)
+
+.PARAMETER RestrictRoutes
+If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
+
+.EXAMPLE
+$def = Get-PodeOpenApiDefinition -RouteFilter '/api/*'
+#>
 function Get-PodeOpenApiDefinition
 {
     [CmdletBinding()]
@@ -105,6 +167,46 @@ function Get-PodeOpenApiDefinition
         -RestrictRoutes:$RestrictRoutes)
 }
 
+<#
+.SYNOPSIS
+Adds a response definition to the supplied route.
+
+.DESCRIPTION
+Adds a response definition to the supplied route.
+
+.PARAMETER Route
+The route to add the response definition, usually from -PassThru on Add-PodeRoute.
+
+.PARAMETER StatusCode
+The HTTP StatusCode for the response.
+
+.PARAMETER ContentSchemas
+The content-types and schema the response returns (the schema is created using the Property functions).
+
+.PARAMETER HeaderSchemas
+The header name and schema the response returns (the schema is created using the Property functions).
+
+.PARAMETER Description
+A Description of the response. (Default: the HTTP StatusCode description)
+
+.PARAMETER Reference
+A Reference Name of an existing component response to use.
+
+.PARAMETER Default
+If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -Reference 'OKResponse'
+#>
 function Add-PodeOAResponse
 {
     [CmdletBinding(DefaultParameterSetName='Schema')]
@@ -199,6 +301,31 @@ function Add-PodeOAResponse
     }
 }
 
+<#
+.SYNOPSIS
+Adds a reusable component for responses.
+
+.DESCRIPTION
+Adds a reusable component for responses.
+
+.PARAMETER Name
+The reference Name of the response.
+
+.PARAMETER ContentSchemas
+The content-types and schema the response returns (the schema is created using the Property functions).
+
+.PARAMETER HeaderSchemas
+The header name and schema the response returns (the schema is created using the Property functions).
+
+.PARAMETER Description
+The Description of the response.
+
+.EXAMPLE
+Add-PodeOAComponentResponse -Name 'OKResponse' -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+
+.EXAMPLE
+Add-PodeOAComponentResponse -Name 'ErrorResponse' -ContentSchemas @{ 'application/json' = 'ErrorSchema' }
+#>
 function Add-PodeOAComponentResponse
 {
     [CmdletBinding()]
@@ -237,6 +364,25 @@ function Add-PodeOAComponentResponse
     }
 }
 
+<#
+.SYNOPSIS
+Sets the names of defined Authentication types as the security the supplied route uses.
+
+.DESCRIPTION
+Sets the names of defined Authentication types as the security the supplied route uses.
+
+.PARAMETER Route
+The route to set a security definition, usually from -PassThru on Add-PodeRoute.
+
+.PARAMETER Name
+The Name(s) of any defined Authentication types (from Add-PodeAuth).
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Set-PodeOAAuth -Name 'Validate'
+#>
 function Set-PodeOAAuth
 {
     [CmdletBinding()]
@@ -273,6 +419,19 @@ function Set-PodeOAAuth
     }
 }
 
+<#
+.SYNOPSIS
+Sets the names of defined Authentication types as global OpenAPI Security.
+
+.DESCRIPTION
+Sets the names of defined Authentication types as global OpenAPI Security.
+
+.PARAMETER Name
+The Name(s) of any defined Authentication types (from Add-PodeAuth).
+
+.EXAMPLE
+Set-PodeOAGlobalAuth -Name 'Validate'
+#>
 function Set-PodeOAGlobalAuth
 {
     [CmdletBinding()]
@@ -295,6 +454,28 @@ function Set-PodeOAGlobalAuth
     })
 }
 
+<#
+.SYNOPSIS
+Sets the definition of a request for a route.
+
+.DESCRIPTION
+Sets the definition of a request for a route.
+
+.PARAMETER Route
+The route to set a request definition, usually from -PassThru on Add-PodeRoute.
+
+.PARAMETER Parameters
+The Parameter definitions the request uses (from ConvertTo-PodeOAParameter).
+
+.PARAMETER RequestBody
+The Request Body definition the request uses (from New-PodeOARequestBody).
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'UserIdBody')
+#>
 function Set-PodeOARequest
 {
     [CmdletBinding()]
@@ -326,6 +507,34 @@ function Set-PodeOARequest
     }
 }
 
+<#
+.SYNOPSIS
+Creates a Request Body definition for routes.
+
+.DESCRIPTION
+Creates a Request Body definition for routes from the supplied content-types and schemas.
+
+.PARAMETER Reference
+A reference name from an existing component request body.
+
+.PARAMETER ContentSchemas
+The content-types and schema the request body accepts (the schema is created using the Property functions).
+
+.PARAMETER Description
+A Description of the request body.
+
+.PARAMETER Required
+If supplied, the request body will be flagged as required.
+
+.EXAMPLE
+New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+
+.EXAMPLE
+New-PodeOARequestBody -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
+
+.EXAMPLE
+New-PodeOARequestBody -Reference 'UserIdBody'
+#>
 function New-PodeOARequestBody
 {
     [CmdletBinding(DefaultParameterSetName='Schema')]
@@ -368,6 +577,22 @@ function New-PodeOARequestBody
     }
 }
 
+<#
+.SYNOPSIS
+Adds a reusable component for a request body.
+
+.DESCRIPTION
+Adds a reusable component for a request body.
+
+.PARAMETER Name
+The reference Name of the schema.
+
+.PARAMETER Schema
+The Schema definition (the schema is created using the Property functions).
+
+.EXAMPLE
+Add-PodeOAComponentSchema -Name 'UserIdSchema' -Schema (New-PodeOAIntProperty -Name 'userId' -Object)
+#>
 function Add-PodeOAComponentSchema
 {
     [CmdletBinding()]
@@ -384,6 +609,31 @@ function Add-PodeOAComponentSchema
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
 }
 
+<#
+.SYNOPSIS
+Adds a reusable component for a request body.
+
+.DESCRIPTION
+Adds a reusable component for a request body.
+
+.PARAMETER Name
+The reference Name of the request body.
+
+.PARAMETER ContentSchemas
+The content-types and schema the request body accepts (the schema is created using the Property functions).
+
+.PARAMETER Description
+A Description of the request body.
+
+.PARAMETER Required
+If supplied, the request body will be flagged as required.
+
+.EXAMPLE
+Add-PodeOAComponentRequestBody -Name 'UserIdBody' -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+
+.EXAMPLE
+Add-PodeOAComponentRequestBody -Name 'UserIdBody' -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
+#>
 function Add-PodeOAComponentRequestBody
 {
     [CmdletBinding()]
@@ -412,6 +662,22 @@ function Add-PodeOAComponentRequestBody
     }
 }
 
+<#
+.SYNOPSIS
+Adds a reusable component for a request parameter.
+
+.DESCRIPTION
+Adds a reusable component for a request parameter.
+
+.PARAMETER Name
+The reference Name of the parameter.
+
+.PARAMETER Parameter
+The Parameter to use for the component (from ConvertTo-PodeOAParameter)
+
+.EXAMPLE
+New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add-PodeOAComponentParameter -Name 'UserIdParam'
+#>
 function Add-PodeOAComponentParameter
 {
     [CmdletBinding()]
@@ -432,6 +698,49 @@ function Add-PodeOAComponentParameter
     $PodeContext.Server.OpenAPI.components.responses[$Name] = $Parameter
 }
 
+<#
+.SYNOPSIS
+Creates a new OpenAPI integer property.
+
+.DESCRIPTION
+Creates a new OpenAPI integer property, for Schemas or Parameters.
+
+.PARAMETER Name
+The Name of the property.
+
+.PARAMETER Format
+The inbuilt OpenAPI Format of the integer. (Default: Any)
+
+.PARAMETER Default
+The default value of the property. (Default: 0)
+
+.PARAMETER Minimum
+The minimum value of the integer. (Default: Int.Min)
+
+.PARAMETER Maximum
+The maximum value of the integer. (Default: Int.Max)
+
+.PARAMETER MultiplesOf
+The integer must be in multiples of the supplied value.
+
+.PARAMETER Description
+A Description of the property.
+
+.PARAMETER Required
+If supplied, the object will be treated as Required where supported.
+
+.PARAMETER Deprecated
+If supplied, the object will be treated as Deprecated where supported.
+
+.PARAMETER Array
+If supplied, the integer will be treated as an array of integers.
+
+.PARAMETER Object
+If supplied, the integer will be automatically wrapped in an object.
+
+.EXAMPLE
+New-PodeOANumberProperty -Name 'age' -Required
+#>
 function New-PodeOAIntProperty
 {
     [CmdletBinding()]
@@ -505,6 +814,49 @@ function New-PodeOAIntProperty
     return $param
 }
 
+<#
+.SYNOPSIS
+Creates a new OpenAPI number property.
+
+.DESCRIPTION
+Creates a new OpenAPI number property, for Schemas or Parameters.
+
+.PARAMETER Name
+The Name of the property.
+
+.PARAMETER Format
+The inbuilt OpenAPI Format of the number. (Default: Any)
+
+.PARAMETER Default
+The default value of the property. (Default: 0)
+
+.PARAMETER Minimum
+The minimum value of the number. (Default: Double.Min)
+
+.PARAMETER Maximum
+The maximum value of the number. (Default: Double.Max)
+
+.PARAMETER MultiplesOf
+The number must be in multiples of the supplied value.
+
+.PARAMETER Description
+A Description of the property.
+
+.PARAMETER Required
+If supplied, the object will be treated as Required where supported.
+
+.PARAMETER Deprecated
+If supplied, the object will be treated as Deprecated where supported.
+
+.PARAMETER Array
+If supplied, the number will be treated as an array of numbers.
+
+.PARAMETER Object
+If supplied, the number will be automatically wrapped in an object.
+
+.EXAMPLE
+New-PodeOANumberProperty -Name 'gravity' -Default 9.8
+#>
 function New-PodeOANumberProperty
 {
     [CmdletBinding()]
@@ -545,7 +897,10 @@ function New-PodeOANumberProperty
         $Deprecated,
 
         [switch]
-        $Array
+        $Array,
+
+        [switch]
+        $Object
     )
 
     $param = @{
@@ -575,6 +930,55 @@ function New-PodeOANumberProperty
     return $param
 }
 
+<#
+.SYNOPSIS
+Creates a new OpenAPI string property.
+
+.DESCRIPTION
+Creates a new OpenAPI string property, for Schemas or Parameters.
+
+.PARAMETER Name
+The Name of the property.
+
+.PARAMETER Format
+The inbuilt OpenAPI Format of the string. (Default: Any)
+
+.PARAMETER CustomFormat
+The name of a custom OpenAPI Format of the string. (Default: None)
+
+.PARAMETER Default
+The default value of the property. (Default: $null)
+
+.PARAMETER MinLength
+The minimum length of the string. (Default: Int.Min)
+
+.PARAMETER MaxLength
+The maximum length of the string. (Default: Int.Max)
+
+.PARAMETER Pattern
+A Regex pattern that the string must match.
+
+.PARAMETER Description
+A Description of the property.
+
+.PARAMETER Required
+If supplied, the object will be treated as Required where supported.
+
+.PARAMETER Deprecated
+If supplied, the object will be treated as Deprecated where supported.
+
+.PARAMETER Array
+If supplied, the string will be treated as an array of strings.
+
+.PARAMETER Object
+If supplied, the string will be automatically wrapped in an object.
+
+.EXAMPLE
+New-PodeOAStringProperty -Name 'userType' -Default 'admin'
+
+.EXAMPLE
+New-PodeOAStringProperty -Name 'password' -Format Password
+#>
 function New-PodeOAStringProperty
 {
     [CmdletBinding(DefaultParameterSetName='Inbuilt')]
@@ -619,7 +1023,10 @@ function New-PodeOAStringProperty
         $Deprecated,
 
         [switch]
-        $Array
+        $Array,
+
+        [switch]
+        $Object
     )
 
     $_format = $Format
@@ -651,6 +1058,37 @@ function New-PodeOAStringProperty
     return $param
 }
 
+<#
+.SYNOPSIS
+Creates a new OpenAPI boolean property.
+
+.DESCRIPTION
+Creates a new OpenAPI boolean property, for Schemas or Parameters.
+
+.PARAMETER Name
+The Name of the property.
+
+.PARAMETER Default
+The default value of the property. (Default: $false)
+
+.PARAMETER Description
+A Description of the property.
+
+.PARAMETER Required
+If supplied, the object will be treated as Required where supported.
+
+.PARAMETER Deprecated
+If supplied, the object will be treated as Deprecated where supported.
+
+.PARAMETER Array
+If supplied, the boolean will be treated as an array of booleans.
+
+.PARAMETER Object
+If supplied, the boolean will be automatically wrapped in an object.
+
+.EXAMPLE
+New-PodeOABoolProperty -Name 'enabled' -Required
+#>
 function New-PodeOABoolProperty
 {
     [CmdletBinding()]
@@ -674,7 +1112,10 @@ function New-PodeOABoolProperty
         $Deprecated,
 
         [switch]
-        $Array
+        $Array,
+
+        [switch]
+        $Object
     )
 
     $param = @{
@@ -691,6 +1132,34 @@ function New-PodeOABoolProperty
     return $param
 }
 
+<#
+.SYNOPSIS
+Creates a new OpenAPI object property from other properties.
+
+.DESCRIPTION
+Creates a new OpenAPI object property from other properties, for Schemas or Parameters.
+
+.PARAMETER Name
+The Name of the property.
+
+.PARAMETER Properties
+An array of other int/string/etc properties wrap up as an object.
+
+.PARAMETER Description
+A Description of the property.
+
+.PARAMETER Required
+If supplied, the object will be treated as Required where supported.
+
+.PARAMETER Deprecated
+If supplied, the object will be treated as Deprecated where supported.
+
+.PARAMETER Array
+If supplied, the object will be treated as an array of objects.
+
+.EXAMPLE
+New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
+#>
 function New-PodeOAObjectProperty
 {
     [CmdletBinding()]
@@ -731,6 +1200,28 @@ function New-PodeOAObjectProperty
     return $param
 }
 
+<#
+.SYNOPSIS
+Converts an OpenAPI property into a Request Parameter.
+
+.DESCRIPTION
+Converts an OpenAPI property (such as from New-PodeOAIntProperty) into a Request Parameter.
+
+.PARAMETER In
+Where in the Request can the parameter be found?
+
+.PARAMETER Property
+The Property that need converting (such as from New-PodeOAIntProperty).
+
+.PARAMETER Reference
+The name of an existing component parameter to be reused.
+
+.EXAMPLE
+New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query
+
+.EXAMPLE
+ConvertTo-PodeOAParameter -Reference 'UserIdParam'
+#>
 function ConvertTo-PodeOAParameter
 {
     [CmdletBinding(DefaultParameterSetName='Reference')]
@@ -787,6 +1278,34 @@ function ConvertTo-PodeOAParameter
     return $prop
 }
 
+<#
+.SYNOPSIS
+Sets metadate for the supplied route.
+
+.DESCRIPTION
+Sets metadate for the supplied route, such as Summary and Tags.
+
+.PARAMETER Route
+The route to update info, usually from -PassThru on Add-PodeRoute.
+
+.PARAMETER Summary
+A quick Summary of the route.
+
+.PARAMETER Description
+A longer Description of the route.
+
+.PARAMETER Tags
+An array of Tags for the route, mostly for grouping.
+
+.PARAMETER Deprecated
+If supplied, the route will be flagged as deprecated.
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Set-PodeOARouteInfo -Summary 'A quick summary' -Tags 'Admin'
+#>
 function Set-PodeOARouteInfo
 {
     [CmdletBinding()]
@@ -827,6 +1346,34 @@ function Set-PodeOARouteInfo
     }
 }
 
+<#
+.SYNOPSIS
+Adds a route that enables Swagger to be used.
+
+.DESCRIPTION
+Adds a route that enables Swagger to be used to view some OpenAPI definition.
+
+.PARAMETER Path
+The route Path where Swagger can be accessed. (Default: /swagger)
+
+.PARAMETER OpenApi
+The URL where the OpenAPI definition can be retrieved. (Default is the OpenAPI path from Enable-PodeOpenApi)
+
+.PARAMETER Middleware
+Like normal Routes, an array of Middleware that will be applied.
+
+.PARAMETER Title
+The title of the Swagger web page.
+
+.PARAMETER DarkMode
+If supplied, Swagger be be rendered using a dark theme.
+
+.EXAMPLE
+Enable-PodeSwagger
+
+.EXAMPLE
+Enable-PodeSwagger -Title 'Some Title' -OpenApi 'http://some-url/openapi'
+#>
 function Enable-PodeSwagger
 {
     [CmdletBinding()]
@@ -884,6 +1431,31 @@ function Enable-PodeSwagger
     }
 }
 
+<#
+.SYNOPSIS
+Adds a route that enables ReDoc to be used.
+
+.DESCRIPTION
+Adds a route that enables ReDoc to be used to view some OpenAPI definition.
+
+.PARAMETER Path
+The route Path where ReDoc can be accessed. (Default: /redoc)
+
+.PARAMETER OpenApi
+The URL where the OpenAPI definition can be retrieved. (Default is the OpenAPI path from Enable-PodeOpenApi)
+
+.PARAMETER Middleware
+Like normal Routes, an array of Middleware that will be applied.
+
+.PARAMETER Title
+The title of the ReDoc web page.
+
+.EXAMPLE
+Enable-PodeReDoc
+
+.EXAMPLE
+Enable-PodeReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
+#>
 function Enable-PodeReDoc
 {
     [CmdletBinding()]
