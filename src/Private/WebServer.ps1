@@ -106,6 +106,7 @@ function Start-PodeWebServer
                         Cookies = $request.Cookies
                         PendingCookies = @{}
                         Streamed = $true
+                        Timestamp = [datetime]::UtcNow
                     }
 
                     # set pode in server response header

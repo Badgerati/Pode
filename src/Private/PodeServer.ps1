@@ -154,6 +154,7 @@ function Invoke-PodeSocketHandler
             Data = $null
             Files = $null
             Streamed = $true
+            Timestamp = [datetime]::UtcNow
         }
 
         # set pode in server response header

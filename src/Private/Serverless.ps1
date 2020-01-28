@@ -44,6 +44,7 @@ function Start-PodeAzFuncServer
                 PendingCookies = @{}
                 Path = [string]::Empty
                 Streamed = $false
+                Timestamp = [datetime]::UtcNow
             }
 
             # set the path, using static content query parameter if passed
@@ -137,6 +138,7 @@ function Start-PodeAwsLambdaServer
                 Cookies = @{}
                 PendingCookies = @{}
                 Streamed = $false
+                Timestamp = [datetime]::UtcNow
             }
 
             # set pode in server response header
