@@ -937,6 +937,10 @@ function Remove-PodeNullKeysFromHashtable
             $Hashtable.Remove($key) | Out-Null
         }
 
+        if (($Hashtable[$key] -is [array]) -and ($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
+            $Hashtable.Remove($key) | Out-Null
+        }
+
         if ($Hashtable[$key] -is [hashtable]) {
             $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
         }

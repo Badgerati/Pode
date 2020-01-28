@@ -6,7 +6,8 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Name 'admin'
 
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
-    Enable-PodeSwagger -DarkMode
+    Enable-PodeOpenApiViewer -Type Swagger -DarkMode
+    Enable-PodeOpenApiViewer -Type ReDoc
 
 
     Add-PodeRoute -Method Get -Path "/api/resources" -EndpointName 'user' -ScriptBlock {

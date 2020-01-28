@@ -601,6 +601,9 @@ An optional name for the endpoint, that can be used with other functions.
 .PARAMETER RedirectTo
 The Name of another Endpoint to automatically generate a redirect route for all traffic.
 
+.PARAMETER Description
+A quick description of the Endpoint - normally used in OpenAPI.
+
 .PARAMETER Force
 Ignore Adminstrator checks for non-localhost endpoints.
 

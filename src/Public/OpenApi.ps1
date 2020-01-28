@@ -498,8 +498,13 @@ function Set-PodeOARequest
     )
 
     foreach ($r in @($Route)) {
-        $r.OpenApi.Parameters = @($Parameters)
-        $r.OpenApi.RequestBody = $RequestBody
+        if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
+            $r.OpenApi.Parameters = @($Parameters)
+        }
+
+        if ($null -ne $RequestBody) {
+            $r.OpenApi.RequestBody = $RequestBody
+        }
     }
 
     if ($PassThru) {
@@ -1348,44 +1353,51 @@ function Set-PodeOARouteInfo
 
 <#
 .SYNOPSIS
-Adds a route that enables Swagger to be used.
+Adds a route that enables a viewer to display OpenAPI docs, such as Swagger or ReDoc.
 
 .DESCRIPTION
-Adds a route that enables Swagger to be used to view some OpenAPI definition.
+Adds a route that enables a viewer to display OpenAPI docs, such as Swagger or ReDoc.
+
+.PARAMETER Type
+The Type of OpenAPI viewer to use.
 
 .PARAMETER Path
-The route Path where Swagger can be accessed. (Default: /swagger)
+The route Path where the docs can be accessed. (Default: "/$Type")
 
-.PARAMETER OpenApi
+.PARAMETER OpenApiUrl
 The URL where the OpenAPI definition can be retrieved. (Default is the OpenAPI path from Enable-PodeOpenApi)
 
 .PARAMETER Middleware
 Like normal Routes, an array of Middleware that will be applied.
 
 .PARAMETER Title
-The title of the Swagger web page.
+The title of the web page.
 
 .PARAMETER DarkMode
-If supplied, Swagger be be rendered using a dark theme.
+If supplied, the page will be rendered using a dark theme (this is not supported for all viewers).
 
 .EXAMPLE
-Enable-PodeSwagger
+Enable-PodeOpenApiViewer -Type Swagger -DarkMode
 
 .EXAMPLE
-Enable-PodeSwagger -Title 'Some Title' -OpenApi 'http://some-url/openapi'
+Enable-PodeOpenApiViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
 #>
-function Enable-PodeSwagger
+function Enable-PodeOpenApiViewer
 {
     [CmdletBinding()]
     param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Swagger', 'ReDoc')]
         [string]
-        $Path = '/swagger',
+        $Type,
 
         [Parameter()]
         [string]
-        $OpenApi,
+        $Path,
+
+        [Parameter()]
+        [string]
+        $OpenApiUrl,
 
         [Parameter()]
         [object[]]
@@ -1399,112 +1411,41 @@ function Enable-PodeSwagger
         $DarkMode
     )
 
-    # error if there's no OpenAPI path
-    $OpenApi = Protect-PodeValue -Value $OpenApi -Default $PodeContext.Server.OpenAPI.Path
-    if ([string]::IsNullOrWhiteSpace($OpenApi)) {
-        throw "No OpenAPI path supplied for Swagger to use"
+    # error if there's no OpenAPI URL
+    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI.Path
+    if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
+        throw "No OpenAPI URL supplied for $($Type)"
     }
 
     # fail if no title
     $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
-    $Title = Protect-PodeValue -Value $Title -Default 'Swagger'
+    $Title = Protect-PodeValue -Value $Title -Default $Type
     if ([string]::IsNullOrWhiteSpace($Title)) {
-        throw "No title supplied for Swagger page"
+        throw "No title supplied for $($Type) page"
+    }
+
+    # set a default path
+    $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())"
+    if ([string]::IsNullOrWhiteSpace($Title)) {
+        throw "No route path supplied for $($Type) page"
     }
 
     # setup meta info
     $meta = @{
+        Type = $Type.ToLowerInvariant()
         Title = $Title
-        OpenApi = $OpenApi
+        OpenApi = $OpenApiUrl
         DarkMode = $DarkMode
     }
 
-    # add the swagger route
+    # add the viewer route
     Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
         param($e, $meta)
         $podeRoot = Get-PodeModuleMiscPath
-        Write-PodeFileResponse -Path (Join-Path $podeRoot 'default-swagger.html.pode') -Data @{
+        Write-PodeFileResponse -Path (Join-Path $podeRoot "default-$($meta.Type).html.pode") -Data @{
             Title = $meta.Title
             OpenApi = $meta.OpenApi
             DarkMode = $meta.DarkMode
-        }
-    }
-}
-
-<#
-.SYNOPSIS
-Adds a route that enables ReDoc to be used.
-
-.DESCRIPTION
-Adds a route that enables ReDoc to be used to view some OpenAPI definition.
-
-.PARAMETER Path
-The route Path where ReDoc can be accessed. (Default: /redoc)
-
-.PARAMETER OpenApi
-The URL where the OpenAPI definition can be retrieved. (Default is the OpenAPI path from Enable-PodeOpenApi)
-
-.PARAMETER Middleware
-Like normal Routes, an array of Middleware that will be applied.
-
-.PARAMETER Title
-The title of the ReDoc web page.
-
-.EXAMPLE
-Enable-PodeReDoc
-
-.EXAMPLE
-Enable-PodeReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
-#>
-function Enable-PodeReDoc
-{
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Path = '/redoc',
-
-        [Parameter()]
-        [string]
-        $OpenApi,
-
-        [Parameter()]
-        [object[]]
-        $Middleware,
-
-        [Parameter()]
-        [string]
-        $Title
-    )
-
-    # error if there's no OpenAPI path
-    $OpenApi = Protect-PodeValue -Value $OpenApi -Default $PodeContext.Server.OpenAPI.Path
-    if ([string]::IsNullOrWhiteSpace($OpenApi)) {
-        throw "No OpenAPI path supplied for ReDoc to use"
-    }
-
-    # fail if no title
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
-    $Title = Protect-PodeValue -Value $Title -Default 'ReDoc'
-    if ([string]::IsNullOrWhiteSpace($Title)) {
-        throw "No title supplied for ReDoc page"
-    }
-
-    # setup meta info
-    $meta = @{
-        Title = $Title
-        OpenApi = $OpenApi
-        DarkMode = $DarkMode
-    }
-
-    # add the swagger route
-    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
-        param($e, $meta)
-        $podeRoot = Get-PodeModuleMiscPath
-        Write-PodeFileResponse -Path (Join-Path $podeRoot 'default-redoc.html.pode') -Data @{
-            Title = $meta.Title
-            OpenApi = $meta.OpenApi
         }
     }
 }

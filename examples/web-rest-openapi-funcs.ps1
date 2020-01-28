@@ -5,7 +5,8 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
-    Enable-PodeSwagger -DarkMode
+    Enable-PodeOpenApiViewer -Type Swagger -DarkMode
+    Enable-PodeOpenApiViewer -Type ReDoc
 
     #ConvertTo-PodeRoute -Path '/api' -Commands @('Get-ChildItem', 'New-Item')
     ConvertTo-PodeRoute -Path '/api' -Module Pester

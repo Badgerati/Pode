@@ -8,8 +8,8 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
-    Enable-PodeSwagger -DarkMode
-    Enable-PodeReDoc
+    Enable-PodeOpenApiViewer -Type Swagger -DarkMode
+    Enable-PodeOpenApiViewer -Type ReDoc
 
 
     New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {

@@ -523,14 +523,12 @@ If you're not using a custom OpenAPI viewer, then you can use one of the inbuilt
 
 For both you can customise the path to access the page on, but by default Swagger is at `/swagger` and ReDoc is at `/redoc`. If you've written your own custom OpenAPI definition then you can also set a custom path to fetch the definition.
 
-To enable Swagger you can use the [`Enable-PodeSwagger`](../../Functions/OpenApi/Enable-PodeSwagger) function:
+To enable either you can use the [`Enable-PodeOpenApiViewer`](../../Functions/OpenApi/Enable-PodeOpenApiViewer) function:
 
 ```powershell
-Enable-PodeSwagger -Path '/docs/swagger' -DarkMode
-```
+# for swagger at "/docs/swagger"
+Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger' -DarkMode
 
-And to enable ReDoc you can use the [`Enable-PodeReDoc`](../../Functions/OpenApi/Enable-PodeReDoc) function:
-
-```powershell
-Enable-PodeReDoc -Path '/docs/redoc' -OpenApi '/custom_openapi.yml'
+# or ReDoc at the default "/redoc"
+Enable-PodeOpenApiViewer -Type ReDoc
 ```
