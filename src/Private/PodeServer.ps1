@@ -23,26 +23,17 @@ function Start-PodeSocketServer
     # work out which endpoints to listen on
     $endpoints = @()
     @(Get-PodeEndpoints -Type Http) | ForEach-Object {
-        # get the protocol
-        $_protocol = (Resolve-PodeValue -Check $_.Ssl -TrueValue 'https' -FalseValue 'http')
-
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = (Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1)
         $_ip = (Get-PodeIPAddress $_ip)
 
-        # get the port
-        $_port = [int]($_.Port)
-        if ($_port -eq 0) {
-            $_port = (Resolve-PodeValue $_.Ssl -TrueValue 8443 -FalseValue 8080)
-        }
-
         # add endpoint to list
         $endpoints += @{
             Address = $_ip
-            Port = $_port
+            Port = $_.Port
             Certificate = $_.Certificate.Raw
-            HostName = "$($_protocol)://$($_.HostName):$($_port)/"
+            HostName = $_.Url
         }
     }
 

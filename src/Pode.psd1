@@ -175,7 +175,28 @@
         'Start-PodeStaticServer',
         'Show-PodeGui',
         'Add-PodeEndpoint',
-        'Pode'
+        'Pode',
+
+        # openapi
+        'Enable-PodeOpenApi',
+        'Get-PodeOpenApiDefinition',
+        'Add-PodeOAResponse',
+        'Add-PodeOAComponentResponse',
+        'Set-PodeOAAuth',
+        'Set-PodeOAGlobalAuth',
+        'Set-PodeOARequest',
+        'New-PodeOARequestBody',
+        'Add-PodeOAComponentSchema',
+        'Add-PodeOAComponentRequestBody',
+        'Add-PodeOAComponentParameter',
+        'New-PodeOAIntProperty',
+        'New-PodeOANumberProperty',
+        'New-PodeOAStringProperty',
+        'New-PodeOABoolProperty',
+        'New-PodeOAObjectProperty',
+        'ConvertTo-PodeOAParameter',
+        'Set-PodeOARouteInfo',
+        'Enable-PodeOpenApiViewer'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
@@ -187,7 +208,7 @@
                 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform', 'access-control',
                 'file-monitoring', 'multithreaded', 'rate-limiting', 'cron', 'schedule', 'middleware', 'session',
                 'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets')
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'redoc')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

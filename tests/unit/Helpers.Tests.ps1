@@ -1223,9 +1223,9 @@ Describe 'Get-PodeEndpointUrl' {
     It 'Returns default endpoint url' {
         $PodeContext = @{ Server = @{
             Endpoints = @(@{
-                Ssl = $true
                 Port = 6000
                 Hostname = 'thing.com'
+                Protocol = 'https'
             })
         } }
 
@@ -1234,9 +1234,9 @@ Describe 'Get-PodeEndpointUrl' {
 
     It 'Returns a passed endpoint url' {
         $endpoint = @{
-            Ssl = $false
             Port = 7000
             Hostname = 'stuff.com'
+            Protocol = 'http'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'http://stuff.com:7000'
@@ -1244,9 +1244,9 @@ Describe 'Get-PodeEndpointUrl' {
 
     It 'Returns a passed endpoint url, with default port for http' {
         $endpoint = @{
-            Ssl = $false
-            Port = 0
+            Port = 8080
             Hostname = 'stuff.com'
+            Protocol = 'http'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'http://stuff.com:8080'
@@ -1254,9 +1254,17 @@ Describe 'Get-PodeEndpointUrl' {
 
     It 'Returns a passed endpoint url, with default port for https' {
         $endpoint = @{
-            Ssl = $true
-            Port = 0
+            Port = 8443
             Hostname = 'stuff.com'
+            Protocol = 'https'
+        }
+
+        Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'https://stuff.com:8443'
+    }
+
+    It 'Returns a passed endpoint url, using raw url' {
+        $endpoint = @{
+            Url = 'https://stuff.com:8443'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should Be 'https://stuff.com:8443'
@@ -1397,5 +1405,50 @@ Describe 'Out-PodeHost' {
     It 'Writes a hashtable to the Host by pipeline' {
         @{ Name = 'Rick' } | Out-PodeHost
         Assert-MockCalled Out-Default -Scope It -Times 1
+    }
+}
+
+Describe 'Remove-PodeNullKeysFromHashtable' {
+    It 'Removes all null values keys' {
+        $ht = @{
+            Value1 = $null
+            Value2 = @{
+                Value3 = @()
+                Value4 = $null
+            }
+        }
+
+        $ht | Remove-PodeNullKeysFromHashtable
+
+        $ht.ContainsKey('Value1') | Should Be $false
+        $ht.ContainsKey('Value2') | Should Be $true
+        $ht.Value2.ContainsKey('Value3') | Should Be $true
+        $ht.Value2.ContainsKey('Value4') | Should Be $false
+    }
+}
+
+Describe 'Get-PodeDefaultPort' {
+    It 'Returns default port for http' {
+        Get-PodeDefaultPort -Protocol Http | Should Be 8080
+    }
+
+    It 'Returns default port for https' {
+        Get-PodeDefaultPort -Protocol Https | Should Be 8443
+    }
+
+    It 'Returns default port for smtp' {
+        Get-PodeDefaultPort -Protocol Smtp | Should Be 25
+    }
+
+    It 'Returns default port for tcp' {
+        Get-PodeDefaultPort -Protocol Tcp | Should Be 9001
+    }
+
+    It 'Returns default port for ws' {
+        Get-PodeDefaultPort -Protocol Ws | Should Be 9080
+    }
+
+    It 'Returns default port for wss' {
+        Get-PodeDefaultPort -Protocol Wss | Should Be 9443
     }
 }

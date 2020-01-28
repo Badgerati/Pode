@@ -31,7 +31,7 @@ function Set-PodeResponseAttachment
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Path,
 
@@ -146,7 +146,7 @@ function Write-PodeTextResponse
 {
     [CmdletBinding(DefaultParameterSetName='String')]
     param (
-        [Parameter(ParameterSetName='String')]
+        [Parameter(ParameterSetName='String', ValueFromPipeline=$true)]
         [string]
         $Value,
 
@@ -294,7 +294,7 @@ function Write-PodeFileResponse
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [ValidateNotNull()]
         [string]
         $Path,
@@ -384,7 +384,7 @@ function Write-PodeCsvResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value')]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -457,7 +457,7 @@ function Write-PodeHtmlResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value')]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -520,7 +520,7 @@ function Write-PodeMarkdownResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value')]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -591,7 +591,7 @@ function Write-PodeJsonResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value')]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -662,7 +662,7 @@ function Write-PodeXmlResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value')]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -731,7 +731,7 @@ function Write-PodeViewResponse
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Path,
 
@@ -987,7 +987,7 @@ function Write-PodeTcpClient
 {
     [CmdletBinding()]
     param (
-        [Parameter()]
+        [Parameter(ValueFromPipeline=$true)]
         [string]
         $Message,
 
@@ -1182,7 +1182,7 @@ function Use-PodePartialView
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Path,
 

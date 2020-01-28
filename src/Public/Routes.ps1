@@ -38,6 +38,9 @@ A literal, or relative, path to a file containing a ScriptBlock for the Route's 
 .PARAMETER ArgumentList
 An array of arguments to supply to the Route's ScriptBlock.
 
+.PARAMETER PassThru
+If supplied, the route created will be returned so it can be passed through a pipe.
+
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
@@ -101,7 +104,10 @@ function Add-PodeRoute
 
         [Parameter()]
         [object[]]
-        $ArgumentList
+        $ArgumentList,
+
+        [switch]
+        $PassThru
     )
 
     # split route on '?' for query
@@ -112,6 +118,7 @@ function Add-PodeRoute
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path
+    $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
     $Path = Update-PodeRoutePlaceholders -Path $Path
 
     # get endpoints from name, or use single passed endpoint/protocol
@@ -182,18 +189,36 @@ function Add-PodeRoute
         }
     }
 
-    # add the route
+    # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
-    foreach ($_endpoint in $endpoints) {
-        $PodeContext.Server.Routes[$Method][$Path] += @(@{
+    $newRoutes = @(foreach ($_endpoint in $endpoints) {
+        @{
             Logic = $ScriptBlock
             Middleware = $Middleware
             Protocol = $_endpoint.Protocol
             Endpoint = $_endpoint.Address.Trim()
+            EndpointName = @($EndpointName)
             ContentType = $ContentType
             ErrorType = $ErrorContentType
             Arguments = $ArgumentList
-        })
+            OpenApi = @{
+                Path = $OpenApiPath
+                Responses = @{
+                    '200' = @{ description = 'OK' }
+                    'default' = @{ description = 'Internal server error' }
+                }
+                Parameters = @()
+                RequestBody = @{}
+                Authentication = @()
+            }
+        }
+    })
+
+    $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
+
+    # return the routes?
+    if ($PassThru) {
+        return $newRoutes
     }
 }
 
@@ -525,6 +550,9 @@ Like normal Routes, an array of Middleware that will be applied to all generated
 .PARAMETER NoVerb
 If supplied, the Command's Verb will not be included in the Route's path.
 
+.PARAMETER NoOpenApi
+If supplied, no OpenAPI definitions will be generated for the routes created.
+
 .EXAMPLE
 ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware (Get-PodeAuthMiddleware -Name 'auth-name' -Sessionless)
 
@@ -560,7 +588,10 @@ function ConvertTo-PodeRoute
         $Middleware,
 
         [switch]
-        $NoVerb
+        $NoVerb,
+
+        [switch]
+        $NoOpenApi
     )
 
     # if a module was supplied, import it - then validate the commands
@@ -568,7 +599,7 @@ function ConvertTo-PodeRoute
         Import-PodeModule -Name $Module -Now
 
         Write-Verbose "Getting exported commands from module"
-        $ModuleCommands = (Get-Module -Name $Module).ExportedCommands.Keys
+        $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys
 
         # if commands were supplied validate them - otherwise use all exported ones
         if (Test-IsEmpty $Commands) {
@@ -624,7 +655,7 @@ function ConvertTo-PodeRoute
         $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
 
         # create the route
-        Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -ArgumentList $cmd -ScriptBlock {
+        $route = (Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -ArgumentList $cmd -ScriptBlock {
             param($e, $cmd)
 
             # either get params from the QueryString or Payload
@@ -642,6 +673,34 @@ function ConvertTo-PodeRoute
             if (!(Test-IsEmpty $result)) {
                 Write-PodeJsonResponse -Value $result -Depth 1
             }
+        } -PassThru)
+
+        # set the openapi metadata of the function, unless told to skip
+        if ($NoOpenApi) {
+            continue
+        }
+
+        $help = Get-Help -Name $cmd
+        $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
+
+        # set the routes parameters (get = query, everything else = payload)
+        $params = (Get-Command -Name $cmd).Parameters
+        if (($null -eq $params) -or ($params.Count -eq 0)) {
+            continue
+        }
+
+        $props = @(foreach ($key in $params.Keys) {
+            $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
+        })
+
+        if ($_method -ieq 'get') {
+            $route | Set-PodeOARequest -Parameters @(foreach ($prop in $props) { $prop | ConvertTo-PodeOAParameter -In Query })
+        }
+
+        else {
+            $route | Set-PodeOARequest -RequestBody (
+                New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAObjectProperty -Array -Properties $props) }
+            )
         }
     }
 }

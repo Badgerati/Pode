@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>$($data.Title)</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css">
+        <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+        <script type="text/javascript">
+            window.onload = function() {
+                SwaggerUIBundle({
+                    deepLinking: true,
+                    dom_id: '#swagger-ui',
+                    showExtensions: true,
+                    showCommonExtensions: true,
+                    url: '$($data.OpenApi)'
+                });
+            };
+        </script>
+
+        $(if ($data.DarkMode) {
+            "<style>
+                .swagger-ui .info .title,
+                .swagger-ui a.nostyle,
+                .swagger-ui .parameter__name,
+                .swagger-ui .parameter__type,
+                .swagger-ui .parameter__deprecated,
+                .swagger-ui .parameter__in,
+                .swagger-ui table thead tr th,
+                .swagger-ui .response-col_status,
+                .swagger-ui table thead tr td,
+                .swagger-ui .opblock .opblock-section-header h4,
+                .swagger-ui label,
+                .swagger-ui .tab li,
+                .swagger-ui .opblock .opblock-section-header label,
+                .swagger-ui .opblock .opblock-summary-path span,
+                .swagger-ui .opblock-tag span,
+                .swagger-ui .response-col_links,
+                .swagger-ui .response-col_links i,
+                .swagger-ui .btn
+                {
+                    color: #CCCCCC !important;
+                }
+
+                .swagger-ui svg.arrow,
+                .swagger-ui button.unlocked
+                {
+                    fill: #CCCCCC;
+                    opacity: 1 !important;
+                }
+
+                .swagger-ui .scheme-container
+                {
+                    box-shadow: none;
+                    border-bottom: 1px solid #CCCCCC;
+                }
+
+                .swagger-ui .opblock .opblock-summary-description,
+                .swagger-ui .opblock-description-wrapper p,
+                .swagger-ui h4,
+                .swagger-ui h5
+                {
+                    color: #BBBBBB !important;
+                }
+
+                body,
+                .swagger-ui .info .title,
+                .swagger-ui .scheme-container,
+                .swagger-ui select
+                {
+                    background-color: #222;
+                    color: #CCC;
+                }
+
+                .swagger-ui .opblock .opblock-section-header
+                {
+                    background-color: transparent;
+                }
+
+                .swagger-ui textarea,
+                .swagger-ui input[type=text]
+                {
+                    background-color: #41444e;
+                    color: #CCC;
+                }
+
+                .swagger-ui .topbar
+                {
+                    background-color: #000;
+                }
+            </style>"
+        })
+    </head>
+    <body>
+        <div id="swagger-ui"></div>
+    </body>
+</html>

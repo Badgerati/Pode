@@ -707,17 +707,17 @@ Describe 'ConvertTo-PodeRoute' {
     }
 
     It 'Calls Add-PodeRoute twice for commands' {
-        ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Invoke-Expression')
+        ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Invoke-Expression') -NoOpenApi
         Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
     }
 
     It 'Calls Add-PodeRoute twice for module commands' {
-        ConvertTo-PodeRoute -Module Example
+        ConvertTo-PodeRoute -Module Example -NoOpenApi
         Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
     }
 
     It 'Calls Add-PodeRoute once for module filtered commands' {
-        ConvertTo-PodeRoute -Module Example -Commands 'Some-ModuleCommand1'
+        ConvertTo-PodeRoute -Module Example -Commands 'Some-ModuleCommand1' -NoOpenApi
         Assert-MockCalled Add-PodeRoute -Times 1 -Scope It
     }
 }
