@@ -40,7 +40,7 @@ Start-PodeServer {
 
     Add-PodeRoute -Method Post -Path '/api/users' -ScriptBlock {
         param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
+        Write-PodeJsonResponse -Value @{ Name = $e.Data.Name; UserId = $e.Data.UserId }
     } -PassThru |
         Set-PodeOARequest -RequestBody (
             New-PodeOARequestBody -Required -ContentSchemas @{
