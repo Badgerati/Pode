@@ -196,7 +196,11 @@
         'New-PodeOAObjectProperty',
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
-        'Enable-PodeOpenApiViewer'
+        'Enable-PodeOpenApiViewer',
+
+        # Metrics
+        'Get-PodeServerUptime',
+        'Get-PodeServerRestartCount'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
