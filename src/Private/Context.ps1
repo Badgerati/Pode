@@ -55,7 +55,8 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru
+        Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru
 
     # set the server name, logic and root
     $ctx.Server.Name = $Name
@@ -206,6 +207,15 @@ function New-PodeContext
         security = @()
     }
 
+    # server metrics
+    $ctx.Metrics = @{
+        Server = @{
+            InitialLoadTime = [datetime]::UtcNow
+            StartTime = [datetime]::UtcNow
+            RestartCount = 0
+        }
+    }
+
     # authnetication methods
     $ctx.Server.Authentications = @{}
 
@@ -321,6 +331,7 @@ function New-PodeStateContext
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
+        Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $Context.Lockable -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
