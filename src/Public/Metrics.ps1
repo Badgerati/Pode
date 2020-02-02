@@ -24,7 +24,7 @@ function Get-PodeServerUptime
 
     $time = $PodeContext.Metrics.Server.StartTime
     if ($Total) {
-        $time = $PodeContext.Metrics.Server.IntialLoadTime
+        $time = $PodeContext.Metrics.Server.InitialLoadTime
     }
 
     return [long]([datetime]::UtcNow - $time).TotalMilliseconds

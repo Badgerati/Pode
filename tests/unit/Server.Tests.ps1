@@ -2,7 +2,10 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
 Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
-$PodeContext = @{ 'Server' = $null; }
+$PodeContext = @{
+    Server = $null
+    Metrics = @{ Server = @{ StartTime = [datetime]::UtcNow } }
+}
 
 Describe 'Start-PodeInternalServer' {
     Mock Add-PodePSInbuiltDrives { }
@@ -21,7 +24,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Start-PodeServiceServer { }
 
     It 'Calls one-off script logic' {
-        $PodeContext.Server = @{ 'Type' = ([string]::Empty); 'Logic' = {} }
+        $PodeContext.Server = @{ Type = ([string]::Empty); Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -35,7 +38,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls smtp server logic' {
-        $PodeContext.Server = @{ 'Type' = 'SMTP'; 'Logic' = {} }
+        $PodeContext.Server = @{ Type = 'SMTP'; Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -49,7 +52,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls tcp server logic' {
-        $PodeContext.Server = @{ 'Type' = 'TCP'; 'Logic' = {} }
+        $PodeContext.Server = @{ Type = 'TCP'; Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -63,7 +66,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls http web server logic' {
-        $PodeContext.Server = @{ 'Type' = 'HTTP'; 'Logic' = {} }
+        $PodeContext.Server = @{ Type = 'HTTP'; Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -77,7 +80,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls https web server logic' {
-        $PodeContext.Server = @{ 'Type' = 'HTTPS'; 'Logic' = {} }
+        $PodeContext.Server = @{ Type = 'HTTPS'; Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -146,6 +149,11 @@ Describe 'Restart-PodeInternalServer' {
                 OpenAPI = @{}
                 BodyParsers = @{}
             };
+            Metrics = @{
+                Server = @{
+                    RestartCount = 0
+                }
+            }
             Timers = @{ 'key' = 'value' }
             Schedules = @{ 'key' = 'value' };
         }
@@ -168,6 +176,8 @@ Describe 'Restart-PodeInternalServer' {
         $PodeContext.Server.ViewEngine.Extension | Should Be 'html'
         $PodeContext.Server.ViewEngine.Script | Should Be $null
         $PodeContext.Server.ViewEngine.IsDynamic | Should Be $false
+
+        $PodeContext.Metrics.Server.RestartCount | Should Be 1
     }
 
     It 'Catches exception and throws it' {

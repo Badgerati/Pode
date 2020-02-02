@@ -210,7 +210,7 @@ function New-PodeContext
     # server metrics
     $ctx.Metrics = @{
         Server = @{
-            IntialLoadTime = [datetime]::UtcNow
+            InitialLoadTime = [datetime]::UtcNow
             StartTime = [datetime]::UtcNow
             RestartCount = 0
         }
