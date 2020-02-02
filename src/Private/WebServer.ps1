@@ -20,32 +20,23 @@ function Start-PodeWebServer
     # work out which endpoints to listen on
     $endpoints = @()
     @(Get-PodeEndpoints -Type Http) | ForEach-Object {
-        # get the protocol
-        $_protocol = (Resolve-PodeValue -Check $_.Ssl -TrueValue 'https' -FalseValue 'http')
-
         # get the ip address
         $_ip = "$($_.Address)"
         if ($_ip -ieq '0.0.0.0') {
             $_ip = '*'
         }
 
-        # get the port
-        $_port = [int]($_.Port)
-        if ($_port -eq 0) {
-            $_port = (Resolve-PodeValue $_.Ssl -TrueValue 8443 -FalseValue 8080)
-        }
-
         # if this endpoint is https, generate a self-signed cert or bind an existing one
         if ($_.Ssl) {
             $addr = (Resolve-PodeValue -Check $_.IsIPAddress -TrueValue $_.Address -FalseValue $_.HostName)
             $selfSigned = $_.Certificate.SelfSigned
-            Set-PodeCertificate -Address $addr -Port $_port -Certificate $_.Certificate.Name -Thumbprint $_.Certificate.Thumbprint -SelfSigned:$selfSigned
+            Set-PodeCertificate -Address $addr -Port $_.Port -Certificate $_.Certificate.Name -Thumbprint $_.Certificate.Thumbprint -SelfSigned:$selfSigned
         }
 
         # add endpoint to list
         $endpoints += @{
-            Prefix = "$($_protocol)://$($_ip):$($_port)/"
-            HostName = "$($_protocol)://$($_.HostName):$($_port)/"
+            Prefix = "$($_.Protocol)://$($_ip):$($_.Port)/"
+            HostName = $_.Url
         }
     }
 
@@ -115,6 +106,7 @@ function Start-PodeWebServer
                         Cookies = $request.Cookies
                         PendingCookies = @{}
                         Streamed = $true
+                        Timestamp = [datetime]::UtcNow
                     }
 
                     # set pode in server response header

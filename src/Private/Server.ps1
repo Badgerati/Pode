@@ -86,6 +86,9 @@ function Start-PodeInternalServer
             $endpoints += (Start-PodeSignalServer)
         }
 
+        # set the start time of the server (start and after restart)
+        $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
+
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
             Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.Web) thread(s)]:" -ForegroundColor Yellow
@@ -138,6 +141,9 @@ function Restart-PodeInternalServer
         # clear endpoints
         $PodeContext.Server.Endpoints = @()
 
+        # clear openapi
+        $PodeContext.Server.OpenAPI.Clear()
+
         # clear the sockets
         $PodeContext.Server.Sockets.Listeners = @()
         $PodeContext.Server.Sockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
@@ -177,6 +183,7 @@ function Restart-PodeInternalServer
         Write-Host " Done" -ForegroundColor Green
 
         # restart the server
+        $PodeContext.Metrics.Server.RestartCount++
         Start-PodeInternalServer
     }
     catch {

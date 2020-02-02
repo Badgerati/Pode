@@ -37,14 +37,18 @@ function Start-PodeAzFuncServer
                 Method = $request.Method.ToLowerInvariant()
                 Query = $request.Query
                 Protocol = ($request.Url -split '://')[0]
-                Endpoint = ((Get-PodeHeader -Name 'host') -split ':')[0]
-                ContentType = (Get-PodeHeader -Name 'content-type')
+                Endpoint = $null
+                ContentType = $null
                 ErrorType = $null
                 Cookies = @{}
                 PendingCookies = @{}
                 Path = [string]::Empty
                 Streamed = $false
+                Timestamp = [datetime]::UtcNow
             }
+
+            $WebEvent.Endpoint = ((Get-PodeHeader -Name 'host') -split ':')[0]
+            $WebEvent.ContentType = (Get-PodeHeader -Name 'content-type')
 
             # set the path, using static content query parameter if passed
             if (![string]::IsNullOrWhiteSpace($request.Query['static-file'])) {
@@ -130,14 +134,19 @@ function Start-PodeAwsLambdaServer
                 Path = $request.path
                 Method = $request.httpMethod.ToLowerInvariant()
                 Query = $request.queryStringParameters
-                Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
-                Endpoint = ((Get-PodeHeader -Name 'Host') -split ':')[0]
-                ContentType = (Get-PodeHeader -Name 'Content-Type')
+                Protocol = $null
+                Endpoint = $null
+                ContentType = $null
                 ErrorType = $null
                 Cookies = @{}
                 PendingCookies = @{}
                 Streamed = $false
+                Timestamp = [datetime]::UtcNow
             }
+
+            $WebEvent.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
+            $WebEvent.Endpoint = ((Get-PodeHeader -Name 'Host') -split ':')[0]
+            $WebEvent.ContentType = (Get-PodeHeader -Name 'Content-Type')
 
             # set pode in server response header
             Set-PodeServerHeader -Type 'Lambda'

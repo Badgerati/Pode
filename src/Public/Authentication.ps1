@@ -38,6 +38,9 @@ The Name of an Authentication type - such as Basic or NTLM.
 .PARAMETER Realm
 The name of scope of the protected area.
 
+.PARAMETER Scheme
+The scheme type for custom Authentication types. Default is HTTP.
+
 .EXAMPLE
 $basic_auth = New-PodeAuthType -Basic
 
@@ -101,7 +104,12 @@ function New-PodeAuthType
 
         [Parameter()]
         [string]
-        $Realm
+        $Realm,
+
+        [Parameter(ParameterSetName='Custom')]
+        [ValidateSet('ApiKey', 'Http', 'OAuth2', 'OpenIdConnect')]
+        [string]
+        $Scheme = 'Http'
     )
 
     # configure the auth type
@@ -111,6 +119,7 @@ function New-PodeAuthType
                 Name = (Protect-PodeValue -Value $Name -Default 'Basic')
                 Realm = $Realm
                 ScriptBlock = (Get-PodeAuthBasicType)
+                Scheme = 'http'
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                     Encoding = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
@@ -123,6 +132,7 @@ function New-PodeAuthType
                 Name = (Protect-PodeValue -Value $Name -Default 'Form')
                 Realm = $Realm
                 ScriptBlock = (Get-PodeAuthFormType)
+                Scheme = 'http'
                 Arguments = @{
                     Fields = @{
                         Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
@@ -136,6 +146,7 @@ function New-PodeAuthType
             return @{
                 Name = $Name
                 Realm = $Realm
+                Scheme = $Scheme.ToLowerInvariant()
                 ScriptBlock = $ScriptBlock
                 Arguments = $ArgumentList
             }

@@ -355,8 +355,8 @@ function Get-PodeEndpointInfo
 
     # return the info
     return @{
-        'Host' = $_host;
-        'Port' = (Resolve-PodeValue -Check ($AnyPortOnZero -and $_port -eq 0) -TrueValue '*' -FalseValue $_port);
+        Host = $_host
+        Port = (Resolve-PodeValue -Check ($AnyPortOnZero -and ($_port -eq 0)) -TrueValue '*' -FalseValue $_port)
     }
 }
 
@@ -913,7 +913,7 @@ function Join-PodeServerRoot
 function Remove-PodeEmptyItemsFromArray
 {
     param (
-        [Parameter()]
+        [Parameter(ValueFromPipeline=$true)]
         $Array
     )
 
@@ -922,6 +922,29 @@ function Remove-PodeEmptyItemsFromArray
     }
 
     return @(@($Array -ne ([string]::Empty)) -ne $null)
+}
+
+function Remove-PodeNullKeysFromHashtable
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $Hashtable
+    )
+
+    foreach ($key in ($Hashtable.Clone()).Keys) {
+        if ($null -eq $Hashtable[$key]) {
+            $Hashtable.Remove($key) | Out-Null
+        }
+
+        if (($Hashtable[$key] -is [array]) -and ($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
+            $Hashtable.Remove($key) | Out-Null
+        }
+
+        if ($Hashtable[$key] -is [hashtable]) {
+            $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
+        }
+    }
 }
 
 function Join-PodePaths
@@ -1517,6 +1540,11 @@ function Get-PodeModuleRootPath
     return (Split-Path -Parent -Path $PodeContext.Server.PodeModulePath)
 }
 
+function Get-PodeModuleMiscPath
+{
+    return (Join-Path (Get-PodeModuleRootPath) 'Misc')
+}
+
 function Get-PodeUrl
 {
     return "$($WebEvent.Protocol)://$($WebEvent.Endpoint)$($WebEvent.Path)"
@@ -1619,7 +1647,7 @@ function Get-PodeErrorPage
 
     # if there's no custom page found, attempt to find an inbuilt page
     if ([string]::IsNullOrWhiteSpace($path)) {
-        $podeRoot = Join-Path (Get-PodeModuleRootPath) 'Misc'
+        $podeRoot = Get-PodeModuleMiscPath
         $path = Find-PodeFileForContentType -Path $podeRoot -Name 'default-error-page' -ContentType $ContentType -Engine 'pode'
     }
 
@@ -1883,16 +1911,31 @@ function Get-PodeEndpointUrl
         $Endpoint = $PodeContext.Server.Endpoints[0]
     }
 
-    # work out the protocol
-    $protocol = (Resolve-PodeValue -Check $Endpoint.Ssl -TrueValue 'https' -FalseValue 'http')
-
-    # grab the port number
-    $port = $Endpoint.Port
-    if ($port -eq 0) {
-        $port = (Resolve-PodeValue -Check $Endpoint.Ssl -TrueValue 8443 -FalseValue 8080)
+    $url = $Endpoint.Url
+    if ([string]::IsNullOrWhiteSpace($url)) {
+        $url = "$($Endpoint.Protocol)://$($Endpoint.HostName):$($Endpoint.Port)"
     }
 
-    return "$($protocol)://$($Endpoint.HostName):$($port)"
+    return $url
+}
+
+function Get-PodeDefaultPort
+{
+    param(
+        [Parameter()]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [string]
+        $Protocol
+    )
+
+    return (@{
+        Http    = 8080
+        Https   = 8443
+        Smtp    = 25
+        Tcp     = 9001
+        Ws      = 9080
+        Wss     = 9443
+    })[$Protocol.ToLowerInvariant()]
 }
 
 function Set-PodeServerHeader

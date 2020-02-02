@@ -1,5 +1,23 @@
 # Release Notes
 
+## v1.5.0
+
+```plain
+### Features
+* #218: Adds OpenAPI with Swagger and ReDoc support
+
+### Enhancements
+* #458: Adds a Timestamp to the event object passed to Routes/Middleware
+* #459: Ability to get the Uptime and Restart Count of the server
+
+### Bugs
+* #461: Fix the parsing of payloads in Azure Functions and AWS Lambdas
+* #465: Format fix in the OpenAPI examples (thanks @haidouks!)
+
+### Packaging
+* #470: Bumps the version of the MkDocs Material theme to 4.6.0
+```
+
 ## v1.4.0
 
 ```plain
