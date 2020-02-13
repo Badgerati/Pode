@@ -41,6 +41,9 @@ The name of scope of the protected area.
 .PARAMETER Scheme
 The scheme type for custom Authentication types. Default is HTTP.
 
+.PARAMETER Digest
+If supplied, will use the inbuilt Digest Authentication credentials retriever.
+
 .EXAMPLE
 $basic_auth = New-PodeAuthType -Basic
 
@@ -109,7 +112,15 @@ function New-PodeAuthType
         [Parameter(ParameterSetName='Custom')]
         [ValidateSet('ApiKey', 'Http', 'OAuth2', 'OpenIdConnect')]
         [string]
-        $Scheme = 'Http'
+        $Scheme = 'Http',
+
+        [Parameter(ParameterSetName='Custom')]
+        [scriptblock]
+        $PostValidator,
+
+        [Parameter(ParameterSetName='Digest')]
+        [switch]
+        $Digest
     )
 
     # configure the auth type
@@ -119,6 +130,7 @@ function New-PodeAuthType
                 Name = (Protect-PodeValue -Value $Name -Default 'Basic')
                 Realm = $Realm
                 ScriptBlock = (Get-PodeAuthBasicType)
+                PostValidator = $null
                 Scheme = 'http'
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
@@ -127,11 +139,23 @@ function New-PodeAuthType
             }
         }
 
+        'digest' {
+            return @{
+                Name = (Protect-PodeValue -Value $Name -Default 'Digest')
+                Realm = $Realm
+                ScriptBlock = (Get-PodeAuthDigestType)
+                PostValidator = (Get-PodeAuthDigestPostValidator)
+                Scheme = 'http'
+                Arguments = @{}
+            }
+        }
+
         'form' {
             return @{
                 Name = (Protect-PodeValue -Value $Name -Default 'Form')
                 Realm = $Realm
                 ScriptBlock = (Get-PodeAuthFormType)
+                PostValidator = $null
                 Scheme = 'http'
                 Arguments = @{
                     Fields = @{
@@ -148,6 +172,7 @@ function New-PodeAuthType
                 Realm = $Realm
                 Scheme = $Scheme.ToLowerInvariant()
                 ScriptBlock = $ScriptBlock
+                PostValidator = $PostValidator
                 Arguments = $ArgumentList
             }
         }

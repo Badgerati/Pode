@@ -78,17 +78,28 @@ function New-PodeGuid
         $Length = 16,
 
         [switch]
-        $Secure
+        $Secure,
+
+        [switch]
+        $NoDashes
     )
 
     # generate a cryptographically secure guid
     if ($Secure) {
         $bytes = [byte[]](Get-PodeRandomBytes -Length $Length)
-        return ([guid]::new($bytes)).ToString()
+        $guid = ([guid]::new($bytes)).ToString()
     }
 
     # return a normal guid
-    return ([guid]::NewGuid()).ToString()
+    else {
+        $guid = ([guid]::NewGuid()).ToString()
+    }
+
+    if ($NoDashes) {
+        $guid = ($guid -ireplace '-', '')
+    }
+
+    return $guid
 }
 
 function Invoke-PodeValueSign

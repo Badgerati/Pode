@@ -52,6 +52,106 @@ function Get-PodeAuthBasicType
     }
 }
 
+function Get-PodeAuthDigestType
+{
+    return {
+        param($e, $options)
+
+        # get the auth header - send challenge if missing
+        $header = (Get-PodeHeader -Name 'Authorization')
+        if ($null -eq $header) {
+            return @{
+                Message = 'No Authorization header found'
+                Challenge = (New-PodeAuthDigestChallenge)
+                Code = 401
+            }
+        }
+
+        # if auth header isn't digest send challenge
+        $atoms = $header -isplit '\s+'
+        if ($atoms.Length -lt 2) {
+            return @{
+                Message = 'Invalid Authorization header'
+                Code = 400
+            }
+        }
+
+        if ($atoms[0] -ine 'Digest') {
+            return @{
+                Message = 'Authorization header is not Digest'
+                Challenge = (New-PodeAuthDigestChallenge)
+                Code = 401
+            }
+        }
+
+        # parse the other atoms of the header (after the scheme), return 400 if none
+        $obj = ConvertFrom-PodeAuthDigestHeader -Parts ($atoms[1..$($atoms.Length - 1)])
+        if ($obj.Count -eq 0) {
+            return @{
+                Message = 'Invalid Authorization header'
+                Code = 400
+            }
+        }
+
+        # if no username then 401 and challenge
+        if ([string]::IsNullOrWhiteSpace($obj.username)) {
+            return @{
+                Message = 'Authorization header is missing username'
+                Challenge = (New-PodeAuthDigestChallenge)
+                Code = 401
+            }
+        }
+
+        #TODO: return 400 if domain doesnt match request domain
+        # if ($e.Url -ine $obj.uri) {
+        #     return @{
+        #         Message = 'Invalid Authorization header'
+        #         Code = 400
+        #     }
+        # }
+
+        # return data for calling validator
+        return @($username, $obj)
+    }
+}
+
+function Get-PodeAuthDigestPostValidator
+{
+    return {
+        param($e, $user, $obj)
+    }
+}
+
+function ConvertFrom-PodeAuthDigestHeader
+{
+    param(
+        [Parameter()]
+        [string[]]
+        $Parts
+    )
+
+    if (($null -eq $Parts) -or ($Parts.Length -eq 0)) {
+        return @{}
+    }
+
+    $obj = @{}
+    $value = ($Parts -join ' ')
+
+    @($value -isplit ',(?=(?:[^"]|"[^"]*")*$)') | ForEach-Object {
+        if ($_ -imatch '(?<name>\w+)=["]?(?<value>[^"]+)["]?$') {
+            $obj[$Matches['name']] = $Matches['value']
+        }
+    }
+
+    return $obj
+}
+
+function New-PodeAuthDigestChallenge
+{
+    $items = @('qop="auth"', "nonce=`"$(New-PodeGuid -Length 32 -Secure -NoDashes)`"")
+    return ($items -join ', ')
+}
+
 function Get-PodeAuthFormType
 {
     return {
@@ -183,6 +283,8 @@ function Get-PodeAuthMiddlewareScript
             # if data is a hashtable, then don't call validator (parser either failed, or forced a success)
             if ($result -isnot [hashtable]) {
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments (@($result) + @($auth.Arguments)) -Return -Splat)
+
+                #TODO: if no error, and we have user, then run post validator
             }
         }
         catch {
@@ -196,7 +298,7 @@ function Get-PodeAuthMiddlewareScript
 
             # set the www-auth header
             if (($_code -eq 401) -and (($null -eq $result.Headers) -or !$result.Headers.ContainsKey('WWW-Authenticate'))) {
-                $_wwwHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Type.Name -Realm $auth.Type.Realm
+                $_wwwHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Type.Name -Realm $auth.Type.Realm -Challenge $result.Challenge
                 if (![string]::IsNullOrWhiteSpace($_wwwHeader)) {
                     Set-PodeHeader -Name 'WWW-Authenticate' -Value $_wwwHeader
                 }
@@ -229,7 +331,11 @@ function Get-PodeAuthWwwHeaderValue
 
         [Parameter()]
         [string]
-        $Realm
+        $Realm,
+
+        [Parameter()]
+        [string]
+        $Challenge
     )
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
@@ -239,6 +345,10 @@ function Get-PodeAuthWwwHeaderValue
     $header = $Name
     if (![string]::IsNullOrWhiteSpace($Realm)) {
         $header += " realm=`"$($Realm)`""
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Challenge)) {
+        $header += ", $($Challenge)"
     }
 
     return $header
