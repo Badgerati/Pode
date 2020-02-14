@@ -85,8 +85,8 @@ function Get-PodeAuthDigestType
         }
 
         # parse the other atoms of the header (after the scheme), return 400 if none
-        $obj = ConvertFrom-PodeAuthDigestHeader -Parts ($atoms[1..$($atoms.Length - 1)])
-        if ($obj.Count -eq 0) {
+        $params = ConvertFrom-PodeAuthDigestHeader -Parts ($atoms[1..$($atoms.Length - 1)])
+        if ($params.Count -eq 0) {
             return @{
                 Message = 'Invalid Authorization header'
                 Code = 400
@@ -94,7 +94,7 @@ function Get-PodeAuthDigestType
         }
 
         # if no username then 401 and challenge
-        if ([string]::IsNullOrWhiteSpace($obj.username)) {
+        if ([string]::IsNullOrWhiteSpace($params.username)) {
             return @{
                 Message = 'Authorization header is missing username'
                 Challenge = (New-PodeAuthDigestChallenge)
@@ -102,23 +102,54 @@ function Get-PodeAuthDigestType
             }
         }
 
-        #TODO: return 400 if domain doesnt match request domain
-        # if ($e.Url -ine $obj.uri) {
-        #     return @{
-        #         Message = 'Invalid Authorization header'
-        #         Code = 400
-        #     }
-        # }
+        # return 400 if domain doesnt match request domain
+        if ($e.Path -ine $params.uri) {
+            return @{
+                Message = 'Invalid Authorization header'
+                Code = 400
+            }
+        }
 
         # return data for calling validator
-        return @($username, $obj)
+        return @($username, $params)
     }
 }
 
 function Get-PodeAuthDigestPostValidator
 {
     return {
-        param($e, $user, $obj)
+        param($e, $username, $params, $result)
+
+        # if there's no user or password, fail with challenge
+        if (($null -eq $result) -or ($null -eq $result.User) -or [string]::IsNullOrWhiteSpace($result.Password)) {
+            return @{
+                Message = 'User not found'
+                Challenge = (New-PodeAuthDigestChallenge)
+                Code = 401
+            }
+        }
+
+        # generate the first hash
+        $hash1 = Invoke-PodeMD5Hash -Value "$($params.username):$($params.realm):$($result.Password)"
+
+        # generate the second hash
+        $hash2 = Invoke-PodeMD5Hash -Value "$($e.Method.ToUpperInvariant()):$($params.uri)"
+
+        # generate final hash
+        $final = Invoke-PodeMD5Hash -Value "$($hash1):$($params.nonce):$($params.nc):$($params.cnonce):$($params.qop):$($hash2)"
+
+        # compare final hash to client response
+        if ($final -ne $params.response) {
+            return @{
+                Message = 'Hashes failed to match'
+                Challenge = (New-PodeAuthDigestChallenge)
+                Code = 401
+            }
+        }
+
+        # hashes are valid, remove password and return result
+        $result.Remove('Password') | Out-Null
+        return $result
     }
 }
 
@@ -148,7 +179,7 @@ function ConvertFrom-PodeAuthDigestHeader
 
 function New-PodeAuthDigestChallenge
 {
-    $items = @('qop="auth"', "nonce=`"$(New-PodeGuid -Length 32 -Secure -NoDashes)`"")
+    $items = @('qop="auth"', 'algorithm="MD5"', "nonce=`"$(New-PodeGuid -Secure -NoDashes)`"")
     return ($items -join ', ')
 }
 
@@ -282,9 +313,13 @@ function Get-PodeAuthMiddlewareScript
 
             # if data is a hashtable, then don't call validator (parser either failed, or forced a success)
             if ($result -isnot [hashtable]) {
+                $original = $result
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments (@($result) + @($auth.Arguments)) -Return -Splat)
 
-                #TODO: if no error, and we have user, then run post validator
+                # if we have user, then run post validator if present
+                if (!(Test-IsEmpty $auth.Type.PostValidator)) {
+                    $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.PostValidator -Arguments (@($e) + @($original) + @($result)) -Return -Splat)
+                }
             }
         }
         catch {

@@ -142,7 +142,7 @@ function New-PodeAuthType
         'digest' {
             return @{
                 Name = (Protect-PodeValue -Value $Name -Default 'Digest')
-                Realm = $Realm
+                Realm = (Protect-PodeValue -Value $Realm -Default 'User Authentication')
                 ScriptBlock = (Get-PodeAuthDigestType)
                 PostValidator = (Get-PodeAuthDigestPostValidator)
                 Scheme = 'http'

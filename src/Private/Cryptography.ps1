@@ -42,6 +42,19 @@ function Invoke-PodeSHA1Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
+function Invoke-PodeMD5Hash
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Value
+    )
+
+    $crypto = [System.Security.Cryptography.MD5]::Create()
+    return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::ASCII.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
+}
+
 function Get-PodeRandomBytes
 {
     param (
