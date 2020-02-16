@@ -27,7 +27,7 @@ The name of the Password Field in the payload to retrieve the password.
 If supplied, will allow you to create a Custom Authentication credentials retriever.
 
 .PARAMETER ScriptBlock
-The ScriptBlock to retrieve user credentials.
+The ScriptBlock is used to parse the request and retieve user credentials and other information.
 
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Authentication type's ScriptBlock.
@@ -43,6 +43,9 @@ The scheme type for custom Authentication types. Default is HTTP.
 
 .PARAMETER Digest
 If supplied, will use the inbuilt Digest Authentication credentials retriever.
+
+.PARAMETER PostValidator
+The PostValidator is a scriptblock that is invoked after user validation.
 
 .EXAMPLE
 $basic_auth = New-PodeAuthType -Basic
