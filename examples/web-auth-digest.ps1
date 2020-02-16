@@ -15,14 +15,18 @@ Start-PodeServer -Threads 2 {
         param($username, $params)
 
         # here you'd check a real user storage, this is just for example
-        return @{
-            User = @{
-                ID ='M0R7Y302'
-                Name = 'Morty'
-                Type = 'Human'
+        if ($username -ieq 'morty') {
+            return @{
+                User = @{
+                    ID ='M0R7Y302'
+                    Name = 'Morty'
+                    Type = 'Human'
+                }
+                Password = 'pickle'
             }
-            Password = 'pickle'
         }
+
+        return $null
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)

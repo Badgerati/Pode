@@ -111,7 +111,7 @@ function Get-PodeAuthDigestType
         }
 
         # return data for calling validator
-        return @($username, $params)
+        return @($params.username, $params)
     }
 }
 
