@@ -4,7 +4,7 @@ Basic Authentication is when you pass an encoded `username:password` value on th
 
 ## Setup
 
-To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Basic` function, and then pipe this into the  [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
+To setup and start using Basic Authentication in Pode you use the `New-PodeAuthType -Basic` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password:
 
 ```powershell
 Start-PodeServer {
@@ -28,7 +28,7 @@ Start-PodeServer {
 }
 ```
 
-## Validating
+## Middleware
 
 Once configured you can start using Basic Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
@@ -64,13 +64,16 @@ Start-PodeServer {
 
         # here you'd check a real user storage, this is just for example
         if ($username -eq 'morty' -and $password -eq 'pickle') {
-            return @{ 'user' = @{
-                'ID' ='M0R7Y302'
-                'Name' = 'Morty';
-                'Type' = 'Human';
-            } }
+            return @{
+                User = @{
+                    'ID' ='M0R7Y302'
+                    'Name' = 'Morty';
+                    'Type' = 'Human';
+                }
+            }
         }
 
+        # authentication failed
         return $null
     }
 
