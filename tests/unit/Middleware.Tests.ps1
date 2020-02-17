@@ -395,7 +395,7 @@ Describe 'Get-PodeQueryMiddleware' {
 
         Mock ConvertFrom-PodeNameValueToHashTable { return 'string' }
         (. $r.Logic @{
-            'Request' = @{ 'QueryString' = 'name=bob' }
+            'Request' = @{ 'QueryString' = [System.Web.HttpUtility]::ParseQueryString('name=bob') }
         }) | Should Be $true
     }
 

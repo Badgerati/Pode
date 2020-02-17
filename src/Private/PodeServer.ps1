@@ -212,10 +212,9 @@ function Invoke-PodeSocketHandler
         $WebEvent.Endpoint = $req_info.Headers['Host']
         $WebEvent.ContentType = $req_info.Headers['Content-Type']
 
-        $WebEvent.Query = [System.Web.HttpUtility]::ParseQueryString($req_info.Query)
-        if ($null -eq $WebEvent.Query) {
-            $WebEvent.Query = @{}
-        }
+        # parse the query string and convert it to a hashtable
+        $tmpQuery = [System.Web.HttpUtility]::ParseQueryString($req_info.Query.TrimStart('/', '?'))
+        $WebEvent.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 
         # add logging endware for post-request
         Add-PodeRequestLogEndware -WebEvent $WebEvent
