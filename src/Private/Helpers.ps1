@@ -1939,6 +1939,12 @@ function Get-PodeDefaultPort
         $Protocol
     )
 
+    # if we running as iis, return the ASPNET port
+    if ($PodeContext.Server.IsIIS) {
+        return [int]$env:ASPNETCORE_PORT
+    }
+
+    # otherwise, get the port for the protocol
     return (@{
         Http    = 8080
         Https   = 8443

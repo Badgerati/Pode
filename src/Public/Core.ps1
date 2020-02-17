@@ -130,7 +130,7 @@ function Start-PodeServer
             -ServerType $Type
 
         # set it so ctrl-c can terminate, unless serverless
-        if (!$PodeContext.Server.IsServerless) {
+        if (!$PodeContext.Server.IsServerless -and !$PodeContext.Server.IsIIS) {
             [Console]::TreatControlCAsInput = $true
         }
 
