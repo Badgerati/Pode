@@ -724,6 +724,10 @@ function Add-PodeEndpoint
 
     # set the port for the context, if 0 use a default port for protocol
     $obj.Port = $_endpoint.Port
+    if ($PodeContext.Server.IsIIS -and (@('Http', 'Https') -icontains $Protocol)) {
+        $obj.Port = [int]$env:ASPNETCORE_PORT
+    }
+
     if (([int]$obj.Port) -eq 0) {
         $obj.Port = Get-PodeDefaultPort -Protocol $Protocol
     }
@@ -733,7 +737,10 @@ function Add-PodeEndpoint
 
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {
-        throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
+        # skip if IIS and address is a hostname
+        if (!($PodeContext.Server.IsIIS -and (Test-PodeHostname -Hostname $obj.Address))) {
+            throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
+        }
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
