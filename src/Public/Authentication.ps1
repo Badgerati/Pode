@@ -41,11 +41,17 @@ The name of scope of the protected area.
 .PARAMETER Scheme
 The scheme type for custom Authentication types. Default is HTTP.
 
+.PARAMETER PostValidator
+The PostValidator is a scriptblock that is invoked after user validation.
+
 .PARAMETER Digest
 If supplied, will use the inbuilt Digest Authentication credentials retriever.
 
-.PARAMETER PostValidator
-The PostValidator is a scriptblock that is invoked after user validation.
+.PARAMETER Bearer
+If supplied, will use the inbuilt Bearer Authentication token retriever.
+
+.PARAMETER Scope
+An optional array of Scopes for Bearer Authentication. (These are case-sensitive)
 
 .EXAMPLE
 $basic_auth = New-PodeAuthType -Basic
@@ -104,7 +110,7 @@ function New-PodeAuthType
         [hashtable]
         $ArgumentList,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Custom')]
         [string]
         $Name,
 
@@ -123,15 +129,26 @@ function New-PodeAuthType
 
         [Parameter(ParameterSetName='Digest')]
         [switch]
-        $Digest
+        $Digest,
+
+        [Parameter(ParameterSetName='Bearer')]
+        [switch]
+        $Bearer,
+
+        [Parameter(ParameterSetName='Bearer')]
+        [string[]]
+        $Scope
     )
+
+    # default realm
+    $_realm = 'User'
 
     # configure the auth type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'basic' {
             return @{
-                Name = (Protect-PodeValue -Value $Name -Default 'Basic')
-                Realm = $Realm
+                Name = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 ScriptBlock = (Get-PodeAuthBasicType)
                 PostValidator = $null
                 Scheme = 'http'
@@ -144,8 +161,8 @@ function New-PodeAuthType
 
         'digest' {
             return @{
-                Name = (Protect-PodeValue -Value $Name -Default 'Digest')
-                Realm = (Protect-PodeValue -Value $Realm -Default 'User Authentication')
+                Name = 'Digest'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 ScriptBlock = (Get-PodeAuthDigestType)
                 PostValidator = (Get-PodeAuthDigestPostValidator)
                 Scheme = 'http'
@@ -153,10 +170,23 @@ function New-PodeAuthType
             }
         }
 
+        'bearer' {
+            return @{
+                Name = 'Bearer'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = (Get-PodeAuthBearerType)
+                PostValidator = (Get-PodeAuthBearerPostValidator)
+                Scheme = 'http'
+                Arguments = @{
+                    Scopes = $Scope
+                }
+            }
+        }
+
         'form' {
             return @{
-                Name = (Protect-PodeValue -Value $Name -Default 'Form')
-                Realm = $Realm
+                Name = 'Form'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 ScriptBlock = (Get-PodeAuthFormType)
                 PostValidator = $null
                 Scheme = 'http'
@@ -172,7 +202,7 @@ function New-PodeAuthType
         'custom' {
             return @{
                 Name = $Name
-                Realm = $Realm
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 Scheme = $Scheme.ToLowerInvariant()
                 ScriptBlock = $ScriptBlock
                 PostValidator = $PostValidator
