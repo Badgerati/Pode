@@ -683,6 +683,14 @@ function Add-PodeEndpoint
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeEndpoint' -ThrowError
 
+    # are we running as IIS for HTTP/HTTPS? (if yes, force the port, address and protocol)
+    $isIIS = ($PodeContext.Server.IsIIS -and (@('Http', 'Https') -icontains $Protocol))
+    if ($isIIS) {
+        $Port = [int]$env:ASPNETCORE_PORT
+        $Address = '127.0.0.1'
+        $Protocol = 'Http'
+    }
+
     # parse the endpoint for host/port info
     $FullAddress = "$($Address):$($Port)"
     $_endpoint = Get-PodeEndpointInfo -Endpoint $FullAddress
@@ -714,7 +722,7 @@ function Add-PodeEndpoint
         }
     }
 
-    # set the ip for the context
+    # set the ip for the context (force to localhost for IIS)
     $obj.Address = (Get-PodeIPAddress $_endpoint.Host)
     if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
         $obj.HostName = "$($obj.Address)"
@@ -724,10 +732,6 @@ function Add-PodeEndpoint
 
     # set the port for the context, if 0 use a default port for protocol
     $obj.Port = $_endpoint.Port
-    if ($PodeContext.Server.IsIIS -and (@('Http', 'Https') -icontains $Protocol)) {
-        $obj.Port = [int]$env:ASPNETCORE_PORT
-    }
-
     if (([int]$obj.Port) -eq 0) {
         $obj.Port = Get-PodeDefaultPort -Protocol $Protocol
     }
@@ -737,10 +741,7 @@ function Add-PodeEndpoint
 
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {
-        # skip if IIS and address is a hostname
-        if (!($PodeContext.Server.IsIIS -and (Test-PodeHostname -Hostname $obj.Address))) {
-            throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
-        }
+        throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
@@ -749,7 +750,7 @@ function Add-PodeEndpoint
     } | Measure-Object).Count
 
     # if we're dealing with a certificate file, attempt to import it
-    if ($PSCmdlet.ParameterSetName -ieq 'certfile') {
+    if (!$isIIS -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
         # fail if protocol is not https
         if (@('https', 'wss') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
@@ -799,7 +800,7 @@ function Add-PodeEndpoint
     }
 
     # if RedirectTo is set, attempt to build a redirecting route
-    if (![string]::IsNullOrWhiteSpace($RedirectTo)) {
+    if (!$isIIS -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
         $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
 
         # ensure the name exists
