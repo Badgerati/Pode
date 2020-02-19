@@ -11,7 +11,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # setup bearer auth
-    New-PodeAuthType -Bearer | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthType -Bearer -Scope write | Add-PodeAuth -Name 'Validate' -ScriptBlock {
         param($token)
 
         # here you'd check a real user storage, this is just for example
@@ -22,6 +22,7 @@ Start-PodeServer -Threads 2 {
                     Name = 'Morty'
                     Type = 'Human'
                 }
+                Scope = 'read'
             }
         }
 
