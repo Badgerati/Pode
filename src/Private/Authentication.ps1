@@ -24,7 +24,7 @@ function Get-PodeAuthBasicType
         if ($atoms[0] -ine $options.HeaderTag) {
             return @{
                 Message = "Header is not for $($options.HeaderTag) Authorization"
-                Code = 401
+                Code = 400
             }
         }
 
