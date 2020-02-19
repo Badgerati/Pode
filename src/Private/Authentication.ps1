@@ -14,6 +14,13 @@ function Get-PodeAuthBasicType
 
         # ensure the first atom is basic (or opt override)
         $atoms = $header -isplit '\s+'
+        if ($atoms.Length -lt 2) {
+            return @{
+                Message = 'Invalid Authorization header'
+                Code = 400
+            }
+        }
+
         if ($atoms[0] -ine $options.HeaderTag) {
             return @{
                 Message = "Header is not for $($options.HeaderTag) Authorization"
@@ -50,6 +57,127 @@ function Get-PodeAuthBasicType
         # return data for calling validator
         return @($username, $password)
     }
+}
+
+function Get-PodeAuthBearerType
+{
+    return {
+        param($e, $options)
+
+        # get the auth header
+        $header = (Get-PodeHeader -Name 'Authorization')
+        if ($null -eq $header) {
+            return @{
+                Message = 'No Authorization header found'
+                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_request)
+                Code = 400
+            }
+        }
+
+        # ensure the first atom is bearer
+        $atoms = $header -isplit '\s+'
+        if ($atoms.Length -lt 2) {
+            return @{
+                Message = 'Invalid Authorization header'
+                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_request)
+                Code = 400
+            }
+        }
+
+        if ($atoms[0] -ine 'Bearer') {
+            return @{
+                Message = 'Authorization header is not Bearer'
+                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_request)
+                Code = 400
+            }
+        }
+
+        # return token for calling validator
+        return @($atoms[1].Trim())
+    }
+}
+
+function Get-PodeAuthBearerPostValidator
+{
+    return {
+        param($e, $token, $result, $options)
+
+        # if there's no user, fail with challenge
+        if (($null -eq $result) -or ($null -eq $result.User)) {
+            return @{
+                Message = 'User not found'
+                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_token)
+                Code = 401
+            }
+        }
+
+        # check for an error and description
+        if (![string]::IsNullOrWhiteSpace($result.Error)) {
+            return @{
+                Message = 'Authorization failed'
+                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType $result.Error -ErrorDescription $result.ErrorDescription)
+                Code = 401
+            }
+        }
+
+        # check the scopes
+        $hasAuthScopes = (($null -ne $options.Scopes) -and ($options.Scopes.Length -gt 0))
+        $hasTokenScope = ![string]::IsNullOrWhiteSpace($result.Scope)
+
+        # 403 if we have auth scopes but no token scope
+        if ($hasAuthScopes -and !$hasTokenScope) {
+            return @{
+                Message = 'Invalid Scope'
+                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType insufficient_scope)
+                Code = 403
+            }
+        }
+
+        # 403 if we have both, but token not in auth scope
+        if ($hasAuthScopes -and $hasTokenScope -and ($options.Scopes -notcontains $result.Scope)) {
+            return @{
+                Message = 'Invalid Scope'
+                Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType insufficient_scope)
+                Code = 403
+            }
+        }
+
+        # return result
+        return $result
+    }
+}
+
+function New-PodeAuthBearerChallenge
+{
+    param(
+        [Parameter()]
+        [string[]]
+        $Scopes,
+
+        [Parameter()]
+        [ValidateSet('', 'invalid_request', 'invalid_token', 'insufficient_scope')]
+        [string]
+        $ErrorType,
+
+        [Parameter()]
+        [string]
+        $ErrorDescription
+    )
+
+    $items = @()
+    if (($null -ne $Scopes) -and ($Scopes.Length -gt 0)) {
+        $items += "scope=`"$($Scopes -join ' ')`""
+    }
+
+    if (![string]::IsNullOrWhiteSpace($ErrorType)) {
+        $items += "error=`"$($ErrorType)`""
+    }
+
+    if (![string]::IsNullOrWhiteSpace($ErrorDescription)) {
+        $items += "error_description=`"$($ErrorDescription)`""
+    }
+
+    return ($items -join ', ')
 }
 
 function Get-PodeAuthDigestType
@@ -118,7 +246,7 @@ function Get-PodeAuthDigestType
 function Get-PodeAuthDigestPostValidator
 {
     return {
-        param($e, $username, $params, $result)
+        param($e, $username, $params, $result, $options)
 
         # if there's no user or password, fail with challenge
         if (($null -eq $result) -or ($null -eq $result.User) -or [string]::IsNullOrWhiteSpace($result.Password)) {
@@ -317,8 +445,8 @@ function Get-PodeAuthMiddlewareScript
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments (@($result) + @($auth.Arguments)) -Return -Splat)
 
                 # if we have user, then run post validator if present
-                if (!(Test-IsEmpty $auth.Type.PostValidator)) {
-                    $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.PostValidator -Arguments (@($e) + @($original) + @($result)) -Return -Splat)
+                if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-IsEmpty $auth.Type.PostValidator)) {
+                    $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.PostValidator -Arguments (@($e) + @($original) + @($result) + @($auth.Type.Arguments)) -Return -Splat)
                 }
             }
         }
@@ -332,7 +460,10 @@ function Get-PodeAuthMiddlewareScript
             $_code = (Protect-PodeValue -Value $result.Code -Default 401)
 
             # set the www-auth header
-            if (($_code -eq 401) -and (($null -eq $result.Headers) -or !$result.Headers.ContainsKey('WWW-Authenticate'))) {
+            $validCode = (($_code -eq 401) -or ![string]::IsNullOrWhiteSpace($result.Challenge))
+            $validHeaders = (($null -eq $result.Headers) -or !$result.Headers.ContainsKey('WWW-Authenticate'))
+
+            if ($validCode -and $validHeaders) {
                 $_wwwHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Type.Name -Realm $auth.Type.Realm -Challenge $result.Challenge
                 if (![string]::IsNullOrWhiteSpace($_wwwHeader)) {
                     Set-PodeHeader -Name 'WWW-Authenticate' -Value $_wwwHeader
