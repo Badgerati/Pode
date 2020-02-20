@@ -337,7 +337,7 @@ function Get-PodeAuthFormType
     }
 }
 
-function Get-PodeAuthWindowsAdMethod
+function Get-PodeAuthWindowsADMethod
 {
     return {
         param($username, $password, $options)
@@ -646,7 +646,7 @@ function Test-PodeAuthADUser
             User = @{
                 Username = $Username
                 Name = $user.name
-                Server = $Server
+                Fqdn = $Server
                 Domain = $Domain
                 Groups = $groups
             }

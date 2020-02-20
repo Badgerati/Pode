@@ -1,11 +1,10 @@
 # Windows AD
 
-!!! important
-    The Windows AD authentication method is only supported on Windows (PowerShell, and PS Core v6.1+ only).
+Pode's inbuilt Windows AD authentication works cross-platform, using OpenLDAP to work in *nix environments.
 
 ## Usage
 
-To use Windows AD authentication you use the  [`Add-PodeAuthWindowsAd`](../../../../Functions/Authentication/Add-PodeAuthWindowsAd) function. The following example will validate a user's credentials, supplied via a web-form against the default DNS domain defined in `$env:USERDNSDOMAIN`:
+To enable Windows AD authentication you can use the [`Add-PodeAuthWindowsAd`](../../../../Functions/Authentication/Add-PodeAuthWindowsAd) function. The following example will validate a user's credentials, supplied via a web-form, against the default AD the current server is joined to:
 
 ```powershell
 Start-PodeServer {
@@ -23,6 +22,7 @@ The User object returned, and accessible on Routes, and other functions via `$e.
 | Name | string | The user's fullname in AD |
 | FQDN | string | The DNS domain of the AD |
 | Groups | string[] | The groups that the user is a member of in AD, both directly and recursively |
+| Domain | string | The domain part of the username |
 
 Such as:
 
@@ -33,9 +33,9 @@ Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Nam
 }
 ```
 
-### Custom Domain
+### Server
 
-If you want to supply a custom DNS domain, then you can supply the `-FQDN` parameter:
+If you want to supply a custom DNS domain, then you can supply the `-Fqdn` parameter:
 
 ```powershell
 Start-PodeServer {
@@ -60,37 +60,5 @@ You can supply a list of authorised usernames to validate a user's access, after
 ```powershell
 Start-PodeServer {
     New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
-}
-```
-
-## Linux
-
-The inbuilt authentication only supports Windows, but you can use libraries such as [Novell.Directory.Ldap.NETStandard](https://www.nuget.org/packages/Novell.Directory.Ldap.NETStandard/) with dotnet core on *nix environments:
-
-```powershell
-Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
-        param ($username, $password)
-
-        Add-Type -Path '<path-to-novell-dll>'
-
-        try {
-            $ldap = New-Object Novell.Directory.Ldap.LdapConnection
-            $ldap.Connect('ad-server-name', 389)
-            $ldap.Bind("<domain>\$username", $password)
-        }
-        catch {
-            return $null
-        }
-        finally {
-            $ldap.Dispose()
-        }
-
-        return @{
-            User = @{
-                Username = "<domain>\$username"
-            }
-        }
-    }
 }
 ```

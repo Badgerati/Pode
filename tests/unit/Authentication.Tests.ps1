@@ -51,7 +51,7 @@ Describe 'Get-PodeAuthFormType' {
 
 Describe 'Get-PodeAuthInbuiltMethod' {
     It 'Returns Windows AD auth' {
-        $result = Get-PodeAuthInbuiltMethod -Type WindowsAd
+        $result = Get-PodeAuthWindowsADMethod
         $result | Should Not Be $null
         $result.GetType().Name | Should Be 'ScriptBlock'
     }

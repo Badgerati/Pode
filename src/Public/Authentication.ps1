@@ -387,7 +387,7 @@ function Add-PodeAuthWindowsAd
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
         Type = $Type
-        ScriptBlock = (Get-PodeAuthWindowsAdMethod)
+        ScriptBlock = (Get-PodeAuthWindowsADMethod)
         Arguments = @{
             Server = $Fqdn
             Domain = $Domain
