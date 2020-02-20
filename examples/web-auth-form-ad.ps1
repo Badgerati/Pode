@@ -27,7 +27,7 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 
     # setup form auth against windows AD (<form> in HTML)
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn $env:USERDNSDOMAIN -Groups @() -Users @()
+    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @() -Users @()
 
 
     # home page:
