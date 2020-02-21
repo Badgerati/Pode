@@ -18,11 +18,14 @@ The User object returned, and accessible on Routes, and other functions via `$e.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+| AuthenticationType | string | Value is fixed to LDAP |
+| DistinguishedName | string | The distinguished name of the user |
 | Username | string | The username of the user |
 | Name | string | The user's fullname in AD |
+| Email | string | The user's email address in AD |
 | FQDN | string | The DNS domain of the AD |
-| Groups | string[] | The groups that the user is a member of in AD, both directly and recursively |
 | Domain | string | The domain part of the username |
+| Groups | string[] | The groups that the user is a member of in AD, both directly and recursively |
 
 Such as:
 

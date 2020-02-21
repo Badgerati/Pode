@@ -346,7 +346,7 @@ function Get-PodeAuthWindowsADMethod
         $noGroups = $options.NoGroups
         $openLdap = $options.OpenLDAP
 
-        $result = Test-PodeAuthADUser `
+        $result = Get-PodeAuthADUser `
             -Server $options.Server `
             -Domain $options.Domain `
             -Username $username `
@@ -592,7 +592,7 @@ function Set-PodeAuthStatus
     return $true
 }
 
-function Test-PodeAuthADUser
+function Get-PodeAuthADUser
 {
     param (
         [Parameter()]
@@ -644,8 +644,9 @@ function Test-PodeAuthADUser
         # return the user
         return @{
             User = @{
+                AuthenticationType = 'LDAP'
                 DistinguishedName = $user.DistinguishedName
-                Username = $Username
+                Username = ($Username -split '\\')[-1]
                 Name = $user.Name
                 Email = $user.Email
                 Fqdn = $Server
