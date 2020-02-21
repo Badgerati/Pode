@@ -636,16 +636,18 @@ function Test-PodeAuthADUser
         }
 
         # get the users groups
-        $groups =@()
+        $groups = @()
         if (!$NoGroups) {
-            $groups = (Get-PodeAuthADGroups -Connection $connection -CategoryName $Username -CategoryType 'person' -OpenLDAP:$OpenLDAP)
+            $groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName -OpenLDAP:$OpenLDAP)
         }
 
         # return the user
         return @{
             User = @{
+                DistinguishedName = $user.DistinguishedName
                 Username = $Username
-                Name = $user.name
+                Name = $user.Name
+                Email = $user.Email
                 Fqdn = $Server
                 Domain = $Domain
                 Groups = $groups
@@ -770,27 +772,26 @@ function Get-PodeAuthADUser
         }
 
         $user = @{
+            DistinguishedName = @($result.distinguishedname)[0]
             Name = @($result.name)[0]
+            Email = @($result.mail)[0]
         }
     }
     else {
-        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" name)
+        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" name mail)
         if (!$? -or ($LASTEXITCODE -ne 0)) {
             return $null
         }
 
         $user = @{
+            DistinguishedName = ($result | ForEach-Object { if ($_ -imatch '^dn\:\s+(?<dn>.+)$') { $Matches['dn'] } })
             Name = ($result | ForEach-Object { if ($_ -imatch '^name\:\s+(?<name>.+)$') { $Matches['name'] } })
+            Email = ($result | ForEach-Object { if ($_ -imatch '^mail\:\s+(?<mail>.+)$') { $Matches['mail'] } })
         }
     }
 
     return $user
 }
-
-
-
-
-
 
 function Get-PodeAuthADGroups
 {
@@ -798,72 +799,30 @@ function Get-PodeAuthADGroups
         [Parameter(Mandatory=$true)]
         $Connection,
 
-        [Parameter(Mandatory=$true)]
-        [string]
-        $CategoryName,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('group', 'person')]
-        [string]
-        $CategoryType,
-
         [Parameter()]
-        [hashtable]
-        $GroupsFound = $null,
+        [string]
+        $DistinguishedName,
 
         [switch]
         $OpenLDAP
     )
 
-    # setup found groups
-    if ($null -eq $GroupsFound) {
-        $GroupsFound = @{}
-    }
-
     # create the query
-    $query = "(&(objectCategory=$($CategoryType))(samaccountname=$($CategoryName)))"
-    $groups = @{}
+    $query = "(member:1.2.840.113556.1.4.1941:=$($DistinguishedName))"
+    $groups = @()
 
     # get the groups
     if ((Test-IsWindows) -and !$OpenLDAP) {
+        $Connection.Searcher.PropertiesToLoad.Add('samaccountname')
         $Connection.Searcher.filter = $query
-        $members = $Connection.Searcher.FindOne().Properties.memberof
+        $groups = @($Connection.Searcher.FindAll().Properties.samaccountname)
     }
     else {
-        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" memberOf)
-        $members = ($result | ForEach-Object { if ($_ -imatch '^memberOf\:\s+(?<member>.+)$') { $Matches['member'] } })
+        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" samaccountname)
+        $groups = ($result | ForEach-Object { if ($_ -imatch '^sAMAccountName\:\s+(?<name>.+)$') { $Matches['name'] } })
     }
 
-    # filter the members
-    foreach ($member in $members) {
-        if ($member -imatch '^CN=(?<group>.+?),') {
-            $g = $Matches['group']
-            $groups[$g] = ($member -imatch '=builtin,')
-        }
-    }
-
-    # check the status of the groups
-    foreach ($group in $groups.Keys) {
-        # don't bother if we've already looked up the group
-        if ($GroupsFound.ContainsKey($group)) {
-            continue
-        }
-
-        # add group to checked groups
-        $GroupsFound[$group] = $true
-
-        # don't bother if it's inbuilt
-        if ($groups[$group]) {
-            continue
-        }
-
-        # get the groups
-        Get-PodeAuthADGroups -Connection $Connection -CategoryName $group -CategoryType 'group' -GroupsFound $GroupsFound -OpenLDAP:$OpenLDAP
-    }
-
-    if ($CategoryType -ieq 'person') {
-        return $GroupsFound.Keys
-    }
+    return $groups
 }
 
 function Get-PodeAuthDomainName
