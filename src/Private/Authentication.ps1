@@ -702,11 +702,7 @@ function Open-PodeAuthADConnection
         }
     }
     else {
-        $parts = @($Server -split '\.' | ForEach-Object {
-            "DC=$($_)"
-        })
-
-        $dcName = ($parts -join ',').ToLowerInvariant()
+        $dcName = "DC=$(($Server -split '\.') -join ',DC=')"
         $query = (Get-PodeAuthADQuery -Username $Username)
         $hostname = "LDAP://$($Server)"
 
@@ -785,13 +781,41 @@ function Get-PodeAuthADUser
         }
 
         $user = @{
-            DistinguishedName = ($result | ForEach-Object { if ($_ -imatch '^dn\:\s+(?<dn>.+)$') { $Matches['dn'] } })
-            Name = ($result | ForEach-Object { if ($_ -imatch '^name\:\s+(?<name>.+)$') { $Matches['name'] } })
-            Email = ($result | ForEach-Object { if ($_ -imatch '^mail\:\s+(?<mail>.+)$') { $Matches['mail'] } })
+            DistinguishedName = (Get-PodeOpenLdapValue -Lines $result -Property 'dn')
+            Name = (Get-PodeOpenLdapValue -Lines $result -Property 'name')
+            Email = (Get-PodeOpenLdapValue -Lines $result -Property 'mail')
         }
     }
 
     return $user
+}
+
+function Get-PodeOpenLdapValue
+{
+    param(
+        [Parameter()]
+        [string[]]
+        $Lines,
+
+        [Parameter()]
+        [string]
+        $Property,
+
+        [switch]
+        $All
+    )
+
+    foreach ($line in $Lines) {
+        if ($line -imatch "^$($Property)\:\s+(?<$($Property)>.+)$") {
+            # return the first found
+            if (!$All) {
+                return $Matches[$Property]
+            }
+
+            # return array of all
+            $Matches[$Property]
+        }
+    }
 }
 
 function Get-PodeAuthADGroups
@@ -820,7 +844,7 @@ function Get-PodeAuthADGroups
     }
     else {
         $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" samaccountname)
-        $groups = ($result | ForEach-Object { if ($_ -imatch '^sAMAccountName\:\s+(?<name>.+)$') { $Matches['name'] } })
+        $groups = (Get-PodeOpenLdapValue -Lines $result -Property 'sAMAccountName' -All)
     }
 
     return $groups
