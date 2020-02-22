@@ -19,6 +19,7 @@ Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+	New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set the view engine
     Set-PodeViewEngine -Type Pode

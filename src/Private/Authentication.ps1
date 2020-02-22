@@ -346,7 +346,7 @@ function Get-PodeAuthWindowsADMethod
         $noGroups = $options.NoGroups
         $openLdap = $options.OpenLDAP
 
-        $result = Get-PodeAuthADUser `
+        $result = Get-PodeAuthADResult `
             -Server $options.Server `
             -Domain $options.Domain `
             -Username $username `
@@ -592,7 +592,7 @@ function Set-PodeAuthStatus
     return $true
 }
 
-function Get-PodeAuthADUser
+function Get-PodeAuthADResult
 {
     param (
         [Parameter()]
