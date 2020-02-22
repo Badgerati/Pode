@@ -41,11 +41,17 @@ The name of scope of the protected area.
 .PARAMETER Scheme
 The scheme type for custom Authentication types. Default is HTTP.
 
+.PARAMETER PostValidator
+The PostValidator is a scriptblock that is invoked after user validation.
+
 .PARAMETER Digest
 If supplied, will use the inbuilt Digest Authentication credentials retriever.
 
-.PARAMETER PostValidator
-The PostValidator is a scriptblock that is invoked after user validation.
+.PARAMETER Bearer
+If supplied, will use the inbuilt Bearer Authentication token retriever.
+
+.PARAMETER Scope
+An optional array of Scopes for Bearer Authentication. (These are case-sensitive)
 
 .EXAMPLE
 $basic_auth = New-PodeAuthType -Basic
@@ -104,7 +110,7 @@ function New-PodeAuthType
         [hashtable]
         $ArgumentList,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Custom')]
         [string]
         $Name,
 
@@ -123,15 +129,26 @@ function New-PodeAuthType
 
         [Parameter(ParameterSetName='Digest')]
         [switch]
-        $Digest
+        $Digest,
+
+        [Parameter(ParameterSetName='Bearer')]
+        [switch]
+        $Bearer,
+
+        [Parameter(ParameterSetName='Bearer')]
+        [string[]]
+        $Scope
     )
+
+    # default realm
+    $_realm = 'User'
 
     # configure the auth type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'basic' {
             return @{
-                Name = (Protect-PodeValue -Value $Name -Default 'Basic')
-                Realm = $Realm
+                Name = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 ScriptBlock = (Get-PodeAuthBasicType)
                 PostValidator = $null
                 Scheme = 'http'
@@ -144,8 +161,8 @@ function New-PodeAuthType
 
         'digest' {
             return @{
-                Name = (Protect-PodeValue -Value $Name -Default 'Digest')
-                Realm = (Protect-PodeValue -Value $Realm -Default 'User Authentication')
+                Name = 'Digest'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 ScriptBlock = (Get-PodeAuthDigestType)
                 PostValidator = (Get-PodeAuthDigestPostValidator)
                 Scheme = 'http'
@@ -153,10 +170,23 @@ function New-PodeAuthType
             }
         }
 
+        'bearer' {
+            return @{
+                Name = 'Bearer'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = (Get-PodeAuthBearerType)
+                PostValidator = (Get-PodeAuthBearerPostValidator)
+                Scheme = 'http'
+                Arguments = @{
+                    Scopes = $Scope
+                }
+            }
+        }
+
         'form' {
             return @{
-                Name = (Protect-PodeValue -Value $Name -Default 'Form')
-                Realm = $Realm
+                Name = 'Form'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 ScriptBlock = (Get-PodeAuthFormType)
                 PostValidator = $null
                 Scheme = 'http'
@@ -172,7 +202,7 @@ function New-PodeAuthType
         'custom' {
             return @{
                 Name = $Name
-                Realm = $Realm
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 Scheme = $Scheme.ToLowerInvariant()
                 ScriptBlock = $ScriptBlock
                 PostValidator = $PostValidator
@@ -264,7 +294,10 @@ A unique Name for the Authentication method.
 The Type to use for retrieving credentials (From New-PodeAuthType).
 
 .PARAMETER Fqdn
-A custom FQDN for the DNS of the AD you wish to authenticate against.
+A custom FQDN for the DNS of the AD you wish to authenticate against. (Alias: Server)
+
+.PARAMETER Domain
+(Unix Only) A custom domain name that is prepended onto usernames that are missing it (<Domain>\<Username>).
 
 .PARAMETER Groups
 An array of Group names to only allow access.
@@ -275,6 +308,9 @@ An array of Usernames to only allow access.
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
 
+.PARAMETER OpenLDAP
+If supplied, and on Windows, OpenLDAP will be used instead.
+
 .EXAMPLE
 New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
 
@@ -283,6 +319,9 @@ New-PodeAuthType -Basic | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Devel
 
 .EXAMPLE
 New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
+
+.EXAMPLE
+New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'UnixAuth' -Server 'testdomain.company.com' -Domain 'testdomain'
 #>
 function Add-PodeAuthWindowsAd
 {
@@ -297,8 +336,13 @@ function Add-PodeAuthWindowsAd
         $Type,
 
         [Parameter()]
+        [Alias('Server')]
         [string]
-        $Fqdn = $env:USERDNSDOMAIN,
+        $Fqdn,
+
+        [Parameter()]
+        [string]
+        $Domain,
 
         [Parameter(ParameterSetName='Groups')]
         [string[]]
@@ -310,14 +354,11 @@ function Add-PodeAuthWindowsAd
 
         [Parameter(ParameterSetName='NoGroups')]
         [switch]
-        $NoGroups
-    )
+        $NoGroups,
 
-    # Check PowerShell/OS version
-    $version = $PSVersionTable.PSVersion
-    if ((Test-IsUnix) -or ($version.Major -eq 6 -and $version.Minor -eq 0)) {
-        throw 'Windows AD authentication is currently only supported on Windows PowerShell, and Windows PowerShell Core v6.1+'
-    }
+        [switch]
+        $OpenLDAP
+    )
 
     # ensure the name doesn't already exist
     if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
@@ -329,15 +370,31 @@ function Add-PodeAuthWindowsAd
         throw "The supplied Type for the '$($Name)' Windows AD authentication method requires a valid ScriptBlock"
     }
 
+    # set server name if not passed
+    if ([string]::IsNullOrWhiteSpace($Fqdn)) {
+        $Fqdn = Get-PodeAuthDomainName
+
+        if ([string]::IsNullOrWhiteSpace($Fqdn)) {
+            throw 'No domain server name has been supplied for Windows AD authentication'
+        }
+    }
+
+    # set the domain if not passed
+    if ([string]::IsNullOrWhiteSpace($Domain)) {
+        $Domain = ($Fqdn -split '\.')[0]
+    }
+
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
         Type = $Type
-        ScriptBlock = (Get-PodeAuthInbuiltMethod -Type WindowsAd)
+        ScriptBlock = (Get-PodeAuthWindowsADMethod)
         Arguments = @{
-            Fqdn = $Fqdn
+            Server = $Fqdn
+            Domain = $Domain
             Users = $Users
             Groups = $Groups
             NoGroups = $NoGroups
+            OpenLDAP = $OpenLDAP
         }
     }
 }

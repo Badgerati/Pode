@@ -49,7 +49,7 @@ Start-PodeServer {
 
 The typical setup of authentication is that you create some type to parse the request ([`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType)), and then you pipe this into a validator/method to validate the parsed user's credentials ([`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)).
 
-There is however also an optional `-PostValidator` ScriptBlock that can be passed to your Custom Authentication type on the [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) function. This `-PostValidator` script runs after normal user validation, as is supplied the current web event, the original splatted array returned from the [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) ScriptBlock, and also the result HashTable from the validator. You can use this script to re-generate any hashes for further validation, but if successful you *must* return the User object again (ie: re-return the last parameter which is the original validation result).
+There is however also an optional `-PostValidator` ScriptBlock that can be passed to your Custom Authentication type on the [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) function. This `-PostValidator` script runs after normal user validation, and is supplied the current web event, the original splatted array returned from the [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) ScriptBlock, the result HashTable from the user validator from `Add-PodeAuth`, and the `-ArgumentList` HashTable from `New-PodeAuthType`. You can use this script to re-generate any hashes for further validation, but if successful you *must* return the User object again (ie: re-return the last parameter which is the original validation result).
 
 For example, if you have a post validator script for the above Client Custom Authentication, then it would be supplied the following parameters:
 
@@ -59,6 +59,7 @@ For example, if you have a post validator script for the above Client Custom Aut
 * Password
 * ClientName
 * Validation Result
+* Type ArgumentsList
 
 For example:
 
@@ -82,7 +83,7 @@ Start-PodeServer {
         return @($client, $username, $password)
     } `
     -PostValidator {
-        param($e, $client, $username, $password, $result)
+        param($e, $client, $username, $password, $result, $opts)
 
         # run any extra post-validation logic
 

@@ -11,14 +11,15 @@ To setup and use authentication in Pode you need to use the [`New-PodeAuthType`]
 
 ### Types/Parsers
 
-The [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function allows you to create and configure Basic/Digest/Form authentication types/parsers, or you can create your own Custom authentication types. These types can then be used on the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function. There job is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
+The [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function allows you to create and configure authentication types/parsers, or you can create your own Custom authentication types. These types can then be used on the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function. There job is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
 
-An example of creating Basic/Digest/Form authentication is as follows:
+An example of creating some authentication types is as follows:
 
 ```powershell
 Start-PodeServer {
     $basic_auth = New-PodeAuthType -Basic
     $digest_auth = New-PodeAuthType -Digest
+    $bearer_auth = New-PodeAuthType -Bearer
     $form_auth = New-PodeAuthType -Form
 }
 ```
@@ -98,7 +99,7 @@ New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
 }
 ```
 
-If you're defining an authenticator that need to send back a Challenge, then you can also do this by setting the response Code property to 401, and also supplying a Challenge property.
+If you're defining an authenticator that need to send back a Challenge, then you can also do this by setting the response Code property to 401, and/or by also supplying a Challenge property.
 This Challenge property is a string, and will be automatically appended onto the `WWW-Authenticate` Header. It *does not* need to include the Authentication Type or Realm (these will be added for you).
 
 For example, in Digest you could return:

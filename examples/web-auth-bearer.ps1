@@ -10,19 +10,19 @@ Start-PodeServer -Threads 2 {
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
-    # setup digest auth
-    New-PodeAuthType -Digest | Add-PodeAuth -Name 'Validate' -ScriptBlock {
-        param($username, $params)
+    # setup bearer auth
+    New-PodeAuthType -Bearer -Scope write | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+        param($token)
 
         # here you'd check a real user storage, this is just for example
-        if ($username -ieq 'morty') {
+        if ($token -ieq 'test-token') {
             return @{
                 User = @{
                     ID ='M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
                 }
-                Password = 'pickle'
+                Scope = 'read'
             }
         }
 

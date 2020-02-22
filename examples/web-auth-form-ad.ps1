@@ -19,6 +19,7 @@ Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+	New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set the view engine
     Set-PodeViewEngine -Type Pode
@@ -27,7 +28,7 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 
     # setup form auth against windows AD (<form> in HTML)
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn $env:USERDNSDOMAIN -Groups @() -Users @()
+    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @() -Users @()
 
 
     # home page:
