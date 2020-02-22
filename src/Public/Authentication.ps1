@@ -294,7 +294,10 @@ A unique Name for the Authentication method.
 The Type to use for retrieving credentials (From New-PodeAuthType).
 
 .PARAMETER Fqdn
-A custom FQDN for the DNS of the AD you wish to authenticate against.
+A custom FQDN for the DNS of the AD you wish to authenticate against. (Alias: Server)
+
+.PARAMETER Domain
+(Unix Only) A custom domain name that is prepended onto usernames that are missing it (<Domain>\<Username>).
 
 .PARAMETER Groups
 An array of Group names to only allow access.
@@ -305,6 +308,9 @@ An array of Usernames to only allow access.
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
 
+.PARAMETER OpenLDAP
+If supplied, and on Windows, OpenLDAP will be used instead.
+
 .EXAMPLE
 New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
 
@@ -313,6 +319,9 @@ New-PodeAuthType -Basic | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Devel
 
 .EXAMPLE
 New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
+
+.EXAMPLE
+New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'UnixAuth' -Server 'testdomain.company.com' -Domain 'testdomain'
 #>
 function Add-PodeAuthWindowsAd
 {
@@ -327,8 +336,13 @@ function Add-PodeAuthWindowsAd
         $Type,
 
         [Parameter()]
+        [Alias('Server')]
         [string]
-        $Fqdn = $env:USERDNSDOMAIN,
+        $Fqdn,
+
+        [Parameter()]
+        [string]
+        $Domain,
 
         [Parameter(ParameterSetName='Groups')]
         [string[]]
@@ -340,14 +354,11 @@ function Add-PodeAuthWindowsAd
 
         [Parameter(ParameterSetName='NoGroups')]
         [switch]
-        $NoGroups
-    )
+        $NoGroups,
 
-    # Check PowerShell/OS version
-    $version = $PSVersionTable.PSVersion
-    if ((Test-IsUnix) -or ($version.Major -eq 6 -and $version.Minor -eq 0)) {
-        throw 'Windows AD authentication is currently only supported on Windows PowerShell, and Windows PowerShell Core v6.1+'
-    }
+        [switch]
+        $OpenLDAP
+    )
 
     # ensure the name doesn't already exist
     if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
@@ -359,15 +370,31 @@ function Add-PodeAuthWindowsAd
         throw "The supplied Type for the '$($Name)' Windows AD authentication method requires a valid ScriptBlock"
     }
 
+    # set server name if not passed
+    if ([string]::IsNullOrWhiteSpace($Fqdn)) {
+        $Fqdn = Get-PodeAuthDomainName
+
+        if ([string]::IsNullOrWhiteSpace($Fqdn)) {
+            throw 'No domain server name has been supplied for Windows AD authentication'
+        }
+    }
+
+    # set the domain if not passed
+    if ([string]::IsNullOrWhiteSpace($Domain)) {
+        $Domain = ($Fqdn -split '\.')[0]
+    }
+
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
         Type = $Type
-        ScriptBlock = (Get-PodeAuthInbuiltMethod -Type WindowsAd)
+        ScriptBlock = (Get-PodeAuthWindowsADMethod)
         Arguments = @{
-            Fqdn = $Fqdn
+            Server = $Fqdn
+            Domain = $Domain
             Users = $Users
             Groups = $Groups
             NoGroups = $NoGroups
+            OpenLDAP = $OpenLDAP
         }
     }
 }

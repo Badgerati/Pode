@@ -337,61 +337,55 @@ function Get-PodeAuthFormType
     }
 }
 
-function Get-PodeAuthInbuiltMethod
+function Get-PodeAuthWindowsADMethod
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('WindowsAd')]
-        [string]
-        $Type
-    )
+    return {
+        param($username, $password, $options)
 
-    switch ($Type.ToLowerInvariant())
-    {
-        'windowsad' {
-            $script = {
-                param($username, $password, $options)
+        # validate and retrieve the AD user
+        $noGroups = $options.NoGroups
+        $openLdap = $options.OpenLDAP
 
-                # validate and retrieve the AD user
-                $noGroups = $options.NoGroups
-                $result = Get-PodeAuthADUser -Fqdn $options.Fqdn -Username $username -Password $password -NoGroups:$noGroups
+        $result = Get-PodeAuthADResult `
+            -Server $options.Server `
+            -Domain $options.Domain `
+            -Username $username `
+            -Password $password `
+            -NoGroups:$noGroups `
+            -OpenLDAP:$openLdap
 
-                # if there's a message, fail and return the message
-                if (!(Test-IsEmpty $result.Message)) {
+        # if there's a message, fail and return the message
+        if (![string]::IsNullOrWhiteSpace($result.Message)) {
+            return $result
+        }
+
+        # if there's no user, then, err, oops
+        if (Test-IsEmpty $result.User) {
+            return @{ Message = 'An unexpected error occured' }
+        }
+
+        # if there are no groups/users supplied, return the user
+        if ((Test-IsEmpty $options.Users) -and (Test-IsEmpty $options.Groups)){
+            return $result
+        }
+
+        # before checking supplied groups, is the user in the supplied list of authorised users?
+        if (!(Test-IsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
+            return $result
+        }
+
+        # if there are groups supplied, check the user is a member of one
+        if (!(Test-IsEmpty $options.Groups)) {
+            foreach ($group in $options.Groups) {
+                if (@($result.User.Groups) -icontains $group) {
                     return $result
                 }
-
-                # if there's no user, then, err, oops
-                if (Test-IsEmpty $result.User) {
-                    return @{ Message = 'An unexpected error occured' }
-                }
-
-                # if there are no groups/users supplied, return the user
-                if ((Test-IsEmpty $options.Users) -and (Test-IsEmpty $options.Groups)){
-                    return $result
-                }
-
-                # before checking supplied groups, is the user in the supplied list of authorised users?
-                if (!(Test-IsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
-                    return $result
-                }
-
-                # if there are groups supplied, check the user is a member of one
-                if (!(Test-IsEmpty $options.Groups)) {
-                    foreach ($group in $options.Groups) {
-                        if (@($result.User.Groups) -icontains $group) {
-                            return $result
-                        }
-                    }
-                }
-
-                # else, they shall not pass!
-                return @{ Message = 'You are not authorised to access this website' }
             }
         }
-    }
 
-    return $script
+        # else, they shall not pass!
+        return @{ Message = 'You are not authorised to access this website' }
+    }
 }
 
 function Get-PodeAuthMiddlewareScript
@@ -598,12 +592,16 @@ function Set-PodeAuthStatus
     return $true
 }
 
-function Get-PodeAuthADUser
+function Get-PodeAuthADResult
 {
     param (
         [Parameter()]
         [string]
-        $Fqdn,
+        $Server,
+
+        [Parameter()]
+        [string]
+        $Domain,
 
         [Parameter()]
         [string]
@@ -614,49 +612,208 @@ function Get-PodeAuthADUser
         $Password,
 
         [switch]
-        $NoGroups
+        $NoGroups,
+
+        [switch]
+        $OpenLDAP
     )
 
     try
     {
-        # setup the dns domain
-        $Fqdn = Protect-PodeValue -Value $Fqdn -Default $env:USERDNSDOMAIN
-
         # validate the user's AD creds
-        $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($Fqdn)", "$($Username)", "$($Password)")
-        if (Test-IsEmpty $ad.distinguishedName) {
+        $result = (Open-PodeAuthADConnection -Server $Server -Domain $Domain -Username $Username -Password $Password -OpenLDAP:$OpenLDAP)
+        if (!$result.Success) {
             return @{ Message = 'Invalid credentials supplied' }
         }
 
-        # generate query to find user/groups
-        $query = New-Object System.DirectoryServices.DirectorySearcher $ad
-        $query.filter = "(&(objectCategory=person)(samaccountname=$($Username)))"
+        # get the connection
+        $connection = $result.Connection
 
-        $user = $query.FindOne().Properties
-        if (Test-IsEmpty $user) {
+        # get the user
+        $user = (Get-PodeAuthADUser -Connection $connection -Username $Username -OpenLDAP:$OpenLDAP)
+        if ($null -eq $user) {
             return @{ Message = 'User not found in Active Directory' }
         }
 
         # get the users groups
-        $groups =@()
+        $groups = @()
         if (!$NoGroups) {
-            $groups = Get-PodeAuthADGroups -Query $query -CategoryName $Username -CategoryType 'person'
+            $groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName -OpenLDAP:$OpenLDAP)
         }
 
         # return the user
         return @{
             User = @{
-                Username = $Username
-                Name = @($user.name)[0]
-                Fqdn = $Fqdn
+                AuthenticationType = 'LDAP'
+                DistinguishedName = $user.DistinguishedName
+                Username = ($Username -split '\\')[-1]
+                Name = $user.Name
+                Email = $user.Email
+                Fqdn = $Server
+                Domain = $Domain
                 Groups = $groups
             }
         }
     }
     finally {
-        if (!(Test-IsEmpty $ad.distinguishedName)) {
-            Close-PodeDisposable -Disposable $query
-            Close-PodeDisposable -Disposable $ad -Close
+        if ((Test-IsWindows) -and !$OpenLDAP -and ($null -ne $connection)) {
+            Close-PodeDisposable -Disposable $connection.Searcher
+            Close-PodeDisposable -Disposable $connection.Entry -Close
+        }
+    }
+}
+
+function Open-PodeAuthADConnection
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Server,
+
+        [Parameter()]
+        [string]
+        $Domain,
+
+        [Parameter()]
+        [string]
+        $Username,
+
+        [Parameter()]
+        [string]
+        $Password,
+
+        [switch]
+        $OpenLDAP
+    )
+
+    $result = $true
+    $connection = $null
+
+    # validate the user's AD creds
+    if ((Test-IsWindows) -and !$OpenLDAP) {
+        $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($Server)", "$($Username)", "$($Password)")
+        if (Test-IsEmpty $ad.distinguishedName) {
+            $result = $false
+        }
+        else {
+            $connection = @{
+                Entry = $ad
+            }
+        }
+    }
+    else {
+        $dcName = "DC=$(($Server -split '\.') -join ',DC=')"
+        $query = (Get-PodeAuthADQuery -Username $Username)
+        $hostname = "LDAP://$($Server)"
+
+        $user = $Username
+        if (!$Username.StartsWith($Domain)) {
+            $user = "$($Domain)\$($Username)"
+        }
+
+        (ldapsearch -x -LLL -H "$($hostname)" -D "$($user)" -w "$($Password)" -b "$($dcName)" "$($query)" dn) | Out-Null
+        if (!$? -or ($LASTEXITCODE -ne 0)) {
+            $result = $false
+        }
+        else {
+            $connection = @{
+                Hostname = $hostname
+                Username = $user
+                DCName = $dcName
+                Password = $Password
+            }
+        }
+    }
+
+    return @{
+        Success = $result
+        Connection = $connection
+    }
+}
+
+function Get-PodeAuthADQuery
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Username
+    )
+
+    return "(&(objectCategory=person)(samaccountname=$($Username)))"
+}
+
+function Get-PodeAuthADUser
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        $Connection,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Username,
+
+        [switch]
+        $OpenLDAP
+    )
+
+    $query = (Get-PodeAuthADQuery -Username $Username)
+
+    # generate query to find user
+    if ((Test-IsWindows) -and !$OpenLDAP) {
+        $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
+        $Connection.Searcher.filter = $query
+
+        $result = $Connection.Searcher.FindOne().Properties
+        if (Test-IsEmpty $result) {
+            return $null
+        }
+
+        $user = @{
+            DistinguishedName = @($result.distinguishedname)[0]
+            Name = @($result.name)[0]
+            Email = @($result.mail)[0]
+        }
+    }
+    else {
+        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" name mail)
+        if (!$? -or ($LASTEXITCODE -ne 0)) {
+            return $null
+        }
+
+        $user = @{
+            DistinguishedName = (Get-PodeOpenLdapValue -Lines $result -Property 'dn')
+            Name = (Get-PodeOpenLdapValue -Lines $result -Property 'name')
+            Email = (Get-PodeOpenLdapValue -Lines $result -Property 'mail')
+        }
+    }
+
+    return $user
+}
+
+function Get-PodeOpenLdapValue
+{
+    param(
+        [Parameter()]
+        [string[]]
+        $Lines,
+
+        [Parameter()]
+        [string]
+        $Property,
+
+        [switch]
+        $All
+    )
+
+    foreach ($line in $Lines) {
+        if ($line -imatch "^$($Property)\:\s+(?<$($Property)>.+)$") {
+            # return the first found
+            if (!$All) {
+                return $Matches[$Property]
+            }
+
+            # return array of all
+            $Matches[$Property]
         }
     }
 }
@@ -665,58 +822,50 @@ function Get-PodeAuthADGroups
 {
     param (
         [Parameter(Mandatory=$true)]
-        [System.DirectoryServices.DirectorySearcher]
-        $Query,
-
-        [Parameter(Mandatory=$true)]
-        [string]
-        $CategoryName,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('group', 'person')]
-        [string]
-        $CategoryType,
+        $Connection,
 
         [Parameter()]
-        [hashtable]
-        $GroupsFound = $null
+        [string]
+        $DistinguishedName,
+
+        [switch]
+        $OpenLDAP
     )
 
-    # setup found groups
-    if ($null -eq $GroupsFound) {
-        $GroupsFound = @{}
+    # create the query
+    $query = "(member:1.2.840.113556.1.4.1941:=$($DistinguishedName))"
+    $groups = @()
+
+    # get the groups
+    if ((Test-IsWindows) -and !$OpenLDAP) {
+        $Connection.Searcher.PropertiesToLoad.Add('samaccountname')
+        $Connection.Searcher.filter = $query
+        $groups = @($Connection.Searcher.FindAll().Properties.samaccountname)
+    }
+    else {
+        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" samaccountname)
+        $groups = (Get-PodeOpenLdapValue -Lines $result -Property 'sAMAccountName' -All)
     }
 
-    # get the groups for the category
-    $Query.filter = "(&(objectCategory=$($CategoryType))(samaccountname=$($CategoryName)))"
+    return $groups
+}
 
-    $groups = @{}
-    foreach ($member in $Query.FindOne().Properties.memberof) {
-        if ($member -imatch '^CN=(?<group>.+?),') {
-            $g = $Matches['group']
-            $groups[$g] = ($member -imatch '=builtin,')
+function Get-PodeAuthDomainName
+{
+    if (Test-IsUnix) {
+        $dn = (dnsdomainname)
+        if ([string]::IsNullOrWhiteSpace($dn)) {
+            $dn = (/usr/sbin/realm list --name-only)
         }
+
+        return $dn
     }
-
-    foreach ($group in $groups.Keys) {
-        # don't bother if we've already looked up the group
-        if ($GroupsFound.ContainsKey($group)) {
-            continue
+    else {
+        $domain = $env:USERDNSDOMAIN
+        if ([string]::IsNullOrWhiteSpace($domain)) {
+            $domain = (Get-CimInstance -Class Win32_ComputerSystem -Verbose:$false).Domain
         }
 
-        # add group to checked groups
-        $GroupsFound[$group] = $true
-
-        # don't bother if it's inbuilt
-        if ($groups[$group]) {
-            continue
-        }
-
-        # get the groups
-        Get-PodeAuthADGroups -Query $Query -CategoryName $group -CategoryType 'group' -GroupsFound $GroupsFound
-    }
-
-    if ($CategoryType -ieq 'person') {
-        return $GroupsFound.Keys
+        return $domain
     }
 }
