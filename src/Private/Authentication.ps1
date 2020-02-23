@@ -388,6 +388,99 @@ function Get-PodeAuthWindowsADMethod
     }
 }
 
+function Get-PodeAuthWindowsADIISMethod
+{
+    return {
+        param($token, $options)
+
+        # get the close handler
+        $win32Handler = Add-Type -Name Win32CloseHandle -PassThru -MemberDefinition @'
+            [DllImport("kernel32.dll", SetLastError = true)]
+            public static extern bool CloseHandle(IntPtr handle);
+'@
+
+        try {
+            # parse the auth token and get the user
+            $winAuthToken = [System.IntPtr][Int]"0x$($token)"
+            $winIdentity = New-Object System.Security.Principal.WindowsIdentity($winAuthToken, 'Windows')
+
+            # get user and domain
+            $username = ($winIdentity.Name -split '\\')[-1]
+            $domain = ($winIdentity.Name -split '\\')[0]
+
+            # attempt to get the user from AD - if it's not a local user
+            $adUser = $null
+            if (@('.', $env:COMPUTERNAME) -inotcontains $domain) {
+                $adUser = [ADSI]"LDAP://<SID=$($winIdentity.User.Value.ToString())>"
+            }
+
+            # create user object
+            $result = @{
+                User = @{
+                    AuthenticationType = $winIdentity.AuthenticationType
+                    DistinguishedName = [string]::Empty
+                    Username = $username
+                    Name = [string]::Empty
+                    Email = [string]::Empty
+                    Fqdn = [string]::Empty
+                    Domain = $domain
+                    Groups = @()
+                }
+            }
+
+            # if we have an AD user, set the details
+            if ($null -ne $adUser) {
+                $result.User.DistinguishedName = @($adUser.distinguishedname)[0]
+                $result.User.Name = @($adUser.name)[0]
+                $result.User.Email = @($adUser.mail)[0]
+                $result.User.Fqdn = (Get-PodeADServerFromDistinguishedName -DistinguishedName $result.User.DistinguishedName)
+            }
+
+            # do we need groups?
+            if (!$options.NoGroups -and ($null -ne $adUser)) {
+                $connection = @{
+                    Searcher = New-Object System.DirectoryServices.DirectorySearcher $adUser
+                }
+
+                $result.User.Groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $result.User.DistinguishedName)
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            return @{ Message = 'Failed to retrieve user using Authentication Token' }
+        }
+        finally {
+            if ($null -ne $connection) {
+                Close-PodeDisposable -Disposable $connection.Searcher
+            }
+
+            $win32Handler::CloseHandle($winAuthToken)
+        }
+
+        # if there are no groups/users supplied, return the user
+        if ((Test-IsEmpty $options.Users) -and (Test-IsEmpty $options.Groups)){
+            return $result
+        }
+
+        # before checking supplied groups, is the user in the supplied list of authorised users?
+        if (!(Test-IsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
+            return $result
+        }
+
+        # if there are groups supplied, check the user is a member of one
+        if (!(Test-IsEmpty $options.Groups)) {
+            foreach ($group in $options.Groups) {
+                if (@($result.User.Groups) -icontains $group) {
+                    return $result
+                }
+            }
+        }
+
+        # else, they shall not pass!
+        return @{ Message = 'You are not authorised to access this website' }
+    }
+}
+
 function Get-PodeAuthMiddlewareScript
 {
     return {
@@ -590,6 +683,30 @@ function Set-PodeAuthStatus
     }
 
     return $true
+}
+
+function Get-PodeADServerFromDistinguishedName
+{
+    param(
+        [Parameter()]
+        [string]
+        $DistinguishedName
+    )
+
+    if ([string]::IsNullOrWhiteSpace($DistinguishedName)) {
+        return [string]::Empty
+    }
+
+    $parts = @($DistinguishedName -split ',')
+    $name = @()
+
+    foreach ($part in $parts) {
+        if ($part -imatch '^DC=(?<name>.+)$') {
+            $name += $Matches['name']
+        }
+    }
+
+    return ($name -join '.')
 }
 
 function Get-PodeAuthADResult

@@ -789,3 +789,21 @@ function Out-PodeHost
 
     $InputObject | Out-Default
 }
+
+<#
+.SYNOPSIS
+Returns whether or not the server is running via IIS.
+
+.DESCRIPTION
+Returns whether or not the server is running via IIS.
+
+.EXAMPLE
+if (Test-PodeIsIIS) { }
+#>
+function Test-PodeIsIIS
+{
+    [CmdletBinding()]
+    param()
+
+    return $PodeContext.Server.IsIIS
+}
