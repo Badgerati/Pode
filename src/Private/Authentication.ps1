@@ -364,23 +364,9 @@ function Get-PodeAuthWindowsADMethod
             return @{ Message = 'An unexpected error occured' }
         }
 
-        # if there are no groups/users supplied, return the user
-        if ((Test-IsEmpty $options.Users) -and (Test-IsEmpty $options.Groups)){
+        # is the user valid for any users/groups?
+        if (Test-PodeAuthADUser -User $result.User -Users $options.Users -Groups $options.Groups) {
             return $result
-        }
-
-        # before checking supplied groups, is the user in the supplied list of authorised users?
-        if (!(Test-IsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
-            return $result
-        }
-
-        # if there are groups supplied, check the user is a member of one
-        if (!(Test-IsEmpty $options.Groups)) {
-            foreach ($group in $options.Groups) {
-                if (@($result.User.Groups) -icontains $group) {
-                    return $result
-                }
-            }
         }
 
         # else, they shall not pass!
@@ -457,28 +443,55 @@ function Get-PodeAuthWindowsADIISMethod
             $win32Handler::CloseHandle($winAuthToken)
         }
 
-        # if there are no groups/users supplied, return the user
-        if ((Test-IsEmpty $options.Users) -and (Test-IsEmpty $options.Groups)){
+        # is the user valid for any users/groups?
+        if (Test-PodeAuthADUser -User $result.User -Users $options.Users -Groups $options.Groups) {
             return $result
-        }
-
-        # before checking supplied groups, is the user in the supplied list of authorised users?
-        if (!(Test-IsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
-            return $result
-        }
-
-        # if there are groups supplied, check the user is a member of one
-        if (!(Test-IsEmpty $options.Groups)) {
-            foreach ($group in $options.Groups) {
-                if (@($result.User.Groups) -icontains $group) {
-                    return $result
-                }
-            }
         }
 
         # else, they shall not pass!
         return @{ Message = 'You are not authorised to access this website' }
     }
+}
+
+function Test-PodeAuthADUser
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $User,
+
+        [Parameter()]
+        [string[]]
+        $Users,
+
+        [Parameter()]
+        [string[]]
+        $Groups
+    )
+
+    $haveUsers = (($null -ne $Users) -and ($Users.Length -gt 0))
+    $haveGroups = (($null -ne $Groups) -and ($Groups.Length -gt 0))
+
+    # if there are no groups/users supplied, return user is valid
+    if (!$haveUsers -and !$haveGroups) {
+        return $true
+    }
+
+    # before checking supplied groups, is the user in the supplied list of authorised users?
+    if ($haveUsers -and (@($Users) -icontains $User.Username)) {
+        return $true
+    }
+
+    # if there are groups supplied, check the user is a member of one
+    if ($haveGroups) {
+        foreach ($group in $Groups) {
+            if (@($User.Groups) -icontains $group) {
+                return $true
+            }
+        }
+    }
+
+    return $false
 }
 
 function Get-PodeAuthMiddlewareScript
