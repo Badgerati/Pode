@@ -72,6 +72,25 @@ Although Pode does have support for HTTPS, when running via IIS it takes control
 
 You can setup a binding in IIS for HTTPS with a Certificate, and IIS will deal with SSL for you.
 
+## IIS Authentication
+
+If you decide to use IIS for Windows Authentication, then you can retrieve the authenticated user in Pode. This is done using the [`Add-PodeAuthIIS`] function, and will ceck for the `MS-ASPNETCORE-WINAUTHTOKEN` header from IIS. The function creates a custom Authentication Method, and can be used on Routes like other Authentications in Pode:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
+
+    Add-PodeAuthIIS -Name 'IISAuth'
+
+    Add-PodeRoute -Method Get -Path '/test' -Middleware (Get-PodeAuthMiddleware -Name 'IISAuth') -ScriptBlock {
+        param($e)
+        Write-PodeJsonResponse -Value @{ User = $e.Auth.User }
+    }
+}
+```
+
+If the required header is missing, then Pode responds with a 401. The the retrieved user, like other authentication, is set in the web event's `Auth.User` and contains the same information as Pode's inbuilt Windows AD authenticator.
+
 ## Useful Links
 
 * [Host ASP.NET Core on Windows with IIS \| Microsoft Docs](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.1)

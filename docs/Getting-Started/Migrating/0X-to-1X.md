@@ -109,7 +109,7 @@ The `gui` function use to take a Name with a hashtable of options. This function
 
 ## Handlers
 
-([Tutorial](../../../Servers/SmtpServer))
+([Tutorial](../../../Hosting/SmtpServer))
 
 The biggest change the Handlers is that you can now create multiple handlers for each of SMTP, TCP and Service - rather than just one. With this, the new [`Add-PodeHandler`](../../../Functions/Handlers/Add-PodeHandler) requires a `-Name` to be supplied.
 
