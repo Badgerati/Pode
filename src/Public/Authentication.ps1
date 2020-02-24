@@ -595,6 +595,11 @@ function Add-PodeAuthIIS
         $NoGroups
     )
 
+    # ensure we're on Windows!
+    if (!(Test-IsWindows)) {
+        throw "IIS Authentication support is for Windows only"
+    }
+
     # ensure the name doesn't already exist
     if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
         throw "IIS Authentication method already defined: $($Name)"
