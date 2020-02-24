@@ -30,6 +30,9 @@ Finally, you'll need to have Pode installed under PowerShell Core:
 pwsh -c "Install-Module Pode"
 ```
 
+!!! note
+    Sometimes you may need to run `iisreset`, otherwise IIS will return 502 errors.
+
 ## Server
 
 The first thing you'll need to do so IIS can host your server is, in the same directory as your Pode server's `.ps1` root script, create a `web.config` file. This file should look as follows, but make sure you replace the `.\server.ps1` with the path to your actual server script:
@@ -64,7 +67,7 @@ Pode automatically detects that it is running via IIS, and it changes certain at
 This allows you to write a Pode server that works locally, but will also automatically work under IIS without having to change anything!
 
 !!! note
-    This does mean that the Pode server will force all endpoints to `127.0.0.1:PORT`. So if you had two different IPs before, they'll be merged into one.
+    This does mean that Pode will force all endpoints to `127.0.0.1:PORT`. So if you had two different IPs before, they'll be merged into one.
 
 ## HTTPS
 
@@ -74,7 +77,7 @@ You can setup a binding in IIS for HTTPS with a Certificate, and IIS will deal w
 
 ## IIS Authentication
 
-If you decide to use IIS for Windows Authentication, then you can retrieve the authenticated user in Pode. This is done using the [`Add-PodeAuthIIS`] function, and will ceck for the `MS-ASPNETCORE-WINAUTHTOKEN` header from IIS. The function creates a custom Authentication Method, and can be used on Routes like other Authentications in Pode:
+If you decide to use IIS for Windows Authentication, then you can retrieve the authenticated user in Pode. This is done using the [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) function, and it will check for the `MS-ASPNETCORE-WINAUTHTOKEN` header from IIS. The function creates a custom Authentication Type and Method, and can be used on Routes like other Authentications in Pode:
 
 ```powershell
 Start-PodeServer {
@@ -89,7 +92,21 @@ Start-PodeServer {
 }
 ```
 
-If the required header is missing, then Pode responds with a 401. The the retrieved user, like other authentication, is set in the web event's `Auth.User` and contains the same information as Pode's inbuilt Windows AD authenticator.
+If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set in the web event's `Auth.User` and contains the same information as Pode's inbuilt Windows AD authenticator:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| AuthenticationType | string | Value is fixed to LDAP |
+| DistinguishedName | string | The distinguished name of the user |
+| Username | string | The user's username (without domain) |
+| Name | string | The user's fullname |
+| Email | string | The user's email address |
+| FQDN | string | The FQDN of the AD server |
+| Domain | string | The domain part of the user's username |
+| Groups | string[] | All groups, and nested groups, of which the the user is a member |
+
+!!! note
+    If the authenticated user is a Local User, then the following properies will be empty: FQDN, Email, Name, Groups, DistinguishedName
 
 ## Useful Links
 
