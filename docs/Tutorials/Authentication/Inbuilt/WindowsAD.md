@@ -18,6 +18,7 @@ The User object returned, and accessible on Routes, and other functions via `$e.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+| UserType | string | Value is fixed to Domain |
 | AuthenticationType | string | Value is fixed to LDAP |
 | DistinguishedName | string | The distinguished name of the user |
 | Username | string | The user's username (without domain) |

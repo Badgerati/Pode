@@ -99,6 +99,7 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+| UserType | string | Specifies if the user is a Domain or Local user |
 | AuthenticationType | string | Value is fixed to LDAP |
 | DistinguishedName | string | The distinguished name of the user |
 | Username | string | The user's username (without domain) |
@@ -106,10 +107,10 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 | Email | string | The user's email address |
 | FQDN | string | The FQDN of the AD server |
 | Domain | string | The domain part of the user's username |
-| Groups | string[] | All groups, and nested groups, of which the the user is a member |
+| Groups | string[] | All groups of which the the user is a member |
 
 !!! note
-    If the authenticated user is a Local User, then the following properies will be empty: FQDN, Email, Name, Groups, DistinguishedName
+    If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
 
 ## Useful Links
 
