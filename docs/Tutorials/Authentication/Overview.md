@@ -156,7 +156,7 @@ When the user makes another call using the same authenticated session and that c
 
 ## Users
 
-After successful validation, an `Auth` object will be created for use against the current web event. This `Auth` object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) is invoked).
+After successful validation, an `Auth` object will be created for use against the current [web event](../../WebEvent). This `Auth` object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) is invoked).
 
 The `Auth` object will also contain:
 
