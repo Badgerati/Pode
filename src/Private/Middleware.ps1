@@ -120,7 +120,7 @@ function Get-PodePublicMiddleware
 
         # get the static file path
         $info = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
-        if ([string]::IsNullOrWhiteSpace($info.Path)) {
+        if ([string]::IsNullOrWhiteSpace($info.Source)) {
             return $true
         }
 
@@ -144,7 +144,7 @@ function Get-PodePublicMiddleware
             Set-PodeResponseAttachment -Path $e.Path
         }
         else {
-            Write-PodeFileResponse -Path $info.Path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
+            Write-PodeFileResponse -Path $info.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
         }
 
         # static content found, stop
@@ -160,14 +160,14 @@ function Get-PodeRouteValidateMiddleware
             param($e)
 
             # ensure the path has a route
-            $route = Get-PodeRoute -Method $e.Method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
+            $route = Find-PodeRoute -Method $e.Method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
 
             # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
             if ($null -eq $route) {
                 # check if a route exists for another method
                 $methods = @('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
                 $routes = @(foreach ($method in $methods) {
-                    $r = Get-PodeRoute -Method $method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+                    $r = Find-PodeRoute -Method $method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
                     if ($null -ne $r) {
                         $r
                     }

@@ -4,35 +4,35 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 $PodeContext = @{ 'Server' = $null; }
 
-Describe 'Get-PodeRoute' {
+Describe 'Find-PodeRoute' {
     Context 'Invalid parameters supplied' {
         It 'Throw invalid method error for no method' {
-            { Get-PodeRoute -Method 'MOO' -Route '/' } | Should Throw "Cannot validate argument on parameter 'Method'"
+            { Find-PodeRoute -Method 'MOO' -Route '/' } | Should Throw "Cannot validate argument on parameter 'Method'"
         }
 
         It 'Throw null route parameter error' {
-            { Get-PodeRoute -Method GET -Route $null } | Should Throw 'The argument is null or empty'
+            { Find-PodeRoute -Method GET -Route $null } | Should Throw 'The argument is null or empty'
         }
 
         It 'Throw empty route parameter error' {
-            { Get-PodeRoute -Method GET -Route ([string]::Empty) } | Should Throw 'The argument is null or empty'
+            { Find-PodeRoute -Method GET -Route ([string]::Empty) } | Should Throw 'The argument is null or empty'
         }
     }
 
     Context 'Valid method and route' {
         It 'Return null as method does not exist' {
             $PodeContext.Server = @{ 'Routes' = @{}; }
-            Get-PodeRoute -Method GET -Route '/' | Should Be $null
+            Find-PodeRoute -Method GET -Route '/' | Should Be $null
         }
 
         It 'Returns no logic for method/route that do not exist' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Get-PodeRoute -Method GET -Route '/' | Should Be $null
+            Find-PodeRoute -Method GET -Route '/' | Should Be $null
         }
 
         It 'Returns logic for method and exact route' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
-            $result = (Get-PodeRoute -Method GET -Route '/')
+            $result = (Find-PodeRoute -Method GET -Route '/')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
@@ -45,7 +45,7 @@ Describe 'Get-PodeRoute' {
                 @{ 'Logic'= { Write-Host 'Test' }; 'Protocol' = 'http' };
             ); }; }; }
 
-            $result = (Get-PodeRoute -Method GET -Route '/' -Protocol 'http')
+            $result = (Find-PodeRoute -Method GET -Route '/' -Protocol 'http')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Protocol | Should Be 'http'
@@ -59,7 +59,7 @@ Describe 'Get-PodeRoute' {
                 @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = 'pode.foo.com' };
             ); }; }; }
 
-            $result = (Get-PodeRoute -Method GET -Route '/' -Endpoint 'pode.foo.com')
+            $result = (Find-PodeRoute -Method GET -Route '/' -Endpoint 'pode.foo.com')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Endpoint | Should Be 'pode.foo.com'
@@ -74,7 +74,7 @@ Describe 'Get-PodeRoute' {
                 @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = 'pode.foo.com'; 'Protocol' = 'https' };
             ); }; }; }
 
-            $result = (Get-PodeRoute -Method GET -Route '/' -Endpoint 'pode.foo.com' -Protocol 'https')
+            $result = (Find-PodeRoute -Method GET -Route '/' -Endpoint 'pode.foo.com' -Protocol 'https')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Protocol | Should Be 'https'
@@ -89,7 +89,7 @@ Describe 'Get-PodeRoute' {
                 @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = '*:8080' };
             ); }; }; }
 
-            $result = (Get-PodeRoute -Method GET -Route '/' -Endpoint 'localhost:8080')
+            $result = (Find-PodeRoute -Method GET -Route '/' -Endpoint 'localhost:8080')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Endpoint | Should Be '*:8080'
@@ -99,7 +99,7 @@ Describe 'Get-PodeRoute' {
 
         It 'Returns logic and middleware for method and exact route' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; 'Middleware' = { Write-Host 'Middle' }; }); }; }; }
-            $result = (Get-PodeRoute -Method GET -Route '/')
+            $result = (Find-PodeRoute -Method GET -Route '/')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
@@ -109,7 +109,7 @@ Describe 'Get-PodeRoute' {
 
         It 'Returns logic for method and exact route under star' {
             $PodeContext.Server = @{ 'Routes' = @{ '*' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
-            $result = (Get-PodeRoute -Method * -Route '/')
+            $result = (Find-PodeRoute -Method * -Route '/')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
@@ -118,7 +118,7 @@ Describe 'Get-PodeRoute' {
 
         It 'Returns logic and parameters for parameterised route' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
-            $result = (Get-PodeRoute -Method GET -Route '/123')
+            $result = (Find-PodeRoute -Method GET -Route '/123')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
@@ -140,7 +140,7 @@ Describe 'Add-PodeStaticRoute' {
         $route = $PodeContext.Server.Routes['static']
         $route | Should Not Be $null
         $route.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should Be $true
-        $route['/assets[/]{0,1}(?<file>.*)'].Path | Should Be './assets'
+        $route['/assets[/]{0,1}(?<file>.*)'].Source | Should Be './assets'
     }
 
     It 'Throws error when adding static route for non-existing folder' {
@@ -199,7 +199,7 @@ Describe 'Remove-PodeStaticRoute' {
         $routes = $PodeContext.Server.Routes['static']
         $routes | Should Not be $null
         $routes.ContainsKey('/assets[/]{0,1}(?<file>.*)') | Should Be $true
-        $routes['/assets[/]{0,1}(?<file>.*)'].Path | Should Be './assets'
+        $routes['/assets[/]{0,1}(?<file>.*)'].Source | Should Be './assets'
 
         Remove-PodeStaticRoute -Path '/assets'
 

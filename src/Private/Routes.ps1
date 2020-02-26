@@ -1,4 +1,4 @@
-function Get-PodeRoute
+function Find-PodeRoute
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -25,7 +25,7 @@ function Get-PodeRoute
 
     # first, if supplied, check the wildcard method
     if ($CheckWildMethod -and $PodeContext.Server.Routes['*'].Count -ne 0) {
-        $found = Get-PodeRoute -Method '*' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+        $found = Find-PodeRoute -Method '*' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
         if ($null -ne $found) {
             return $found
         }
@@ -76,7 +76,7 @@ function Get-PodeRoute
 
         if ($isStatic) {
             return @{
-                Path = $found.Path
+                Source = $found.Source
                 Defaults = $found.Defaults
                 Protocol = $found.Protocol
                 Endpoint = $found.Endpoint
@@ -117,7 +117,7 @@ function Get-PodeStaticRoutePath
     )
 
     # attempt to get a static route for the path
-    $found = Get-PodeRoute -Method 'static' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+    $found = Find-PodeRoute -Method 'static' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
     $havePublicDir = (![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public']))
     $path = $null
     $download = $false
@@ -140,7 +140,7 @@ function Get-PodeStaticRoutePath
             }
             else {
                 foreach ($def in $found.Defaults) {
-                    if (Test-PodePath (Join-Path $found.Path $def) -NoStatus) {
+                    if (Test-PodePath (Join-Path $found.Source $def) -NoStatus) {
                         $found.File = Join-PodePaths @($found.File, $def)
                         break
                     }
@@ -148,7 +148,7 @@ function Get-PodeStaticRoutePath
             }
         }
 
-        $path = (Join-Path $found.Path $found.File)
+        $path = (Join-Path $found.Source $found.File)
     }
 
     # use the public static directory (but only if path is a file, and a public dir is present)
@@ -158,7 +158,7 @@ function Get-PodeStaticRoutePath
 
     # return the route details
     return @{
-        Path = $path
+        Source = $path
         Download = $download
     }
 }

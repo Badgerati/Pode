@@ -201,6 +201,8 @@ function Add-PodeRoute
             ContentType = $ContentType
             ErrorType = $ErrorContentType
             Arguments = $ArgumentList
+            Method = $Method
+            Path = $Path
             OpenApi = @{
                 Path = $OpenApiPath
                 Responses = @{
@@ -329,10 +331,13 @@ function Add-PodeStaticRoute
     # add the static route for each endpoint
     foreach ($_endpoint in $endpoints) {
         $PodeContext.Server.Routes[$Method][$Path] += @(@{
-            Path = $Source
+            Source = $Source
+            Path = $Path
+            Method = $Method
             Defaults = $Defaults
             Protocol = $_endpoint.Protocol
             Endpoint = $_endpoint.Address.Trim()
+            EndpointName = @($EndpointName)
             Download = $DownloadOnly
         })
     }
@@ -846,4 +851,145 @@ function Add-PodePage
 
     # create the route
     Add-PodeRoute -Method Get -Path $_path -Middleware $Middleware -ArgumentList $arg -ScriptBlock $logic
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+<#
+.SYNOPSIS
+Get a Route(s).
+
+.DESCRIPTION
+Get a Route(s).
+
+.PARAMETER Method
+A Method to filter the routes.
+
+.PARAMETER Path
+A Path to filter the routes.
+
+.PARAMETER Protocol
+A Protocol to filter the routes.
+
+.PARAMETER Endpoint
+An Endpoint to filter the routes.
+
+.EXAMPLE
+Get-PodeRoute -Method Get -Route '/about'
+
+.EXAMPLE
+Get-PodeRoute -Method Post -Route '/users/:userId' -Endpoint 127.0.0.2:8001
+#>
+function Get-PodeRoute
+{
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [ValidateSet('', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
+        [string]
+        $Method,
+
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Protocol,
+
+        [Parameter()]
+        [string]
+        $Endpoint
+    )
+
+    # start off with every route
+    $routes = $PodeContext.Server.Routes.Values.Values
+
+    # if we have a method, filter
+    if (![string]::IsNullOrWhiteSpace($Method)) {
+        $routes = ($routes | Where-Object { $_.Method -ieq $Method })
+    }
+
+    # if we have a path, filter
+    if (![string]::IsNullOrWhiteSpace($Path)) {
+        $Path = Split-PodeRouteQuery -Path $Path
+        $Path = Update-PodeRouteSlashes -Path $Path
+        $Path = Update-PodeRoutePlaceholders -Path $Path
+        $routes = ($routes | Where-Object { $_.Path -ieq $Path })
+    }
+
+    # attempt to filter by protocol/endpoint
+    if (![string]::IsNullOrWhiteSpace($Protocol) -or ![string]::IsNullOrWhiteSpace($Endpoint)) {
+        $routes = (Get-PodeRoutesByUrl -Routes $routes -Protocol $Protocol -Endpoint $Endpoint)
+    }
+
+    # return
+    return $routes
+}
+
+<#
+.SYNOPSIS
+Get a static Route(s).
+
+.DESCRIPTION
+Get a static Route(s).
+
+.PARAMETER Path
+A Path to filter the static routes.
+
+.PARAMETER Protocol
+A Protocol to filter the static routes.
+
+.PARAMETER Endpoint
+An Endpoint to filter the static routes.
+
+.EXAMPLE
+Get-PodeStaticRoute -Path '/assets'
+
+.EXAMPLE
+Get-PodeStaticRoute -Path '/assets' -Protocol
+#>
+function Get-PodeStaticRoute
+{
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Protocol,
+
+        [Parameter()]
+        [string]
+        $Endpoint
+    )
+
+    # start off with every route
+    $routes = $PodeContext.Server.Routes['Static'].Values
+
+    # if we have a path, filter
+    if (![string]::IsNullOrWhiteSpace($Path)) {
+        $Path = Update-PodeRouteSlashes -Path $Path -Static
+        $routes = ($routes | Where-Object { $_.Path -ieq $Path })
+    }
+
+    # attempt to filter by protocol/endpoint
+    if (![string]::IsNullOrWhiteSpace($Protocol) -or ![string]::IsNullOrWhiteSpace($Endpoint)) {
+        $routes = (Get-PodeRoutesByUrl -Routes $routes -Protocol $Protocol -Endpoint $Endpoint)
+    }
+
+    # return
+    return $routes
 }

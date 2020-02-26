@@ -309,7 +309,7 @@ Describe 'Get-PodeRouteValidateMiddleware' {
         $r.Name | Should Be '__pode_mw_route_validation__'
         $r.Logic | Should Not Be $null
 
-        Mock Get-PodeRoute { return @{ 'Parameters' = @{}; 'Logic' = { Write-Host 'hello' }; } }
+        Mock Find-PodeRoute { return @{ 'Parameters' = @{}; 'Logic' = { Write-Host 'hello' }; } }
         (. $r.Logic @{
             'Method' = 'GET';
             'Path' = '/';
@@ -328,7 +328,7 @@ Describe 'Get-PodeRouteValidateMiddleware' {
         $r.Name | Should Be '__pode_mw_route_validation__'
         $r.Logic | Should Not Be $null
 
-        Mock Get-PodeRoute { return @{
+        Mock Find-PodeRoute { return @{
             'Parameters' = @{};
             'Logic' = { Write-Host 'hello' };
             'ContentType' = 'application/json';
@@ -343,7 +343,7 @@ Describe 'Get-PodeRouteValidateMiddleware' {
         $r.Name | Should Be '__pode_mw_route_validation__'
         $r.Logic | Should Not Be $null
 
-        Mock Get-PodeRoute { return $null }
+        Mock Find-PodeRoute { return $null }
         Mock Set-PodeResponseStatus { }
         (. $r.Logic @{
             'Method' = 'GET';
@@ -423,7 +423,7 @@ Describe 'Get-PodePublicMiddleware' {
         $r.Name | Should Be '__pode_mw_static_content__'
         $r.Logic | Should Not Be $null
 
-        Mock Get-PodeStaticRoutePath { return @{ 'Path' = $null } }
+        Mock Get-PodeStaticRoutePath { return @{ 'Source' = $null } }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
         }) | Should Be $true
@@ -438,7 +438,7 @@ Describe 'Get-PodePublicMiddleware' {
             'Web' = @{ 'Static' = @{ } }
         }}
 
-        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/'; 'Download' = $true } }
+        Mock Get-PodeStaticRoutePath { return @{ 'Source' = '/'; 'Download' = $true } }
         Mock Set-PodeResponseAttachment { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
@@ -460,7 +460,7 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
+        Mock Get-PodeStaticRoutePath { return @{ 'Source' = '/' } }
         Mock Write-PodeFileResponse { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
@@ -483,7 +483,7 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
+        Mock Get-PodeStaticRoutePath { return @{ 'Source' = '/' } }
         Mock Write-PodeFileResponse { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
@@ -506,7 +506,7 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
+        Mock Get-PodeStaticRoutePath { return @{ 'Source' = '/' } }
         Mock Write-PodeFileResponse { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
@@ -528,7 +528,7 @@ Describe 'Get-PodePublicMiddleware' {
             }}
         }}
 
-        Mock Get-PodeStaticRoutePath { return @{ 'Path' = '/' } }
+        Mock Get-PodeStaticRoutePath { return @{ 'Source' = '/' } }
         Mock Write-PodeFileResponse { }
         (. $r.Logic @{
             'Path' = '/'; 'Protocol' = 'http'; 'Endpoint' = '';
