@@ -917,7 +917,13 @@ function Get-PodeRoute
 
     # if we have a method, filter
     if (![string]::IsNullOrWhiteSpace($Method)) {
-        $routes = ($routes | Where-Object { $_.Method -ieq $Method })
+        $routes = @(foreach ($route in $routes) {
+            if ($route.Method -ine $Method) {
+                continue
+            }
+
+            $route
+        })
     }
 
     # if we have a path, filter
@@ -925,7 +931,14 @@ function Get-PodeRoute
         $Path = Split-PodeRouteQuery -Path $Path
         $Path = Update-PodeRouteSlashes -Path $Path
         $Path = Update-PodeRoutePlaceholders -Path $Path
-        $routes = ($routes | Where-Object { $_.Path -ieq $Path })
+
+        $routes = @(foreach ($route in $routes) {
+            if ($route.Path -ine $Path) {
+                continue
+            }
+
+            $route
+        })
     }
 
     # attempt to filter by protocol/endpoint
@@ -982,7 +995,13 @@ function Get-PodeStaticRoute
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
         $Path = Update-PodeRouteSlashes -Path $Path -Static
-        $routes = ($routes | Where-Object { $_.Path -ieq $Path })
+        $routes = @(foreach ($route in $routes) {
+            if ($route.Path -ine $Path) {
+                continue
+            }
+
+            $route
+        })
     }
 
     # attempt to filter by protocol/endpoint

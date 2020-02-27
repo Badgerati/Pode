@@ -1164,3 +1164,78 @@ Describe 'Get-PodeRouteByUrl' {
         $Result | Should Be $routeNeitherSet
     }
 }
+
+Describe 'Get-PodeRoute' {
+    It 'Returns both routes whe nothing supplied' {
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; }
+        Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
+
+        $routes = Get-PodeRoute
+        $routes.Length | Should Be 3
+    }
+
+    It 'Returns both routes for GET method' {
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; }
+        Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
+
+        $routes = Get-PodeRoute -Method Get
+        $routes.Length | Should Be 2
+    }
+
+    It 'Returns one route for POST method' {
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; }
+        Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
+
+        $routes = Get-PodeRoute -Method Post
+        $routes.Length | Should Be 1
+    }
+
+    It 'Returns both routes for users path' {
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; }
+        Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
+
+        $routes = Get-PodeRoute -Path '/users'
+        $routes.Length | Should Be 2
+    }
+
+    It 'Returns one route for users path and GET metho' {
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; }
+        Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
+        Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
+
+        $routes = Get-PodeRoute -Method Get -Path '/users'
+        $routes.Length | Should Be 1
+    }
+}
+
+Describe 'Get-PodeStaticRoute' {
+    Mock Test-PodePath { return $true }
+    Mock New-PodePSDrive { return './assets' }
+
+    It 'Returns all static routes' {
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd }
+        Add-PodeStaticRoute -Path '/assets' -Source './assets'
+        Add-PodeStaticRoute -Path '/images' -Source './images'
+
+        $routes = Get-PodeStaticRoute
+        $routes.Length | Should Be 2
+    }
+
+    It 'Returns one static route' {
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd }
+        Add-PodeStaticRoute -Path '/assets' -Source './assets'
+        Add-PodeStaticRoute -Path '/images' -Source './images'
+
+        $routes = Get-PodeStaticRoute -Path '/images'
+        $routes.Length | Should Be 1
+    }
+}
