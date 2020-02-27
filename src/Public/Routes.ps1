@@ -436,7 +436,7 @@ The endpoint of the static Route to remove.
 Remove-PodeStaticRoute -Path '/assets'
 
 .EXAMPLE
-Remove-PodeStaticRoute -Path '/assets' -Protocol
+Remove-PodeStaticRoute -Path '/assets' -Protocol 127.0.0.1
 #>
 function Remove-PodeStaticRoute
 {
@@ -853,18 +853,6 @@ function Add-PodePage
     Add-PodeRoute -Method Get -Path $_path -Middleware $Middleware -ArgumentList $arg -ScriptBlock $logic
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 <#
 .SYNOPSIS
 Get a Route(s).
@@ -970,7 +958,7 @@ An Endpoint to filter the static routes.
 Get-PodeStaticRoute -Path '/assets'
 
 .EXAMPLE
-Get-PodeStaticRoute -Path '/assets' -Protocol
+Get-PodeStaticRoute -Path '/assets' -Protocol 127.0.0.1
 #>
 function Get-PodeStaticRoute
 {
