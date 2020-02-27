@@ -114,6 +114,8 @@
         'Clear-PodeStaticRoutes',
         'ConvertTo-PodeRoute',
         'Add-PodePage',
+        'Get-PodeRoute',
+        'Get-PodeStaticRoute',
 
         # handlers
         'Add-PodeHandler',

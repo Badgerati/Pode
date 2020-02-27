@@ -41,7 +41,7 @@ function Set-PodeResponseAttachment
     )
 
     # only attach files from public/static-route directories when path is relative
-    $_path = (Get-PodeStaticRoutePath -Route $Path).Path
+    $_path = (Get-PodeStaticRoutePath -Route $Path).Source
 
     # if there's no path, check the original path (in case it's literal/relative)
     if (!(Test-PodePath $_path -NoStatus)) {
