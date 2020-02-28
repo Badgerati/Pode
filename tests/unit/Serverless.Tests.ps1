@@ -18,6 +18,7 @@ Describe 'Start-PodeAzFuncServer' {
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
     Mock Set-PodeResponseStatus { }
+    Mock Update-PodeServerRequestMetrics { }
 
     It 'Throws error for null data' {
         { Start-PodeAzFuncServer -Data $null } | Should Throw 'because it is null'
@@ -147,6 +148,7 @@ Describe 'Start-PodeAwsLambdaServer' {
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
     Mock Set-PodeResponseStatus { }
+    Mock Update-PodeServerRequestMetrics { }
 
     It 'Throws error for null data' {
         { Start-PodeAwsLambdaServer -Data $null } | Should Throw 'because it is null'
