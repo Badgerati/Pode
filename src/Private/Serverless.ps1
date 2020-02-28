@@ -44,6 +44,7 @@ function Start-PodeAzFuncServer
                 PendingCookies = @{}
                 Path = [string]::Empty
                 Streamed = $false
+                Route = $null
                 Timestamp = [datetime]::UtcNow
             }
 
@@ -63,14 +64,10 @@ function Start-PodeAzFuncServer
 
             # invoke middleware
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                # get the route logic
-                $route = Find-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
-                    -Endpoint $WebEvent.Endpoint -CheckWildMethod
-
                 # invoke route and custom middleware
-                if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
-                    if ($null -ne $route.Logic) {
-                        Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
+                if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware)) {
+                    if ($null -ne $WebEvent.Route.Logic) {
+                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent -Scoped
                     }
                 }
             }
@@ -78,6 +75,9 @@ function Start-PodeAzFuncServer
         catch {
             Set-PodeResponseStatus -Code 500 -Exception $_
             Write-Host $Error[0]
+        }
+        finally {
+            Update-PodeServerRequestMetrics -WebEvent $WebEvent
         }
 
         # invoke endware specifc to the current web event
@@ -141,6 +141,7 @@ function Start-PodeAwsLambdaServer
                 Cookies = @{}
                 PendingCookies = @{}
                 Streamed = $false
+                Route = $null
                 Timestamp = [datetime]::UtcNow
             }
 
@@ -153,14 +154,10 @@ function Start-PodeAwsLambdaServer
 
             # invoke middleware
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                # get the route logic
-                $route = Find-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
-                    -Endpoint $WebEvent.Endpoint -CheckWildMethod
-
                 # invoke route and custom middleware
-                if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
-                    if ($null -ne $route.Logic) {
-                        Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments $WebEvent -Scoped
+                if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware)) {
+                    if ($null -ne $WebEvent.Route.Logic) {
+                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent -Scoped
                     }
                 }
             }
@@ -168,6 +165,9 @@ function Start-PodeAwsLambdaServer
         catch {
             Set-PodeResponseStatus -Code 500 -Exception $_
             Write-Host $Error[0]
+        }
+        finally {
+            Update-PodeServerRequestMetrics -WebEvent $WebEvent
         }
 
         # invoke endware specifc to the current web event

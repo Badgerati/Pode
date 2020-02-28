@@ -213,6 +213,13 @@ function Add-PodeRoute
                 RequestBody = @{}
                 Authentication = @()
             }
+            IsStatic = $false
+            Metrics = @{
+                Requests = @{
+                    Total = 0
+                    StatusCodes = @{}
+                }
+            }
         }
     })
 
@@ -339,6 +346,13 @@ function Add-PodeStaticRoute
             Endpoint = $_endpoint.Address.Trim()
             EndpointName = @($EndpointName)
             Download = $DownloadOnly
+            IsStatic = $true
+            Metrics = @{
+                Requests = @{
+                    Total = 0
+                    StatusCodes = @{}
+                }
+            }
         })
     }
 }

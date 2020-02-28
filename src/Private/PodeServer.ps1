@@ -154,6 +154,7 @@ function Invoke-PodeSocketHandler
             Data = $null
             Files = $null
             Streamed = $true
+            Route = $null
             Timestamp = [datetime]::UtcNow
         }
 
@@ -221,14 +222,10 @@ function Invoke-PodeSocketHandler
 
         # invoke middleware
         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-            # get the route logic
-            $route = Find-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
-                -Endpoint $WebEvent.Endpoint -CheckWildMethod
-
             # invoke route and custom middleware
-            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
-                if ($null -ne $route.Logic) {
-                    Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments (@($WebEvent) + @($route.Arguments)) -Scoped -Splat
+            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware)) {
+                if ($null -ne $WebEvent.Route.Logic) {
+                    Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments (@($WebEvent) + @($WebEvent.Route.Arguments)) -Scoped -Splat
                 }
             }
         }
@@ -246,6 +243,9 @@ function Invoke-PodeSocketHandler
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
         Set-PodeResponseStatus -Code 500 -Exception $_
+    }
+    finally {
+        Update-PodeServerRequestMetrics -WebEvent $WebEvent
     }
 
     try {
