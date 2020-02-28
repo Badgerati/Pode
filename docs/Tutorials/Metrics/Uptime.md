@@ -1,6 +1,6 @@
 # Uptime and Restarts
 
-Internally Pode keeps track of the uptime of the server, as well as the number of times the server has been restarted.
+Pode internally keeps track of the uptime of the server, as well as the number of times the server has been restarted.
 
 ## Uptime
 
