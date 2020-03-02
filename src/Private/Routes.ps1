@@ -433,6 +433,7 @@ function Find-PodeEndpoints
         $endpoints += @{
             Protocol = $Protocol
             Address = $Endpoint
+            Name = [string]::Empty
         }
     }
 
@@ -444,6 +445,7 @@ function Find-PodeEndpoints
                 $endpoints += @{
                     Protocol = $_endpoint.Protocol
                     Address = $_endpoint.RawAddress
+                    Name = $name
                 }
             }
         }
