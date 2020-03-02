@@ -432,7 +432,7 @@ function Get-PodeAuthWindowsADIISMethod
                     $connection = $result.Connection
 
                     # get the users groups
-                    if (!$NoGroups) {
+                    if (!$options.NoGroups) {
                         $user.Groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName)
                     }
                 }
@@ -454,8 +454,8 @@ function Get-PodeAuthWindowsADIISMethod
                     $user.UserType = 'Local'
 
                     # dirty, i know :/ - since IIS runs using pwsh, the InvokeMember part fails
-                    # we can safely call powershell here, as IIS is only on windows.
-                    if (!$NoGroups) {
+                    # we can safely call windows powershell here, as IIS is only on windows.
+                    if (!$options.NoGroups) {
                         $cmd = "`$ad = [adsi]'WinNT://$($localUser)'; @(`$ad.Groups() | Foreach-Object { `$_.GetType().InvokeMember('Name', 'GetProperty', `$null, `$_, `$null) })"
                         $user.Groups = [string[]](powershell -c $cmd)
                     }
