@@ -565,6 +565,9 @@ An array of Usernames to only allow access.
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
 
+.PARAMETER NoLocalCheck
+If supplied, Pode will not at attempt to retrieve local User/Group information for the authenticated user.
+
 .EXAMPLE
 Add-PodeAuthIIS -Name 'IISAuth'
 
@@ -592,7 +595,10 @@ function Add-PodeAuthIIS
 
         [Parameter(ParameterSetName='NoGroups')]
         [switch]
-        $NoGroups
+        $NoGroups,
+
+        [switch]
+        $NoLocalCheck
     )
 
     # ensure we're on Windows!
@@ -630,5 +636,6 @@ function Add-PodeAuthIIS
         Users = $Users
         Groups = $Groups
         NoGroups = $NoGroups
+        NoLocalCheck = $NoLocalCheck
     }
 }
