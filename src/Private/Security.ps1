@@ -8,22 +8,24 @@ function Test-PodeIPLimit
 
     $type = 'IP'
 
-    # get the ip address in bytes
-    $IP = @{
-        'String' = $IP.IPAddressToString;
-        'Family' = $IP.AddressFamily;
-        'Bytes' = $IP.GetAddressBytes();
-    }
-
     # get the limit rules and active list
     $rules = $PodeContext.Server.Limits.Rules[$type]
     $active = $PodeContext.Server.Limits.Active[$type]
-    $now = [DateTime]::UtcNow
 
     # if there are no rules, it's valid
-    if (Test-IsEmpty $rules) {
+    if (($null -eq $rules) -or ($rules.Count -eq 0)) {
         return $true
     }
+
+    # get the ip address in bytes
+    $IP = @{
+        String = $IP.IPAddressToString
+        Family = $IP.AddressFamily
+        Bytes = $IP.GetAddressBytes()
+    }
+
+    # now
+    $now = [DateTime]::UtcNow
 
     # is the ip active? (get a direct match, then try grouped subnets)
     $_active_ip = $active[$IP.String]
@@ -37,6 +39,7 @@ function Test-PodeIPLimit
         $_active_ip = @(foreach ($_group in $_groups) {
             if (Test-PodeIPAddressInRange -IP $IP -LowerIP $_group.Rule.Lower -UpperIP $_group.Rule.Upper) {
                 $_group
+                break
             }
         })[0]
     }
@@ -70,6 +73,7 @@ function Test-PodeIPLimit
         $_rule_ip = @(foreach ($rule in $rules.Values) {
             if (Test-PodeIPAddressInRange -IP $IP -LowerIP $rule.Lower -UpperIP $rule.Upper) {
                 $rule
+                break
             }
         })[0]
 
@@ -77,8 +81,8 @@ function Test-PodeIPLimit
         # (add to active list as always allowed - saves running where search everytime)
         if ($null -eq $_rule_ip) {
             $active.Add($IP.String, @{
-                'Rule' = @{
-                    'Limit' = -1
+                Rule = @{
+                    Limit = -1
                 }
             })
 
@@ -89,9 +93,9 @@ function Test-PodeIPLimit
         $_ip = (Resolve-PodeValue -Check $_rule_ip.Grouped -TrueValue $_rule_ip.IP -FalseValue $IP.String)
 
         $active.Add($_ip, @{
-            'Rule' = $_rule_ip;
-            'Rate' = 1;
-            'Expire' = $now.AddSeconds($_rule_ip.Seconds);
+            Rule = $_rule_ip
+            Rate = 1
+            Expire = $now.AddSeconds($_rule_ip.Seconds)
         })
 
         # if limit is 0, it's never allowed
@@ -109,23 +113,23 @@ function Test-PodeIPAccess
 
     $type = 'IP'
 
-    # get the ip address in bytes
-    $IP = @{
-        'Family' = $IP.AddressFamily;
-        'Bytes' = $IP.GetAddressBytes();
-    }
-
     # get permission lists for ip
     $allow = $PodeContext.Server.Access.Allow[$type]
     $deny = $PodeContext.Server.Access.Deny[$type]
 
     # are they empty?
-    $alEmpty = (Test-IsEmpty $allow)
-    $dnEmpty = (Test-IsEmpty $deny)
+    $alEmpty = (($null -eq $allow) -or ($allow.Count -eq 0))
+    $dnEmpty = (($null -eq $deny) -or ($deny.Count -eq 0))
 
     # if both are empty, value is valid
     if ($alEmpty -and $dnEmpty) {
         return $true
+    }
+
+    # get the ip address in bytes
+    $IP = @{
+        Family = $IP.AddressFamily
+        Bytes = $IP.GetAddressBytes()
     }
 
     # if value in allow, it's allowed
@@ -133,6 +137,7 @@ function Test-PodeIPAccess
         $match = @(foreach ($value in $allow.Values) {
             if (Test-PodeIPAddressInRange -IP $IP -LowerIP $value.Lower -UpperIP $value.Upper) {
                 $value
+                break
             }
         })[0]
 
@@ -146,6 +151,7 @@ function Test-PodeIPAccess
         $match = @(foreach ($value in $deny.Values) {
             if (Test-PodeIPAddressInRange -IP $IP -LowerIP $value.Lower -UpperIP $value.Upper) {
                 $value
+                break
             }
         })[0]
 

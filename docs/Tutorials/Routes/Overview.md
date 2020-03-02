@@ -185,6 +185,7 @@ The following is the structure of the Route object internally, as well as the ob
 | ErrorType | string | Content type of the error page to use for the route |
 | Logic | scriptblock | The main scriptblock logic of the route |
 | Method | string | HTTP method of the route |
+| Metrics | hashtable | Metrics for the route, such as Request counts |
 | Middleware | hashtable[] | Array of middleware that runs prior to the route's scriptblock |
 | OpenApi | hashtable[] | The OpenAPI definition/settings for the route |
 | Path | string | The path of the route - this path will have regex in place of route parameters |
@@ -199,6 +200,7 @@ Static routes have a slightly different format:
 | Endpoint | string | Endpoint the route is bound to as `<address>:<port>` |
 | EndpointName | string | Name of the endpoint the route is bound to |
 | Method | string | HTTP method of the route |
+| Metrics | hashtable | Metrics for the route, such as Request counts |
 | Path | string | The path of the route - this path will have regex in place of dynamic file names |
 | Protocol | string | Protocol the route is bound to |
 | Source | string | The source path within the server that is used for the route |
