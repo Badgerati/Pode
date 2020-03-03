@@ -1,5 +1,25 @@
 # Release Notes
 
+## v1.6.0
+
+```plain
+### Features
+* #464: Request metrics for routes for the number of requests
+* #473: Digest Authentication support (with added support for PostValidator scripts)
+* #478: Bearer Authentication support (with support for scope validation)
+
+### Enhancements
+* #425: Adds functions to get routes: `Get-PodeRoute` and `Get-PodeStaticRoute`
+* #474: The inbuilt Windows AD authentication now works cross-platform!
+* #475: Adds support for hosting a Pode server via IIS
+
+### Bugs
+* #477: Fix QueryString parsing on Pode server type
+
+### Documentation
+* #484: Information about Web Events and their structure
+```
+
 ## v1.5.0
 
 ```plain
