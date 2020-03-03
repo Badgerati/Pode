@@ -13,12 +13,12 @@ Describe 'Start-PodeAzFuncServer' {
     Mock Get-PodeCookieMiddleware { }
     Mock New-Object { return @{} }
     Mock Get-PodeHeader { return 'some-value' }
-    Mock Find-PodeRoute { return @{ Logic = { Write-Host 'Helo' } } }
     Mock Invoke-PodeScriptBlock { }
     Mock Write-Host { }
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
     Mock Set-PodeResponseStatus { }
+    Mock Update-PodeServerRequestMetrics { }
 
     It 'Throws error for null data' {
         { Start-PodeAzFuncServer -Data $null } | Should Throw 'because it is null'
@@ -44,7 +44,6 @@ Describe 'Start-PodeAzFuncServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 0 -Scope It
     }
 
     It 'Runs the server, using static content path from query' {
@@ -67,11 +66,10 @@ Describe 'Start-PodeAzFuncServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 0 -Scope It
     }
 
     It 'Runs the server, succeeds middleware with route' {
-        Mock Invoke-PodeMiddleware { return $true }
+        Mock Invoke-PodeMiddleware { $WebEvent.Route = @{ Logic = {} }; return $true }
         $PodeContext = @{ Server = @{ } }
 
         $result = Start-PodeAzFuncServer -Data @{
@@ -90,7 +88,6 @@ Describe 'Start-PodeAzFuncServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 1 -Scope It
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
@@ -114,7 +111,6 @@ Describe 'Start-PodeAzFuncServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 0 -Scope It
     }
 
     It 'Runs the server, errors in endware' {
@@ -137,7 +133,6 @@ Describe 'Start-PodeAzFuncServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 0 -Scope It
     }
 }
 
@@ -148,12 +143,12 @@ Describe 'Start-PodeAwsLambdaServer' {
     Mock Get-PodeCookieMiddleware { }
     Mock Get-PodeHeader { return 'some-value' }
     Mock Set-PodeHeader { }
-    Mock Find-PodeRoute { return @{ Logic = { Write-Host 'Helo' } } }
     Mock Invoke-PodeScriptBlock { }
     Mock Write-Host { }
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
     Mock Set-PodeResponseStatus { }
+    Mock Update-PodeServerRequestMetrics { }
 
     It 'Throws error for null data' {
         { Start-PodeAwsLambdaServer -Data $null } | Should Throw 'because it is null'
@@ -173,11 +168,10 @@ Describe 'Start-PodeAwsLambdaServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 0 -Scope It
     }
 
     It 'Runs the server, succeeds middleware with route' {
-        Mock Invoke-PodeMiddleware { return $true }
+        Mock Invoke-PodeMiddleware { $WebEvent.Route = @{ Logic = {} }; return $true }
         $PodeContext = @{ Server = @{ } }
 
         $result = Start-PodeAwsLambdaServer -Data @{
@@ -190,7 +184,6 @@ Describe 'Start-PodeAwsLambdaServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 1 -Scope It
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
@@ -208,7 +201,6 @@ Describe 'Start-PodeAwsLambdaServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 0 -Scope It
     }
 
     It 'Runs the server, errors in endware' {
@@ -226,6 +218,5 @@ Describe 'Start-PodeAwsLambdaServer' {
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
-        Assert-MockCalled Find-PodeRoute -Times 0 -Scope It
     }
 }

@@ -119,7 +119,7 @@ function Get-PodePublicMiddleware
         param($e)
 
         # get the static file path
-        $info = Get-PodeStaticRoutePath -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+        $info = Find-PodeStaticRoutePath -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
         if ([string]::IsNullOrWhiteSpace($info.Source)) {
             return $true
         }
@@ -160,20 +160,21 @@ function Get-PodeRouteValidateMiddleware
             param($e)
 
             # ensure the path has a route
-            $route = Find-PodeRoute -Method $e.Method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
+            $route = Find-PodeRoute -Method $e.Method -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
 
             # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
             if ($null -eq $route) {
                 # check if a route exists for another method
                 $methods = @('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
-                $routes = @(foreach ($method in $methods) {
-                    $r = Find-PodeRoute -Method $method -Route $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+                $diff_route = @(foreach ($method in $methods) {
+                    $r = Find-PodeRoute -Method $method -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
                     if ($null -ne $r) {
                         $r
+                        break
                     }
-                })
+                })[0]
 
-                if (($null -ne $routes) -and ($routes.Length -gt 0)) {
+                if ($null -ne $diff_route) {
                     Set-PodeResponseStatus -Code 405
                     return $false
                 }
@@ -184,7 +185,13 @@ function Get-PodeRouteValidateMiddleware
             }
 
             # set the route parameters
-            $e.Parameters = $route.Parameters
+            $e.Parameters = @{}
+            if ($e.Path -imatch "$($route.Path)$") {
+                $e.Parameters = $Matches
+            }
+
+            # set the route on the WebEvent
+            $e.Route = $route
 
             # override the content type from the route if it's not empty
             if (![string]::IsNullOrWhiteSpace($route.ContentType)) {

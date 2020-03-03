@@ -214,6 +214,10 @@ function New-PodeContext
             StartTime = [datetime]::UtcNow
             RestartCount = 0
         }
+        Requests = @{
+            Total = 0
+            StatusCodes = @{}
+        }
     }
 
     # authnetication methods

@@ -7,36 +7,35 @@ $PodeContext = @{ 'Server' = $null; }
 Describe 'Find-PodeRoute' {
     Context 'Invalid parameters supplied' {
         It 'Throw invalid method error for no method' {
-            { Find-PodeRoute -Method 'MOO' -Route '/' } | Should Throw "Cannot validate argument on parameter 'Method'"
+            { Find-PodeRoute -Method 'MOO' -Path '/' } | Should Throw "Cannot validate argument on parameter 'Method'"
         }
 
         It 'Throw null route parameter error' {
-            { Find-PodeRoute -Method GET -Route $null } | Should Throw 'The argument is null or empty'
+            { Find-PodeRoute -Method GET -Path $null } | Should Throw 'The argument is null or empty'
         }
 
         It 'Throw empty route parameter error' {
-            { Find-PodeRoute -Method GET -Route ([string]::Empty) } | Should Throw 'The argument is null or empty'
+            { Find-PodeRoute -Method GET -Path ([string]::Empty) } | Should Throw 'The argument is null or empty'
         }
     }
 
     Context 'Valid method and route' {
         It 'Return null as method does not exist' {
             $PodeContext.Server = @{ 'Routes' = @{}; }
-            Find-PodeRoute -Method GET -Route '/' | Should Be $null
+            Find-PodeRoute -Method GET -Path '/' | Should Be $null
         }
 
         It 'Returns no logic for method/route that do not exist' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
-            Find-PodeRoute -Method GET -Route '/' | Should Be $null
+            Find-PodeRoute -Method GET -Path '/' | Should Be $null
         }
 
         It 'Returns logic for method and exact route' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
-            $result = (Find-PodeRoute -Method GET -Route '/')
+            $result = (Find-PodeRoute -Method GET -Path '/')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-            $result.Parameters | Should Be $null
         }
 
         It 'Returns logic for method and exact route and protocol' {
@@ -45,12 +44,11 @@ Describe 'Find-PodeRoute' {
                 @{ 'Logic'= { Write-Host 'Test' }; 'Protocol' = 'http' };
             ); }; }; }
 
-            $result = (Find-PodeRoute -Method GET -Route '/' -Protocol 'http')
+            $result = (Find-PodeRoute -Method GET -Path '/' -Protocol 'http')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Protocol | Should Be 'http'
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-            $result.Parameters | Should Be $null
         }
 
         It 'Returns logic for method and exact route and endpoint' {
@@ -59,12 +57,11 @@ Describe 'Find-PodeRoute' {
                 @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = 'pode.foo.com' };
             ); }; }; }
 
-            $result = (Find-PodeRoute -Method GET -Route '/' -Endpoint 'pode.foo.com')
+            $result = (Find-PodeRoute -Method GET -Path '/' -Endpoint 'pode.foo.com')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Endpoint | Should Be 'pode.foo.com'
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-            $result.Parameters | Should Be $null
         }
 
         It 'Returns logic for method and exact route, endpoint and protocol' {
@@ -74,13 +71,12 @@ Describe 'Find-PodeRoute' {
                 @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = 'pode.foo.com'; 'Protocol' = 'https' };
             ); }; }; }
 
-            $result = (Find-PodeRoute -Method GET -Route '/' -Endpoint 'pode.foo.com' -Protocol 'https')
+            $result = (Find-PodeRoute -Method GET -Path '/' -Endpoint 'pode.foo.com' -Protocol 'https')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Protocol | Should Be 'https'
             $result.Endpoint | Should Be 'pode.foo.com'
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-            $result.Parameters | Should Be $null
         }
 
         It 'Returns logic for method and exact route and wildcard endpoint' {
@@ -89,42 +85,36 @@ Describe 'Find-PodeRoute' {
                 @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = '*:8080' };
             ); }; }; }
 
-            $result = (Find-PodeRoute -Method GET -Route '/' -Endpoint 'localhost:8080')
+            $result = (Find-PodeRoute -Method GET -Path '/' -Endpoint 'localhost:8080')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Endpoint | Should Be '*:8080'
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-            $result.Parameters | Should Be $null
         }
 
         It 'Returns logic and middleware for method and exact route' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; 'Middleware' = { Write-Host 'Middle' }; }); }; }; }
-            $result = (Find-PodeRoute -Method GET -Route '/')
+            $result = (Find-PodeRoute -Method GET -Path '/')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
             $result.Middleware.ToString() | Should Be ({ Write-Host 'Middle' }).ToString()
-            $result.Parameters | Should Be $null
         }
 
         It 'Returns logic for method and exact route under star' {
             $PodeContext.Server = @{ 'Routes' = @{ '*' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
-            $result = (Find-PodeRoute -Method * -Route '/')
+            $result = (Find-PodeRoute -Method * -Path '/')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-            $result.Parameters | Should Be $null
         }
 
         It 'Returns logic and parameters for parameterised route' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
-            $result = (Find-PodeRoute -Method GET -Route '/123')
+            $result = (Find-PodeRoute -Method GET -Path '/123')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-
-            $result.Parameters | Should BeOfType System.Collections.Hashtable
-            $result.Parameters['userId'] | Should Be '123'
         }
     }
 }
