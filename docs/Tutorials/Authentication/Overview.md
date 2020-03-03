@@ -7,17 +7,19 @@ Authentication can either be sessionless (requiring validation on every request)
 
 To setup and use authentication in Pode you need to use the [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) and [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) functions, as well as the [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) function for defining authentication Middleware.
 
-## Functions
+## Usage
 
-### New-PodeAuthType
+### Types/Parsers
 
-The [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function allows you to create and configure Basic/Form authentication types, or you can create your own Custom authentication types. These types can then be used on the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function.
+The [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function allows you to create and configure authentication types/parsers, or you can create your own Custom authentication types. These types can then be used on the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function. There job is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
 
-An example of creating Basic/Form authentication is as follows:
+An example of creating some authentication types is as follows:
 
 ```powershell
 Start-PodeServer {
     $basic_auth = New-PodeAuthType -Basic
+    $digest_auth = New-PodeAuthType -Digest
+    $bearer_auth = New-PodeAuthType -Bearer
     $form_auth = New-PodeAuthType -Form
 }
 ```
@@ -39,15 +41,15 @@ Start-PodeServer {
         $username = $e.Data.$userField
         $password = $e.Data.$passField
 
-        # return the data, to be passed to the validator script
+        # return the data as an array, to be passed to the validator script
         return @($client, $username, $password)
     }
 }
 ```
 
-### Add-PodeAuth
+### Method/Validator
 
-The [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function allows you to add authentication methods to your server. You can have many methods configured, defining which one to validate against using the [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) function.
+The [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function allows you to add authentication methods/validators to your server. You can have many methods configured, defining which one to validate against using the [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) function. There job is the validate the information parsed from the supplied type to ensure a user is valid.
 
 An example of using [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) for Basic authentication is as follows:
 
@@ -97,6 +99,18 @@ New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
 }
 ```
 
+If you're defining an authenticator that need to send back a Challenge, then you can also do this by setting the response Code property to 401, and/or by also supplying a Challenge property.
+This Challenge property is a string, and will be automatically appended onto the `WWW-Authenticate` Header. It *does not* need to include the Authentication Type or Realm (these will be added for you).
+
+For example, in Digest you could return:
+
+```powershell
+return @{
+    Code = 401
+    Challenge = 'qop="auth", nonce="<some-random-guid>"'
+}
+```
+
 #### Authenticate Type/Realm
 
 When authentication fails, and a 401 response is returned, then Pode will also attempt to Response back to the client with a `WWW-Authenticate` header (if you've manually set this header using the custom headers from above, then the custom header will be used instead). For the inbuilt types, such as Basic, this Header will always be returned on a 401 response.
@@ -118,7 +132,7 @@ WWW-Authenticate: Basic realm="Enter creds to access site"
 !!! note
     If no Realm was set then it would just look as follows: `WWW-Authenticate: Basic`
 
-### Get-PodeAuthMiddleware
+### Middleware
 
 The [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) function allows you to define which authentication method to validate a Request against. It returns valid Middleware, meaning you can either use it on specific Routes, or globally for all routes as global Middleware. If this action fails, then a 401 response is returned.
 
@@ -142,7 +156,7 @@ When the user makes another call using the same authenticated session and that c
 
 ## Users
 
-After successful validation, an `Auth` object will be created for use against the current web event. This `Auth` object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) is invoked).
+After successful validation, an `Auth` object will be created for use against the current [web event](../../WebEvent). This `Auth` object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) is invoked).
 
 The `Auth` object will also contain:
 

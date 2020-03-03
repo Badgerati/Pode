@@ -104,6 +104,7 @@
         'Test-IsPSCore',
         'Test-IsEmpty',
         'Out-PodeHost',
+        'Test-PodeIsIIS',
 
         # routes
         'Add-PodeRoute',
@@ -114,6 +115,8 @@
         'Clear-PodeStaticRoutes',
         'ConvertTo-PodeRoute',
         'Add-PodePage',
+        'Get-PodeRoute',
+        'Get-PodeStaticRoute',
 
         # handlers
         'Add-PodeHandler',
@@ -156,6 +159,7 @@
         'Add-PodeAuthWindowsAd',
         'Remove-PodeAuth',
         'Get-PodeAuthMiddleware',
+        'Add-PodeAuthIIS',
 
         # logging
         'New-PodeLoggingMethod',
@@ -200,7 +204,8 @@
 
         # Metrics
         'Get-PodeServerUptime',
-        'Get-PodeServerRestartCount'
+        'Get-PodeServerRestartCount',
+        'Get-PodeServerRequestMetric'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

@@ -130,7 +130,7 @@ function Start-PodeServer
             -ServerType $Type
 
         # set it so ctrl-c can terminate, unless serverless
-        if (!$PodeContext.Server.IsServerless) {
+        if (!$PodeContext.Server.IsServerless -and !$PodeContext.Server.IsIIS) {
             [Console]::TreatControlCAsInput = $true
         }
 
@@ -683,6 +683,14 @@ function Add-PodeEndpoint
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeEndpoint' -ThrowError
 
+    # are we running as IIS for HTTP/HTTPS? (if yes, force the port, address and protocol)
+    $isIIS = ($PodeContext.Server.IsIIS -and (@('Http', 'Https') -icontains $Protocol))
+    if ($isIIS) {
+        $Port = [int]$env:ASPNETCORE_PORT
+        $Address = '127.0.0.1'
+        $Protocol = 'Http'
+    }
+
     # parse the endpoint for host/port info
     $FullAddress = "$($Address):$($Port)"
     $_endpoint = Get-PodeEndpointInfo -Endpoint $FullAddress
@@ -714,7 +722,7 @@ function Add-PodeEndpoint
         }
     }
 
-    # set the ip for the context
+    # set the ip for the context (force to localhost for IIS)
     $obj.Address = (Get-PodeIPAddress $_endpoint.Host)
     if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
         $obj.HostName = "$($obj.Address)"
@@ -742,7 +750,7 @@ function Add-PodeEndpoint
     } | Measure-Object).Count
 
     # if we're dealing with a certificate file, attempt to import it
-    if ($PSCmdlet.ParameterSetName -ieq 'certfile') {
+    if (!$isIIS -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
         # fail if protocol is not https
         if (@('https', 'wss') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
@@ -792,7 +800,7 @@ function Add-PodeEndpoint
     }
 
     # if RedirectTo is set, attempt to build a redirecting route
-    if (![string]::IsNullOrWhiteSpace($RedirectTo)) {
+    if (!$isIIS -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
         $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
 
         # ensure the name exists

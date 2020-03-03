@@ -28,7 +28,7 @@ Start-PodeServer {
 }
 ```
 
-## Validating
+## Middleware
 
 Once configured you can start using Form Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 

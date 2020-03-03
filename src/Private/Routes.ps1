@@ -1,4 +1,4 @@
-function Get-PodeRoute
+function Test-PodeRoute
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -9,7 +9,36 @@ function Get-PodeRoute
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Route,
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Protocol,
+
+        [Parameter()]
+        [string]
+        $Endpoint,
+
+        [switch]
+        $CheckWildMethod
+    )
+
+    $route = Find-PodeRoute -Method $Method -Path $Path -Protocol $Protocol -Endpoint $Endpoint -CheckWildMethod:$CheckWildMethod
+    return ($null -ne $route)
+}
+
+function Find-PodeRoute
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
+        [string]
+        $Method,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path,
 
         [Parameter()]
         [string]
@@ -24,8 +53,8 @@ function Get-PodeRoute
     )
 
     # first, if supplied, check the wildcard method
-    if ($CheckWildMethod -and $PodeContext.Server.Routes['*'].Count -ne 0) {
-        $found = Get-PodeRoute -Method '*' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+    if ($CheckWildMethod -and ($PodeContext.Server.Routes['*'].Count -ne 0)) {
+        $found = Find-PodeRoute -Method '*' -Path $Path -Protocol $Protocol -Endpoint $Endpoint
         if ($null -ne $found) {
             return $found
         }
@@ -41,25 +70,18 @@ function Get-PodeRoute
     }
 
     # if we have a perfect match for the route, return it if the protocol is right
-    $found = Get-PodeRouteByUrl -Routes $_method[$Route] -Protocol $Protocol -Endpoint $Endpoint
-    if (!$isStatic -and $null -ne $found) {
-        return @{
-            Logic = $found.Logic
-            Middleware = $found.Middleware
-            Protocol = $found.Protocol
-            Endpoint = $found.Endpoint
-            ContentType = $found.ContentType
-            ErrorType = $found.ErrorType
-            Parameters = $null
-            Arguments = $found.Arguments
-        }
+    $found = Get-PodeRouteByUrl -Routes $_method[$Path] -Protocol $Protocol -Endpoint $Endpoint
+    if (!$isStatic -and ($null -ne $found)) {
+        return $found
     }
 
     # otherwise, attempt to match on regex parameters
     else {
+        # match the path to routes on regex (first match only)
         $valid = @(foreach ($key in $_method.Keys) {
-            if ($Route -imatch "^$($key)$") {
+            if ($Path -imatch "^$($key)$") {
                 $key
+                break
             }
         })[0]
 
@@ -67,45 +89,23 @@ function Get-PodeRoute
             return $null
         }
 
+        # is the route valid for any protocols/endpoints?
         $found = Get-PodeRouteByUrl -Routes $_method[$valid] -Protocol $Protocol -Endpoint $Endpoint
         if ($null -eq $found) {
             return $null
         }
 
-        $Route -imatch "$($valid)$" | Out-Null
-
-        if ($isStatic) {
-            return @{
-                Path = $found.Path
-                Defaults = $found.Defaults
-                Protocol = $found.Protocol
-                Endpoint = $found.Endpoint
-                Download = $found.Download
-                File = $Matches['file']
-            }
-        }
-        else {
-            return @{
-                Logic = $found.Logic
-                Middleware = $found.Middleware
-                Protocol = $found.Protocol
-                Endpoint = $found.Endpoint
-                ContentType = $found.ContentType
-                ErrorType = $found.ErrorType
-                Parameters = $Matches
-                Arguments = $found.Arguments
-            }
-        }
+        return $found
     }
 }
 
-function Get-PodeStaticRoutePath
+function Find-PodeStaticRoutePath
 {
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
-        $Route,
+        $Path,
 
         [Parameter()]
         [string]
@@ -117,48 +117,46 @@ function Get-PodeStaticRoutePath
     )
 
     # attempt to get a static route for the path
-    $found = Get-PodeRoute -Method 'static' -Route $Route -Protocol $Protocol -Endpoint $Endpoint
+    $found = Find-PodeRoute -Method 'static' -Path $Path -Protocol $Protocol -Endpoint $Endpoint
     $havePublicDir = (![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public']))
-    $path = $null
-    $download = $false
+    $source = $null
+    $download = ([bool]$found.Download)
 
     # if we have a defined static route, use that
     if ($null -ne $found) {
-        # is the found route set as download only?
-        if ($found.Download) {
-            $download = $true
-            $found.File = (Protect-PodeValue -Value $found.File -Default ([string]::Empty))
+        # see if we have a file
+        $file = [string]::Empty
+        if ($Path -imatch "$($found.Path)$") {
+            $file = (Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty))
         }
 
         # if there's no file, we need to check defaults
-        elseif (!(Test-PodePathIsFile $found.File) -and (Get-PodeCount @($found.Defaults)) -gt 0)
+        if (!$found.Download -and !(Test-PodePathIsFile $file) -and (Get-PodeCount @($found.Defaults)) -gt 0)
         {
-            $found.File = (Protect-PodeValue -Value $found.File -Default ([string]::Empty))
-
             if ((Get-PodeCount @($found.Defaults)) -eq 1) {
-                $found.File = Join-PodePaths @($found.File, @($found.Defaults)[0])
+                $file = Join-PodePaths @($file, @($found.Defaults)[0])
             }
             else {
                 foreach ($def in $found.Defaults) {
-                    if (Test-PodePath (Join-Path $found.Path $def) -NoStatus) {
-                        $found.File = Join-PodePaths @($found.File, $def)
+                    if (Test-PodePath (Join-Path $found.Source $def) -NoStatus) {
+                        $file = Join-PodePaths @($file, $def)
                         break
                     }
                 }
             }
         }
 
-        $path = (Join-Path $found.Path $found.File)
+        $source = (Join-Path $found.Source $file)
     }
 
     # use the public static directory (but only if path is a file, and a public dir is present)
-    if ($havePublicDir -and (Test-PodePathIsFile $Route) -and !(Test-PodePath -Path $path -NoStatus)) {
-        $path = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Route)
+    if ($havePublicDir -and (Test-PodePathIsFile $Path) -and !(Test-PodePath -Path $source -NoStatus)) {
+        $source = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Path)
     }
 
     # return the route details
     return @{
-        Path = $path
+        Source = $source
         Download = $download
     }
 }
@@ -178,6 +176,11 @@ function Get-PodeRouteByUrl
         [string]
         $Endpoint
     )
+
+    # if routes is already null/empty just return
+    if (($null -eq $Routes) -or ($Routes.Length -eq 0)) {
+        return $null
+    }
 
     # get the routes
     $rs = @(Get-PodeRoutesByUrl -Routes $Routes -Protocol $Protocol -Endpoint $Endpoint)
@@ -430,6 +433,7 @@ function Find-PodeEndpoints
         $endpoints += @{
             Protocol = $Protocol
             Address = $Endpoint
+            Name = [string]::Empty
         }
     }
 
@@ -441,6 +445,7 @@ function Find-PodeEndpoints
                 $endpoints += @{
                     Protocol = $_endpoint.Protocol
                     Address = $_endpoint.RawAddress
+                    Name = $name
                 }
             }
         }

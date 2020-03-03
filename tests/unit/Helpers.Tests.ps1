@@ -866,8 +866,10 @@ Describe 'Invoke-PodeScriptBlock' {
 }
 
 Describe 'ConvertFrom-PodeNameValueToHashTable' {
-    It 'Returns null for no collection' {
-        ConvertFrom-PodeNameValueToHashTable -Collection $null | Should Be $null
+    It 'Returns an empty hashtable for no collection' {
+        $result = ConvertFrom-PodeNameValueToHashTable -Collection $null
+        ($result -is [hashtable]) | Should Be $true
+        $result.Count | Should Be 0
     }
 
     It 'Returns a hashtable from a NameValue collection' {

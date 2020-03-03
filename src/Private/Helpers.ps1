@@ -1253,11 +1253,12 @@ function ConvertFrom-PodeNameValueToHashTable
 {
     param (
         [Parameter()]
+        [System.Collections.Specialized.NameValueCollection]
         $Collection
     )
 
-    if ($null -eq $Collection) {
-        return $null
+    if ((Get-PodeCount -Object $Collection) -eq 0) {
+        return @{}
     }
 
     $ht = @{}
@@ -1281,6 +1282,16 @@ function Get-PodeCount
 
     if ($Object -is [string]){
         return $Object.Length
+    }
+
+    if ($Object -is [System.Collections.Specialized.NameValueCollection]) {
+        if ($Object.Count -eq 0) {
+            return 0
+        }
+
+        if (($Object.Count -eq 1) -and ($null -eq $Object.Keys[0])) {
+            return 0
+        }
     }
 
     return $Object.Count
@@ -1928,6 +1939,12 @@ function Get-PodeDefaultPort
         $Protocol
     )
 
+    # if we running as iis, return the ASPNET port
+    if ($PodeContext.Server.IsIIS) {
+        return [int]$env:ASPNETCORE_PORT
+    }
+
+    # otherwise, get the port for the protocol
     return (@{
         Http    = 8080
         Https   = 8443

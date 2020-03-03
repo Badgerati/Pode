@@ -154,6 +154,7 @@ function Invoke-PodeSocketHandler
             Data = $null
             Files = $null
             Streamed = $true
+            Route = $null
             Timestamp = [datetime]::UtcNow
         }
 
@@ -212,24 +213,19 @@ function Invoke-PodeSocketHandler
         $WebEvent.Endpoint = $req_info.Headers['Host']
         $WebEvent.ContentType = $req_info.Headers['Content-Type']
 
-        $WebEvent.Query = [System.Web.HttpUtility]::ParseQueryString($req_info.Query)
-        if ($null -eq $WebEvent.Query) {
-            $WebEvent.Query = @{}
-        }
+        # parse the query string and convert it to a hashtable
+        $tmpQuery = [System.Web.HttpUtility]::ParseQueryString($req_info.Query.TrimStart('/', '?'))
+        $WebEvent.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 
         # add logging endware for post-request
         Add-PodeRequestLogEndware -WebEvent $WebEvent
 
         # invoke middleware
         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-            # get the route logic
-            $route = Get-PodeRoute -Method $WebEvent.Method -Route $WebEvent.Path -Protocol $WebEvent.Protocol `
-                -Endpoint $WebEvent.Endpoint -CheckWildMethod
-
             # invoke route and custom middleware
-            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $route.Middleware)) {
-                if ($null -ne $route.Logic) {
-                    Invoke-PodeScriptBlock -ScriptBlock $route.Logic -Arguments (@($WebEvent) + @($route.Arguments)) -Scoped -Splat
+            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware)) {
+                if ($null -ne $WebEvent.Route.Logic) {
+                    Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments (@($WebEvent) + @($WebEvent.Route.Arguments)) -Scoped -Splat
                 }
             }
         }
@@ -247,6 +243,9 @@ function Invoke-PodeSocketHandler
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
         Set-PodeResponseStatus -Code 500 -Exception $_
+    }
+    finally {
+        Update-PodeServerRequestMetrics -WebEvent $WebEvent
     }
 
     try {
