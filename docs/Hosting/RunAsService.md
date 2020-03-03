@@ -1,4 +1,4 @@
-# Running Pode as a Service
+# Service
 
 Rather than having to manually invoke your Pode server script each time, it's best if you can have it start automatically when your computer/server starts. Below you'll see how to set your script to run as either a Windows or a Linux service.
 

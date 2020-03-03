@@ -126,6 +126,12 @@ function New-PodeContext
         $ctx.Server.IsServerless = $isServerless
     }
 
+    # is the server running under IIS? (also, force the server type to pode)
+    $ctx.Server.IsIIS = (!$isServerless -and (!(Test-IsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-IsEmpty $env:ASPNETCORE_TOKEN)))
+    if ($ctx.Server.IsIIS) {
+        $ctx.Server.Type = 'PODE'
+    }
+
     # set the IP address details
     $ctx.Server.Endpoints = @()
 

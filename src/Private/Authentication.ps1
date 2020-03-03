@@ -364,28 +364,167 @@ function Get-PodeAuthWindowsADMethod
             return @{ Message = 'An unexpected error occured' }
         }
 
-        # if there are no groups/users supplied, return the user
-        if ((Test-IsEmpty $options.Users) -and (Test-IsEmpty $options.Groups)){
+        # is the user valid for any users/groups?
+        if (Test-PodeAuthADUser -User $result.User -Users $options.Users -Groups $options.Groups) {
             return $result
-        }
-
-        # before checking supplied groups, is the user in the supplied list of authorised users?
-        if (!(Test-IsEmpty $options.Users) -and (@($options.Users) -icontains $result.User.Username)) {
-            return $result
-        }
-
-        # if there are groups supplied, check the user is a member of one
-        if (!(Test-IsEmpty $options.Groups)) {
-            foreach ($group in $options.Groups) {
-                if (@($result.User.Groups) -icontains $group) {
-                    return $result
-                }
-            }
         }
 
         # else, they shall not pass!
         return @{ Message = 'You are not authorised to access this website' }
     }
+}
+
+function Get-PodeAuthWindowsADIISMethod
+{
+    return {
+        param($token, $options)
+
+        # get the close handler
+        $win32Handler = Add-Type -Name Win32CloseHandle -PassThru -MemberDefinition @'
+            [DllImport("kernel32.dll", SetLastError = true)]
+            public static extern bool CloseHandle(IntPtr handle);
+'@
+
+        try {
+            # parse the auth token and get the user
+            $winAuthToken = [System.IntPtr][Int]"0x$($token)"
+            $winIdentity = New-Object System.Security.Principal.WindowsIdentity($winAuthToken, 'Windows')
+
+            # get user and domain
+            $username = ($winIdentity.Name -split '\\')[-1]
+            $domain = ($winIdentity.Name -split '\\')[0]
+
+            # create base user object
+            $user = @{
+                UserType = 'Domain'
+                AuthenticationType = $winIdentity.AuthenticationType
+                DistinguishedName = [string]::Empty
+                Username = $username
+                Name = [string]::Empty
+                Email = [string]::Empty
+                Fqdn = [string]::Empty
+                Domain = $domain
+                Groups = @()
+            }
+
+            # if the domain isn't local, attempt AD user
+            if (![string]::IsNullOrWhiteSpace($domain) -and (@('.', $env:COMPUTERNAME) -inotcontains $domain)) {
+                # get the server's fdqn (and name/email)
+                try {
+                    $ad = [adsi]"LDAP://<SID=$($winIdentity.User.Value.ToString())>"
+                    $user.DistinguishedName = @($ad.distinguishedname)[0]
+                    $user.Name = @($ad.name)[0]
+                    $user.Email = @($ad.mail)[0]
+                    $user.Fqdn = (Get-PodeADServerFromDistinguishedName -DistinguishedName $user.DistinguishedName)
+                }
+                finally {
+                    Close-PodeDisposable -Disposable $ad -Close
+                }
+
+                try {
+                    # open a new connection
+                    $result = (Open-PodeAuthADConnection -Server $user.Fqdn -Domain $domain)
+                    if (!$result.Success) {
+                        return @{ Message = 'Failed to connect to Domain Server' }
+                    }
+
+                    # get the connection
+                    $connection = $result.Connection
+
+                    # get the users groups
+                    if (!$options.NoGroups) {
+                        $user.Groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName)
+                    }
+                }
+                finally {
+                    if ($null -ne $connection) {
+                        Close-PodeDisposable -Disposable $connection.Searcher
+                        Close-PodeDisposable -Disposable $connection.Entry -Close
+                    }
+                }
+            }
+
+            # otherwise, get details of local user
+            else {
+                # get the user's name and groups
+                try {
+                    $user.UserType = 'Local'
+
+                    if (!$options.NoLocalCheck) {
+                        $localUser = $winIdentity.Name -replace '\\', '/'
+                        $ad = [adsi]"WinNT://$($localUser)"
+                        $user.Name = @($ad.FullName)[0]
+
+                        # dirty, i know :/ - since IIS runs using pwsh, the InvokeMember part fails
+                        # we can safely call windows powershell here, as IIS is only on windows.
+                        if (!$options.NoGroups) {
+                            $cmd = "`$ad = [adsi]'WinNT://$($localUser)'; @(`$ad.Groups() | Foreach-Object { `$_.GetType().InvokeMember('Name', 'GetProperty', `$null, `$_, `$null) })"
+                            $user.Groups = [string[]](powershell -c $cmd)
+                        }
+                    }
+                }
+                finally {
+                    Close-PodeDisposable -Disposable $ad -Close
+                }
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            return @{ Message = 'Failed to retrieve user using Authentication Token' }
+        }
+        finally {
+            $win32Handler::CloseHandle($winAuthToken)
+        }
+
+        # is the user valid for any users/groups?
+        if (Test-PodeAuthADUser -User $user -Users $options.Users -Groups $options.Groups) {
+            return @{ User = $user }
+        }
+
+        # else, they shall not pass!
+        return @{ Message = 'You are not authorised to access this website' }
+    }
+}
+
+function Test-PodeAuthADUser
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $User,
+
+        [Parameter()]
+        [string[]]
+        $Users,
+
+        [Parameter()]
+        [string[]]
+        $Groups
+    )
+
+    $haveUsers = (($null -ne $Users) -and ($Users.Length -gt 0))
+    $haveGroups = (($null -ne $Groups) -and ($Groups.Length -gt 0))
+
+    # if there are no groups/users supplied, return user is valid
+    if (!$haveUsers -and !$haveGroups) {
+        return $true
+    }
+
+    # before checking supplied groups, is the user in the supplied list of authorised users?
+    if ($haveUsers -and (@($Users) -icontains $User.Username)) {
+        return $true
+    }
+
+    # if there are groups supplied, check the user is a member of one
+    if ($haveGroups) {
+        foreach ($group in $Groups) {
+            if (@($User.Groups) -icontains $group) {
+                return $true
+            }
+        }
+    }
+
+    return $false
 }
 
 function Get-PodeAuthMiddlewareScript
@@ -592,6 +731,30 @@ function Set-PodeAuthStatus
     return $true
 }
 
+function Get-PodeADServerFromDistinguishedName
+{
+    param(
+        [Parameter()]
+        [string]
+        $DistinguishedName
+    )
+
+    if ([string]::IsNullOrWhiteSpace($DistinguishedName)) {
+        return [string]::Empty
+    }
+
+    $parts = @($DistinguishedName -split ',')
+    $name = @()
+
+    foreach ($part in $parts) {
+        if ($part -imatch '^DC=(?<name>.+)$') {
+            $name += $Matches['name']
+        }
+    }
+
+    return ($name -join '.')
+}
+
 function Get-PodeAuthADResult
 {
     param (
@@ -644,6 +807,7 @@ function Get-PodeAuthADResult
         # return the user
         return @{
             User = @{
+                UserType = 'Domain'
                 AuthenticationType = 'LDAP'
                 DistinguishedName = $user.DistinguishedName
                 Username = ($Username -split '\\')[-1]
@@ -682,6 +846,11 @@ function Open-PodeAuthADConnection
         [string]
         $Password,
 
+        [Parameter()]
+        [ValidateSet('LDAP', 'WinNT')]
+        [string]
+        $Protocol = 'LDAP',
+
         [switch]
         $OpenLDAP
     )
@@ -691,7 +860,13 @@ function Open-PodeAuthADConnection
 
     # validate the user's AD creds
     if ((Test-IsWindows) -and !$OpenLDAP) {
-        $ad = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$($Server)", "$($Username)", "$($Password)")
+        if ([string]::IsNullOrWhiteSpace($Password)) {
+            $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)")
+        }
+        else {
+            $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)", "$($Username)", "$($Password)")
+        }
+
         if (Test-IsEmpty $ad.distinguishedName) {
             $result = $false
         }
@@ -704,7 +879,7 @@ function Open-PodeAuthADConnection
     else {
         $dcName = "DC=$(($Server -split '\.') -join ',DC=')"
         $query = (Get-PodeAuthADQuery -Username $Username)
-        $hostname = "LDAP://$($Server)"
+        $hostname = "$($Protocol)://$($Server)"
 
         $user = $Username
         if (!$Username.StartsWith($Domain)) {
@@ -838,7 +1013,11 @@ function Get-PodeAuthADGroups
 
     # get the groups
     if ((Test-IsWindows) -and !$OpenLDAP) {
-        $Connection.Searcher.PropertiesToLoad.Add('samaccountname')
+        if ($null -eq $Connection.Searcher) {
+            $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
+        }
+
+        $Connection.Searcher.PropertiesToLoad.Add('samaccountname') | Out-Null
         $Connection.Searcher.filter = $query
         $groups = @($Connection.Searcher.FindAll().Properties.samaccountname)
     }

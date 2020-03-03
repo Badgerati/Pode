@@ -545,3 +545,97 @@ function Get-PodeAuthMiddleware
     # return the middleware
     return (Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options)
 }
+
+<#
+.SYNOPSIS
+Adds the inbuilt IIS Authentication method for verifying users passed to Pode from IIS.
+
+.DESCRIPTION
+Adds the inbuilt IIS Authentication method for verifying users passed to Pode from IIS.
+
+.PARAMETER Name
+A unique Name for the Authentication method.
+
+.PARAMETER Groups
+An array of Group names to only allow access.
+
+.PARAMETER Users
+An array of Usernames to only allow access.
+
+.PARAMETER NoGroups
+If supplied, groups will not be retrieved for the user in AD.
+
+.PARAMETER NoLocalCheck
+If supplied, Pode will not at attempt to retrieve local User/Group information for the authenticated user.
+
+.EXAMPLE
+Add-PodeAuthIIS -Name 'IISAuth'
+
+.EXAMPLE
+Add-PodeAuthIIS -Name 'IISAuth' -Groups @('Developers')
+
+.EXAMPLE
+Add-PodeAuthIIS -Name 'IISAuth' -NoGroups
+#>
+function Add-PodeAuthIIS
+{
+    [CmdletBinding(DefaultParameterSetName='Groups')]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(ParameterSetName='Groups')]
+        [string[]]
+        $Groups,
+
+        [Parameter()]
+        [string[]]
+        $Users,
+
+        [Parameter(ParameterSetName='NoGroups')]
+        [switch]
+        $NoGroups,
+
+        [switch]
+        $NoLocalCheck
+    )
+
+    # ensure we're on Windows!
+    if (!(Test-IsWindows)) {
+        throw "IIS Authentication support is for Windows only"
+    }
+
+    # ensure the name doesn't already exist
+    if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
+        throw "IIS Authentication method already defined: $($Name)"
+    }
+
+    # create the auth tye for getting the token header
+    $type = New-PodeAuthType -Custom -ScriptBlock {
+        param($e, $options)
+
+        $header = 'MS-ASPNETCORE-WINAUTHTOKEN'
+
+        # fail if no header
+        if (!(Test-PodeHeader -Name $header)) {
+            return @{
+                Message = "No $($header) header found"
+                Code = 401
+            }
+        }
+
+        # return the header for validation
+        $token = Get-PodeHeader -Name $header
+        return @($token)
+    }
+
+    # add a custom auth method to validate the user
+    $method = Get-PodeAuthWindowsADIISMethod
+    $type | Add-PodeAuth -Name $Name -ScriptBlock $method -ArgumentList @{
+        Users = $Users
+        Groups = $Groups
+        NoGroups = $NoGroups
+        NoLocalCheck = $NoLocalCheck
+    }
+}

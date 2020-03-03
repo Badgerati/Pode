@@ -1,6 +1,10 @@
 # AWS Lambda
 
-Pode has support for being used within AWS Lambda PowerShell Functions, helping you with routing and responses.
+Pode has support for being used within AWS Lambda PowerShell Functions, helping you with routing and responses, but also leveraging middleware, authentication, and other features of Pode.
+
+## Overview
+
+When you use Pode in a serverless environment, the server logic is run once, and the route logic immediately parsed; any response is returned, and the server disposed. Unlike the normal web-server logic of Pode, when in serverless the server logic doesn't continually loop.
 
 ## Usage
 
@@ -116,3 +120,17 @@ For example, if you have a CSS stylesheet at `/tmp/www/styles/main.css.pode`, th
 ## Responses
 
 Pode will handle returning an appropriate response object for you, dealing with the Status Code, Body, Headers, etc. There's no need to return the normal hashtable from your Function.
+
+## Unsupported Features
+
+Unfortunately not all the features of Pode can be used within a serverless environment. Below is a list of features in Pode that cannot be used when running in a serverless context:
+
+* Access Middleware
+* Limit Middleware
+* Opening your server as a GUI
+* TCP/Service Handler logic
+* Listening on endpoints (as AWS Lambda does this for us)
+* Schedules
+* Timers
+* File Monitoring
+* Server Restarting

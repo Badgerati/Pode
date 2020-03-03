@@ -104,6 +104,7 @@
         'Test-IsPSCore',
         'Test-IsEmpty',
         'Out-PodeHost',
+        'Test-PodeIsIIS',
 
         # routes
         'Add-PodeRoute',
@@ -158,6 +159,7 @@
         'Add-PodeAuthWindowsAd',
         'Remove-PodeAuth',
         'Get-PodeAuthMiddleware',
+        'Add-PodeAuthIIS',
 
         # logging
         'New-PodeLoggingMethod',
