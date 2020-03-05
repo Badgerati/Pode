@@ -1,5 +1,16 @@
 # Release Notes
 
+## v1.6.1
+
+```plain
+### Bugs
+* 495: Fix issue with parsing query strings when using the Pode server type
+
+### Documentation
+* #496: When using IIS, install Pode using AllUsers scope
+* #497: Comments about using PowerShell classes in Pode, under Known Issues
+```
+
 ## v1.6.0
 
 ```plain
