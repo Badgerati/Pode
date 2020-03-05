@@ -2017,3 +2017,28 @@ function Convert-PodeFileToScriptBlock
 
     return ([scriptblock](Use-PodeScript -Path $FilePath))
 }
+
+function Convert-PodeQueryStringToHashTable
+{
+    param(
+        [Parameter()]
+        [string]
+        $Uri
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Uri)) {
+        return @{}
+    }
+
+    $qmIndex = $Uri.IndexOf('?')
+    if ($qmIndex -eq -1) {
+        return @{}
+    }
+
+    if ($qmIndex -gt 0) {
+        $Uri = $Uri.Substring($qmIndex)
+    }
+
+    $tmpQuery = [System.Web.HttpUtility]::ParseQueryString($Uri)
+    return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
+}
