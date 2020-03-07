@@ -1454,3 +1454,61 @@ Describe 'Get-PodeDefaultPort' {
         Get-PodeDefaultPort -Protocol Wss | Should Be 9443
     }
 }
+
+Describe 'Convert-PodeQueryStringToHashTable' {
+    It 'Emty for no uri' {
+        $result = Convert-PodeQueryStringToHashTable -Uri ([string]::Empty)
+        $result.Count | Should Be 0
+    }
+
+    It 'Emty for uri but no query' {
+        $result = Convert-PodeQueryStringToHashTable -Uri "/api/users"
+        $result.Count | Should Be 0
+    }
+
+    It 'Hashtable for root query' {
+        $result = Convert-PodeQueryStringToHashTable -Uri "/?Name=Bob"
+        $result.Count | Should Be 1
+        $result['Name'] | Should Be 'Bob'
+    }
+
+    It 'Hashtable for root query, no slash' {
+        $result = Convert-PodeQueryStringToHashTable -Uri "?Name=Bob"
+        $result.Count | Should Be 1
+        $result['Name'] | Should Be 'Bob'
+    }
+
+    It 'Hashtable for root multi-query' {
+        $result = Convert-PodeQueryStringToHashTable -Uri "/?Name=Bob&Age=42"
+        $result.Count | Should Be 2
+        $result['Name'] | Should Be 'Bob'
+        $result['Age'] | Should Be 42
+    }
+
+    It 'Hashtable for root multi-query, no slash' {
+        $result = Convert-PodeQueryStringToHashTable -Uri "?Name=Bob&Age=42"
+        $result.Count | Should Be 2
+        $result['Name'] | Should Be 'Bob'
+        $result['Age'] | Should Be 42
+    }
+
+    It 'Hashtable for non-root query' {
+        $result = Convert-PodeQueryStringToHashTable -Uri "/api/user?Name=Bob"
+        $result.Count | Should Be 1
+        $result['Name'] | Should Be 'Bob'
+    }
+
+    It 'Hashtable for non-root multi-query' {
+        $result = Convert-PodeQueryStringToHashTable -Uri "/api/user?Name=Bob&Age=42"
+        $result.Count | Should Be 2
+        $result['Name'] | Should Be 'Bob'
+        $result['Age'] | Should Be 42
+    }
+
+    It 'Hashtable for non-root multi-query, end slash' {
+        $result = Convert-PodeQueryStringToHashTable -Uri "/api/user/?Name=Bob&Age=42"
+        $result.Count | Should Be 2
+        $result['Name'] | Should Be 'Bob'
+        $result['Age'] | Should Be 42
+    }
+}

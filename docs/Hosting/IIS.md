@@ -30,7 +30,7 @@ choco install pwsh -y
 Finally, you'll need to have Pode installed under PowerShell Core:
 
 ```powershell
-pwsh -c "Install-Module Pode"
+pwsh -c "Install-Module Pode -Scope AllUsers"
 ```
 
 !!! note
