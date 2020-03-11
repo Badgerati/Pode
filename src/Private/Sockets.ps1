@@ -321,7 +321,16 @@ function Get-PodeServerRequestDetails
 
     # then set the request body
     $req_body = ($req_lines[($req_body_index)..($req_lines.Length - 1)] -join $newLine)
-    $req_body_bytes = $bytes[($bytes.Length - $req_body.Length)..($bytes.Length - 1)]
+
+    # then set the raw bytes of the request body
+    $start = 0
+    $lines = $req_lines[0..($req_body_index - 1)]
+    foreach ($line in $lines) {
+        $start += $line.Length
+    }
+
+    $start += ($lines.Length * $newLine.Length)
+    $req_body_bytes = $bytes[$start..($bytes.Length - 1)]
 
     # build required URI details
     $req_uri = [uri]::new("$($Protocol)://$($req_headers['Host'])$($req_query)")

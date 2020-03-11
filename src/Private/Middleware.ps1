@@ -214,7 +214,7 @@ function Get-PodeBodyMiddleware
 
         try {
             # attempt to parse that data
-            $result = ConvertFrom-PodeRequestContent -Request $e.Request -ContentType $e.ContentType
+            $result = ConvertFrom-PodeRequestContent -Request $e.Request -ContentType $e.ContentType -TransferEncoding $e.TransferEncoding
 
             # set session data
             $e.Data = $result.Data
@@ -277,7 +277,9 @@ function Get-PodeCookieMiddleware
 
             $value = [string]::Empty
             if ($atoms.Length -gt 1) {
-                $value = ($atoms[1..($atoms.Length - 1)] -join ([string]::Empty))
+                foreach ($atom in $atoms[1..($atoms.Length - 1)]) {
+                    $value += $atom
+                }
             }
 
             $e.Cookies[$atoms[0]] = [System.Net.Cookie]::new($atoms[0], $value)

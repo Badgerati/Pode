@@ -172,6 +172,7 @@ function Get-PodeContentType
         '.gsm' { return 'audio/x-gsm' }
         '.gtar' { return 'application/x-gtar' }
         '.gz' { return 'application/x-gzip' }
+        '.gzip' { return 'application/x-gzip' }
         '.h' { return 'text/plain' }
         '.hdf' { return 'application/x-hdf' }
         '.hdml' { return 'text/x-hdml' }

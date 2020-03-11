@@ -1040,6 +1040,30 @@ function Test-PodeValidNetworkFailure
     return ($null -ne $match)
 }
 
+function Get-PodeTransferEncoding
+{
+    param(
+        [Parameter()]
+        [string]
+        $TransferEncoding
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+        return [string]::Empty
+    }
+
+    $parts = @($TransferEncoding -isplit ',').Trim()
+
+    $valid = @('gzip', 'deflate')
+    foreach ($part in $parts) {
+        if ($valid -icontains $part) {
+            return $part
+        }
+    }
+
+    return [string]::Empty
+}
+
 function Get-PodeEncodingFromContentType
 {
     param(
@@ -1052,10 +1076,10 @@ function Get-PodeEncodingFromContentType
         return [System.Text.Encoding]::UTF8
     }
 
-    $parts = $ContentType -isplit ';'
+    $parts = @($ContentType -isplit ';').Trim()
 
     foreach ($part in $parts) {
-        if ($part.Trim().StartsWith('charset')) {
+        if ($part.StartsWith('charset')) {
             return [System.Text.Encoding]::GetEncoding(($part -isplit '=')[1].Trim())
         }
     }
@@ -1071,7 +1095,11 @@ function ConvertFrom-PodeRequestContent
 
         [Parameter()]
         [string]
-        $ContentType
+        $ContentType,
+
+        [Parameter()]
+        [string]
+        $TransferEncoding
     )
 
     # get the requests content type and boundary
@@ -1102,11 +1130,35 @@ function ConvertFrom-PodeRequestContent
             }
 
             'pode' {
-                $Content = $Request.Body.Value
+                # if the request is compressed, attempt to uncompress it
+                if ($TransferEncoding -iin @('gzip', 'deflate')) {
+                    # get the actual bytes
+                    $start = $Request.Body.Bytes.IndexOf([byte]10) + 1
+                    $sub_bytes = $Request.Body.Bytes[$start..($bytes.Length - 1)]
+
+                    # create a compressed stream to decompress the above bytes
+                    $ms = New-Object -TypeName System.IO.MemoryStream
+                    $ms.Write($sub_bytes, 0, $sub_bytes.Length)
+                    $ms.Seek(0, 0) | Out-Null
+                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
+
+                    # read the decompressed bytes
+                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+                }
+                else {
+                    $Content = $Request.Body.Value
+                }
             }
 
             default {
-                $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                # if the request is compressed, attempt to uncompress it
+                if ($TransferEncoding -iin @('gzip', 'deflate')) {
+                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($Request.InputStream, [System.IO.Compression.CompressionMode]::Decompress)
+                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+                }
+                else {
+                    $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                }
             }
         }
 
