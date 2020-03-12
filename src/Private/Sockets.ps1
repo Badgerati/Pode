@@ -354,8 +354,8 @@ function Get-PodeServerRequestDetails
         $req_body_bytes = [byte[]]@()
 
         while ($length -ne 0) {
-            # get index of 13, read start>index bytes as HEX for length
-            $index = [array]::IndexOf($Bytes, [byte]13, $start)
+            # get index of newline char, read start>index bytes as HEX for length
+            $index = [array]::IndexOf($Bytes, [byte]$newLine[0], $start)
             $hexBytes = $Bytes[$start..($index - 1)]
 
             $hex = [string]::Empty
@@ -369,13 +369,13 @@ function Get-PodeServerRequestDetails
                 continue
             }
 
-            # read those X hex bytes from (13-index + 2)
-            $start = $index + 2
+            # read those X hex bytes from (newline index + newline length)
+            $start = $index + $newLine.Length
             $end = $start + $length - 1
             $req_body_bytes += $Bytes[$start..$end]
 
-            # skip 2 bytes for ending newline, and set new start
-            $start = ($end + 3)
+            # skip bytes for ending newline, and set new start
+            $start = ($end + $newLine.Length + 1)
         }
     }
 
