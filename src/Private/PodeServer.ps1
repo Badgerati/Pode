@@ -207,7 +207,7 @@ function Invoke-PodeSocketHandler
             Protocol = $req_info.Protocol
             ProtocolVersion = ($req_info.Protocol -isplit '/')[1]
             ContentEncoding = (Get-PodeEncodingFromContentType -ContentType $req_info.Headers['Content-Type'])
-            TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'])
+            TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'] -ThrowError)
         }
 
         $WebEvent.Path = $req_info.Uri.AbsolutePath

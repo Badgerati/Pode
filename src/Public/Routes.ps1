@@ -29,6 +29,9 @@ The EndpointName of an Endpoint(s) this Route should be bound against.
 .PARAMETER ContentType
 The content type the Route should use when parsing any payloads.
 
+.PARAMETER TransferEncoding
+The transfer encoding the Route should use when parsing any payloads.
+
 .PARAMETER ErrorContentType
 The content type of any error pages that may get returned.
 
@@ -49,6 +52,9 @@ Add-PodeRoute -Method Post -Path '/users/:userId/message' -Middleware (Get-PodeC
 
 .EXAMPLE
 Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeRoute -Method Post -Path '/user' -ContentType 'application/json' -TransferEncoding gzip -ScriptBlock { /* logic */ }
 
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/api/cpu' -ErrorContentType 'application/json' -ScriptBlock { /* logic */ }
@@ -93,6 +99,11 @@ function Add-PodeRoute
         [Parameter()]
         [string]
         $ContentType,
+
+        [Parameter()]
+        [ValidateSet('', 'gzip', 'deflate')]
+        [string]
+        $TransferEncoding,
 
         [Parameter()]
         [string]
@@ -189,6 +200,21 @@ function Add-PodeRoute
         }
     }
 
+    # workout a default transfer encoding for the route
+    if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+        $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Default
+
+        # find type by pattern from settings
+        $matched = ($PodeContext.Server.Web.TransferEncoding.Routes.Keys | Where-Object {
+            $Path -imatch $_
+        } | Select-Object -First 1)
+
+        # if we get a match, set it
+        if (!(Test-IsEmpty $matched)) {
+            $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Routes[$matched]
+        }
+    }
+
     # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
@@ -199,6 +225,7 @@ function Add-PodeRoute
             Endpoint = $_endpoint.Address.Trim()
             EndpointName = $_endpoint.Name
             ContentType = $ContentType
+            TransferEncoding = $TransferEncoding
             ErrorType = $ErrorContentType
             Arguments = $ArgumentList
             Method = $Method

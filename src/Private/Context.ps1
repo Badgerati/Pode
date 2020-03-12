@@ -242,6 +242,11 @@ function New-PodeContext
     $ctx.Server.Middleware = @()
     $ctx.Server.BodyParsers = @{}
 
+    # common support values
+    $ctx.Server.Supported = @{
+        TransferEncodings = @('gzip', 'deflate', 'x-gzip')
+    }
+
     # endware that needs to run
     $ctx.Server.Endware = @()
 
@@ -453,6 +458,10 @@ function Set-PodeWebConfiguration
             Default = $Configuration.ContentType.Default
             Routes = @{}
         }
+        TransferEncoding = @{
+            Default = $Configuration.TransferEncoding.Default
+            Routes = @{}
+        }
     }
 
     # setup content type route patterns for forced content types
@@ -460,6 +469,13 @@ function Set-PodeWebConfiguration
         $_type = $Configuration.ContentType.Routes[$_]
         $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
         $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
+    }
+
+    # setup transfer encoding route patterns for forced transfer encodings
+    $Configuration.TransferEncoding.Routes.Keys | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+        $_type = $Configuration.TransferEncoding.Routes[$_]
+        $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
+        $Context.Server.Web.TransferEncoding.Routes[$_pattern] = $_type
     }
 
     # setup content type route patterns for error pages

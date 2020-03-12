@@ -198,6 +198,11 @@ function Get-PodeRouteValidateMiddleware
                 $e.ContentType = $route.ContentType
             }
 
+            # override the transfer encoding from the route if it's not empty
+            if (![string]::IsNullOrWhiteSpace($route.TransferEncoding)) {
+                $e.TransferEncoding = $route.TransferEncoding
+            }
+
             # set the content type for any pages for the route if it's not empty
             $e.ErrorType = $route.ErrorType
 
