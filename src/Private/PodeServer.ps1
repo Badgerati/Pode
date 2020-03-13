@@ -210,6 +210,11 @@ function Invoke-PodeSocketHandler
             TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'] -ThrowError)
         }
 
+        # if the transfer encoding is empty, attempt X-Transfer-Encoding for support from HttpListener
+        if ([string]::IsNullOrWhiteSpace($WebEvent.Request.TransferEncoding)) {
+            $WebEvent.Request.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['X-Transfer-Encoding'] -ThrowError)
+        }
+
         $WebEvent.Path = $req_info.Uri.AbsolutePath
         $WebEvent.Method = $req_info.Method.ToLowerInvariant()
         $WebEvent.Endpoint = $req_info.Headers['Host']
