@@ -1040,6 +1040,131 @@ function Test-PodeValidNetworkFailure
     return ($null -ne $match)
 }
 
+function ConvertFrom-PodeHeaderQValue
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [string]
+        $Value
+    )
+
+    $qs = [ordered]@{}
+
+    # return if no value
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $qs
+    }
+
+    # split the values up
+    $parts = @($Value -isplit ',').Trim()
+
+    # go through each part and check its q-value
+    foreach ($part in $parts) {
+        # default of 1 if no q-value
+        if ($part.IndexOf(';q=') -eq -1) {
+            $qs[$part] = 1.0
+            continue
+        }
+
+        # parse for q-value
+        $atoms = @($part -isplit ';q=')
+        $qs[$atoms[0]] = [double]$atoms[1]
+    }
+
+    return $qs
+}
+
+function Get-PodeAcceptEncoding
+{
+    param(
+        [Parameter()]
+        [string]
+        $AcceptEncoding,
+
+        [switch]
+        $ThrowError
+    )
+
+    # return if no encoding
+    if ([string]::IsNullOrWhiteSpace($AcceptEncoding)) {
+        return [string]::Empty
+    }
+
+    # return empty if not compressing
+    if (!$PodeContext.Server.Web.Compression.Enabled) {
+        return [string]::Empty
+    }
+
+    # convert encoding form q-form
+    $encodings = ConvertFrom-PodeHeaderQValue -Value $AcceptEncoding
+    if ($encodings.Count -eq 0) {
+        return [string]::Empty
+    }
+
+    # check the encodings for one that matches
+    $normal = @('identity', '*')
+    $valid = @()
+
+    # build up supported and invalid
+    foreach ($encoding in $encodings.Keys) {
+        if (($encoding -iin $PodeContext.Server.Compression.Encodings) -or ($encoding -iin $normal)) {
+            $valid += @{
+                Name  = $encoding
+                Value = $encodings[$encoding]
+            }
+        }
+    }
+
+    # if it's empty, just return empty
+    if ($valid.Length -eq 0) {
+        [string]::Empty
+    }
+
+    # find the highest ranked match
+    $found = @{}
+    $failOnIdentity = $false
+
+    foreach ($encoding in $valid) {
+        if ($encoding.Value -gt $found.Value) {
+            $found = $encoding
+        }
+
+        if (!$failOnIdentity -and ($encoding.Value -eq 0) -and ($encoding.Name -iin $normal)) {
+            $failOnIdentity = $true
+        }
+    }
+
+    # force found to identity/* if the 0 is not identity - meaning it's still allowed
+    if (($found.Value -eq 0) -and !$failOnIdentity) {
+        $found = @{
+            Name  = 'identity'
+            Value = 1.0
+        }
+    }
+
+    # return invalid, error, or return empty for idenity?
+    if ($found.Value -eq 0) {
+        if ($ThrowError) {
+            $err = [System.Net.Http.HttpRequestException]::new()
+            $err.Data.Add('PodeStatusCode', 406)
+            throw $err
+        }
+
+        return $found.Name
+    }
+
+    # else, we're safe
+    if ($found.Name -iin $normal) {
+        return [string]::Empty
+    }
+
+    if ($found.Name -ieq 'x-gzip') {
+        return 'gzip'
+    }
+
+    return $found.Name
+}
+
 function Get-PodeTransferEncoding
 {
     param(
@@ -1056,26 +1181,31 @@ function Get-PodeTransferEncoding
         return [string]::Empty
     }
 
-    # get the encoding, and store invalid ones for later
-    $parts = @($TransferEncoding -isplit ',').Trim()
+    # convert encoding form q-form
+    $encodings = ConvertFrom-PodeHeaderQValue -Value $TransferEncoding
+    if ($encodings.Count -eq 0) {
+        return [string]::Empty
+    }
+
+    # check the encodings for one that matches
     $normal = @('chunked', 'identity')
     $invalid = @()
 
     # if we see a supported one, return immediately. else build up invalid one
-    foreach ($part in $parts) {
-        if ($part -iin $PodeContext.Server.Supported.TransferEncodings) {
-            if ($part -ieq 'x-gzip') {
+    foreach ($encoding in $encodings.Keys) {
+        if ($encoding -iin $PodeContext.Server.Compression.Encodings) {
+            if ($encoding -ieq 'x-gzip') {
                 return 'gzip'
             }
 
-            return $part
+            return $encoding
         }
 
-        if ($part -iin $normal) {
+        if ($encoding -iin $normal) {
             continue
         }
 
-        $invalid += $part
+        $invalid += $encoding
     }
 
     # if we have any invalid, throw a 415 error

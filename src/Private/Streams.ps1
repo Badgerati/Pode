@@ -120,18 +120,14 @@ function ConvertFrom-PodeValueToBytes
 {
     param (
         [Parameter()]
-        [object]
+        [string]
         $Value,
 
         [Parameter()]
         $Encoding = [System.Text.Encoding]::UTF8
     )
 
-    if ($Value.GetType().Name -ieq 'string') {
-        $Value = $Encoding.GetBytes($Value)
-    }
-
-    return $Value
+    return $Encoding.GetBytes($Value)
 }
 
 function ConvertFrom-PodeBytesToString

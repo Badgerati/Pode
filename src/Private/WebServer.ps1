@@ -109,9 +109,11 @@ function Start-PodeWebServer
                         Route = $null
                         Timestamp = [datetime]::UtcNow
                         TransferEncoding = $null
+                        AcceptEncoding = $null
                     }
 
-                    $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'x-transfer-encoding') -ThrowError)
+                    $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'X-Transfer-Encoding') -ThrowError)
+                    $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
 
                     # set pode in server response header
                     Set-PodeServerHeader -AllowEmptyType
