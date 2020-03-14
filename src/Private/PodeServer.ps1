@@ -156,6 +156,7 @@ function Invoke-PodeSocketHandler
             Streamed = $true
             Route = $null
             Timestamp = [datetime]::UtcNow
+            TransferEncoding = $null
         }
 
         # set pode in server response header
@@ -206,12 +207,19 @@ function Invoke-PodeSocketHandler
             Protocol = $req_info.Protocol
             ProtocolVersion = ($req_info.Protocol -isplit '/')[1]
             ContentEncoding = (Get-PodeEncodingFromContentType -ContentType $req_info.Headers['Content-Type'])
+            TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'] -ThrowError)
+        }
+
+        # if the transfer encoding is empty, attempt X-Transfer-Encoding for support from HttpListener
+        if ([string]::IsNullOrWhiteSpace($WebEvent.Request.TransferEncoding)) {
+            $WebEvent.Request.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['X-Transfer-Encoding'] -ThrowError)
         }
 
         $WebEvent.Path = $req_info.Uri.AbsolutePath
         $WebEvent.Method = $req_info.Method.ToLowerInvariant()
         $WebEvent.Endpoint = $req_info.Headers['Host']
         $WebEvent.ContentType = $req_info.Headers['Content-Type']
+        $WebEvent.TransferEncoding = $WebEvent.Request.TransferEncoding
 
         # parse the query string and convert it to a hashtable
         $WebEvent.Query = (Convert-PodeQueryStringToHashTable -Uri $req_info.Query)

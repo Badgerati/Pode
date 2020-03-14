@@ -276,7 +276,7 @@ function Get-PodeServerRequestDetails
     )
 
     # convert array to string
-    $Content = $PodeContext.Server.Encoding.GetString($bytes, 0, $bytes.Length)
+    $Content = $PodeContext.Server.Encoding.GetString($Bytes, 0, $Bytes.Length)
 
     # parse the request headers
     $newLine = "`r`n"
@@ -319,9 +319,75 @@ function Get-PodeServerRequestDetails
         $req_headers[$name] = $value
     }
 
+    # attempt to get content length, and see if content is chunked
+    $contentLength = $req_headers['Content-Length']
+    if (![string]::IsNullOrWhiteSpace($contentLength)) {
+        $contentLength = 0
+    }
+
+    $transferEncoding = $req_headers['Transfer-Encoding']
+    if (![string]::IsNullOrWhiteSpace($transferEncoding)) {
+        $isChunked = $transferEncoding.Contains('chunked')
+    }
+
+    # if chunked, and we have a content-length, fail
+    if ($isChunked -and ($contentLength -gt 0)) {
+        throw [System.Net.Http.HttpRequestException]::new("Cannot supply a Content-Length and a chunked Transfer-Encoding")
+    }
+
     # then set the request body
     $req_body = ($req_lines[($req_body_index)..($req_lines.Length - 1)] -join $newLine)
-    $req_body_bytes = $bytes[($bytes.Length - $req_body.Length)..($bytes.Length - 1)]
+
+    # then set the raw bytes of the request body
+    $start = 0
+
+    $lines = $req_lines[0..($req_body_index - 1)]
+    foreach ($line in $lines) {
+        $start += $line.Length
+    }
+
+    $start += ($lines.Length * $newLine.Length)
+
+    # if chunked
+    if ($isChunked) {
+        $length = -1
+        $req_body_bytes = [byte[]]@()
+
+        while ($length -ne 0) {
+            # get index of newline char, read start>index bytes as HEX for length
+            $index = [array]::IndexOf($Bytes, [byte]$newLine[0], $start)
+            $hexBytes = $Bytes[$start..($index - 1)]
+
+            $hex = [string]::Empty
+            foreach ($b in $hexBytes) {
+                $hex += ([char]$b)
+            }
+
+            # if length is 0, end
+            $length = [System.Convert]::ToInt32($hex, 16)
+            if ($length -eq 0) {
+                continue
+            }
+
+            # read those X hex bytes from (newline index + newline length)
+            $start = $index + $newLine.Length
+            $end = $start + $length - 1
+            $req_body_bytes += $Bytes[$start..$end]
+
+            # skip bytes for ending newline, and set new start
+            $start = ($end + $newLine.Length + 1)
+        }
+    }
+
+    # else if content-length
+    elseif ($contentLength -gt 0) {
+        $req_body_bytes = $Bytes[$start..($start + $contentLength)]
+    }
+
+    # else read all
+    else {
+        $req_body_bytes = $Bytes[$start..($Bytes.Length - 1)]
+    }
 
     # build required URI details
     $req_uri = [uri]::new("$($Protocol)://$($req_headers['Host'])$($req_query)")

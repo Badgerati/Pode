@@ -108,7 +108,10 @@ function Start-PodeWebServer
                         Streamed = $true
                         Route = $null
                         Timestamp = [datetime]::UtcNow
+                        TransferEncoding = $null
                     }
+
+                    $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'x-transfer-encoding') -ThrowError)
 
                     # set pode in server response header
                     Set-PodeServerHeader -AllowEmptyType
@@ -126,9 +129,18 @@ function Start-PodeWebServer
                         }
                     }
                 }
+                catch [System.Net.Http.HttpRequestException] {
+                    $code = [int]($_.Exception.Data['PodeStatusCode'])
+                    if ($code -le 0) {
+                        $code = 400
+                    }
+
+                    Set-PodeResponseStatus -Code $code -Exception $_
+                }
                 catch {
-                    Set-PodeResponseStatus -Code 500 -Exception $_
                     $_ | Write-PodeErrorLog
+                    $_.Exception | Write-PodeErrorLog -CheckInnerException
+                    Set-PodeResponseStatus -Code 500 -Exception $_
                 }
                 finally {
                     Update-PodeServerRequestMetrics -WebEvent $WebEvent

@@ -1040,6 +1040,59 @@ function Test-PodeValidNetworkFailure
     return ($null -ne $match)
 }
 
+function Get-PodeTransferEncoding
+{
+    param(
+        [Parameter()]
+        [string]
+        $TransferEncoding,
+
+        [switch]
+        $ThrowError
+    )
+
+    # return if no encoding
+    if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+        return [string]::Empty
+    }
+
+    # get the encoding, and store invalid ones for later
+    $parts = @($TransferEncoding -isplit ',').Trim()
+    $normal = @('chunked', 'identity')
+    $invalid = @()
+
+    # if we see a supported one, return immediately. else build up invalid one
+    foreach ($part in $parts) {
+        if ($part -iin $PodeContext.Server.Supported.TransferEncodings) {
+            if ($part -ieq 'x-gzip') {
+                return 'gzip'
+            }
+
+            return $part
+        }
+
+        if ($part -iin $normal) {
+            continue
+        }
+
+        $invalid += $part
+    }
+
+    # if we have any invalid, throw a 415 error
+    if ($invalid.Length -gt 0) {
+        if ($ThrowError) {
+            $err = [System.Net.Http.HttpRequestException]::new()
+            $err.Data.Add('PodeStatusCode', 415)
+            throw $err
+        }
+
+        return $invalid[0]
+    }
+
+    # else, we're safe
+    return [string]::Empty
+}
+
 function Get-PodeEncodingFromContentType
 {
     param(
@@ -1052,10 +1105,10 @@ function Get-PodeEncodingFromContentType
         return [System.Text.Encoding]::UTF8
     }
 
-    $parts = $ContentType -isplit ';'
+    $parts = @($ContentType -isplit ';').Trim()
 
     foreach ($part in $parts) {
-        if ($part.Trim().StartsWith('charset')) {
+        if ($part.StartsWith('charset')) {
             return [System.Text.Encoding]::GetEncoding(($part -isplit '=')[1].Trim())
         }
     }
@@ -1071,7 +1124,11 @@ function ConvertFrom-PodeRequestContent
 
         [Parameter()]
         [string]
-        $ContentType
+        $ContentType,
+
+        [Parameter()]
+        [string]
+        $TransferEncoding
     )
 
     # get the requests content type and boundary
@@ -1102,11 +1159,31 @@ function ConvertFrom-PodeRequestContent
             }
 
             'pode' {
-                $Content = $Request.Body.Value
+                # if the request is compressed, attempt to uncompress it
+                if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
+                    # create a compressed stream to decompress the req bytes
+                    $ms = New-Object -TypeName System.IO.MemoryStream
+                    $ms.Write($Request.Body.Bytes, 0, $Request.Body.Bytes.Length)
+                    $ms.Seek(0, 0) | Out-Null
+                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
+
+                    # read the decompressed bytes
+                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+                }
+                else {
+                    $Content = $Request.Body.Value
+                }
             }
 
             default {
-                $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                # if the request is compressed, attempt to uncompress it
+                if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
+                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($Request.InputStream, [System.IO.Compression.CompressionMode]::Decompress)
+                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+                }
+                else {
+                    $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                }
             }
         }
 
@@ -1195,8 +1272,8 @@ function ConvertFrom-PodeRequestContent
                         $type = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
 
                         $Result.Files.Add($fields.filename, @{
-                            'ContentType' = (@($type -isplit ':')[1].Trim());
-                            'Bytes' = $null;
+                            ContentType = @($type -isplit ':')[1].Trim()
+                            Bytes = $null
                         })
 
                         $bytes = @()
