@@ -1094,7 +1094,7 @@ function Get-PodeAcceptEncoding
 
     # if it's empty, just return empty
     if ($valid.Length -eq 0) {
-        [string]::Empty
+        return [string]::Empty
     }
 
     # find the highest ranked match
@@ -1126,8 +1126,6 @@ function Get-PodeAcceptEncoding
             $err.Data.Add('PodeStatusCode', 406)
             throw $err
         }
-
-        return $found.Name
     }
 
     # else, we're safe
