@@ -207,19 +207,19 @@ function Invoke-PodeSocketHandler
             Protocol = $req_info.Protocol
             ProtocolVersion = ($req_info.Protocol -isplit '/')[1]
             ContentEncoding = (Get-PodeEncodingFromContentType -ContentType $req_info.Headers['Content-Type'])
-            TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'] -ThrowError)
-        }
-
-        # if the transfer encoding is empty, attempt X-Transfer-Encoding for support from HttpListener
-        if ([string]::IsNullOrWhiteSpace($WebEvent.Request.TransferEncoding)) {
-            $WebEvent.Request.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['X-Transfer-Encoding'] -ThrowError)
         }
 
         $WebEvent.Path = $req_info.Uri.AbsolutePath
         $WebEvent.Method = $req_info.Method.ToLowerInvariant()
         $WebEvent.Endpoint = $req_info.Headers['Host']
         $WebEvent.ContentType = $req_info.Headers['Content-Type']
-        $WebEvent.TransferEncoding = $WebEvent.Request.TransferEncoding
+        $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding $req_info.Headers['Accept-Encoding'] -ThrowError)
+
+        # transfer encoding
+        $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'] -ThrowError)
+        if ([string]::IsNullOrWhiteSpace($WebEvent.TransferEncoding)) {
+            $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['X-Transfer-Encoding'] -ThrowError)
+        }
 
         # parse the query string and convert it to a hashtable
         $WebEvent.Query = (Convert-PodeQueryStringToHashTable -Uri $req_info.Query)

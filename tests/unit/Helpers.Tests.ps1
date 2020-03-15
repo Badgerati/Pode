@@ -1512,3 +1512,163 @@ Describe 'Convert-PodeQueryStringToHashTable' {
         $result['Age'] | Should Be 42
     }
 }
+
+Describe 'ConvertFrom-PodeHeaderQValue' {
+    It 'Returns empty' {
+        $result = ConvertFrom-PodeHeaderQValue -Value ''
+        $result.Count | Should Be 0
+    }
+
+    It 'Returns values default to 1' {
+        $result = ConvertFrom-PodeHeaderQValue -Value 'gzip,deflate'
+        $result.Count | Should Be 2
+
+        $result['gzip'] | Should Be 1.0
+        $result['deflate'] | Should Be 1.0
+    }
+
+    It 'Returns values with set quality' {
+        $result = ConvertFrom-PodeHeaderQValue -Value 'gzip;q=0.1,deflate;q=0.8'
+        $result.Count | Should Be 2
+
+        $result['gzip'] | Should Be 0.1
+        $result['deflate'] | Should Be 0.8
+    }
+
+    It 'Returns values with mix' {
+        $result = ConvertFrom-PodeHeaderQValue -Value 'gzip,deflate;q=0.8,identity;q=0'
+        $result.Count | Should Be 3
+
+        $result['gzip'] | Should Be 1.0
+        $result['deflate'] | Should Be 0.8
+        $result['identity'] | Should Be 0
+    }
+}
+
+Describe 'Get-PodeAcceptEncoding' {
+    $PodeContext = @{
+        Server = @{
+            Web = @{ Compression = @{ Enabled = $true } }
+            Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
+        }
+    }
+
+    It 'Returns empty for no encoding' {
+        Get-PodeAcceptEncoding -AcceptEncoding '' | Should Be ''
+    }
+
+    It 'Returns empty when disabled' {
+        $PodeContext.Server.Web.Compression.Enabled = $false
+        Get-PodeAcceptEncoding -AcceptEncoding '' | Should Be ''
+    }
+
+    It 'Returns first encoding for all default' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'gzip,deflate' | Should Be 'gzip'
+    }
+
+    It 'Returns gzip for older x-gzip' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'x-gzip' | Should Be 'gzip'
+    }
+
+    It 'Returns empty if no encoding matches' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'br,compress' | Should Be ''
+    }
+
+    It 'Returns empty if no encoding matches, and 1 encoding is disabled' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'br,compress,gzip;q=0' | Should Be ''
+    }
+
+    It 'Returns encoding when no other encoding matches, and 1 encoding matches' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'br,compress,gzip' | Should Be 'gzip'
+    }
+
+    It 'Returns highest encoding when weighted' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'gzip;q=0.1,deflate' | Should Be 'deflate'
+    }
+
+    It 'Returns highest encoding when weighted, and identity disabled' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'gzip;q=0.1,deflate,identity;q=0' | Should Be 'deflate'
+    }
+
+    It 'Returns encoding even when none match, and identity disabled' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' | Should Be ''
+    }
+
+    It 'Errors when no encoding matches, and identity disabled' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        { Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' -ThrowError } | Should Throw 'HttpRequestException'
+    }
+
+    It 'Errors when no encoding matches, and wildcard disabled' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        { Get-PodeAcceptEncoding -AcceptEncoding 'br,*;q=0' -ThrowError } | Should Throw 'HttpRequestException'
+    }
+
+    It 'Returns empty if identity is allowed, but wildcard disabled' {
+        $PodeContext.Server.Web.Compression.Enabled = $true
+        Get-PodeAcceptEncoding -AcceptEncoding 'identity,*;q=0' | Should Be ''
+    }
+}
+
+Describe 'Get-PodeTransferEncoding' {
+    $PodeContext = @{
+        Server = @{
+            Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
+        }
+    }
+
+    It 'Returns empty for no encoding' {
+        Get-PodeTransferEncoding -TransferEncoding '' | Should Be ''
+    }
+
+    It 'Returns empty when just chunked' {
+        Get-PodeTransferEncoding -TransferEncoding 'chunked' | Should Be ''
+    }
+
+    It 'Returns first encoding that matches' {
+        Get-PodeTransferEncoding -TransferEncoding 'gzip,deflate' | Should Be 'gzip'
+    }
+
+    It 'Returns encoding when chunked' {
+        Get-PodeTransferEncoding -TransferEncoding 'gzip,chunked' | Should Be 'gzip'
+        Get-PodeTransferEncoding -TransferEncoding 'chunked,gzip' | Should Be 'gzip'
+    }
+
+    It 'Returns first invalid encoding when none match' {
+        Get-PodeTransferEncoding -TransferEncoding 'compress,chunked' | Should Be 'compress'
+    }
+
+    It 'Errors when no encoding matches' {
+        { Get-PodeTransferEncoding -TransferEncoding 'compress,chunked' -ThrowError } | Should Throw 'HttpRequestException'
+    }
+}
+
+Describe 'Get-PodeEncodingFromContentType' {
+    It 'Return utf8 for no type' {
+        $enc = Get-PodeEncodingFromContentType -ContentType ''
+        $enc.EncodingName | Should Be 'Unicode (UTF-8)'
+    }
+
+    It 'Return utf8 for no charset in type' {
+        $enc = Get-PodeEncodingFromContentType -ContentType 'application/json'
+        $enc.EncodingName | Should Be 'Unicode (UTF-8)'
+    }
+
+    It 'Return ascii when charset is set' {
+        $enc = Get-PodeEncodingFromContentType -ContentType 'application/json;charset=ascii'
+        $enc.EncodingName | Should Be 'US-ASCII'
+    }
+
+    It 'Return utf8 when charset is set' {
+        $enc = Get-PodeEncodingFromContentType -ContentType 'application/json;charset=utf-8'
+        $enc.EncodingName | Should Be 'Unicode (UTF-8)'
+    }
+}

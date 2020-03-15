@@ -243,8 +243,8 @@ function New-PodeContext
     $ctx.Server.BodyParsers = @{}
 
     # common support values
-    $ctx.Server.Supported = @{
-        TransferEncodings = @('gzip', 'deflate', 'x-gzip')
+    $ctx.Server.Compression = @{
+        Encodings = @('gzip', 'deflate', 'x-gzip')
     }
 
     # endware that needs to run
@@ -461,6 +461,9 @@ function Set-PodeWebConfiguration
         TransferEncoding = @{
             Default = $Configuration.TransferEncoding.Default
             Routes = @{}
+        }
+        Compression = @{
+            Enabled = [bool]$Configuration.Compression.Enable
         }
     }
 

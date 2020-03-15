@@ -23,6 +23,16 @@ HttpListener is the default web server, unless you specify `-Type Pode` on `Star
 !!! note
     The Pode server does also support `X-Transfer-Encoding`, but it will check `Transfer-Encoding` first.
 
+An example of the header in the request is as follows:
+
+```text
+Transfer-Encoding: gzip
+Transfer-Encoding: deflate
+
+// or:
+Transfer-Encoding: gzip,chunked
+```
+
 ## Route
 
 Like content types, you can force a Route to use a specific transfer encoding by using the `-TransferEncoding` parameter on [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute). If specified, Pode will use this compression type to decompress the payload regardless if the header is present or not.
