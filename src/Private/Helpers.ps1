@@ -955,30 +955,7 @@ function Join-PodePaths
         $Paths
     )
 
-    # remove any empty/null paths
-    $Paths = @(Remove-PodeEmptyItemsFromArray $Paths)
-
-    # if there are no paths, return blank
-    if ($null -eq $Paths -or $Paths.Length -eq 0) {
-        return ([string]::Empty)
-    }
-
-    # return the first path if singular
-    if ($Paths.Length -eq 1) {
-        return $Paths[0]
-    }
-
-    # join the first two paths
-    $_path = Join-Path $Paths[0] $Paths[1]
-
-    # if there are any more, add them on
-    if ($Paths.Length -gt 2) {
-        foreach ($p in $Paths[2..($Paths.Length - 1)]) {
-            $_path = Join-Path $_path $p
-        }
-    }
-
-    return $_path
+    return [System.IO.Path]::Combine($Paths)
 }
 
 function Get-PodeFileExtension
