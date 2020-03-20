@@ -156,7 +156,10 @@ function Set-PodeSessionDataHash
         $Session
     )
 
-    $Session.Data = (Protect-PodeValue -Value $Session.Data -Default @{})
+    if (($null -eq $Session.Data) -or ($Session.Data.Count -eq 0)) {
+        $Session.Data = @{}
+    }
+
     $Session.DataHash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json -Depth 10 -Compress))
 }
 
@@ -169,11 +172,14 @@ function Test-PodeSessionDataHash
         $Session
     )
 
-    if (Test-IsEmpty $Session.DataHash) {
+    if ([string]::IsNullOrWhiteSpace($Session.DataHash)) {
         return $false
     }
 
-    $Session.Data = (Protect-PodeValue -Value $Session.Data -Default @{})
+    if (($null -eq $Session.Data) -or ($Session.Data.Count -eq 0)) {
+        $Session.Data = @{}
+    }
+
     $hash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json -Depth 10 -Compress))
     return ($Session.DataHash -eq $hash)
 }
@@ -191,7 +197,11 @@ function Get-PodeSessionExpiry
         return [DateTime]::MinValue
     }
 
-    $expiry = (Resolve-PodeValue -Check ([bool]$Session.Properties.Extend) -TrueValue ([DateTime]::UtcNow) -FalseValue $Session.Properties.TimeStamp)
+    $expiry = [DateTime]::UtcNow
+    if (!([bool]$Session.Properties.Extend)) {
+        $expiry = $Session.Properties.TimeStamp
+    }
+
     $expiry = $expiry.AddSeconds($Session.Properties.Duration)
     return $expiry
 }
@@ -223,7 +233,7 @@ function Set-PodeSessionHelpers
         $expiry = (Get-PodeSessionExpiry -Session $session)
 
         # save session data to store
-        $PodeContext.Server.Sessions.Store.Set($session.Id, $session.Data, $expiry)
+        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $session.Data, $expiry) -Splat
 
         # update session's data hash
         Set-PodeSessionDataHash -Session $session
@@ -234,7 +244,7 @@ function Set-PodeSessionHelpers
         param($session)
 
         # remove data from store
-        $PodeContext.Server.Sessions.Store.Delete($session.Id)
+        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $session.Id
 
         # clear session
         $session.Clear()
@@ -249,20 +259,20 @@ function Get-PodeSessionInMemStore
     $store | Add-Member -MemberType NoteProperty -Name Memory -Value @{}
 
     # delete a sessionId and data
-    $store | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+    $store | Add-Member -MemberType NoteProperty -Name Delete -Value {
         param($sessionId)
-        $this.Memory.Remove($sessionId) | Out-Null
+        $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId) | Out-Null
     }
 
     # get a sessionId's data
-    $store | Add-Member -MemberType ScriptMethod -Name Get -Value {
+    $store | Add-Member -MemberType NoteProperty -Name Get -Value {
         param($sessionId)
 
-        $s = $this.Memory[$sessionId]
+        $s = $PodeContext.Server.Sessions.Store.Memory[$sessionId]
 
         # if expire, remove
         if (($null -ne $s) -and ($s.Expiry -lt [DateTime]::UtcNow)) {
-            $this.Memory.Remove($sessionId) | Out-Null
+            $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId) | Out-Null
             return $null
         }
 
@@ -270,10 +280,10 @@ function Get-PodeSessionInMemStore
     }
 
     # update/insert a sessionId and data
-    $store | Add-Member -MemberType ScriptMethod -Name Set -Value {
+    $store | Add-Member -MemberType NoteProperty -Name Set -Value {
         param($sessionId, $data, $expiry)
 
-        $this.Memory[$sessionId] = @{
+        $PodeContext.Server.Sessions.Store.Memory[$sessionId] = @{
             Data = $data
             Expiry = $expiry
         }
@@ -311,6 +321,17 @@ function Test-PodeSessionsConfigured
     return (!(Test-IsEmpty $PodeContext.Server.Sessions))
 }
 
+function Get-PodeSessionData
+{
+    param(
+        [Parameter()]
+        [string]
+        $SessionId
+    )
+
+    return (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Get -Arguments $SessionId -Return)
+}
+
 function Get-PodeSessionMiddleware
 {
     return {
@@ -333,7 +354,7 @@ function Get-PodeSessionMiddleware
             }
 
             # get the session's data
-            elseif ($null -ne ($data = $PodeContext.Server.Sessions.Store.Get($e.Session.Id))) {
+            elseif ($null -ne ($data = (Get-PodeSessionData -SessionId $e.Session.Id))) {
                 $e.Session.Data = $data
                 Set-PodeSessionDataHash -Session $e.Session
             }
