@@ -639,3 +639,68 @@ function Add-PodeAuthIIS
         NoLocalCheck = $NoLocalCheck
     }
 }
+
+function Add-PodeAuthUserFile
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable]
+        $Type,
+
+        [Parameter()]
+        [string]
+        $FilePath,
+
+        [Parameter()]
+        [string[]]
+        $Groups,
+
+        [Parameter()]
+        [string[]]
+        $Users,
+
+        [Parameter(ParameterSetName='Hmac')]
+        [string]
+        $HmacSecret
+    )
+
+    # ensure the name doesn't already exist
+    if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
+        throw "User File Authentication method already defined: $($Name)"
+    }
+
+    # ensure the Type contains a scriptblock
+    if (Test-IsEmpty $Type.ScriptBlock) {
+        throw "The supplied Type for the '$($Name)' User File authentication method requires a valid ScriptBlock"
+    }
+
+    # set the file path if not passed
+    if ([string]::IsNullOrWhiteSpace($FilePath)) {
+        $FilePath = Join-PodeServerRoot -Folder '.' -FilePath 'users.json'
+    }
+    else {
+        $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot -Resolve
+    }
+
+    # ensure the user file exists
+    if (!(Test-PodePath -Path $FilePath -NoStatus -FailOnDirectory)) {
+        throw "The user file does not exist: $($FilePath)"
+    }
+
+    # add Windows AD auth method to server
+    $PodeContext.Server.Authentications[$Name] = @{
+        Type = $Type
+        ScriptBlock = (Get-PodeAuthUserFileMethod)
+        Arguments = @{
+            FilePath = $FilePath
+            Users = $Users
+            Groups = $Groups
+            HmacSecret = $HmacSecret
+        }
+    }
+}

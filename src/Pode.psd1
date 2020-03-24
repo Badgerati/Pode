@@ -160,6 +160,7 @@
         'Remove-PodeAuth',
         'Get-PodeAuthMiddleware',
         'Add-PodeAuthIIS',
+        'Add-PodeAuthUserFile',
 
         # logging
         'New-PodeLoggingMethod',

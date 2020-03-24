@@ -1,0 +1,12 @@
+[
+    {
+        "Name": "Rick Sanchez",
+        "Username": "r.sanchez",
+        "Email": "r.sanchez@sanctum.com",
+        "Password": "bQik5jDkqg1c2HPmWuoKI99C3mEHPstJ7xcVj+ap3Oo=",
+        "Groups": [
+            "Admin",
+            "Developer"
+        ]
+    }
+]
