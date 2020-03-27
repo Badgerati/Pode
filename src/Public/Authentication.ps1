@@ -640,6 +640,37 @@ function Add-PodeAuthIIS
     }
 }
 
+<#
+.SYNOPSIS
+Adds the inbuilt User File Authentication method for verifying users.
+
+.DESCRIPTION
+Adds the inbuilt User File Authentication method for verifying users.
+
+.PARAMETER Name
+A unique Name for the Authentication method.
+
+.PARAMETER Type
+The Type to use for retrieving credentials (From New-PodeAuthType).
+
+.PARAMETER FilePath
+A path to a users JSON file (Default: ./users.json)
+
+.PARAMETER Groups
+An array of Group names to only allow access.
+
+.PARAMETER Users
+An array of Usernames to only allow access.
+
+.PARAMETER HmacSecret
+An optional secret if the passwords are HMAC SHA256 hashed.
+
+.EXAMPLE
+New-PodeAuthType -Form | Add-PodeAuthUserFile -Name 'Login'
+
+.EXAMPLE
+New-PodeAuthType -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './custom/path/users.json'
+#>
 function Add-PodeAuthUserFile
 {
     [CmdletBinding()]
