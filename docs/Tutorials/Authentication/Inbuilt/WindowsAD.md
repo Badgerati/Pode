@@ -2,6 +2,8 @@
 
 Pode's inbuilt Windows AD authentication works cross-platform, using OpenLDAP to work in *nix environments.
 
+This authenticator can only be used with Basic and Form. Custom is also supported, but a username and password must be supplied.
+
 ## Usage
 
 To enable Windows AD authentication you can use the [`Add-PodeAuthWindowsAd`](../../../../Functions/Authentication/Add-PodeAuthWindowsAd) function. The following example will validate a user's credentials, supplied via a web-form, against the default AD the current server is joined to:
@@ -49,7 +51,7 @@ Start-PodeServer {
 
 ### Groups
 
-You can supply a list of group names to validate that user's are a member of them in AD. If you supply multiple group names, the user only needs to be a of one of the groups. You can supply the list of groups to the `auth` function's options parameter as an array - the list is not case-sensitive:
+You can supply a list of group names to validate that user's are a member of them in AD. If you supply multiple group names, the user only needs to be a of one of the groups. You can supply the list of groups to the function's `-Groups` parameter as an array - the list is not case-sensitive:
 
 ```powershell
 Start-PodeServer {
@@ -57,12 +59,16 @@ Start-PodeServer {
 }
 ```
 
+If an user being authenticated is not in one of these groups, then a 401 is returned.
+
 ### Users
 
-You can supply a list of authorised usernames to validate a user's access, after credentials are validated, and instead of of checking AD groups. You can supply the list of usernames to the `auth` function's options parameter as an array - the list is not case-sensitive:
+You can supply a list of authorised usernames to validate a user's access, after credentials are validated, and instead of of checking AD groups. You can supply the list of usernames to the function's `-Users` parameter as an array - the list is not case-sensitive:
 
 ```powershell
 Start-PodeServer {
     New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
 }
 ```
+
+If an user being authenticated is not one of the allowed users, then a 401 is returned.

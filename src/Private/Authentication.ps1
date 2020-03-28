@@ -337,6 +337,60 @@ function Get-PodeAuthFormType
     }
 }
 
+function Get-PodeAuthUserFileMethod
+{
+    return {
+        param($username, $password, $options)
+
+        # load the file
+        $users = (Get-Content -Path $options.FilePath -Raw | ConvertFrom-Json)
+
+        # find the user by username - only use the first one
+        $user = @(foreach ($_user in $users) {
+            if ($_user.Username -ieq $username) {
+                $_user
+                break
+            }
+        })[0]
+
+        # fail if no user
+        if ($null -eq $user) {
+            return @{ Message = 'You are not authorised to access this website' }
+        }
+
+        # check the user's password
+        if (![string]::IsNullOrWhiteSpace($options.HmacSecret)) {
+            $hash = Invoke-PodeHMACSHA256Hash -Value $password -Secret $options.HmacSecret
+        }
+        else {
+            $hash = Invoke-PodeSHA256Hash -Value $password
+        }
+
+        if ($user.Password -ne $hash) {
+            return @{ Message = 'You are not authorised to access this website' }
+        }
+
+        # convert the user to a hashtable
+        $user = @{
+            Name = $user.Name
+            Username = $user.Username
+            Email = $user.Email
+            Groups = $user.Groups
+            Metadata = $user.Metadata
+        }
+
+        # is the user valid for any users/groups?
+        if (!(Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups)) {
+            return @{ Message = 'You are not authorised to access this website' }
+        }
+
+        # return user
+        return @{
+            User = $user
+        }
+    }
+}
+
 function Get-PodeAuthWindowsADMethod
 {
     return {
@@ -365,7 +419,7 @@ function Get-PodeAuthWindowsADMethod
         }
 
         # is the user valid for any users/groups?
-        if (Test-PodeAuthADUser -User $result.User -Users $options.Users -Groups $options.Groups) {
+        if (Test-PodeAuthUserGroups -User $result.User -Users $options.Users -Groups $options.Groups) {
             return $result
         }
 
@@ -477,7 +531,7 @@ function Get-PodeAuthWindowsADIISMethod
         }
 
         # is the user valid for any users/groups?
-        if (Test-PodeAuthADUser -User $user -Users $options.Users -Groups $options.Groups) {
+        if (Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups) {
             return @{ User = $user }
         }
 
@@ -486,7 +540,7 @@ function Get-PodeAuthWindowsADIISMethod
     }
 }
 
-function Test-PodeAuthADUser
+function Test-PodeAuthUserGroups
 {
     param(
         [Parameter(Mandatory=$true)]
