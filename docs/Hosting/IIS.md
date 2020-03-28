@@ -88,7 +88,7 @@ Start-PodeServer {
 
     Add-PodeAuthIIS -Name 'IISAuth'
 
-    Add-PodeRoute -Method Get -Path '/test' -Middleware (Get-PodeAuthMiddleware -Name 'IISAuth') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/test' -Middleware (Get-PodeAuthMiddleware -Name 'IISAuth' -Sessionless) -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ User = $e.Auth.User }
     }
