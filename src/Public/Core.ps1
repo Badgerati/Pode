@@ -881,7 +881,7 @@ function Get-PodeEndpoint
         }
 
         $endpoints = @(foreach ($endpoint in $endpoints) {
-            if ($endpoint.Address -ine $Address) {
+            if ($endpoint.Address.ToString() -ine $Address) {
                 continue
             }
 
