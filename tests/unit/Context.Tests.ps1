@@ -281,6 +281,112 @@ Describe 'Add-PodeEndpoint' {
     }
 }
 
+Describe 'Get-PodeEndpoint' {
+    Mock Test-PodeIPAddress { return $true }
+    Mock Test-IsAdminUser { return $true }
+
+    It 'Returns no Endpoints' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $endpoints = Get-PodeEndpoint
+        $endpoints.Length | Should Be 0
+    }
+
+    It 'Returns all Endpoints' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 8080 -Protocol 'HTTP'
+
+        $endpoints = Get-PodeEndpoint
+        $endpoints.Length | Should Be 3
+    }
+
+    It 'Returns 1 endpoint by address' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 8080 -Protocol 'HTTP'
+
+        $endpoints = Get-PodeEndpoint -Address '127.0.0.1'
+        $endpoints.Length | Should Be 1
+    }
+
+    It 'Returns 2 endpoints by address' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 8080 -Protocol 'HTTP'
+
+        $endpoints = Get-PodeEndpoint -Address 'pode.foo.com'
+        $endpoints.Length | Should Be 2
+    }
+
+    It 'Returns 2 endpoints by port' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 8080 -Protocol 'HTTP'
+
+        $endpoints = Get-PodeEndpoint -Port 80
+        $endpoints.Length | Should Be 2
+    }
+
+    It 'Returns all endpoints by protocol' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 8080 -Protocol 'HTTP'
+
+        $endpoints = Get-PodeEndpoint -Protocol Http
+        $endpoints.Length | Should Be 3
+    }
+
+    It 'Returns 2 endpoints by name' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -Name 'Admin'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'User'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 8080 -Protocol 'HTTP' -Name 'Dev'
+
+        $endpoints = Get-PodeEndpoint -Name Admin, User
+        $endpoints.Length | Should Be 2
+    }
+
+    It 'Returns 1 endpoint using everything' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -Name 'Admin'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'User'
+        Add-PodeEndpoint -Address 'pode.foo.com' -Port 8080 -Protocol 'HTTP' -Name 'Dev'
+
+        $endpoints = Get-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol Http -Name User
+        $endpoints.Length | Should Be 1
+    }
+
+    It 'Returns endpoint set using wildcard' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '*' -Port 80 -Protocol 'HTTP'
+
+        $endpoints = Get-PodeEndpoint -Address '*'
+        $endpoints.Length | Should Be 1
+    }
+
+    It 'Returns endpoint set using localhost' {
+        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address 'localhost' -Port 80 -Protocol 'HTTP'
+
+        $endpoints = Get-PodeEndpoint -Address 'localhost'
+        $endpoints.Length | Should Be 1
+    }
+}
+
 Describe 'Import-PodeModule' {
     Context 'Invalid parameters supplied' {
         It 'Throw null path parameter error' {

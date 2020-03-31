@@ -1274,11 +1274,6 @@ Describe 'Get-PodeStaticRoute' {
         $routes.Length | Should Be 1
     }
 
-
-
-
-    
-
     It 'Returns one static route for endpoint' {
         $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @(); Type = $null }
 
