@@ -99,11 +99,38 @@ function Find-PodeRoute
     }
 }
 
-function Find-PodeStaticRoutePath
+function Find-PodePublicRoute
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    $source = $null
+    $publicPath = $PodeContext.Server.InbuiltDrives['public']
+
+    # reutrn null if there is no public directory
+    if ([string]::IsNullOrWhiteSpace($publicPath)) {
+        return $source
+    }
+
+    # use the public static directory (but only if path is a file, and a public dir is present)
+    if (Test-PodePathIsFile $Path) {
+        $source = (Join-Path $publicPath $Path)
+        if (!(Test-PodePath -Path $source -NoStatus)) {
+            $source = $null
+        }
+    }
+
+    # return the route details
+    return $source
+}
+
+function Find-PodeStaticRoute
+{
+    param(
+        [Parameter(Mandatory=$true)]
         [string]
         $Path,
 
@@ -113,14 +140,16 @@ function Find-PodeStaticRoutePath
 
         [Parameter()]
         [string]
-        $Endpoint
+        $Endpoint,
+
+        [switch]
+        $CheckPublic
     )
 
     # attempt to get a static route for the path
     $found = Find-PodeRoute -Method 'static' -Path $Path -Protocol $Protocol -Endpoint $Endpoint
-    $havePublicDir = (![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public']))
-    $source = $null
     $download = ([bool]$found.Download)
+    $source = $null
 
     # if we have a defined static route, use that
     if ($null -ne $found) {
@@ -149,16 +178,53 @@ function Find-PodeStaticRoutePath
         $source = (Join-Path $found.Source $file)
     }
 
-    # use the public static directory (but only if path is a file, and a public dir is present)
-    if ($havePublicDir -and (Test-PodePathIsFile $Path) -and !(Test-PodePath -Path $source -NoStatus)) {
-        $source = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Path)
+    # check public, if flagged
+    if ($CheckPublic -and !(Test-PodePath -Path $source -NoStatus)) {
+        $source = Find-PodePublicRoute -Path $Path
+        $download = $false
+        $found = $null
+    }
+
+    # return nothing if no source
+    if ([string]::IsNullOrWhiteSpace($source)) {
+        return $null
     }
 
     # return the route details
     return @{
-        Source = $source
-        Download = $download
+        StaticRoute = @{
+            Source = $source
+            IsDownload = $download
+            IsCachable = (Test-PodeRouteValidForCaching -Path $Path)
+        }
+        Route = $found
     }
+}
+
+function Test-PodeRouteValidForCaching
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+
+    # check current state of caching
+    $config = $PodeContext.Server.Web.Static.Cache
+    $caching = $config.Enabled
+
+    # if caching, check include/exclude
+    if ($caching) {
+        if (($null -ne $config.Exclude) -and ($Path -imatch $config.Exclude)) {
+            $caching = $false
+        }
+
+        if (($null -ne $config.Include) -and ($Path -inotmatch $config.Include)) {
+            $caching = $false
+        }
+    }
+
+    return $caching
 }
 
 function Get-PodeRouteByUrl
