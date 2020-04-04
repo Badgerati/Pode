@@ -1,4 +1,4 @@
-# External Endpoints
+# External
 
 At most times you'll possibly be accessing your Pode server locally. However, you can access your server externally if you setup the endpoints appropriately using the [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) function. These will work on a your VMs, or in a Container.
 

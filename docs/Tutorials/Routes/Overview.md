@@ -174,7 +174,7 @@ The [`Get-PodeStaticRoute`](../../../Functions/Routes/Get-PodeStaticRoute) funct
 !!! warning
     Be careful if you choose to edit these objects, as they will affect the server.
 
-The following is the structure of the Route object internally, as well as the object that is returned from `Add-PodeRoute -PassThru` or `Get-PodeRoute`:
+The following is the structure of the Route object internally, as well as the object that is returned from `Add-PodeRoute -PassThru` or [`Get-PodeRoute`](../../../Functions/Routes/Get-PodeRoute):
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

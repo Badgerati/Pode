@@ -820,6 +820,124 @@ function Add-PodeEndpoint
 
 <#
 .SYNOPSIS
+Get an Endpoint(s).
+
+.DESCRIPTION
+Get an Endpoint(s).
+
+.PARAMETER Address
+An Address to filter the endpoints.
+
+.PARAMETER Port
+A Port to filter the endpoints.
+
+.PARAMETER Protocol
+A Protocol to filter the endpoints.
+
+.PARAMETER Name
+Any endpoints Names to filter endpoints.
+
+.EXAMPLE
+Get-PodeEndpoint -Address 127.0.0.1
+
+.EXAMPLE
+Get-PodeEndpoint -Protocol Http
+
+.EXAMPLE
+Get-PodeEndpoint -Name Admin, User
+#>
+function Get-PodeEndpoint
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Address,
+
+        [Parameter()]
+        [int]
+        $Port = 0,
+
+        [Parameter()]
+        [ValidateSet('', 'Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [string]
+        $Protocol,
+
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    $endpoints = $PodeContext.Server.Endpoints
+
+    # if we have an address, filter
+    if (![string]::IsNullOrWhiteSpace($Address)) {
+        if ($Address -eq '*') {
+            $Address = '0.0.0.0'
+        }
+
+        if ($PodeContext.Server.IsIIS) {
+            $Address = '127.0.0.1'
+        }
+
+        $endpoints = @(foreach ($endpoint in $endpoints) {
+            if ($endpoint.Address.ToString() -ine $Address) {
+                continue
+            }
+
+            $endpoint
+        })
+    }
+
+    # if we have a port, filter
+    if ($Port -gt 0) {
+        if ($PodeContext.Server.IsIIS) {
+            $Port = [int]$env:ASPNETCORE_PORT
+        }
+
+        $endpoints = @(foreach ($endpoint in $endpoints) {
+            if ($endpoint.Port -ne $Port) {
+                continue
+            }
+
+            $endpoint
+        })
+    }
+
+    # if we have a protocol, filter
+    if (![string]::IsNullOrWhiteSpace($Protocol)) {
+        if ($PodeContext.Server.IsIIS) {
+            $Protocol = 'Http'
+        }
+
+        $endpoints = @(foreach ($endpoint in $endpoints) {
+            if ($endpoint.Protocol -ine $Protocol) {
+                continue
+            }
+
+            $endpoint
+        })
+    }
+
+    # further filter by endpoint names
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $endpoints = @(foreach ($_name in $Name) {
+            foreach ($endpoint in $endpoints) {
+                if ($endpoint.Name -ine $_name) {
+                    continue
+                }
+
+                $endpoint
+            }
+        })
+    }
+
+    # return
+    return $endpoints
+}
+
+<#
+.SYNOPSIS
 Adds a new Timer with logic to periodically invoke.
 
 .DESCRIPTION

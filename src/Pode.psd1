@@ -180,6 +180,7 @@
         'Start-PodeStaticServer',
         'Show-PodeGui',
         'Add-PodeEndpoint',
+        'Get-PodeEndpoint',
         'Pode',
 
         # openapi
