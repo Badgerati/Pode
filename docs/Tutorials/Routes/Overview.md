@@ -140,7 +140,7 @@ For example, to create a route from a file that will write a simple JSON respons
 }
 ```
 
-* Timer
+* Route
 ```powershell
 Add-PodeRoute -Method Get -Path '/ping' -FilePath './Routes/File.ps1'
 ```
@@ -179,10 +179,11 @@ The following is the structure of the Route object internally, as well as the ob
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | Arguments | object[] | Array of arguments that are splatted onto the route's scriptblock (after the web event) |
-| ContentType | string | Content type to use when parsing the payload a request to the route |
+| ContentType | string | The content type to use when parsing the payload in the request |
 | Endpoint | string | Endpoint the route is bound to as `<address>:<port>` |
 | EndpointName | string | Name of the endpoint the route is bound to |
 | ErrorType | string | Content type of the error page to use for the route |
+| IsStatic | bool | Fixed to false for normal routes |
 | Logic | scriptblock | The main scriptblock logic of the route |
 | Method | string | HTTP method of the route |
 | Metrics | hashtable | Metrics for the route, such as Request counts |
@@ -190,17 +191,24 @@ The following is the structure of the Route object internally, as well as the ob
 | OpenApi | hashtable[] | The OpenAPI definition/settings for the route |
 | Path | string | The path of the route - this path will have regex in place of route parameters |
 | Protocol | string | Protocol the route is bound to |
+| TransferEncoding | string | The transfer encoding to use when parsing the payload in the request |
 
 Static routes have a slightly different format:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+| ContentType | string | Content type to use when parsing the payload a request to the route |
 | Defaults | string[] | Array of default file names to render if path in request is a folder |
 | Download | bool | Specifies whether files are rendered in the response, or downloaded |
 | Endpoint | string | Endpoint the route is bound to as `<address>:<port>` |
 | EndpointName | string | Name of the endpoint the route is bound to |
+| ErrorType | string | Content type of the error page to use for the route |
+| IsStatic | bool | Fixed to true for static routes |
 | Method | string | HTTP method of the route |
 | Metrics | hashtable | Metrics for the route, such as Request counts |
+| Middleware | hashtable[] | Array of middleware that runs prior to the route's scriptblock |
+| OpenApi | hashtable[] | The OpenAPI definition/settings for the route |
 | Path | string | The path of the route - this path will have regex in place of dynamic file names |
 | Protocol | string | Protocol the route is bound to |
 | Source | string | The source path within the server that is used for the route |
+| TransferEncoding | string | The transfer encoding to use when parsing the payload in the request |

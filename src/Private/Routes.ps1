@@ -192,7 +192,7 @@ function Find-PodeStaticRoute
 
     # return the route details
     return @{
-        StaticRoute = @{
+        Content = @{
             Source = $source
             IsDownload = $download
             IsCachable = (Test-PodeRouteValidForCaching -Path $Path)

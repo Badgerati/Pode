@@ -37,6 +37,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 | Response | object | The raw Response object |
 | Route | hashtable | The current Route that is being invoked |
 | Session | hashtable | Contains details about, and any data stored in the current session - this data can be accessed in the sub `.Data` property |
+| StaticContent | hashtable | Contains details about the source path, if the route is a custom Static Route |
 | Streamed | bool | Specifies whether the current server type uses streams for the Request/Response, or raw strings |
 | Timestamp | datetime | The current date and time of the Request |
 

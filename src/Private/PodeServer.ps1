@@ -155,7 +155,7 @@ function Invoke-PodeSocketHandler
             Files = $null
             Streamed = $true
             Route = $null
-            StaticRoute = $null
+            StaticContent = $null
             Timestamp = [datetime]::UtcNow
             TransferEncoding = $null
         }
@@ -233,13 +233,13 @@ function Invoke-PodeSocketHandler
             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
             {
                 # invoke the route
-                if ($null -ne $WebEvent.StaticRoute) {
-                    if ($WebEvent.StaticRoute.IsDownload) {
+                if ($null -ne $WebEvent.StaticContent) {
+                    if ($WebEvent.StaticContent.IsDownload) {
                         Set-PodeResponseAttachment -Path $e.Path
                     }
                     else {
-                        $cachable = $WebEvent.StaticRoute.IsCachable
-                        Write-PodeFileResponse -Path $WebEvent.StaticRoute.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                        $cachable = $WebEvent.StaticContent.IsCachable
+                        Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
                     }
                 }
                 else {

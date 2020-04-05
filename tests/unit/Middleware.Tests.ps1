@@ -384,13 +384,13 @@ Describe 'Get-PodeRouteValidateMiddleware' {
         $r.Name | Should Be '__pode_mw_route_validation__'
         $r.Logic | Should Not Be $null
 
-        Mock Find-PodeStaticRoute { return @{ StaticRoute = @{ Source = '/'; Download = $true }; Route = @{} } }
+        Mock Find-PodeStaticRoute { return @{ Content = @{ Source = '/'; Download = $true }; Route = @{} } }
         Mock Find-PodeRoute { return $null }
 
         (. $r.Logic $WebEvent) | Should Be $true
         $WebEvent.Route | Should Not Be $null
-        $WebEvent.StaticRoute | Should Not Be $null
-        $WebEvent.StaticRoute.Download | Should Be $true
+        $WebEvent.StaticContent | Should Not Be $null
+        $WebEvent.StaticContent.Download | Should Be $true
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching' {
@@ -413,12 +413,12 @@ Describe 'Get-PodeRouteValidateMiddleware' {
             }}
         }}
 
-        Mock Find-PodeStaticRoute { return @{ StaticRoute = @{ Source = '/' }; Route = @{} } }
+        Mock Find-PodeStaticRoute { return @{ Content = @{ Source = '/' }; Route = @{} } }
         Mock Find-PodeRoute { return $null }
 
         (. $r.Logic $WebEvent) | Should Be $true
         $WebEvent.Route | Should Not Be $null
-        $WebEvent.StaticRoute | Should Not Be $null
+        $WebEvent.StaticContent | Should Not Be $null
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching from exclude' {
@@ -442,12 +442,12 @@ Describe 'Get-PodeRouteValidateMiddleware' {
             }}
         }}
 
-        Mock Find-PodeStaticRoute { return @{ StaticRoute = @{ Source = '/' }; Route = @{} } }
+        Mock Find-PodeStaticRoute { return @{ Content = @{ Source = '/' }; Route = @{} } }
         Mock Find-PodeRoute { return $null }
 
         (. $r.Logic $WebEvent) | Should Be $true
         $WebEvent.Route | Should Not Be $null
-        $WebEvent.StaticRoute | Should Not Be $null
+        $WebEvent.StaticContent | Should Not Be $null
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with no caching from include' {
@@ -471,12 +471,12 @@ Describe 'Get-PodeRouteValidateMiddleware' {
             }}
         }}
 
-        Mock Find-PodeStaticRoute { return @{ StaticRoute = @{ Source = '/' }; Route = @{} } }
+        Mock Find-PodeStaticRoute { return @{ Content = @{ Source = '/' }; Route = @{} } }
         Mock Find-PodeRoute { return $null }
 
         (. $r.Logic $WebEvent) | Should Be $true
         $WebEvent.Route | Should Not Be $null
-        $WebEvent.StaticRoute | Should Not Be $null
+        $WebEvent.StaticContent | Should Not Be $null
     }
 
     It 'Returns a ScriptBlock, invokes false for static path, with caching' {
@@ -499,12 +499,12 @@ Describe 'Get-PodeRouteValidateMiddleware' {
             }}
         }}
 
-        Mock Find-PodeStaticRoute { return @{ StaticRoute = @{ Source = '/' }; Route = @{} } }
+        Mock Find-PodeStaticRoute { return @{ Content = @{ Source = '/' }; Route = @{} } }
         Mock Find-PodeRoute { return $null }
 
         (. $r.Logic $WebEvent) | Should Be $true
         $WebEvent.Route | Should Not Be $null
-        $WebEvent.StaticRoute | Should Not Be $null
+        $WebEvent.StaticContent | Should Not Be $null
     }
 }
 

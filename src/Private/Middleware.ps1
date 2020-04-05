@@ -171,8 +171,8 @@ function Get-PodeRouteValidateMiddleware
             }
 
             # check if static and split
-            if ($null -ne $route.StaticRoute) {
-                $e.StaticRoute = $route.StaticRoute
+            if ($null -ne $route.Content) {
+                $e.StaticContent = $route.Content
                 $route = $route.Route
             }
 
