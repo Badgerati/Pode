@@ -14,7 +14,7 @@ function Invoke-PodeMiddleware
     )
 
     # if there's no middleware, do nothing
-    if ($null -eq $Middleware -or $Middleware.Length -eq 0) {
+    if (($null -eq $Middleware) -or ($Middleware.Length -eq 0)) {
         return $true
     }
 
@@ -22,6 +22,10 @@ function Invoke-PodeMiddleware
     if (![string]::IsNullOrWhiteSpace($Route))
     {
         $Middleware = @(foreach ($mware in $Middleware) {
+            if ($null -eq $mware) {
+                continue
+            }
+
             if ([string]::IsNullOrWhiteSpace($mware.Route) -or ($mware.Route -ieq '/') -or ($mware.Route -ieq $Route) -or ($Route -imatch "^$($mware.Route)$")) {
                 $mware
             }
@@ -34,6 +38,10 @@ function Invoke-PodeMiddleware
     # loop through each of the middleware, invoking the next if it returns true
     foreach ($midware in @($Middleware))
     {
+        if (($null -eq $midware) -or ($null -eq $midware.Logic)) {
+            continue
+        }
+
         try {
             $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments (@($WebEvent) + @($midware.Arguments)) -Return -Scoped -Splat
         }
