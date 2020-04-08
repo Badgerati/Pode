@@ -28,7 +28,13 @@ function New-PodeContext
 
         [Parameter()]
         [string]
-        $ServerType
+        $ServerType,
+
+        [switch]
+        $DisableTermination,
+
+        [switch]
+        $Quiet
     )
 
     # set a random server name if one not supplied
@@ -58,12 +64,14 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru
 
-    # set the server name, logic and root
+    # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
+    $ctx.Server.DisableTermination = $DisableTermination.IsPresent
+    $ctx.Server.Quiet = $Quiet.IsPresent
 
     # basic logging setup
     $ctx.Server.Logging = @{
@@ -124,12 +132,14 @@ function New-PodeContext
 
     if ($isServerless) {
         $ctx.Server.IsServerless = $isServerless
+        $ctx.Server.DisableTermination = $true
     }
 
     # is the server running under IIS? (also, force the server type to pode)
     $ctx.Server.IsIIS = (!$isServerless -and (!(Test-IsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-IsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
         $ctx.Server.Type = 'PODE'
+        $ctx.Server.DisableTermination = $true
     }
 
     # set the IP address details

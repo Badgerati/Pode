@@ -141,8 +141,8 @@ function Test-IsAdminUser
         return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
     }
     catch [exception] {
-        Write-Host 'Error checking user administrator priviledges' -ForegroundColor Red
-        Write-Host $_.Exception.Message -ForegroundColor Red
+        Write-PodeHost 'Error checking user administrator priviledges' -ForegroundColor Red
+        Write-PodeHost $_.Exception.Message -ForegroundColor Red
         return $false
     }
 }
@@ -217,7 +217,7 @@ function Set-PodeCertificate
 
     # only bind if windows at the moment
     if (!(Test-IsWindows)) {
-        Write-Host "Certificates are currently only supported on Windows" -ForegroundColor Yellow
+        Write-PodeHost "Certificates are currently only supported on Windows" -ForegroundColor Yellow
         return
     }
 
@@ -227,7 +227,7 @@ function Set-PodeCertificate
     }
 
     if ($sslPortInUse) {
-        Write-Host "$($addrport) already has a certificate bound" -ForegroundColor Green
+        Write-PodeHost "$($addrport) already has a certificate bound" -ForegroundColor Green
         return
     }
 
@@ -246,13 +246,13 @@ function Set-PodeCertificate
     {
         # generate a self-signed cert
         if ($SelfSigned) {
-            Write-Host "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
+            Write-PodeHost "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
             $cert = (New-PodeSelfSignedCertificate)
         }
 
         # ensure a given cert exists for binding
         else {
-            Write-Host "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
+            Write-PodeHost "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
             $cert = (Get-PodeCertificate -Certificate $Certificate)
         }
     }
@@ -271,7 +271,7 @@ function Set-PodeCertificate
         }
     }
 
-    Write-Host " Done" -ForegroundColor Green
+    Write-PodeHost " Done" -ForegroundColor Green
 }
 
 function Get-PodeHostIPRegex
@@ -719,7 +719,7 @@ function Test-PodeTerminationPressed
         $Key = $null
     )
 
-    if ($PodeContext.DisableTermination) {
+    if ($PodeContext.Server.DisableTermination) {
         return $false
     }
 
@@ -744,43 +744,6 @@ function Test-PodeRestartPressed
 
     return (($null -ne $Key) -and ($Key.Key -ieq 'r') -and
         (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
-}
-
-function Start-PodeTerminationListener
-{
-    Add-PodeRunspace -Type 'Main' {
-        # default variables
-        $options = "AllowCtrlC,IncludeKeyUp,NoEcho"
-        $ctrlState = "LeftCtrlPressed"
-        $char = 'c'
-        $cancel = $false
-
-        # are we on ps-core?
-        $onCore = ($PSVersionTable.PSEdition -ieq 'core')
-
-        while ($true) {
-            if ($Console.UI.RawUI.KeyAvailable) {
-                $key = $Console.UI.RawUI.ReadKey($options)
-
-                if ([char]$key.VirtualKeyCode -ieq $char) {
-                    if ($onCore) {
-                        $cancel = ($key.Character -ine $char)
-                    }
-                    else {
-                        $cancel = (($key.ControlKeyState -band $ctrlState) -ieq $ctrlState)
-                    }
-                }
-
-                if ($cancel) {
-                    Write-Host 'Terminating...' -NoNewline
-                    $PodeContext.Tokens.Cancellation.Cancel()
-                    break
-                }
-            }
-
-            Start-Sleep -Milliseconds 10
-        }
-    }
 }
 
 function Close-PodeServer
@@ -809,7 +772,7 @@ function Close-PodeServer
     Remove-PodePSDrives
 
     if ($ShowDoneMessage -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -and !$PodeContext.Server.IsServerless) {
-        Write-Host " Done" -ForegroundColor Green
+        Write-PodeHost " Done" -ForegroundColor Green
     }
 }
 

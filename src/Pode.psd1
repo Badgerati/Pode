@@ -104,6 +104,7 @@
         'Test-IsPSCore',
         'Test-IsEmpty',
         'Out-PodeHost',
+        'Write-PodeHost',
         'Test-PodeIsIIS',
 
         # routes
