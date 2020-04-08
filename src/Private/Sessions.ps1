@@ -90,7 +90,7 @@ function Get-PodeSession
 
         # get the header from the request
         $value = Get-PodeHeader -Name $Session.Name -Secret $secret
-        if (Test-IsEmpty $value) {
+        if ([string]::IsNullOrWhiteSpace($value)) {
             return $null
         }
     }
@@ -104,7 +104,7 @@ function Get-PodeSession
 
         # get the cookie from the request
         $cookie = Get-PodeCookie -Name $Session.Name -Secret $secret
-        if (Test-IsEmpty $cookie) {
+        if ([string]::IsNullOrWhiteSpace($cookie)) {
             return $null
         }
 
@@ -233,7 +233,12 @@ function Set-PodeSessionHelpers
         $expiry = (Get-PodeSessionExpiry -Session $session)
 
         # save session data to store
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $session.Data, $expiry) -Splat
+        if ($PodeContext.Server.Sessions.Store.Set -is [psscriptmethod]) {
+            $PodeContext.Server.Sessions.Store.Set($session.Id, $session.Data, $expiry)
+        }
+        else {
+            Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $session.Data, $expiry) -Splat
+        }
 
         # update session's data hash
         Set-PodeSessionDataHash -Session $session
@@ -244,7 +249,12 @@ function Set-PodeSessionHelpers
         param($session)
 
         # remove data from store
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $session.Id
+        if ($PodeContext.Server.Sessions.Store.Delete -is [psscriptmethod]) {
+            $PodeContext.Server.Sessions.Store.Delete($session.Id)
+        }
+        else {
+            Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $session.Id
+        }
 
         # clear session
         $session.Clear()
@@ -318,7 +328,7 @@ function Set-PodeSessionInMemClearDown
 
 function Test-PodeSessionsConfigured
 {
-    return (!(Test-IsEmpty $PodeContext.Server.Sessions))
+    return (($null -ne $PodeContext.Server.Sessions) -and ($PodeContext.Server.Sessions.Count -gt 0))
 }
 
 function Get-PodeSessionData
@@ -329,7 +339,12 @@ function Get-PodeSessionData
         $SessionId
     )
 
-    return (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Get -Arguments $SessionId -Return)
+    if ($PodeContext.Server.Sessions.Store.Get -is [psscriptmethod]) {
+        return $PodeContext.Server.Sessions.Store.Get($e.Session.Id)
+    }
+    else {
+        return (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Get -Arguments $SessionId -Return)
+    }
 }
 
 function Get-PodeSessionMiddleware
