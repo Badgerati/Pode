@@ -107,6 +107,7 @@ function Start-PodeWebServer
                         PendingCookies = @{}
                         Streamed = $true
                         Route = $null
+                        StaticContent = $null
                         Timestamp = [datetime]::UtcNow
                         TransferEncoding = $null
                         AcceptEncoding = $null
@@ -121,11 +122,21 @@ function Start-PodeWebServer
                     # add logging endware for post-request
                     Add-PodeRequestLogEndware -WebEvent $WebEvent
 
-                    # invoke middleware
+                    # invoke global and route middleware
                     if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                        # invoke route and custom middleware
-                        if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware)) {
-                            if ($null -ne $WebEvent.Route.Logic) {
+                        if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
+                        {
+                            # invoke the route
+                            if ($null -ne $WebEvent.StaticContent) {
+                                if ($WebEvent.StaticContent.IsDownload) {
+                                    Set-PodeResponseAttachment -Path $e.Path
+                                }
+                                else {
+                                    $cachable = $WebEvent.StaticContent.IsCachable
+                                    Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                                }
+                            }
+                            else {
                                 Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments (@($WebEvent) + @($WebEvent.Route.Arguments)) -Scoped -Splat
                             }
                         }

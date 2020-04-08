@@ -14,7 +14,7 @@ function Invoke-PodeMiddleware
     )
 
     # if there's no middleware, do nothing
-    if ($null -eq $Middleware -or $Middleware.Length -eq 0) {
+    if (($null -eq $Middleware) -or ($Middleware.Length -eq 0)) {
         return $true
     }
 
@@ -22,6 +22,10 @@ function Invoke-PodeMiddleware
     if (![string]::IsNullOrWhiteSpace($Route))
     {
         $Middleware = @(foreach ($mware in $Middleware) {
+            if ($null -eq $mware) {
+                continue
+            }
+
             if ([string]::IsNullOrWhiteSpace($mware.Route) -or ($mware.Route -ieq '/') -or ($mware.Route -ieq $Route) -or ($Route -imatch "^$($mware.Route)$")) {
                 $mware
             }
@@ -34,6 +38,10 @@ function Invoke-PodeMiddleware
     # loop through each of the middleware, invoking the next if it returns true
     foreach ($midware in @($Middleware))
     {
+        if (($null -eq $midware) -or ($null -eq $midware.Logic)) {
+            continue
+        }
+
         try {
             $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments (@($WebEvent) + @($midware.Arguments)) -Return -Scoped -Splat
         }
@@ -118,36 +126,19 @@ function Get-PodePublicMiddleware
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {
         param($e)
 
-        # get the static file path
-        $info = Find-PodeStaticRoutePath -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
-        if ([string]::IsNullOrWhiteSpace($info.Source)) {
+        # only find public static content here
+        $path = Find-PodePublicRoute -Path $e.Path
+        if ([string]::IsNullOrWhiteSpace($path)) {
             return $true
         }
 
         # check current state of caching
-        $config = $PodeContext.Server.Web.Static.Cache
-        $caching = $config.Enabled
+        $cachable = Test-PodeRouteValidForCaching -Path $e.Path
 
-        # if caching, check include/exclude
-        if ($caching) {
-            if (($null -ne $config.Exclude) -and ($e.Path -imatch $config.Exclude)) {
-                $caching = $false
-            }
+        # write the file to the response
+        Write-PodeFileResponse -Path $path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
 
-            if (($null -ne $config.Include) -and ($e.Path -inotmatch $config.Include)) {
-                $caching = $false
-            }
-        }
-
-        # write, or attach, the file to the response
-        if ($info.Download) {
-            Set-PodeResponseAttachment -Path $e.Path
-        }
-        else {
-            Write-PodeFileResponse -Path $info.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$caching
-        }
-
-        # static content found, stop
+        # public static content found, stop
         return $false
     })
 }
@@ -159,8 +150,11 @@ function Get-PodeRouteValidateMiddleware
         Logic = {
             param($e)
 
-            # ensure the path has a route
-            $route = Find-PodeRoute -Method $e.Method -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
+            # check if the path is static route first, then check the main routes
+            $route = Find-PodeStaticRoute -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+            if ($null -eq $route) {
+                $route = Find-PodeRoute -Method $e.Method -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
+            }
 
             # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
             if ($null -eq $route) {
@@ -182,6 +176,12 @@ function Get-PodeRouteValidateMiddleware
                 # otheriwse, it's a 404
                 Set-PodeResponseStatus -Code 404
                 return $false
+            }
+
+            # check if static and split
+            if ($null -ne $route.Content) {
+                $e.StaticContent = $route.Content
+                $route = $route.Route
             }
 
             # set the route parameters

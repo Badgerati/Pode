@@ -99,11 +99,38 @@ function Find-PodeRoute
     }
 }
 
-function Find-PodeStaticRoutePath
+function Find-PodePublicRoute
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    $source = $null
+    $publicPath = $PodeContext.Server.InbuiltDrives['public']
+
+    # reutrn null if there is no public directory
+    if ([string]::IsNullOrWhiteSpace($publicPath)) {
+        return $source
+    }
+
+    # use the public static directory (but only if path is a file, and a public dir is present)
+    if (Test-PodePathIsFile $Path) {
+        $source = (Join-Path $publicPath $Path)
+        if (!(Test-PodePath -Path $source -NoStatus)) {
+            $source = $null
+        }
+    }
+
+    # return the route details
+    return $source
+}
+
+function Find-PodeStaticRoute
+{
+    param(
+        [Parameter(Mandatory=$true)]
         [string]
         $Path,
 
@@ -113,14 +140,16 @@ function Find-PodeStaticRoutePath
 
         [Parameter()]
         [string]
-        $Endpoint
+        $Endpoint,
+
+        [switch]
+        $CheckPublic
     )
 
     # attempt to get a static route for the path
     $found = Find-PodeRoute -Method 'static' -Path $Path -Protocol $Protocol -Endpoint $Endpoint
-    $havePublicDir = (![string]::IsNullOrWhiteSpace($PodeContext.Server.InbuiltDrives['public']))
-    $source = $null
     $download = ([bool]$found.Download)
+    $source = $null
 
     # if we have a defined static route, use that
     if ($null -ne $found) {
@@ -149,16 +178,53 @@ function Find-PodeStaticRoutePath
         $source = (Join-Path $found.Source $file)
     }
 
-    # use the public static directory (but only if path is a file, and a public dir is present)
-    if ($havePublicDir -and (Test-PodePathIsFile $Path) -and !(Test-PodePath -Path $source -NoStatus)) {
-        $source = (Join-Path $PodeContext.Server.InbuiltDrives['public'] $Path)
+    # check public, if flagged
+    if ($CheckPublic -and !(Test-PodePath -Path $source -NoStatus)) {
+        $source = Find-PodePublicRoute -Path $Path
+        $download = $false
+        $found = $null
+    }
+
+    # return nothing if no source
+    if ([string]::IsNullOrWhiteSpace($source)) {
+        return $null
     }
 
     # return the route details
     return @{
-        Source = $source
-        Download = $download
+        Content = @{
+            Source = $source
+            IsDownload = $download
+            IsCachable = (Test-PodeRouteValidForCaching -Path $Path)
+        }
+        Route = $found
     }
+}
+
+function Test-PodeRouteValidForCaching
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+
+    # check current state of caching
+    $config = $PodeContext.Server.Web.Static.Cache
+    $caching = $config.Enabled
+
+    # if caching, check include/exclude
+    if ($caching) {
+        if (($null -ne $config.Exclude) -and ($Path -imatch $config.Exclude)) {
+            $caching = $false
+        }
+
+        if (($null -ne $config.Include) -and ($Path -inotmatch $config.Include)) {
+            $caching = $false
+        }
+    }
+
+    return $caching
 }
 
 function Get-PodeRouteByUrl
@@ -478,4 +544,125 @@ function Convert-PodeFunctionVerbToHttpMethod
         { $_ -iin @('Clear', 'Close', 'Exit', 'Hide', 'Remove', 'Undo', 'Dismount', 'Unpublish', 'Disable', 'Uninstall', 'Unregister') } { 'DELETE' }
         Default { 'POST' }
     }
+}
+
+function Find-PodeRouteTransferEncoding
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $TransferEncoding
+    )
+
+    # if we already have one, return it
+    if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
+        return $TransferEncoding
+    }
+
+    # set the default
+    $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Default
+
+    # find type by pattern from settings
+    $matched = ($PodeContext.Server.Web.TransferEncoding.Routes.Keys | Where-Object {
+        $Path -imatch $_
+    } | Select-Object -First 1)
+
+    # if we get a match, set it
+    if (!(Test-IsEmpty $matched)) {
+        $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Routes[$matched]
+    }
+
+    return $TransferEncoding
+}
+
+function Find-PodeRouteContentType
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $ContentType
+    )
+
+    # if we already have one, return it
+    if (![string]::IsNullOrWhiteSpace($ContentType)) {
+        return $ContentType
+    }
+
+    # set the default
+    $ContentType = $PodeContext.Server.Web.ContentType.Default
+
+    # find type by pattern from settings
+    $matched = ($PodeContext.Server.Web.ContentType.Routes.Keys | Where-Object {
+        $Path -imatch $_
+    } | Select-Object -First 1)
+
+    # if we get a match, set it
+    if (!(Test-IsEmpty $matched)) {
+        $ContentType = $PodeContext.Server.Web.ContentType.Routes[$matched]
+    }
+
+    return $ContentType
+}
+
+function ConvertTo-PodeRouteMiddleware
+{
+    [OutputType([hashtable[]])]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Method,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [object[]]
+        $Middleware
+    )
+
+    # return if no middleware
+    if (Test-IsEmpty $Middleware) {
+        return $null
+    }
+
+    # ensure supplied middlewares are either a scriptblock, or a valid hashtable
+    @($Middleware) | ForEach-Object {
+        # check middleware is a type valid
+        if (($_ -isnot [scriptblock]) -and ($_ -isnot [hashtable])) {
+            throw "One of the Route Middlewares supplied for the '[$($Method)] $($Path)' Route is an invalid type. Expected either ScriptBlock or Hashtable, but got: $($_.GetType().Name)"
+        }
+
+        # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
+        if ($_ -is [hashtable]) {
+            if ($null -eq $_.Logic) {
+                throw "A Hashtable Middleware supplied for the '[$($Method)] $($Path)' Route has no Logic defined"
+            }
+
+            if ($_.Logic -isnot [scriptblock]) {
+                throw "A Hashtable Middleware supplied for the '[$($Method)] $($Path)' Route has an invalid Logic type. Expected ScriptBlock, but got: $($_.Logic.GetType().Name)"
+            }
+        }
+    }
+
+    # if we have middleware, convert scriptblocks to hashtables
+    $Middleware = @($Middleware)
+
+    for ($i = 0; $i -lt $Middleware.Length; $i++) {
+        if ($Middleware[$i] -is [scriptblock]) {
+            $Middleware[$i] = @{
+                Logic = $Middleware[$i]
+            }
+        }
+    }
+
+    return $Middleware
 }

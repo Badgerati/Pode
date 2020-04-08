@@ -150,70 +150,14 @@ function Add-PodeRoute
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
-    # ensure supplied middlewares are either a scriptblock, or a valid hashtable
-    if (!(Test-IsEmpty $Middleware)) {
-        @($Middleware) | ForEach-Object {
-            # check middleware is a type valid
-            if (($_ -isnot [scriptblock]) -and ($_ -isnot [hashtable])) {
-                throw "One of the Route Middlewares supplied for the '[$($Method)] $($Path)' Route is an invalid type. Expected either ScriptBlock or Hashtable, but got: $($_.GetType().Name)"
-            }
-
-            # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
-            if ($_ -is [hashtable]) {
-                if ($null -eq $_.Logic) {
-                    throw "A Hashtable Middleware supplied for the '[$($Method)] $($Path)' Route has no Logic defined"
-                }
-
-                if ($_.Logic -isnot [scriptblock]) {
-                    throw "A Hashtable Middleware supplied for the '[$($Method)] $($Path)' Route has has an invalid Logic type. Expected ScriptBlock, but got: $($_.Logic.GetType().Name)"
-                }
-            }
-        }
-    }
-
-    # if we have middleware, convert scriptblocks to hashtables
-    if (!(Test-IsEmpty $Middleware))
-    {
-        $Middleware = @($Middleware)
-
-        for ($i = 0; $i -lt $Middleware.Length; $i++) {
-            if ($Middleware[$i] -is [scriptblock]) {
-                $Middleware[$i] = @{
-                    'Logic' = $Middleware[$i]
-                }
-            }
-        }
-    }
+    # convert any middleware into valid hashtables
+    $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware)
 
     # workout a default content type for the route
-    if ([string]::IsNullOrWhiteSpace($ContentType)) {
-        $ContentType = $PodeContext.Server.Web.ContentType.Default
-
-        # find type by pattern from settings
-        $matched = ($PodeContext.Server.Web.ContentType.Routes.Keys | Where-Object {
-            $Path -imatch $_
-        } | Select-Object -First 1)
-
-        # if we get a match, set it
-        if (!(Test-IsEmpty $matched)) {
-            $ContentType = $PodeContext.Server.Web.ContentType.Routes[$matched]
-        }
-    }
+    $ContentType = Find-PodeRouteContentType -Path $Path -ContentType $ContentType
 
     # workout a default transfer encoding for the route
-    if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
-        $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Default
-
-        # find type by pattern from settings
-        $matched = ($PodeContext.Server.Web.TransferEncoding.Routes.Keys | Where-Object {
-            $Path -imatch $_
-        } | Select-Object -First 1)
-
-        # if we get a match, set it
-        if (!(Test-IsEmpty $matched)) {
-            $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Routes[$matched]
-        }
-    }
+    $TransferEncoding = Find-PodeRouteTransferEncoding -Path $Path -TransferEncoding $TransferEncoding
 
     # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
@@ -271,6 +215,9 @@ The URI path for the static Route.
 .PARAMETER Source
 The literal, or relative, path to the directory that contains the static content.
 
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware.
+
 .PARAMETER Protocol
 The protocol this static Route should be bound against.
 
@@ -280,11 +227,23 @@ The endpoint this static Route should be bound against.
 .PARAMETER EndpointName
 The EndpointName of an Endpoint(s) to bind the static Route against.
 
+.PARAMETER ContentType
+The content type the static Route should use when parsing any payloads.
+
+.PARAMETER TransferEncoding
+The transfer encoding the static Route should use when parsing any payloads.
+
 .PARAMETER Defaults
 An array of default pages to display, such as 'index.html'.
 
+.PARAMETER ErrorContentType
+The content type of any error pages that may get returned.
+
 .PARAMETER DownloadOnly
 When supplied, all static content on this Route will be attached as downloads - rather than rendered.
+
+.PARAMETER PassThru
+If supplied, the static route created will be returned so it can be passed through a pipe.
 
 .EXAMPLE
 Add-PodeStaticRoute -Path '/assets' -Source './assets'
@@ -308,6 +267,10 @@ function Add-PodeStaticRoute
         $Source,
 
         [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter()]
         [ValidateSet('', 'Http', 'Https')]
         [string]
         $Protocol,
@@ -321,11 +284,27 @@ function Add-PodeStaticRoute
         $EndpointName,
 
         [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [ValidateSet('', 'gzip', 'deflate')]
+        [string]
+        $TransferEncoding,
+
+        [Parameter()]
         [string[]]
         $Defaults,
 
+        [Parameter()]
+        [string]
+        $ErrorContentType,
+
         [switch]
-        $DownloadOnly
+        $DownloadOnly,
+
+        [switch]
+        $PassThru
     )
 
     # store the route method
@@ -339,6 +318,8 @@ function Add-PodeStaticRoute
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path -Static
+    $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+    $Path = Update-PodeRoutePlaceholders -Path $Path
 
     # get endpoints from name, or use single passed endpoint/protocol
     $endpoints = Find-PodeEndpoints -Endpoint $Endpoint -Protocol $Protocol -EndpointName $EndpointName
@@ -362,17 +343,41 @@ function Add-PodeStaticRoute
         $Defaults = Get-PodeStaticRouteDefaults
     }
 
-    # add the static route for each endpoint
-    foreach ($_endpoint in $endpoints) {
-        $PodeContext.Server.Routes[$Method][$Path] += @(@{
+    # convert any middleware into valid hashtables
+    $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware)
+
+    # workout a default content type for the route
+    $ContentType = Find-PodeRouteContentType -Path $Path -ContentType $ContentType
+
+    # workout a default transfer encoding for the route
+    $TransferEncoding = Find-PodeRouteTransferEncoding -Path $Path -TransferEncoding $TransferEncoding
+
+    # add the route(s)
+    Write-Verbose "Adding Route: [$($Method)] $($Path)"
+    $newRoutes = @(foreach ($_endpoint in $endpoints) {
+        @{
             Source = $Source
             Path = $Path
             Method = $Method
             Defaults = $Defaults
+            Middleware = $Middleware
             Protocol = $_endpoint.Protocol
             Endpoint = $_endpoint.Address.Trim()
             EndpointName = $_endpoint.Name
+            ContentType = $ContentType
+            TransferEncoding = $TransferEncoding
+            ErrorType = $ErrorContentType
             Download = $DownloadOnly
+            OpenApi = @{
+                Path = $OpenApiPath
+                Responses = @{
+                    '200' = @{ description = 'OK' }
+                    'default' = @{ description = 'Internal server error' }
+                }
+                Parameters = @()
+                RequestBody = @{}
+                Authentication = @()
+            }
             IsStatic = $true
             Metrics = @{
                 Requests = @{
@@ -380,7 +385,14 @@ function Add-PodeStaticRoute
                     StatusCodes = @{}
                 }
             }
-        })
+        }
+    })
+
+    $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
+
+    # return the routes?
+    if ($PassThru) {
+        return $newRoutes
     }
 }
 
