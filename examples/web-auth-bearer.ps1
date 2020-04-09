@@ -10,6 +10,8 @@ Start-PodeServer -Threads 2 {
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
+    New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
+
     # setup bearer auth
     New-PodeAuthType -Bearer -Scope write | Add-PodeAuth -Name 'Validate' -ScriptBlock {
         param($token)
@@ -22,7 +24,7 @@ Start-PodeServer -Threads 2 {
                     Name = 'Morty'
                     Type = 'Human'
                 }
-                Scope = 'read'
+                Scope = 'write'
             }
         }
 
