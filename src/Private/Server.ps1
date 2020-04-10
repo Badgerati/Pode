@@ -91,9 +91,9 @@ function Start-PodeInternalServer
 
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
-            Write-Host "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.Web) thread(s)]:" -ForegroundColor Yellow
+            Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.Web) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
-                Write-Host "`t- $($_)" -ForegroundColor Yellow
+                Write-PodeHost "`t- $($_)" -ForegroundColor Yellow
             }
         }
     }
@@ -107,7 +107,7 @@ function Restart-PodeInternalServer
     try
     {
         # inform restart
-        Write-Host 'Restarting server...' -NoNewline -ForegroundColor Cyan
+        Write-PodeHost 'Restarting server...' -NoNewline -ForegroundColor Cyan
 
         # cancel the session token
         $PodeContext.Tokens.Cancellation.Cancel()
@@ -180,7 +180,7 @@ function Restart-PodeInternalServer
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
-        Write-Host " Done" -ForegroundColor Green
+        Write-PodeHost " Done" -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++

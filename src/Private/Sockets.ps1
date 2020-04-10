@@ -129,7 +129,7 @@ function Close-PodeSocketListener
         $PodeContext.Server[$Type].Listeners = @()
     }
     catch {
-        $_.Exception | Out-Default
+        $_.Exception | Out-PodeHost
     }
 }
 

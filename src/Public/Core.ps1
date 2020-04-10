@@ -33,6 +33,9 @@ The server type, to define how Pode should run and deal with incoming Requests.
 .PARAMETER DisableTermination
 Disables the ability to terminate the Server.
 
+.PARAMETER Quiet
+Disables any output from the Server.
+
 .PARAMETER Browse
 Open the web Server's default endpoint in your default browser.
 
@@ -88,6 +91,9 @@ function Start-PodeServer
         $DisableTermination,
 
         [switch]
+        $Quiet,
+
+        [switch]
         $Browse,
 
         [Parameter(ParameterSetName='File')]
@@ -127,10 +133,12 @@ function Start-PodeServer
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-            -ServerType $Type
+            -ServerType $Type `
+            -DisableTermination:$DisableTermination `
+            -Quiet:$Quiet
 
-        # set it so ctrl-c can terminate, unless serverless
-        if (!$PodeContext.Server.IsServerless -and !$PodeContext.Server.IsIIS) {
+        # set it so ctrl-c can terminate, unless serverless/iis, or disabled
+        if (!$PodeContext.Server.DisableTermination) {
             [Console]::TreatControlCAsInput = $true
         }
 
@@ -158,7 +166,7 @@ function Start-PodeServer
             }
         }
 
-        Write-Host 'Terminating...' -NoNewline -ForegroundColor Yellow
+        Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
         $PodeContext.Tokens.Cancellation.Cancel()
     }
     catch {

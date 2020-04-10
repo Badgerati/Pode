@@ -68,10 +68,12 @@ function Start-PodeFileMonitor
     Register-ObjectEvent -InputObject $timer -EventName 'Elapsed' -SourceIdentifier (Get-PodeFileMonitorTimerName) -Action {
         # if enabled, show the files that triggered the restart
         if ($Event.MessageData.FileSettings.ShowFiles) {
-            Write-Host 'The following files have changed:' -ForegroundColor Magenta
+            if (!$Event.MessageData.Quiet) {
+                Write-Host 'The following files have changed:' -ForegroundColor Magenta
 
-            foreach ($file in $Event.MessageData.FileSettings.Files) {
-                Write-Host "> $($file)" -ForegroundColor Magenta
+                foreach ($file in $Event.MessageData.FileSettings.Files) {
+                    Write-Host "> $($file)" -ForegroundColor Magenta
+                }
             }
 
             $Event.MessageData.FileSettings.Files = @()
@@ -83,6 +85,7 @@ function Start-PodeFileMonitor
     } -MessageData @{
         Tokens = $PodeContext.Tokens
         FileSettings = $PodeContext.Server.FileMonitor
+        Quiet = $PodeContext.Server.Quiet
     } -SupportEvent
 }
 

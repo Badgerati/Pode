@@ -84,8 +84,8 @@ function Start-PodeAzFuncServer
             }
         }
         catch {
+            $_ | Write-PodeErrorLog
             Set-PodeResponseStatus -Code 500 -Exception $_
-            Write-Host $Error[0]
         }
         finally {
             Update-PodeServerRequestMetrics -WebEvent $WebEvent
@@ -99,7 +99,7 @@ function Start-PodeAzFuncServer
         Push-OutputBinding -Name Response -Value $response
     }
     catch {
-        Write-Host $Error[0]
+        $_ | Write-PodeErrorLog
         throw $_.Exception
     }
 }
@@ -185,8 +185,8 @@ function Start-PodeAwsLambdaServer
             }
         }
         catch {
+            $_ | Write-PodeErrorLog
             Set-PodeResponseStatus -Code 500 -Exception $_
-            Write-Host $Error[0]
         }
         finally {
             Update-PodeServerRequestMetrics -WebEvent $WebEvent
@@ -208,7 +208,7 @@ function Start-PodeAwsLambdaServer
         } | ConvertTo-Json -Depth 10 -Compress) 
     }
     catch {
-        Write-Host $Error[0]
+        $_ | Write-PodeErrorLog
         throw $_.Exception
     }
 }
