@@ -45,7 +45,7 @@ function Install-PodeLocalModules
                 $_version = [string]((Find-Module $_name -Repository $_repository -ErrorAction Ignore).Version)
             }
 
-            Write-PodeHost "=> Downloading $($_name)@$($_version) from $($_repository)... " -NoNewline -ForegroundColor Cyan
+            Write-Host "=> Downloading $($_name)@$($_version) from $($_repository)... " -NoNewline -ForegroundColor Cyan
 
             # if the current version exists, do nothing
             if (!(Test-Path (Join-Path $psModules "$($_name)/$($_version)"))) {
@@ -58,10 +58,10 @@ function Install-PodeLocalModules
                 Save-Module -Name $_name -RequiredVersion $_version -Repository $_repository -Path $psModules -Force -ErrorAction Stop | Out-Null
             }
 
-            Write-PodeHost 'Success' -ForegroundColor Green
+            Write-Host 'Success' -ForegroundColor Green
         }
         catch {
-            Write-PodeHost 'Failed' -ForegroundColor Red
+            Write-Host 'Failed' -ForegroundColor Red
             throw "Module or version not found on $($_repository): $($_name)@$($_version)"
         }
     }
