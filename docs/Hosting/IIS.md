@@ -112,7 +112,7 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
 
-## Azure Web App
+## Azure Web Apps
 
 To host your Pode server under IIS using Azure Web Apps, ensure the OS type is Windows and the framework is .NET Core 2.1/3.0.
 
