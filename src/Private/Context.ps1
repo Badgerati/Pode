@@ -28,7 +28,13 @@ function New-PodeContext
 
         [Parameter()]
         [string]
-        $ServerType
+        $ServerType,
+
+        [switch]
+        $DisableTermination,
+
+        [switch]
+        $Quiet
     )
 
     # set a random server name if one not supplied
@@ -58,12 +64,14 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru
 
-    # set the server name, logic and root
+    # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
+    $ctx.Server.DisableTermination = $DisableTermination.IsPresent
+    $ctx.Server.Quiet = $Quiet.IsPresent
 
     # basic logging setup
     $ctx.Server.Logging = @{
@@ -122,14 +130,22 @@ function New-PodeContext
         $ctx.Server.Type = 'SERVICE'
     }
 
+    # if it's serverless, also disable termination
     if ($isServerless) {
         $ctx.Server.IsServerless = $isServerless
+        $ctx.Server.DisableTermination = $true
     }
 
-    # is the server running under IIS? (also, force the server type to pode)
+    # is the server running under IIS? (also, force the server type to pode, and disable termination)
     $ctx.Server.IsIIS = (!$isServerless -and (!(Test-IsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-IsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
         $ctx.Server.Type = 'PODE'
+        $ctx.Server.DisableTermination = $true
+
+        # if IIS under and Azure Web App, force quiet
+        if (!(Test-IsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
+            $ctx.Server.Quiet = $true
+        }
     }
 
     # set the IP address details
@@ -241,6 +257,11 @@ function New-PodeContext
     # middleware that needs to run
     $ctx.Server.Middleware = @()
     $ctx.Server.BodyParsers = @{}
+
+    # common support values
+    $ctx.Server.Compression = @{
+        Encodings = @('gzip', 'deflate', 'x-gzip')
+    }
 
     # endware that needs to run
     $ctx.Server.Endware = @()
@@ -453,6 +474,13 @@ function Set-PodeWebConfiguration
             Default = $Configuration.ContentType.Default
             Routes = @{}
         }
+        TransferEncoding = @{
+            Default = $Configuration.TransferEncoding.Default
+            Routes = @{}
+        }
+        Compression = @{
+            Enabled = [bool]$Configuration.Compression.Enable
+        }
     }
 
     # setup content type route patterns for forced content types
@@ -460,6 +488,13 @@ function Set-PodeWebConfiguration
         $_type = $Configuration.ContentType.Routes[$_]
         $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
         $Context.Server.Web.ContentType.Routes[$_pattern] = $_type
+    }
+
+    # setup transfer encoding route patterns for forced transfer encodings
+    $Configuration.TransferEncoding.Routes.Keys | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+        $_type = $Configuration.TransferEncoding.Routes[$_]
+        $_pattern = (Convert-PodePathPatternToRegex -Path $_ -NotSlashes)
+        $Context.Server.Web.TransferEncoding.Routes[$_pattern] = $_type
     }
 
     # setup content type route patterns for error pages

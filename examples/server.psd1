@@ -21,6 +21,9 @@
                 '/john' = 'application/json'
             }
         }
+        Compression = @{
+            Enable = $false
+        }
     }
     Server = @{
         FileMonitor = @{

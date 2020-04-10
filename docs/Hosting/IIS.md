@@ -88,7 +88,7 @@ Start-PodeServer {
 
     Add-PodeAuthIIS -Name 'IISAuth'
 
-    Add-PodeRoute -Method Get -Path '/test' -Middleware (Get-PodeAuthMiddleware -Name 'IISAuth') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/test' -Middleware (Get-PodeAuthMiddleware -Name 'IISAuth' -Sessionless) -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ User = $e.Auth.User }
     }
@@ -111,6 +111,14 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
+
+## Azure Web Apps
+
+To host your Pode server under IIS using Azure Web Apps, ensure the OS type is Windows and the framework is .NET Core 2.1/3.0.
+
+Your web.config's `processPath` will also need to reference `powershell.exe` not `pwsh.exe`.
+
+Pode can auto-detect if you're using an Azure Web App, but if you're having issues trying setting the `-DisableTermination` and `-Quiet` switches on your [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
 
 ## Useful Links
 

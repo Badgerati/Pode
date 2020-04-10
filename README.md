@@ -43,6 +43,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Cross-platform support for server-to-client WebSockets, including secure WebSockets
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
+* Request and Response compression using GZip/Deflate
 * Multi-thread support for incoming requests
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes

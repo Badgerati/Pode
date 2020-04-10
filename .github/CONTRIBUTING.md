@@ -21,7 +21,7 @@ The following is a set of guidelines for contributing to Pode on GitHub. These a
     * [General](#general)
     * [Help](#help)
   * [PowerShell Commandlets](#powershell-commandlets)
-    * [Foreach-Objech](#foreach-object)
+    * [Foreach-Object](#foreach-object)
     * [Where-Object](#where-object)
     * [Select-Object](#select-object)
     * [Measure-Object](#measure-object)

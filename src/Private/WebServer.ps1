@@ -107,8 +107,14 @@ function Start-PodeWebServer
                         PendingCookies = @{}
                         Streamed = $true
                         Route = $null
+                        StaticContent = $null
                         Timestamp = [datetime]::UtcNow
+                        TransferEncoding = $null
+                        AcceptEncoding = $null
                     }
+
+                    $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'X-Transfer-Encoding') -ThrowError)
+                    $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
 
                     # set pode in server response header
                     Set-PodeServerHeader -AllowEmptyType
@@ -116,19 +122,38 @@ function Start-PodeWebServer
                     # add logging endware for post-request
                     Add-PodeRequestLogEndware -WebEvent $WebEvent
 
-                    # invoke middleware
+                    # invoke global and route middleware
                     if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                        # invoke route and custom middleware
-                        if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware)) {
-                            if ($null -ne $WebEvent.Route.Logic) {
+                        if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
+                        {
+                            # invoke the route
+                            if ($null -ne $WebEvent.StaticContent) {
+                                if ($WebEvent.StaticContent.IsDownload) {
+                                    Set-PodeResponseAttachment -Path $e.Path
+                                }
+                                else {
+                                    $cachable = $WebEvent.StaticContent.IsCachable
+                                    Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                                }
+                            }
+                            else {
                                 Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments (@($WebEvent) + @($WebEvent.Route.Arguments)) -Scoped -Splat
                             }
                         }
                     }
                 }
+                catch [System.Net.Http.HttpRequestException] {
+                    $code = [int]($_.Exception.Data['PodeStatusCode'])
+                    if ($code -le 0) {
+                        $code = 400
+                    }
+
+                    Set-PodeResponseStatus -Code $code -Exception $_
+                }
                 catch {
-                    Set-PodeResponseStatus -Code 500 -Exception $_
                     $_ | Write-PodeErrorLog
+                    $_.Exception | Write-PodeErrorLog -CheckInnerException
+                    Set-PodeResponseStatus -Code 500 -Exception $_
                 }
                 finally {
                     Update-PodeServerRequestMetrics -WebEvent $WebEvent

@@ -93,7 +93,7 @@ Although you can define your own custom middleware, Pode does have some inbuilt 
 | ----- | ---------- | ----------- |
 | 1 | **Access Rules** | Allowing/Denying IP addresses (if access rules have been defined) |
 | 2 | **Rate Limiting** | Limiting access to IP addresses (if rate limiting rules have been defined) |
-| 3 | **Static Content** | Static Content such as images/css/js/html in the `/public` directory (or other defined static routes) |
+| 3 | **Static Content** | Static Content, such as images/css/js/html, in the `/public` directory |
 | 4 | **Body Parsing** | Parsing request payload as JSON, XML, or other types |
 | 5 | **Query String** | Getting any query string parameters currently on the request URL |
 | 6 | **Cookie Parsing** | Parse the cookies from the request's header (this only applies to serverless) |

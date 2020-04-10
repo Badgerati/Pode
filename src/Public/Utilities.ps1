@@ -223,7 +223,7 @@ function Start-PodeStopwatch
     }
     finally {
         $watch.Stop()
-        Out-Default -InputObject "[Stopwatch]: $($watch.Elapsed) [$($Name)]"
+        "[Stopwatch]: $($watch.Elapsed) [$($Name)]" | Out-PodeHost
     }
 }
 
@@ -768,6 +768,7 @@ Outputs an object to the main Host.
 
 .DESCRIPTION
 Due to Pode's use of runspaces, this will output a given object back to the main Host.
+It's advised to use this function, so that any output respects the -Quiet flag of the server.
 
 .PARAMETER InputObject
 The object to output.
@@ -787,7 +788,57 @@ function Out-PodeHost
         $InputObject
     )
 
-    $InputObject | Out-Default
+    if (!$PodeContext.Server.Quiet) {
+        $InputObject | Out-Default
+    }
+}
+
+<#
+.SYNOPSIS
+Writes an object to the Host.
+
+.DESCRIPTION
+Writes an object to the Host.
+It's advised to use this function, so that any output respects the -Quiet flag of the server.
+
+.PARAMETER Object
+The object to write.
+
+.PARAMETER ForegroundColor
+An optional foreground colour.
+
+.PARAMETER NoNewLine
+Whether or not to write a new line.
+
+.EXAMPLE
+'Some output' | Write-PodeHost -ForegroundColor Cyan
+#>
+function Write-PodeHost
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Position=0, ValueFromPipeline=$true)]
+        [object]
+        $Object,
+
+        [Parameter()]
+        [System.ConsoleColor]
+        $ForegroundColor,
+
+        [switch]
+        $NoNewLine
+    )
+
+    if ($PodeContext.Server.Quiet) {
+        return
+    }
+
+    if ($ForegroundColor) {
+        Write-Host -Object $Object -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
+    }
+    else {
+        Write-Host -Object $Object -NoNewline:$NoNewLine
+    }
 }
 
 <#

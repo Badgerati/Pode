@@ -41,7 +41,7 @@ function Set-PodeResponseAttachment
     )
 
     # only attach files from public/static-route directories when path is relative
-    $_path = (Find-PodeStaticRoutePath -Path $Path).Source
+    $_path = (Find-PodeStaticRoute -Path $Path -CheckPublic).Content.Source
 
     # if there's no path, check the original path (in case it's literal/relative)
     if (!(Test-PodePath $_path -NoStatus)) {
@@ -223,6 +223,30 @@ function Write-PodeTextResponse
         # convert string to bytes
         if ($isStringValue) {
             $Bytes = ConvertFrom-PodeValueToBytes -Value $Value
+        }
+
+        # check if we need to compress the response
+        if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
+            try {
+                $ms = New-Object -TypeName System.IO.MemoryStream
+                $stream = New-Object "System.IO.Compression.$($WebEvent.AcceptEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Compress, $true)
+                $stream.Write($Bytes, 0, $Bytes.Length)
+                $stream.Close()
+                $ms.Position = 0
+                $Bytes = $ms.ToArray()
+            }
+            finally {
+                if ($null -ne $stream) {
+                    $stream.Close()
+                }
+
+                if ($null -ne $ms) {
+                    $ms.Close()
+                }
+            }
+
+            # set content encoding header
+            Set-PodeHeader -Name 'Content-Encoding' -Value $WebEvent.AcceptEncoding
         }
 
         # write the content to the response stream

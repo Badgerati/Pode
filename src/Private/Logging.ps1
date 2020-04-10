@@ -2,8 +2,13 @@ function Get-PodeLoggingTerminalMethod
 {
     return {
         param($item, $options)
+
+        if ($PodeContext.Server.Quiet) {
+            return
+        }
+
         $item = ($item | Protect-PodeLogItem)
-        $item.ToString() | Out-Default
+        $item.ToString() | Out-PodeHost
     }
 }
 

@@ -33,6 +33,9 @@ The server type, to define how Pode should run and deal with incoming Requests.
 .PARAMETER DisableTermination
 Disables the ability to terminate the Server.
 
+.PARAMETER Quiet
+Disables any output from the Server.
+
 .PARAMETER Browse
 Open the web Server's default endpoint in your default browser.
 
@@ -88,6 +91,9 @@ function Start-PodeServer
         $DisableTermination,
 
         [switch]
+        $Quiet,
+
+        [switch]
         $Browse,
 
         [Parameter(ParameterSetName='File')]
@@ -127,10 +133,12 @@ function Start-PodeServer
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-            -ServerType $Type
+            -ServerType $Type `
+            -DisableTermination:$DisableTermination `
+            -Quiet:$Quiet
 
-        # set it so ctrl-c can terminate, unless serverless
-        if (!$PodeContext.Server.IsServerless -and !$PodeContext.Server.IsIIS) {
+        # set it so ctrl-c can terminate, unless serverless/iis, or disabled
+        if (!$PodeContext.Server.DisableTermination) {
             [Console]::TreatControlCAsInput = $true
         }
 
@@ -158,7 +166,7 @@ function Start-PodeServer
             }
         }
 
-        Write-Host 'Terminating...' -NoNewline -ForegroundColor Yellow
+        Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
         $PodeContext.Tokens.Cancellation.Cancel()
     }
     catch {
@@ -816,6 +824,124 @@ function Add-PodeEndpoint
             Move-PodeResponseUrl -Address $addr -Port $endpoint.Port -Protocol $endpoint.Protocol
         }
     }
+}
+
+<#
+.SYNOPSIS
+Get an Endpoint(s).
+
+.DESCRIPTION
+Get an Endpoint(s).
+
+.PARAMETER Address
+An Address to filter the endpoints.
+
+.PARAMETER Port
+A Port to filter the endpoints.
+
+.PARAMETER Protocol
+A Protocol to filter the endpoints.
+
+.PARAMETER Name
+Any endpoints Names to filter endpoints.
+
+.EXAMPLE
+Get-PodeEndpoint -Address 127.0.0.1
+
+.EXAMPLE
+Get-PodeEndpoint -Protocol Http
+
+.EXAMPLE
+Get-PodeEndpoint -Name Admin, User
+#>
+function Get-PodeEndpoint
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Address,
+
+        [Parameter()]
+        [int]
+        $Port = 0,
+
+        [Parameter()]
+        [ValidateSet('', 'Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [string]
+        $Protocol,
+
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    $endpoints = $PodeContext.Server.Endpoints
+
+    # if we have an address, filter
+    if (![string]::IsNullOrWhiteSpace($Address)) {
+        if ($Address -eq '*') {
+            $Address = '0.0.0.0'
+        }
+
+        if ($PodeContext.Server.IsIIS) {
+            $Address = '127.0.0.1'
+        }
+
+        $endpoints = @(foreach ($endpoint in $endpoints) {
+            if ($endpoint.Address.ToString() -ine $Address) {
+                continue
+            }
+
+            $endpoint
+        })
+    }
+
+    # if we have a port, filter
+    if ($Port -gt 0) {
+        if ($PodeContext.Server.IsIIS) {
+            $Port = [int]$env:ASPNETCORE_PORT
+        }
+
+        $endpoints = @(foreach ($endpoint in $endpoints) {
+            if ($endpoint.Port -ne $Port) {
+                continue
+            }
+
+            $endpoint
+        })
+    }
+
+    # if we have a protocol, filter
+    if (![string]::IsNullOrWhiteSpace($Protocol)) {
+        if ($PodeContext.Server.IsIIS) {
+            $Protocol = 'Http'
+        }
+
+        $endpoints = @(foreach ($endpoint in $endpoints) {
+            if ($endpoint.Protocol -ine $Protocol) {
+                continue
+            }
+
+            $endpoint
+        })
+    }
+
+    # further filter by endpoint names
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $endpoints = @(foreach ($_name in $Name) {
+            foreach ($endpoint in $endpoints) {
+                if ($endpoint.Name -ine $_name) {
+                    continue
+                }
+
+                $endpoint
+            }
+        })
+    }
+
+    # return
+    return $endpoints
 }
 
 <#

@@ -104,6 +104,7 @@
         'Test-IsPSCore',
         'Test-IsEmpty',
         'Out-PodeHost',
+        'Write-PodeHost',
         'Test-PodeIsIIS',
 
         # routes
@@ -160,6 +161,7 @@
         'Remove-PodeAuth',
         'Get-PodeAuthMiddleware',
         'Add-PodeAuthIIS',
+        'Add-PodeAuthUserFile',
 
         # logging
         'New-PodeLoggingMethod',
@@ -179,6 +181,7 @@
         'Start-PodeStaticServer',
         'Show-PodeGui',
         'Add-PodeEndpoint',
+        'Get-PodeEndpoint',
         'Pode',
 
         # openapi

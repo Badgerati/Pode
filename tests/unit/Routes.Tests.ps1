@@ -1274,11 +1274,6 @@ Describe 'Get-PodeStaticRoute' {
         $routes.Length | Should Be 1
     }
 
-
-
-
-    
-
     It 'Returns one static route for endpoint' {
         $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @(); Type = $null }
 
@@ -1319,5 +1314,116 @@ Describe 'Get-PodeStaticRoute' {
 
         $routes = @(Get-PodeStaticRoute -Path '/images' -EndpointName user, admin)
         $routes.Length | Should Be 2
+    }
+}
+
+Describe 'Find-PodeRouteTransferEncoding' {
+    It 'Returns nothing' {
+        Find-PodeRouteTransferEncoding -Path '/users' | Should Be ([string]::Empty)
+    }
+
+    It 'Returns the passed encoding' {
+        Find-PodeRouteTransferEncoding -Path '/users' -TransferEncoding 'text/xml' | Should Be 'text/xml'
+    }
+
+    It 'Returns a default encoding' {
+        $PodeContext.Server = @{ Web = @{ TransferEncoding = @{ Default = 'text/yml' } } }
+        Find-PodeRouteTransferEncoding -Path '/users' | Should Be 'text/yml'
+    }
+
+    It 'Returns a path match' {
+        $PodeContext.Server = @{ Web = @{ TransferEncoding = @{ Routes = @{
+            '/users' = 'text/json' 
+        } } } }
+
+        Find-PodeRouteTransferEncoding -Path '/users' | Should Be 'text/json'
+    }
+}
+
+Describe 'Find-PodeRouteContentType' {
+    It 'Returns nothing' {
+        Find-PodeRouteContentType -Path '/users' | Should Be ([string]::Empty)
+    }
+
+    It 'Returns the passed type' {
+        Find-PodeRouteContentType -Path '/users' -ContentType 'text/xml' | Should Be 'text/xml'
+    }
+
+    It 'Returns a default type' {
+        $PodeContext.Server = @{ Web = @{ ContentType = @{ Default = 'text/yml' } } }
+        Find-PodeRouteContentType -Path '/users' | Should Be 'text/yml'
+    }
+
+    It 'Returns a path match' {
+        $PodeContext.Server = @{ Web = @{ ContentType = @{ Routes = @{
+            '/users' = 'text/json' 
+        } } } }
+
+        Find-PodeRouteContentType -Path '/users' | Should Be 'text/json'
+    }
+}
+
+Describe 'ConvertTo-PodeRouteMiddleware' {
+    It 'Returns no middleware' {
+        @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users') | Should Be $null
+    }
+
+    It 'Errors for invalid middleware type' {
+        { ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware 'string' } | Should Throw 'invalid type'
+    }
+
+    It 'Errors for invalid middleware hashtable - no logic' {
+        { ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @{} } | Should Throw 'no logic defined'
+    }
+
+    It 'Errors for invalid middleware hashtable - logic not scriptblock' {
+        { ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @{ Logic = 'string' } } | Should Throw 'invalid logic type'
+    }
+
+    It 'Returns hashtable for single hashtable middleware' {
+        $middleware = @{ Logic = { Write-Host 'Hello' } }
+        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware $middleware)
+        $converted.Length | Should Be 1
+        $converted[0].Logic.ToString() | Should Be ($middleware.Logic.ToString())
+    }
+
+    It 'Returns hashtable for multiple hashtable middleware' {
+        $middleware1 = @{ Logic = { Write-Host 'Hello1' } }
+        $middleware2 = @{ Logic = { Write-Host 'Hello2' } }
+
+        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @($middleware1, $middleware2))
+
+        $converted.Length | Should Be 2
+        $converted[0].Logic.ToString() | Should Be ($middleware1.Logic.ToString())
+        $converted[1].Logic.ToString() | Should Be ($middleware2.Logic.ToString())
+    }
+
+    It 'Converts single scriptblock middleware to hashtable' {
+        $middleware = { Write-Host 'Hello' }
+        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware $middleware)
+        $converted.Length | Should Be 1
+        $converted[0].Logic.ToString() | Should Be ($middleware.ToString())
+    }
+
+    It 'Converts multiple scriptblock middleware to hashtable' {
+        $middleware1 = { Write-Host 'Hello1' }
+        $middleware2 = { Write-Host 'Hello2' }
+
+        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @($middleware1, $middleware2))
+
+        $converted.Length | Should Be 2
+        $converted[0].Logic.ToString() | Should Be ($middleware1.ToString())
+        $converted[1].Logic.ToString() | Should Be ($middleware2.ToString())
+    }
+
+    It 'Handles a mixture of hashtable and scriptblock' {
+        $middleware1 = @{ Logic = { Write-Host 'Hello1' } }
+        $middleware2 = { Write-Host 'Hello2' }
+
+        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @($middleware1, $middleware2))
+
+        $converted.Length | Should Be 2
+        $converted[0].Logic.ToString() | Should Be ($middleware1.Logic.ToString())
+        $converted[1].Logic.ToString() | Should Be ($middleware2.ToString())
     }
 }

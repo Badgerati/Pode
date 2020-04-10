@@ -23,6 +23,7 @@ Pode is a Cross-Platform framework, *completely written in PowerShell*, to creat
 * Cross-platform support for server-to-client WebSockets, including secure WebSockets
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
+* Request and Response compression using GZip/Deflate
 * Multi-thread support for incoming requests
 * Inbuilt template engine, with support for third-parties
 * Async timers for short-running repeatable processes

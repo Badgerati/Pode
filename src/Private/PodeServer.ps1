@@ -155,7 +155,9 @@ function Invoke-PodeSocketHandler
             Files = $null
             Streamed = $true
             Route = $null
+            StaticContent = $null
             Timestamp = [datetime]::UtcNow
+            TransferEncoding = $null
         }
 
         # set pode in server response header
@@ -212,6 +214,13 @@ function Invoke-PodeSocketHandler
         $WebEvent.Method = $req_info.Method.ToLowerInvariant()
         $WebEvent.Endpoint = $req_info.Headers['Host']
         $WebEvent.ContentType = $req_info.Headers['Content-Type']
+        $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding $req_info.Headers['Accept-Encoding'] -ThrowError)
+
+        # transfer encoding
+        $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'] -ThrowError)
+        if ([string]::IsNullOrWhiteSpace($WebEvent.TransferEncoding)) {
+            $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['X-Transfer-Encoding'] -ThrowError)
+        }
 
         # parse the query string and convert it to a hashtable
         $WebEvent.Query = (Convert-PodeQueryStringToHashTable -Uri $req_info.Query)
@@ -219,11 +228,21 @@ function Invoke-PodeSocketHandler
         # add logging endware for post-request
         Add-PodeRequestLogEndware -WebEvent $WebEvent
 
-        # invoke middleware
+        # invoke global and route middleware
         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-            # invoke route and custom middleware
-            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware)) {
-                if ($null -ne $WebEvent.Route.Logic) {
+            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
+            {
+                # invoke the route
+                if ($null -ne $WebEvent.StaticContent) {
+                    if ($WebEvent.StaticContent.IsDownload) {
+                        Set-PodeResponseAttachment -Path $e.Path
+                    }
+                    else {
+                        $cachable = $WebEvent.StaticContent.IsCachable
+                        Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                    }
+                }
+                else {
                     Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments (@($WebEvent) + @($WebEvent.Route.Arguments)) -Scoped -Splat
                 }
             }

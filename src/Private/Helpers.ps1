@@ -141,8 +141,8 @@ function Test-IsAdminUser
         return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
     }
     catch [exception] {
-        Write-Host 'Error checking user administrator priviledges' -ForegroundColor Red
-        Write-Host $_.Exception.Message -ForegroundColor Red
+        Write-PodeHost 'Error checking user administrator priviledges' -ForegroundColor Red
+        Write-PodeHost $_.Exception.Message -ForegroundColor Red
         return $false
     }
 }
@@ -217,7 +217,7 @@ function Set-PodeCertificate
 
     # only bind if windows at the moment
     if (!(Test-IsWindows)) {
-        Write-Host "Certificates are currently only supported on Windows" -ForegroundColor Yellow
+        Write-PodeHost "Certificates are currently only supported on Windows" -ForegroundColor Yellow
         return
     }
 
@@ -227,7 +227,7 @@ function Set-PodeCertificate
     }
 
     if ($sslPortInUse) {
-        Write-Host "$($addrport) already has a certificate bound" -ForegroundColor Green
+        Write-PodeHost "$($addrport) already has a certificate bound" -ForegroundColor Green
         return
     }
 
@@ -246,13 +246,13 @@ function Set-PodeCertificate
     {
         # generate a self-signed cert
         if ($SelfSigned) {
-            Write-Host "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
+            Write-PodeHost "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
             $cert = (New-PodeSelfSignedCertificate)
         }
 
         # ensure a given cert exists for binding
         else {
-            Write-Host "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
+            Write-PodeHost "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
             $cert = (Get-PodeCertificate -Certificate $Certificate)
         }
     }
@@ -271,7 +271,7 @@ function Set-PodeCertificate
         }
     }
 
-    Write-Host " Done" -ForegroundColor Green
+    Write-PodeHost " Done" -ForegroundColor Green
 }
 
 function Get-PodeHostIPRegex
@@ -719,7 +719,7 @@ function Test-PodeTerminationPressed
         $Key = $null
     )
 
-    if ($PodeContext.DisableTermination) {
+    if ($PodeContext.Server.DisableTermination) {
         return $false
     }
 
@@ -744,43 +744,6 @@ function Test-PodeRestartPressed
 
     return (($null -ne $Key) -and ($Key.Key -ieq 'r') -and
         (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
-}
-
-function Start-PodeTerminationListener
-{
-    Add-PodeRunspace -Type 'Main' {
-        # default variables
-        $options = "AllowCtrlC,IncludeKeyUp,NoEcho"
-        $ctrlState = "LeftCtrlPressed"
-        $char = 'c'
-        $cancel = $false
-
-        # are we on ps-core?
-        $onCore = ($PSVersionTable.PSEdition -ieq 'core')
-
-        while ($true) {
-            if ($Console.UI.RawUI.KeyAvailable) {
-                $key = $Console.UI.RawUI.ReadKey($options)
-
-                if ([char]$key.VirtualKeyCode -ieq $char) {
-                    if ($onCore) {
-                        $cancel = ($key.Character -ine $char)
-                    }
-                    else {
-                        $cancel = (($key.ControlKeyState -band $ctrlState) -ieq $ctrlState)
-                    }
-                }
-
-                if ($cancel) {
-                    Write-Host 'Terminating...' -NoNewline
-                    $PodeContext.Tokens.Cancellation.Cancel()
-                    break
-                }
-            }
-
-            Start-Sleep -Milliseconds 10
-        }
-    }
 }
 
 function Close-PodeServer
@@ -809,7 +772,7 @@ function Close-PodeServer
     Remove-PodePSDrives
 
     if ($ShowDoneMessage -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -and !$PodeContext.Server.IsServerless) {
-        Write-Host " Done" -ForegroundColor Green
+        Write-PodeHost " Done" -ForegroundColor Green
     }
 }
 
@@ -955,30 +918,7 @@ function Join-PodePaths
         $Paths
     )
 
-    # remove any empty/null paths
-    $Paths = @(Remove-PodeEmptyItemsFromArray $Paths)
-
-    # if there are no paths, return blank
-    if ($null -eq $Paths -or $Paths.Length -eq 0) {
-        return ([string]::Empty)
-    }
-
-    # return the first path if singular
-    if ($Paths.Length -eq 1) {
-        return $Paths[0]
-    }
-
-    # join the first two paths
-    $_path = Join-Path $Paths[0] $Paths[1]
-
-    # if there are any more, add them on
-    if ($Paths.Length -gt 2) {
-        foreach ($p in $Paths[2..($Paths.Length - 1)]) {
-            $_path = Join-Path $_path $p
-        }
-    }
-
-    return $_path
+    return [System.IO.Path]::Combine($Paths)
 }
 
 function Get-PodeFileExtension
@@ -1040,6 +980,187 @@ function Test-PodeValidNetworkFailure
     return ($null -ne $match)
 }
 
+function ConvertFrom-PodeHeaderQValue
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [string]
+        $Value
+    )
+
+    $qs = [ordered]@{}
+
+    # return if no value
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $qs
+    }
+
+    # split the values up
+    $parts = @($Value -isplit ',').Trim()
+
+    # go through each part and check its q-value
+    foreach ($part in $parts) {
+        # default of 1 if no q-value
+        if ($part.IndexOf(';q=') -eq -1) {
+            $qs[$part] = 1.0
+            continue
+        }
+
+        # parse for q-value
+        $atoms = @($part -isplit ';q=')
+        $qs[$atoms[0]] = [double]$atoms[1]
+    }
+
+    return $qs
+}
+
+function Get-PodeAcceptEncoding
+{
+    param(
+        [Parameter()]
+        [string]
+        $AcceptEncoding,
+
+        [switch]
+        $ThrowError
+    )
+
+    # return if no encoding
+    if ([string]::IsNullOrWhiteSpace($AcceptEncoding)) {
+        return [string]::Empty
+    }
+
+    # return empty if not compressing
+    if (!$PodeContext.Server.Web.Compression.Enabled) {
+        return [string]::Empty
+    }
+
+    # convert encoding form q-form
+    $encodings = ConvertFrom-PodeHeaderQValue -Value $AcceptEncoding
+    if ($encodings.Count -eq 0) {
+        return [string]::Empty
+    }
+
+    # check the encodings for one that matches
+    $normal = @('identity', '*')
+    $valid = @()
+
+    # build up supported and invalid
+    foreach ($encoding in $encodings.Keys) {
+        if (($encoding -iin $PodeContext.Server.Compression.Encodings) -or ($encoding -iin $normal)) {
+            $valid += @{
+                Name  = $encoding
+                Value = $encodings[$encoding]
+            }
+        }
+    }
+
+    # if it's empty, just return empty
+    if ($valid.Length -eq 0) {
+        return [string]::Empty
+    }
+
+    # find the highest ranked match
+    $found = @{}
+    $failOnIdentity = $false
+
+    foreach ($encoding in $valid) {
+        if ($encoding.Value -gt $found.Value) {
+            $found = $encoding
+        }
+
+        if (!$failOnIdentity -and ($encoding.Value -eq 0) -and ($encoding.Name -iin $normal)) {
+            $failOnIdentity = $true
+        }
+    }
+
+    # force found to identity/* if the 0 is not identity - meaning it's still allowed
+    if (($found.Value -eq 0) -and !$failOnIdentity) {
+        $found = @{
+            Name  = 'identity'
+            Value = 1.0
+        }
+    }
+
+    # return invalid, error, or return empty for idenity?
+    if ($found.Value -eq 0) {
+        if ($ThrowError) {
+            $err = [System.Net.Http.HttpRequestException]::new()
+            $err.Data.Add('PodeStatusCode', 406)
+            throw $err
+        }
+    }
+
+    # else, we're safe
+    if ($found.Name -iin $normal) {
+        return [string]::Empty
+    }
+
+    if ($found.Name -ieq 'x-gzip') {
+        return 'gzip'
+    }
+
+    return $found.Name
+}
+
+function Get-PodeTransferEncoding
+{
+    param(
+        [Parameter()]
+        [string]
+        $TransferEncoding,
+
+        [switch]
+        $ThrowError
+    )
+
+    # return if no encoding
+    if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+        return [string]::Empty
+    }
+
+    # convert encoding form q-form
+    $encodings = ConvertFrom-PodeHeaderQValue -Value $TransferEncoding
+    if ($encodings.Count -eq 0) {
+        return [string]::Empty
+    }
+
+    # check the encodings for one that matches
+    $normal = @('chunked', 'identity')
+    $invalid = @()
+
+    # if we see a supported one, return immediately. else build up invalid one
+    foreach ($encoding in $encodings.Keys) {
+        if ($encoding -iin $PodeContext.Server.Compression.Encodings) {
+            if ($encoding -ieq 'x-gzip') {
+                return 'gzip'
+            }
+
+            return $encoding
+        }
+
+        if ($encoding -iin $normal) {
+            continue
+        }
+
+        $invalid += $encoding
+    }
+
+    # if we have any invalid, throw a 415 error
+    if ($invalid.Length -gt 0) {
+        if ($ThrowError) {
+            $err = [System.Net.Http.HttpRequestException]::new()
+            $err.Data.Add('PodeStatusCode', 415)
+            throw $err
+        }
+
+        return $invalid[0]
+    }
+
+    # else, we're safe
+    return [string]::Empty
+}
+
 function Get-PodeEncodingFromContentType
 {
     param(
@@ -1052,10 +1173,10 @@ function Get-PodeEncodingFromContentType
         return [System.Text.Encoding]::UTF8
     }
 
-    $parts = $ContentType -isplit ';'
+    $parts = @($ContentType -isplit ';').Trim()
 
     foreach ($part in $parts) {
-        if ($part.Trim().StartsWith('charset')) {
+        if ($part.StartsWith('charset')) {
             return [System.Text.Encoding]::GetEncoding(($part -isplit '=')[1].Trim())
         }
     }
@@ -1071,7 +1192,11 @@ function ConvertFrom-PodeRequestContent
 
         [Parameter()]
         [string]
-        $ContentType
+        $ContentType,
+
+        [Parameter()]
+        [string]
+        $TransferEncoding
     )
 
     # get the requests content type and boundary
@@ -1102,11 +1227,31 @@ function ConvertFrom-PodeRequestContent
             }
 
             'pode' {
-                $Content = $Request.Body.Value
+                # if the request is compressed, attempt to uncompress it
+                if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
+                    # create a compressed stream to decompress the req bytes
+                    $ms = New-Object -TypeName System.IO.MemoryStream
+                    $ms.Write($Request.Body.Bytes, 0, $Request.Body.Bytes.Length)
+                    $ms.Seek(0, 0) | Out-Null
+                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
+
+                    # read the decompressed bytes
+                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+                }
+                else {
+                    $Content = $Request.Body.Value
+                }
             }
 
             default {
-                $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                # if the request is compressed, attempt to uncompress it
+                if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
+                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($Request.InputStream, [System.IO.Compression.CompressionMode]::Decompress)
+                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+                }
+                else {
+                    $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                }
             }
         }
 
@@ -1195,8 +1340,8 @@ function ConvertFrom-PodeRequestContent
                         $type = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
 
                         $Result.Files.Add($fields.filename, @{
-                            'ContentType' = (@($type -isplit ':')[1].Trim());
-                            'Bytes' = $null;
+                            ContentType = @($type -isplit ':')[1].Trim()
+                            Bytes = $null
                         })
 
                         $bytes = @()

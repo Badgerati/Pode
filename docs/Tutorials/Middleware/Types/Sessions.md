@@ -55,7 +55,7 @@ You can supply the secret value as normal, Pode will automatically extend it for
 
 The inbuilt storage for sessions is a simple In-Memory store - with auto-cleanup for expired sessions.
 
-If supplied, the `-Storage` parameter is a `psobject` with the following required `ScriptMethod` members:
+If supplied, the `-Storage` parameter is a `psobject` with the following required `NoteProperty` scriptblock members:
 
 ```powershell
 [hashtable] Get([string] $sessionId)
@@ -63,14 +63,24 @@ If supplied, the `-Storage` parameter is a `psobject` with the following require
 [void]      Delete([string] $sessionId)
 ```
 
-For example, the `Delete` method could be done as follows:
+For example, the following is a mock up of a Storage for Redis (note that the functions are fake):
 
 ```powershell
 $store = New-Object -TypeName psobject
 
-$store | Add-Member -MemberType ScriptMethod -Name Delete -Value {
+$store | Add-Member -MemberType NoteProperty -Name Get -Value {
     param($sessionId)
-    Remove-RedisKey $sessionId | Out-Null
+    return (Get-RedisKey -Key $sessionId)
+}
+
+$store | Add-Member -MemberType NoteProperty -Name Set -Value {
+    param($sessionId, $data, $expiry)
+    Set-RedisKey -Key $sessionId -Value $data -TimeToLive $expiry
+}
+
+$store | Add-Member -MemberType NoteProperty -Name Delete -Value {
+    param($sessionId)
+    Remove-RedisKey -Key $sessionId
 }
 ```
 
