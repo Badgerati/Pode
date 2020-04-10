@@ -1,5 +1,28 @@
 # Release Notes
 
+## v1.7.0
+
+```plain
+### Features
+* #504: Support for GZip and Deflate compression on Requests
+* #507: Support for GZip and Deflate compression on Responses
+* #510: New inbuilt authenticator to allow authenticating users from a file
+
+### Enhancements
+* #511: Adds middleware support to `Add-PodeStaticRoute`
+* #518: New `Get-PodeEndpoint` function to retrieve and filter endpoints
+* #525: Support for Azure Web Apps, fixes DisableTermination, and adds Quiet switch
+
+### Bugs
+* #509: Fixes a freezing bug caused by sessions - and improves performance of sessions
+
+### Documentation
+* #517: Adds missing `-Sessionless` parameter in IIS docs (thanks @RobinBeismann!)
+
+### Packaging
+* #503: Bump the Docker images to PowerShell v7.0
+```
+
 ## v1.6.1
 
 ```plain
