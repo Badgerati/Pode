@@ -465,28 +465,37 @@ function Get-PodeAuthWindowsADIISMethod
             if (![string]::IsNullOrWhiteSpace($domain) -and (@('.', $env:COMPUTERNAME) -inotcontains $domain)) {
                 # get the server's fdqn (and name/email)
                 try {
-                    $ad = [adsi]"LDAP://<SID=$($winIdentity.User.Value.ToString())>"
-                    $user.DistinguishedName = @($ad.distinguishedname)[0]
-                    $user.Name = @($ad.name)[0]
-                    $user.Email = @($ad.mail)[0]
+                    # Open ADSISearcher and change context to given domain
+                    $searcher = [adsisearcher]""
+                    $searcher.SearchRoot = [adsi]"LDAP://$($domain)"
+                    $searcher.Filter = "ObjectSid=$($winIdentity.User.Value.ToString())"
+
+                    # Query the ADSISearcher for the above defined SID
+                    $ad = $searcher.FindOne()
+                    
+                    # Save it to our existing array for later usage
+                    $user.DistinguishedName = @($ad.Properties.distinguishedname)[0]
+                    $user.Name = @($ad.Properties.name)[0]
+                    $user.Email = @($ad.Properties.mail)[0]
                     $user.Fqdn = (Get-PodeADServerFromDistinguishedName -DistinguishedName $user.DistinguishedName)
                 }
                 finally {
-                    Close-PodeDisposable -Disposable $ad -Close
+                    Close-PodeDisposable -Disposable $searcher
                 }
 
                 try {
-                    # open a new connection
-                    $result = (Open-PodeAuthADConnection -Server $user.Fqdn -Domain $domain)
-                    if (!$result.Success) {
-                        return @{ Message = 'Failed to connect to Domain Server' }
-                    }
-
-                    # get the connection
-                    $connection = $result.Connection
-
-                    # get the users groups
                     if (!$options.NoGroups) {
+
+                        # open a new connection
+                        $result = (Open-PodeAuthADConnection -Server $user.Fqdn -Domain $domain)
+                        if (!$result.Success) {
+                            return @{ Message = "Failed to connect to Domain Server '$($user.Fqdn)' of $domain for $($user.DistinguishedName)." }
+                        }
+
+                        # get the connection
+                        $connection = $result.Connection
+
+                        # get the users groups
                         $user.Groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName)
                     }
                 }
