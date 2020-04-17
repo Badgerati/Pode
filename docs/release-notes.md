@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.7.1
+
+```plain
+### Bugs
+* #534: Fixes an issue with IIS Windows Authentication when using foreign trusted domains (thanks @RobinBeismann!)
+```
+
 ## v1.7.0
 
 ```plain
