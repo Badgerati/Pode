@@ -9,13 +9,19 @@ Start-PodeServer {
 
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # re-initialise the state
     Restore-PodeState -Path './state.json'
 
     # initialise if there was no file
-    if ($null -eq ($hash = (Get-PodeState -Name 'hash'))) {
-        $hash = Set-PodeState -Name 'hash' -Value @{}
+    if ($null -eq ($hash = (Get-PodeState -Name 'hash1'))) {
+        $hash = Set-PodeState -Name 'hash1' -Value @{}
+        $hash['values'] = @()
+    }
+
+    if ($null -eq ($hash = (Get-PodeState -Name 'hash2'))) {
+        $hash = Set-PodeState -Name 'hash2' -Value @{}
         $hash['values'] = @()
     }
 
@@ -25,9 +31,9 @@ Start-PodeServer {
         $hash = $null
 
         Lock-PodeObject -Object $session.Lockable {
-            $hash = (Get-PodeState -Name 'hash')
+            $hash = (Get-PodeState -Name 'hash1')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
-            Save-PodeState -Path './state.json'
+            Save-PodeState -Path './state.json' -Exclude 'hash2'
         }
     }
 
@@ -36,7 +42,7 @@ Start-PodeServer {
         param($session)
 
         Lock-PodeObject -Object $session.Lockable {
-            $hash = (Get-PodeState 'hash')
+            $hash = (Get-PodeState 'hash1')
             Write-PodeJsonResponse -Value $hash
         }
     }

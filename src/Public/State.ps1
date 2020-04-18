@@ -108,8 +108,17 @@ Saves the current shared state to a supplied JSON file. When using this function
 .PARAMETER Path
 The path to a JSON file which the current state will be saved to.
 
+.PARAMETER Exclude
+An optional array of state object names to exclude from being saved. (This has a higher precedence than Include)
+
+.PARAMETER Include
+An optional array of state object names to only include when being saved.
+
 .EXAMPLE
 Save-PodeState -Path './state.json'
+
+.EXAMPLE
+Save-PodeState -Path './state.json' -Exclude Name1, Name2
 #>
 function Save-PodeState
 {
@@ -117,18 +126,51 @@ function Save-PodeState
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Path
+        $Path,
+
+        [Parameter()]
+        [string[]]
+        $Exclude,
+
+        [Parameter()]
+        [string[]]
+        $Include
     )
 
+    # error if attempting to use outside of the pode server
     if ($null -eq $PodeContext.Server.State) {
         throw "Pode has not been initialised"
     }
 
+    # get the full path to save the state
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-    $PodeContext.Server.State |
-        ConvertTo-Json -Depth 10 |
-        Out-File -FilePath $Path -Force |
-        Out-Null
+
+    # contruct the state to save (excludes, etc)
+    $state = @{}
+
+    # include specific or all
+    if (($null -eq $Include) -or ($Include.Length -eq 0)) {
+        $state = $PodeContext.Server.State.Clone()
+    }
+    else {
+        foreach ($key in $PodeContext.Server.State.Clone().Keys) {
+            if ($Include -icontains $key) {
+                $state[$key] = $PodeContext.Server.State[$key]
+            }
+        }
+    }
+
+    # exclude keys
+    if (($null -ne $Exclude) -and ($Exclude.Length -gt 0)) {
+        foreach ($key in $state.Clone().Keys) {
+            if ($Exclude -icontains $key) {
+                $state.Remove($key) | Out-Null
+            }
+        }
+    }
+
+    # save the state
+    $state | ConvertTo-Json -Depth 10 | Out-File -FilePath $Path -Force | Out-Null
 }
 
 <#
@@ -153,15 +195,18 @@ function Restore-PodeState
         $Path
     )
 
+    # error if attempting to use outside of the pode server
     if ($null -eq $PodeContext.Server.State) {
         throw "Pode has not been initialised"
     }
 
+    # get the full path to the state
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
     if (!(Test-Path $Path)) {
         return
     }
 
+    # restore the state from file
     if (Test-IsPSCore) {
         $PodeContext.Server.State = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
     }

@@ -59,6 +59,26 @@ Describe 'Save-PodeState' {
 
         Assert-MockCalled Out-File -Times 1 -Scope It
     }
+
+    It 'Saves the state to file with Include' {
+        Mock Get-PodeRelativePath { return $Path }
+        Mock Out-File {}
+
+        $PodeContext.Server = @{ 'State' = @{ 'test' = 8 } }
+        Save-PodeState -Path './state.json' -Include 'test'
+
+        Assert-MockCalled Out-File -Times 1 -Scope It
+    }
+
+    It 'Saves the state to file with Exclude' {
+        Mock Get-PodeRelativePath { return $Path }
+        Mock Out-File {}
+
+        $PodeContext.Server = @{ 'State' = @{ 'test' = 8 } }
+        Save-PodeState -Path './state.json' -Exclude 'test'
+
+        Assert-MockCalled Out-File -Times 1 -Scope It
+    }
 }
 
 Describe 'Restore-PodeState' {
