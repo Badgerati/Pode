@@ -967,7 +967,10 @@ function Get-PodeRoute
     )
 
     # start off with every route
-    $routes = $PodeContext.Server.Routes.Values.Values
+    $routes = @()
+    foreach ($route in $PodeContext.Server.Routes.Values.Values) {
+        $routes += $route
+    }
 
     # if we have a method, filter
     if (![string]::IsNullOrWhiteSpace($Method)) {
@@ -1071,7 +1074,10 @@ function Get-PodeStaticRoute
     )
 
     # start off with every route
-    $routes = $PodeContext.Server.Routes['Static'].Values
+    $routes = @()
+    foreach ($route in $PodeContext.Server.Routes['Static'].Values) {
+        $routes += $route
+    }
 
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
