@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a basic server
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
@@ -16,12 +16,12 @@ Start-PodeServer {
 
     # initialise if there was no file
     if ($null -eq ($hash = (Get-PodeState -Name 'hash1'))) {
-        $hash = Set-PodeState -Name 'hash1' -Value @{}
+        $hash = Set-PodeState -Name 'hash1' -Value @{} -Scope Scope0, Scope1
         $hash['values'] = @()
     }
 
     if ($null -eq ($hash = (Get-PodeState -Name 'hash2'))) {
-        $hash = Set-PodeState -Name 'hash2' -Value @{}
+        $hash = Set-PodeState -Name 'hash2' -Value @{} -Scope Scope0, Scope2
         $hash['values'] = @()
     }
 
@@ -33,7 +33,7 @@ Start-PodeServer {
         Lock-PodeObject -Object $session.Lockable {
             $hash = (Get-PodeState -Name 'hash1')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
-            Save-PodeState -Path './state.json' -Exclude 'hash2'
+            Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
         }
     }
 

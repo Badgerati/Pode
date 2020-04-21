@@ -11,28 +11,46 @@ The name of the state object.
 .PARAMETER Value
 The value to set in the state.
 
+.PARAMETER Scope
+An optional Scope for the state object, used when saving the state.
+
 .EXAMPLE
 Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
+
+.EXAMPLE
+Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
 #>
 function Set-PodeState
 {
     [CmdletBinding()]
     [OutputType([object])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
 
         [Parameter(ValueFromPipeline=$true)]
         [object]
-        $Value
+        $Value,
+
+        [Parameter()]
+        [string[]]
+        $Scope
     )
 
     if ($null -eq $PodeContext.Server.State) {
         throw "Pode has not been initialised"
     }
 
-    $PodeContext.Server.State[$Name] = $Value
+    if ($null -eq $Scope) {
+        $Scope = @()
+    }
+
+    $PodeContext.Server.State[$Name] = @{
+        Value = $Value
+        Scope = $Scope
+    }
+
     return $Value
 }
 
@@ -46,24 +64,34 @@ Retrieves some state object from the shared state.
 .PARAMETER Name
 The name of the state object.
 
+.PARAMETER WithScope
+If supplied, the state's value and scope will be returned as a hashtable.
+
 .EXAMPLE
 Get-PodeState -Name 'Data'
 #>
 function Get-PodeState
 {
     [CmdletBinding()]
-    [OutputType([object])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Name
+        $Name,
+
+        [switch]
+        $WithScope
     )
 
     if ($null -eq $PodeContext.Server.State) {
         throw "Pode has not been initialised"
     }
 
-    return $PodeContext.Server.State[$Name]
+    if ($WithScope) {
+        return $PodeContext.Server.State[$Name]
+    }
+    else {
+        return $PodeContext.Server.State[$Name].Value
+    }
 }
 
 <#
@@ -83,7 +111,7 @@ function Remove-PodeState
 {
     [CmdletBinding()]
     [OutputType([object])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name
@@ -93,7 +121,7 @@ function Remove-PodeState
         throw "Pode has not been initialised"
     }
 
-    $value = $PodeContext.Server.State[$Name]
+    $value = $PodeContext.Server.State[$Name].Value
     $PodeContext.Server.State.Remove($Name) | Out-Null
     return $value
 }
@@ -108,6 +136,9 @@ Saves the current shared state to a supplied JSON file. When using this function
 .PARAMETER Path
 The path to a JSON file which the current state will be saved to.
 
+.PARAMETER Scope
+An optional array of scopes for state objects that should be saved. (This has a higher precedence than Exclude/Include)
+
 .PARAMETER Exclude
 An optional array of state object names to exclude from being saved. (This has a higher precedence than Include)
 
@@ -119,6 +150,9 @@ Save-PodeState -Path './state.json'
 
 .EXAMPLE
 Save-PodeState -Path './state.json' -Exclude Name1, Name2
+
+.EXAMPLE
+Save-PodeState -Path './state.json' -Scope Users
 #>
 function Save-PodeState
 {
@@ -127,6 +161,10 @@ function Save-PodeState
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
 
         [Parameter()]
         [string[]]
@@ -146,25 +184,50 @@ function Save-PodeState
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # contruct the state to save (excludes, etc)
-    $state = @{}
+    $state = $PodeContext.Server.State.Clone()
 
-    # include specific or all
-    if (($null -eq $Include) -or ($Include.Length -eq 0)) {
-        $state = $PodeContext.Server.State.Clone()
+    # scopes
+    if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
+        foreach ($_key in $state.Clone().Keys) {
+            # remove if no scope
+            if (($null -eq $state[$_key].Scope) -or ($state[$_key].Scope.Length -eq 0)) {
+                $state.Remove($_key) | Out-Null
+                continue
+            }
+
+            # check scopes (only remove if none match)
+            $found = $false
+
+            foreach ($_scope in $state[$_key].Scope) {
+                if ($Scope -icontains $_scope) {
+                    $found = $true
+                    break
+                }
+            }
+
+            if ($found) {
+                continue
+            }
+
+            # none matched, remove
+            $state.Remove($_key) | Out-Null
+        }
     }
-    else {
-        foreach ($key in $PodeContext.Server.State.Clone().Keys) {
-            if ($Include -icontains $key) {
-                $state[$key] = $PodeContext.Server.State[$key]
+
+    # include keys
+    if (($null -ne $Include) -and ($Include.Length -gt 0)) {
+        foreach ($_key in $state.Clone().Keys) {
+            if ($Include -inotcontains $_key) {
+                $state.Remove($_key) | Out-Null
             }
         }
     }
 
     # exclude keys
     if (($null -ne $Exclude) -and ($Exclude.Length -gt 0)) {
-        foreach ($key in $state.Clone().Keys) {
-            if ($Exclude -icontains $key) {
-                $state.Remove($key) | Out-Null
+        foreach ($_key in $state.Clone().Keys) {
+            if ($Exclude -icontains $_key) {
+                $state.Remove($_key) | Out-Null
             }
         }
     }
@@ -207,14 +270,38 @@ function Restore-PodeState
     }
 
     # restore the state from file
+    $state = @{}
+
     if (Test-IsPSCore) {
-        $PodeContext.Server.State = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
+        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
     }
     else {
-        (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties | ForEach-Object {
-            $PodeContext.Server.State[$_.Name] = $_.Value
+        $props = (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties
+        foreach ($prop in $props) {
+            $state[$prop.Name] = $prop.Value
         }
     }
+
+    # check for no scopes, and add for backwards compat
+    $convert = $false
+    foreach ($_key in $state.Clone().Keys) {
+        if ($null -eq $state[$_key].Scope) {
+            $convert = $true
+            break
+        }
+    }
+
+    if ($convert) {
+        foreach ($_key in $state.Clone().Keys) {
+            $state[$_key] = @{
+                Value = $state[$_key]
+                Scope = @()
+            }
+        }
+    }
+
+    # set the scope to the main context
+    $PodeContext.Server.State = $state.Clone()
 }
 
 <#
@@ -234,7 +321,7 @@ function Test-PodeState
 {
     [CmdletBinding()]
     [OutputType([bool])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name
