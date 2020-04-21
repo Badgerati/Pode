@@ -1250,6 +1250,19 @@ Describe 'Get-PodeRoute' {
         $routes = @(Get-PodeRoute -Method Get -Path '/users' -EndpointName user, admin)
         $routes.Length | Should Be 2
     }
+
+    It 'Returns both routes for user endpoint name' {
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
+
+        Add-PodeRoute -Method Get -Path '/users1' -ScriptBlock { Write-Host 'hello' } -EndpointName user, admin
+        Add-PodeRoute -Method Get -Path '/users2' -ScriptBlock { Write-Host 'hello' } -EndpointName user, admin
+
+        $routes = @(Get-PodeRoute -Method Get -EndpointName user)
+        $routes.Length | Should Be 2
+    }
 }
 
 Describe 'Get-PodeStaticRoute' {
@@ -1313,6 +1326,19 @@ Describe 'Get-PodeStaticRoute' {
         Add-PodeStaticRoute -Path '/images' -Source './images' -EndpointName admin
 
         $routes = @(Get-PodeStaticRoute -Path '/images' -EndpointName user, admin)
+        $routes.Length | Should Be 2
+    }
+
+    It 'Returns both routes for user endpoint' {
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @(); Type = $null }
+
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
+
+        Add-PodeStaticRoute -Path '/images1' -Source './images' -EndpointName user, admin
+        Add-PodeStaticRoute -Path '/images2' -Source './images' -EndpointName user, admin
+
+        $routes = @(Get-PodeStaticRoute -EndpointName user)
         $routes.Length | Should Be 2
     }
 }
