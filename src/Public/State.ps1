@@ -137,7 +137,7 @@ Saves the current shared state to a supplied JSON file. When using this function
 The path to a JSON file which the current state will be saved to.
 
 .PARAMETER Scope
-An optional array of scopes for state objects that should be saved. (This has a higher precedence than Exclude/Include)
+An optional array of scopes for state objects that should be saved. (This has a lower precedence than Exclude/Include)
 
 .PARAMETER Exclude
 An optional array of state object names to exclude from being saved. (This has a higher precedence than Include)
