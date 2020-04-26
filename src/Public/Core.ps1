@@ -164,6 +164,11 @@ function Start-PodeServer
             if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                 Restart-PodeInternalServer
             }
+
+            # check for open browser
+            if (Test-PodeOpenBrowserPressed -Key $key) {
+                Start-Process (Get-PodeEndpointUrl)
+            }
         }
 
         Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
