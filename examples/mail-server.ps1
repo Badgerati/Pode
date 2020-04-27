@@ -4,6 +4,11 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+<#
+Example call:
+Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -Body 'Hello' -Subject 'Hi there' -Port 25
+#>
+
 # create a server, and start listening on port 25
 Start-PodeServer -Threads 2 {
 
