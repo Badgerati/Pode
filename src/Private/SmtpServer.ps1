@@ -101,7 +101,6 @@ function Start-PodeSmtpServer
                             Write-PodeTcpClient -Message '250 OK'
 
                             # set event data/headers
-                            $TcpEvent.Client | Out-Default
                             $TcpEvent.Email.From = $mail_from
                             $TcpEvent.Email.To = $rcpt_tos
                             $TcpEvent.Email.Data = $data
