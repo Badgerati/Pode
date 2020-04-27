@@ -143,23 +143,26 @@ function Start-PodeSmtpServer
             {
                 # get an incoming request
                 $client = (Wait-PodeTask -Task $Listener.AcceptTcpClientAsync())
+                $TcpEvent = @{
+                    Client = $client
+                    Lockable = $PodeContext.Lockable
+                    Email = @{}
+                }
 
                 # convert the ip
                 $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
 
                 # ensure the request ip is allowed
-                if (!(Test-PodeIPAccess -IP $ip) -or !(Test-PodeIPLimit -IP $ip)) {
-                    Close-PodeTcpConnection -Quit
+                if (!(Test-PodeIPAccess -IP $ip)) {
+                    Close-PodeTcpConnection -Quit -Message '550 Your IP address was rejected'
+                }
+
+                elseif (!(Test-PodeIPLimit -IP $ip)) {
+                    Close-PodeTcpConnection -Quit -Message '550 Your IP address has hit the rate limit'
                 }
 
                 # deal with smtp call
                 else {
-                    $TcpEvent = @{
-                        Client = $client
-                        Lockable = $PodeContext.Lockable
-                        Email = @{}
-                    }
-
                     Invoke-PodeScriptBlock -ScriptBlock $process
                     Close-PodeTcpConnection -Quit
                 }

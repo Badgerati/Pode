@@ -14,8 +14,11 @@ Start-PodeServer -Threads 2 {
 
     Add-PodeEndpoint -Address localhost -Protocol SMTP
 
+    # enable logging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+
     # allow the local ip
-    Add-PodeAccessRule -Access Allow -Type IP -Values 127.0.0.1
+    #Add-PodeAccessRule -Access Allow -Type IP -Values 127.0.0.1
 
     # setup an smtp handler
     Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
