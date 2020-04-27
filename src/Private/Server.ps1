@@ -170,6 +170,11 @@ function Restart-PodeInternalServer
         # clear up shared state
         $PodeContext.Server.State.Clear()
 
+        # reset type if smtp/tcp
+        if (@('smtp', 'tcp') -icontains $PodeContext.Server.Type) {
+            $PodeContext.Server.Type = [string]::Empty
+        }
+
         # recreate the session tokens
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
         $PodeContext.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource

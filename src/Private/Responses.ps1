@@ -57,6 +57,11 @@ function Close-PodeTcpConnection
         [Parameter()]
         $Client,
 
+        [Parameter(ParameterSetName='Quit')]
+        [string]
+        $Message,
+
+        [Parameter(ParameterSetName='Quit')]
         [switch]
         $Quit
     )
@@ -67,7 +72,11 @@ function Close-PodeTcpConnection
 
     if ($null -ne $Client) {
         if ($Quit -and $Client.Connected) {
-            Write-PodeTcpClient -Message '221 Bye'
+            if ([string]::IsNullOrWhiteSpace($Message)) {
+                $Message = '221 Bye'
+            }
+
+            Write-PodeTcpClient -Message $Message
         }
 
         Close-PodeDisposable -Disposable $Client -Close
