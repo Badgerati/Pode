@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.7.2
+
+```plain
+### Bugs
+* #543: Fixes an internal issue that was causing errors in the SMTP server
+```
+
 ## v1.7.1
 
 ```plain
