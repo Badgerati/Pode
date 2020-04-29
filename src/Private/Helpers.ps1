@@ -765,7 +765,7 @@ function Test-PodeKeyPressed
         (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
-function Close-PodeServer
+function Close-PodeServerInternal
 {
     param (
         [switch]
