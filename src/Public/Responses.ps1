@@ -1064,11 +1064,18 @@ function Read-PodeTcpClient
         $Client = $TcpEvent.Client
     }
 
+    # read the data from the stream
     $bytes = New-Object byte[] 8192
+    $data = [string]::Empty
     $encoder = New-Object System.Text.ASCIIEncoding
     $stream = $Client.GetStream()
-    $bytesRead = (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, 8192))
-    return $encoder.GetString($bytes, 0, $bytesRead)
+
+    do {
+        $bytesRead = (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $bytes.Length))
+        $data += $encoder.GetString($bytes, 0, $bytesRead)
+    } while ($stream.DataAvailable)
+
+    return $data
 }
 
 <#

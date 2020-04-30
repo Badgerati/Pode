@@ -113,7 +113,7 @@ function Start-PodeSmtpServer
                             $TcpEvent.Email.ContentEncoding = $TcpEvent.Email.Headers['Content-Transfer-Encoding']
 
                             # set the email body
-                            $TcpEvent.Email.Body = (Get-PodeSmtpBody -Data $data -ContentType $TcpEvent.ContentType -ContentEncoding $TcpEvent.ContentEncoding)
+                            $TcpEvent.Email.Body = (Get-PodeSmtpBody -Data $data -ContentType $TcpEvent.Email.ContentType -ContentEncoding $TcpEvent.Email.ContentEncoding)
 
                             # call user handlers for processing smtp data
                             $handlers = Get-PodeHandler -Type Smtp
@@ -260,7 +260,7 @@ function Get-PodeSmtpBody
     $body = ($dataSplit[($indexOfBlankLine + 1)..($indexOfLastDot - 2)] -join [System.Environment]::NewLine)
 
     # if there's no body, just return
-    if (($indexOfLastDot -eq -1) -or (Test-IsEmpty $body)) {
+    if (($indexOfLastDot -eq -1) -or ([string]::IsNullOrWhiteSpace($body))) {
         return $body
     }
 
@@ -268,6 +268,12 @@ function Get-PodeSmtpBody
     switch ($ContentEncoding.ToLowerInvariant()) {
         'base64' {
             $body = [System.Convert]::FromBase64String($body)
+        }
+
+        'quoted-printable' {
+            while ($body -imatch '(?<code>=(?<hex>[0-9A-F]{2}))') {
+                $body = ($body -ireplace $Matches['code'], [char]([convert]::ToInt32($Matches['hex'], 16)))
+            }
         }
     }
 
