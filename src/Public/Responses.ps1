@@ -1044,6 +1044,9 @@ Reads data from a TCP Client stream.
 .PARAMETER Client
 An optional TcpClient from which to read data.
 
+.PARAMETER Timeout
+An optional Timeout in milliseconds.
+
 .EXAMPLE
 $data = Read-PodeTcpClient
 #>
@@ -1053,7 +1056,11 @@ function Read-PodeTcpClient
     [OutputType([string])]
     param (
         [Parameter()]
-        $Client
+        $Client,
+
+        [Parameter()]
+        [int]
+        $Timeout = 0
     )
 
     # error if serverless
@@ -1071,7 +1078,7 @@ function Read-PodeTcpClient
     $stream = $Client.GetStream()
 
     do {
-        $bytesRead = (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $bytes.Length))
+        $bytesRead = (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $bytes.Length) -Timeout $Timeout)
         $data += $encoder.GetString($bytes, 0, $bytesRead)
     } while ($stream.DataAvailable)
 

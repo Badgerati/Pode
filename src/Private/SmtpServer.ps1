@@ -67,64 +67,83 @@ function Start-PodeSmtpServer
                 catch [System.OperationCanceledException] {
                     throw
                 }
+                catch [System.TimeoutException] {
+                    Close-PodeTcpConnection -Quit -Message '442 Timeout'
+                    break
+                }
                 catch {
                     $_ | Write-PodeErrorLog
                     break
                 }
 
                 try {
-                    if (!(Test-IsEmpty $msg)) {
-                        if ($msg.StartsWith('QUIT')) {
-                            Write-PodeTcpClient -Message '221 Bye'
-                            Close-PodeTcpConnection
+                    # if empty, stop - invalid data
+                    if ([string]::IsNullOrWhiteSpace($msg)) {
+                        Close-PodeTcpConnection -Quit -Message '501 Invalid command received'
+                        break
+                    }
+
+                    # process the command
+                    # quit
+                    if ($msg.StartsWith('QUIT')) {
+                        Close-PodeTcpConnection -Quit
+                        break
+                    }
+
+                    # hello
+                    if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO')) {
+                        Write-PodeTcpClient -Message '250 OK'
+                    }
+
+                    # to addresses
+                    if ($msg.StartsWith('RCPT TO')) {
+                        Write-PodeTcpClient -Message '250 OK'
+                        $rcpt_tos += (Get-PodeSmtpEmail $msg)
+                    }
+
+                    # from address
+                    if ($msg.StartsWith('MAIL FROM')) {
+                        Write-PodeTcpClient -Message '250 OK'
+                        $mail_from = (Get-PodeSmtpEmail $msg)
+                    }
+
+                    # data of email
+                    if ($msg.StartsWith('DATA'))
+                    {
+                        Write-PodeTcpClient -Message '354 Start mail input; end with <CR><LF>.<CR><LF>'
+                        $data = (Read-PodeTcpClient)
+                        Write-PodeTcpClient -Message '250 OK'
+
+                        # set event data/headers
+                        $TcpEvent.Email.From = $mail_from
+                        $TcpEvent.Email.To = $rcpt_tos
+                        $TcpEvent.Email.Data = $data
+                        $TcpEvent.Email.Headers = (Get-PodeSmtpHeadersFromData $data)
+
+                        # set the subject/priority/content-types
+                        $TcpEvent.Email.Subject = $TcpEvent.Email.Headers['Subject']
+                        $TcpEvent.Email.IsUrgent = (($TcpEvent.Email.Headers['Priority'] -ieq 'urgent') -or ($TcpEvent.Email.Headers['Importance'] -ieq 'high'))
+                        $TcpEvent.Email.ContentType = $TcpEvent.Email.Headers['Content-Type']
+                        $TcpEvent.Email.ContentEncoding = $TcpEvent.Email.Headers['Content-Transfer-Encoding']
+
+                        # set the email body
+                        if (Test-PodeSmtpBody -Data $data) {
+                            $TcpEvent.Email.Body = (Get-PodeSmtpBody -Data $data -ContentType $TcpEvent.Email.ContentType -ContentEncoding $TcpEvent.Email.ContentEncoding)
+                        }
+                        else {
+                            Close-PodeTcpConnection -Quit -Message '501 Invalid DATA received'
                             break
                         }
 
-                        if ($msg.StartsWith('EHLO') -or $msg.StartsWith('HELO')) {
-                            Write-PodeTcpClient -Message '250 OK'
+                        # call user handlers for processing smtp data
+                        $handlers = Get-PodeHandler -Type Smtp
+                        foreach ($name in $handlers.Keys) {
+                            $handler = $handlers[$name]
+                            Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments (@($TcpEvent) + @($handler.Arguments)) -Scoped -Splat
                         }
 
-                        if ($msg.StartsWith('RCPT TO')) {
-                            Write-PodeTcpClient -Message '250 OK'
-                            $rcpt_tos += (Get-PodeSmtpEmail $msg)
-                        }
-
-                        if ($msg.StartsWith('MAIL FROM')) {
-                            Write-PodeTcpClient -Message '250 OK'
-                            $mail_from = (Get-PodeSmtpEmail $msg)
-                        }
-
-                        if ($msg.StartsWith('DATA'))
-                        {
-                            Write-PodeTcpClient -Message '354 Start mail input; end with <CR><LF>.<CR><LF>'
-                            $data = (Read-PodeTcpClient)
-                            Write-PodeTcpClient -Message '250 OK'
-
-                            # set event data/headers
-                            $TcpEvent.Email.From = $mail_from
-                            $TcpEvent.Email.To = $rcpt_tos
-                            $TcpEvent.Email.Data = $data
-                            $TcpEvent.Email.Headers = (Get-PodeSmtpHeadersFromData $data)
-
-                            # set the subject/priority/content-types
-                            $TcpEvent.Email.Subject = $TcpEvent.Email.Headers['Subject']
-                            $TcpEvent.Email.IsUrgent = (($TcpEvent.Email.Headers['Priority'] -ieq 'urgent') -or ($TcpEvent.Email.Headers['Importance'] -ieq 'high'))
-                            $TcpEvent.Email.ContentType = $TcpEvent.Email.Headers['Content-Type']
-                            $TcpEvent.Email.ContentEncoding = $TcpEvent.Email.Headers['Content-Transfer-Encoding']
-
-                            # set the email body
-                            $TcpEvent.Email.Body = (Get-PodeSmtpBody -Data $data -ContentType $TcpEvent.Email.ContentType -ContentEncoding $TcpEvent.Email.ContentEncoding)
-
-                            # call user handlers for processing smtp data
-                            $handlers = Get-PodeHandler -Type Smtp
-                            foreach ($name in $handlers.Keys) {
-                                $handler = $handlers[$name]
-                                Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments (@($TcpEvent) + @($handler.Arguments)) -Scoped -Splat
-                            }
-
-                            # reset the to list
-                            $rcpt_tos = @()
-                        }
+                        # reset the to list
+                        $rcpt_tos = @()
                     }
                 }
                 catch [System.OperationCanceledException] {
@@ -154,11 +173,11 @@ function Start-PodeSmtpServer
 
                 # ensure the request ip is allowed
                 if (!(Test-PodeIPAccess -IP $ip)) {
-                    Close-PodeTcpConnection -Quit -Message '550 Your IP address was rejected'
+                    Close-PodeTcpConnection -Quit -Message '554 Your IP address was rejected'
                 }
 
                 elseif (!(Test-PodeIPLimit -IP $ip)) {
-                    Close-PodeTcpConnection -Quit -Message '550 Your IP address has hit the rate limit'
+                    Close-PodeTcpConnection -Quit -Message '554 Your IP address has hit the rate limit'
                 }
 
                 # deal with smtp call
@@ -231,6 +250,19 @@ function Get-PodeSmtpEmail
     }
 
     return [string]::Empty
+}
+
+function Test-PodeSmtpBody
+{
+    param(
+        [Parameter()]
+        [string]
+        $Data
+    )
+
+    $dataSplit = @($Data -isplit [System.Environment]::NewLine)
+    $indexOfLastDot = [array]::LastIndexOf($dataSplit, '.')
+    return ($indexOfLastDot -gt -1)
 }
 
 function Get-PodeSmtpBody
