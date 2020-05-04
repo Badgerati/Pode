@@ -86,7 +86,7 @@ Describe 'REST API Requests' {
             Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get
         }
         catch {
-            ([System.Net.WebException]$_.Exception).Response.StatusCode | Should Be 404
+            $_.Exception.Message.Contains('404') | Should Be $true
         }
     }
 
@@ -95,7 +95,7 @@ Describe 'REST API Requests' {
             Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post
         }
         catch {
-            ([System.Net.WebException]$_.Exception).Response.StatusCode | Should Be 405
+            $_.Exception.Message.Contains('405') | Should Be $true
         }
     }
 

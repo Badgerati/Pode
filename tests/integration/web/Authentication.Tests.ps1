@@ -70,7 +70,7 @@ Describe 'Authentication Requests' {
             Invoke-RestMethod -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic cmljazpwaWNrbGU=' } -ErrorAction Stop
         }
         catch {
-            ([System.Net.WebException]$_.Exception).Response.StatusCode | Should Be 401
+            $_.Exception.Message.Contains('401') | Should Be $true
         }
     }
 
@@ -79,7 +79,7 @@ Describe 'Authentication Requests' {
             Invoke-RestMethod -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic cmlazpwaNrbGU' } -ErrorAction Stop
         }
         catch {
-            ([System.Net.WebException]$_.Exception).Response.StatusCode | Should Be 400
+            $_.Exception.Message.Contains('400') | Should Be $true
         }
     }
 
@@ -95,7 +95,7 @@ Describe 'Authentication Requests' {
             Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer fake-token' } -ErrorAction Stop
         }
         catch {
-            ([System.Net.WebException]$_.Exception).Response.StatusCode | Should Be 401
+            $_.Exception.Message.Contains('401') | Should Be $true
         }
     }
 
@@ -104,7 +104,7 @@ Describe 'Authentication Requests' {
             Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer' } -ErrorAction Stop
         }
         catch {
-            ([System.Net.WebException]$_.Exception).Response.StatusCode | Should Be 400
+            $_.Exception.Message.Contains('400') | Should Be $true
         }
     }
 }

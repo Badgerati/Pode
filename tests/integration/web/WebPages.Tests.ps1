@@ -29,7 +29,6 @@ Describe 'Web Page Requests' {
     }
 
     AfterAll {
-        Receive-Job -Name 'Pode'
         Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Get | Out-Null
         Get-Job -Name 'Pode' | Remove-Job -Force
     }
