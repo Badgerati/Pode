@@ -64,6 +64,14 @@ Describe 'REST API Requests' {
                     param($e)
                     Write-PodeJsonResponse -Value @{ Username = $e.Data.username }
                 }
+
+                Add-PodeRoute -Method * -Path '/all' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result ='OK' }
+                }
+
+                Add-PodeRoute -Method Get -Path '/api/*/hello' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result ='OK' }
+                }
             }
         }
 
@@ -83,7 +91,7 @@ Describe 'REST API Requests' {
 
     It 'responds back with 404 for invalid route' {
         try {
-            Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get
+            Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop
         }
         catch {
             $_.Exception.Message.Contains('404') | Should Be $true
@@ -92,7 +100,7 @@ Describe 'REST API Requests' {
 
     It 'responds back with 405 for incorrect method' {
         try {
-            Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post
+            Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop
         }
         catch {
             $_.Exception.Message.Contains('405') | Should Be $true
@@ -195,5 +203,27 @@ Describe 'REST API Requests' {
         # make the request
         $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer-forced-type" -Method Post -Body $ms.ToArray() -ContentType 'application/json'
         $result.Username | Should Be 'rick'
+    }
+
+    It 'works with any method' {
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/all" -Method Get
+        $result.Result | Should Be 'OK'
+
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/all" -Method Put
+        $result.Result | Should Be 'OK'
+
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/all" -Method Patch
+        $result.Result | Should Be 'OK'
+    }
+
+    It 'route with a wild card' {
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/api/stuff/hello" -Method Get
+        $result.Result | Should Be 'OK'
+
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/api/random/hello" -Method Get
+        $result.Result | Should Be 'OK'
+
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/api/123/hello" -Method Get
+        $result.Result | Should Be 'OK'
     }
 }

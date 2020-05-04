@@ -22,6 +22,16 @@ Describe 'Web Page Requests' {
                 Add-PodeRoute -Method Get -Path '/views/static' -ScriptBlock {
                     Write-PodeViewResponse -Path 'static.html'
                 }
+
+                Add-PodeRoute -Method Get -Path '/redirect' -ScriptBlock {
+                    Move-PodeResponseUrl -Url 'https://google.com'
+                }
+
+                Add-PodeRoute -Method Get -Path '/attachment' -ScriptBlock {
+                    Set-PodeResponseAttachment -Path 'ruler.png'
+                }
+
+                Add-PodeStaticRoute -Path '/custom-images' -Source './images'
             }
         }
 
@@ -42,5 +52,39 @@ Describe 'Web Page Requests' {
     It 'responds with a static view' {
         $result = Invoke-WebRequest -Uri "$($Endpoint)/views/static" -Method Get
         $result.Content | Should Be '<p>2020-01-01</p>'
+    }
+
+    It 'redirects you to another url' {
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/redirect" -Method Get
+        $result.StatusCode | Should Be 200
+        $result.BaseResponse.ResponseUri.Host | Should Be 'www.google.com'
+    }
+
+    It 'attaches and image for download' {
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/attachment" -Method Get
+        $result.StatusCode | Should Be 200
+        $result.Headers['Content-Type'] | Should Be 'image/png'
+        $result.Headers['Content-Disposition'] | Should Be 'attachment; filename=ruler.png'
+    }
+
+    It 'responds with public static content' {
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/ruler.png" -Method Get
+        $result.StatusCode | Should Be 200
+        $result.Headers['Content-Type'] | Should Be 'image/png; charset=utf-8'
+    }
+
+    It 'responds with 404 for non-public static content' {
+        try {
+            Invoke-WebRequest -Uri "$($Endpoint)/images/custom_ruler.png" -Method Get -ErrorAction Stop
+        }
+        catch {
+            $_.Exception.Message.Contains('404') | Should Be $true
+        }
+    }
+
+    It 'responds with custom static content' {
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/custom-images/custom_ruler.png" -Method Get
+        $result.StatusCode | Should Be 200
+        $result.Headers['Content-Type'] | Should Be 'image/png; charset=utf-8'
     }
 }
