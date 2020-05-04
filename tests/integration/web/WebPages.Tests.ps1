@@ -57,7 +57,7 @@ Describe 'Web Page Requests' {
     It 'redirects you to another url' {
         $result = Invoke-WebRequest -Uri "$($Endpoint)/redirect" -Method Get
         $result.StatusCode | Should Be 200
-        $result.BaseResponse.ResponseUri.Host | Should Be 'www.google.com'
+        $result.Content.Contains('google') | Should Be $true
     }
 
     It 'attaches and image for download' {
