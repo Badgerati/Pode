@@ -5,10 +5,12 @@ Describe 'REST API Requests' {
         $Endpoint = "http://localhost:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
-            Import-Module -Name "$($using:PSScriptRoot)\..\..\..\src\Pode.psm1"
+            Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
-            Start-PodeServer {
+            Start-PodeServer -RootPath $using:PSScriptRoot -Type Pode {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
+
+                New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
                 }
@@ -90,21 +92,11 @@ Describe 'REST API Requests' {
     }
 
     It 'responds back with 404 for invalid route' {
-        try {
-            Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop
-        }
-        catch {
-            $_.Exception.Message.Contains('404') | Should Be $true
-        }
+        { Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop } | Should Throw '404'
     }
 
     It 'responds back with 405 for incorrect method' {
-        try {
-            Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop
-        }
-        catch {
-            $_.Exception.Message.Contains('405') | Should Be $true
-        }
+        { Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop } | Should Throw '405'
     }
 
     It 'responds with simple query parameter' {

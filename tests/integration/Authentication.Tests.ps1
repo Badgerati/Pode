@@ -5,7 +5,7 @@ Describe 'Authentication Requests' {
         $Endpoint = "http://localhost:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
-            Import-Module -Name "$($using:PSScriptRoot)\..\..\..\src\Pode.psm1"
+            Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
             Start-PodeServer {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
@@ -66,21 +66,11 @@ Describe 'Authentication Requests' {
     }
 
     It 'basic - returns 401 for invalid creds' {
-        try {
-            Invoke-RestMethod -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic cmljazpwaWNrbGU=' } -ErrorAction Stop
-        }
-        catch {
-            $_.Exception.Message.Contains('401') | Should Be $true
-        }
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic cmljazpwaWNrbGU=' } -ErrorAction Stop } | Should Throw '401'
     }
 
     It 'basic - returns 400 for invalid base64' {
-        try {
-            Invoke-RestMethod -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic cmlazpwaNrbGU' } -ErrorAction Stop
-        }
-        catch {
-            $_.Exception.Message.Contains('400') | Should Be $true
-        }
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ Authorization = 'Basic cmlazpwaNrbGU' } -ErrorAction Stop } | Should Throw '400'
     }
 
 
@@ -91,20 +81,10 @@ Describe 'Authentication Requests' {
     }
 
     It 'bearer - returns 401 for invalid token' {
-        try {
-            Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer fake-token' } -ErrorAction Stop
-        }
-        catch {
-            $_.Exception.Message.Contains('401') | Should Be $true
-        }
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer fake-token' } -ErrorAction Stop } | Should Throw '401'
     }
 
     It 'bearer - returns 400 for no token' {
-        try {
-            Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer' } -ErrorAction Stop
-        }
-        catch {
-            $_.Exception.Message.Contains('400') | Should Be $true
-        }
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer' } -ErrorAction Stop } | Should Throw 400
     }
 }

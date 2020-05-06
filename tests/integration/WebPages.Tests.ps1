@@ -5,7 +5,7 @@ Describe 'Web Page Requests' {
         $Endpoint = "http://localhost:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
-            Import-Module -Name "$($using:PSScriptRoot)\..\..\..\src\Pode.psm1"
+            Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
             Start-PodeServer -RootPath $using:PSScriptRoot {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
@@ -74,12 +74,7 @@ Describe 'Web Page Requests' {
     }
 
     It 'responds with 404 for non-public static content' {
-        try {
-            Invoke-WebRequest -Uri "$($Endpoint)/images/custom_ruler.png" -Method Get -ErrorAction Stop
-        }
-        catch {
-            $_.Exception.Message.Contains('404') | Should Be $true
-        }
+        { Invoke-WebRequest -Uri "$($Endpoint)/images/custom_ruler.png" -Method Get -ErrorAction Stop } | Should Throw '404'
     }
 
     It 'responds with custom static content' {
