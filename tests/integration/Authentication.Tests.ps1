@@ -85,6 +85,6 @@ Describe 'Authentication Requests' {
     }
 
     It 'bearer - returns 400 for no token' {
-        { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer' } -ErrorAction Stop } | Should Throw 400
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer' } -ErrorAction Stop } | Should Throw '400'
     }
 }
