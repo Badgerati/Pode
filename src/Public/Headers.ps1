@@ -220,7 +220,7 @@ function Test-PodeHeaderSigned
     )
 
     $header = Get-PodeHeader -Name $Name
-    if (($null -eq $header) -or [string]::IsNullOrWhiteSpace($header)) {
+    if ([string]::IsNullOrWhiteSpace($header)) {
         return $false
     }
 

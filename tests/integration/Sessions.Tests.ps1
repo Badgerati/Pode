@@ -69,12 +69,14 @@ Describe 'Session Requests' {
         $content.Views | Should Be 1
         $result.Headers['pode.sid'] | Should Not Be $null
 
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $result.Headers['pode.sid'] }
+        $session = ($result.Headers['pode.sid'] | Select-Object -First 1)
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session }
         $content = ($result.Content | ConvertFrom-Json)
         $content.Result | Should Be 'OK'
         $content.Views | Should Be 2
 
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $result.Headers['pode.sid'] }
+        $session = ($result.Headers['pode.sid'] | Select-Object -First 1)
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session }
         $content = ($result.Content | ConvertFrom-Json)
         $content.Result | Should Be 'OK'
         $content.Views | Should Be 3
@@ -92,13 +94,15 @@ Describe 'Session Requests' {
         $content.Views | Should Be 1
         $result.Headers['pode.sid'] | Should Not Be $null
 
-        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $result.Headers['pode.sid'] }
+        $session = ($result.Headers['pode.sid'] | Select-Object -First 1)
+        $result = Invoke-WebRequest -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session }
         $content = ($result.Content | ConvertFrom-Json)
         $content.Result | Should Be 'OK'
         $content.Views | Should Be 2
 
         Start-Sleep -Seconds 6
 
-        { Invoke-RestMethod -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $result.Headers['pode.sid'] } -ErrorAction Stop } | Should Throw '401'
+        $session = ($result.Headers['pode.sid'] | Select-Object -First 1)
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/basic" -Method Post -Headers @{ 'pode.sid' = $session } -ErrorAction Stop } | Should Throw '401'
     }
 }
