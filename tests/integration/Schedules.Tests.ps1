@@ -45,6 +45,7 @@ Describe 'Schedules' {
     }
 
     AfterAll {
+        Receive-Job -Name 'Pode' | Out-Default
         Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Get | Out-Null
         Get-Job -Name 'Pode' | Remove-Job -Force
     }

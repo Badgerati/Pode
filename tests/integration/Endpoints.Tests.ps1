@@ -37,6 +37,7 @@ Describe 'Endpoint Requests' {
     }
 
     AfterAll {
+        Receive-Job -Name 'Pode' | Out-Default
         Invoke-RestMethod -Uri "$($Endpoint1)/close" -Method Get | Out-Null
         Get-Job -Name 'Pode' | Remove-Job -Force
     }
