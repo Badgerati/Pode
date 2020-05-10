@@ -354,7 +354,10 @@ function Write-PodeFileResponse
     $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
 
     # generate dynamic content
-    if (![string]::IsNullOrWhiteSpace($mainExt) -and (($mainExt -ieq 'pode') -or ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension))) {
+    if (![string]::IsNullOrWhiteSpace($mainExt) -and (
+        ($mainExt -ieq 'pode') -or
+        ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
+    )) {
         $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
 
         # get the sub-file extension, if empty, use original
