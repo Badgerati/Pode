@@ -131,6 +131,7 @@
         'Invoke-PodeSchedule',
         'Edit-PodeSchedule',
         'Set-PodeScheduleConcurrency',
+        'Get-PodeSchedule',
 
         # timers
         'Add-PodeTimer',
@@ -138,6 +139,7 @@
         'Clear-PodeTimers',
         'Invoke-PodeTimer',
         'Edit-PodeTimer',
+        'Get-PodeTimer',
 
         # middleware
         'Add-PodeMiddleware',

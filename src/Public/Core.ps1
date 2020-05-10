@@ -1236,6 +1236,50 @@ function Edit-PodeTimer
 
 <#
 .SYNOPSIS
+Returns any defined timers.
+
+.DESCRIPTION
+Returns any defined timers, with support for filtering.
+
+.PARAMETER Name
+Any timer Names to filter the timers.
+
+.EXAMPLE
+Get-PodeTimer
+
+.EXAMPLE
+Get-PodeTimer -Name Name1, Name2
+#>
+function Get-PodeTimer
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    $timers = $PodeContext.Timers.Values
+
+    # further filter by timer names
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $timers = @(foreach ($_name in $Name) {
+            foreach ($timer in $timers) {
+                if ($timer.Name -ine $_name) {
+                    continue
+                }
+
+                $timer
+            }
+        })
+    }
+
+    # return
+    return $timers
+}
+
+<#
+.SYNOPSIS
 Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
 
 .DESCRIPTION
@@ -1353,6 +1397,7 @@ function Add-PodeSchedule
         StartTime = $StartTime
         EndTime = $EndTime
         Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        CronsRaw = @($Cron)
         Limit = $Limit
         Count = 0
         Countable = ($Limit -gt 0)
@@ -1546,6 +1591,50 @@ function Edit-PodeSchedule
     if (!(Test-IsEmpty $ArgumentList)) {
         $PodeContext.Schedules[$Name].Arguments = $ArgumentList
     }
+}
+
+<#
+.SYNOPSIS
+Returns any defined schedules.
+
+.DESCRIPTION
+Returns any defined schedules, with support for filtering.
+
+.PARAMETER Name
+Any schedule Names to filter the schedules.
+
+.EXAMPLE
+Get-PodeSchedule
+
+.EXAMPLE
+Get-PodeSchedule -Name Name1, Name2
+#>
+function Get-PodeSchedule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    $schedules = $PodeContext.Schedules.Values
+
+    # further filter by schedule names
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $schedules = @(foreach ($_name in $Name) {
+            foreach ($schedule in $schedules) {
+                if ($schedule.Name -ine $_name) {
+                    continue
+                }
+
+                $schedule
+            }
+        })
+    }
+
+    # return
+    return $schedules
 }
 
 <#

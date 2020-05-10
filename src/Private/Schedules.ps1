@@ -1,6 +1,6 @@
-function Get-PodeSchedule
+function Find-PodeSchedule
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]

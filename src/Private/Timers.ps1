@@ -1,4 +1,4 @@
-function Get-PodeTimer
+function Find-PodeTimer
 {
     param (
         [Parameter(Mandatory=$true)]
