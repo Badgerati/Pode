@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.7.3
+
+```plain
+### Bugs
+* #554: Fixes an issue where HTML static files would be treated as dynamic files
+```
+
 ## v1.7.2
 
 ```plain
