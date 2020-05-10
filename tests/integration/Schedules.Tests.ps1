@@ -41,7 +41,7 @@ Describe 'Schedules' {
             }
         }
 
-        Start-Sleep -Seconds 3
+        Start-Sleep -Seconds 8
     }
 
     AfterAll {

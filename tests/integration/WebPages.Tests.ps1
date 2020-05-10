@@ -35,7 +35,7 @@ Describe 'Web Page Requests' {
             }
         }
 
-        Start-Sleep -Seconds 3
+        Start-Sleep -Seconds 8
     }
 
     AfterAll {
