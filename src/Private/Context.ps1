@@ -148,6 +148,11 @@ function New-PodeContext
         }
     }
 
+    # if we're inside a remote host, stop termination
+    if ($Host.Name -ieq 'ServerRemoteHost') {
+        $ctx.Server.DisableTermination = $true
+    }
+
     # set the IP address details
     $ctx.Server.Endpoints = @()
 

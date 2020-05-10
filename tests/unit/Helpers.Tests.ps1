@@ -1195,7 +1195,7 @@ Describe 'Close-PodeRunspaces' {
     }
 }
 
-Describe 'Close-PodeServer' {
+Describe 'Close-PodeServerInternal' {
     Mock Close-PodeRunspaces { }
     Mock Stop-PodeFileMonitor { }
     Mock Close-PodeDisposable { }
@@ -1204,19 +1204,19 @@ Describe 'Close-PodeServer' {
 
     It 'Closes out pode, but with no done flag' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
-        Close-PodeServer
+        Close-PodeServerInternal
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 
     It 'Closes out pode, but with the done flag' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
-        Close-PodeServer -ShowDoneMessage
+        Close-PodeServerInternal -ShowDoneMessage
         Assert-MockCalled Write-Host -Times 1 -Scope It
     }
 
     It 'Closes out pode, but with no done flag if serverless' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'Server'; 'IsServerless' = $true } }
-        Close-PodeServer -ShowDoneMessage
+        Close-PodeServerInternal -ShowDoneMessage
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 }

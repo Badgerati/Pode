@@ -180,11 +180,29 @@ function Start-PodeServer
     }
     finally {
         # clean the runspaces and tokens
-        Close-PodeServer -ShowDoneMessage:$ShowDoneMessage
+        Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
 
         # clean the session
         $PodeContext = $null
     }
+}
+
+<#
+.SYNOPSIS
+Closes the Pode server.
+
+.DESCRIPTION
+Closes the Pode server.
+
+.EXAMPLE
+Close-PodeServer
+#>
+function Close-PodeServer
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Tokens.Cancellation.Cancel()
 }
 
 <#
