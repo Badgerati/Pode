@@ -1,10 +1,10 @@
 Describe 'Endpoint Requests' {
 
     BeforeAll {
-        $Port1 = 9000
+        $Port1 = 50000
         $Endpoint1 = "http://localhost:$($Port1)"
 
-        $Port2 = 9001
+        $Port2 = 50001
         $Endpoint2 = "http://localhost:$($Port2)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
