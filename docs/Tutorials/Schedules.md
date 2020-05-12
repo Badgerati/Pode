@@ -1,6 +1,6 @@
 # Schedules
 
-A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, this can be changed by using the [`Set-PodeScheduleConcurrency`](../../Functions/Core/Set-PodeScheduleConcurrency) function.
+A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, but this can be changed by using the [`Set-PodeScheduleConcurrency`](../../Functions/Core/Set-PodeScheduleConcurrency) function.
 
 Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions), basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a defined end time.
 
@@ -44,6 +44,9 @@ Add-PodeSchedule -Name 'date' -Cron '@minutely' -ArgumentList @{ Name = 'Rick'; 
 }
 ```
 
+!!! important
+    In schedules, your scriptblock parameter names must be exact - including case-sensitivity. This is because the arguments are splatted into a runspace. If you pass in an argument called "Names", the param-block must have `$Names` exactly. Furthermore, the event parameter *must* be called `$Event`.
+
 ## Delayed Start
 
 The `-StartTime <datetime>` parameter will cause the Schedule to only be triggered after the date/time defined. For example, if you have a schedule set to trigger at 00:05 every Tuesday, and you pass `-StartTime [DateTime]::Now.AddMonths(2)`, then the schedule will only start trigger on Tuesdays in 2 months time.
@@ -85,7 +88,42 @@ For example, to create a schedule from a file that will output `Hello, world` ev
 }
 ```
 
-* Timer
+* Schedule
 ```powershell
 Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './Schedules/File.ps1'
 ```
+
+## Getting Schedules
+
+The [`Get-PodeSchedule`] helper function will allow you to retrieve a list of schedules configured within Pode. You can use it to retrieve all of the schedules, or supply filters to retrieve specific ones.
+
+To retrieve all of the schedules, you can call the function will no parameters. To filter, here are some examples:
+
+```powershell
+# one schedule by name
+Get-PodeSchedule -Name Name1
+
+# multiple schedules by name
+Get-PodeSchedule -Name Name1, Name2
+```
+
+## Schedule Object
+
+!!! warning
+    Be careful if you choose to edit these objects, as they will affect the server.
+
+The following is the structure of the Schedule object internally, as well as the object that is returned from [`Get-PodeSchedule`]:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| Name | string | The name of the Schedule |
+| StartTime | datetime | The delayed start time of the Schedule - null if run at server start |
+| EndTime | datetime | The end time of the Schedule - null if running indefinitely |
+| Crons | hashtable[] | The cron expressions of the Schedule, but parsed into an internal format |
+| CronsRaw | string[] | The raw cron expressions that were supplied |
+| Limit | int | The number of times the Schedule should run - 0 if running indefinitely |
+| Count | int | The number of times the Schedule has run - this will only increment if the Schedule is limited |
+| Script | scriptblock | The scriptblock of the Schedule |
+| Arguments | hashtable | The arguments supplied from ArgumentList |
+| OnStart | bool | Should the Schedule run once when the server is starting, or once the server has fully loaded |
+| Completed | bool | Has the Schedule completed all of its runs - only set if the Schedule is limited |

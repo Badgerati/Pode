@@ -2,26 +2,26 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
 Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
-Describe 'Get-PodeSchedule' {
+Describe 'Find-PodeSchedule' {
     Context 'Invalid parameters supplied' {
         It 'Throw null name parameter error' {
-            { Get-PodeSchedule -Name $null } | Should Throw 'The argument is null or empty'
+            { Find-PodeSchedule -Name $null } | Should Throw 'The argument is null or empty'
         }
 
         It 'Throw empty name parameter error' {
-            { Get-PodeSchedule -Name ([string]::Empty) } | Should Throw 'The argument is null or empty'
+            { Find-PodeSchedule -Name ([string]::Empty) } | Should Throw 'The argument is null or empty'
         }
     }
 
     Context 'Valid values supplied' {
         It 'Returns null as the schedule does not exist' {
             $PodeContext = @{ 'Schedules' = @{}; }
-            Get-PodeSchedule -Name 'test' | Should Be $null
+            Find-PodeSchedule -Name 'test' | Should Be $null
         }
 
         It 'Returns schedule for name' {
             $PodeContext = @{ 'Schedules' = @{ 'test' = @{ 'Name' = 'test'; }; }; }
-            $result = (Get-PodeSchedule -Name 'test')
+            $result = (Find-PodeSchedule -Name 'test')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Name | Should Be 'test'
@@ -129,6 +129,55 @@ Describe 'Add-PodeSchedule' {
         $schedule.Script | Should Not Be $null
         $schedule.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
         $schedule.Crons.Length | Should Be 2
+    }
+}
+
+Describe 'Get-PodeSchedule' {
+    It 'Returns no schedules' {
+        $PodeContext = @{ Schedules = @{} }
+        $schedules = Get-PodeSchedule
+        $schedules.Length | Should Be 0
+    }
+
+    It 'Returns 1 schedule by name' {
+        $PodeContext = @{ Schedules = @{} }
+        $start = ([DateTime]::Now.AddHours(3))
+        $end = ([DateTime]::Now.AddHours(5))
+
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        $schedules = Get-PodeSchedule
+        $schedules.Length | Should Be 1
+
+        $schedules.Name | Should Be 'test1'
+        $schedules.StartTime | Should Be $start
+        $schedules.EndTime | Should Be $end
+        $schedules.Limit | Should Be 0
+    }
+
+    It 'Returns 2 schedules by name' {
+        $PodeContext = @{ Schedules = @{} }
+        $start = ([DateTime]::Now.AddHours(3))
+        $end = ([DateTime]::Now.AddHours(5))
+
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        Add-PodeSchedule -Name 'test2' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        Add-PodeSchedule -Name 'test3' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+
+        $schedules = Get-PodeSchedule -Name test1, test2
+        $schedules.Length | Should Be 2
+    }
+
+    It 'Returns all schedules' {
+        $PodeContext = @{ Schedules = @{} }
+        $start = ([DateTime]::Now.AddHours(3))
+        $end = ([DateTime]::Now.AddHours(5))
+
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        Add-PodeSchedule -Name 'test2' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        Add-PodeSchedule -Name 'test3' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+
+        $schedules = Get-PodeSchedule
+        $schedules.Length | Should Be 3
     }
 }
 
