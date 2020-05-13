@@ -97,7 +97,7 @@ function Start-PodeWebServer
                         Response = $response
                         Request = $request
                         Lockable = $PodeContext.Lockable
-                        Path = ($request.RawUrl -isplit "\?")[0]
+                        Path = [System.Web.HttpUtility]::UrlDecode(($request.RawUrl -isplit "\?")[0])
                         Method = $request.HttpMethod.ToLowerInvariant()
                         Protocol = $request.Url.Scheme
                         Endpoint = $request.Url.Authority

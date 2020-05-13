@@ -60,6 +60,8 @@ function Start-PodeAzFuncServer
                 $WebEvent.Path = "/api/$($Data.sys.MethodName)"
             }
 
+            $WebEvent.Path = [System.Web.HttpUtility]::UrlDecode($WebEvent.Path)
+
             # set pode in server response header
             Set-PodeServerHeader -Type 'Kestrel'
 
@@ -142,7 +144,7 @@ function Start-PodeAwsLambdaServer
                 Response = $response
                 Request = $request
                 Lockable = $PodeContext.Lockable
-                Path = $request.path
+                Path = [System.Web.HttpUtility]::UrlDecode($request.path)
                 Method = $request.httpMethod.ToLowerInvariant()
                 Query = $request.queryStringParameters
                 Protocol = $null
