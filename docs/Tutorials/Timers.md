@@ -84,11 +84,11 @@ The following is the structure of the Timer object internally, as well as the ob
 | ---- | ---- | ----------- |
 | Name | string | The name of the Timer |
 | Interval | int | How often the Timer runs, defined in seconds |
-| Limit | int | The number of times the Timer should run - 0 if running indefinitely |
+| Limit | int | The number of times the Timer should run - 0 if running forever |
 | Skip | int | The number of times the Timer should skip being triggered |
-| Count | int | The number of times the Timer has run - this will only increment if the Timer is limited |
-| NextTick | datetime | The datetime the Timer will next be triggered |
+| Count | int | The number of times the Timer has run |
+| NextTriggerTime | datetime | The datetime the Timer will next be triggered |
 | Script | scriptblock | The scriptblock of the Timer |
 | Arguments | object[] | The arguments supplied from ArgumentList |
 | OnStart | bool | Should the Timer run once when the server is starting, or once the server has fully loaded |
-| Completed | bool | Has the Timer completed all of its runs - only set if the Timer is limited |
+| Completed | bool | Has the Timer completed all of its runs |

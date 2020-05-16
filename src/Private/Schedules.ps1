@@ -24,13 +24,11 @@ function Start-PodeScheduleRunspace
             Where-Object {
                 $_.OnStart
             } | ForEach-Object {
-                if (Invoke-PodeInternalSchedule -Schedule $_) {
-                    $_.Completed = $true
-                }
+                Invoke-PodeInternalSchedule -Schedule $_
             }
 
-        # remove any schedules
-        Remove-PodeInternalSchedules -Now $_now
+        # complete any schedules
+        Complete-PodeInternalSchedules -Now $_now
 
         # first, sleep for a period of time to get to 00 seconds (start of minute)
         Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
@@ -46,13 +44,11 @@ function Start-PodeScheduleRunspace
                     (($null -eq $_.EndTime) -or ($_.EndTime -ge $_now)) -and
                     (Test-PodeCronExpressions -Expressions $_.Crons -DateTime $_now) -and !$_.Completed
                 } | ForEach-Object {
-                    if (Invoke-PodeInternalSchedule -Schedule $_) {
-                        $_.Completed = $true
-                    }
+                    Invoke-PodeInternalSchedule -Schedule $_
                 }
 
-            # remove any schedules
-            Remove-PodeInternalSchedules -Now $_now
+            # complete any schedules
+            Complete-PodeInternalSchedules -Now $_now
 
             # cron expression only goes down to the minute, so sleep for 1min
             Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
@@ -62,7 +58,7 @@ function Start-PodeScheduleRunspace
     Add-PodeRunspace -Type 'Main' -ScriptBlock $script
 }
 
-function Remove-PodeInternalSchedules
+function Complete-PodeInternalSchedules
 {
     param(
         [Parameter(Mandatory=$true)]
@@ -92,25 +88,22 @@ function Invoke-PodeInternalSchedule
     )
 
     $Schedule.OnStart = $false
-    $remove = $false
 
     # increment total number of triggers for the schedule
-    if ($Schedule.Countable) {
-        $Schedule.Count++
-        $Schedule.Countable = ($Schedule.Count -lt $Schedule.Limit)
-    }
+    $Schedule.Count++
 
     # check if we have hit the limit, and remove
-    if (($Schedule.Limit -ne 0) -and ($Schedule.Count -ge $Schedule.Limit)) {
-        $remove = $true
+    if (($Schedule.Limit -gt 0) -and ($Schedule.Count -ge $Schedule.Limit)) {
+        $Schedule.Completed = $true
     }
 
     # trigger the schedules logic
     Invoke-PodeInternalScheduleLogic -Schedule $Schedule
 
     # reset the cron if it's random
-    $Schedule.Crons = Reset-PodeRandomCronExpressions -Expressions $Schedule.Crons
-    return $remove
+    if (!$Schedule.Completed) {
+        $Schedule.Crons = Reset-PodeRandomCronExpressions -Expressions $Schedule.Crons
+    }
 }
 
 function Invoke-PodeInternalScheduleLogic

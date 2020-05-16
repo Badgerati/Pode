@@ -12,20 +12,20 @@ function Get-PodeCronFields
 function Get-PodeCronFieldConstraints
 {
     return @{
-        'MinMax' = @(
+        MinMax = @(
             @(0, 59),
             @(0, 23),
             @(1, 31),
             @(1, 12),
             @(0, 6)
-        );
-        'DaysInMonths' = @(
+        )
+        DaysInMonths = @(
             31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-        );
-        'Months' = @(
+        )
+        Months = @(
             'January', 'February', 'March', 'April', 'May', 'June', 'July',
             'August', 'September', 'October', 'November', 'December'
-        );
+        )
     }
 }
 
@@ -38,7 +38,7 @@ function Get-PodeCronPredefined
         '@daily' = '0 0 * * *';
         '@weekly' = '0 0 * * 0';
         '@monthly' = '0 0 1 * *';
-        '@quarterly' = '0 0 1 1,4,7,10';
+        '@quarterly' = '0 0 1 1,4,7,10 *';
         '@yearly' = '0 0 1 1 *';
         '@annually' = '0 0 1 1 *';
 
@@ -55,29 +55,29 @@ function Get-PodeCronPredefined
 function Get-PodeCronFieldAliases
 {
     return @{
-        'Month' = @{
-            'Jan' = 1;
-            'Feb' = 2;
-            'Mar' = 3;
-            'Apr' = 4;
-            'May' = 5;
-            'Jun' = 6;
-            'Jul' = 7;
-            'Aug' = 8;
-            'Sep' = 9;
-            'Oct' = 10;
-            'Nov' = 11;
-            'Dec' = 12;
-        };
-        'DayOfWeek' = @{
-            'Sun' = 0;
-            'Mon' = 1;
-            'Tue' = 2;
-            'Wed' = 3;
-            'Thu' = 4;
-            'Fri' = 5;
-            'Sat' = 6;
-        };
+        Month = @{
+            Jan = 1
+            Feb = 2
+            Mar = 3
+            Apr = 4
+            May = 5
+            Jun = 6
+            Jul = 7
+            Aug = 8
+            Sep = 9
+            Oct = 10
+            Nov = 11
+            Dec = 12
+        }
+        DayOfWeek = @{
+            Sun = 0
+            Mon = 1
+            Tue = 2
+            Wed = 3
+            Thu = 4
+            Fri = 5
+            Sat = 6
+        }
     }
 }
 
@@ -130,10 +130,11 @@ function ConvertFrom-PodeCronExpression
     for ($i = 0; $i -lt $atoms.Length; $i++)
     {
         $_cronExp = @{
-            'Range' = $null;
-            'Values' = $null;
-            'Constraints' = $null;
-            'Random' = $false;
+            Range = $null
+            Values = $null
+            Constraints = $null
+            Random = $false
+            WildCard = $false
         }
 
         $_atom = $atoms[$i]
@@ -142,20 +143,16 @@ function ConvertFrom-PodeCronExpression
         $_aliases = $aliases[$_field]
 
         # replace day of week and months with numbers
-        switch ($_field)
-        {
-            { $_field -ieq 'month' -or $_field -ieq 'dayofweek' }
-                {
-                    while ($_atom -imatch $aliasRgx) {
-                        $_alias = $_aliases[$Matches['tag']]
-                        if ($null -eq $_alias) {
-                            throw "Invalid $($_field) alias found: $($Matches['tag'])"
-                        }
-
-                        $_atom = $_atom -ireplace $Matches['tag'], $_alias
-                        $_atom -imatch $aliasRgx | Out-Null
-                    }
+        if (@('month', 'dayofweek') -icontains $_field) {
+            while ($_atom -imatch $aliasRgx) {
+                $_alias = $_aliases[$Matches['tag']]
+                if ($null -eq $_alias) {
+                    throw "Invalid $($_field) alias found: $($Matches['tag'])"
                 }
+
+                $_atom = $_atom -ireplace $Matches['tag'], $_alias
+                $_atom -imatch $aliasRgx | Out-Null
+            }
         }
 
         # ensure atom is a valid value
@@ -165,6 +162,7 @@ function ConvertFrom-PodeCronExpression
 
         # replace * with min/max constraint
         if ($_atom -ieq '*') {
+            $_cronExp.WildCard = $true
             $_atom = ($_constraint -join '-')
         }
 
@@ -255,7 +253,7 @@ function ConvertFrom-PodeCronExpression
     }
 
     # post validation for month/days in month
-    if ($null -ne $cron['Month'].Values -and $null -ne $cron['DayOfMonth'].Values)
+    if (($null -ne $cron['Month'].Values) -and ($null -ne $cron['DayOfMonth'].Values))
     {
         foreach ($mon in $cron['Month'].Values) {
             foreach ($day in $cron['DayOfMonth'].Values) {
@@ -348,15 +346,10 @@ function Test-PodeCronExpression
 
     function Test-RangeAndValue($AtomContraint, $NowValue) {
         if ($null -ne $AtomContraint.Range) {
-            if ($NowValue -lt $AtomContraint.Range.Min -or $NowValue -gt $AtomContraint.Range.Max) {
-                return $false
-            }
-        }
-        elseif ($AtomContraint.Values -inotcontains $NowValue) {
-            return $false
+            return (!(($NowValue -lt $AtomContraint.Range.Min) -or ($NowValue -gt $AtomContraint.Range.Max)))
         }
 
-        return $true
+        return ($AtomContraint.Values -icontains $NowValue)
     }
 
     # current time
@@ -391,4 +384,135 @@ function Test-PodeCronExpression
 
     # date is valid
     return $true
+}
+
+function Get-PodeCronNextTrigger
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Expression,
+
+        [Parameter()]
+        $DateTime = $null
+    )
+
+    # start from the current time, if a start time not defined
+    if ($null -eq $DateTime) {
+        $DateTime = [datetime]::Now
+    }
+    $DateTime = $DateTime.AddMinutes(1)
+
+    # the next time to trigger
+    $NextTime = [datetime]::new($DateTime.Year, $DateTime.Month, $DateTime.Day, $DateTime.Hour, $DateTime.Minute, 0)
+
+    # first, is the current time valid?
+    if (Test-PodeCronExpression -Expression $Expression -DateTime $NextTime) {
+        return $NextTime
+    }
+
+    # functions for getting values
+    function Get-ClosestValue($AtomContraint, $NowValue) {
+        $_values = $AtomContraint.Values
+        if ($null -eq $_values) {
+            $_values = ($AtomContraint.Range.Min..$AtomContraint.Range.Max)
+        }
+
+        if (($_values.Length -eq 1) -or ($_values[-1] -lt $NowValue) -or ($_values[0] -gt $NowValue)) {
+            return $_values[0]
+        }
+
+        return ($_values -ge $NowValue)[0]
+    }
+
+    # loop until we get a date
+    while ($true)
+    {
+        # check the minute
+        if (!$Expression.Minute.WildCard) {
+            $minute = Get-ClosestValue -AtomContraint $Expression.Minute -NowValue $NextTime.Minute
+            if ($minute -lt $NextTime.Minute) {
+                $NextTime = $NextTime.AddHours(1)
+            }
+
+            $NextTime = $NextTime.AddMinutes($minute - $NextTime.Minute)
+        }
+
+        # check hour
+        if (!$Expression.Hour.WildCard) {
+            $hour = Get-ClosestValue -AtomContraint $Expression.Hour -NowValue $NextTime.Hour
+            if ($hour -lt $NextTime.Hour) {
+                $NextTime = $NextTime.AddDays(1)
+            }
+
+            $_hour = $NextTime.Hour
+            $NextTime = $NextTime.AddHours($hour - $NextTime.Hour)
+            if ($_hour -ne $hour) {
+                $NextTime = [datetime]::new($NextTime.Year, $NextTime.Month, $NextTime.Day, $NextTime.Hour, 0, 0)
+                continue
+            }
+        }
+
+        # check day
+        if (!$Expression.DayOfMonth.WildCard) {
+            $day = Get-ClosestValue -AtomContraint $Expression.DayOfMonth -NowValue $NextTime.Day
+            if (($day -lt $NextTime.Day) -or ($day -gt [datetime]::DaysInMonth($NextTime.Year, $NextTime.Month))) {
+                $NextTime = $NextTime.AddMonths(1)
+            }
+
+            if ($day -gt [datetime]::DaysInMonth($NextTime.Year, $NextTime.Month)) {
+                $NextTime = [datetime]::new($NextTime.Year, $NextTime.Month, 1, 0, 0, 0)
+                continue
+            }
+
+            $_day = $NextTime.Day
+            $NextTime = $NextTime.AddDays($day - $NextTime.Day)
+            if ($_day -ne $day) {
+                $NextTime = [datetime]::new($NextTime.Year, $NextTime.Month, $NextTime.Day, 0, 0, 0)
+                continue
+            }
+        }
+
+        # check month
+        if (!$Expression.Month.WildCard) {
+            $month = Get-ClosestValue -AtomContraint $Expression.Month -NowValue $NextTime.Month
+            if ($month -lt $NextTime.Month) {
+                $NextTime = $NextTime.AddYears(1)
+            }
+
+            $_month = $NextTime.Month
+            $NextTime = $NextTime.AddMonths($month - $NextTime.Month)
+            if ($_month -ne $month) {
+                $NextTime = [datetime]::new($NextTime.Year, $NextTime.Month, 1, 0, 0, 0)
+                continue
+            }
+        }
+
+        # check day of week
+        if (!$Expression.DayOfWeek.WildCard) {
+            $doweek = Get-ClosestValue -AtomContraint $Expression.DayOfWeek -NowValue $NextTime.DayOfWeek
+
+            $_doweek = $NextTime.DayOfWeek
+            if ($doweek -lt $NextTime.DayOfWeek) {
+                $NextTime = $NextTime.AddDays(7 - ($NextTime.DayOfWeek - $doweek))
+            }
+            elseif ($doweek -gt $NextTime.DayOfWeek) {
+                $NextTime = $NextTime.AddDays($doweek - $NextTime.DayOfWeek)
+            }
+
+            if ($_doweek -ne $doweek) {
+                $NextTime = [datetime]::new($NextTime.Year, $NextTime.Month, $NextTime.Day, 0, 0, 0)
+                continue
+            }
+        }
+
+        break
+    }
+
+    # before we return, make sure the time is valid
+    if (!(Test-PodeCronExpression -Expression $Expression -DateTime $NextTime)) {
+        throw "Looks like something went wrong trying to calculate the next trigger datetime"
+    }
+
+    return $NextTime
 }

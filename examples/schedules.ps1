@@ -13,6 +13,7 @@ Start-PodeServer {
     # schedule minutely using predefined cron
     Add-PodeSchedule -Name 'predefined' -Cron '@minutely' -Limit 2 -ScriptBlock {
         'hello, world!' | Out-Default
+        Get-PodeSchedule -Name 'predefined' | Out-Default
     }
 
     Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './scripts/schedule.ps1'
@@ -28,7 +29,7 @@ Start-PodeServer {
     }
 
     # schedule to run every 5 past the hour, starting in 2hrs
-    Add-PodeSchedule -Name 'hourly-start' -Cron '5 * * * *' -ScriptBlock {
+    Add-PodeSchedule -Name 'hourly-start' -Cron '5,7,9 * * * *' -ScriptBlock {
         # logic
     } -StartTime ([DateTime]::Now.AddHours(2))
 

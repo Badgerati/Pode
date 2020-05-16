@@ -19,7 +19,7 @@ For example, if you wanted to run a schedule that triggers every midnight on a T
 Whereas if you wanted a schedule to trigger on the 15th of each month, at 1am:
 
 ```plain
-0 1 15 * * *
+0 1 15 * *
 ```
 
 ## Predefined
@@ -33,7 +33,7 @@ The following table outlines some of the predefined cron expressions supported b
 | @daily | `0 0 * * *` |
 | @weekly | `0 0 * * 0` |
 | @monthly | `0 0 1 * *` |
-| @quarterly | `0 0 1 1,4,8,7,10` |
+| @quarterly | `0 0 1 1,4,8,7,10 *` |
 | @yearly | `0 0 1 1 *` |
 | @annually | `0 0 1 1 *` |
 | @twice-hourly | `0,30 * * * *` |

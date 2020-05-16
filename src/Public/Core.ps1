@@ -1075,9 +1075,9 @@ function Add-PodeTimer
     }
 
     # calculate the next tick time (based on Skip)
-    $NextTick = [DateTime]::Now.AddSeconds($Interval)
+    $NextTriggerTime = [DateTime]::Now.AddSeconds($Interval)
     if ($Skip -gt 1) {
-        $NextTick = $NextTick.AddSeconds($Interval * $Skip)
+        $NextTriggerTime = $NextTriggerTime.AddSeconds($Interval * $Skip)
     }
 
     # add the timer
@@ -1087,8 +1087,7 @@ function Add-PodeTimer
         Limit = $Limit
         Count = 0
         Skip = $Skip
-        Countable = ($Limit -gt 0)
-        NextTick = $NextTick
+        NextTriggerTime = $NextTriggerTime
         Script = $ScriptBlock
         Arguments = $ArgumentList
         OnStart = $OnStart
@@ -1400,7 +1399,6 @@ function Add-PodeSchedule
         CronsRaw = @($Cron)
         Limit = $Limit
         Count = 0
-        Countable = ($Limit -gt 0)
         Script = $ScriptBlock
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart = $OnStart

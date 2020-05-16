@@ -48,7 +48,7 @@ Describe 'Get-PodeCronPredefined' {
         $values['@daily'] | Should Be '0 0 * * *'
         $values['@weekly'] | Should Be '0 0 * * 0'
         $values['@monthly'] | Should Be '0 0 1 * *'
-        $values['@quarterly'] | Should Be '0 0 1 1,4,7,10'
+        $values['@quarterly'] | Should Be '0 0 1 1,4,7,10 *'
         $values['@yearly'] | Should Be '0 0 1 1 *'
         $values['@annually'] | Should Be '0 0 1 1 *'
         $values['@twice-hourly'] | Should Be '0,30 * * * *'
@@ -487,7 +487,74 @@ Describe 'Test-PodeCronExpression'{
     }
 }
 
+Describe 'Get-PodeCronNextTrigger' {
+    $inputDate = [datetime]::new(2020, 1, 1)
 
+    It 'Returns the next minute' {
+        $exp = '* * * * *'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2020, 1, 1, 0, 1, 0))
+    }
 
+    It 'Returns the next hour' {
+        $exp = '0 * * * *'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2020, 1, 1, 1, 0, 0))
+    }
 
+    It 'Returns the next day' {
+        $exp = '0 0 * * *'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2020, 1, 2, 0, 0, 0))
+    }
 
+    It 'Returns the next month' {
+        $exp = '0 0 1 * *'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2020, 2, 1, 0, 0, 0))
+    }
+
+    It 'Returns the next year' {
+        $exp = '0 0 1 1 *'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2021, 1, 1, 0, 0, 0))
+    }
+
+    It 'Returns the friday 3rd' {
+        $exp = '0 0 * 1 FRI'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2020, 1, 3, 0, 0, 0))
+    }
+
+    It 'Returns the 2023 friday' {
+        $exp = '0 0 13 1 FRI'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2023, 1, 13, 0, 0, 0))
+    }
+
+    $inputDate = [datetime]::new(2020, 1, 15, 2, 30, 0)
+
+    It 'Returns the minute but next hour' {
+        $exp = '20 * * * *'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2020, 1, 15, 3, 20, 0))
+    }
+
+    It 'Returns the later minute but same hour' {
+        $exp = '20,40 * * * *'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2020, 1, 15, 2, 40, 0))
+    }
+
+    It 'Returns the next minute but same hour' {
+        $exp = '20-40 * * * *'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2020, 1, 15, 2, 31, 0))
+    }
+
+    It 'Returns the a very specific date' {
+        $exp = '37 13 5 2 FRI'
+        $cron = ConvertFrom-PodeCronExpressions -Expressions $exp
+        Get-PodeCronNextTrigger -Expression $cron -DateTime $inputDate | Should Be ([datetime]::new(2021, 2, 5, 13, 37, 0))
+    }
+}
