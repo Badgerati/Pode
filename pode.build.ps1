@@ -101,6 +101,17 @@ function Invoke-PodeBuildInstall($name, $version)
     }
 }
 
+function Install-PodeBuildModule($name)
+{
+    if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions.$name })) {
+        return
+    }
+
+    Write-Host "Installing $($name)"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    Install-Module -Name $name -Scope CurrentUser -RequiredVersion $Versions.$name -Force -SkipPublisherCheck
+}
+
 
 <#
 # Helper Tasks
@@ -152,18 +163,12 @@ task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
 # Synopsis: Install dependencies for running tests
 task TestDeps {
     # install pester
-    if (((Get-Module -ListAvailable Pester) | Where-Object { $_.Version -ieq $Versions.Pester }) -eq $null) {
-        Write-Host 'Installing Pester'
-        Install-Module -Name Pester -Scope CurrentUser -RequiredVersion $Versions.Pester -Force -SkipPublisherCheck
-    }
+    Install-PodeBuildModule Pester
 
     # install PSCoveralls
     if (Test-PodeBuildCanCodeCoverage)
     {
-        if (((Get-Module -ListAvailable PSCoveralls) | Where-Object { $_.Version -ieq $Versions.PSCoveralls }) -eq $null) {
-            Write-Host 'Installing PSCoveralls'
-            Install-Module -Name PSCoveralls -Scope CurrentUser -RequiredVersion $Versions.PSCoveralls -Force -SkipPublisherCheck
-        }
+        Install-PodeBuildModule PSCoveralls
     }
 }
 
@@ -180,10 +185,7 @@ task DocsDeps ChocoDeps, {
     }
 
     # install platyps
-    if (((Get-Module -ListAvailable PlatyPS) | Where-Object { $_.Version -ieq $Versions.PlatyPS }) -eq $null) {
-        Write-Host 'Installing PlatyPS'
-        Install-Module -Name PlatyPS -Scope CurrentUser -RequiredVersion $Versions.PlatyPS -Force -SkipPublisherCheck
-    }
+    Install-PodeBuildModule PlatyPS
 }
 
 
