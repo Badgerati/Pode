@@ -433,7 +433,7 @@ function Get-PodeCronNextTrigger
         return $NextTime
     }
 
-    # functions for getting values
+    # functions for getting the closest value
     function Get-ClosestValue($AtomContraint, $NowValue) {
         $_values = $AtomContraint.Values
         if ($null -eq $_values) {
@@ -533,11 +533,11 @@ function Get-PodeCronNextTrigger
 
     # before we return, make sure the time is valid
     if (!(Test-PodeCronExpression -Expression $Expression -DateTime $NextTime)) {
-        throw "Looks like something went wrong trying to calculate the next trigger datetime"
+        throw "Looks like something went wrong trying to calculate the next trigger datetime: $($NextTime)"
     }
 
     # if before the start or after end then return null
-    if (($NextTime -lt $StartTime) -or (($null -ne $EndTime) -and ($NextTime -ge $EndTime))) {
+    if (($NextTime -lt $StartTime) -or (($null -ne $EndTime) -and ($NextTime -gt $EndTime))) {
         return $null
     }
 
