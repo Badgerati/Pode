@@ -1609,11 +1609,20 @@ Returns any defined schedules, with support for filtering.
 .PARAMETER Name
 Any schedule Names to filter the schedules.
 
+.PARAMETER StartTime
+An optional StartTime to only return Schedules that will trigger after this date.
+
+.PARAMETER EndTime
+An optional EndTime to only return Schedules that will trigger before this date.
+
 .EXAMPLE
 Get-PodeSchedule
 
 .EXAMPLE
 Get-PodeSchedule -Name Name1, Name2
+
+.EXAMPLE
+Get-PodeSchedule -Name Name1, Name2 -StartTime [datetime]::new(2020, 3, 1) -EndTime [datetime]::new(2020, 3, 31)
 #>
 function Get-PodeSchedule
 {
@@ -1621,7 +1630,13 @@ function Get-PodeSchedule
     param(
         [Parameter()]
         [string[]]
-        $Name
+        $Name,
+
+        [Parameter()]
+        $StartTime = $null,
+
+        [Parameter()]
+        $EndTime = $null
     )
 
     $schedules = $PodeContext.Schedules.Values
@@ -1636,6 +1651,50 @@ function Get-PodeSchedule
 
                 $schedule
             }
+        })
+    }
+
+    # filter by some start time
+    if ($null -ne $StartTime) {
+        $schedules = @(foreach ($schedule in $schedules) {
+            if (($null -ne $schedule.StartTime) -and ($StartTime -lt $schedule.StartTime)) {
+                continue
+            }
+
+            $_end = $EndTime
+            if ($null -eq $_end) {
+                $_end = $schedule.EndTime
+            }
+
+            if (($null -ne $schedule.EndTime) -and
+                (($StartTime -gt $schedule.EndTime) -or
+                    ((Get-PodeScheduleNextTrigger -Name $schedule.Name -DateTime $StartTime) -gt $_end))) {
+                continue
+            }
+
+            $schedule
+        })
+    }
+
+    # filter by some end time
+    if ($null -ne $EndTime) {
+        $schedules = @(foreach ($schedule in $schedules) {
+            if (($null -ne $schedule.EndTime) -and ($EndTime -gt $schedule.EndTime)) {
+                continue
+            }
+
+            $_start = $StartTime
+            if ($null -eq $_start) {
+                $_start = $schedule.StartTime
+            }
+
+            if (($null -ne $schedule.StartTime) -and
+                (($EndTime -lt $schedule.StartTime) -or
+                    ((Get-PodeScheduleNextTrigger -Name $schedule.Name -DateTime $_start) -gt $EndTime))) {
+                continue
+            }
+
+            $schedule
         })
     }
 

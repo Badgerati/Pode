@@ -40,9 +40,10 @@ function Start-PodeScheduleRunspace
             # select the schedules that need triggering
             $PodeContext.Schedules.Values |
                 Where-Object {
+                    !$_.Completed -and
                     (($null -eq $_.StartTime) -or ($_.StartTime -le $_now)) -and
                     (($null -eq $_.EndTime) -or ($_.EndTime -ge $_now)) -and
-                    (Test-PodeCronExpressions -Expressions $_.Crons -DateTime $_now) -and !$_.Completed
+                    (Test-PodeCronExpressions -Expressions $_.Crons -DateTime $_now)
                 } | ForEach-Object {
                     Invoke-PodeInternalSchedule -Schedule $_
                 }
