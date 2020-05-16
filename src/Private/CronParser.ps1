@@ -386,6 +386,25 @@ function Test-PodeCronExpression
     return $true
 }
 
+function Get-PodeCronNextEarliestTrigger
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        $Expressions,
+
+        [Parameter()]
+        $StartTime = $null,
+
+        [Parameter()]
+        $EndTime = $null
+    )
+
+    return (@($Expressions) | Foreach-Object {
+        Get-PodeCronNextTrigger -Expression $_ -StartTime $StartTime -EndTime $EndTime
+    } | Where-Object { $null -ne $_ } | Sort-Object | Select-Object -First 1)
+}
+
 function Get-PodeCronNextTrigger
 {
     param(
@@ -394,17 +413,20 @@ function Get-PodeCronNextTrigger
         $Expression,
 
         [Parameter()]
-        $DateTime = $null
+        $StartTime = $null,
+
+        [Parameter()]
+        $EndTime = $null
     )
 
     # start from the current time, if a start time not defined
-    if ($null -eq $DateTime) {
-        $DateTime = [datetime]::Now
+    if ($null -eq $StartTime) {
+        $StartTime = [datetime]::Now
     }
-    $DateTime = $DateTime.AddMinutes(1)
+    $StartTime = $StartTime.AddMinutes(1)
 
     # the next time to trigger
-    $NextTime = [datetime]::new($DateTime.Year, $DateTime.Month, $DateTime.Day, $DateTime.Hour, $DateTime.Minute, 0)
+    $NextTime = [datetime]::new($StartTime.Year, $StartTime.Month, $StartTime.Day, $StartTime.Hour, $StartTime.Minute, 0)
 
     # first, is the current time valid?
     if (Test-PodeCronExpression -Expression $Expression -DateTime $NextTime) {
@@ -512,6 +534,11 @@ function Get-PodeCronNextTrigger
     # before we return, make sure the time is valid
     if (!(Test-PodeCronExpression -Expression $Expression -DateTime $NextTime)) {
         throw "Looks like something went wrong trying to calculate the next trigger datetime"
+    }
+
+    # if before the start or after end then return null
+    if (($NextTime -lt $StartTime) -or (($null -ne $EndTime) -and ($NextTime -ge $EndTime))) {
+        return $null
     }
 
     return $NextTime

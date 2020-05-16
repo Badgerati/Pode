@@ -61,7 +61,7 @@ Add-PodeTimer -Name 'from-file' -Interval 2 -FilePath './Timers/File.ps1'
 
 ## Getting Timers
 
-The [`Get-PodeTimer`] helper function will allow you to retrieve a list of timers configured within Pode. You can use it to retrieve all of the timers, or supply filters to retrieve specific ones.
+The [`Get-PodeTimer`](../../Functions/Core/Get-PodeTimer) helper function will allow you to retrieve a list of timers configured within Pode. You can use it to retrieve all of the timers, or supply filters to retrieve specific ones.
 
 To retrieve all of the timers, you can call the function will no parameters. To filter, here are some examples:
 
@@ -78,7 +78,7 @@ Get-PodeTimer -Name Name1, Name2
 !!! warning
     Be careful if you choose to edit these objects, as they will affect the server.
 
-The following is the structure of the Timer object internally, as well as the object that is returned from [`Get-PodeTimer`]:
+The following is the structure of the Timer object internally, as well as the object that is returned from [`Get-PodeTimer`](../../Functions/Core/Get-PodeTimer):
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

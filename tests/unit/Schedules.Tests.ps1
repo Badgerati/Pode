@@ -31,6 +31,7 @@ Describe 'Find-PodeSchedule' {
 
 Describe 'Add-PodeSchedule' {
     Mock 'ConvertFrom-PodeCronExpression' { @{} }
+    Mock 'Get-PodeCronNextEarliestTrigger' { [datetime]::new(2020, 1, 1) }
 
     It 'Throws error because schedule already exists' {
         $PodeContext = @{ 'Schedules' = @{ 'test' = $null }; }
@@ -178,6 +179,34 @@ Describe 'Get-PodeSchedule' {
 
         $schedules = Get-PodeSchedule
         $schedules.Length | Should Be 3
+    }
+}
+
+Describe 'Get-PodeScheduleNextTrigger' {
+    It 'Returns next trigger time' {
+        $PodeContext = @{ Schedules = @{} }
+        $start = ([DateTime]::Now.AddHours(3))
+        $end = ([DateTime]::Now.AddHours(5))
+
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        $trigger = Get-PodeScheduleNextTrigger -Name 'test1'
+
+        $expected = $start.AddHours(1)
+        $expected = [datetime]::new($expected.Year, $expected.Month, $expected.Day, $expected.Hour, 0, 0)
+        $trigger | Should Be $expected
+    }
+
+    It 'Returns next trigger time from date' {
+        $PodeContext = @{ Schedules = @{} }
+        $start = ([DateTime]::Now.AddHours(3))
+        $end = ([DateTime]::Now.AddHours(5))
+
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        $trigger = Get-PodeScheduleNextTrigger -Name 'test1' -DateTime $start.AddHours(1)
+
+        $expected = $start.AddHours(2)
+        $expected = [datetime]::new($expected.Year, $expected.Month, $expected.Day, $expected.Hour, 0, 0)
+        $trigger | Should Be $expected
     }
 }
 

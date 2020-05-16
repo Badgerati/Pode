@@ -21,6 +21,7 @@ Start-PodeServer {
     # schedule defined using two cron expressions
     Add-PodeSchedule -Name 'two-crons' -Cron @('0/3 * * * *', '0/5 * * * *') -ScriptBlock {
         'double cron' | Out-Default
+        Get-PodeSchedule -Name 'two-crons' | Out-Default
     }
 
     # schedule to run every tuesday at midnight

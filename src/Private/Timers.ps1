@@ -40,6 +40,9 @@ function Start-PodeTimerRunspace
                 if (!$_.Completed) {
                     $_.NextTriggerTime = $_now.AddSeconds($_.Interval)
                 }
+                else {
+                    $_.NextTriggerTime = $null
+                }
             }
 
             Start-Sleep -Seconds 1

@@ -103,6 +103,10 @@ function Invoke-PodeInternalSchedule
     # reset the cron if it's random
     if (!$Schedule.Completed) {
         $Schedule.Crons = Reset-PodeRandomCronExpressions -Expressions $Schedule.Crons
+        $Schedule.NextTriggerTime = Get-PodeCronNextEarliestTrigger -Expressions $Schedule.Crons -EndTime $Schedule.EndTime
+    }
+    else {
+        $Schedule.NextTriggerTime = $null
     }
 }
 

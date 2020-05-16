@@ -95,7 +95,7 @@ Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './Schedules/File
 
 ## Getting Schedules
 
-The [`Get-PodeSchedule`] helper function will allow you to retrieve a list of schedules configured within Pode. You can use it to retrieve all of the schedules, or supply filters to retrieve specific ones.
+The [`Get-PodeSchedule`](../../Functions/Core/Get-PodeSchedule) helper function will allow you to retrieve a list of schedules configured within Pode. You can use it to retrieve all of the schedules, or supply filters to retrieve specific ones.
 
 To retrieve all of the schedules, you can call the function will no parameters. To filter, here are some examples:
 
@@ -107,23 +107,38 @@ Get-PodeSchedule -Name Name1
 Get-PodeSchedule -Name Name1, Name2
 ```
 
+## Next Trigger Time
+
+When you retrieve a Schedule using [`Get-PodeSchedule`](../../Functions/Core/Get-PodeSchedule), each Schedule object will already have its next trigger time as `NextTriggerTime`. However, if you want to get a trigger time further ino the future than this, then you can use the [`Get-PodeScheduleNextTrigger`](../../Functions/Core/Get-PodeScheduleNextTrigger) function.
+
+This function takes the Name of a Schedule, as well as a custom DateTime and will return the next trigger time after that DateTime. If no DateTime is supplied, then the Schedule's StartTime is used (or the current time if no StartTime).
+
+```powershell
+# just get the next time
+$time = Get-PodeScheduleNextTrigger -Name Schedule1
+
+# get the next time after a date
+$time = Get-PodeScheduleTriggerTime -Name Schedule1 -DateTime [datetime]::new(2020, 3, 20)
+```
+
 ## Schedule Object
 
 !!! warning
     Be careful if you choose to edit these objects, as they will affect the server.
 
-The following is the structure of the Schedule object internally, as well as the object that is returned from [`Get-PodeSchedule`]:
+The following is the structure of the Schedule object internally, as well as the object that is returned from [`Get-PodeSchedule`](../../Functions/Core/Get-PodeSchedule):
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | Name | string | The name of the Schedule |
-| StartTime | datetime | The delayed start time of the Schedule - null if run at server start |
-| EndTime | datetime | The end time of the Schedule - null if running indefinitely |
+| StartTime | datetime | The delayed start time of the Schedule |
+| EndTime | datetime | The end time of the Schedule |
 | Crons | hashtable[] | The cron expressions of the Schedule, but parsed into an internal format |
 | CronsRaw | string[] | The raw cron expressions that were supplied |
-| Limit | int | The number of times the Schedule should run - 0 if running indefinitely |
-| Count | int | The number of times the Schedule has run - this will only increment if the Schedule is limited |
+| Limit | int | The number of times the Schedule should run - 0 if running infinitely |
+| Count | int | The number of times the Schedule has run |
+| NextTriggerTime | datetime | The datetime the Schedule will next be triggered |
 | Script | scriptblock | The scriptblock of the Schedule |
 | Arguments | hashtable | The arguments supplied from ArgumentList |
 | OnStart | bool | Should the Schedule run once when the server is starting, or once the server has fully loaded |
-| Completed | bool | Has the Schedule completed all of its runs - only set if the Schedule is limited |
+| Completed | bool | Has the Schedule completed all of its runs |

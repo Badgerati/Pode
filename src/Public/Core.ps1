@@ -1381,7 +1381,7 @@ function Add-PodeSchedule
         throw "[Schedule] $($Name): The EndTime value must be in the future"
     }
 
-    if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -lt $StartTime)) {
+    if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -le $StartTime)) {
         throw "[Schedule] $($Name): Cannot have a StartTime after the EndTime"
     }
 
@@ -1391,18 +1391,22 @@ function Add-PodeSchedule
     }
 
     # add the schedule
+    $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
+    $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime
+
     $PodeContext.Schedules[$Name] = @{
         Name = $Name
         StartTime = $StartTime
         EndTime = $EndTime
-        Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        Crons = $parsedCrons
         CronsRaw = @($Cron)
         Limit = $Limit
         Count = 0
+        NextTriggerTime = $nextTrigger
         Script = $ScriptBlock
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart = $OnStart
-        Completed = $false
+        Completed = ($null -eq $nextTrigger)
     }
 }
 
@@ -1575,19 +1579,23 @@ function Edit-PodeSchedule
         throw "Schedule '$($Name)' does not exist"
     }
 
+    $_schedule = $PodeContext.Schedules[$Name]
+
     # edit cron if supplied
     if (!(Test-IsEmpty $Cron)) {
-        $PodeContext.Schedules[$Name].Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        $_schedule.Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        $_schedule.CronsRaw = $Cron
+        $_schedule.NextTriggerTime = Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $_schedule.StartTime -EndTime $_schedule.EndTime
     }
 
     # edit scriptblock if supplied
     if (!(Test-IsEmpty $ScriptBlock)) {
-        $PodeContext.Schedules[$Name].Script = $ScriptBlock
+        $_schedule.Script = $ScriptBlock
     }
 
     # edit arguments if supplied
     if (!(Test-IsEmpty $ArgumentList)) {
-        $PodeContext.Schedules[$Name].Arguments = $ArgumentList
+        $_schedule.Arguments = $ArgumentList
     }
 }
 
@@ -1633,6 +1641,61 @@ function Get-PodeSchedule
 
     # return
     return $schedules
+}
+
+<#
+.SYNOPSIS
+Get the next trigger time for a Schedule.
+
+.DESCRIPTION
+Get the next trigger time for a Schedule, either from the Schedule's StartTime or from a defined DateTime.
+
+.PARAMETER Name
+The Name of the Schedule.
+
+.PARAMETER DateTime
+An optional specific DateTime to get the next trigger time after. This DateTime must be between the Schedule's StartTime and EndTime.
+
+.EXAMPLE
+Get-PodeScheduleNextTrigger -Name Schedule1
+
+.EXAMPLE
+Get-PodeScheduleNextTrigger -Name Schedule1 -DateTime [datetime]::new(2020, 3, 10)
+#>
+function Get-PodeScheduleNextTrigger
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        $DateTime = $null
+    )
+
+    # ensure the schedule exists
+    if (!$PodeContext.Schedules.ContainsKey($Name)) {
+        throw "Schedule '$($Name)' does not exist"
+    }
+
+    $_schedule = $PodeContext.Schedules[$Name]
+
+    # ensure date is after start/before end
+    if (($null -ne $DateTime) -and ($null -ne $_schedule.StartTime) -and ($DateTime -lt $_schedule.StartTime)) {
+        throw "Supplied date is before the start time of the schedule at $($_schedule.StartTime)"
+    }
+
+    if (($null -ne $DateTime) -and ($null -ne $_schedule.EndTime) -and ($DateTime -gt $_schedule.EndTime)) {
+        throw "Supplied date is after the end time of the schedule at $($_schedule.EndTime)"
+    }
+
+    # get the next trigger
+    if ($null -eq $DateTime) {
+        $DateTime = $_schedule.StartTime
+    }
+
+    return (Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $DateTime -EndTime $_schedule.EndTime)
 }
 
 <#
