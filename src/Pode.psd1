@@ -132,6 +132,7 @@
         'Edit-PodeSchedule',
         'Set-PodeScheduleConcurrency',
         'Get-PodeSchedule',
+        'Get-PodeScheduleNextTrigger',
 
         # timers
         'Add-PodeTimer',

@@ -38,7 +38,7 @@ Describe 'Session Requests' {
             }
         }
 
-        Start-Sleep -Seconds 8
+        Start-Sleep -Seconds 10
     }
 
     AfterAll {
