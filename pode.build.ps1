@@ -27,11 +27,6 @@ function Test-PodeBuildIsWindows
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
 
-function Test-PodeBuildIsAppVeyor
-{
-    return (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID))
-}
-
 function Test-PodeBuildIsGitHub
 {
     return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
@@ -44,15 +39,7 @@ function Test-PodeBuildCanCodeCoverage
 
 function Get-PodeBuildService
 {
-    if (Test-PodeBuildIsAppVeyor) {
-        return 'appveyor'
-    }
-
-    if (Test-PodeBuildIsGitHub) {
-        return 'github-actions'
-    }
-
-    return 'travis-ci'
+    return 'github-actions'
 }
 
 function Test-PodeBuildCommand($cmd)
@@ -71,14 +58,7 @@ function Test-PodeBuildCommand($cmd)
 
 function Get-PodeBuildBranch
 {
-    if (Test-PodeBuildIsAppVeyor) {
-        $branch = $env:APPVEYOR_REPO_BRANCH
-    }
-    elseif (Test-PodeBuildIsGitHub) {
-        $branch = $env:GITHUB_REF
-    }
-
-    return ($branch -ireplace 'refs\/heads\/', '')
+    return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
 }
 
 function Invoke-PodeBuildInstall($name, $version)
@@ -220,7 +200,7 @@ task Test TestDeps, {
 
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
 
-    # if appveyor or github, run code coverage
+    # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
         $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
@@ -228,20 +208,13 @@ task Test TestDeps, {
     else {
         $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
     }
-}, PushAppVeyorTests, PushCodeCoverage, CheckFailedTests
+}, PushCodeCoverage, CheckFailedTests
 
 # Synopsis: Check if any of the tests failed
 task CheckFailedTests {
     if ($TestStatus.FailedCount -gt 0) {
         throw "$($TestStatus.FailedCount) tests failed"
     }
-}
-
-# Synopsis: If AppVeyor, push result artifacts
-task PushAppVeyorTests -If (Test-PodeBuildIsAppVeyor) {
-    $url = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
-    (New-Object 'System.Net.WebClient').UploadFile($url, $TestResultFile)
-    Push-AppveyorArtifact $TestResultFile
 }
 
 # Synopsis: If AppyVeyor or GitHub, push code coverage stats
