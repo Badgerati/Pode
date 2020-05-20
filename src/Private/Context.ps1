@@ -30,6 +30,10 @@ function New-PodeContext
         [string]
         $ServerType,
 
+        [Parameter()]
+        [string]
+        $StatusPageExceptions,
+
         [switch]
         $DisableTermination,
 
@@ -117,6 +121,15 @@ function New-PodeContext
 
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
+
+    # over status page exceptions
+    if (!(Test-IsEmpty $StatusPageExceptions)) {
+        if ($null -eq $ctx.Server.Web) {
+            $ctx.Server.Web = @{ ErrorPages = @{} }
+        }
+
+        $ctx.Server.Web.ErrorPages.ShowExceptions = ($StatusPageExceptions -eq 'show')
+    }
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot

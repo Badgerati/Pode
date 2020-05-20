@@ -30,6 +30,10 @@ Intended for Serverless environments, this is Requests details that Pode can par
 .PARAMETER Type
 The server type, to define how Pode should run and deal with incoming Requests.
 
+.PARAMETER StatusPageExceptions
+An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
+If supplied this value will override the ShowExceptions setting in the server.psd1 file.
+
 .PARAMETER DisableTermination
 Disables the ability to terminate the Server.
 
@@ -87,6 +91,11 @@ function Start-PodeServer
         [string]
         $Type = [string]::Empty,
 
+        [Parameter()]
+        [ValidateSet('', 'Hide', 'Show')]
+        [string]
+        $StatusPageExceptions = [string]::Empty,
+
         [switch]
         $DisableTermination,
 
@@ -134,6 +143,7 @@ function Start-PodeServer
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
             -ServerType $Type `
+            -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
             -Quiet:$Quiet
 
