@@ -5,7 +5,7 @@ There are two aspects to logging in Pode: Methods and Types.
 * Methods define how log items should be recorded, such as to a file or terminal.
 * Types define how items to log are transformed, and what should be supplied to the Method.
 
-For example when you supply an Exception to  [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog), this Exception is first supplied to Pode's inbuilt Error type. This type transforms any Exception (or Error Record) into a string which can then be supplied to the File logging method.
+For example when you supply an Exception to [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog), this Exception is first supplied to Pode's inbuilt Error logging type. This type transforms any Exception (or Error Record) into a string which can then be supplied to the File logging method.
 
 In Pode you can use File, Terminal or a Custom method. As well as Request, Error, or a Custom type.
 
@@ -53,7 +53,7 @@ Instead of masking the whole value that matches, there is support for two RegEx 
 
 Specifying either of these groups in your pattern will keep the original value in place rather than masking it.
 
-For example, expanding on the above example, to keep the `Password=` text you could use the following:
+For example, expanding on the above, to keep the `Password=` text you could use the following:
 
 ```powershell
 @{
@@ -93,3 +93,19 @@ To specify a custom mask, you can do this in the configuration file:
     }
 }
 ```
+
+## Batches
+
+By default all log items are recorded one-by-one, but this can obviously become very slow if a lot of log items are being processed.
+
+To help speed this up, you can specify a batch size on your logging method:
+
+```powershell
+New-PodeLoggingMethod -Terminal -Batch 10 | Enable-PodeRequestLogging
+```
+
+Instead of writing logs one-by-one, the above will keep transformed log items in an array. Once the array matches the batch size of 10, all items will be sent to the method at once.
+
+This means that the method's scriptblock will receive an array of items, rather than a single item.
+
+You can also sent a `-BatchTimeout` value, in seconds, so that if your batch size it 10 but only 5 log items are added, then after the timeout value the logs items will be sent to your method.

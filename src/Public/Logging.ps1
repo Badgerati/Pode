@@ -17,6 +17,12 @@ The File Path of where to store the logs.
 .PARAMETER Name
 The File Name to prepend new log files using.
 
+.PARAMETER Batch
+An optional batch size to write log items in bulk (Default: 1)
+
+.PARAMETER BatchTimeout
+An optional batch timeout, in seconds, to send items off for writing if a log item isn't received (Default: 0)
+
 .PARAMETER MaxDays
 The maximum number of days to keep logs, before Pode automatically removes them.
 
