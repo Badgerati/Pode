@@ -62,6 +62,14 @@ function New-PodeLoggingMethod
         [string]
         $Name,
 
+        [Parameter()]
+        [int]
+        $Batch = 1,
+
+        [Parameter()]
+        [int]
+        $BatchTimeout = 0,
+
         [Parameter(ParameterSetName='File')]
         [ValidateScript({
             if ($_ -lt 0) {
@@ -104,10 +112,20 @@ function New-PodeLoggingMethod
         $ArgumentList
     )
 
+    # batch details
+    $batchInfo = @{
+        Size = $Batch
+        Timeout = $BatchTimeout
+        LastUpdate = $null
+        Items = @()
+    }
+
+    # return info on appropriate logging type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
             return @{
                 ScriptBlock = (Get-PodeLoggingTerminalMethod)
+                Batch = $batchInfo
                 Arguments = @{}
             }
         }
@@ -119,6 +137,7 @@ function New-PodeLoggingMethod
 
             return @{
                 ScriptBlock = (Get-PodeLoggingFileMethod)
+                Batch = $batchInfo
                 Arguments = @{
                     Name = $Name
                     Path = $Path
@@ -134,6 +153,7 @@ function New-PodeLoggingMethod
         'custom' {
             return @{
                 ScriptBlock = $ScriptBlock
+                Batch = $batchInfo
                 Arguments = $ArgumentList
             }
         }
