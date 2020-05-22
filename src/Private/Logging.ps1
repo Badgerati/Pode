@@ -296,15 +296,10 @@ function Start-PodeLoggingRunspace
                 # add current item to batch
                 $batch.Items += $result
                 $batch.LastUpdate = $now
-                $result = $null
 
                 # if the current amount of items matches the batch, write
+                $result = $null
                 if ($batch.Items.Length -ge $batch.Size) {
-                    $result = $batch.Items
-                }
-
-                # check if we have timed-out, if so, write
-                if (($batch.Timeout -gt 0) -and ($batch.LastUpdate.AddSeconds($batch.Timeout) -le $now)) {
                     $result = $batch.Items
                 }
 
