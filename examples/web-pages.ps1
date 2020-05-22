@@ -26,7 +26,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeAccessRule -Access Deny -Type IP -Values all
 
     # log requests to the terminal
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set view engine to pode renderer
