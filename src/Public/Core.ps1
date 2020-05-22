@@ -732,6 +732,14 @@ function Add-PodeEndpoint
         $Protocol = 'Http'
     }
 
+    # are we running as Heroku for HTTP/HTTPS? (if yes, force the port, address and protocol)
+    $isHeroku = ($PodeContext.Server.IsHeroku -and (@('Http', 'Https') -icontains $Protocol))
+    if ($isHeroku) {
+        $Port = [int]$env:PORT
+        $Address = '0.0.0.0'
+        $Protocol = 'Http'
+    }
+
     # parse the endpoint for host/port info
     $FullAddress = "$($Address):$($Port)"
     $_endpoint = Get-PodeEndpointInfo -Endpoint $FullAddress
@@ -791,7 +799,7 @@ function Add-PodeEndpoint
     } | Measure-Object).Count
 
     # if we're dealing with a certificate file, attempt to import it
-    if (!$isIIS -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
+    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
         # fail if protocol is not https
         if (@('https', 'wss') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
@@ -841,7 +849,7 @@ function Add-PodeEndpoint
     }
 
     # if RedirectTo is set, attempt to build a redirecting route
-    if (!$isIIS -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
+    if (!$isIIS -and !$isHeroku -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
         $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
 
         # ensure the name exists
@@ -913,7 +921,7 @@ function Get-PodeEndpoint
 
     # if we have an address, filter
     if (![string]::IsNullOrWhiteSpace($Address)) {
-        if ($Address -eq '*') {
+        if (($Address -eq '*') -or $PodeContext.Server.IsHeroku) {
             $Address = '0.0.0.0'
         }
 
@@ -936,6 +944,10 @@ function Get-PodeEndpoint
             $Port = [int]$env:ASPNETCORE_PORT
         }
 
+        if ($PodeContext.Server.IsHeroku) {
+            $Port = [int]$env:PORT
+        }
+
         $endpoints = @(foreach ($endpoint in $endpoints) {
             if ($endpoint.Port -ne $Port) {
                 continue
@@ -947,7 +959,7 @@ function Get-PodeEndpoint
 
     # if we have a protocol, filter
     if (![string]::IsNullOrWhiteSpace($Protocol)) {
-        if ($PodeContext.Server.IsIIS) {
+        if ($PodeContext.Server.IsIIS -or $PodeContext.Server.IsHeroku) {
             $Protocol = 'Http'
         }
 

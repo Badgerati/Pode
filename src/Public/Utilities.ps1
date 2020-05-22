@@ -884,3 +884,21 @@ function Test-PodeIsIIS
 
     return $PodeContext.Server.IsIIS
 }
+
+<#
+.SYNOPSIS
+Returns whether or not the server is running via Heroku.
+
+.DESCRIPTION
+Returns whether or not the server is running via Heroku.
+
+.EXAMPLE
+if (Test-PodeIsHeroku) { }
+#>
+function Test-PodeIsHeroku
+{
+    [CmdletBinding()]
+    param()
+
+    return $PodeContext.Server.IsHeroku
+}
