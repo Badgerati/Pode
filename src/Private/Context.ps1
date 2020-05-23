@@ -155,11 +155,14 @@ function New-PodeContext
         $ctx.Server.Type = 'PODE'
         $ctx.Server.DisableTermination = $true
 
-        # if IIS under and Azure Web App, force quiet
+        # if under IIS and Azure Web App, force quiet
         if (!(Test-IsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
             $ctx.Server.Quiet = $true
         }
     }
+
+    # is the server running under Heroku?
+    $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-IsEmpty $env:PORT)) -and (!(Test-IsEmpty $env:DYNO)))
 
     # if we're inside a remote host, stop termination
     if ($Host.Name -ieq 'ServerRemoteHost') {

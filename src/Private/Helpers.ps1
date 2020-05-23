@@ -2108,6 +2108,11 @@ function Get-PodeDefaultPort
         return [int]$env:ASPNETCORE_PORT
     }
 
+    # if we running as heroku, return the port
+    if ($PodeContext.Server.IsHeroku) {
+        return [int]$env:PORT
+    }
+
     # otherwise, get the port for the protocol
     return (@{
         Http    = 8080
