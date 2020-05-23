@@ -14,7 +14,7 @@ To get started you'll need the following software installed:
 
 You'll also need an account with [Heroku](https://heroku.com/).
 
-## Dockerfile
+## Server
 
 Your server will need a Dockerfile, such as the following:
 
@@ -27,11 +27,25 @@ CMD [ "pwsh", "-c", "cd /usr/src/app; ./server.ps1" ]
 
 While Pode can detect that your server is running in Heroku, and can set your server's endpoints appropriately, the Dockerfile will need to use the `$PORT` variable that Heroku set.
 
-You can set this when testing locally as follows (assuming you have your server listen on port 5000 locally):
+You can set this when testing locally as follows (assuming your server is listening on port 5000 locally):
 
 ```powershell
 docker run -p 5000:5000 -e PORT=5000 <image-name>
 ```
+
+The server script itself could look as follows:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address 127.0.0.1 -Port 5000 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Response = 'Hello, world!' }
+    }
+}
+```
+
+Here we have an endpoint on localhost and port 5000; but when in Heroku Pode will automatically change the address/port for you.
 
 ## Build and Push
 
