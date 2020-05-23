@@ -9,11 +9,11 @@ param (
 
 $Versions = @{
     Pester = '4.8.0'
-    MkDocs = '1.0.4'
+    MkDocs = '1.1.2'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
     Checksum = '0.2.0'
-    MkDocsTheme = '4.6.0'
+    MkDocsTheme = '5.2.1'
     PlatyPS = '0.14.0'
 }
 
@@ -63,6 +63,8 @@ function Get-PodeBuildBranch
 
 function Invoke-PodeBuildInstall($name, $version)
 {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
     if (Test-PodeBuildIsWindows) {
         if (Test-PodeBuildCommand 'choco') {
             choco install $name --version $version -y
