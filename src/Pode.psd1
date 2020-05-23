@@ -106,6 +106,7 @@
         'Out-PodeHost',
         'Write-PodeHost',
         'Test-PodeIsIIS',
+        'Test-PodeIsHeroku',
 
         # routes
         'Add-PodeRoute',
