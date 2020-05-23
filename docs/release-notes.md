@@ -1,5 +1,31 @@
 # Release Notes
 
+## v1.8.0
+
+```plain
+### Enhancements
+* #533: Support on states for inclusion/exlcusions when saving, and scopes on states
+* #538: Support to batch log items together before sending them off to be recorded
+* #540: Adds a Ctrl+B shortcutto open the server in the default browser
+* #542: Add new switch to help toggling of Status Page exception message
+* #548: Adds new `Get-PodeSchedule` and `Get-PodeTimer` functions
+* #549: Support for calculating a schedule's next trigger datetime
+
+### Bugs
+* #532: Fixes a bug in `Get-PodeRoute` when a route is bound to multiple endpoints
+* #547: Fixes a bug where not all data was being read on SMTP messages
+* #558: Paths with URL encoded characters fail when trying to load static content
+
+### Documentation
+* #381: Documentation on using Pode in Heroku (plus auto-detection support)
+
+### Packaging
+* #546: Adds automated integration tests
+* #562: Remove AppVeyor and TravisCI in favour of GitHub Actions
+* #567: Bump Powershell version in Docker to 7.0.1
+* #569: Bump version of MkDocs and Material Theme
+```
+
 ## v1.7.3
 
 ```plain
