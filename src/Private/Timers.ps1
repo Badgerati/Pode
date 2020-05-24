@@ -1,4 +1,4 @@
-function Get-PodeTimer
+function Find-PodeTimer
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -21,29 +21,28 @@ function Start-PodeTimerRunspace
         {
             $_now = [DateTime]::Now
 
+            # only run timers that haven't completed, and have a next trigger in the past
             $PodeContext.Timers.Values | Where-Object {
-                ($_.OnStart -or ($_.NextTick -le $_now)) -and !$_.Completed
+                !$_.Completed -and ($_.OnStart -or ($_.NextTriggerTime -le $_now))
             } | ForEach-Object {
-                $run = $true
                 $_.OnStart = $false
+                $_.Count++
 
-                # increment total number of runs for timer (do we still need to count?)
-                if ($_.Countable) {
-                    $_.Count++
-                    $_.Countable = ($_.Count -le $_.Limit)
-                }
-
-                # check if we have hit the limit, and remove
-                if ($run -and ($_.Limit -ne 0) -and ($_.Count -gt $_.Limit)) {
-                    $run = $false
+                # has the timer completed?
+                if (($_.Limit -gt 0) -and ($_.Count -ge $_.Limit)) {
                     $_.Completed = $true
                 }
 
-                if ($run) {
-                    Invoke-PodeInternalTimer -Timer $_
-                }
+                # run the timer
+                Invoke-PodeInternalTimer -Timer $_
 
-                $_.NextTick = $_now.AddSeconds($_.Interval)
+                # next trigger
+                if (!$_.Completed) {
+                    $_.NextTriggerTime = $_now.AddSeconds($_.Interval)
+                }
+                else {
+                    $_.NextTriggerTime = $null
+                }
             }
 
             Start-Sleep -Seconds 1

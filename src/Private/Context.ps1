@@ -30,6 +30,10 @@ function New-PodeContext
         [string]
         $ServerType,
 
+        [Parameter()]
+        [string]
+        $StatusPageExceptions,
+
         [switch]
         $DisableTermination,
 
@@ -118,6 +122,15 @@ function New-PodeContext
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
+    # over status page exceptions
+    if (!(Test-IsEmpty $StatusPageExceptions)) {
+        if ($null -eq $ctx.Server.Web) {
+            $ctx.Server.Web = @{ ErrorPages = @{} }
+        }
+
+        $ctx.Server.Web.ErrorPages.ShowExceptions = ($StatusPageExceptions -eq 'show')
+    }
+
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
     if (!(Test-IsEmpty $ctx.Server.Configuration.Server.Root)) {
@@ -142,10 +155,18 @@ function New-PodeContext
         $ctx.Server.Type = 'PODE'
         $ctx.Server.DisableTermination = $true
 
-        # if IIS under and Azure Web App, force quiet
+        # if under IIS and Azure Web App, force quiet
         if (!(Test-IsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
             $ctx.Server.Quiet = $true
         }
+    }
+
+    # is the server running under Heroku?
+    $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-IsEmpty $env:PORT)) -and (!(Test-IsEmpty $env:DYNO)))
+
+    # if we're inside a remote host, stop termination
+    if ($Host.Name -ieq 'ServerRemoteHost') {
+        $ctx.Server.DisableTermination = $true
     }
 
     # set the IP address details

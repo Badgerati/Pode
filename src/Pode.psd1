@@ -106,6 +106,7 @@
         'Out-PodeHost',
         'Write-PodeHost',
         'Test-PodeIsIIS',
+        'Test-PodeIsHeroku',
 
         # routes
         'Add-PodeRoute',
@@ -131,6 +132,8 @@
         'Invoke-PodeSchedule',
         'Edit-PodeSchedule',
         'Set-PodeScheduleConcurrency',
+        'Get-PodeSchedule',
+        'Get-PodeScheduleNextTrigger',
 
         # timers
         'Add-PodeTimer',
@@ -138,6 +141,7 @@
         'Clear-PodeTimers',
         'Invoke-PodeTimer',
         'Edit-PodeTimer',
+        'Get-PodeTimer',
 
         # middleware
         'Add-PodeMiddleware',
@@ -178,6 +182,7 @@
 
         # core
         'Start-PodeServer',
+        'Close-PodeServer',
         'Start-PodeStaticServer',
         'Show-PodeGui',
         'Add-PodeEndpoint',

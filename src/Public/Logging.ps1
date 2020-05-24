@@ -17,6 +17,12 @@ The File Path of where to store the logs.
 .PARAMETER Name
 The File Name to prepend new log files using.
 
+.PARAMETER Batch
+An optional batch size to write log items in bulk (Default: 1)
+
+.PARAMETER BatchTimeout
+An optional batch timeout, in seconds, to send items off for writing if a log item isn't received (Default: 0)
+
 .PARAMETER MaxDays
 The maximum number of days to keep logs, before Pode automatically removes them.
 
@@ -62,6 +68,14 @@ function New-PodeLoggingMethod
         [string]
         $Name,
 
+        [Parameter()]
+        [int]
+        $Batch = 1,
+
+        [Parameter()]
+        [int]
+        $BatchTimeout = 0,
+
         [Parameter(ParameterSetName='File')]
         [ValidateScript({
             if ($_ -lt 0) {
@@ -104,10 +118,20 @@ function New-PodeLoggingMethod
         $ArgumentList
     )
 
+    # batch details
+    $batchInfo = @{
+        Size = $Batch
+        Timeout = $BatchTimeout
+        LastUpdate = $null
+        Items = @()
+    }
+
+    # return info on appropriate logging type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
             return @{
                 ScriptBlock = (Get-PodeLoggingTerminalMethod)
+                Batch = $batchInfo
                 Arguments = @{}
             }
         }
@@ -119,6 +143,7 @@ function New-PodeLoggingMethod
 
             return @{
                 ScriptBlock = (Get-PodeLoggingFileMethod)
+                Batch = $batchInfo
                 Arguments = @{
                     Name = $Name
                     Path = $Path
@@ -134,6 +159,7 @@ function New-PodeLoggingMethod
         'custom' {
             return @{
                 ScriptBlock = $ScriptBlock
+                Batch = $batchInfo
                 Arguments = $ArgumentList
             }
         }

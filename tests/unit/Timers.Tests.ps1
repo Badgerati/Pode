@@ -2,26 +2,26 @@ $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
 Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
-Describe 'Get-PodeTimer' {
+Describe 'Find-PodeTimer' {
     Context 'Invalid parameters supplied' {
         It 'Throw null name parameter error' {
-            { Get-PodeTimer -Name $null } | Should Throw 'The argument is null or empty'
+            { Find-PodeTimer -Name $null } | Should Throw 'The argument is null or empty'
         }
 
         It 'Throw empty name parameter error' {
-            { Get-PodeTimer -Name ([string]::Empty) } | Should Throw 'The argument is null or empty'
+            { Find-PodeTimer -Name ([string]::Empty) } | Should Throw 'The argument is null or empty'
         }
     }
 
     Context 'Valid values supplied' {
         It 'Returns null as the timer does not exist' {
             $PodeContext = @{ 'Timers' = @{}; }
-            Get-PodeTimer -Name 'test' | Should Be $null
+            Find-PodeTimer -Name 'test' | Should Be $null
         }
 
         It 'Returns timer for name' {
             $PodeContext = @{ 'Timers' = @{ 'test' = @{ 'Name' = 'test'; }; }; }
-            $result = (Get-PodeTimer -Name 'test')
+            $result = (Find-PodeTimer -Name 'test')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Name | Should Be 'test'
@@ -66,8 +66,7 @@ Describe 'Add-PodeTimer' {
         $timer.Limit | Should Be 0
         $timer.Count | Should Be 0
         $timer.Skip | Should Be 1
-        $timer.Countable | Should Be $false
-        $timer.NextTick | Should BeOfType System.DateTime
+        $timer.NextTriggerTime | Should BeOfType System.DateTime
         $timer.Script | Should Not Be $null
         $timer.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
     }
@@ -83,10 +82,52 @@ Describe 'Add-PodeTimer' {
         $timer.Limit | Should Be 2
         $timer.Count | Should Be 0
         $timer.Skip | Should Be 1
-        $timer.Countable | Should Be $true
-        $timer.NextTick | Should BeOfType System.DateTime
+        $timer.NextTriggerTime | Should BeOfType System.DateTime
         $timer.Script | Should Not Be $null
         $timer.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+    }
+}
+
+Describe 'Get-PodeTimer' {
+    It 'Returns no timers' {
+        $PodeContext = @{ Timers = @{} }
+        $timers = Get-PodeTimer
+        $timers.Length | Should Be 0
+    }
+
+    It 'Returns 1 timer by name' {
+        $PodeContext = @{ Timers = @{} }
+
+        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+        $timers = Get-PodeTimer
+        $timers.Length | Should Be 1
+
+        $timers.Name | Should Be 'test1'
+        $timers.Interval | Should Be 1
+        $timers.Skip | Should Be 1
+        $timers.Limit | Should Be 0
+    }
+
+    It 'Returns 2 timers by name' {
+        $PodeContext = @{ Timers = @{} }
+
+        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+        Add-PodeTimer -Name 'test2' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+        Add-PodeTimer -Name 'test3' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+
+        $timers = Get-PodeTimer -Name test1, test2
+        $timers.Length | Should Be 2
+    }
+
+    It 'Returns all timers' {
+        $PodeContext = @{ Timers = @{} }
+
+        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+        Add-PodeTimer -Name 'test2' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+        Add-PodeTimer -Name 'test3' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+
+        $timers = Get-PodeTimer
+        $timers.Length | Should Be 3
     }
 }
 

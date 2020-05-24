@@ -27,7 +27,7 @@
     }
     Server = @{
         FileMonitor = @{
-            Enable = $true
+            Enable = $false
             ShowFiles = $true
         }
         Logging = @{

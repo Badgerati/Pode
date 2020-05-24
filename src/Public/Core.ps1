@@ -30,6 +30,10 @@ Intended for Serverless environments, this is Requests details that Pode can par
 .PARAMETER Type
 The server type, to define how Pode should run and deal with incoming Requests.
 
+.PARAMETER StatusPageExceptions
+An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
+If supplied this value will override the ShowExceptions setting in the server.psd1 file.
+
 .PARAMETER DisableTermination
 Disables the ability to terminate the Server.
 
@@ -87,6 +91,11 @@ function Start-PodeServer
         [string]
         $Type = [string]::Empty,
 
+        [Parameter()]
+        [ValidateSet('', 'Hide', 'Show')]
+        [string]
+        $StatusPageExceptions = [string]::Empty,
+
         [switch]
         $DisableTermination,
 
@@ -134,6 +143,7 @@ function Start-PodeServer
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
             -ServerType $Type `
+            -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
             -Quiet:$Quiet
 
@@ -164,6 +174,11 @@ function Start-PodeServer
             if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                 Restart-PodeInternalServer
             }
+
+            # check for open browser
+            if (Test-PodeOpenBrowserPressed -Key $key) {
+                Start-Process (Get-PodeEndpointUrl)
+            }
         }
 
         Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
@@ -175,11 +190,29 @@ function Start-PodeServer
     }
     finally {
         # clean the runspaces and tokens
-        Close-PodeServer -ShowDoneMessage:$ShowDoneMessage
+        Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
 
         # clean the session
         $PodeContext = $null
     }
+}
+
+<#
+.SYNOPSIS
+Closes the Pode server.
+
+.DESCRIPTION
+Closes the Pode server.
+
+.EXAMPLE
+Close-PodeServer
+#>
+function Close-PodeServer
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Tokens.Cancellation.Cancel()
 }
 
 <#
@@ -699,6 +732,14 @@ function Add-PodeEndpoint
         $Protocol = 'Http'
     }
 
+    # are we running as Heroku for HTTP/HTTPS? (if yes, force the port, address and protocol)
+    $isHeroku = ($PodeContext.Server.IsHeroku -and (@('Http', 'Https') -icontains $Protocol))
+    if ($isHeroku) {
+        $Port = [int]$env:PORT
+        $Address = '0.0.0.0'
+        $Protocol = 'Http'
+    }
+
     # parse the endpoint for host/port info
     $FullAddress = "$($Address):$($Port)"
     $_endpoint = Get-PodeEndpointInfo -Endpoint $FullAddress
@@ -758,7 +799,7 @@ function Add-PodeEndpoint
     } | Measure-Object).Count
 
     # if we're dealing with a certificate file, attempt to import it
-    if (!$isIIS -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
+    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
         # fail if protocol is not https
         if (@('https', 'wss') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
@@ -808,7 +849,7 @@ function Add-PodeEndpoint
     }
 
     # if RedirectTo is set, attempt to build a redirecting route
-    if (!$isIIS -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
+    if (!$isIIS -and !$isHeroku -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
         $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
 
         # ensure the name exists
@@ -880,7 +921,7 @@ function Get-PodeEndpoint
 
     # if we have an address, filter
     if (![string]::IsNullOrWhiteSpace($Address)) {
-        if ($Address -eq '*') {
+        if (($Address -eq '*') -or $PodeContext.Server.IsHeroku) {
             $Address = '0.0.0.0'
         }
 
@@ -903,6 +944,10 @@ function Get-PodeEndpoint
             $Port = [int]$env:ASPNETCORE_PORT
         }
 
+        if ($PodeContext.Server.IsHeroku) {
+            $Port = [int]$env:PORT
+        }
+
         $endpoints = @(foreach ($endpoint in $endpoints) {
             if ($endpoint.Port -ne $Port) {
                 continue
@@ -914,7 +959,7 @@ function Get-PodeEndpoint
 
     # if we have a protocol, filter
     if (![string]::IsNullOrWhiteSpace($Protocol)) {
-        if ($PodeContext.Server.IsIIS) {
+        if ($PodeContext.Server.IsIIS -or $PodeContext.Server.IsHeroku) {
             $Protocol = 'Http'
         }
 
@@ -1052,9 +1097,9 @@ function Add-PodeTimer
     }
 
     # calculate the next tick time (based on Skip)
-    $NextTick = [DateTime]::Now.AddSeconds($Interval)
+    $NextTriggerTime = [DateTime]::Now.AddSeconds($Interval)
     if ($Skip -gt 1) {
-        $NextTick = $NextTick.AddSeconds($Interval * $Skip)
+        $NextTriggerTime = $NextTriggerTime.AddSeconds($Interval * $Skip)
     }
 
     # add the timer
@@ -1064,8 +1109,7 @@ function Add-PodeTimer
         Limit = $Limit
         Count = 0
         Skip = $Skip
-        Countable = ($Limit -gt 0)
-        NextTick = $NextTick
+        NextTriggerTime = $NextTriggerTime
         Script = $ScriptBlock
         Arguments = $ArgumentList
         OnStart = $OnStart
@@ -1213,6 +1257,50 @@ function Edit-PodeTimer
 
 <#
 .SYNOPSIS
+Returns any defined timers.
+
+.DESCRIPTION
+Returns any defined timers, with support for filtering.
+
+.PARAMETER Name
+Any timer Names to filter the timers.
+
+.EXAMPLE
+Get-PodeTimer
+
+.EXAMPLE
+Get-PodeTimer -Name Name1, Name2
+#>
+function Get-PodeTimer
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    $timers = $PodeContext.Timers.Values
+
+    # further filter by timer names
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $timers = @(foreach ($_name in $Name) {
+            foreach ($timer in $timers) {
+                if ($timer.Name -ine $_name) {
+                    continue
+                }
+
+                $timer
+            }
+        })
+    }
+
+    # return
+    return $timers
+}
+
+<#
+.SYNOPSIS
 Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
 
 .DESCRIPTION
@@ -1315,7 +1403,7 @@ function Add-PodeSchedule
         throw "[Schedule] $($Name): The EndTime value must be in the future"
     }
 
-    if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -lt $StartTime)) {
+    if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -le $StartTime)) {
         throw "[Schedule] $($Name): Cannot have a StartTime after the EndTime"
     }
 
@@ -1325,18 +1413,22 @@ function Add-PodeSchedule
     }
 
     # add the schedule
+    $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
+    $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime
+
     $PodeContext.Schedules[$Name] = @{
         Name = $Name
         StartTime = $StartTime
         EndTime = $EndTime
-        Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        Crons = $parsedCrons
+        CronsRaw = @($Cron)
         Limit = $Limit
         Count = 0
-        Countable = ($Limit -gt 0)
+        NextTriggerTime = $nextTrigger
         Script = $ScriptBlock
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart = $OnStart
-        Completed = $false
+        Completed = ($null -eq $nextTrigger)
     }
 }
 
@@ -1509,20 +1601,182 @@ function Edit-PodeSchedule
         throw "Schedule '$($Name)' does not exist"
     }
 
+    $_schedule = $PodeContext.Schedules[$Name]
+
     # edit cron if supplied
     if (!(Test-IsEmpty $Cron)) {
-        $PodeContext.Schedules[$Name].Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        $_schedule.Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        $_schedule.CronsRaw = $Cron
+        $_schedule.NextTriggerTime = Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $_schedule.StartTime -EndTime $_schedule.EndTime
     }
 
     # edit scriptblock if supplied
     if (!(Test-IsEmpty $ScriptBlock)) {
-        $PodeContext.Schedules[$Name].Script = $ScriptBlock
+        $_schedule.Script = $ScriptBlock
     }
 
     # edit arguments if supplied
     if (!(Test-IsEmpty $ArgumentList)) {
-        $PodeContext.Schedules[$Name].Arguments = $ArgumentList
+        $_schedule.Arguments = $ArgumentList
     }
+}
+
+<#
+.SYNOPSIS
+Returns any defined schedules.
+
+.DESCRIPTION
+Returns any defined schedules, with support for filtering.
+
+.PARAMETER Name
+Any schedule Names to filter the schedules.
+
+.PARAMETER StartTime
+An optional StartTime to only return Schedules that will trigger after this date.
+
+.PARAMETER EndTime
+An optional EndTime to only return Schedules that will trigger before this date.
+
+.EXAMPLE
+Get-PodeSchedule
+
+.EXAMPLE
+Get-PodeSchedule -Name Name1, Name2
+
+.EXAMPLE
+Get-PodeSchedule -Name Name1, Name2 -StartTime [datetime]::new(2020, 3, 1) -EndTime [datetime]::new(2020, 3, 31)
+#>
+function Get-PodeSchedule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter()]
+        $StartTime = $null,
+
+        [Parameter()]
+        $EndTime = $null
+    )
+
+    $schedules = $PodeContext.Schedules.Values
+
+    # further filter by schedule names
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $schedules = @(foreach ($_name in $Name) {
+            foreach ($schedule in $schedules) {
+                if ($schedule.Name -ine $_name) {
+                    continue
+                }
+
+                $schedule
+            }
+        })
+    }
+
+    # filter by some start time
+    if ($null -ne $StartTime) {
+        $schedules = @(foreach ($schedule in $schedules) {
+            if (($null -ne $schedule.StartTime) -and ($StartTime -lt $schedule.StartTime)) {
+                continue
+            }
+
+            $_end = $EndTime
+            if ($null -eq $_end) {
+                $_end = $schedule.EndTime
+            }
+
+            if (($null -ne $schedule.EndTime) -and
+                (($StartTime -gt $schedule.EndTime) -or
+                    ((Get-PodeScheduleNextTrigger -Name $schedule.Name -DateTime $StartTime) -gt $_end))) {
+                continue
+            }
+
+            $schedule
+        })
+    }
+
+    # filter by some end time
+    if ($null -ne $EndTime) {
+        $schedules = @(foreach ($schedule in $schedules) {
+            if (($null -ne $schedule.EndTime) -and ($EndTime -gt $schedule.EndTime)) {
+                continue
+            }
+
+            $_start = $StartTime
+            if ($null -eq $_start) {
+                $_start = $schedule.StartTime
+            }
+
+            if (($null -ne $schedule.StartTime) -and
+                (($EndTime -lt $schedule.StartTime) -or
+                    ((Get-PodeScheduleNextTrigger -Name $schedule.Name -DateTime $_start) -gt $EndTime))) {
+                continue
+            }
+
+            $schedule
+        })
+    }
+
+    # return
+    return $schedules
+}
+
+<#
+.SYNOPSIS
+Get the next trigger time for a Schedule.
+
+.DESCRIPTION
+Get the next trigger time for a Schedule, either from the Schedule's StartTime or from a defined DateTime.
+
+.PARAMETER Name
+The Name of the Schedule.
+
+.PARAMETER DateTime
+An optional specific DateTime to get the next trigger time after. This DateTime must be between the Schedule's StartTime and EndTime.
+
+.EXAMPLE
+Get-PodeScheduleNextTrigger -Name Schedule1
+
+.EXAMPLE
+Get-PodeScheduleNextTrigger -Name Schedule1 -DateTime [datetime]::new(2020, 3, 10)
+#>
+function Get-PodeScheduleNextTrigger
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        $DateTime = $null
+    )
+
+    # ensure the schedule exists
+    if (!$PodeContext.Schedules.ContainsKey($Name)) {
+        throw "Schedule '$($Name)' does not exist"
+    }
+
+    $_schedule = $PodeContext.Schedules[$Name]
+
+    # ensure date is after start/before end
+    if (($null -ne $DateTime) -and ($null -ne $_schedule.StartTime) -and ($DateTime -lt $_schedule.StartTime)) {
+        throw "Supplied date is before the start time of the schedule at $($_schedule.StartTime)"
+    }
+
+    if (($null -ne $DateTime) -and ($null -ne $_schedule.EndTime) -and ($DateTime -gt $_schedule.EndTime)) {
+        throw "Supplied date is after the end time of the schedule at $($_schedule.EndTime)"
+    }
+
+    # get the next trigger
+    if ($null -eq $DateTime) {
+        $DateTime = $_schedule.StartTime
+    }
+
+    return (Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $DateTime -EndTime $_schedule.EndTime)
 }
 
 <#

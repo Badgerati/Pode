@@ -714,7 +714,7 @@ function Get-PodeConsoleKey
 
 function Test-PodeTerminationPressed
 {
-    param (
+    param(
         [Parameter()]
         $Key = $null
     )
@@ -723,30 +723,49 @@ function Test-PodeTerminationPressed
         return $false
     }
 
-    if ($null -eq $Key) {
-        $Key = Get-PodeConsoleKey
-    }
-
-    return (($null -ne $Key) -and ($Key.Key -ieq 'c') -and
-        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
+    return (Test-PodeKeyPressed -Key $Key -Character 'c')
 }
 
 function Test-PodeRestartPressed
 {
-    param (
+    param(
         [Parameter()]
         $Key = $null
+    )
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'r')
+}
+
+function Test-PodeOpenBrowserPressed
+{
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'b')
+}
+
+function Test-PodeKeyPressed
+{
+    param(
+        [Parameter()]
+        $Key = $null,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Character
     )
 
     if ($null -eq $Key) {
         $Key = Get-PodeConsoleKey
     }
 
-    return (($null -ne $Key) -and ($Key.Key -ieq 'r') -and
+    return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
         (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
-function Close-PodeServer
+function Close-PodeServerInternal
 {
     param (
         [switch]
@@ -2087,6 +2106,11 @@ function Get-PodeDefaultPort
     # if we running as iis, return the ASPNET port
     if ($PodeContext.Server.IsIIS) {
         return [int]$env:ASPNETCORE_PORT
+    }
+
+    # if we running as heroku, return the port
+    if ($PodeContext.Server.IsHeroku) {
+        return [int]$env:PORT
     }
 
     # otherwise, get the port for the protocol

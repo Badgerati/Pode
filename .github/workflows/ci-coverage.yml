@@ -19,11 +19,15 @@ jobs:
 
     - name: Install Invoke-Build
       shell: pwsh
-      run: Install-Module -Name InvokeBuild -RequiredVersion '5.5.1' -Force
+      run: |
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Install-Module -Name InvokeBuild -RequiredVersion '5.5.1' -Force
 
     - name: Run Pester Tests
       shell: pwsh
       env:
         PODE_COVERALLS_TOKEN: ${{ secrets.PODE_COVERALLS_TOKEN }}
         PODE_RUN_CODE_COVERAGE: true
-      run: Invoke-Build Test
+      run: |
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-Build Test

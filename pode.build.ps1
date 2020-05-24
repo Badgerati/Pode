@@ -9,11 +9,11 @@ param (
 
 $Versions = @{
     Pester = '4.8.0'
-    MkDocs = '1.0.4'
+    MkDocs = '1.1.2'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
     Checksum = '0.2.0'
-    MkDocsTheme = '4.6.0'
+    MkDocsTheme = '5.2.1'
     PlatyPS = '0.14.0'
 }
 
@@ -25,11 +25,6 @@ function Test-PodeBuildIsWindows
 {
     $v = $PSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
-}
-
-function Test-PodeBuildIsAppVeyor
-{
-    return (![string]::IsNullOrWhiteSpace($env:APPVEYOR_JOB_ID))
 }
 
 function Test-PodeBuildIsGitHub
@@ -44,15 +39,7 @@ function Test-PodeBuildCanCodeCoverage
 
 function Get-PodeBuildService
 {
-    if (Test-PodeBuildIsAppVeyor) {
-        return 'appveyor'
-    }
-
-    if (Test-PodeBuildIsGitHub) {
-        return 'github-actions'
-    }
-
-    return 'travis-ci'
+    return 'github-actions'
 }
 
 function Test-PodeBuildCommand($cmd)
@@ -71,18 +58,13 @@ function Test-PodeBuildCommand($cmd)
 
 function Get-PodeBuildBranch
 {
-    if (Test-PodeBuildIsAppVeyor) {
-        $branch = $env:APPVEYOR_REPO_BRANCH
-    }
-    elseif (Test-PodeBuildIsGitHub) {
-        $branch = $env:GITHUB_REF
-    }
-
-    return ($branch -ireplace 'refs\/heads\/', '')
+    return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
 }
 
 function Invoke-PodeBuildInstall($name, $version)
 {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
     if (Test-PodeBuildIsWindows) {
         if (Test-PodeBuildCommand 'choco') {
             choco install $name --version $version -y
@@ -99,6 +81,17 @@ function Invoke-PodeBuildInstall($name, $version)
             sudo yum install $name -y
         }
     }
+}
+
+function Install-PodeBuildModule($name)
+{
+    if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
+        return
+    }
+
+    Write-Host "Installing $($name) v$($Versions[$name])"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
 
@@ -152,18 +145,12 @@ task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
 # Synopsis: Install dependencies for running tests
 task TestDeps {
     # install pester
-    if (((Get-Module -ListAvailable Pester) | Where-Object { $_.Version -ieq $Versions.Pester }) -eq $null) {
-        Write-Host 'Installing Pester'
-        Install-Module -Name Pester -Scope CurrentUser -RequiredVersion $Versions.Pester -Force -SkipPublisherCheck
-    }
+    Install-PodeBuildModule Pester
 
     # install PSCoveralls
     if (Test-PodeBuildCanCodeCoverage)
     {
-        if (((Get-Module -ListAvailable PSCoveralls) | Where-Object { $_.Version -ieq $Versions.PSCoveralls }) -eq $null) {
-            Write-Host 'Installing PSCoveralls'
-            Install-Module -Name PSCoveralls -Scope CurrentUser -RequiredVersion $Versions.PSCoveralls -Force -SkipPublisherCheck
-        }
+        Install-PodeBuildModule PSCoveralls
     }
 }
 
@@ -180,10 +167,7 @@ task DocsDeps ChocoDeps, {
     }
 
     # install platyps
-    if (((Get-Module -ListAvailable PlatyPS) | Where-Object { $_.Version -ieq $Versions.PlatyPS }) -eq $null) {
-        Write-Host 'Installing PlatyPS'
-        Install-Module -Name PlatyPS -Scope CurrentUser -RequiredVersion $Versions.PlatyPS -Force -SkipPublisherCheck
-    }
+    Install-PodeBuildModule PlatyPS
 }
 
 
@@ -218,28 +202,21 @@ task Test TestDeps, {
 
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
 
-    # if appveyor or github, run code coverage
+    # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
-        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
+        $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
     }
     else {
-        $Script:TestStatus = Invoke-Pester './tests/unit' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
+        $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
     }
-}, PushAppVeyorTests, PushCodeCoverage, CheckFailedTests
+}, PushCodeCoverage, CheckFailedTests
 
 # Synopsis: Check if any of the tests failed
 task CheckFailedTests {
     if ($TestStatus.FailedCount -gt 0) {
         throw "$($TestStatus.FailedCount) tests failed"
     }
-}
-
-# Synopsis: If AppVeyor, push result artifacts
-task PushAppVeyorTests -If (Test-PodeBuildIsAppVeyor) {
-    $url = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
-    (New-Object 'System.Net.WebClient').UploadFile($url, $TestResultFile)
-    Push-AppveyorArtifact $TestResultFile
 }
 
 # Synopsis: If AppyVeyor or GitHub, push code coverage stats

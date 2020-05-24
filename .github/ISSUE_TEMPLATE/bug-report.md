@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve
+about: Create a bug report to help us improve
 title: ''
 labels: 'bug :bug:'
 assignees: ''
@@ -25,8 +25,10 @@ If applicable, add screenshots to help explain your problem.
 
 ### Platform
  - OS: [e.g. iOS, Windows]
- - Browser [e.g. Chrome, Safari]
- - Version [e.g. PS6.2.1]
+ - Browser: [e.g. Chrome, Safari]
+ - Versions:
+   - Pode: [e.g. Pode v1.7.3]
+   - PowerShell: [e.g. PS6.2.1]
 
 ### Additional Context
 Add any other context about the problem here.

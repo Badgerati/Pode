@@ -210,7 +210,7 @@ function Invoke-PodeSocketHandler
             ContentEncoding = (Get-PodeEncodingFromContentType -ContentType $req_info.Headers['Content-Type'])
         }
 
-        $WebEvent.Path = $req_info.Uri.AbsolutePath
+        $WebEvent.Path = [System.Web.HttpUtility]::UrlDecode($req_info.Uri.AbsolutePath)
         $WebEvent.Method = $req_info.Method.ToLowerInvariant()
         $WebEvent.Endpoint = $req_info.Headers['Host']
         $WebEvent.ContentType = $req_info.Headers['Content-Type']

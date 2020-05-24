@@ -8,6 +8,9 @@ Waits for a task to finish, and returns a result if there is one.
 .PARAMETER Task
 The task to wait on.
 
+.PARAMETER Timeout
+An optional Timeout in milliseconds.
+
 .EXAMPLE
 $context = Wait-PodeTask -Task $listener.GetContextAsync()
 #>
@@ -18,15 +21,38 @@ function Wait-PodeTask
     param (
         [Parameter(Mandatory=$true)]
         [System.Threading.Tasks.Task]
-        $Task
+        $Task,
+
+        [Parameter()]
+        [int]
+        $Timeout = 0
     )
+
+    # do we need a timeout?
+    $timeoutTask = $null
+    if ($Timeout -gt 0) {
+        $timeoutTask = [System.Threading.Tasks.Task]::Delay($Timeout)
+    }
+
+    # set the check task
+    if ($null -eq $timeoutTask) {
+        $checkTask = $Task
+    }
+    else {
+        $checkTask = [System.Threading.Tasks.Task]::WhenAny($Task, $timeoutTask)
+    }
 
     # is there a cancel token to supply?
     if (($null -eq $PodeContext) -or ($null -eq $PodeContext.Tokens.Cancellation.Token)) {
-        $Task.Wait()
+        $checkTask.Wait()
     }
     else {
-        $Task.Wait($PodeContext.Tokens.Cancellation.Token)
+        $checkTask.Wait($PodeContext.Tokens.Cancellation.Token)
+    }
+
+    # if the main task isnt complete, it timed out
+    if (($null -ne $timeoutTask) -and (!$Task.IsCompleted)) {
+        throw [System.TimeoutException]::new("Task has timed out after $($Timeout)ms")
     }
 
     # only return a value if the result has one
@@ -857,4 +883,22 @@ function Test-PodeIsIIS
     param()
 
     return $PodeContext.Server.IsIIS
+}
+
+<#
+.SYNOPSIS
+Returns whether or not the server is running via Heroku.
+
+.DESCRIPTION
+Returns whether or not the server is running via Heroku.
+
+.EXAMPLE
+if (Test-PodeIsHeroku) { }
+#>
+function Test-PodeIsHeroku
+{
+    [CmdletBinding()]
+    param()
+
+    return $PodeContext.Server.IsHeroku
 }

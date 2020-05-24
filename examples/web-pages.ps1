@@ -10,7 +10,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Start-PodeServer -Threads 2 -Browse {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http -Name '8090Address'
@@ -26,7 +26,7 @@ Start-PodeServer -Threads 2 -Browse {
     Add-PodeAccessRule -Access Deny -Type IP -Values all
 
     # log requests to the terminal
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set view engine to pode renderer
