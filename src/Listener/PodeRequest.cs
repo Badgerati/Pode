@@ -1,0 +1,301 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
+using System.Linq;
+
+namespace Pode
+{
+    public class PodeRequest : IDisposable
+    {
+        public string HttpMethod { get; private set; }
+        //TODO: change this to HashTable
+        public NameValueCollection QueryString { get; private set; }
+        public string Protocol { get; private set; }
+        public string ProtocolVersion { get; private set; }
+        public EndPoint RemoteEndPoint { get; private set; }
+        public string ContentType { get; private set; }
+        public Encoding ContentEncoding { get; private set; }
+        public string UserAgent { get; private set; }
+        public string UrlReferrer { get; private set; }
+        public Uri Url { get; private set; }
+        public Hashtable Headers { get; private set; }
+        public string Body { get; private set; }
+        public byte[] RawBody { get; private set; }
+        public bool IsSsl { get; private set; }
+        public string Host { get; private set; }
+        public bool CloseImmediately { get; private set; }
+
+        public Stream InputStream { get; private set; }
+        public HttpRequestException Error { get; private set; }
+
+        private Socket Socket;
+        private static UTF8Encoding Encoding = new UTF8Encoding();
+
+        public PodeRequest(Socket socket, X509Certificate certificate, SslProtocols protocols)
+        {
+            Socket = socket;
+            RemoteEndPoint = socket.RemoteEndPoint;
+            IsSsl = (certificate != default(X509Certificate));
+
+            Open(certificate, protocols);
+            if (CloseImmediately)
+            {
+                return;
+            }
+
+            try
+            {
+                Receive();
+            }
+            catch (HttpRequestException httpex)
+            {
+                Error = httpex;
+            }
+            catch (Exception ex)
+            {
+                Error = new HttpRequestException(ex.Message, ex);
+                Error.Data.Add("PodeStatusCode", 400);
+            }
+        }
+
+        private void Open(X509Certificate certificate, SslProtocols protocols)
+        {
+            // open the socket's stream
+            var stream = new NetworkStream(Socket, true);
+            if (certificate == default(X509Certificate))
+            {
+                // if not ssl, use the main network stream
+                InputStream = stream;
+                return;
+            }
+
+            try
+            {
+                // otherwise, convert the stream to an ssl stream
+                var ssl = new SslStream(stream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
+                ssl.AuthenticateAsServer(certificate, true, protocols, false); //TODO: can true here be false?
+                InputStream = ssl;
+            }
+            catch
+            {
+                // invalid ssl or cert
+                CloseImmediately = true;
+            }
+        }
+
+        private bool ValidateCertificateCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            if (certificate == default(X509Certificate))
+            {
+                return true;
+            }
+
+            return (sslPolicyErrors != SslPolicyErrors.None);
+        }
+
+        public void Receive()
+        {
+            var bytes = new byte[Socket.Available];
+            InputStream.ReadAsync(bytes, 0, Socket.Available).Wait();
+            Parse(bytes);
+        }
+
+        private void Parse(byte[] bytes)
+        {
+            // get the raw string for headers
+            var content = Encoding.GetString(bytes, 0, bytes.Length);
+
+            // split the lines on newline
+            var newline = "\r\n";
+            if (!content.Contains(newline))
+            {
+                newline = "\n";
+            }
+
+            var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
+
+            // first line is method/url
+            var reqMeta = Regex.Split(reqLines[0].Trim(), "\\s+");
+            if (reqMeta.Length != 3)
+            {
+                throw new HttpRequestException($"Invalid request line: {reqLines[0]} [{reqMeta.Length}]");
+            }
+
+            // http method
+            HttpMethod = reqMeta[0].Trim();
+            if (Array.IndexOf(new string[] { "DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE" }, HttpMethod) == -1)
+            {
+                throw new HttpRequestException($"Invalid request HTTP method: {HttpMethod}");
+            }
+
+            // query string
+            var reqQuery = reqMeta[1].Trim();
+            if (!string.IsNullOrWhiteSpace(reqQuery))
+            {
+                var qmIndex = reqQuery.IndexOf("?");
+                if (qmIndex > 0)
+                {
+                    reqQuery = reqQuery.Substring(qmIndex);
+                }
+
+                QueryString = HttpUtility.ParseQueryString(reqQuery);
+                //TODO: convert to HashTable
+            }
+
+            // http protocol version
+            Protocol = (reqMeta[2] ?? "HTTP/1.1").Trim();
+            if (!Protocol.StartsWith("HTTP/"))
+            {
+                throw new HttpRequestException($"Invalid request version: {Protocol}");
+            }
+
+            ProtocolVersion = Regex.Split(Protocol, "/")[1];
+
+            // headers
+            Headers = new Hashtable();
+
+            var bodyIndex = 0;
+            var h_index = 0;
+            var h_line = string.Empty;
+            var h_name = string.Empty;
+            var h_value = string.Empty;
+
+            for (var i = 1; i <= reqLines.Length - 1; i++)
+            {
+                h_line = reqLines[i].Trim();
+                if (string.IsNullOrWhiteSpace(h_line))
+                {
+                    bodyIndex = i + 1;
+                    break;
+                }
+
+                h_index = h_line.IndexOf(":");
+                h_name = h_line.Substring(0, h_index).Trim();
+                h_value = h_line.Substring(h_index + 1).Trim();
+                Headers.Add(h_name, h_value);
+            }
+
+            // get the content length
+            var strContentLength = $"{Headers["Content-Length"]}";
+            if (string.IsNullOrWhiteSpace(strContentLength))
+            {
+                strContentLength = "0";
+            }
+
+            var contentLength = int.Parse(strContentLength);
+
+            // get transfer encoding, see if chunked
+            var transferEncoding = $"{Headers["Transfer-Encoding"]}";
+            var isChunked = (!string.IsNullOrWhiteSpace(transferEncoding) && transferEncoding.Contains("chunked"));
+
+            // if chunked, and we have a content-length, fail
+            if (isChunked && contentLength > 0)
+            {
+                throw new HttpRequestException($"Cannot supply a Content-Length and a chunked Transfer-Encoding");
+            }
+
+            // set the body
+            Body = string.Join(newline, reqLines.Skip(bodyIndex));
+
+            // get the start index for raw bytes
+            var start = reqLines.Take(bodyIndex - 1).Sum(x => x.Length) + ((bodyIndex - 1) * newline.Length);
+
+            // parse for chunked
+            if (isChunked)
+            {
+                var c_length = -1;
+                var c_index = 0;
+                var c_hexBytes = default(IEnumerable<byte>);
+                var c_rawBytes = new List<byte>();
+                var c_hex = string.Empty;
+                var c_start = 0;
+
+                while (c_length != 0)
+                {
+                    // get index of newline char, read start>index bytes as HEX for length
+                    c_index = Array.IndexOf(bytes, (byte)newline[0], start);
+                    c_hexBytes = bytes.Skip(start).Take(c_index - start - 1);
+
+                    c_hex = string.Empty;
+                    foreach (var b in c_hexBytes)
+                    {
+                        c_hex += (char)b;
+                    }
+
+                    // if no length, continue
+                    c_length = Convert.ToInt32(c_hex, 16);
+                    if (c_length == 0)
+                    {
+                        continue;
+                    }
+
+                    // read those X hex bytes from (newline index + newline length)
+                    c_start = c_index + newline.Length;
+                    c_rawBytes.AddRange(bytes.Skip(c_start).Take(c_length - 1));
+
+                    // skip bytes for ending newline, and set new start
+                    start = (c_start + c_length - 1) + newline.Length + 1;
+                }
+
+                RawBody = c_rawBytes.ToArray();
+            }
+
+            // else use content length
+            else if (contentLength > 0)
+            {
+                RawBody = bytes.Skip(start).Take(contentLength).ToArray();
+            }
+
+            // else just read all
+            else
+            {
+                RawBody = bytes.Skip(start).ToArray();
+            }
+
+            // set values from headers
+            Host = $"{Headers["Host"]}";
+            UrlReferrer = $"{Headers["Referer"]}";
+            UserAgent = $"{Headers["User-Agent"]}";
+            ContentType = $"{Headers["Content-Type"]}";
+            //TODO: shouldnt transfer-encoding and accept-encoding be here?
+
+            // set content encoding
+            ContentEncoding = System.Text.Encoding.UTF8;
+            if (!string.IsNullOrWhiteSpace(ContentType))
+            {
+                var atoms = ContentType.Split(';');
+                foreach (var atom in atoms)
+                {
+                    if (atom.Trim().ToLowerInvariant().StartsWith("charset"))
+                    {
+                        ContentEncoding = System.Text.Encoding.GetEncoding((atom.Split('=')[1].Trim()));
+                        break;
+                    }
+                }
+            }
+
+            // build required URI details
+            var _proto = (IsSsl ? "https" : "http");
+            Url = new Uri($"{_proto}://{Host}{reqQuery}");
+        }
+
+        public void Dispose()
+        {
+            if (Socket != default(Socket))
+            {
+                PodeSocket.CloseSocket(Socket);
+            }
+        }
+    }
+}

@@ -172,6 +172,24 @@ task DocsDeps ChocoDeps, {
 
 
 <#
+# Building
+#>
+
+# Synopsis: Build the .NET Core Listener
+task Build {
+    Push-Location ./src/Listener
+
+    try {
+        dotnet build --configuration Release
+        dotnet publish --configuration Release --self-contained --output ../Libs
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+
+<#
 # Packaging
 #>
 

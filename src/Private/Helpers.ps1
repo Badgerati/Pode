@@ -1250,7 +1250,7 @@ function ConvertFrom-PodeRequestContent
                 if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
                     # create a compressed stream to decompress the req bytes
                     $ms = New-Object -TypeName System.IO.MemoryStream
-                    $ms.Write($Request.Body.Bytes, 0, $Request.Body.Bytes.Length)
+                    $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
                     $ms.Seek(0, 0) | Out-Null
                     $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
 
@@ -1258,7 +1258,7 @@ function ConvertFrom-PodeRequestContent
                     $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
                 }
                 else {
-                    $Content = $Request.Body.Value
+                    $Content = $Request.Body
                 }
             }
 
@@ -1312,7 +1312,7 @@ function ConvertFrom-PodeRequestContent
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
             if ($PodeContext.Server.Type -ieq 'pode') {
-                $Content = $Request.Body.Bytes
+                $Content = $Request.RawBody
             }
             else {
                 $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream

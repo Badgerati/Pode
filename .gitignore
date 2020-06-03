@@ -31,6 +31,7 @@ bld/
 [Tt]emp/
 [Ll]ogs/
 [Ss]ite/
+[Ll]ibs/
 
 # Packing Artifacts
 *.zip

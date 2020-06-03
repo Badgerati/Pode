@@ -6,7 +6,7 @@ function Start-PodeSocketServer
     )
 
     # setup the callback for sockets
-    $PodeContext.Server.Sockets.Ssl.Callback = Get-PodeSocketCertifcateCallback
+    #$PodeContext.Server.Sockets.Ssl.Callback = Get-PodeSocketCertifcateCallback
 
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
@@ -15,6 +15,7 @@ function Start-PodeSocketServer
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
+        (Get-PodeQueryMiddleware),
         (Get-PodeCookieMiddleware)
     )
 
@@ -37,27 +38,42 @@ function Start-PodeSocketServer
         }
     }
 
+    # create the listener
+    $listener = [Pode.PodeListener]::new()
+
     try
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $PodeContext.Server.Sockets.Listeners += (Initialize-PodeSocketListenerEndpoint `
-                -Type Sockets `
-                -Address $_.Address `
-                -Port $_.Port `
-                -Certificate $_.Certificate)
+            $socket = [Pode.PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate)
+            $listener.Add($socket)
         }
+
+        $listener.Start()
+
+        # $endpoints | ForEach-Object {
+        #     $PodeContext.Server.Sockets.Listeners += (Initialize-PodeSocketListenerEndpoint `
+        #         -Type Sockets `
+        #         -Address $_.Address `
+        #         -Port $_.Port `
+        #         -Certificate $_.Certificate)
+        # }
     }
     catch {
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
-        Close-PodeSocketListener -Type Sockets
+        Close-PodeDisposable -Disposable $listener
+        #Close-PodeSocketListener -Type Sockets
         throw $_.Exception
     }
 
     # script for listening out for incoming requests
     $listenScript = {
-        param (
+        param(
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener,
+
             [Parameter(Mandatory=$true)]
             [int]
             $ThreadId
@@ -65,15 +81,27 @@ function Start-PodeSocketServer
 
         try
         {
-            Start-PodeSocketListener -Listeners $PodeContext.Server.Sockets.Listeners
-
-            [System.Threading.Thread]::CurrentThread.IsBackground = $true
-            [System.Threading.Thread]::CurrentThread.Priority = [System.Threading.ThreadPriority]::Lowest
-
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
-                Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(60))
+                # get request and response
+                $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
+                try {
+                    Invoke-PodeSocketHandler -Context $context
+                }
+                finally {
+                    Close-PodeDisposable -Disposable $context
+                }
             }
+
+            #Start-PodeSocketListener -Listeners $PodeContext.Server.Sockets.Listeners
+
+            # [System.Threading.Thread]::CurrentThread.IsBackground = $true
+            # [System.Threading.Thread]::CurrentThread.Priority = [System.Threading.ThreadPriority]::Lowest
+
+            # while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+            # {
+            #     Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(60))
+            # }
         }
         catch [System.OperationCanceledException] {}
         catch {
@@ -86,15 +114,29 @@ function Start-PodeSocketServer
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.Web | ForEach-Object {
         Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
-            -Parameters @{ 'ThreadId' = $_ }
+            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
+    # 1..$PodeContext.Threads.Web | ForEach-Object {
+    #     Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
+    #         -Parameters @{ 'ThreadId' = $_ }
+    # }
 
     # script to keep web server listening until cancelled
     $waitScript = {
+        param(
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener
+        )
+
         try {
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+            {
                 Start-Sleep -Seconds 1
             }
+            # while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            #     Start-Sleep -Seconds 1
+            # }
         }
         catch [System.OperationCanceledException] {}
         catch {
@@ -103,11 +145,13 @@ function Start-PodeSocketServer
             throw $_.Exception
         }
         finally {
-            Close-PodeSocketListener -Type Sockets
+            Close-PodeDisposable -Disposable $Listener
+            #Close-PodeSocketListener -Type Sockets
         }
     }
 
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript
+    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    #Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript
 
     # browse to the first endpoint, if flagged
     if ($Browse) {
@@ -121,32 +165,43 @@ function Invoke-PodeSocketHandler
 {
     param(
         [Parameter(Mandatory)]
-        [hashtable]
+        [Pode.PodeContext]
+        #[hashtable]
         $Context
     )
 
     try
     {
+        $Request = $Context.Request
+        $Response = $Context.Response
+
         # reset with basic event data
         $WebEvent = @{
             OnEnd = @()
             Auth = @{}
-            Response = @{
-                Headers = @{}
-                ContentLength64 = 0
-                ContentType = $null
-                OutputStream = New-Object -TypeName System.IO.MemoryStream
-                StatusCode = 200
-                StatusDescription = 'OK'
-            }
-            Request = @{}
+            Response = $Response
+            # Response = @{
+            #     Headers = @{}
+            #     ContentLength64 = 0
+            #     ContentType = $null
+            #     OutputStream = New-Object -TypeName System.IO.MemoryStream
+            #     StatusCode = 200
+            #     StatusDescription = 'OK'
+            # }
+            Request = $Request
+            # Request = @{}
             Lockable = $PodeContext.Lockable
-            Path = $null
-            Method = $null
+            Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
+            # Path = $null
+            Method = $Request.HttpMethod.ToLowerInvariant()
+            # Method = $null
             Query = $null
-            Protocol = $Context.Protocol
-            Endpoint = $null
-            ContentType = $null
+            Protocol = $Request.Url.Scheme
+            # Protocol = $Context.Protocol
+            Endpoint = $Request.Host
+            # Endpoint = $null
+            ContentType = $Request.ContentType
+            # ContentType = $null
             ErrorType = $null
             Cookies = @{}
             PendingCookies = @{}
@@ -158,75 +213,86 @@ function Invoke-PodeSocketHandler
             StaticContent = $null
             Timestamp = [datetime]::UtcNow
             TransferEncoding = $null
+            AcceptEncoding = $null
         }
 
         # set pode in server response header
-        Set-PodeServerHeader
+        # Set-PodeServerHeader
 
         # make the stream (use an ssl stream if we have a cert)
-        $stream = [System.Net.Sockets.NetworkStream]::new($Context.Socket, $true)
+        # $stream = [System.Net.Sockets.NetworkStream]::new($Context.Socket, $true)
 
-        if ($null -ne $Context.Certificate) {
-            try {
-                $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.Sockets.Ssl.Callback)
-                $stream.AuthenticateAsServer($Context.Certificate, $true, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
-            }
-            catch {
-                # immediately close http connections
-                Close-PodeSocket -Socket $Context.Socket -Shutdown
-                return
-            }
-        }
+        # if ($null -ne $Context.Certificate) {
+        #     try {
+        #         $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.Sockets.Ssl.Callback)
+        #         $stream.AuthenticateAsServer($Context.Certificate, $true, $PodeContext.Server.Sockets.Ssl.Protocols, $false)
+        #     }
+        #     catch {
+        #         # immediately close http connections
+        #         Close-PodeSocket -Socket $Context.Socket -Shutdown
+        #         return
+        #     }
+        # }
 
         # read the request headers - prepare for the dodgest of hacks ever. I apologise profusely.
-        try {
-            $bytes = New-Object byte[] 0
-            $Context.Socket.Receive($bytes) | Out-Null
-        }
-        catch {
-            $err = [System.Net.Http.HttpRequestException]::new()
-            $err.Data.Add('PodeStatusCode', 408)
-            throw $err
-        }
+        # try {
+        #     $bytes = New-Object byte[] 0
+        #     $Context.Socket.Receive($bytes) | Out-Null
+        # }
+        # catch {
+        #     $err = [System.Net.Http.HttpRequestException]::new()
+        #     $err.Data.Add('PodeStatusCode', 408)
+        #     throw $err
+        # }
 
-        $bytes = New-Object byte[] $Context.Socket.Available
-        (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $Context.Socket.Available)) | Out-Null
-        $req_info = Get-PodeServerRequestDetails -Bytes $bytes -Protocol $Context.Protocol
+        # $bytes = New-Object byte[] $Context.Socket.Available
+        # (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $Context.Socket.Available)) | Out-Null
+        # $req_info = Get-PodeServerRequestDetails -Bytes $bytes -Protocol $Context.Protocol
 
         # set the rest of the event data
-        $WebEvent.Request = @{
-            Body = @{
-                Value = $req_info.Body
-                Bytes = $req_info.RawBody
-            }
-            Headers = $req_info.Headers
-            Url = $req_info.Uri
-            UrlReferrer = $req_info.Headers['Referer']
-            UserAgent = $req_info.Headers['User-Agent']
-            HttpMethod = $req_info.Method
-            RemoteEndPoint = $Context.Socket.RemoteEndPoint
-            Protocol = $req_info.Protocol
-            ProtocolVersion = ($req_info.Protocol -isplit '/')[1]
-            ContentEncoding = (Get-PodeEncodingFromContentType -ContentType $req_info.Headers['Content-Type'])
-        }
+        # $WebEvent.Request = @{
+        #     Body = @{
+        #         Value = $req_info.Body
+        #         Bytes = $req_info.RawBody
+        #     }
+        #     Headers = $req_info.Headers
+        #     Url = $req_info.Uri
+        #     UrlReferrer = $req_info.Headers['Referer']
+        #     UserAgent = $req_info.Headers['User-Agent']
+        #     HttpMethod = $req_info.Method
+        #     RemoteEndPoint = $Context.Socket.RemoteEndPoint
+        #     Protocol = $req_info.Protocol
+        #     ProtocolVersion = ($req_info.Protocol -isplit '/')[1]
+        #     ContentEncoding = (Get-PodeEncodingFromContentType -ContentType $req_info.Headers['Content-Type'])
+        # }
 
-        $WebEvent.Path = [System.Web.HttpUtility]::UrlDecode($req_info.Uri.AbsolutePath)
-        $WebEvent.Method = $req_info.Method.ToLowerInvariant()
-        $WebEvent.Endpoint = $req_info.Headers['Host']
-        $WebEvent.ContentType = $req_info.Headers['Content-Type']
-        $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding $req_info.Headers['Accept-Encoding'] -ThrowError)
+        # $WebEvent.Path = [System.Web.HttpUtility]::UrlDecode($req_info.Uri.AbsolutePath)
+        # $WebEvent.Method = $req_info.Method.ToLowerInvariant()
+        # $WebEvent.Endpoint = $req_info.Headers['Host']
+        # $WebEvent.ContentType = $req_info.Headers['Content-Type']
+        # $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding $req_info.Headers['Accept-Encoding'] -ThrowError)
+
+        # accept/transfer encoding
+        $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
+        $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
 
         # transfer encoding
-        $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'] -ThrowError)
-        if ([string]::IsNullOrWhiteSpace($WebEvent.TransferEncoding)) {
-            $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['X-Transfer-Encoding'] -ThrowError)
-        }
+        # $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['Transfer-Encoding'] -ThrowError)
+        # if ([string]::IsNullOrWhiteSpace($WebEvent.TransferEncoding)) {
+        #     $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding $req_info.Headers['X-Transfer-Encoding'] -ThrowError)
+        # }
 
         # parse the query string and convert it to a hashtable
-        $WebEvent.Query = (Convert-PodeQueryStringToHashTable -Uri $req_info.Query)
+        # $WebEvent.Query = (Convert-PodeQueryStringToHashTable -Uri $req_info.Query)
 
         # add logging endware for post-request
         Add-PodeRequestLogEndware -WebEvent $WebEvent
+
+        # stop now if the request has an error
+        if ($null -ne $Request.Error) {
+            $Request.Error | Write-PodeErrorLog -CheckInnerException
+            throw $Request.Error
+        }
 
         # invoke global and route middleware
         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
@@ -235,7 +301,7 @@ function Invoke-PodeSocketHandler
                 # invoke the route
                 if ($null -ne $WebEvent.StaticContent) {
                     if ($WebEvent.StaticContent.IsDownload) {
-                        Set-PodeResponseAttachment -Path $e.Path
+                        Set-PodeResponseAttachment -Path $WebEvent.Path
                     }
                     else {
                         $cachable = $WebEvent.StaticContent.IsCachable
@@ -266,49 +332,53 @@ function Invoke-PodeSocketHandler
         Update-PodeServerRequestMetrics -WebEvent $WebEvent
     }
 
-    try {
-        # invoke endware specifc to the current web event
-        $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
-        Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
+    # invoke endware specifc to the current web event
+    $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
+    Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
 
-        # write the response line
-        $protocol = $req_info.Protocol
-        if ([string]::IsNullOrWhiteSpace($protocol)) {
-            $protocol = 'HTTP/1.1'
-        }
+    # try {
+    #     # invoke endware specifc to the current web event
+    #     $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
+    #     Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
 
-        $newLine = "`r`n"
-        $res_msg = "$($protocol) $($WebEvent.Response.StatusCode) $($WebEvent.Response.StatusDescription)$($newLine)"
+    #     # write the response line
+    #     $protocol = $req_info.Protocol
+    #     if ([string]::IsNullOrWhiteSpace($protocol)) {
+    #         $protocol = 'HTTP/1.1'
+    #     }
 
-        # set response headers before adding
-        Set-PodeServerResponseHeaders -WebEvent $WebEvent
+    #     $newLine = "`r`n"
+    #     $res_msg = "$($protocol) $($WebEvent.Response.StatusCode) $($WebEvent.Response.StatusDescription)$($newLine)"
 
-        # write the response headers
-        if ($WebEvent.Response.Headers.Count -gt 0) {
-            foreach ($key in $WebEvent.Response.Headers.Keys) {
-                foreach ($value in $WebEvent.Response.Headers[$key]) {
-                    $res_msg += "$($key): $($value)$($newLine)"
-                }
-            }
-        }
+    #     # set response headers before adding
+    #     Set-PodeServerResponseHeaders -WebEvent $WebEvent
 
-        $res_msg += $newLine
+    #     # write the response headers
+    #     if ($WebEvent.Response.Headers.Count -gt 0) {
+    #         foreach ($key in $WebEvent.Response.Headers.Keys) {
+    #             foreach ($value in $WebEvent.Response.Headers[$key]) {
+    #                 $res_msg += "$($key): $($value)$($newLine)"
+    #             }
+    #         }
+    #     }
 
-        # stream response output
-        $buffer = $PodeContext.Server.Encoding.GetBytes($res_msg)
-        Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
-        $WebEvent.Response.OutputStream.WriteTo($stream)
-        $stream.Flush()
-    }
-    catch [System.Management.Automation.MethodInvocationException] { }
-    finally {
-        # close socket stream
-        if ($null -ne $WebEvent.Response.OutputStream) {
-            Close-PodeDisposable -Disposable $WebEvent.Response.OutputStream -Close -CheckNetwork
-        }
+    #     $res_msg += $newLine
 
-        Close-PodeSocket -Socket $Context.Socket -Shutdown
-    }
+    #     # stream response output
+    #     $buffer = $PodeContext.Server.Encoding.GetBytes($res_msg)
+    #     Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
+    #     $WebEvent.Response.OutputStream.WriteTo($stream)
+    #     $stream.Flush()
+    # }
+    # catch [System.Management.Automation.MethodInvocationException] { }
+    # finally {
+    #     # close socket stream
+    #     if ($null -ne $WebEvent.Response.OutputStream) {
+    #         Close-PodeDisposable -Disposable $WebEvent.Response.OutputStream -Close -CheckNetwork
+    #     }
+
+    #     Close-PodeSocket -Socket $Context.Socket -Shutdown
+    # }
 }
 
 function Set-PodeServerResponseHeaders
