@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
@@ -97,14 +98,13 @@ namespace Pode
             }
 
             args.AcceptSocket = acceptedEvent.AcceptSocket;
+            args.SetBuffer(new byte[0], 0, 0);
             args.UserToken = this;
             var raised = false;
 
             try
             {
-                Console.WriteLine("HERE1");
                 raised = args.AcceptSocket.ReceiveAsync(args);
-                Console.WriteLine("HERE2");
             }
             catch (ObjectDisposedException)
             {
@@ -114,8 +114,6 @@ namespace Pode
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
-                Console.WriteLine(ex.InnerException.Message);
-                Console.WriteLine(ex.InnerException.StackTrace);
                 throw;
             }
 
@@ -160,7 +158,6 @@ namespace Pode
 
         private void ProcessReceive(SocketAsyncEventArgs args)
         {
-            Console.WriteLine("HERE3");
             // get details
             var received = args.AcceptSocket;
             var socket = (PodeSocket)args.UserToken;
@@ -189,6 +186,12 @@ namespace Pode
                 // if we need to exit now, dispose and exit
                 if (request.CloseImmediately || string.IsNullOrWhiteSpace(request.HttpMethod))
                 {
+                    if (request.Error != default(HttpRequestException))
+                    {
+                        Console.WriteLine(request.Error.Message);
+                        Console.WriteLine(request.Error.StackTrace);
+                    }
+
                     request.Dispose();
                     return;
                 }
@@ -239,11 +242,7 @@ namespace Pode
 
         private void Receive_Completed(object sender, SocketAsyncEventArgs e)
         {
-            Console.WriteLine("HERE4");
-            if (e.LastOperation == SocketAsyncOperation.Receive)
-            {
-                ProcessReceive(e);
-            }
+            ProcessReceive(e);
         }
 
         public void Dispose()

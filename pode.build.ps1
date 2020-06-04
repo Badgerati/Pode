@@ -177,6 +177,10 @@ task DocsDeps ChocoDeps, {
 
 # Synopsis: Build the .NET Core Listener
 task Build {
+    if (Test-Path ./src/Libs) {
+        Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
+    }
+
     Push-Location ./src/Listener
 
     try {
@@ -212,7 +216,7 @@ task Pack -If (Test-PodeBuildIsWindows) 7Zip, ChocoPack
 #>
 
 # Synopsis: Run the tests
-task Test TestDeps, {
+task Test Build, TestDeps, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
         Import-Module Pester -Force -RequiredVersion $Versions.Pester

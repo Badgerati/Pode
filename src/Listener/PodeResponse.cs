@@ -15,9 +15,9 @@ namespace Pode
 
         private PodeRequest Request;
 
-        public int ContentLength64
+        public long ContentLength64
         {
-            get { return int.Parse($"{Headers["Content-Length"]}"); }
+            get { return long.Parse($"{Headers["Content-Length"]}"); }
             set
             {
                 if (Headers.ContainsKey("Content-Length"))
@@ -58,31 +58,52 @@ namespace Pode
 
         public void Send()
         {
-            var newline = "\r\n";
-            var message = $"{Request.Protocol} {StatusCode} {StatusDescription}{newline}";
-
-            // default headers
-            ForceDefaultHeaders();
-
-            // write the response headers
-            if (Headers.Count > 0)
+            try
             {
-                foreach (var key in Headers.Keys)
+                var newline = "\r\n";
+                var message = $"{Request.Protocol} {StatusCode} {StatusDescription}{newline}";
+
+                // default headers
+                ForceDefaultHeaders();
+
+                // write the response headers
+                if (Headers.Count > 0)
                 {
-                    foreach (var value in (object[])Headers[key])
+                    foreach (var key in Headers.Keys)
                     {
-                        message += $"{key}: {value}{newline}";
+                        if (Headers[key] is object[])
+                        {
+                            foreach (var value in (object[])Headers[key])
+                            {
+                                message += $"{key}: {value}{newline}";
+                            }
+                        }
+                        else
+                        {
+                            message += $"{key}: {Headers[key]}{newline}";
+                        }
                     }
                 }
+
+                message += newline;
+
+                // stream response output
+                var buffer = Encoding.GetBytes(message);
+                Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
+                OutputStream.WriteTo(Request.InputStream);
+                Request.InputStream.Flush();
             }
-
-            message += newline;
-
-            // stream response output
-            var buffer = Encoding.GetBytes(message);
-            Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
-            OutputStream.WriteTo(Request.InputStream);
-            Request.InputStream.Flush();
+            catch (IOException) { }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
+                throw;
+            }
+            finally
+            {
+                Request.InputStream.Flush();
+            }
         }
 
         //TODO:
@@ -93,6 +114,12 @@ namespace Pode
 
         private void ForceDefaultHeaders()
         {
+            // ensure content length
+            if (ContentLength64 == 0 && OutputStream.Length > 0)
+            {
+                ContentLength64 = OutputStream.Length;
+            }
+
             // set the date
             if (Headers.ContainsKey("Date"))
             {
@@ -102,7 +129,7 @@ namespace Pode
             Headers.Add("Date", DateTime.UtcNow.ToString("r", CultureInfo.InvariantCulture));
 
             // set the server
-            if (!Headers.ContainsKey("Date"))
+            if (!Headers.ContainsKey("Server"))
             {
                 Headers.Add("Server", "Pode");
             }

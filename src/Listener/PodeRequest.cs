@@ -19,7 +19,6 @@ namespace Pode
     public class PodeRequest : IDisposable
     {
         public string HttpMethod { get; private set; }
-        //TODO: change this to HashTable
         public NameValueCollection QueryString { get; private set; }
         public string Protocol { get; private set; }
         public string ProtocolVersion { get; private set; }
@@ -150,7 +149,6 @@ namespace Pode
                 }
 
                 QueryString = HttpUtility.ParseQueryString(reqQuery);
-                //TODO: convert to HashTable
             }
 
             // http protocol version
