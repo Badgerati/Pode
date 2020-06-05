@@ -105,9 +105,16 @@ namespace Pode
 
         public void Receive()
         {
-            var bytes = new byte[Socket.Available];
-            InputStream.ReadAsync(bytes, 0, Socket.Available).Wait();
-            Parse(bytes);
+            var allBytes = new List<byte>();
+
+            while (Socket.Available > 0)
+            {
+                var bytes = new byte[Socket.Available];
+                InputStream.ReadAsync(bytes, 0, Socket.Available).Wait();
+                allBytes.AddRange(bytes);
+            }
+
+            Parse(allBytes.ToArray());
         }
 
         private void Parse(byte[] bytes)
@@ -207,7 +214,7 @@ namespace Pode
             Body = string.Join(newline, reqLines.Skip(bodyIndex));
 
             // get the start index for raw bytes
-            var start = reqLines.Take(bodyIndex - 1).Sum(x => x.Length) + ((bodyIndex - 1) * newline.Length);
+            var start = reqLines.Take(bodyIndex).Sum(x => x.Length) + ((bodyIndex) * newline.Length);
 
             // parse for chunked
             if (isChunked)
@@ -217,13 +224,13 @@ namespace Pode
                 var c_hexBytes = default(IEnumerable<byte>);
                 var c_rawBytes = new List<byte>();
                 var c_hex = string.Empty;
-                var c_start = 0;
+                //var c_start = 0;
 
                 while (c_length != 0)
                 {
                     // get index of newline char, read start>index bytes as HEX for length
                     c_index = Array.IndexOf(bytes, (byte)newline[0], start);
-                    c_hexBytes = bytes.Skip(start).Take(c_index - start - 1);
+                    c_hexBytes = bytes.Skip(start).Take(c_index - start);
 
                     c_hex = string.Empty;
                     foreach (var b in c_hexBytes)
@@ -239,11 +246,11 @@ namespace Pode
                     }
 
                     // read those X hex bytes from (newline index + newline length)
-                    c_start = c_index + newline.Length;
-                    c_rawBytes.AddRange(bytes.Skip(c_start).Take(c_length - 1));
+                    start = c_index + newline.Length;
+                    c_rawBytes.AddRange(bytes.Skip(start).Take(c_length - 1));
 
                     // skip bytes for ending newline, and set new start
-                    start = (c_start + c_length - 1) + newline.Length + 1;
+                    start = (start + c_length - 1) + newline.Length + 1;
                 }
 
                 RawBody = c_rawBytes.ToArray();
