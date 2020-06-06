@@ -106,12 +106,24 @@ namespace Pode
         public void Receive()
         {
             var allBytes = new List<byte>();
+            if (IsSsl)
+            {
+                try
+                {
+                    // the stream gets reset on ssl upgrade
+                    Socket.Receive(new byte[0]);
+                }
+                catch
+                {
+                    var err = new HttpRequestException();
+                    err.Data.Add("PodeStatusCode", 408);
+                    throw err;
+                }
+            }
 
-            Console.WriteLine($"Now Available: {Socket.Available}");
             while (Socket.Available > 0)
             {
                 var bytes = new byte[Socket.Available];
-                Console.WriteLine($"Reading Available: {Socket.Available}");
                 InputStream.ReadAsync(bytes, 0, Socket.Available).Wait();
                 allBytes.AddRange(bytes);
             }
@@ -123,8 +135,6 @@ namespace Pode
         {
             // get the raw string for headers
             var content = Encoding.GetString(bytes, 0, bytes.Length);
-            Console.WriteLine($"Bytes: {bytes.Length}");
-            Console.WriteLine(content);
 
             // split the lines on newline
             var newline = "\r\n";

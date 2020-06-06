@@ -37,6 +37,7 @@ function Start-PodeSocketServer
 
     # create the listener
     $listener = [Pode.PodeListener]::new()
+    $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
 
     try
     {

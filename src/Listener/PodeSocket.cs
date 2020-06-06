@@ -112,8 +112,10 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(ex.StackTrace);
+                if (Listener.ErrorLoggingEnabled)
+                {
+                    PodeHelpers.WriteException(ex, Listener);
+                }
                 throw;
             }
 
@@ -181,19 +183,12 @@ namespace Pode
             try
             {
                 // create the request
-                Console.WriteLine("- - - - - - - - - - - - -  - - - - -");
-                Console.WriteLine($"Available: {received.Available}");
                 var request = new PodeRequest(received, socket.Certificate, socket.Protocols);
 
                 // if we need to exit now, dispose and exit
                 if (request.CloseImmediately || string.IsNullOrWhiteSpace(request.HttpMethod))
                 {
-                    if (request.Error != default(HttpRequestException))
-                    {
-                        Console.WriteLine(request.Error.Message);
-                        Console.WriteLine(request.Error.StackTrace);
-                    }
-
+                    PodeHelpers.WriteException(request.Error, Listener);
                     request.Dispose();
                     return;
                 }
@@ -208,8 +203,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(ex.StackTrace);
+                PodeHelpers.WriteException(ex, Listener);
             }
 
             // add args back to connections

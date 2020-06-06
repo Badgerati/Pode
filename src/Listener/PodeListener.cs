@@ -10,6 +10,7 @@ namespace Pode
     {
         private IList<PodeSocket> Sockets;
         public bool IsListening { get; private set; }
+        public bool ErrorLoggingEnabled { get; set; }
 
         private BlockingCollection<PodeContext> Contexts;
 
@@ -53,19 +54,6 @@ namespace Pode
 
             IsListening = true;
         }
-
-        // public void Accept()
-        // {
-        //     foreach (var socket in Sockets)
-        //     {
-        //         socket.Start();
-        //     }
-        // }
-
-        // public void Stop()
-        // {
-        //     //TODO:
-        // }
 
         public void Dispose()
         {
