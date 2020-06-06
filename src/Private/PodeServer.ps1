@@ -105,8 +105,7 @@ function Start-PodeSocketServer
         )
 
         try {
-            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-            {
+            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Seconds 1
             }
         }

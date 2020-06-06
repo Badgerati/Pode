@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Pode
@@ -55,6 +57,11 @@ namespace Pode
             }
         }
 
+        public string HttpResponseLine
+        {
+            get { return $"{Request.Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}"; }
+        }
+
         private static UTF8Encoding Encoding = new UTF8Encoding();
 
         public PodeResponse(PodeRequest request)
@@ -68,38 +75,18 @@ namespace Pode
         {
             try
             {
-                var newline = "\r\n";
-                var message = $"{Request.Protocol} {StatusCode} {StatusDescription}{newline}";
+                var message = HttpResponseLine;
 
                 // default headers
                 SetDefaultHeaders();
 
                 // write the response headers
-                if (Headers.Count > 0)
-                {
-                    foreach (var key in Headers.Keys)
-                    {
-                        if (Headers[key] is object[])
-                        {
-                            foreach (var value in (object[])Headers[key])
-                            {
-                                message += $"{key}: {value}{newline}";
-                            }
-                        }
-                        else
-                        {
-                            message += $"{key}: {Headers[key]}{newline}";
-                        }
-                    }
-                }
-
-                message += newline;
+                message += BuildHeaders(Headers);
 
                 // stream response output
                 var buffer = Encoding.GetBytes(message);
                 Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
                 OutputStream.WriteTo(Request.InputStream);
-                Request.InputStream.Flush();
             }
             catch (IOException) { }
             catch (Exception ex)
@@ -113,10 +100,60 @@ namespace Pode
             }
         }
 
+        public void Write(byte[] buffer)
+        {
+            try
+            {
+                Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
+            }
+            catch (IOException) { }
+            catch (Exception ex)
+            {
+                PodeHelpers.WriteException(ex);
+                throw;
+            }
+        }
+
         //TODO:
-        public void UpgradeSocket()
+        public void UpgradeWebSocket(string clientId)
         {
             //websocket
+            if (!Request.IsWebSocket)
+            {
+                throw new HttpRequestException("Cannot upgrade a non-websocket request");
+            }
+
+            // set the status of the response
+            StatusCode = 101;
+            StatusDescription = "Switching Protocols";
+
+            // get the socket key from the request
+            var socketKey = $"{Request.Headers["Sec-WebSocket-Key"]}".Trim();
+
+            // make the socket accept hash
+            var crypto = SHA1.Create();
+            var socketHash = Convert.ToBase64String(crypto.ComputeHash(System.Text.Encoding.UTF8.GetBytes($"{socketKey}{PodeHelpers.WEB_SOCKET_MAGIC_KEY}")));
+
+            // compile the headers
+            var headers = new Hashtable();
+            headers.Add("Connection", "Upgrade");
+            headers.Add("Upgrade", "websocket");
+            headers.Add("Sec-WebSocket-Accept", socketHash);
+
+            if (!string.IsNullOrWhiteSpace(clientId))
+            {
+                headers.Add("X-Pode-ClientId", clientId);
+            }
+
+            // build the message
+            var message = HttpResponseLine;
+
+            // add the headers
+            message += BuildHeaders(headers);
+
+            // stream response output (but do not close)
+            var buffer = Encoding.GetBytes(message);
+            Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
         }
 
         private void SetDefaultHeaders()
@@ -148,6 +185,34 @@ namespace Pode
             }
 
             Headers.Add("Connection", "close");
+        }
+
+        private string BuildHeaders(Hashtable headers)
+        {
+            if (headers.Count == 0)
+            {
+                return PodeHelpers.NEW_LINE;
+            }
+
+            var str = string.Empty;
+
+            foreach (var key in headers.Keys)
+            {
+                if (headers[key] is object[])
+                {
+                    foreach (var value in (object[])headers[key])
+                    {
+                        str += $"{key}: {value}{PodeHelpers.NEW_LINE}";
+                    }
+                }
+                else
+                {
+                    str += $"{key}: {headers[key]}{PodeHelpers.NEW_LINE}";
+                }
+            }
+
+            str += PodeHelpers.NEW_LINE;
+            return str;
         }
 
         public void Dispose()

@@ -41,6 +41,14 @@ namespace Pode
         private Socket Socket;
         private static UTF8Encoding Encoding = new UTF8Encoding();
 
+        public bool IsWebSocket
+        {
+            get
+            {
+                return (Headers != default(Hashtable) && Headers.ContainsKey("Sec-WebSocket-Key"));
+            }
+        }
+
         public PodeRequest(Socket socket, X509Certificate certificate, SslProtocols protocols)
         {
             Socket = socket;
@@ -137,10 +145,10 @@ namespace Pode
             var content = Encoding.GetString(bytes, 0, bytes.Length);
 
             // split the lines on newline
-            var newline = "\r\n";
+            var newline = PodeHelpers.NEW_LINE;
             if (!content.Contains(newline))
             {
-                newline = "\n";
+                newline = PodeHelpers.NEW_LINE_UNIX;
             }
 
             var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);

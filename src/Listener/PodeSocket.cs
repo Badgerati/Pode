@@ -193,7 +193,12 @@ namespace Pode
                     return;
                 }
 
-                //TODO: if websocket, and httpmethod != GET, close!
+                // if websocket, and httpmethod != GET, close!
+                if (request.IsWebSocket && !request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    request.Dispose();
+                    return;
+                }
 
                 // create the response
                 var response = new PodeResponse(request);

@@ -1,7 +1,7 @@
 function Start-PodeSignalServer
 {
     # setup the callback for sockets
-    $PodeContext.Server.WebSockets.Ssl.Callback = Get-PodeSocketCertifcateCallback
+    #$PodeContext.Server.WebSockets.Ssl.Callback = Get-PodeSocketCertifcateCallback
 
     # work out which endpoints to listen on
     $endpoints = @()
@@ -20,16 +20,28 @@ function Start-PodeSignalServer
         }
     }
 
+    # create the listener
+    $listener = [Pode.PodeListener]::new()
+    $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+
     try
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $PodeContext.Server.WebSockets.Listeners += (Initialize-PodeSocketListenerEndpoint `
-                -Type WebSockets `
-                -Address $_.Address `
-                -Port $_.Port `
-                -Certificate $_.Certificate)
+            $socket = [Pode.PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate)
+            $listener.Add($socket)
         }
+
+        $listener.Start()
+
+        # register endpoints on the listener
+        # $endpoints | ForEach-Object {
+        #     $PodeContext.Server.WebSockets.Listeners += (Initialize-PodeSocketListenerEndpoint `
+        #         -Type WebSockets `
+        #         -Address $_.Address `
+        #         -Port $_.Port `
+        #         -Certificate $_.Certificate)
+        # }
     }
     catch {
         $_ | Write-PodeErrorLog
@@ -40,7 +52,11 @@ function Start-PodeSignalServer
 
     # script for listening out for incoming requests
     $listenScript = {
-        param (
+        param(
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener,
+
             [Parameter(Mandatory=$true)]
             [int]
             $ThreadId
@@ -48,15 +64,28 @@ function Start-PodeSignalServer
 
         try
         {
-            Start-PodeSocketListener -Listeners $PodeContext.Server.WebSockets.Listeners
-
-            [System.Threading.Thread]::CurrentThread.IsBackground = $true
-            [System.Threading.Thread]::CurrentThread.Priority = [System.Threading.ThreadPriority]::Lowest
-
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
-                Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(60))
+                # get request and response
+                $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
+                #try {
+                    Invoke-PodeWebSocketHandler -Context $context
+                #}
+                #finally {
+                #    Close-PodeDisposable -Disposable $context
+                #}
             }
+
+
+            # Start-PodeSocketListener -Listeners $PodeContext.Server.WebSockets.Listeners
+
+            # [System.Threading.Thread]::CurrentThread.IsBackground = $true
+            # [System.Threading.Thread]::CurrentThread.Priority = [System.Threading.ThreadPriority]::Lowest
+
+            # while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+            # {
+            #     Wait-PodeTask ([System.Threading.Tasks.Task]::Delay(60))
+            # }
         }
         catch [System.OperationCanceledException] {}
         catch {
@@ -69,10 +98,14 @@ function Start-PodeSignalServer
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.Web | ForEach-Object {
         Add-PodeRunspace -Type 'Signals' -ScriptBlock $listenScript `
-            -Parameters @{ 'ThreadId' = $_ }
+            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
+    # 1..$PodeContext.Threads.Web | ForEach-Object {
+    #     Add-PodeRunspace -Type 'Signals' -ScriptBlock $listenScript `
+    #         -Parameters @{ 'ThreadId' = $_ }
+    # }
 
-    # script to write messages back to the client(s)
+    #TODO: script to write messages back to the client(s)
     $signalScript = {
         try {
             [System.Threading.Thread]::CurrentThread.IsBackground = $true
@@ -138,7 +171,8 @@ function Start-PodeSignalServer
                 # send the message to all found sockets
                 foreach ($socket in $sockets) {
                     try {
-                        Wait-PodeTask -Task $socket.Stream.WriteAsync($buffer, 0, $buffer.Length)
+                        $socket.Context.Response.Write($buffer)
+                        #Wait-PodeTask -Task $socket.Stream.WriteAsync($buffer, 0, $buffer.Length)
                     }
                     catch {
                         $PodeContext.Server.WebSockets.Queues.Sockets.Remove($socket.ClientId) | Out-Null
@@ -158,10 +192,19 @@ function Start-PodeSignalServer
 
     # script to keep web server listening until cancelled
     $waitScript = {
+        param(
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener
+        )
+
         try {
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Seconds 1
             }
+            # while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            #     Start-Sleep -Seconds 1
+            # }
         }
         catch [System.OperationCanceledException] {}
         catch {
@@ -170,11 +213,12 @@ function Start-PodeSignalServer
             throw $_.Exception
         }
         finally {
-            Close-PodeSocketListener -Type WebSockets
+            Close-PodeDisposable -Disposable $Listener
+            #Close-PodeSocketListener -Type WebSockets
         }
     }
 
-    Add-PodeRunspace -Type 'Signals' -ScriptBlock $waitScript
+    Add-PodeRunspace -Type 'Signals' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
     return @($endpoints.HostName)
 }
 
@@ -182,47 +226,48 @@ function Invoke-PodeWebSocketHandler
 {
     param(
         [Parameter(Mandatory)]
-        [hashtable]
+        [Pode.PodeContext]
+        #[hashtable]
         $Context
     )
 
     try
     {
         # make the stream (use an ssl stream if we have a cert)
-        $stream = [System.Net.Sockets.NetworkStream]::new($Context.Socket, $true)
+        # $stream = [System.Net.Sockets.NetworkStream]::new($Context.Socket, $true)
 
-        if ($null -ne $Context.Certificate) {
-            try {
-                $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.WebSockets.Ssl.Callback)
-                $stream.AuthenticateAsServer($Context.Certificate, $false, $PodeContext.Server.WebSockets.Ssl.Protocols, $false)
-            }
-            catch {
-                # immediately close http connections
-                Close-PodeSocket -Socket $Context.Socket -Shutdown
-                return
-            }
-        }
+        # if ($null -ne $Context.Certificate) {
+        #     try {
+        #         $stream = [System.Net.Security.SslStream]::new($stream, $false, $PodeContext.Server.WebSockets.Ssl.Callback)
+        #         $stream.AuthenticateAsServer($Context.Certificate, $false, $PodeContext.Server.WebSockets.Ssl.Protocols, $false)
+        #     }
+        #     catch {
+        #         # immediately close http connections
+        #         Close-PodeSocket -Socket $Context.Socket -Shutdown
+        #         return
+        #     }
+        # }
 
         # read the request headers - once again, I apologise profusely.
-        try {
-            $bytes = New-Object byte[] 0
-            $Context.Socket.Receive($bytes) | Out-Null
-        }
-        catch {
-            $err = [System.Net.Http.HttpRequestException]::new()
-            $err.Data.Add('PodeStatusCode', 408)
-            throw $err
-        }
+        # try {
+        #     $bytes = New-Object byte[] 0
+        #     $Context.Socket.Receive($bytes) | Out-Null
+        # }
+        # catch {
+        #     $err = [System.Net.Http.HttpRequestException]::new()
+        #     $err.Data.Add('PodeStatusCode', 408)
+        #     throw $err
+        # }
 
-        $bytes = New-Object byte[] $Context.Socket.Available
-        (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $Context.Socket.Available)) | Out-Null
-        $req_info = Get-PodeServerRequestDetails -Bytes $bytes -Protocol $Context.Protocol
+        # $bytes = New-Object byte[] $Context.Socket.Available
+        # (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $Context.Socket.Available)) | Out-Null
+        # $req_info = Get-PodeServerRequestDetails -Bytes $bytes -Protocol $Context.Protocol
 
         # if the method is not a GET, close immediately
-        if ($req_info.Method -ine 'GET') {
-            Close-PodeSocket -Socket $Context.Socket -Shutdown
-            return
-        }
+        # if ($req_info.Method -ine 'GET') {
+        #     Close-PodeSocket -Socket $Context.Socket -Shutdown
+        #     return
+        # }
     }
     catch [System.OperationCanceledException] {}
     catch [System.Net.Http.HttpRequestException] {
@@ -240,45 +285,53 @@ function Invoke-PodeWebSocketHandler
     }
 
     try {
+        $Request = $Context.Request
+        $Response = $Context.Response
+
         # get the path, and generate a clientId
-        $path = $req_info.Uri.AbsolutePath
+        $path = $Request.Url.AbsolutePath
+        #$path = $req_info.Uri.AbsolutePath
         $clientId = New-PodeGuid -Secure
 
-        # send back headers to upgrade the client to a websocket
-        $magicGuid = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
-        $secSocketKey = $req_info.Headers['Sec-WebSocket-Key'].Trim()
+        # upgrade the socket
+        $Response.UpgradeWebSocket($clientId)
 
-        $resHeaders = @{
-            'Connection' = 'Upgrade'
-            'Upgrade' = 'websocket'
-            'Sec-WebSocket-Accept' = Invoke-PodeSHA1Hash -Value "$($secSocketKey)$($magicGuid)"
-            'X-Pode-ClientId' = $clientId
-        }
+        # send back headers to upgrade the client to a websocket
+        #$magicGuid = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
+        #$secSocketKey = $req_info.Headers['Sec-WebSocket-Key'].Trim()
+
+        # $resHeaders = @{
+        #     'Connection' = 'Upgrade'
+        #     'Upgrade' = 'websocket'
+        #     'Sec-WebSocket-Accept' = Invoke-PodeSHA1Hash -Value "$($secSocketKey)$($magicGuid)"
+        #     'X-Pode-ClientId' = $clientId
+        # }
 
         # write the response line
-        $protocol = $req_info.Protocol
-        if ([string]::IsNullOrWhiteSpace($protocol)) {
-            $protocol = 'HTTP/1.1'
-        }
+        # $protocol = $req_info.Protocol
+        # if ([string]::IsNullOrWhiteSpace($protocol)) {
+        #     $protocol = 'HTTP/1.1'
+        # }
 
-        $newLine = "`r`n"
-        $res_msg = "$($protocol) 101 Switching Protocols$($newLine)"
+        # $newLine = "`r`n"
+        # $res_msg = "$($protocol) 101 Switching Protocols$($newLine)"
 
         # write the response headers
-        foreach ($key in $resHeaders.Keys) {
-            $res_msg += "$($key): $($resHeaders[$key])$($newLine)"
-        }
+        # foreach ($key in $resHeaders.Keys) {
+        #     $res_msg += "$($key): $($resHeaders[$key])$($newLine)"
+        # }
 
-        $res_msg += $newLine
+        # $res_msg += $newLine
 
         # stream response output
-        $buffer = $PodeContext.Server.Encoding.GetBytes($res_msg)
-        Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
+        # $buffer = $PodeContext.Server.Encoding.GetBytes($res_msg)
+        # Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
 
         # add the socket/stream to all sockets, and path sockets (and clientId)
         $PodeContext.Server.WebSockets.Queues.Sockets[$clientId] = @{
-            Socket = $Context.Socket
-            Stream = $stream
+            #Socket = $Context.Socket
+            #Stream = $stream
+            Context = $Context
             Path = $path
             ClientId = $clientId
         }
