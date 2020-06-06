@@ -181,6 +181,8 @@ namespace Pode
             try
             {
                 // create the request
+                Console.WriteLine("- - - - - - - - - - - - -  - - - - -");
+                Console.WriteLine($"Available: {received.Available}");
                 var request = new PodeRequest(received, socket.Certificate, socket.Protocols);
 
                 // if we need to exit now, dispose and exit

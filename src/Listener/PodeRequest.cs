@@ -83,7 +83,7 @@ namespace Pode
             {
                 // otherwise, convert the stream to an ssl stream
                 var ssl = new SslStream(stream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
-                ssl.AuthenticateAsServer(certificate, true, protocols, false); //TODO: can true here be false?
+                ssl.AuthenticateAsServer(certificate, false, protocols, false);
                 InputStream = ssl;
             }
             catch
@@ -107,9 +107,11 @@ namespace Pode
         {
             var allBytes = new List<byte>();
 
+            Console.WriteLine($"Now Available: {Socket.Available}");
             while (Socket.Available > 0)
             {
                 var bytes = new byte[Socket.Available];
+                Console.WriteLine($"Reading Available: {Socket.Available}");
                 InputStream.ReadAsync(bytes, 0, Socket.Available).Wait();
                 allBytes.AddRange(bytes);
             }
@@ -121,6 +123,8 @@ namespace Pode
         {
             // get the raw string for headers
             var content = Encoding.GetString(bytes, 0, bytes.Length);
+            Console.WriteLine($"Bytes: {bytes.Length}");
+            Console.WriteLine(content);
 
             // split the lines on newline
             var newline = "\r\n";
@@ -150,12 +154,7 @@ namespace Pode
             if (!string.IsNullOrWhiteSpace(reqQuery))
             {
                 var qmIndex = reqQuery.IndexOf("?");
-                if (qmIndex > 0)
-                {
-                    reqQuery = reqQuery.Substring(qmIndex);
-                }
-
-                QueryString = HttpUtility.ParseQueryString(reqQuery);
+                QueryString = HttpUtility.ParseQueryString(qmIndex > 0 ? reqQuery.Substring(qmIndex) : reqQuery);
             }
 
             // http protocol version
@@ -247,7 +246,7 @@ namespace Pode
 
                     // read those X hex bytes from (newline index + newline length)
                     start = c_index + newline.Length;
-                    c_rawBytes.AddRange(bytes.Skip(start).Take(c_length - 1));
+                    c_rawBytes.AddRange(bytes.Skip(start).Take(c_length));
 
                     // skip bytes for ending newline, and set new start
                     start = (start + c_length - 1) + newline.Length + 1;

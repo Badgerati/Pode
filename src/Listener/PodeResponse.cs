@@ -17,7 +17,15 @@ namespace Pode
 
         public long ContentLength64
         {
-            get { return long.Parse($"{Headers["Content-Length"]}"); }
+            get
+            {
+                if (!Headers.ContainsKey("Content-Length"))
+                {
+                    return 0;
+                }
+
+                return long.Parse($"{Headers["Content-Length"]}");
+            }
             set
             {
                 if (Headers.ContainsKey("Content-Length"))
@@ -64,7 +72,7 @@ namespace Pode
                 var message = $"{Request.Protocol} {StatusCode} {StatusDescription}{newline}";
 
                 // default headers
-                ForceDefaultHeaders();
+                SetDefaultHeaders();
 
                 // write the response headers
                 if (Headers.Count > 0)
@@ -112,7 +120,7 @@ namespace Pode
             //websocket
         }
 
-        private void ForceDefaultHeaders()
+        private void SetDefaultHeaders()
         {
             // ensure content length
             if (ContentLength64 == 0 && OutputStream.Length > 0)

@@ -160,7 +160,7 @@ Describe 'REST API Requests' {
         $ms.Position = 0
 
         # make the request
-        $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'X-Transfer-Encoding' = 'gzip' } -ContentType 'application/json'
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'Transfer-Encoding' = 'gzip' } -ContentType 'application/json'
         $result.Username | Should Be 'rick'
     }
 
@@ -177,7 +177,7 @@ Describe 'REST API Requests' {
         $ms.Position = 0
 
         # make the request
-        $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'X-Transfer-Encoding' = 'deflate' } -ContentType 'application/json'
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'Transfer-Encoding' = 'deflate' } -ContentType 'application/json'
         $result.Username | Should Be 'rick'
     }
 
