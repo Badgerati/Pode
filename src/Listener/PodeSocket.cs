@@ -14,7 +14,7 @@ namespace Pode
     public class PodeSocket : IDisposable
     {
         public IPAddress IPAddress { get; private set; }
-        public string Hostname { get; private set; }
+        public string Hostname { get; set; }
         public int Port { get; private set; }
         public IPEndPoint Endpoint { get; private set; }
         public X509Certificate Certificate { get; private set; }
@@ -38,13 +38,9 @@ namespace Pode
         }
 
         public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, X509Certificate certificate = null)
-            : this(ipAddress, string.Empty, port, protocols, certificate) {}
-
-        public PodeSocket(IPAddress ipAddress, string hostname, int port, SslProtocols protocols, X509Certificate certificate = null)
         {
             IPAddress = ipAddress;
             Port = port;
-            Hostname = hostname;
             Certificate = certificate;
             Protocols = protocols;
             Endpoint = new IPEndPoint(ipAddress, port);

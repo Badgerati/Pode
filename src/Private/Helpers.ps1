@@ -149,23 +149,63 @@ function Test-IsAdminUser
 
 function New-PodeSelfSignedCertificate
 {
-    # generate the cert -- has to call "powershell.exe" for ps-core on windows
-    $cert = (PowerShell.exe -NoProfile -Command {
-        $expire = (Get-Date).AddYears(1)
+    $sanBuilder = [System.Security.Cryptography.X509Certificates.SubjectAlternativeNameBuilder]::new()
+    $sanBuilder.AddIpAddress([ipaddress]::Loopback) | Out-Null
+    $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback) | Out-Null
+    $sanBuilder.AddDnsName('localhost') | Out-Null
 
-        $c = New-SelfSignedCertificate -DnsName 'localhost' -CertStoreLocation 'Cert:\LocalMachine\My' -NotAfter $expire `
-                -KeyAlgorithm RSA -HashAlgorithm SHA256 -KeyLength 4096 -Subject 'CN=localhost';
-
-        if ($null -eq $c.Thumbprint) {
-            return $c
-        }
-
-        return $c.Thumbprint
-    })
-
-    if ($LASTEXITCODE -ne 0 -or !$?) {
-        throw "Failed to generate self-signed certificte:`n$($cert)"
+    if (![string]::IsNullOrWhiteSpace($env:COMPUTERNAME)) {
+        $sanBuilder.AddDnsName($env:COMPUTERNAME) | Out-Null
     }
+
+    $rsa = [System.Security.Cryptography.RSA]::Create(2048)
+    $distinguishedName = [X500DistinguishedName]::new("CN=localhost")
+
+    $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+        $distinguishedName,
+        $rsa,
+        [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+        [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
+    )
+
+    $flags = (
+        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DataEncipherment -bor
+        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::KeyEncipherment -bor
+        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature
+    )
+
+    $req.CertificateExtensions.Add(
+        [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new(
+            $flags,
+            $false
+        )
+    ) | Out-Null
+
+    $oid = [System.Security.Cryptography.OidCollection]::new()
+    $oid.Add([System.Security.Cryptography.Oid]::new('1.3.6.1.5.5.7.3.1')) | Out-Null
+
+    $req.CertificateExtensions.Add(
+        [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]::new(
+            $oid,
+            $false
+        )
+    )
+
+    $req.CertificateExtensions.Add($sanBuilder.Build()) | Out-Null
+
+    $cert = $req.CreateSelfSigned(
+        [System.DateTimeOffset]::UtcNow.AddDays(-1),
+        [System.DateTimeOffset]::UtcNow.AddYears(10)
+    )
+
+    if (Test-IsWindows) {
+        $cert.FriendlyName = 'localhost'
+    }
+
+    $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+        $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, 'self-signed'),
+        'self-signed'
+    )
 
     return $cert
 }

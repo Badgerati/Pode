@@ -680,17 +680,9 @@ function Add-PodeEndpoint
         [string]
         $Protocol,
 
-        [Parameter(Mandatory=$true, ParameterSetName='CertName')]
-        [string]
-        $Certificate = $null,
-
-        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
-        [string]
-        $CertificateThumbprint = $null,
-
         [Parameter(Mandatory=$true, ParameterSetName='CertFile')]
         [string]
-        $CertificateFile = $null,
+        $Certificate = $null,
 
         [Parameter(ParameterSetName='CertFile')]
         [string]
@@ -699,7 +691,7 @@ function Add-PodeEndpoint
         [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
         [Parameter()]
         [X509Certificate]
-        $RawCertificate = $null,
+        $X509Certificate = $null,
 
         [Parameter()]
         [string]
@@ -764,9 +756,7 @@ function Add-PodeEndpoint
         Ssl = (@('https', 'wss') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
         Certificate = @{
-            Name = $Certificate
-            Thumbprint = $CertificateThumbprint
-            Raw = $RawCertificate
+            Raw = $X509Certificate
             SelfSigned = $SelfSigned
         }
     }
@@ -805,7 +795,7 @@ function Add-PodeEndpoint
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
         }
 
-        $_path = Get-PodeRelativePath -Path $CertificateFile -JoinRoot -Resolve
+        $_path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
 
         if ([string]::IsNullOrWhiteSpace($CertificatePassword)) {
             $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path)
@@ -816,8 +806,18 @@ function Add-PodeEndpoint
 
         # fail if the cert is expired
         if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            throw "The certificate '$($CertificateFile)' has expired: $($obj.Certificate.Raw.NotAfter)"
+            throw "The certificate '$($Certificate)' has expired: $($obj.Certificate.Raw.NotAfter)"
         }
+    }
+
+    # if we're dealing with a self-signed certificate, create it
+    if (!$isIIS -and !$isHeroku -and $SelfSigned) {
+        # fail if protocol is not https
+        if (@('https', 'wss') -inotcontains $Protocol) {
+            throw "Cannot create a self-signed certificate a non-HTTPS/WSS endpoint"
+        }
+
+        $obj.Certificate.Raw = New-PodeSelfSignedCertificate
     }
 
     if (!$exists) {
