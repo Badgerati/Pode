@@ -133,10 +133,9 @@ function New-PodeContext
         $ctx.Server.DisableTermination = $true
     }
 
-    # is the server running under IIS? (also, force the server type to pode, and disable termination)
+    # is the server running under IIS? (also, disable termination)
     $ctx.Server.IsIIS = (!$isServerless -and (!(Test-IsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-IsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
-        $ctx.Server.Type = 'PODE'
         $ctx.Server.DisableTermination = $true
 
         # if under IIS and Azure Web App, force quiet

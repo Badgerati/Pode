@@ -87,7 +87,7 @@ function Start-PodeServer
         $Request,
 
         [Parameter()]
-        [ValidateSet('', 'AzureFunctions', 'AwsLambda', 'Pode')]
+        [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
         [string]
         $Type = [string]::Empty,
 
@@ -293,7 +293,7 @@ function Start-PodeStaticServer
 
         [Parameter(ParameterSetName='Https')]
         [string]
-        $CertificateFile = $null,
+        $Certificate = $null,
 
         [Parameter(ParameterSetName='Https')]
         [string]
@@ -302,7 +302,7 @@ function Start-PodeStaticServer
         [Parameter(ParameterSetName='Https')]
         [Parameter()]
         [X509Certificate]
-        $RawCertificate = $null,
+        $X509Certificate = $null,
 
         [Parameter()]
         [string]
@@ -322,11 +322,11 @@ function Start-PodeStaticServer
     Start-PodeServer -RootPath $RootPath -Threads $Threads -Type Pode -Browse:$Browse -ScriptBlock {
         # add either an http or https endpoint
         if ($Https) {
-            if ($null -eq $RawCertificate) {
-                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -CertificateFile $CertificateFile -CertificatePassword $CertificatePassword
+            if ($null -eq $X509Certificate) {
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -Certificate $Certificate -CertificatePassword $CertificatePassword
             }
             else {
-                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -RawCertificate $RawCertificate
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -X509Certificate $X509Certificate
             }
         }
         else {
@@ -832,9 +832,6 @@ function Add-PodeEndpoint
         }
         else {
             $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
-            if (($_type -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
-                $_type = 'pode'
-            }
 
             if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
                 $PodeContext.Server.Type = $_type

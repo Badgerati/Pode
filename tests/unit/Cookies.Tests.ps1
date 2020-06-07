@@ -342,16 +342,7 @@ Describe 'Update-PodeCookieExpiry' {
             'test' = @{ 'Name' = 'test'; 'Expires' = [datetime]::UtcNow }
         } }
 
-        $script:called = $false
-        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
-            param($n, $v)
-            $script:WebEvent.Response.Headers[$n] = $v
-            $script:called = $true
-        }
-
         Update-PodeCookieExpiry -Name 'test' -Duration 3600
-        $called | Should Be $true
-
         ($WebEvent.PendingCookies['test'].Expires -gt [datetime]::UtcNow.AddSeconds(3000)) | Should Be $true
     }
 
@@ -365,16 +356,7 @@ Describe 'Update-PodeCookieExpiry' {
         };
         'PendingCookies' = @{} }
 
-        $script:called = $false
-        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
-            param($n, $v)
-            $script:WebEvent.Response.Headers[$n] = $v
-            $script:called = $true
-        }
-
         Update-PodeCookieExpiry -Name 'test' -Duration 3600
-        $called | Should Be $true
-
         ($WebEvent.PendingCookies['test'].Expires -gt [datetime]::UtcNow.AddSeconds(3000)) | Should Be $true
     }
 
@@ -388,16 +370,7 @@ Describe 'Update-PodeCookieExpiry' {
             'test' = @{ 'Name' = 'test'; 'Expires' = [datetime]::UtcNow }
         } }
 
-        $script:called = $false
-        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
-            param($n, $v)
-            $script:WebEvent.Response.Headers[$n] = $v
-            $script:called = $true
-        }
-
         Update-PodeCookieExpiry -Name 'test' -Expiry ([datetime]::UtcNow.AddDays(2))
-        $called | Should Be $true
-
         ($WebEvent.PendingCookies['test'].Expires -gt [datetime]::UtcNow.AddDays(1)) | Should Be $true
     }
 
@@ -413,16 +386,7 @@ Describe 'Update-PodeCookieExpiry' {
             'test' = @{ 'Name' = 'test'; 'Expires' = $ttl }
         } }
 
-        $script:called = $false
-        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
-            param($n, $v)
-            $script:WebEvent.Response.Headers[$n] = $v
-            $script:called = $true
-        }
-
         Update-PodeCookieExpiry -Name 'test'
-        $called | Should Be $true
-
         $WebEvent.PendingCookies['test'].Expires | Should Be $ttl
     }
 
@@ -438,16 +402,7 @@ Describe 'Update-PodeCookieExpiry' {
             'test' = @{ 'Name' = 'test'; 'Expires' = $ttl }
         } }
 
-        $script:called = $false
-        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
-            param($n, $v)
-            $script:WebEvent.Response.Headers[$n] = $v
-            $script:called = $true
-        }
-
         Update-PodeCookieExpiry -Name 'test' -Duration -1
-        $called | Should Be $true
-
         $WebEvent.PendingCookies['test'].Expires | Should Be $ttl
     }
 }
@@ -463,15 +418,7 @@ Describe 'Remove-PodeCookie' {
             'test' = @{ 'Name' = 'test'; 'Discard' = $false; 'Expires' = [datetime]::UtcNow }
         } }
 
-        $script:called = $false
-        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
-            param($n, $v)
-            $script:WebEvent.Response.Headers[$n] = $v
-            $script:called = $true
-        }
-
         Remove-PodeCookie -Name 'test'
-        $called | Should Be $true
 
         $WebEvent.PendingCookies['test'].Discard | Should Be $true
         ($WebEvent.PendingCookies['test'].Expires -lt [datetime]::UtcNow) | Should Be $true
@@ -487,15 +434,7 @@ Describe 'Remove-PodeCookie' {
         };
         'PendingCookies' = @{} }
 
-        $script:called = $false
-        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
-            param($n, $v)
-            $script:WebEvent.Response.Headers[$n] = $v
-            $script:called = $true
-        }
-
         Remove-PodeCookie -Name 'test'
-        $called | Should Be $true
 
         $WebEvent.PendingCookies['test'].Discard | Should Be $true
         ($WebEvent.PendingCookies['test'].Expires -lt [datetime]::UtcNow) | Should Be $true

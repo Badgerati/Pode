@@ -12,7 +12,7 @@ To start using this server type, there isn't very must you need to do. All that'
 To start using the Pode server type, you just need to set the `-Type` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer). The following example is a simple HTTP server that will use this server type:
 
 ```powershell
-Start-PodeServer -Type Pode {
+Start-PodeServer {
 
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
 
@@ -38,7 +38,7 @@ There are 3 ways to do this:
 The following example is like above, but this time we'll supply some `.pfx` to enable HTTPS support:
 
 ```powershell
-Start-PodeServer -Type Pode {
+Start-PodeServer {
 
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Https -CertificateFile './cert.pfx' -CertificatePassword 'Hunter2'
 

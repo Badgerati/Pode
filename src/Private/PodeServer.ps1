@@ -1,4 +1,4 @@
-function Start-PodeSocketServer
+function Start-PodeWebServer
 {
     param (
         [switch]

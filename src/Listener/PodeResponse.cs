@@ -14,6 +14,7 @@ namespace Pode
         public Hashtable Headers { get; private set; }
         public int StatusCode = 200;
         public string StatusDescription = "OK";
+        public bool SendChunked = false;
         public MemoryStream OutputStream { get; private set; }
 
         private PodeContext Context;

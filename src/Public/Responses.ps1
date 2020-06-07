@@ -68,6 +68,7 @@ function Set-PodeResponseAttachment
         else {
             $WebEvent.Response.ContentType = $ContentType
         }
+
         Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
         # if serverless, get the content raw and return

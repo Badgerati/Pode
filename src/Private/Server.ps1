@@ -64,10 +64,6 @@ function Start-PodeInternalServer
                 $endpoints += (Start-PodeWebServer -Browse:$Browse)
             }
 
-            'PODE' {
-                $endpoints += (Start-PodeSocketServer -Browse:$Browse)
-            }
-
             'SERVICE' {
                 Start-PodeServiceServer
             }
