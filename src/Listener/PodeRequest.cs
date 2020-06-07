@@ -39,6 +39,8 @@ namespace Pode
         public HttpRequestException Error { get; private set; }
 
         private Socket Socket;
+        private PodeContext Context;
+        private PodeResponse Response { get => Context.Response; }
         private static UTF8Encoding Encoding = new UTF8Encoding();
 
         public bool IsWebSocket
@@ -310,6 +312,11 @@ namespace Pode
             // build required URI details
             var _proto = (IsSsl ? "https" : "http");
             Url = new Uri($"{_proto}://{Host}{reqQuery}");
+        }
+
+        public void SetContext(PodeContext context)
+        {
+            Context = context;
         }
 
         public void Dispose()

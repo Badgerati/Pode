@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -15,7 +16,9 @@ namespace Pode
         public string StatusDescription = "OK";
         public MemoryStream OutputStream { get; private set; }
 
-        private PodeRequest Request;
+        private PodeContext Context;
+        private PodeRequest Request { get => Context.Request; }
+        private PodeListener Listener { get => Context.Listener; }
 
         public long ContentLength64
         {
@@ -64,9 +67,8 @@ namespace Pode
 
         private static UTF8Encoding Encoding = new UTF8Encoding();
 
-        public PodeResponse(PodeRequest request)
+        public PodeResponse()
         {
-            Request = request;
             Headers = new Hashtable();
             OutputStream = new MemoryStream();
         }
@@ -75,6 +77,13 @@ namespace Pode
         {
             try
             {
+                // skip this for web sockets
+                if (Request.IsWebSocket)
+                {
+                    return;
+                }
+
+                // start building the response message
                 var message = HttpResponseLine;
 
                 // default headers
@@ -100,6 +109,30 @@ namespace Pode
             }
         }
 
+        public void Write(string message)
+        {
+            var msgBytes = Encoding.GetBytes(message);
+
+            // simple messages
+            if (!Request.IsWebSocket)
+            {
+                Write(msgBytes);
+                return;
+            }
+
+            // web socket message
+            var buffer = new List<byte>() { (byte)((byte)0x80 | (byte)1) };
+
+            var lengthByte = (byte)(msgBytes.Length < 126
+                ? msgBytes.Length
+                : (msgBytes.Length <= UInt16.MaxValue ? 126 : 127));
+
+            buffer.Add((byte)((byte)0x00 | (byte)lengthByte));
+            buffer.AddRange(msgBytes);
+
+            Write(buffer.ToArray());
+        }
+
         public void Write(byte[] buffer)
         {
             try
@@ -114,7 +147,6 @@ namespace Pode
             }
         }
 
-        //TODO:
         public void UpgradeWebSocket(string clientId)
         {
             //websocket
@@ -154,6 +186,21 @@ namespace Pode
             // stream response output (but do not close)
             var buffer = Encoding.GetBytes(message);
             Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
+
+            // add open web socket to listener
+            lock (Listener.WebSockets)
+            {
+                var websocket = new PodeWebSocket(Context, Request.Url.AbsolutePath, clientId);
+
+                if (Listener.WebSockets.ContainsKey(clientId))
+                {
+                    Listener.WebSockets[clientId] = websocket;
+                }
+                else
+                {
+                    Listener.WebSockets.Add(clientId, websocket);
+                }
+            }
         }
 
         private void SetDefaultHeaders()
@@ -213,6 +260,11 @@ namespace Pode
 
             str += PodeHelpers.NEW_LINE;
             return str;
+        }
+
+        public void SetContext(PodeContext context)
+        {
+            Context = context;
         }
 
         public void Dispose()

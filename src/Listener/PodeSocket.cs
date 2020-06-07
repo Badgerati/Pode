@@ -200,11 +200,8 @@ namespace Pode
                     return;
                 }
 
-                // create the response
-                var response = new PodeResponse(request);
-
                 // add a new context
-                socket.Listener.AddContext(request, response);
+                socket.Listener.AddContext(request, new PodeResponse());
             }
             catch (Exception ex)
             {

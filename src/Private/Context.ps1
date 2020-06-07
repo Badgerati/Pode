@@ -106,6 +106,7 @@ function New-PodeContext
     $ctx.Server.WebSockets = @{
         Enabled = $false
         Listeners = @()
+        Listener = $null
         MaxConnections = 0
         Ssl = @{
             Callback = $null

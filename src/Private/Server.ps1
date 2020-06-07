@@ -150,6 +150,7 @@ function Restart-PodeInternalServer
 
         # clear the websockets
         $PodeContext.Server.WebSockets.Listeners = @()
+        $PodeContext.Server.WebSockets.Listener = $null
         $PodeContext.Server.WebSockets.Queues.Sockets.Clear()
         $PodeContext.Server.WebSockets.Queues.Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
 
