@@ -46,7 +46,7 @@ namespace Pode
 
         public string ContentType
         {
-            get { return $"{Headers["Content-Type"]}"; }
+            get => $"{Headers["Content-Type"]}";
             set
             {
                 if (Headers.ContainsKey("Content-Type"))
@@ -62,7 +62,7 @@ namespace Pode
 
         public string HttpResponseLine
         {
-            get { return $"{Request.Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}"; }
+            get => $"{Request.Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}";
         }
 
         private static UTF8Encoding Encoding = new UTF8Encoding();

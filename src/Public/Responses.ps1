@@ -1313,10 +1313,4 @@ function Send-PodeSignal
     }
 
     $PodeContext.Server.WebSockets.Listener.AddSignal($Value, $Path, $ClientId)
-
-    # $PodeContext.Server.WebSockets.Queues.Messages.Enqueue(@{
-    #     Value = $Value
-    #     ClientId = $ClientId
-    #     Path = $Path
-    # })
 }

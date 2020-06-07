@@ -91,33 +91,16 @@ function New-PodeContext
 
     # set socket details for pode server
     $ctx.Server.Sockets = @{
-        Listeners = @()
-        MaxConnections = 0
+        Listener = $null
         Ssl = @{
-            Callback = $null
             Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
         }
         ReceiveTimeout = 100
-        Queues = @{
-            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
-        }
     }
 
     $ctx.Server.WebSockets = @{
         Enabled = $false
-        Listeners = @()
         Listener = $null
-        MaxConnections = 0
-        Ssl = @{
-            Callback = $null
-            Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
-        }
-        ReceiveTimeout = 100
-        Queues = @{
-            Sockets = @{}
-            Messages = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
-        }
     }
 
     # check if there is any global configuration
@@ -454,13 +437,13 @@ function Set-PodeServerConfiguration
         Types = @{}
     }
 
-    # sockets (pode)
-    if (!(Test-IsEmpty $Configuration.Pode.Ssl.Protocols)) {
-        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Pode.Ssl.Protocols)
+    # sockets
+    if (!(Test-IsEmpty $Configuration.Ssl.Protocols)) {
+        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Ssl.Protocols)
     }
 
-    if ([int]$Configuration.Pode.ReceiveTimeout -gt 0) {
-        $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.Pode.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
+    if ([int]$Configuration.ReceiveTimeout -gt 0) {
+        $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
     }
 }
 

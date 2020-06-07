@@ -45,10 +45,7 @@ namespace Pode
 
         public bool IsWebSocket
         {
-            get
-            {
-                return (Headers != default(Hashtable) && Headers.ContainsKey("Sec-WebSocket-Key"));
-            }
+            get => (Headers != default(Hashtable) && Headers.ContainsKey("Sec-WebSocket-Key"));
         }
 
         public PodeRequest(Socket socket, X509Certificate certificate, SslProtocols protocols)

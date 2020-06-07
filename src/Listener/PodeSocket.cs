@@ -28,7 +28,13 @@ namespace Pode
 
         public bool IsSsl
         {
-            get { return (Certificate != default(X509Certificate)); }
+            get => (Certificate != default(X509Certificate));
+        }
+
+        public int ReceiveTimeout
+        {
+            get => Socket.ReceiveTimeout;
+            set => Socket.ReceiveTimeout = value;
         }
 
         public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, X509Certificate certificate = null)

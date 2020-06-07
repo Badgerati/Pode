@@ -72,9 +72,7 @@ The default receive timeout is 100ms, but you can change this to any value above
 ```powershell
 @{
     Server = @{
-        Pode = @{
-            ReceiveTimeout = 500
-        }
+        ReceiveTimeout = 500
     }
 }
 ```
@@ -86,10 +84,8 @@ The default allowed SSL protocols are SSL3 and TLS1.2, but you can change these 
 ```powershell
 @{
     Server = @{
-        Pode = @{
-            Ssl= @{
-                Protocols = @('TLS', 'TLS11', 'TLS12')
-            }
+        Ssl= @{
+            Protocols = @('TLS', 'TLS11', 'TLS12')
         }
     }
 }

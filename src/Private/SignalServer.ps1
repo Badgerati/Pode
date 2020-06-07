@@ -26,6 +26,7 @@ function Start-PodeSignalServer
         # register endpoints on the listener
         $endpoints | ForEach-Object {
             $socket = [Pode.PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate)
+            $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $listener.Add($socket)
         }
 
@@ -35,7 +36,7 @@ function Start-PodeSignalServer
     catch {
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
-        Close-PodeSocketListener -Type WebSockets
+        Close-PodeDisposable -Disposable $listener
         throw $_.Exception
     }
 
@@ -57,25 +58,9 @@ function Start-PodeSignalServer
             {
                 # get request and response
                 $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
-                #Invoke-PodeWebSocketHandler -Context $context
 
                 try {
-                    $Request = $context.Request
-                    $Response = $context.Response
-
-                    # get the path, and generate a clientId
-                    #$path = $Request.Url.AbsolutePath
-                    $clientId = New-PodeGuid -Secure
-
-                    # upgrade the socket
-                    $Response.UpgradeWebSocket($clientId)
-
-                    # add the socket/stream to all sockets, and path sockets (and clientId)
-                    # $PodeContext.Server.WebSockets.Queues.Sockets[$clientId] = @{
-                    #     Context = $context
-                    #     Path = $path
-                    #     ClientId = $clientId
-                    # }
+                    $context.Response.UpgradeWebSocket((New-PodeGuid -Secure))
                 }
                 catch [System.Management.Automation.MethodInvocationException] { }
             }
@@ -113,11 +98,9 @@ function Start-PodeSignalServer
                 # by clientId
                 if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
                     $sockets = @($Listener.WebSockets[$message.ClientId])
-                    #$sockets = @($PodeContext.Server.WebSockets.Queues.Sockets[$message.ClientId])
                 }
                 else {
                     $sockets = @($Listener.WebSockets.Values)
-                    #$sockets = @($PodeContext.Server.WebSockets.Queues.Sockets.Values)
 
                     # by path
                     if (![string]::IsNullOrWhiteSpace($message.Path)) {
@@ -135,32 +118,13 @@ function Start-PodeSignalServer
                     continue
                 }
 
-                # frame the message
-                # $buffer = [byte[]]@()
-                # $buffer += [byte]([byte]0x80 -bor [byte]1)
-
-                # $payload = $PodeContext.Server.Encoding.GetBytes($message.Value)
-                # if ($payload.Length -lt 126) {
-                #     $buffer += [byte]([byte]0x00 -bor [byte]$payload.Length)
-                # }
-                # elseif ($payload.Length -le [uint16]::MaxValue) {
-                #     $buffer += [byte]([byte]0x00 -bor [byte]126)
-                # }
-                # else {
-                #     $buffer += [byte]([byte]0x00 -bor [byte]127)
-                # }
-
-                # $buffer += $payload
-
                 # send the message to all found sockets
                 foreach ($socket in $sockets) {
                     try {
-                        #$socket.Context.Response.Write($buffer)
                         $socket.Context.Response.Write($message.Value)
                     }
                     catch {
-                        $Listener.WebSockets.Remove($socket.ClientId) | Out-Null
-                        #$PodeContext.Server.WebSockets.Queues.Sockets.Remove($socket.ClientId) | Out-Null
+                        $Listener.WebSockets.Remove($socket.ClientId) | Out-Nul
                     }
                 }
             }
@@ -202,32 +166,3 @@ function Start-PodeSignalServer
     Add-PodeRunspace -Type 'Signals' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
     return @($endpoints.HostName)
 }
-
-# function Invoke-PodeWebSocketHandler
-# {
-#     param(
-#         [Parameter(Mandatory)]
-#         [Pode.PodeContext]
-#         $Context
-#     )
-
-#     try {
-#         $Request = $Context.Request
-#         $Response = $Context.Response
-
-#         # get the path, and generate a clientId
-#         $path = $Request.Url.AbsolutePath
-#         $clientId = New-PodeGuid -Secure
-
-#         # upgrade the socket
-#         $Response.UpgradeWebSocket($clientId)
-
-#         # add the socket/stream to all sockets, and path sockets (and clientId)
-#         $PodeContext.Server.WebSockets.Queues.Sockets[$clientId] = @{
-#             Context = $Context
-#             Path = $path
-#             ClientId = $clientId
-#         }
-#     }
-#     catch [System.Management.Automation.MethodInvocationException] { }
-# }
