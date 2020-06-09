@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography;
 
 namespace Pode
 {
@@ -23,6 +24,16 @@ namespace Pode
 
             Console.WriteLine(ex.Message);
             Console.WriteLine(ex.StackTrace);
+        }
+
+        public static string NewGuid(int length = 16)
+        {
+            using (var rnd = RandomNumberGenerator.Create())
+            {
+                var bytes = new byte[length];
+                rnd.GetBytes(bytes);
+                return (new Guid(bytes)).ToString();
+            }
         }
     }
 }

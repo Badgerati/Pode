@@ -49,7 +49,6 @@ namespace Pode
             ReceiveConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
 
             Socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, false);
             Socket.ReceiveTimeout = 100;
         }
 
@@ -91,17 +90,25 @@ namespace Pode
             }
         }
 
-        private void StartReceive(SocketAsyncEventArgs acceptedEvent)
+        public void StartReceive(PodeContext context)
         {
-            var args = default(SocketAsyncEventArgs);
-            if (!ReceiveConnections.TryDequeue(out args))
-            {
-                args = NewReceiveConnection();
-            }
+            var args = GetReceiveConnection();
+            args.AcceptSocket = context.Request.Socket;
+            args.UserToken = context;
+            StartReceive(args);
+        }
 
-            args.AcceptSocket = acceptedEvent.AcceptSocket;
-            args.SetBuffer(new byte[0], 0, 0);
+        private void StartReceive(Socket acceptedSocket)
+        {
+            var args = GetReceiveConnection();
+            args.AcceptSocket = acceptedSocket;
             args.UserToken = this;
+            StartReceive(args);
+        }
+
+        private void StartReceive(SocketAsyncEventArgs args)
+        {
+            args.SetBuffer(new byte[0], 0, 0);
             var raised = false;
 
             try
@@ -153,7 +160,7 @@ namespace Pode
             }
 
             // start receive
-            StartReceive(args);
+            StartReceive(args.AcceptSocket);
 
             // add args back to connections
             ClearSocketAsyncEvent(args);
@@ -164,8 +171,12 @@ namespace Pode
         {
             // get details
             var received = args.AcceptSocket;
-            var socket = (PodeSocket)args.UserToken;
+            var token = args.UserToken;
             var error = args.SocketError;
+
+            var isContext = (token is PodeContext);
+            var context = (isContext ? (PodeContext)token : default(PodeContext));
+            var socket = (isContext ? default(PodeSocket) : (PodeSocket)token);
 
             // close socket if not successful
             if ((received == default(Socket)) || (error != SocketError.Success))
@@ -176,6 +187,12 @@ namespace Pode
                     received.Close();
                 }
 
+                // close the context
+                if (isContext)
+                {
+                    context.Dispose(true);
+                }
+
                 // add args back to connections
                 ClearSocketAsyncEvent(args);
                 ReceiveConnections.Enqueue(args);
@@ -184,26 +201,53 @@ namespace Pode
 
             try
             {
-                // create the request
-                var request = new PodeRequest(received, socket.Certificate, socket.Protocols);
-
-                // if we need to exit now, dispose and exit
-                if (request.CloseImmediately || string.IsNullOrWhiteSpace(request.HttpMethod))
+                // deal with existing context
+                if (isContext)
                 {
-                    PodeHelpers.WriteException(request.Error, Listener);
-                    request.Dispose();
-                    return;
+                    var request = context.Request;
+                    request.Receive();
+
+                    // if we need to exit now, dispose and exit
+                    if (string.IsNullOrWhiteSpace(request.HttpMethod))
+                    {
+                        PodeHelpers.WriteException(request.Error, Listener);
+                        context.Dispose(true);
+                        return;
+                    }
                 }
 
-                // if websocket, and httpmethod != GET, close!
-                if (request.IsWebSocket && !request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
+                // else, create a new context
+                else
                 {
-                    request.Dispose();
-                    return;
+                    var request = new PodeRequest(received, socket);
+
+                    // if we need to exit now, dispose and exit
+                    if (request.CloseImmediately || string.IsNullOrWhiteSpace(request.HttpMethod))
+                    {
+                        PodeHelpers.WriteException(request.Error, Listener);
+                        request.Dispose();
+                        return;
+                    }
+
+                    // if websocket, and httpmethod != GET, close!
+                    if (request.IsWebSocket && !request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        request.Dispose();
+                        return;
+                    }
+
+                    context = new PodeContext(request, new PodeResponse(), Listener);
+
+                    // if it's a websocket, upgrade it
+                    if (context.Request.IsWebSocket)
+                    {
+                        context.Response.UpgradeWebSocket(PodeHelpers.NewGuid());
+                        return;
+                    }
                 }
 
-                // add a new context
-                socket.Listener.AddContext(request, new PodeResponse());
+                // add the context for processing
+                Listener.AddContext(context);
             }
             catch (Exception ex)
             {
@@ -233,6 +277,18 @@ namespace Pode
                 args.Completed += new EventHandler<SocketAsyncEventArgs>(Receive_Completed);
                 return args;
             }
+        }
+
+        private SocketAsyncEventArgs GetReceiveConnection()
+        {
+            var args = default(SocketAsyncEventArgs);
+
+            if (!ReceiveConnections.TryDequeue(out args))
+            {
+                args = NewReceiveConnection();
+            }
+
+            return args;
         }
 
         private void Accept_Completed(object sender, SocketAsyncEventArgs e)

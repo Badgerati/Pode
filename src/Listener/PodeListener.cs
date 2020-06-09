@@ -42,9 +42,14 @@ namespace Pode
 
         public void AddContext(PodeRequest request, PodeResponse response)
         {
+            AddContext(new PodeContext(request, response, this));
+        }
+
+        public void AddContext(PodeContext context)
+        {
             lock (Contexts)
             {
-                Contexts.Add(new PodeContext(request, response, this));
+                Contexts.Add(context);
             }
         }
 
@@ -93,13 +98,13 @@ namespace Pode
             // close existing contexts
             foreach (var _context in Contexts.ToArray())
             {
-                _context.Dispose();
+                _context.Dispose(true);
             }
 
             // close connected web sockets
             foreach (var _socket in WebSockets.Values)
             {
-                _socket.Context.Dispose();
+                _socket.Context.Dispose(true);
             }
         }
     }

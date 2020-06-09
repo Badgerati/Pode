@@ -106,7 +106,11 @@ namespace Pode
             }
             finally
             {
-                Request.InputStream.Flush();
+                // close unless keep-alive
+                if (!Request.IsKeepAlive)
+                {
+                    Request.InputStream.Flush();
+                }
             }
         }
 
@@ -227,12 +231,12 @@ namespace Pode
             }
 
             // close the connection (TODO: implement keep-alive)
-            if (Headers.ContainsKey("Connection"))
-            {
-                Headers.Remove("Connection");
-            }
+            // if (Headers.ContainsKey("Connection"))
+            // {
+            //     Headers.Remove("Connection");
+            // }
 
-            Headers.Add("Connection", "close");
+            // Headers.Add("Connection", "close");
         }
 
         private string BuildHeaders(Hashtable headers)

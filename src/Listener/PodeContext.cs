@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 
 namespace Pode
 {
@@ -21,16 +22,38 @@ namespace Pode
             Timestamp = DateTime.UtcNow;
         }
 
+        private void NewResponse()
+        {
+            Response = new PodeResponse();
+            Response.SetContext(this);
+        }
+
         public void Dispose()
         {
-            // send the response, and then close the request/response
+            Dispose(Request.Error != default(HttpRequestException));
+        }
+
+        public void Dispose(bool force)
+        {
+            // send the response and close, only close request if not keep alive
             try
             {
                 Response.Send();
-                Request.Dispose();
                 Response.Dispose();
+
+                if (!Request.IsKeepAlive || force)
+                {
+                    Request.Dispose();
+                }
             }
             catch {}
+
+            // if keep-alive, setup for re-receive
+            if (Request.IsKeepAlive && !force)
+            {
+                NewResponse();
+                Request.StartReceive();
+            }
         }
     }
 }

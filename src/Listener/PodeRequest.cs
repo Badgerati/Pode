@@ -38,7 +38,8 @@ namespace Pode
         public Stream InputStream { get; private set; }
         public HttpRequestException Error { get; private set; }
 
-        private Socket Socket;
+        public Socket Socket;
+        private PodeSocket PodeSocket;
         private PodeContext Context;
         private PodeResponse Response { get => Context.Response; }
         private static UTF8Encoding Encoding = new UTF8Encoding();
@@ -48,31 +49,27 @@ namespace Pode
             get => (Headers != default(Hashtable) && Headers.ContainsKey("Sec-WebSocket-Key"));
         }
 
-        public PodeRequest(Socket socket, X509Certificate certificate, SslProtocols protocols)
+        public bool IsKeepAlive
+        {
+            get => (Headers != default(Hashtable)
+                && Headers.ContainsKey("Connection")
+                && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        public PodeRequest(Socket socket, PodeSocket podeSocket)
         {
             Socket = socket;
+            PodeSocket = podeSocket;
             RemoteEndPoint = socket.RemoteEndPoint;
-            IsSsl = (certificate != default(X509Certificate));
+            IsSsl = (podeSocket.Certificate != default(X509Certificate));
 
-            Open(certificate, protocols);
+            Open(podeSocket.Certificate, podeSocket.Protocols);
             if (CloseImmediately)
             {
                 return;
             }
 
-            try
-            {
-                Receive();
-            }
-            catch (HttpRequestException httpex)
-            {
-                Error = httpex;
-            }
-            catch (Exception ex)
-            {
-                Error = new HttpRequestException(ex.Message, ex);
-                Error.Data.Add("PodeStatusCode", 400);
-            }
+            Receive();
         }
 
         private void Open(X509Certificate certificate, SslProtocols protocols)
@@ -112,30 +109,49 @@ namespace Pode
 
         public void Receive()
         {
-            var allBytes = new List<byte>();
-            if (IsSsl)
+            try
             {
-                try
-                {
-                    // the stream gets reset on ssl upgrade
-                    Socket.Receive(new byte[0]);
-                }
-                catch
-                {
-                    var err = new HttpRequestException();
-                    err.Data.Add("PodeStatusCode", 408);
-                    throw err;
-                }
-            }
+                Error = default(HttpRequestException);
 
-            while (Socket.Available > 0)
+                var allBytes = new List<byte>();
+                if (IsSsl)
+                {
+                    try
+                    {
+                        // the stream gets reset on ssl upgrade
+                        Socket.Receive(new byte[0]);
+                    }
+                    catch
+                    {
+                        var err = new HttpRequestException();
+                        err.Data.Add("PodeStatusCode", 408);
+                        throw err;
+                    }
+                }
+
+                while (Socket.Available > 0)
+                {
+                    var bytes = new byte[Socket.Available];
+                    InputStream.ReadAsync(bytes, 0, Socket.Available).Wait();
+                    allBytes.AddRange(bytes);
+                }
+
+                Parse(allBytes.ToArray());
+            }
+            catch (HttpRequestException httpex)
             {
-                var bytes = new byte[Socket.Available];
-                InputStream.ReadAsync(bytes, 0, Socket.Available).Wait();
-                allBytes.AddRange(bytes);
+                Error = httpex;
             }
+            catch (Exception ex)
+            {
+                Error = new HttpRequestException(ex.Message, ex);
+                Error.Data.Add("PodeStatusCode", 400);
+            }
+        }
 
-            Parse(allBytes.ToArray());
+        public void StartReceive()
+        {
+            PodeSocket.StartReceive(Context);
         }
 
         private void Parse(byte[] bytes)
@@ -240,7 +256,6 @@ namespace Pode
                 var c_hexBytes = default(IEnumerable<byte>);
                 var c_rawBytes = new List<byte>();
                 var c_hex = string.Empty;
-                //var c_start = 0;
 
                 while (c_length != 0)
                 {

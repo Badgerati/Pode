@@ -5,7 +5,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening
-Start-PodeServer -Type Pode -Threads 5 {
+Start-PodeServer -Threads 5 {
 
     # listen
     Add-PodeEndpoint -Address * -Port 8090 -CertificateFile './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Https

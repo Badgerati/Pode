@@ -319,7 +319,7 @@ function Start-PodeStaticServer
         $Browse
     )
 
-    Start-PodeServer -RootPath $RootPath -Threads $Threads -Type Pode -Browse:$Browse -ScriptBlock {
+    Start-PodeServer -RootPath $RootPath -Threads $Threads -Browse:$Browse -ScriptBlock {
         # add either an http or https endpoint
         if ($Https) {
             if ($null -eq $X509Certificate) {
