@@ -19,7 +19,6 @@ namespace Pode
 
         private PodeContext Context;
         private PodeRequest Request { get => Context.Request; }
-        private PodeListener Listener { get => Context.Listener; }
 
         public long ContentLength64
         {
@@ -78,12 +77,6 @@ namespace Pode
         {
             try
             {
-                // skip this for web sockets
-                if (Request.IsWebSocket)
-                {
-                    return;
-                }
-
                 // start building the response message
                 var message = HttpResponseLine;
 
@@ -96,7 +89,11 @@ namespace Pode
                 // stream response output
                 var buffer = Encoding.GetBytes(message);
                 Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
-                OutputStream.WriteTo(Request.InputStream);
+
+                if (OutputStream.Length > 0)
+                {
+                    OutputStream.WriteTo(Request.InputStream);
+                }
             }
             catch (IOException) { }
             catch (Exception ex)
@@ -107,11 +104,16 @@ namespace Pode
             finally
             {
                 // close unless keep-alive
-                if (!Request.IsKeepAlive)
-                {
+                //if (!Context.IsKeepAlive && !Context.IsWebSocket)
+                //{
                     Request.InputStream.Flush();
-                }
+                //}
             }
+        }
+
+        public void SendSignal(PodeSignal signal)
+        {
+            Write(signal.Value);
         }
 
         public void Write(string message)
@@ -119,7 +121,7 @@ namespace Pode
             var msgBytes = Encoding.GetBytes(message);
 
             // simple messages
-            if (!Request.IsWebSocket)
+            if (!Context.IsWebSocket)
             {
                 Write(msgBytes);
                 return;
@@ -152,68 +154,12 @@ namespace Pode
             }
         }
 
-        public void UpgradeWebSocket(string clientId)
-        {
-            //websocket
-            if (!Request.IsWebSocket)
-            {
-                throw new HttpRequestException("Cannot upgrade a non-websocket request");
-            }
-
-            // set the status of the response
-            StatusCode = 101;
-            StatusDescription = "Switching Protocols";
-
-            // get the socket key from the request
-            var socketKey = $"{Request.Headers["Sec-WebSocket-Key"]}".Trim();
-
-            // make the socket accept hash
-            var crypto = SHA1.Create();
-            var socketHash = Convert.ToBase64String(crypto.ComputeHash(System.Text.Encoding.UTF8.GetBytes($"{socketKey}{PodeHelpers.WEB_SOCKET_MAGIC_KEY}")));
-
-            // compile the headers
-            var headers = new Hashtable();
-            headers.Add("Connection", "Upgrade");
-            headers.Add("Upgrade", "websocket");
-            headers.Add("Sec-WebSocket-Accept", socketHash);
-
-            if (!string.IsNullOrWhiteSpace(clientId))
-            {
-                headers.Add("X-Pode-ClientId", clientId);
-            }
-
-            // build the message
-            var message = HttpResponseLine;
-
-            // add the headers
-            message += BuildHeaders(headers);
-
-            // stream response output (but do not close)
-            var buffer = Encoding.GetBytes(message);
-            Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
-
-            // add open web socket to listener
-            lock (Listener.WebSockets)
-            {
-                var websocket = new PodeWebSocket(Context, Request.Url.AbsolutePath, clientId);
-
-                if (Listener.WebSockets.ContainsKey(clientId))
-                {
-                    Listener.WebSockets[clientId] = websocket;
-                }
-                else
-                {
-                    Listener.WebSockets.Add(clientId, websocket);
-                }
-            }
-        }
-
         private void SetDefaultHeaders()
         {
             // ensure content length
-            if (ContentLength64 == 0 && OutputStream.Length > 0)
+            if (ContentLength64 == 0)
             {
-                ContentLength64 = OutputStream.Length;
+                ContentLength64 = (OutputStream.Length > 0 ? OutputStream.Length : 0);
             }
 
             // set the date
@@ -230,13 +176,24 @@ namespace Pode
                 Headers.Add("Server", "Pode");
             }
 
-            // close the connection (TODO: implement keep-alive)
-            // if (Headers.ContainsKey("Connection"))
-            // {
-            //     Headers.Remove("Connection");
-            // }
+            // set context/socket ID
+            if (Headers.ContainsKey("X-Pode-ContextId"))
+            {
+                Headers.Remove("X-Pode-ContextId");
+            }
 
-            // Headers.Add("Connection", "close");
+            Headers.Add("X-Pode-ContextId", Context.ID);
+
+            // close the connection, only if request didn't specify keep-alive
+            if (!Context.IsKeepAlive && !Context.IsWebSocket)
+            {
+                if (Headers.ContainsKey("Connection"))
+                {
+                    Headers.Remove("Connection");
+                }
+
+                Headers.Add("Connection", "close");
+            }
         }
 
         private string BuildHeaders(Hashtable headers)

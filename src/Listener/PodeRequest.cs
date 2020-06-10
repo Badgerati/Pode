@@ -31,70 +31,40 @@ namespace Pode
         public Hashtable Headers { get; private set; }
         public string Body { get; private set; }
         public byte[] RawBody { get; private set; }
-        public bool IsSsl { get; private set; }
         public string Host { get; private set; }
-        public bool CloseImmediately { get; private set; }
+        public bool IsSsl { get; private set; }
 
         public Stream InputStream { get; private set; }
         public HttpRequestException Error { get; private set; }
 
         public Socket Socket;
-        private PodeSocket PodeSocket;
         private PodeContext Context;
-        private PodeResponse Response { get => Context.Response; }
         private static UTF8Encoding Encoding = new UTF8Encoding();
 
-        public bool IsWebSocket
-        {
-            get => (Headers != default(Hashtable) && Headers.ContainsKey("Sec-WebSocket-Key"));
-        }
-
-        public bool IsKeepAlive
-        {
-            get => (Headers != default(Hashtable)
-                && Headers.ContainsKey("Connection")
-                && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase));
-        }
-
-        public PodeRequest(Socket socket, PodeSocket podeSocket)
+        public PodeRequest(Socket socket)
         {
             Socket = socket;
-            PodeSocket = podeSocket;
             RemoteEndPoint = socket.RemoteEndPoint;
-            IsSsl = (podeSocket.Certificate != default(X509Certificate));
-
-            Open(podeSocket.Certificate, podeSocket.Protocols);
-            if (CloseImmediately)
-            {
-                return;
-            }
-
-            Receive();
         }
 
-        private void Open(X509Certificate certificate, SslProtocols protocols)
+        public void Open(X509Certificate certificate, SslProtocols protocols)
         {
+            // ssl or not?
+            IsSsl = (certificate != default(X509Certificate));
+
             // open the socket's stream
             var stream = new NetworkStream(Socket, true);
-            if (certificate == default(X509Certificate))
+            if (!IsSsl)
             {
                 // if not ssl, use the main network stream
                 InputStream = stream;
                 return;
             }
 
-            try
-            {
-                // otherwise, convert the stream to an ssl stream
-                var ssl = new SslStream(stream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
-                ssl.AuthenticateAsServer(certificate, false, protocols, false);
-                InputStream = ssl;
-            }
-            catch
-            {
-                // invalid ssl or cert
-                CloseImmediately = true;
-            }
+            // otherwise, convert the stream to an ssl stream
+            var ssl = new SslStream(stream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
+            ssl.AuthenticateAsServer(certificate, false, protocols, false);
+            InputStream = ssl;
         }
 
         private bool ValidateCertificateCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
@@ -149,23 +119,13 @@ namespace Pode
             }
         }
 
-        public void StartReceive()
-        {
-            PodeSocket.StartReceive(Context);
-        }
-
         private void Parse(byte[] bytes)
         {
             // get the raw string for headers
             var content = Encoding.GetString(bytes, 0, bytes.Length);
 
             // split the lines on newline
-            var newline = PodeHelpers.NEW_LINE;
-            if (!content.Contains(newline))
-            {
-                newline = PodeHelpers.NEW_LINE_UNIX;
-            }
-
+            var newline = (content.Contains(PodeHelpers.NEW_LINE) ? PodeHelpers.NEW_LINE : PodeHelpers.NEW_LINE_UNIX);
             var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
 
             // first line is method/url
@@ -177,7 +137,7 @@ namespace Pode
 
             // http method
             HttpMethod = reqMeta[0].Trim();
-            if (Array.IndexOf(new string[] { "DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE" }, HttpMethod) == -1)
+            if (Array.IndexOf(PodeHelpers.HTTP_METHODS, HttpMethod) == -1)
             {
                 throw new HttpRequestException($"Invalid request HTTP method: {HttpMethod}");
             }

@@ -123,7 +123,7 @@ function Start-PodeSignalServer
                 # send the message to all found sockets
                 foreach ($socket in $sockets) {
                     try {
-                        $socket.Context.Response.Write($message.Value)
+                        $socket.Context.Response.SendSignal($message)
                     }
                     catch {
                         $Listener.WebSockets.Remove($socket.ClientId) | Out-Nul

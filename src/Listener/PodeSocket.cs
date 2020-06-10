@@ -204,13 +204,13 @@ namespace Pode
                 // deal with existing context
                 if (isContext)
                 {
-                    var request = context.Request;
-                    request.Receive();
+                    Console.WriteLine("re-receive!");
+                    context.Receive();
 
                     // if we need to exit now, dispose and exit
-                    if (string.IsNullOrWhiteSpace(request.HttpMethod))
+                    if (context.CloseImmediately)
                     {
-                        PodeHelpers.WriteException(request.Error, Listener);
+                        PodeHelpers.WriteException(context.Request.Error, Listener);
                         context.Dispose(true);
                         return;
                     }
@@ -219,29 +219,27 @@ namespace Pode
                 // else, create a new context
                 else
                 {
-                    var request = new PodeRequest(received, socket);
+                    context = new PodeContext(received, socket, Listener);
 
                     // if we need to exit now, dispose and exit
-                    if (request.CloseImmediately || string.IsNullOrWhiteSpace(request.HttpMethod))
+                    if (context.CloseImmediately)
                     {
-                        PodeHelpers.WriteException(request.Error, Listener);
-                        request.Dispose();
+                        PodeHelpers.WriteException(context.Request.Error, Listener);
+                        context.Dispose(true);
                         return;
                     }
 
                     // if websocket, and httpmethod != GET, close!
-                    if (request.IsWebSocket && !request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
+                    if (context.IsWebSocket && !context.Request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
                     {
-                        request.Dispose();
+                        context.Dispose(true);
                         return;
                     }
 
-                    context = new PodeContext(request, new PodeResponse(), Listener);
-
                     // if it's a websocket, upgrade it
-                    if (context.Request.IsWebSocket)
+                    if (context.IsWebSocket)
                     {
-                        context.Response.UpgradeWebSocket(PodeHelpers.NewGuid());
+                        context.UpgradeWebSocket();
                         return;
                     }
                 }

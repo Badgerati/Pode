@@ -40,16 +40,26 @@ namespace Pode
             return Task.Factory.StartNew(() => GetContext(cancellationToken), cancellationToken);
         }
 
-        public void AddContext(PodeRequest request, PodeResponse response)
-        {
-            AddContext(new PodeContext(request, response, this));
-        }
-
         public void AddContext(PodeContext context)
         {
             lock (Contexts)
             {
                 Contexts.Add(context);
+            }
+        }
+
+        public void AddWebSocket(PodeWebSocket webSocket)
+        {
+            lock (WebSockets)
+            {
+                if (WebSockets.ContainsKey(webSocket.ClientId))
+                {
+                    WebSockets[webSocket.ClientId] = webSocket;
+                }
+                else
+                {
+                    WebSockets.Add(webSocket.ClientId, webSocket);
+                }
             }
         }
 

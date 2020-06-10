@@ -10,8 +10,8 @@ Start-PodeServer -Threads 5 {
     # listen
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
     Add-PodeEndpoint -Address * -Port 8091 -Protocol Ws
-    #Add-PodeEndpoint -Address * -Port 8090 -CertificateFile './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Https
-    #Add-PodeEndpoint -Address * -Port 8091 -CertificateFile './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Wss
+    #Add-PodeEndpoint -Address * -Port 8090 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Https
+    #Add-PodeEndpoint -Address * -Port 8091 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Wss
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
