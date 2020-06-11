@@ -37,7 +37,7 @@ namespace Pode
         public Stream InputStream { get; private set; }
         public HttpRequestException Error { get; private set; }
 
-        public Socket Socket;
+        private Socket Socket;
         private PodeContext Context;
         private static UTF8Encoding Encoding = new UTF8Encoding();
 
@@ -121,6 +121,13 @@ namespace Pode
 
         private void Parse(byte[] bytes)
         {
+            // if there are no bytes, return (0 bytes read means we can close the socket)
+            if (bytes.Length == 0)
+            {
+                HttpMethod = string.Empty;
+                return;
+            }
+
             // get the raw string for headers
             var content = Encoding.GetString(bytes, 0, bytes.Length);
 
@@ -149,6 +156,10 @@ namespace Pode
                 var qmIndex = reqQuery.IndexOf("?");
                 QueryString = HttpUtility.ParseQueryString(qmIndex > 0 ? reqQuery.Substring(qmIndex) : reqQuery);
             }
+            else
+            {
+                QueryString = default(NameValueCollection);
+            }
 
             // http protocol version
             Protocol = (reqMeta[2] ?? "HTTP/1.1").Trim();
@@ -161,7 +172,6 @@ namespace Pode
 
             // headers
             Headers = new Hashtable();
-
             var bodyIndex = 0;
             var h_index = 0;
             var h_line = string.Empty;

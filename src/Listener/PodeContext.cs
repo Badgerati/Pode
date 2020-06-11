@@ -17,6 +17,8 @@ namespace Pode
         public DateTime Timestamp { get; private set; }
         public Hashtable Data { get; private set; }
         public PodeContextState State { get; private set; }
+        public PodeContextType Type { get; private set; }
+        public bool IsKeepAlive { get; private set; }
 
         public bool CloseImmediately
         {
@@ -25,15 +27,9 @@ namespace Pode
 
         public bool IsWebSocket
         {
-            get => (Request.Headers != default(Hashtable) && Request.Headers.ContainsKey("Sec-WebSocket-Key"));
+            get => (Type == PodeContextType.WebSocket);
         }
 
-        public bool IsKeepAlive
-        {
-            get => (Request.Headers != default(Hashtable)
-                && Request.Headers.ContainsKey("Connection")
-                && $"{Request.Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase));
-        }
 
         public PodeContext(Socket socket, PodeSocket podeSocket, PodeListener listener)
         {
@@ -43,6 +39,8 @@ namespace Pode
             Listener = listener;
             Timestamp = DateTime.UtcNow;
             Data = new Hashtable();
+
+            Type = PodeContextType.Unknown;
             State = PodeContextState.New;
 
             NewRequest();
@@ -74,6 +72,25 @@ namespace Pode
 
             // attempt to receive data from the request stream
             Receive();
+            SetContextType();
+        }
+
+        private void SetContextType()
+        {
+            if (Type != PodeContextType.Unknown)
+            {
+                return;
+            }
+
+            // web socket
+            if (Request.Headers != default(Hashtable) && Request.Headers.ContainsKey("Sec-WebSocket-Key"))
+            {
+                Type = PodeContextType.WebSocket;
+                return;
+            }
+
+            // http
+            Type = PodeContextType.Http;
         }
 
         public void Receive()
@@ -83,6 +100,10 @@ namespace Pode
                 State = PodeContextState.Receiving;
                 Request.Receive();
                 State = PodeContextState.Received;
+
+                IsKeepAlive = (Request.Headers != default(Hashtable)
+                    && Request.Headers.ContainsKey("Connection")
+                    && $"{Request.Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase));
             }
             catch
             {
@@ -99,7 +120,7 @@ namespace Pode
 
         public void UpgradeWebSocket(string clientId = null)
         {
-            //websocket
+            // websocket
             if (!IsWebSocket)
             {
                 throw new HttpRequestException("Cannot upgrade a non-websocket request");

@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Concurrent;
-using System.IO;
+using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
-using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -23,6 +20,7 @@ namespace Pode
 
         private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
         private ConcurrentQueue<SocketAsyncEventArgs> ReceiveConnections;
+        private IDictionary<string, Socket> PendingSockets;
 
         private PodeListener Listener;
 
@@ -47,6 +45,7 @@ namespace Pode
 
             AcceptConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
             ReceiveConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
+            PendingSockets = new Dictionary<string, Socket>();
 
             Socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             Socket.ReceiveTimeout = 100;
@@ -77,7 +76,7 @@ namespace Pode
 
             try
             {
-                raised = ((PodeSocket)args.UserToken).Socket.AcceptAsync(args);
+                raised = Socket.AcceptAsync(args);
             }
             catch (ObjectDisposedException)
             {
@@ -93,7 +92,7 @@ namespace Pode
         public void StartReceive(PodeContext context)
         {
             var args = GetReceiveConnection();
-            args.AcceptSocket = context.Request.Socket;
+            args.AcceptSocket = context.Socket;
             args.UserToken = context;
             StartReceive(args);
         }
@@ -113,6 +112,7 @@ namespace Pode
 
             try
             {
+                AddPendingSocket(args.AcceptSocket);
                 raised = args.AcceptSocket.ReceiveAsync(args);
             }
             catch (ObjectDisposedException)
@@ -144,23 +144,22 @@ namespace Pode
             // start the socket again
             socket.Start();
 
-            // close socket if not successful
-            if ((accepted == default(Socket)) || (error != SocketError.Success))
+            // close socket if not successful, or if listener is stopped - close now!
+            if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
             {
                 // close socket
                 if (accepted != default(Socket))
                 {
                     accepted.Close();
                 }
-
-                // add args back to connections
-                ClearSocketAsyncEvent(args);
-                AcceptConnections.Enqueue(args);
-                return;
             }
 
-            // start receive
-            StartReceive(args.AcceptSocket);
+            // valid connection
+            else
+            {
+                // start receive
+                StartReceive(args.AcceptSocket);
+            }
 
             // add args back to connections
             ClearSocketAsyncEvent(args);
@@ -178,8 +177,11 @@ namespace Pode
             var context = (isContext ? (PodeContext)token : default(PodeContext));
             var socket = (isContext ? default(PodeSocket) : (PodeSocket)token);
 
-            // close socket if not successful
-            if ((received == default(Socket)) || (error != SocketError.Success))
+            // remove the socket from pending
+            RemovePendingSocket(received);
+
+            // close socket if not successful, or if listener is stopped - close now!
+            if ((received == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
             {
                 // close socket
                 if (received != default(Socket))
@@ -201,10 +203,12 @@ namespace Pode
 
             try
             {
+                // add context to be processed?
+                var process = true;
+
                 // deal with existing context
                 if (isContext)
                 {
-                    Console.WriteLine("re-receive!");
                     context.Receive();
 
                     // if we need to exit now, dispose and exit
@@ -212,7 +216,7 @@ namespace Pode
                     {
                         PodeHelpers.WriteException(context.Request.Error, Listener);
                         context.Dispose(true);
-                        return;
+                        process = false;
                     }
                 }
 
@@ -226,26 +230,29 @@ namespace Pode
                     {
                         PodeHelpers.WriteException(context.Request.Error, Listener);
                         context.Dispose(true);
-                        return;
+                        process = false;
                     }
 
                     // if websocket, and httpmethod != GET, close!
-                    if (context.IsWebSocket && !context.Request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
+                    else if (context.IsWebSocket && !context.Request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
                     {
                         context.Dispose(true);
-                        return;
+                        process = false;
                     }
 
                     // if it's a websocket, upgrade it
-                    if (context.IsWebSocket)
+                    else if (context.IsWebSocket)
                     {
                         context.UpgradeWebSocket();
-                        return;
+                        process = false;
                     }
                 }
 
                 // add the context for processing
-                Listener.AddContext(context);
+                if (process)
+                {
+                    Listener.AddContext(context);
+                }
             }
             catch (Exception ex)
             {
@@ -299,18 +306,50 @@ namespace Pode
             ProcessReceive(e);
         }
 
+        private void AddPendingSocket(Socket socket)
+        {
+            lock (PendingSockets)
+            {
+                var socketId = socket.GetHashCode().ToString();
+                if (!PendingSockets.ContainsKey(socketId))
+                {
+                    PendingSockets.Add(socketId, socket);
+                }
+            }
+        }
+
+        private void RemovePendingSocket(Socket socket)
+        {
+            lock (PendingSockets)
+            {
+                var socketId = socket.GetHashCode().ToString();
+                if (PendingSockets.ContainsKey(socketId))
+                {
+                    PendingSockets.Remove(socketId);
+                }
+            }
+        }
+
         public void Dispose()
         {
             CloseSocket(Socket);
+
+            // close receiving contexts/sockets
+            foreach (var pending in PendingSockets.Values)
+            {
+                CloseSocket(pending);
+            }
         }
 
         public static void CloseSocket(Socket socket)
         {
+            // if connected, shut it down
             if (socket.Connected)
             {
                 socket.Shutdown(SocketShutdown.Both);
             }
 
+            // dispose
             socket.Close();
             socket.Dispose();
         }

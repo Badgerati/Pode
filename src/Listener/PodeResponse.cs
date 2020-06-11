@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Net.Http;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Pode
