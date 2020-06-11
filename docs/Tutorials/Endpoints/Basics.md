@@ -18,63 +18,32 @@ You can also supply an optional unique `-Name` to your endpoint. This name will 
 
 ## Certificates
 
-If you add an HTTPS or WSS endpoint, then you'll be required to also supply certificate details. Depending on which web server type you're using depends on how you supply a certificate.
-
-### HttpListener
-
-This is the default web server type, if you don't supply a `-Type` on the [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) function then you'll be using HttpListener.
-
-The HttpListener web server only supports HTTPS on Windows, and does not support Web Sockets.
-
-To configure a certificate you can use one of the following parameters:
+If you add an HTTPS or WSS endpoint, then you'll be required to also supply certificate details. To configure a certificate you can use one of the following parameters:
 
 | Name | Description |
 | ---- | ----------- |
-| Certificate | The name of a certificate to use, this certificate should be installed in the `MY` certifcate store |
-| CertificateThumbprint | The thumbprint of a certificate to use, this certificate should be installed in the `MY` certifcate store |
-| SelfSigned | If supplied, Pode will automatically generate a self-signed local certificate |
-
-The below example will create a local self-signed HTTPS endpoint:
-
-```powershell
-Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
-```
-
-Whereas the following will create the same endpoint, but will instead bind an installed certificate:
-
-```powershell
-# by name:
-Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Certificate '*.example.com'
-
-# by thumbprint
-Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
-```
-
-### Pode
-
-If you have specified `-Type Pode` on your [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) function, or you're hosting via IIS, then you'll be using the Pode type web server.
-
-The Pode web server supports HTTPS cross-platform, and supports Web Sockets.
-
-To configure a certificate you can use one of the following parameters:
-
-| Name | Description |
-| ---- | ----------- |
-| CertificateFile | The path to a `.pfx` or `.cer` certificate |
+| Certificate | The path to a `.pfx` or `.cer` certificate |
 | CertificatePassword | The password for the above `.pfx` certificate |
-| RawCertificate | A raw X509Certificate object |
+| X609Certificate | A raw X509Certificate object |
+| SelfSigned | If supplied, Pode will automatically generate a self-signed certificate as an X509Certificate object |
 
 The below example will create an endpoint using a `.pfx` certificate:
 
 ```powershell
-Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -CertificateFile './certs/example.pfx' -CertificatePassword 'hunter2'
+Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Certificate './certs/example.pfx' -CertificatePassword 'hunter2'
 ```
 
 Whereas the following will instead create an X509Certificate, and pass that to the endpoint instead:
 
 ```powershell
 $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new('./certs/example.cer')
-Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -RawCertificate $cert
+Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -X509Certificate $cert
+```
+
+The below example will create a local self-signed HTTPS endpoint:
+
+```powershell
+Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
 ```
 
 ## Getting Endpoints

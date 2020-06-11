@@ -274,7 +274,6 @@ namespace Pode
             UrlReferrer = $"{Headers["Referer"]}";
             UserAgent = $"{Headers["User-Agent"]}";
             ContentType = $"{Headers["Content-Type"]}";
-            //TODO: shouldnt transfer-encoding and accept-encoding be here?
 
             // set content encoding
             ContentEncoding = System.Text.Encoding.UTF8;

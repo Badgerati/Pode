@@ -1,6 +1,6 @@
 # IIS
 
-Pode's all PowerShell Web Server now enables you to host your server via IIS!
+Pode has support for you to host your server via IIS!
 
 When you host your server through IIS, Pode can detect this and internally set the server type and endpoints to automatically work with IIS. This allows IIS to deal with binding, HTTPS and Certificates, as well as external traffic, etc.
 

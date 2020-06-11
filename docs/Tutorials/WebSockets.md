@@ -1,6 +1,6 @@
 # Web Sockets
 
-Pode now has support for server-to-client communications using WebSockets, including secure WebSockets.
+Pode has support for server-to-client communications using WebSockets, including secure WebSockets.
 
 !!! note
     Currently only broadcasting messages to connected clients/browsers from the server is supported. Client-to-server communications is in the works!
@@ -17,7 +17,7 @@ On the server side, the only real work required is to register a new endpoint to
 Add-PodeEndpoint -Address * -Port 8091 -Protocol Ws
 
 # or for secure sockets:
-Add-PodeEndpoint -Address * -Port 8091 -CertificateFile './path/cert.pfx' -CertificatePassword 'dummy' -Protocol Wss
+Add-PodeEndpoint -Address * -Port 8091 -Certificate './path/cert.pfx' -CertificatePassword 'dummy' -Protocol Wss
 ```
 
 ### Broadcasting
@@ -151,5 +151,3 @@ $(document).ready(() => {
     }
 })
 ```
-
-
