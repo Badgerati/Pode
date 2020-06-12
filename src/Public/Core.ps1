@@ -622,19 +622,16 @@ The Port number of the endpoint.
 The protocol of the supplied endpoint.
 
 .PARAMETER Certificate
-A certificate name to find and bind onto HTTPS endpoints (Windows only).
-
-.PARAMETER CertificateThumbprint
-A certificate thumbprint to bind onto HTTPS endpoints (Windows only).
-
-.PARAMETER CertificateFile
-The path to a certificate that can be use to enable HTTPS (Cross-platform)
+The path to a certificate that can be use to enable HTTPS
 
 .PARAMETER CertificatePassword
-The password for the certificate referenced in CertificateFile (Cross-platform)
+The password for the certificate file referenced in Certificate
 
-.PARAMETER RawCertificate
-The raw X509 certificate that can be use to enable HTTPS (Cross-platform)
+.PARAMETER CertificateThumbprint
+A certificate thumbprint to bind onto HTTPS endpoints (Windows).
+
+.PARAMETER X509Certificate
+The raw X509 certificate that can be use to enable HTTPS
 
 .PARAMETER Name
 An optional name for the endpoint, that can be used with other functions.
@@ -649,7 +646,7 @@ A quick description of the Endpoint - normally used in OpenAPI.
 Ignore Adminstrator checks for non-localhost endpoints.
 
 .PARAMETER SelfSigned
-Create and bind a self-signed certifcate onto HTTPS endpoints (Windows only).
+Create and bind a self-signed certifcate for HTTPS endpoints.
 
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
@@ -687,6 +684,10 @@ function Add-PodeEndpoint
         [Parameter(ParameterSetName='CertFile')]
         [string]
         $CertificatePassword = $null,
+
+        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
+        [string]
+        $CertificateThumbprint,
 
         [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
         [Parameter()]
@@ -808,6 +809,40 @@ function Add-PodeEndpoint
         if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
             throw "The certificate '$($Certificate)' has expired: $($obj.Certificate.Raw.NotAfter)"
         }
+    }
+
+    # if we're dealing with a certificate thumbprint, attempt to retrieve it (if windows)
+    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ieq 'certthumb')) {
+        # fail if protocol is not https
+        if (@('https', 'wss') -inotcontains $Protocol) {
+            throw "Certificate thumbprint supplied for non-HTTPS/WSS endpoint"
+        }
+
+        # fail if not windows
+        if (!(Test-IsWindows)) {
+            throw "Certificate thumbprints are only supported on Windows"
+        }
+
+        $x509store = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+            [System.Security.Cryptography.X509Certificates.StoreName]::My,
+            [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
+        )
+
+        $x509store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+
+        $x509certs = $x509store.Certificates.Find(
+            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+            $CertificateThumbprint,
+            $false
+        )
+
+        Close-PodeDisposable -Disposable $x509store -Close
+
+        if (($null -eq $x509certs) -or ($x509certs.Count -eq 0)) {
+            throw "No certificate could be found in CurrentUser\My for Thumbprint: $($CertificateThumbprint)"
+        }
+
+        $obj.Certificate.Raw = [X509Certificate2]($x509certs[0])
     }
 
     # if we're dealing with a self-signed certificate, create it

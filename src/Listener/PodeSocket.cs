@@ -89,19 +89,23 @@ namespace Pode
             }
         }
 
+        private void StartReceive(Socket acceptedSocket)
+        {
+            var context = new PodeContext(acceptedSocket, this, Listener);
+            if (context.IsErrored)
+            {
+                context.Dispose(true);
+                return;
+            }
+
+            StartReceive(context);
+        }
+
         public void StartReceive(PodeContext context)
         {
             var args = GetReceiveConnection();
             args.AcceptSocket = context.Socket;
             args.UserToken = context;
-            StartReceive(args);
-        }
-
-        private void StartReceive(Socket acceptedSocket)
-        {
-            var args = GetReceiveConnection();
-            args.AcceptSocket = acceptedSocket;
-            args.UserToken = this;
             StartReceive(args);
         }
 
@@ -170,12 +174,8 @@ namespace Pode
         {
             // get details
             var received = args.AcceptSocket;
-            var token = args.UserToken;
+            var context = (PodeContext)args.UserToken;
             var error = args.SocketError;
-
-            var isContext = (token is PodeContext);
-            var context = (isContext ? (PodeContext)token : default(PodeContext));
-            var socket = (isContext ? default(PodeSocket) : (PodeSocket)token);
 
             // remove the socket from pending
             RemovePendingSocket(received);
@@ -190,10 +190,7 @@ namespace Pode
                 }
 
                 // close the context
-                if (isContext)
-                {
-                    context.Dispose(true);
-                }
+                context.Dispose(true);
 
                 // add args back to connections
                 ClearSocketAsyncEvent(args);
@@ -206,46 +203,22 @@ namespace Pode
                 // add context to be processed?
                 var process = true;
 
-                // deal with existing context
-                if (isContext)
-                {
-                    context.Receive();
+                // deal with context
+                context.Receive();
 
-                    // if we need to exit now, dispose and exit
-                    if (context.CloseImmediately)
-                    {
-                        PodeHelpers.WriteException(context.Request.Error, Listener);
-                        context.Dispose(true);
-                        process = false;
-                    }
+                // if we need to exit now, dispose and exit
+                if (context.CloseImmediately)
+                {
+                    PodeHelpers.WriteException(context.Request.Error, Listener);
+                    context.Dispose(true);
+                    process = false;
                 }
 
-                // else, create a new context
-                else
+                // if it's a websocket, upgrade it
+                else if (context.IsWebSocket)
                 {
-                    context = new PodeContext(received, socket, Listener);
-
-                    // if we need to exit now, dispose and exit
-                    if (context.CloseImmediately)
-                    {
-                        PodeHelpers.WriteException(context.Request.Error, Listener);
-                        context.Dispose(true);
-                        process = false;
-                    }
-
-                    // if websocket, and httpmethod != GET, close!
-                    else if (context.IsWebSocket && !context.Request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        context.Dispose(true);
-                        process = false;
-                    }
-
-                    // if it's a websocket, upgrade it
-                    else if (context.IsWebSocket)
-                    {
-                        context.UpgradeWebSocket();
-                        process = false;
-                    }
+                    context.UpgradeWebSocket();
+                    process = false;
                 }
 
                 // add the context for processing

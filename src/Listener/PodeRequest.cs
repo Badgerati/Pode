@@ -45,6 +45,7 @@ namespace Pode
         {
             Socket = socket;
             RemoteEndPoint = socket.RemoteEndPoint;
+            Protocol = "HTTP/1.1";
         }
 
         public void Open(X509Certificate certificate, SslProtocols protocols)
@@ -53,16 +54,15 @@ namespace Pode
             IsSsl = (certificate != default(X509Certificate));
 
             // open the socket's stream
-            var stream = new NetworkStream(Socket, true);
+            InputStream = new NetworkStream(Socket, true);
             if (!IsSsl)
             {
                 // if not ssl, use the main network stream
-                InputStream = stream;
                 return;
             }
 
             // otherwise, convert the stream to an ssl stream
-            var ssl = new SslStream(stream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
+            var ssl = new SslStream(InputStream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
             ssl.AuthenticateAsServer(certificate, false, protocols, false);
             InputStream = ssl;
         }
@@ -82,22 +82,7 @@ namespace Pode
             try
             {
                 Error = default(HttpRequestException);
-
                 var allBytes = new List<byte>();
-                if (IsSsl)
-                {
-                    try
-                    {
-                        // the stream gets reset on ssl upgrade
-                        Socket.Receive(new byte[0]);
-                    }
-                    catch
-                    {
-                        var err = new HttpRequestException();
-                        err.Data.Add("PodeStatusCode", 408);
-                        throw err;
-                    }
-                }
 
                 while (Socket.Available > 0)
                 {

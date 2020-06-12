@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -22,12 +23,19 @@ namespace Pode
 
         public bool CloseImmediately
         {
-            get => (State == PodeContextState.Error || string.IsNullOrWhiteSpace(Request.HttpMethod));
+            get => (State == PodeContextState.Error
+                || string.IsNullOrWhiteSpace(Request.HttpMethod)
+                || (IsWebSocket && !Request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase)));
         }
 
         public bool IsWebSocket
         {
             get => (Type == PodeContextType.WebSocket);
+        }
+
+        public bool IsErrored
+        {
+            get => (State == PodeContextState.Error || State == PodeContextState.SslError);
         }
 
 
@@ -43,8 +51,8 @@ namespace Pode
             Type = PodeContextType.Unknown;
             State = PodeContextState.New;
 
-            NewRequest();
             NewResponse();
+            NewRequest();
         }
 
         private void NewResponse()
@@ -67,12 +75,10 @@ namespace Pode
             }
             catch
             {
-                State = PodeContextState.Error;
+                State = (Request.InputStream == default(Stream)
+                    ? PodeContextState.Error
+                    : PodeContextState.SslError);
             }
-
-            // attempt to receive data from the request stream
-            Receive();
-            SetContextType();
         }
 
         private void SetContextType()
@@ -109,6 +115,8 @@ namespace Pode
             {
                 State = PodeContextState.Error;
             }
+
+            SetContextType();
         }
 
         public void StartReceive()
@@ -171,7 +179,16 @@ namespace Pode
             // send the response and close, only close request if not keep alive
             try
             {
-                Response.Send();
+                if (IsErrored)
+                {
+                    Response.StatusCode = 500;
+                }
+
+                if (State != PodeContextState.SslError)
+                {
+                    Response.Send();
+                }
+
                 Response.Dispose();
 
                 if (!IsKeepAlive || force)
