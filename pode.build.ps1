@@ -12,6 +12,7 @@ $Versions = @{
     MkDocs = '1.1.2'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
+    DotNetCore = '3.1.5'
     Checksum = '0.2.0'
     MkDocsTheme = '5.2.1'
     PlatyPS = '0.14.0'
@@ -142,14 +143,21 @@ task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
     }
 }
 
+# Synopsis: Install dependencies for compiling/building
+task BuildDeps {
+    # install dotnet
+    if (!(Test-PodeBuildCommand 'dotnet')) {
+        Invoke-PodeBuildInstall 'dotnetcore' $Versions.DotNetCore
+    }
+}
+
 # Synopsis: Install dependencies for running tests
 task TestDeps {
     # install pester
     Install-PodeBuildModule Pester
 
     # install PSCoveralls
-    if (Test-PodeBuildCanCodeCoverage)
-    {
+    if (Test-PodeBuildCanCodeCoverage) {
         Install-PodeBuildModule PSCoveralls
     }
 }
@@ -176,7 +184,7 @@ task DocsDeps ChocoDeps, {
 #>
 
 # Synopsis: Build the .NET Core Listener
-task Build {
+task Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }

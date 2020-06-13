@@ -26,13 +26,16 @@ function Install-PodeModule($path, $version)
     {
         Push-Location (Join-Path $env:ChocolateyPackageFolder 'src')
 
-        New-Item -ItemType Directory -Path (Join-Path $path 'Private') -Force | Out-Null
-        New-Item -ItemType Directory -Path (Join-Path $path 'Public') -Force | Out-Null
-        New-Item -ItemType Directory -Path (Join-Path $path 'Misc') -Force | Out-Null
+        # which folders do we need?
+        $folders = @('Private', 'Public', 'Misc', 'Libs')
 
-        Copy-Item -Path ./Private/* -Destination (Join-Path $path 'Private') -Force | Out-Null
-        Copy-Item -Path ./Public/* -Destination (Join-Path $path 'Public') -Force | Out-Null
-        Copy-Item -Path ./Misc/* -Destination (Join-Path $path 'Misc') -Force | Out-Null
+        # create the directories, then copy the source
+        $folders | ForEach-Object {
+            New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
+            Copy-Item -Path "./$($_)/*" -Destination (Join-Path $path $_) -Force | Out-Null
+        }
+
+        # copy general files
         Copy-Item -Path ./Pode.psm1 -Destination $path -Force | Out-Null
         Copy-Item -Path ./Pode.psd1 -Destination $path -Force | Out-Null
         Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null

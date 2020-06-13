@@ -147,69 +147,6 @@ function Test-IsAdminUser
     }
 }
 
-function New-PodeSelfSignedCertificate
-{
-    $sanBuilder = [System.Security.Cryptography.X509Certificates.SubjectAlternativeNameBuilder]::new()
-    $sanBuilder.AddIpAddress([ipaddress]::Loopback) | Out-Null
-    $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback) | Out-Null
-    $sanBuilder.AddDnsName('localhost') | Out-Null
-
-    if (![string]::IsNullOrWhiteSpace($env:COMPUTERNAME)) {
-        $sanBuilder.AddDnsName($env:COMPUTERNAME) | Out-Null
-    }
-
-    $rsa = [System.Security.Cryptography.RSA]::Create(2048)
-    $distinguishedName = [X500DistinguishedName]::new("CN=localhost")
-
-    $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
-        $distinguishedName,
-        $rsa,
-        [System.Security.Cryptography.HashAlgorithmName]::SHA256,
-        [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
-    )
-
-    $flags = (
-        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DataEncipherment -bor
-        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::KeyEncipherment -bor
-        [System.Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature
-    )
-
-    $req.CertificateExtensions.Add(
-        [System.Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new(
-            $flags,
-            $false
-        )
-    ) | Out-Null
-
-    $oid = [System.Security.Cryptography.OidCollection]::new()
-    $oid.Add([System.Security.Cryptography.Oid]::new('1.3.6.1.5.5.7.3.1')) | Out-Null
-
-    $req.CertificateExtensions.Add(
-        [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]::new(
-            $oid,
-            $false
-        )
-    )
-
-    $req.CertificateExtensions.Add($sanBuilder.Build()) | Out-Null
-
-    $cert = $req.CreateSelfSigned(
-        [System.DateTimeOffset]::UtcNow.AddDays(-1),
-        [System.DateTimeOffset]::UtcNow.AddYears(10)
-    )
-
-    if (Test-IsWindows) {
-        $cert.FriendlyName = 'localhost'
-    }
-
-    $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-        $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, 'self-signed'),
-        'self-signed'
-    )
-
-    return $cert
-}
-
 function Get-PodeHostIPRegex
 {
     param (

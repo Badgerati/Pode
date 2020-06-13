@@ -10,6 +10,6 @@ If you were previously specifying `-Type Pode` on your [`Start-PodeServer`], the
 
 ### Endpoints
 
-With the dropping of HttpListener, the old `-Certificate` is now the old `-CertificateFile` parameter. The `-RawCertificate` is now `-X509Certificate`.
+With the dropping of HttpListener, the old `-Certificate` is now the old `-CertificateFile` parameter. The `-RawCertificate` parameter is now called `-X509Certificate`.
 
-`-CertificateThumbprint` has also been removed.
+`-CertificateThumbprint` remains the same, and only works on Windows.

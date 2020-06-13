@@ -662,7 +662,7 @@ Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '
 #>
 function Add-PodeEndpoint
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Default')]
     param (
         [Parameter()]
         [string]
@@ -789,70 +789,32 @@ function Add-PodeEndpoint
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
-    # if we're dealing with a certificate file, attempt to import it
-    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
+    # if we're dealing with a certificate, attempt to import it
+    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
         if (@('https', 'wss') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
         }
 
-        $_path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
+        {
+            'certfile' {
+                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword
+            }
 
-        if ([string]::IsNullOrWhiteSpace($CertificatePassword)) {
-            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path)
-        }
-        else {
-            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path, $CertificatePassword)
+            'certthumb' {
+                $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint
+            }
+
+            'certself' {
+                $obj.Certificate.Raw = New-PodeSelfSignedCertificate
+            }
         }
 
         # fail if the cert is expired
         if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            throw "The certificate '$($Certificate)' has expired: $($obj.Certificate.Raw.NotAfter)"
+            throw "The certificate '$($obj.Certificate.Raw.Subject)' has expired: $($obj.Certificate.Raw.NotAfter)"
         }
-    }
-
-    # if we're dealing with a certificate thumbprint, attempt to retrieve it (if windows)
-    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ieq 'certthumb')) {
-        # fail if protocol is not https
-        if (@('https', 'wss') -inotcontains $Protocol) {
-            throw "Certificate thumbprint supplied for non-HTTPS/WSS endpoint"
-        }
-
-        # fail if not windows
-        if (!(Test-IsWindows)) {
-            throw "Certificate thumbprints are only supported on Windows"
-        }
-
-        $x509store = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-            [System.Security.Cryptography.X509Certificates.StoreName]::My,
-            [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
-        )
-
-        $x509store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
-
-        $x509certs = $x509store.Certificates.Find(
-            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
-            $CertificateThumbprint,
-            $false
-        )
-
-        Close-PodeDisposable -Disposable $x509store -Close
-
-        if (($null -eq $x509certs) -or ($x509certs.Count -eq 0)) {
-            throw "No certificate could be found in CurrentUser\My for Thumbprint: $($CertificateThumbprint)"
-        }
-
-        $obj.Certificate.Raw = [X509Certificate2]($x509certs[0])
-    }
-
-    # if we're dealing with a self-signed certificate, create it
-    if (!$isIIS -and !$isHeroku -and $SelfSigned) {
-        # fail if protocol is not https
-        if (@('https', 'wss') -inotcontains $Protocol) {
-            throw "Cannot create a self-signed certificate a non-HTTPS/WSS endpoint"
-        }
-
-        $obj.Certificate.Raw = New-PodeSelfSignedCertificate
     }
 
     if (!$exists) {
