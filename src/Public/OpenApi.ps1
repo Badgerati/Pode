@@ -575,7 +575,7 @@ function New-PodeOARequestBody
                 throw "The OpenApi component request body doesn't exist: $($Reference)"
             }
 
-            return = @{
+            return @{
                 '$ref' = "#/components/requestBodies/$($Reference)"
             }
         }
@@ -1252,7 +1252,7 @@ function ConvertTo-PodeOAParameter
             throw "The OpenApi component request parameter doesn't exist: $($Reference)"
         }
 
-        return = @{
+        return @{
             '$ref' = "#/components/parameters/$($Reference)"
         }
     }
