@@ -2,13 +2,14 @@
 
 Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing certificates for HTTPS.
 
-There are 5 ways to setup HTTPS on [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint):
+There are 6 ways to setup HTTPS on [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint):
 
 1. Supplying just the `-Certificate`, such as a `.cer`.
 2. Supplying both the `-Certificate` and `-CertificatePassword`, such as for `.pfx`.
 3. Supplying a `-CertificateThumbprint` for a certificate installed at `Cert:\CurrentUser\My` on Windows.
-4. Supplying `-X509Certificate` of type `X509Certificate`.
-5. Supplying the `-SelfSigned` switch, to generate a quick self-signed `X509Certificate`.
+4. Supplying a `-CertificateName` for a certificate installed at `Cert:\CurrentUser\My` on Windows.
+5. Supplying `-X509Certificate` of type `X509Certificate`.
+6. Supplying the `-SelfSigned` switch, to generate a quick self-signed `X509Certificate`.
 
 ## Usage
 
@@ -29,6 +30,16 @@ On Windows only, you can use a certificate that is installed at `Cert:\CurrentUs
 ```powershell
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Https -CertificateThumbprint '2A623A8DC46ED42A13B27DD045BFC91FDDAEB957'
+}
+```
+
+### Name
+
+On Windows only, you can use a certificate that is installed at `Cert:\CurrentUser\My` using its subject name:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8090 -Protocol Https -CertificateName '*.example.com'
 }
 ```
 

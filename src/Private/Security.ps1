@@ -482,17 +482,21 @@ function Get-PodeCertificateByFile
     return $cert
 }
 
-function Get-PodeCertificateByThumbprint
+function Find-PodeCertificateInCertStore
 {
     param(
         [Parameter(Mandatory=$true)]
+        [X509Certificates.X509FindType]
+        $FindType,
+
+        [Parameter(Mandatory=$true)]
         [string]
-        $Thumbprint
+        $Query
     )
 
     # fail if not windows
     if (!(Test-IsWindows)) {
-        throw "Certificate thumbprints are only supported on Windows"
+        throw "Certificate Thumbprints/Name are only supported on Windows"
     }
 
     # open the currentuser\my store
@@ -501,24 +505,46 @@ function Get-PodeCertificateByThumbprint
         [X509Certificates.StoreLocation]::CurrentUser
     )
 
-    $x509store.Open([X509Certificates.OpenFlags]::ReadOnly)
+    try {
+        # attempt to find the cert
+        $x509store.Open([X509Certificates.OpenFlags]::ReadOnly)
+        $x509certs = $x509store.Certificates.Find($FindType, $Query, $false)
+    }
+    finally {
+        # close the store!
+        if ($null -ne $x509store) {
+            Close-PodeDisposable -Disposable $x509store -Close
+        }
+    }
 
-    # attempt to find the cert
-    $x509certs = $x509store.Certificates.Find(
-        [X509Certificates.X509FindType]::FindByThumbprint,
-        $Thumbprint,
-        $false
-    )
-
-    # close the store!
-    Close-PodeDisposable -Disposable $x509store -Close
-
-    # fail if no cert found for thumbprint
+    # fail if no cert found for query
     if (($null -eq $x509certs) -or ($x509certs.Count -eq 0)) {
-        throw "No certificate could be found in CurrentUser\My for Thumbprint: $($Thumbprint)"
+        throw "No certificate could be found in CurrentUser\My for '$($Thumbprint)'"
     }
 
     return ([X509Certificates.X509Certificate2]($x509certs[0]))
+}
+
+function Get-PodeCertificateByThumbprint
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Thumbprint
+    )
+
+    return (Find-PodeCertificateInCertStore -FindType [X509FindType]::FindByThumbprint -Query $Thumbprint)
+}
+
+function Get-PodeCertificateByName
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return (Find-PodeCertificateInCertStore -FindType [X509FindType]::FindBySubjectName -Query $Name)
 }
 
 function New-PodeSelfSignedCertificate
