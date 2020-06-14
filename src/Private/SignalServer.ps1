@@ -40,47 +40,6 @@ function Start-PodeSignalServer
         throw $_.Exception
     }
 
-    #TODO: use this to listen for client>server socket mesages
-
-    # script for listening out for incoming requests
-    # $listenScript = {
-    #     param(
-    #         [Parameter(Mandatory=$true)]
-    #         [ValidateNotNull()]
-    #         $Listener,
-
-    #         [Parameter(Mandatory=$true)]
-    #         [int]
-    #         $ThreadId
-    #     )
-
-    #     try
-    #     {
-    #         while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-    #         {
-    #             # get request and response
-    #             $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
-
-    #             try {
-    #                 $context.Response.UpgradeWebSocket((New-PodeGuid -Secure))
-    #             }
-    #             catch [System.Management.Automation.MethodInvocationException] { }
-    #         }
-    #     }
-    #     catch [System.OperationCanceledException] {}
-    #     catch {
-    #         $_ | Write-PodeErrorLog
-    #         $_.Exception | Write-PodeErrorLog -CheckInnerException
-    #         throw $_.Exception
-    #     }
-    # }
-
-    # # start the runspace for listening on x-number of threads
-    # 1..$PodeContext.Threads.Web | ForEach-Object {
-    #     Add-PodeRunspace -Type 'Signals' -ScriptBlock $listenScript `
-    #         -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
-    # }
-
     # script to write messages back to the client(s)
     $signalScript = {
         param(

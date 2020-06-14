@@ -217,7 +217,6 @@ task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
 
 # Synopsis: Package up the Module
 task Pack -If (Test-PodeBuildIsWindows) Build, {
-    #todo: create /pkg dir
     $path = './pkg'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
