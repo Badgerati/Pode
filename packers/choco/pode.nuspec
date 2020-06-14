@@ -52,7 +52,7 @@ Pode is a Cross-Platform framework for creating web servers to host REST APIs an
   </metadata>
   <files>
     <file src="tools\**" target="tools" />
-    <file src="..\..\src\**" target="src" />
+    <file src="..\..\pkg\**" target="src" />
     <file src="..\..\LICENSE.txt" target="src/LICENSE.txt" />
     <file src=".\VERIFICATION.txt" target="src/VERIFICATION.txt" />
   </files>

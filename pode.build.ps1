@@ -102,7 +102,7 @@ function Install-PodeBuildModule($name)
 
 # Synopsis: Stamps the version onto the Module
 task StampVersion {
-    (Get-Content ./src/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./src/Pode.psd1
+    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./packers/choco/pode.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
 }
@@ -207,7 +207,7 @@ task Build BuildDeps, {
 
 # Synopsis: Creates a Zip of the Module
 task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
-    exec { & 7z -tzip a $Version-Binaries.zip ./src/* }
+    exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
@@ -216,7 +216,29 @@ task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
 }
 
 # Synopsis: Package up the Module
-task Pack -If (Test-PodeBuildIsWindows) 7Zip, ChocoPack
+task Pack -If (Test-PodeBuildIsWindows) Build, {
+    #todo: create /pkg dir
+    $path = './pkg'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    # create the pkg dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+
+    # which folders do we need?
+    $folders = @('Private', 'Public', 'Misc', 'Libs')
+
+    # create the directories, then copy the source
+    $folders | ForEach-Object {
+        New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
+        Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force | Out-Null
+    }
+
+    # copy general files
+    Copy-Item -Path ./src/Pode.psm1 -Destination $path -Force | Out-Null
+    Copy-Item -Path ./src/Pode.psd1 -Destination $path -Force | Out-Null
+}, 7Zip, ChocoPack
 
 
 <#
