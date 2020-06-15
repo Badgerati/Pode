@@ -30,6 +30,10 @@ Start-PodeServer {
         ))
     }
 
+    New-PodeOAIntProperty -Name 'userId' -Required |
+        ConvertTo-PodeOAParameter -In Path |
+        Add-PodeOAComponentParameter -Name 'UserId'
+
 
     Get-PodeAuthMiddleware -Name 'Validate' -Sessionless | Add-PodeMiddleware -Name 'AuthMiddleware' -Route '/api/*'
     Set-PodeOAGlobalAuth -Name 'Validate'
@@ -55,7 +59,7 @@ Start-PodeServer {
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -Parameters @(
-            (New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In Path)
+            (ConvertTo-PodeOAParameter -Reference 'UserId')
         ) -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 

@@ -700,7 +700,7 @@ function Add-PodeOAComponentParameter
         $Name = $Parameter.name
     }
 
-    $PodeContext.Server.OpenAPI.components.responses[$Name] = $Parameter
+    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
 }
 
 <#
