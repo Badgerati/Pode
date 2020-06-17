@@ -11,13 +11,15 @@ namespace Pode
         public IDictionary<string, PodeWebSocket> WebSockets { get; private set; }
         public bool IsListening { get; private set; }
         public bool ErrorLoggingEnabled { get; set; }
+        public CancellationToken CancellationToken { get; private set; }
 
         private IList<PodeSocket> Sockets;
         private BlockingCollection<PodeContext> Contexts;
         private BlockingCollection<PodeSignal> Signals;
 
-        public PodeListener()
+        public PodeListener(CancellationToken cancellationToken)
         {
+            CancellationToken = cancellationToken;
             Sockets = new List<PodeSocket>();
             WebSockets = new Dictionary<string, PodeWebSocket>();
             Contexts = new BlockingCollection<PodeContext>();

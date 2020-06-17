@@ -63,7 +63,7 @@ namespace Pode
 
             // otherwise, convert the stream to an ssl stream
             var ssl = new SslStream(InputStream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
-            ssl.AuthenticateAsServer(certificate, false, protocols, false);
+            ssl.AuthenticateAsServerAsync(certificate, false, protocols, false).Wait(Context.Listener.CancellationToken);
             InputStream = ssl;
         }
 
@@ -87,7 +87,7 @@ namespace Pode
                 while (Socket.Available > 0)
                 {
                     var bytes = new byte[Socket.Available];
-                    InputStream.ReadAsync(bytes, 0, Socket.Available).Wait();
+                    InputStream.ReadAsync(bytes, 0, Socket.Available).Wait(Context.Listener.CancellationToken);
                     allBytes.AddRange(bytes);
                 }
 

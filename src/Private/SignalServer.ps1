@@ -18,7 +18,7 @@ function Start-PodeSignalServer
     }
 
     # create the listener
-    $listener = [Pode.PodeListener]::new()
+    $listener = [Pode.PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
 
     try

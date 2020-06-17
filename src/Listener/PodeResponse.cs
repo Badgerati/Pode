@@ -86,7 +86,7 @@ namespace Pode
 
                 // stream response output
                 var buffer = Encoding.GetBytes(message);
-                Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
+                Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
 
                 if (OutputStream.Length > 0)
                 {
@@ -101,11 +101,7 @@ namespace Pode
             }
             finally
             {
-                // close unless keep-alive
-                //if (!Context.IsKeepAlive && !Context.IsWebSocket)
-                //{
-                    Request.InputStream.Flush();
-                //}
+                Request.InputStream.Flush();
             }
         }
 
@@ -142,7 +138,7 @@ namespace Pode
         {
             try
             {
-                Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait();
+                Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
             }
             catch (IOException) { }
             catch (Exception ex)
