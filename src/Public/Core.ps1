@@ -237,13 +237,13 @@ The Port number of the endpoint.
 .PARAMETER Https
 Start the server using HTTPS.
 
-.PARAMETER CertificateFile
+.PARAMETER Certificate
 The path to a certificate that can be use to enable HTTPS.
 
 .PARAMETER CertificatePassword
 The password for the certificate referenced in CertificateFile.
 
-.PARAMETER RawCertificate
+.PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS.
 
 .PARAMETER Path

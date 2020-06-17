@@ -14,3 +14,31 @@ With the dropping of HttpListener, the `-Certificate` parameter is now the old `
 
 The `-CertificateThumbprint` parameter remains the same, and only works on Windows.
 The `-Certificate` parameter is now the `-CertificateName` parameter, and also only works on Windows.
+
+### Configuration
+
+Settings that use to be under `Server > Pode` are now just under `Server`. For example, SSL protocols have moved from:
+
+```powershell
+@{
+    Server = @{
+        Pode=  @{
+            Ssl= @{
+                Protocols = @('TLS', 'TLS11', 'TLS12')
+            }
+        }
+    }
+}
+```
+
+to:
+
+```powershell
+@{
+    Server = @{
+        Ssl= @{
+            Protocols = @('TLS', 'TLS11', 'TLS12')
+        }
+    }
+}
+```

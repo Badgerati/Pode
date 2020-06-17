@@ -41,7 +41,7 @@ If you have a question, feel free to either ask it on [GitHub Issues](https://gi
 
 Pode is a PowerShell framework/web server. The aim is to make it purely PowerShell, with *no* external dependencies - other than what is available in .NET Core. This allows Pode to be very lightweight, and just work out-of-the-box when the module is installed on any platform.
 
-The only current exception to the "all PowerShell" rule is the socket listener Pode uses. This listener is apart of Pode, but is written in .NET Core.
+The only current exception to the "all PowerShell" rule is the socket listener Pode uses. This listener is a part of Pode, but is written in .NET Core.
 
 ## How to Contribute
 

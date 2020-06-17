@@ -1174,6 +1174,10 @@ function ConvertFrom-PodeRequestContent
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
             $Content = $Request.RawBody
+            if ($Content.Length -eq 0) {
+                $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
+            }
+
             $Lines = Get-PodeByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
 
             # get the indexes for boundary lines (start and end)
