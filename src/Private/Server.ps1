@@ -142,7 +142,7 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Endpoints = @()
 
         # clear openapi
-        $PodeContext.Server.OpenAPI.Clear()
+        $PodeContext.Server.OpenAPI = Get-PodeOABaseObject
 
         # clear the sockets
         $PodeContext.Server.Sockets.Listeners = @()

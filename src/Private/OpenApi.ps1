@@ -343,3 +343,19 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter
 
     New-PodeOAStringProperty -Name $Parameter.Name
 }
+
+function Get-PodeOABaseObject
+{
+    return @{
+        Path = $null
+        Title = $null
+        components = @{
+            schemas = @{}
+            responses = @{}
+            securitySchemas = @{}
+            requestBodies = @{}
+            parameters = @{}
+        }
+        security = @()
+    }
+}
