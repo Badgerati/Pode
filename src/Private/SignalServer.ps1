@@ -128,9 +128,19 @@ function Start-PodeSignalServer
                 }
                 elseif ($payload.Length -le [uint16]::MaxValue) {
                     $buffer += [byte]([byte]0x00 -bor [byte]126)
+                    $buffer += [byte](($payload.Length -shr [byte]8) -band [byte]255)
+                    $buffer += [byte]($payload.Length -band [byte]255)
                 }
                 else {
                     $buffer += [byte]([byte]0x00 -bor [byte]127)
+                    $buffer += [byte](($payload.Length -shr [byte]56) -band [byte]255)
+                    $buffer += [byte](($payload.Length -shr [byte]48) -band [byte]255)
+                    $buffer += [byte](($payload.Length -shr [byte]40) -band [byte]255)
+                    $buffer += [byte](($payload.Length -shr [byte]32) -band [byte]255)
+                    $buffer += [byte](($payload.Length -shr [byte]24) -band [byte]255)
+                    $buffer += [byte](($payload.Length -shr [byte]16) -band [byte]255)
+                    $buffer += [byte](($payload.Length -shr [byte]8) -band [byte]255)
+                    $buffer += [byte]($payload.Length -band [byte]255)
                 }
 
                 $buffer += $payload
