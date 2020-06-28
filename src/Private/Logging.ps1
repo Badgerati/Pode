@@ -179,6 +179,16 @@ function Test-PodeLoggerEnabled
     return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
+function Test-PodeErrorLoggingEnabled
+{
+    return (Test-PodeLoggerEnabled -Name (Get-PodeErrorLoggingName))
+}
+
+function Test-PodeRequestLoggingEnabled
+{
+    return (Test-PodeLoggerEnabled -Name (Get-PodeRequestLoggingName))
+}
+
 function Write-PodeRequestLog
 {
     param (

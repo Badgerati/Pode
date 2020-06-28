@@ -147,133 +147,6 @@ function Test-IsAdminUser
     }
 }
 
-function New-PodeSelfSignedCertificate
-{
-    # generate the cert -- has to call "powershell.exe" for ps-core on windows
-    $cert = (PowerShell.exe -NoProfile -Command {
-        $expire = (Get-Date).AddYears(1)
-
-        $c = New-SelfSignedCertificate -DnsName 'localhost' -CertStoreLocation 'Cert:\LocalMachine\My' -NotAfter $expire `
-                -KeyAlgorithm RSA -HashAlgorithm SHA256 -KeyLength 4096 -Subject 'CN=localhost';
-
-        if ($null -eq $c.Thumbprint) {
-            return $c
-        }
-
-        return $c.Thumbprint
-    })
-
-    if ($LASTEXITCODE -ne 0 -or !$?) {
-        throw "Failed to generate self-signed certificte:`n$($cert)"
-    }
-
-    return $cert
-}
-
-function Get-PodeCertificate
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Certificate
-    )
-
-    # ensure the certificate exists, and get its thumbprint
-    $cert = (Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -imatch [regex]::Escape($Certificate) })
-    if (Test-IsEmpty $cert) {
-        throw "Failed to find the $($Certificate) certificate at LocalMachine\My"
-    }
-
-    $cert = @($cert)[0].Thumbprint
-    return $cert
-}
-
-function Set-PodeCertificate
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Address,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Port,
-
-        [Parameter()]
-        [string]
-        $Certificate,
-
-        [Parameter()]
-        [string]
-        $Thumbprint,
-
-        [switch]
-        $SelfSigned
-    )
-
-    $addrport = "$($Address):$($Port)"
-
-    # only bind if windows at the moment
-    if (!(Test-IsWindows)) {
-        Write-PodeHost "Certificates are currently only supported on Windows" -ForegroundColor Yellow
-        return
-    }
-
-    # check if this addr/port is already bound
-    $sslPortInUse = (netsh http show sslcert) | Where-Object {
-        ($_ -ilike "*IP:port*" -or $_ -ilike "*Hostname:port*") -and $_ -ilike "*$($addrport)"
-    }
-
-    if ($sslPortInUse) {
-        Write-PodeHost "$($addrport) already has a certificate bound" -ForegroundColor Green
-        return
-    }
-
-    # ensure a cert, or thumbprint, has been supplied
-    if (!$SelfSigned -and (Test-IsEmpty $Certificate) -and (Test-IsEmpty $Thumbprint)) {
-        throw "A certificate name, or thumbprint, is required for ssl connections. For the name, either 'self' or '*.example.com' can be supplied to the 'listen' function"
-    }
-
-    # use the cert specified from the thumbprint
-    if (!(Test-IsEmpty $Thumbprint)) {
-        $cert = $Thumbprint
-    }
-
-    # otherwise, generate/find a certificate
-    else
-    {
-        # generate a self-signed cert
-        if ($SelfSigned) {
-            Write-PodeHost "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
-            $cert = (New-PodeSelfSignedCertificate)
-        }
-
-        # ensure a given cert exists for binding
-        else {
-            Write-PodeHost "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
-            $cert = (Get-PodeCertificate -Certificate $Certificate)
-        }
-    }
-
-    # bind the cert to the ip:port or hostname:port
-    if (Test-PodeIPAddress -IP $Address -IPOnly) {
-        $result = netsh http add sslcert ipport=$addrport certhash=$cert appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
-        if ($LASTEXITCODE -ne 0 -or !$?) {
-            throw "Failed to attach certificate against ipport:`n$($result)"
-        }
-    }
-    else {
-        $result = netsh http add sslcert hostnameport=$addrport certhash=$cert certstorename=MY appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
-        if ($LASTEXITCODE -ne 0 -or !$?) {
-            throw "Failed to attach certificate against hostnameport:`n$($result)"
-        }
-    }
-
-    Write-PodeHost " Done" -ForegroundColor Green
-}
-
 function Get-PodeHostIPRegex
 {
     param (
@@ -1245,12 +1118,12 @@ function ConvertFrom-PodeRequestContent
                 $Content = $Request.RawBody
             }
 
-            'pode' {
+            default {
                 # if the request is compressed, attempt to uncompress it
                 if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
                     # create a compressed stream to decompress the req bytes
                     $ms = New-Object -TypeName System.IO.MemoryStream
-                    $ms.Write($Request.Body.Bytes, 0, $Request.Body.Bytes.Length)
+                    $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
                     $ms.Seek(0, 0) | Out-Null
                     $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
 
@@ -1258,18 +1131,7 @@ function ConvertFrom-PodeRequestContent
                     $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
                 }
                 else {
-                    $Content = $Request.Body.Value
-                }
-            }
-
-            default {
-                # if the request is compressed, attempt to uncompress it
-                if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
-                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($Request.InputStream, [System.IO.Compression.CompressionMode]::Decompress)
-                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
-                }
-                else {
-                    $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
+                    $Content = $Request.Body
                 }
             }
         }
@@ -1311,10 +1173,8 @@ function ConvertFrom-PodeRequestContent
 
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
-            if ($PodeContext.Server.Type -ieq 'pode') {
-                $Content = $Request.Body.Bytes
-            }
-            else {
+            $Content = $Request.RawBody
+            if ($Content.Length -eq 0) {
                 $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
             }
 

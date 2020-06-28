@@ -1,6 +1,6 @@
 # IIS
 
-Pode's all PowerShell Web Server now enables you to host your server via IIS!
+Pode has support for you to host your server via IIS!
 
 When you host your server through IIS, Pode can detect this and internally set the server type and endpoints to automatically work with IIS. This allows IIS to deal with binding, HTTPS and Certificates, as well as external traffic, etc.
 
@@ -62,7 +62,6 @@ Once done, you can setup IIS in the normal way:
 
 Pode automatically detects that it is running via IIS, and it changes certain attributes of your Pode server so they work with IIS:
 
-* The server type is set to `Pode` (The same as doing `Start-PodeServer -Type Pode`)
 * Endpoints have their Address set to `127.0.0.1` (IIS needs Pode to be on localhost)
 * Endpoints have their Port set to `ASPNETCORE_PORT`
 * Endpoints have their Protocol set to `HTTP` (IIS deals with HTTPS for us)

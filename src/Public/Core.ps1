@@ -87,7 +87,7 @@ function Start-PodeServer
         $Request,
 
         [Parameter()]
-        [ValidateSet('', 'AzureFunctions', 'AwsLambda', 'Pode')]
+        [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
         [string]
         $Type = [string]::Empty,
 
@@ -237,13 +237,13 @@ The Port number of the endpoint.
 .PARAMETER Https
 Start the server using HTTPS.
 
-.PARAMETER CertificateFile
+.PARAMETER Certificate
 The path to a certificate that can be use to enable HTTPS.
 
 .PARAMETER CertificatePassword
 The password for the certificate referenced in CertificateFile.
 
-.PARAMETER RawCertificate
+.PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS.
 
 .PARAMETER Path
@@ -293,7 +293,7 @@ function Start-PodeStaticServer
 
         [Parameter(ParameterSetName='Https')]
         [string]
-        $CertificateFile = $null,
+        $Certificate = $null,
 
         [Parameter(ParameterSetName='Https')]
         [string]
@@ -302,7 +302,7 @@ function Start-PodeStaticServer
         [Parameter(ParameterSetName='Https')]
         [Parameter()]
         [X509Certificate]
-        $RawCertificate = $null,
+        $X509Certificate = $null,
 
         [Parameter()]
         [string]
@@ -319,14 +319,14 @@ function Start-PodeStaticServer
         $Browse
     )
 
-    Start-PodeServer -RootPath $RootPath -Threads $Threads -Type Pode -Browse:$Browse -ScriptBlock {
+    Start-PodeServer -RootPath $RootPath -Threads $Threads -Browse:$Browse -ScriptBlock {
         # add either an http or https endpoint
         if ($Https) {
-            if ($null -eq $RawCertificate) {
-                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -CertificateFile $CertificateFile -CertificatePassword $CertificatePassword
+            if ($null -eq $X509Certificate) {
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -Certificate $Certificate -CertificatePassword $CertificatePassword
             }
             else {
-                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -RawCertificate $RawCertificate
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -X509Certificate $X509Certificate
             }
         }
         else {
@@ -622,19 +622,19 @@ The Port number of the endpoint.
 The protocol of the supplied endpoint.
 
 .PARAMETER Certificate
-A certificate name to find and bind onto HTTPS endpoints (Windows only).
-
-.PARAMETER CertificateThumbprint
-A certificate thumbprint to bind onto HTTPS endpoints (Windows only).
-
-.PARAMETER CertificateFile
-The path to a certificate that can be use to enable HTTPS (Cross-platform)
+The path to a certificate that can be use to enable HTTPS
 
 .PARAMETER CertificatePassword
-The password for the certificate referenced in CertificateFile (Cross-platform)
+The password for the certificate file referenced in Certificate
 
-.PARAMETER RawCertificate
-The raw X509 certificate that can be use to enable HTTPS (Cross-platform)
+.PARAMETER CertificateThumbprint
+A certificate thumbprint to bind onto HTTPS endpoints (Windows).
+
+.PARAMETER CertificateName
+A certificate subject name to bind onto HTTPS endpoints (Windows).
+
+.PARAMETER X509Certificate
+The raw X509 certificate that can be use to enable HTTPS
 
 .PARAMETER Name
 An optional name for the endpoint, that can be used with other functions.
@@ -649,7 +649,7 @@ A quick description of the Endpoint - normally used in OpenAPI.
 Ignore Adminstrator checks for non-localhost endpoints.
 
 .PARAMETER SelfSigned
-Create and bind a self-signed certifcate onto HTTPS endpoints (Windows only).
+Create and bind a self-signed certifcate for HTTPS endpoints.
 
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
@@ -665,7 +665,7 @@ Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '
 #>
 function Add-PodeEndpoint
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Default')]
     param (
         [Parameter()]
         [string]
@@ -680,26 +680,26 @@ function Add-PodeEndpoint
         [string]
         $Protocol,
 
-        [Parameter(Mandatory=$true, ParameterSetName='CertName')]
-        [string]
-        $Certificate = $null,
-
-        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
-        [string]
-        $CertificateThumbprint = $null,
-
         [Parameter(Mandatory=$true, ParameterSetName='CertFile')]
         [string]
-        $CertificateFile = $null,
+        $Certificate = $null,
 
         [Parameter(ParameterSetName='CertFile')]
         [string]
         $CertificatePassword = $null,
 
+        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
+        [string]
+        $CertificateThumbprint,
+
+        [Parameter(Mandatory=$true, ParameterSetName='CertName')]
+        [string]
+        $CertificateName,
+
         [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
         [Parameter()]
         [X509Certificate]
-        $RawCertificate = $null,
+        $X509Certificate = $null,
 
         [Parameter()]
         [string]
@@ -764,9 +764,7 @@ function Add-PodeEndpoint
         Ssl = (@('https', 'wss') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
         Certificate = @{
-            Name = $Certificate
-            Thumbprint = $CertificateThumbprint
-            Raw = $RawCertificate
+            Raw = $X509Certificate
             SelfSigned = $SelfSigned
         }
     }
@@ -798,25 +796,35 @@ function Add-PodeEndpoint
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
-    # if we're dealing with a certificate file, attempt to import it
-    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
+    # if we're dealing with a certificate, attempt to import it
+    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
         if (@('https', 'wss') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
         }
 
-        $_path = Get-PodeRelativePath -Path $CertificateFile -JoinRoot -Resolve
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
+        {
+            'certfile' {
+                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword
+            }
 
-        if ([string]::IsNullOrWhiteSpace($CertificatePassword)) {
-            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path)
-        }
-        else {
-            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path, $CertificatePassword)
+            'certthumb' {
+                $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint
+            }
+
+            'certname' {
+                $obj.Certificate.Raw = Get-PodeCertificateByName -Name $CertificateName
+            }
+
+            'certself' {
+                $obj.Certificate.Raw = New-PodeSelfSignedCertificate
+            }
         }
 
         # fail if the cert is expired
         if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            throw "The certificate '$($CertificateFile)' has expired: $($obj.Certificate.Raw.NotAfter)"
+            throw "The certificate '$($obj.Certificate.Raw.Subject)' has expired: $($obj.Certificate.Raw.NotAfter)"
         }
     }
 
@@ -832,9 +840,6 @@ function Add-PodeEndpoint
         }
         else {
             $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
-            if (($_type -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
-                $_type = 'pode'
-            }
 
             if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
                 $PodeContext.Server.Type = $_type

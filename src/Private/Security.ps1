@@ -1,3 +1,5 @@
+using namespace System.Security.Cryptography
+
 function Test-PodeIPLimit
 {
     param (
@@ -453,4 +455,157 @@ function Restore-PodeCsrfToken
 function Test-PodeCsrfConfigured
 {
     return (!(Test-IsEmpty $PodeContext.Server.Cookies.Csrf))
+}
+
+function Get-PodeCertificateByFile
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Certificate,
+
+        [Parameter()]
+        [string]
+        $Password = $null
+    )
+
+    $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
+    $cert = $null
+
+    if ([string]::IsNullOrWhiteSpace($Password)) {
+        $cert = [X509Certificates.X509Certificate2]::new($path)
+    }
+    else {
+        $cert = [X509Certificates.X509Certificate2]::new($path, $Password)
+    }
+
+    return $cert
+}
+
+function Find-PodeCertificateInCertStore
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [X509Certificates.X509FindType]
+        $FindType,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Query
+    )
+
+    # fail if not windows
+    if (!(Test-IsWindows)) {
+        throw "Certificate Thumbprints/Name are only supported on Windows"
+    }
+
+    # open the currentuser\my store
+    $x509store = [X509Certificates.X509Store]::new(
+        [X509Certificates.StoreName]::My,
+        [X509Certificates.StoreLocation]::CurrentUser
+    )
+
+    try {
+        # attempt to find the cert
+        $x509store.Open([X509Certificates.OpenFlags]::ReadOnly)
+        $x509certs = $x509store.Certificates.Find($FindType, $Query, $false)
+    }
+    finally {
+        # close the store!
+        if ($null -ne $x509store) {
+            Close-PodeDisposable -Disposable $x509store -Close
+        }
+    }
+
+    # fail if no cert found for query
+    if (($null -eq $x509certs) -or ($x509certs.Count -eq 0)) {
+        throw "No certificate could be found in CurrentUser\My for '$($Thumbprint)'"
+    }
+
+    return ([X509Certificates.X509Certificate2]($x509certs[0]))
+}
+
+function Get-PodeCertificateByThumbprint
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Thumbprint
+    )
+
+    return (Find-PodeCertificateInCertStore -FindType [X509FindType]::FindByThumbprint -Query $Thumbprint)
+}
+
+function Get-PodeCertificateByName
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return (Find-PodeCertificateInCertStore -FindType [X509FindType]::FindBySubjectName -Query $Name)
+}
+
+function New-PodeSelfSignedCertificate
+{
+    $sanBuilder = [X509Certificates.SubjectAlternativeNameBuilder]::new()
+    $sanBuilder.AddIpAddress([ipaddress]::Loopback) | Out-Null
+    $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback) | Out-Null
+    $sanBuilder.AddDnsName('localhost') | Out-Null
+
+    if (![string]::IsNullOrWhiteSpace($env:COMPUTERNAME)) {
+        $sanBuilder.AddDnsName($env:COMPUTERNAME) | Out-Null
+    }
+
+    $rsa = [RSA]::Create(2048)
+    $distinguishedName = [X500DistinguishedName]::new("CN=localhost")
+
+    $req = [X509Certificates.CertificateRequest]::new(
+        $distinguishedName,
+        $rsa,
+        [HashAlgorithmName]::SHA256,
+        [RSASignaturePadding]::Pkcs1
+    )
+
+    $flags = (
+        [X509Certificates.X509KeyUsageFlags]::DataEncipherment -bor
+        [X509Certificates.X509KeyUsageFlags]::KeyEncipherment -bor
+        [X509Certificates.X509KeyUsageFlags]::DigitalSignature
+    )
+
+    $req.CertificateExtensions.Add(
+        [X509Certificates.X509KeyUsageExtension]::new(
+            $flags,
+            $false
+        )
+    ) | Out-Null
+
+    $oid = [OidCollection]::new()
+    $oid.Add([Oid]::new('1.3.6.1.5.5.7.3.1')) | Out-Null
+
+    $req.CertificateExtensions.Add(
+        [X509Certificates.X509EnhancedKeyUsageExtension]::new(
+            $oid,
+            $false
+        )
+    )
+
+    $req.CertificateExtensions.Add($sanBuilder.Build()) | Out-Null
+
+    $cert = $req.CreateSelfSigned(
+        [System.DateTimeOffset]::UtcNow.AddDays(-1),
+        [System.DateTimeOffset]::UtcNow.AddYears(10)
+    )
+
+    if (Test-IsWindows) {
+        $cert.FriendlyName = 'localhost'
+    }
+
+    $cert = [X509Certificates.X509Certificate2]::new(
+        $cert.Export([X509Certificates.X509ContentType]::Pfx, 'self-signed'),
+        'self-signed'
+    )
+
+    return $cert
 }

@@ -7,7 +7,7 @@ Describe 'REST API Requests' {
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
-            Start-PodeServer -RootPath $using:PSScriptRoot -Type Pode {
+            Start-PodeServer -RootPath $using:PSScriptRoot {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
 
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -160,7 +160,7 @@ Describe 'REST API Requests' {
         $ms.Position = 0
 
         # make the request
-        $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'X-Transfer-Encoding' = 'gzip' } -ContentType 'application/json'
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'Transfer-Encoding' = 'gzip' } -ContentType 'application/json'
         $result.Username | Should Be 'rick'
     }
 
@@ -177,7 +177,7 @@ Describe 'REST API Requests' {
         $ms.Position = 0
 
         # make the request
-        $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'X-Transfer-Encoding' = 'deflate' } -ContentType 'application/json'
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'Transfer-Encoding' = 'deflate' } -ContentType 'application/json'
         $result.Username | Should Be 'rick'
     }
 

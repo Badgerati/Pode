@@ -12,6 +12,7 @@ $Versions = @{
     MkDocs = '1.1.2'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
+    DotNetCore = '3.1.5'
     Checksum = '0.2.0'
     MkDocsTheme = '5.2.1'
     PlatyPS = '0.14.0'
@@ -101,7 +102,7 @@ function Install-PodeBuildModule($name)
 
 # Synopsis: Stamps the version onto the Module
 task StampVersion {
-    (Get-Content ./src/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./src/Pode.psd1
+    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./packers/choco/pode.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
 }
@@ -142,14 +143,21 @@ task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
     }
 }
 
+# Synopsis: Install dependencies for compiling/building
+task BuildDeps {
+    # install dotnet
+    if (!(Test-PodeBuildCommand 'dotnet')) {
+        Invoke-PodeBuildInstall 'dotnetcore' $Versions.DotNetCore
+    }
+}
+
 # Synopsis: Install dependencies for running tests
 task TestDeps {
     # install pester
     Install-PodeBuildModule Pester
 
     # install PSCoveralls
-    if (Test-PodeBuildCanCodeCoverage)
-    {
+    if (Test-PodeBuildCanCodeCoverage) {
         Install-PodeBuildModule PSCoveralls
     }
 }
@@ -172,12 +180,34 @@ task DocsDeps ChocoDeps, {
 
 
 <#
+# Building
+#>
+
+# Synopsis: Build the .NET Core Listener
+task Build BuildDeps, {
+    if (Test-Path ./src/Libs) {
+        Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
+    }
+
+    Push-Location ./src/Listener
+
+    try {
+        dotnet build --configuration Release
+        dotnet publish --configuration Release --self-contained --output ../Libs
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+
+<#
 # Packaging
 #>
 
 # Synopsis: Creates a Zip of the Module
 task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
-    exec { & 7z -tzip a $Version-Binaries.zip ./src/* }
+    exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
@@ -186,7 +216,28 @@ task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
 }
 
 # Synopsis: Package up the Module
-task Pack -If (Test-PodeBuildIsWindows) 7Zip, ChocoPack
+task Pack -If (Test-PodeBuildIsWindows) Build, {
+    $path = './pkg'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    # create the pkg dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+
+    # which folders do we need?
+    $folders = @('Private', 'Public', 'Misc', 'Libs')
+
+    # create the directories, then copy the source
+    $folders | ForEach-Object {
+        New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
+        Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force | Out-Null
+    }
+
+    # copy general files
+    Copy-Item -Path ./src/Pode.psm1 -Destination $path -Force | Out-Null
+    Copy-Item -Path ./src/Pode.psd1 -Destination $path -Force | Out-Null
+}, 7Zip, ChocoPack
 
 
 <#
@@ -194,7 +245,7 @@ task Pack -If (Test-PodeBuildIsWindows) 7Zip, ChocoPack
 #>
 
 # Synopsis: Run the tests
-task Test TestDeps, {
+task Test Build, TestDeps, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
         Import-Module Pester -Force -RequiredVersion $Versions.Pester

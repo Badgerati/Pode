@@ -68,6 +68,7 @@ function Set-PodeResponseAttachment
         else {
             $WebEvent.Response.ContentType = $ContentType
         }
+
         Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
         # if serverless, get the content raw and return
@@ -1299,6 +1300,10 @@ function Send-PodeSignal
         $Depth = 10
     )
 
+    if ($null -eq $PodeContext.Server.WebSockets.Listener) {
+        throw "WebSockets have not been configured to send signal messages"
+    }
+
     if ($Value -isnot [string]) {
         if ($Depth -le 0) {
             $Value = ($Value | ConvertTo-Json -Compress)
@@ -1308,9 +1313,5 @@ function Send-PodeSignal
         }
     }
 
-    $PodeContext.Server.WebSockets.Queues.Messages.Enqueue(@{
-        Value = $Value
-        ClientId = $ClientId
-        Path = $Path
-    })
+    $PodeContext.Server.WebSockets.Listener.AddSignal($Value, $Path, $ClientId)
 }

@@ -1,5 +1,10 @@
+# root path
+$root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
+
+# load binaries
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName System.Net.Http
+Add-Type -LiteralPath "$($root)/Libs/Pode.dll"
 
 # import everything if in a runspace
 if ($PODE_SCOPE_RUNSPACE) {
@@ -7,7 +12,6 @@ if ($PODE_SCOPE_RUNSPACE) {
 }
 
 # load private functions
-$root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 Get-ChildItem "$($root)/Private/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
 
 # only import public functions if not in a runspace

@@ -615,10 +615,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
             $value = '<root><value>test</value></root>'
 
-            Mock Read-PodeStreamToEnd { return $value }
-
             $result = ConvertFrom-PodeRequestContent -Request @{
-                'ContentEncoding' = [System.Text.Encoding]::UTF8;
+                Body = $value
+                ContentEncoding = [System.Text.Encoding]::UTF8
             } -ContentType 'text/xml'
 
             $result.Data | Should Not Be $null
@@ -630,10 +629,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
             $value = '{ "value": "test" }'
 
-            Mock Read-PodeStreamToEnd { return $value }
-
             $result = ConvertFrom-PodeRequestContent -Request @{
-                'ContentEncoding' = [System.Text.Encoding]::UTF8;
+                Body = $value
+                ContentEncoding = [System.Text.Encoding]::UTF8
             } -ContentType 'application/json'
 
             $result.Data | Should Not Be $null
@@ -644,10 +642,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
             $value = "value`ntest"
 
-            Mock Read-PodeStreamToEnd { return $value }
-
             $result = ConvertFrom-PodeRequestContent -Request @{
-                'ContentEncoding' = [System.Text.Encoding]::UTF8;
+                Body = $value
+                ContentEncoding = [System.Text.Encoding]::UTF8
             } -ContentType 'text/csv'
 
             $result | Should Not Be $null
@@ -658,10 +655,9 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
             $value = "test"
 
-            Mock Read-PodeStreamToEnd { return $value }
-            
             (ConvertFrom-PodeRequestContent -Request @{
-                'ContentEncoding' = [System.Text.Encoding]::UTF8;
+                Body = $value
+                ContentEncoding = [System.Text.Encoding]::UTF8
             } -ContentType 'text/custom').Data | Should Be 'test'
         }
 
@@ -879,29 +875,6 @@ Describe 'ConvertFrom-PodeNameValueToHashTable' {
         $r = ConvertFrom-PodeNameValueToHashTable -Collection $c
         $r.GetType().Name | Should Be 'Hashtable'
         $r.colour | Should Be 'blue'
-    }
-}
-
-Describe 'Get-PodeCertificate' {
-    It 'Throws error as certificate does not exist' {
-        Mock Get-ChildItem { return $null }
-        { Get-PodeCertificate -Certificate 'name' } | Should Throw 'failed to find'
-    }
-
-    It 'Returns a certificate thumbprint' {
-        Mock Get-ChildItem { return @(@{ 'Subject' = 'name'; 'Thumbprint' = 'some-thumbprint' }) }
-        Get-PodeCertificate -Certificate 'name' | Should Be 'some-thumbprint'
-    }
-}
-
-Describe 'Set-PodeCertificate' {
-    It 'Throws an error for a non-windows machine' {
-        Mock Test-IsWindows { return $false }
-        Mock Write-Host { }
-
-        Set-PodeCertificate -Address 'localhost' -Port 8080 -Certificate 'name' | Out-Null
-
-        Assert-MockCalled Write-Host -Times 1 -Scope It
     }
 }
 
