@@ -1,5 +1,13 @@
 # Release Notes
 
+## v1.8.1
+
+```plain
+### Bugs
+* #578: Fixes OpenAPI functions with rogue "=" on returning a value
+* #581: Fixes large messages being sent via web sockets
+```
+
 ## v1.8.0
 
 ```plain

@@ -220,18 +220,7 @@ function New-PodeContext
     $ctx.Server.Sessions = @{}
 
     # swagger and openapi
-    $ctx.Server.OpenAPI = @{
-        Path = $null
-        Title = $null
-        components = @{
-            schemas = @{}
-            responses = @{}
-            securitySchemas = @{}
-            requestBodies = @{}
-            parameters = @{}
-        }
-        security = @()
-    }
+    $ctx.Server.OpenAPI = Get-PodeOABaseObject
 
     # server metrics
     $ctx.Metrics = @{
