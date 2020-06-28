@@ -124,13 +124,30 @@ namespace Pode
             // web socket message
             var buffer = new List<byte>() { (byte)((byte)0x80 | (byte)1) };
 
-            var lengthByte = (byte)(msgBytes.Length < 126
-                ? msgBytes.Length
-                : (msgBytes.Length <= UInt16.MaxValue ? 126 : 127));
+            if (msgBytes.Length < 126)
+            {
+                buffer.Add((byte)((byte)0x00 | (byte)msgBytes.Length));
+            }
+            else if (msgBytes.Length <= UInt16.MaxValue)
+            {
+                buffer.Add((byte)((byte)0x00 | (byte)126));
+                buffer.Add((byte)((msgBytes.Length >> 8) & (byte)255));
+                buffer.Add((byte)(msgBytes.Length & (byte)255));
+            }
+            else
+            {
+                buffer.Add((byte)((byte)0x00 | (byte)127));
+                buffer.Add((byte)((msgBytes.Length >> 56) & (byte)255));
+                buffer.Add((byte)((msgBytes.Length >> 48) & (byte)255));
+                buffer.Add((byte)((msgBytes.Length >> 40) & (byte)255));
+                buffer.Add((byte)((msgBytes.Length >> 32) & (byte)255));
+                buffer.Add((byte)((msgBytes.Length >> 24) & (byte)255));
+                buffer.Add((byte)((msgBytes.Length >> 16) & (byte)255));
+                buffer.Add((byte)((msgBytes.Length >> 8) & (byte)255));
+                buffer.Add((byte)(msgBytes.Length & (byte)255));
+            }
 
-            buffer.Add((byte)((byte)0x00 | (byte)lengthByte));
             buffer.AddRange(msgBytes);
-
             Write(buffer.ToArray());
         }
 
