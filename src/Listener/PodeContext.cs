@@ -19,18 +19,35 @@ namespace Pode
         public Hashtable Data { get; private set; }
         public PodeContextState State { get; private set; }
         public PodeContextType Type { get; private set; }
-        public bool IsKeepAlive { get; private set; }
 
         public bool CloseImmediately
         {
-            get => (State == PodeContextState.Error
-                || string.IsNullOrWhiteSpace(Request.HttpMethod)
-                || (IsWebSocket && !Request.HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase)));
+            get => (State == PodeContextState.Error || Request.CloseImmediately);
         }
 
         public bool IsWebSocket
         {
             get => (Type == PodeContextType.WebSocket);
+        }
+
+        public bool IsSmtp
+        {
+            get => (Type == PodeContextType.Smtp);
+        }
+
+        public PodeSmtpRequest SmtpRequest
+        {
+            get => (PodeSmtpRequest)Request;
+        }
+
+        public PodeHttpRequest HttpRequest
+        {
+            get => (PodeHttpRequest)Request;
+        }
+
+        public bool IsKeepAlive
+        {
+            get => (Request.IsKeepAlive);
         }
 
         public bool IsErrored
@@ -64,7 +81,17 @@ namespace Pode
         private void NewRequest()
         {
             // create a new request
-            Request = new PodeRequest(Socket);
+            switch (Listener.Type)
+            {
+                case PodeListenerType.Smtp:
+                    Request = new PodeSmtpRequest(Socket);
+                    break;
+
+                default:
+                    Request = new PodeHttpRequest(Socket);
+                    break;
+            }
+
             Request.SetContext(this);
 
             // attempt to open the request stream
@@ -79,6 +106,12 @@ namespace Pode
                     ? PodeContextState.Error
                     : PodeContextState.SslError);
             }
+
+            // if request is SMTP, send ACK
+            if (Listener.Type == PodeListenerType.Smtp)
+            {
+                SmtpRequest.SendAck();
+            }
         }
 
         private void SetContextType()
@@ -88,15 +121,30 @@ namespace Pode
                 return;
             }
 
-            // web socket
-            if (Request.Headers != default(Hashtable) && Request.Headers.ContainsKey("Sec-WebSocket-Key"))
+            // depending on listener type, either:
+            switch (Listener.Type)
             {
-                Type = PodeContextType.WebSocket;
-                return;
-            }
+                // - only allow smtp
+                case PodeListenerType.Smtp:
+                    var _reqSmtp = SmtpRequest;
+                    Type = PodeContextType.Smtp;
+                    break;
 
-            // http
-            Type = PodeContextType.Http;
+                // - only allow web-socket
+                case PodeListenerType.WebSocket:
+                    if (!HttpRequest.IsWebSocket)
+                    {
+                        throw new HttpRequestException("Request is not for a websocket");
+                    }
+
+                    Type = PodeContextType.WebSocket;
+                    break;
+
+                // - only allow http, with upgrade to web-socket
+                case PodeListenerType.Http:
+                    Type = HttpRequest.IsWebSocket ? PodeContextType.WebSocket : PodeContextType.Http;
+                    break;
+            }
         }
 
         public void Receive()
@@ -106,17 +154,12 @@ namespace Pode
                 State = PodeContextState.Receiving;
                 Request.Receive();
                 State = PodeContextState.Received;
-
-                IsKeepAlive = (Request.Headers != default(Hashtable)
-                    && Request.Headers.ContainsKey("Connection")
-                    && $"{Request.Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase));
+                SetContextType();
             }
             catch
             {
                 State = PodeContextState.Error;
             }
-
-            SetContextType();
         }
 
         public void StartReceive()
@@ -145,7 +188,7 @@ namespace Pode
             Response.StatusDescription = "Switching Protocols";
 
             // get the socket key from the request
-            var socketKey = $"{Request.Headers["Sec-WebSocket-Key"]}".Trim();
+            var socketKey = $"{HttpRequest.Headers["Sec-WebSocket-Key"]}".Trim();
 
             // make the socket accept hash
             var crypto = SHA1.Create();
@@ -166,7 +209,7 @@ namespace Pode
             Response.Send();
 
             // add open web socket to listener
-            Listener.AddWebSocket(new PodeWebSocket(this, Request.Url.AbsolutePath, clientId));
+            Listener.AddWebSocket(new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId));
         }
 
         public void Dispose()
@@ -184,9 +227,15 @@ namespace Pode
                     Response.StatusCode = 500;
                 }
 
-                if (State != PodeContextState.SslError)
+                if (!IsSmtp && State != PodeContextState.SslError)
                 {
                     Response.Send();
+                }
+
+                // if it was smtp, and it was processable, RESET!
+                if (IsSmtp && SmtpRequest.CanProcess)
+                {
+                    SmtpRequest.Reset();
                 }
 
                 Response.Dispose();

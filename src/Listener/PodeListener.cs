@@ -12,14 +12,17 @@ namespace Pode
         public bool IsListening { get; private set; }
         public bool ErrorLoggingEnabled { get; set; }
         public CancellationToken CancellationToken { get; private set; }
+        public PodeListenerType Type { get; private set; }
 
         private IList<PodeSocket> Sockets;
         private BlockingCollection<PodeContext> Contexts;
         private BlockingCollection<PodeSignal> Signals;
 
-        public PodeListener(CancellationToken cancellationToken)
+        public PodeListener(CancellationToken cancellationToken, PodeListenerType type = PodeListenerType.Http)
         {
             CancellationToken = cancellationToken;
+            Type = type;
+
             Sockets = new List<PodeSocket>();
             WebSockets = new Dictionary<string, PodeWebSocket>();
             Contexts = new BlockingCollection<PodeContext>();
