@@ -221,6 +221,16 @@ namespace Pode
                     process = false;
                 }
 
+                // if it's an email, re-receive unless processable
+                else if (context.IsSmtp)
+                {
+                    if (!context.SmtpRequest.CanProcess)
+                    {
+                        process = false;
+                        context.Dispose();
+                    }
+                }
+
                 // add the context for processing
                 if (process)
                 {

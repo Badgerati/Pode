@@ -60,7 +60,7 @@ namespace Pode
 
         public string HttpResponseLine
         {
-            get => $"{Request.Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}";
+            get => $"{((PodeHttpRequest)Request).Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}";
         }
 
         private static UTF8Encoding Encoding = new UTF8Encoding();
@@ -110,14 +110,14 @@ namespace Pode
             Write(signal.Value);
         }
 
-        public void Write(string message)
+        public void Write(string message, bool flush = false)
         {
             var msgBytes = Encoding.GetBytes(message);
 
             // simple messages
             if (!Context.IsWebSocket)
             {
-                Write(msgBytes);
+                Write(msgBytes, flush);
                 return;
             }
 
@@ -148,14 +148,25 @@ namespace Pode
             }
 
             buffer.AddRange(msgBytes);
-            Write(buffer.ToArray());
+            Write(buffer.ToArray(), flush);
         }
 
-        public void Write(byte[] buffer)
+        public void WriteLine(string message, bool flush = false)
+        {
+            var msgBytes = Encoding.GetBytes($"{message}{PodeHelpers.NEW_LINE}");
+            Write(msgBytes, flush);
+        }
+
+        public void Write(byte[] buffer, bool flush = false)
         {
             try
             {
                 Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
+
+                if (flush)
+                {
+                    Request.InputStream.Flush();
+                }
             }
             catch (IOException) { }
             catch (Exception ex)

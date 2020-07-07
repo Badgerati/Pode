@@ -26,10 +26,12 @@ Start-PodeServer -Threads 2 {
         Write-Host '- - - - - - - - - - - - - - - - - -'
         Write-Host $e.Email.From
         Write-Host $e.Email.To
-        Write-Host ([string]::Empty)
+        Write-Host '|'
         Write-Host $e.Email.Body
-        Write-Host ([string]::Empty)
+        Write-Host '|'
         Write-Host $e.Email.Data
+        Write-Host '|'
+        $e.Email | Out-Default
         Write-Host '- - - - - - - - - - - - - - - - - -'
     }
 

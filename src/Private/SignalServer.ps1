@@ -1,3 +1,5 @@
+using namespace Pode
+
 function Start-PodeSignalServer
 {
     # work out which endpoints to listen on
@@ -18,14 +20,14 @@ function Start-PodeSignalServer
     }
 
     # create the listener
-    $listener = [Pode.PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
+    $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token, [PodeListenerType]::WebSocket)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
 
     try
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = [Pode.PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate)
+            $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $listener.Add($socket)
         }
