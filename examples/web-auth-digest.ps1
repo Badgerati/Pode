@@ -11,7 +11,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # setup digest auth
-    New-PodeAuthType -Digest | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $params)
 
         # here you'd check a real user storage, this is just for example
@@ -30,7 +30,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

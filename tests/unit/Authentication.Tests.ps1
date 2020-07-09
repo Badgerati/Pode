@@ -9,25 +9,25 @@ Describe 'Set-PodeAuthStatus' {
     Mock Set-PodeResponseStatus {}
 
     It 'Redirects to a failure URL' {
-        Set-PodeAuthStatus -StatusCode 500 -Options @{'Failure' = @{ 'Url' = 'url'} } | Should Be $false
+        Set-PodeAuthStatus -StatusCode 500 -Failure @{ 'Url' = 'url'} | Should Be $false
         Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
     }
 
     It 'Sets status to failure' {
-        Set-PodeAuthStatus -StatusCode 500 -Options @{} | Should Be $false
+        Set-PodeAuthStatus -StatusCode 500 | Should Be $false
         Assert-MockCalled Move-PodeResponseUrl -Times 0 -Scope It
         Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
     }
 
     It 'Redirects to a success URL' {
-        Set-PodeAuthStatus -Options @{'Success' = @{ 'Url' = 'url' } } | Should Be $false
+        Set-PodeAuthStatus -Success @{ 'Url' = 'url' } -LoginRoute | Should Be $false
         Assert-MockCalled Move-PodeResponseUrl -Times 1 -Scope It
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
     }
 
     It 'Returns true for next middleware' {
-        Set-PodeAuthStatus -Options @{} | Should Be $true
+        Set-PodeAuthStatus | Should Be $true
         Assert-MockCalled Move-PodeResponseUrl -Times 0 -Scope It
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
     }

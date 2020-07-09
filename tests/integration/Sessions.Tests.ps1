@@ -15,7 +15,7 @@ Describe 'Session Requests' {
 
                 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 5 -Extend -UseHeaders
 
-                New-PodeAuthType -Basic | Add-PodeAuth -Name 'Auth' -ScriptBlock {
+                New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Auth' -ScriptBlock {
                     param($username, $password)
 
                     if (($username -eq 'morty') -and ($password -eq 'pickle')) {
@@ -25,7 +25,7 @@ Describe 'Session Requests' {
                     return @{ Message = 'Invalid details supplied' }
                 }
 
-                Add-PodeRoute -Method Post -Path '/auth/basic' -Middleware (Get-PodeAuthMiddleware -Name 'Auth') -ScriptBlock {
+                Add-PodeRoute -Method Post -Path '/auth/basic' -Authentication Auth -ScriptBlock {
                     param($e)
                     $e.Session.Data.Views++
 

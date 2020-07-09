@@ -4,11 +4,11 @@ Form Authentication is for when you're using a `<form>` in HTML, and you submit 
 
 ## Setup
 
-To setup and start using Form Authentication in Pode you use the `New-PodeAuthType -Form` function, and then pipe this into the  [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
+To setup and start using Form Authentication in Pode you use the `New-PodeAuthScheme -Form` function, and then pipe this into the  [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($username, $password)
 
         # check if the user is valid
@@ -18,13 +18,13 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the Request's payload contains a `username` and `password` fields. The `New-PodeAuthType -Form` function can be supplied parameters to allow for custom names of these fields.
+By default, Pode will check if the Request's payload contains a `username` and `password` fields. The `New-PodeAuthScheme -Form` function can be supplied parameters to allow for custom names of these fields.
 
 For example, to look for the field `email` rather than the default `username` you could do:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form -UsernameField 'email' | Add-PodeAuth -Name 'Login' -ScriptBlock {}
+    New-PodeAuthScheme -Form -UsernameField 'email' | Add-PodeAuth -Name 'Login' -ScriptBlock {}
 }
 ```
 
@@ -36,7 +36,7 @@ The following will use Form Authentication to validate every request on every Ro
 
 ```powershell
 Start-PodeServer {
-    Get-PodeAuthMiddleware -Name 'Login' | Add-PodeMiddleware -Name 'GlobalAuthValidation'
+    Add-PodeAuthMiddleware -Name 'GlobalAuthValidation' -Authentication 'Login'
 }
 ```
 
@@ -44,7 +44,7 @@ Whereas the following example will use Form Authentication to only validate requ
 
 ```powershell
 Start-PodeServer {
-    Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
         # logic
     }
 }
@@ -59,7 +59,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup form authentication to validate a user
-    New-PodeAuthType -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -75,7 +75,7 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/cpu' -Authentication -Name 'Login' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 

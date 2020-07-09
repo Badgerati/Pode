@@ -10,7 +10,7 @@ To enable Windows AD authentication you can use the [`Add-PodeAuthWindowsAd`](..
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login'
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login'
 }
 ```
 
@@ -33,7 +33,7 @@ The User object returned, and accessible on Routes, and other functions via `$e.
 Such as:
 
 ```powershell
-Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
     param($e)
     Write-Host $e.Auth.User.Username
 }
@@ -45,7 +45,7 @@ If you want to supply a custom DNS domain, then you can supply the `-Fqdn` param
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com'
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com'
 }
 ```
 
@@ -55,7 +55,7 @@ You can supply a list of group names to validate that user's are a member of the
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @('admins', 'devops')
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @('admins', 'devops')
 }
 ```
 
@@ -67,7 +67,7 @@ You can supply a list of authorised usernames to validate a user's access, after
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
 }
 ```
 

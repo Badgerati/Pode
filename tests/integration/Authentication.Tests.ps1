@@ -9,12 +9,14 @@ Describe 'Authentication Requests' {
 
             Start-PodeServer {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
+
+                New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
                 }
 
                 # BASIC
-                New-PodeAuthType -Basic | Add-PodeAuth -Name 'BasicAuth' -ScriptBlock {
+                New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'BasicAuth' -Sessionless -ScriptBlock {
                     param($username, $password)
 
                     if (($username -eq 'morty') -and ($password -eq 'pickle')) {
@@ -24,12 +26,12 @@ Describe 'Authentication Requests' {
                     return @{ Message = 'Invalid details supplied' }
                 }
 
-                Add-PodeRoute -Method Post -Path '/auth/basic' -Middleware (Get-PodeAuthMiddleware -Name 'BasicAuth' -Sessionless) -ScriptBlock {
+                Add-PodeRoute -Method Post -Path '/auth/basic' -Authentication 'BasicAuth' -ScriptBlock {
                     Write-PodeJsonResponse -Value @{ Result = 'OK' }
                 }
 
                 # BEARER
-                New-PodeAuthType -Bearer -Scope write | Add-PodeAuth -Name 'BearerAuth' -ScriptBlock {
+                New-PodeAuthScheme -Bearer -Scope write | Add-PodeAuth -Name 'BearerAuth' -Sessionless -ScriptBlock {
                     param($token)
 
                     if ($token -ieq 'test-token') {
@@ -42,7 +44,7 @@ Describe 'Authentication Requests' {
                     return $null
                 }
 
-                Add-PodeRoute -Method Get -Path '/auth/bearer' -Middleware (Get-PodeAuthMiddleware -Name 'BearerAuth' -Sessionless) -ScriptBlock {
+                Add-PodeRoute -Method Get -Path '/auth/bearer' -Authentication 'BearerAuth' -ScriptBlock {
                     Write-PodeJsonResponse -Value @{ Result = 'OK' }
                 }
 

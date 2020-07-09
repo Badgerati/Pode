@@ -54,7 +54,7 @@ If your API requires the same authentication on every route, then the quickest w
 
 ```powershell
 # define the authentication
-New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
     return @{ User = @{} }
 }
 
@@ -199,7 +199,7 @@ To add the authentication used on a route's definition you can pipe the route in
 
 ```powershell
 # add the auth type
-New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
     return @{ User = @{} }
 }
 

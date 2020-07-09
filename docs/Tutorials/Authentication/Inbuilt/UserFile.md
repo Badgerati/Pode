@@ -10,7 +10,7 @@ To use user file authentication you can use the [`Add-PodeAuthUserFile`](../../.
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthUserFile -Name 'Login'
+    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login'
 }
 ```
 
@@ -55,7 +55,7 @@ The password is normally a standard SHA256 hash, but Pode does support HMAC SHA2
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthUserFile -Name 'Login' -HmacSecret '<some-secret>'
+    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -HmacSecret '<some-secret>'
 }
 ```
 
@@ -74,7 +74,7 @@ The User object returned, and accessible on Routes, and other functions via the 
 Such as:
 
 ```powershell
-Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
     param($e)
     Write-Host $e.Auth.User.Username
 }
@@ -86,7 +86,7 @@ You can supply a list of group names to validate that users are a member of them
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthUserFile -Name 'Login' -Groups @('admins', 'devops')
+    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -Groups @('admins', 'devops')
 }
 ```
 
@@ -98,7 +98,7 @@ You can supply a list of authorised usernames to validate a user's access, after
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
 }
 ```
 

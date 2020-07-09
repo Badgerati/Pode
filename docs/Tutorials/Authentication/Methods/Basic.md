@@ -4,11 +4,11 @@ Basic Authentication is when you pass an encoded `username:password` value on th
 
 ## Setup
 
-To setup and start using Basic Authentication in Pode you use the `New-PodeAuthType -Basic` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password:
+To setup and start using Basic Authentication in Pode you use the `New-PodeAuthScheme -Basic` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # check if the user is valid
@@ -18,13 +18,13 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Basic`. The `New-PodeAuthType -Basic` function can be supplied parameters to customise this name, as well as the encoding.
+By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Basic`. The `New-PodeAuthScheme -Basic` function can be supplied parameters to customise this name, as well as the encoding.
 
 For example, to use `ASCII` encoding rather than the default `ISO-8859-1` you could do:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Basic -Encoding 'ASCII' | Add-PodeAuth -Name 'Login' -ScriptBlock {}
+    New-PodeAuthScheme -Basic -Encoding 'ASCII' | Add-PodeAuth -Name 'Login' -ScriptBlock {}
 }
 ```
 
@@ -36,7 +36,7 @@ The following will use Basic Authentication to validate every request on every R
 
 ```powershell
 Start-PodeServer {
-    Get-PodeAuthMiddleware -Name 'Login' | Add-PodeMiddleware -Name 'GlobalAuthValidation'
+    Add-PodeAuthMiddleware -Name 'GlobalAuthValidation' -Authentication 'Login'
 }
 ```
 
@@ -44,7 +44,7 @@ Whereas the following example will use Basic authentication to only validate req
 
 ```powershell
 Start-PodeServer {
-    Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
         # logic
     }
 }
@@ -59,7 +59,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup basic authentication to validate a user
-    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -78,7 +78,7 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/cpu' -Authentication 'Login' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 

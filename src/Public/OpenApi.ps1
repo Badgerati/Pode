@@ -401,7 +401,7 @@ function Set-PodeOAAuth
     )
 
     foreach ($n in @($Name)) {
-        if (!$PodeContext.Server.Authentications.ContainsKey($n)) {
+        if (!(Test-PodeAuth -Name $n)) {
             throw "Authentication method does not exist: $($n)"
         }
     }
@@ -442,7 +442,7 @@ function Set-PodeOAGlobalAuth
     )
 
     foreach ($n in @($Name)) {
-        if (!$PodeContext.Server.Authentications.ContainsKey($n)) {
+        if (!(Test-PodeAuth -Name $n)) {
             throw "Authentication method does not exist: $($n)"
         }
     }

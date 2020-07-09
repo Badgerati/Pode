@@ -65,7 +65,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ } -ArgumentList '
 function Add-PodeRoute
 {
     [CmdletBinding(DefaultParameterSetName='Script')]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
         [string]
@@ -117,6 +117,17 @@ function Add-PodeRoute
         [object[]]
         $ArgumentList,
 
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
+
+        [switch]
+        $Login,
+
+        [switch]
+        $Logout,
+
         [switch]
         $PassThru
     )
@@ -141,7 +152,7 @@ function Add-PodeRoute
     }
 
     # if middleware, scriptblock and file path are all null/empty, error
-    if ((Test-IsEmpty $Middleware) -and (Test-IsEmpty $ScriptBlock) -and (Test-IsEmpty $FilePath)) {
+    if ((Test-IsEmpty $Middleware) -and (Test-IsEmpty $ScriptBlock) -and (Test-IsEmpty $FilePath) -and (Test-IsEmpty $Authentication)) {
         throw "[$($Method)] $($Path): No logic passed"
     }
 
@@ -152,6 +163,21 @@ function Add-PodeRoute
 
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware)
+
+    # if an auth name was supplied, setup the auth as the first middleware
+    if (![string]::IsNullOrWhiteSpace($Authentication)) {
+        if (!(Test-PodeAuth -Name $Authentication)) {
+            throw "Authentication method does not exist: $($Authentication)"
+        }
+
+        $options = @{
+            Name = $Authentication
+            Login = $Login
+            Logout = $Logout
+        }
+
+        $Middleware = (@(Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
+    }
 
     # workout a default content type for the route
     $ContentType = Find-PodeRouteContentType -Path $Path -ContentType $ContentType
@@ -165,6 +191,7 @@ function Add-PodeRoute
         @{
             Logic = $ScriptBlock
             Middleware = $Middleware
+            Authentication = $Authentication
             Protocol = $_endpoint.Protocol
             Endpoint = $_endpoint.Address.Trim()
             EndpointName = $_endpoint.Name
@@ -300,6 +327,11 @@ function Add-PodeStaticRoute
         [string]
         $ErrorContentType,
 
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
+
         [switch]
         $DownloadOnly,
 
@@ -345,6 +377,16 @@ function Add-PodeStaticRoute
 
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware)
+
+    # if an auth name was supplied, setup the auth as the first middleware
+    if (![string]::IsNullOrWhiteSpace($Authentication)) {
+        if (!(Test-PodeAuth -Name $Authentication)) {
+            throw "Authentication method does not exist: $($Authentication)"
+        }
+
+        $options = @{ Name = $Authentication }
+        $Middleware = (@(Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
+    }
 
     # workout a default content type for the route
     $ContentType = Find-PodeRouteContentType -Path $Path -ContentType $ContentType
@@ -614,7 +656,10 @@ If supplied, the Command's Verb will not be included in the Route's path.
 If supplied, no OpenAPI definitions will be generated for the routes created.
 
 .EXAMPLE
-ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware (Get-PodeAuthMiddleware -Name 'auth-name' -Sessionless)
+ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware { ... }
+
+.EXAMPLE
+ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Authentication AuthName
 
 .EXAMPLE
 ConvertTo-PodeRoute -Module Pester -Path '/api'
@@ -646,6 +691,11 @@ function ConvertTo-PodeRoute
         [Parameter()]
         [object[]]
         $Middleware,
+
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
 
         [switch]
         $NoVerb,
@@ -715,7 +765,7 @@ function ConvertTo-PodeRoute
         $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
 
         # create the route
-        $route = (Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -ArgumentList $cmd -ScriptBlock {
+        $route = (Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -Authentication $Authentication -ArgumentList $cmd -ScriptBlock {
             param($e, $cmd)
 
             # either get params from the QueryString or Payload

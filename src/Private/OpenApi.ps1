@@ -237,7 +237,7 @@ function Get-PodeOpenApiDefinitionInternal
     # auth/security components
     if ($PodeContext.Server.Authentications.Count -gt 0) {
         foreach ($authName in $PodeContext.Server.Authentications.Keys) {
-            $authType = $PodeContext.Server.Authentications[$authName].Type
+            $authType = (Find-PodeAuth -Name $authName).Type
 
             $def.components.securitySchemas[($authName -replace '\s+', '')] = @{
                 type = $authType.Scheme.ToLowerInvariant()

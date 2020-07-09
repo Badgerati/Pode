@@ -41,10 +41,10 @@ To use sessions for our authentication (so we can stay logged in), we need to se
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 ```
 
-Once we have the Session Middleware initialised, we need to setup Form Authentication - the username/password here are hardcoded, but normally you would validate against a database:
+Once we have the Session Middleware initialised, we need to setup Form Authentication - the username/password here are hard-coded, but normally you would validate against some database. We also specify a `-FailureUrl`, which is the URL to redirect a user to if they try to access a page un-authenticated. The `-SuccessUrl` is the URL to redirect to on successful authentication.
 
 ```powershell
-New-PodeAuthType -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
+New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
     param($username, $password)
 
     # here you'd check a real user storage, this is just for example
@@ -66,8 +66,7 @@ New-PodeAuthType -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
 Below is the Route for the root (`/`) endpoint. This will check the cookies in the request for a signed session cookie, if one is found then the `index.pode` page is displayed - after incrementing a page-view counter. However, if there is no session, or authentication fails, the user is redirected to the login page:
 
 ```powershell
-$auth_check = Get-PodeAuthMiddleware -Name 'Login' -FailureUrl '/login'
-Add-PodeRoute -Method Get -Path '/' -Middleware $auth_check -ScriptBlock {
+Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -ScriptBlock {
     param($e)
 
     $e.Session.Data.Views++
@@ -83,30 +82,22 @@ Next we have the login Route, which is actually two routes. The `GET /login` is 
 
 For the `POST` Route, if Authentication passes the user is logged in and redirected to the home page, but if it failed they're taken back to the login page.
 
-For the `GET` Route we supply `-AutoLogin`, this basically means if the user navigates to the login page with an already verified session then they're automatically redirected to the home page (the `-SuccessUrl`). However, if they have no session or authentication fails then instead of a `403` being displayed, the login page is displayed instead.
+For the `GET` and `POST` login Route we supply the `-Login` switch, this flags that if the user navigates to the login page with an already verified session then they're automatically redirected to the home page (the `-SuccessUrl`). However, if they have no session or authentication fails then instead of a `403` being displayed, the login page is displayed instead (to prevent continuously trying to redirect to the `/login` page).
 
 ```powershell
 # the login page itself
-$auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl '/'
-Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
+Add-PodeRoute -Method Get -Path '/login' -Authentication 'Login' -Login -ScriptBlock {
     Write-PodeViewResponse -Path 'auth-login' -FlashMessages
 }
 
 # the POST action for the <form>
-Add-PodeRoute -Method Post -Path '/login' -Middleware (Get-PodeAuthMiddleware `
-    -Name 'Login' `
-    -FailureUrl '/login' `
-    -SuccessUrl '/' `
-    -EnableFlash)
+Add-PodeRoute -Method Post -Path '/login' -Authentication 'Login' -Login
 ```
 
 Finally, we have the logout Route. Here we have another switch of `-Logout`, which just means to kill the session and redirect the user to the login page:
 
 ```powershell
-Add-PodeRoute -Method Post -Path '/logout' -Middleware (Get-PodeAuthMiddleware `
-    -Name 'Login' `
-    -FailureUrl '/login' `
-    -Logout)
+Add-PodeRoute -Method Post -Path '/logout' -Authentication 'Login' -Logout
 ```
 
 ## Full Server
@@ -124,7 +115,7 @@ Start-PodeServer -Thread 2 {
     Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 
     # setup form authentication
-    New-PodeAuthType -Form | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -143,8 +134,7 @@ Start-PodeServer -Thread 2 {
     }
 
     # the "GET /" endpoint for the homepage
-    $auth_check = Get-PodeAuthMiddleware -Name 'Login' -FailureUrl '/login'
-    Add-PodeRoute -Method Get -Path '/' -Middleware $auth_check -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -ScriptBlock {
         param($e)
 
         $e.Session.Data.Views++
@@ -156,23 +146,15 @@ Start-PodeServer -Thread 2 {
     }
 
     # the "GET /login" endpoint for the login page
-    $auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl '/'
-    Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/login' -Authentication 'Login' -Login -ScriptBlock {
         Write-PodeViewResponse -Path 'auth-login' -FlashMessages
     }
 
     # the "POST /login" endpoint for user authentication
-    Add-PodeRoute -Method Post -Path '/login' -Middleware (Get-PodeAuthMiddleware `
-        -Name 'Login' `
-        -FailureUrl '/login' `
-        -SuccessUrl '/' `
-        -EnableFlash)
+    Add-PodeRoute -Method Post -Path '/login' -Authentication 'Login' -Login
 
     # the "POST /logout" endpoint for ending the session
-    Add-PodeRoute -Method Post -Path '/logout' -Middleware (Get-PodeAuthMiddleware `
-        -Name 'Login' `
-        -FailureUrl '/login' `
-        -Logout)
+    Add-PodeRoute -Method Post -Path '/logout' -Authentication 'Login' -Logout
 }
 ```
 

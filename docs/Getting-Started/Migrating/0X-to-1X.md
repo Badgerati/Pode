@@ -19,7 +19,7 @@ For `auth check`, this has now been replaced with [`Get-PodeAuthMiddleware`](../
 
 ### Types
 
-Using inbuilt authentication types, and creating custom types, is now possible use the [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType) function. This function will return valid Basic, Form, or Custom authentication types for use with [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) and [`Add-PodeAuthWindowsAd`](../../../Functions/Authentication/Add-PodeAuthWindowsAd).
+Using inbuilt authentication types, and creating custom types, is now possible use the [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function. This function will return valid Basic, Form, or Custom authentication types for use with [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) and [`Add-PodeAuthWindowsAd`](../../../Functions/Authentication/Add-PodeAuthWindowsAd).
 
 ### Validators
 
@@ -27,7 +27,7 @@ Configuring an authentication validator is now a case of using the [`Add-PodeAut
 
 For inbuilt validators, like Windows AD, you can use [`Add-PodeAuthWindowsAd`](../../../Functions/Authentication/Add-PodeAuthWindowsAd).
 
-In both cases, the `-Type` parameter comes from using [`New-PodeAuthType`](../../../Functions/Authentication/New-PodeAuthType).
+In both cases, the `-Type` parameter comes from using [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme).
 
 | Functions |
 | -------- |

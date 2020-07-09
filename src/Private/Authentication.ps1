@@ -595,41 +595,42 @@ function Get-PodeAuthMiddlewareScript
     return {
         param($e, $opts)
 
+        # get the auth method
+        $auth = Find-PodeAuth -Name $opts.Name
+
         # route options for using sessions
-        $storeInSession = !$opts.Sessionless
+        $sessionless = $auth.Sessionless
         $usingSessions = (!(Test-IsEmpty $e.Session))
         $useHeaders = [bool]($e.Session.Properties.UseHeaders)
+        $loginRoute = $opts.Login
 
         # check for logout command
         if ($opts.Logout) {
             Remove-PodeAuthSession -Event $e
 
             if ($useHeaders) {
-                return (Set-PodeAuthStatus -StatusCode 401)
+                return (Set-PodeAuthStatus -StatusCode 401 -Sessionless:$sessionless)
             }
             else {
-                $opts.Failure.Url = (Protect-PodeValue -Value $opts.Failure.Url -Default $e.Request.Url.AbsolutePath)
-                return (Set-PodeAuthStatus -StatusCode 302 -Options $opts)
+                $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $e.Request.Url.AbsolutePath)
+                return (Set-PodeAuthStatus -StatusCode 302 -Failure $auth.Failure -Sessionless:$sessionless)
             }
         }
 
         # if the session already has a user/isAuth'd, then skip auth
         if ($usingSessions -and !(Test-IsEmpty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
             $e.Auth = $e.Session.Data.Auth
-            return (Set-PodeAuthStatus -Options $opts)
+            return (Set-PodeAuthStatus -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless)
         }
 
-        # check if the auto-login flag is set, in which case just return
-        if ($opts.AutoLogin -and !$useHeaders) {
+        # check if the login flag is set, in which case just return and load a login get-page
+        if ($loginRoute -and !$useHeaders -and ($e.Method -ieq 'get')) {
             if (!(Test-IsEmpty $e.Session.Data.Auth)) {
                 Revoke-PodeSession -Session $e.Session
             }
 
             return $true
         }
-
-        # get the auth method
-        $auth = $PodeContext.Server.Authentications[$opts.Name]
 
         try {
             # run auth type script to parse request for data
@@ -648,7 +649,7 @@ function Get-PodeAuthMiddlewareScript
         }
         catch {
             $_ | Write-PodeErrorLog
-            return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Options $opts)
+            return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Failure $auth.Failure -Sessionless:$sessionless)
         }
 
         # if there is no result, return false (failed auth)
@@ -670,17 +671,20 @@ function Get-PodeAuthMiddlewareScript
                 -StatusCode $_code `
                 -Description $result.Message `
                 -Headers $result.Headers `
-                -Options $opts)
+                -Failure $auth.Failure `
+                -Success $auth.Success `
+                -LoginRoute:$loginRoute `
+                -Sessionless:$sessionless)
         }
 
         # assign the user to the session, and wire up a quick method
         $e.Auth = @{}
         $e.Auth.User = $result.User
         $e.Auth.IsAuthenticated = $true
-        $e.Auth.Store = $storeInSession
+        $e.Auth.Store = !$sessionless
 
         # continue
-        return (Set-PodeAuthStatus -Headers $result.Headers -Options $opts)
+        return (Set-PodeAuthStatus -Headers $result.Headers -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless)
     }
 }
 
@@ -753,7 +757,17 @@ function Set-PodeAuthStatus
 
         [Parameter()]
         [hashtable]
-        $Options
+        $Failure,
+
+        [Parameter()]
+        [hashtable]
+        $Success,
+
+        [switch]
+        $LoginRoute,
+
+        [switch]
+        $Sessionless
     )
 
     # if we have any headers, set them
@@ -767,16 +781,16 @@ function Set-PodeAuthStatus
     if ($StatusCode -gt 0)
     {
         # override description with the failureMessage if supplied
-        $Description = (Protect-PodeValue -Value $Options.Failure.Message -Default $Description)
+        $Description = (Protect-PodeValue -Value $Failure.Message -Default $Description)
 
-        # add error to flash if flagged
-        if ($Options.Failure.FlashEnabled) {
+        # add error to flash
+        if (!$Sessionless -and ![string]::IsNullOrWhiteSpace($Description)) {
             Add-PodeFlashMessage -Name 'auth-error' -Message $Description
         }
 
         # check if we have a failure url redirect
-        if (![string]::IsNullOrWhiteSpace($Options.Failure.Url)) {
-            Move-PodeResponseUrl -Url $Options.Failure.Url
+        if (![string]::IsNullOrWhiteSpace($Failure.Url)) {
+            Move-PodeResponseUrl -Url $Failure.Url
         }
         else {
             Set-PodeResponseStatus -Code $StatusCode -Description $Description
@@ -785,9 +799,9 @@ function Set-PodeAuthStatus
         return $false
     }
 
-    # if no statuscode, success, so check if we have a success url redirect
-    if (![string]::IsNullOrWhiteSpace($Options.Success.Url)) {
-        Move-PodeResponseUrl -Url $Options.Success.Url
+    # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
+    if ($LoginRoute -and ![string]::IsNullOrWhiteSpace($Success.Url)) {
+        Move-PodeResponseUrl -Url $Success.Url
         return $false
     }
 
@@ -1110,4 +1124,28 @@ function Get-PodeAuthDomainName
 
         return $domain
     }
+}
+
+function Find-PodeAuth
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.Authentications[$Name]
+}
+
+function Test-PodeAuth
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.Authentications.ContainsKey($Name)
 }

@@ -12,7 +12,7 @@ Start-PodeServer {
     Enable-PodeOpenApiViewer -Type ReDoc
 
 
-    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         return @{
             User = @{
                 ID ='M0R7Y302'
@@ -23,9 +23,7 @@ Start-PodeServer {
     }
 
 
-    $auth = (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless)
-
-    Add-PodeRoute -Method Get -Path "/api/resources" -Middleware $auth -EndpointName 'user' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path "/api/resources" -Authentication Validate -EndpointName 'user' -ScriptBlock {
         Set-PodeResponseStatus -Code 200
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Resources' -PassThru |
@@ -69,7 +67,7 @@ Start-PodeServer {
         Add-PodeOAResponse -StatusCode 200 -Description 'A user object'
 
 
-    Add-PodeRoute -Method Post -Path '/api/users' -Middleware $auth -ScriptBlock {
+    Add-PodeRoute -Method Post -Path '/api/users' -Authentication Validate -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
     } -PassThru |
