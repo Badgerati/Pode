@@ -24,7 +24,7 @@ For example, to use `ASCII` encoding rather than the default `ISO-8859-1` you co
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Basic -Encoding 'ASCII' | Add-PodeAuth -Name 'Login' -ScriptBlock {}
+    New-PodeAuthScheme -Basic -Encoding 'ASCII' | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {}
 }
 ```
 

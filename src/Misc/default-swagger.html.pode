@@ -28,6 +28,8 @@
                 .swagger-ui .parameter__in,
                 .swagger-ui table thead tr th,
                 .swagger-ui .response-col_status,
+                .swagger-ui .response-col_description,
+                .swagger-ui .response-control-media-type__title,
                 .swagger-ui table thead tr td,
                 .swagger-ui .opblock .opblock-section-header h4,
                 .swagger-ui label,

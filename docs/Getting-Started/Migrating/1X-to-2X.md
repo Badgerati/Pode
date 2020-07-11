@@ -6,7 +6,7 @@ In Pode v2.X the Server got the biggest overhaul with the dropping of HttpListen
 
 ## Server
 
-If you were previously specifying `-Type Pode` on your [`Start-PodeServer`], then you no longer need to - all servers now default to using Pode new .NET Core socket listener.
+If you were previously specifying `-Type Pode` on your [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer), then you no longer need to - all servers now default to using Pode new .NET Core socket listener.
 
 ### Endpoints
 

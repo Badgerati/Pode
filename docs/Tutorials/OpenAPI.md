@@ -31,7 +31,7 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 * Every route will have a 200 and Default response
 * Although routes will be included, no request bodies, parameters or response payloads will be defined
 * If you have multiple endpoints, then the servers section will be included
-* Any authentication will be included, but won't be bound to any routes
+* Any authentication will be included
 
 ### Get Definition
 
@@ -50,22 +50,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 
 ## Authentication
 
-If your API requires the same authentication on every route, then the quickest way to define global authentication is to use the [`Set-PodeOAGlobalAuth`](../../Functions/OpenApi/Set-PodeOAGlobalAuth) function. This takes an array of authentication names:
-
-```powershell
-# define the authentication
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
-    return @{ User = @{} }
-}
-
-# set the auth as global middleware for all /api routes
-Get-PodeAuthMiddleware -Name 'Validate' -Sessionless | Add-PodeMiddleware -Name 'AuthMiddleware' -Route '/api/*'
-
-# set the OpenAPI global auth
-Set-PodeOAGlobalAuth -Name 'Validate'
-```
-
-This will set the `security` section of the OpenAPI definition.
+Any authentication defined, either by [`Add-PodeAuthMiddleware`](../../Functions/Authentication/Add-PodeAuthMiddleware), or using the `-Authentication` parameter on Routes, will be automatically added to the `security` section of the OpenAPI definition.
 
 ## Routes
 
@@ -191,25 +176,6 @@ The expected payload would look as follows:
     "name": [string],
     "userId": [integer]
 }
-```
-
-### Authentication
-
-To add the authentication used on a route's definition you can pipe the route into the [`Set-PodeOAAuth`](../../Functions/OpenApi/Set-PodeOAAuth) function. This function takes the name of an authentication type being used on the route.
-
-```powershell
-# add the auth type
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
-    return @{ User = @{} }
-}
-
-$auth = (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless)
-
-# define a route that uses the auth type
-Add-PodeRoute -Method Get -Path "/api/resources" -Middleware $auth -ScriptBlock {
-    Set-PodeResponseStatus -Code 200
-} -PassThru |
-    Set-PodeOAAuth -Name 'Validate'
 ```
 
 ## Components

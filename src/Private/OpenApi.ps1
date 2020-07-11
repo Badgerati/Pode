@@ -359,3 +359,59 @@ function Get-PodeOABaseObject
         security = @()
     }
 }
+
+function Set-PodeOAAuth
+{
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter()]
+        [string[]]
+        $Name
+
+        # [switch]
+        # $PassThru
+    )
+
+    foreach ($n in @($Name)) {
+        if (!(Test-PodeAuth -Name $n)) {
+            throw "Authentication method does not exist: $($n)"
+        }
+    }
+
+    foreach ($r in @($Route)) {
+        $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
+            @{
+                "$($n -replace '\s+', '')" = @()
+            }
+        })
+    }
+
+    # if ($PassThru) {
+    #     return $Route
+    # }
+}
+
+function Set-PodeOAGlobalAuth
+{
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    foreach ($n in @($Name)) {
+        if (!(Test-PodeAuth -Name $n)) {
+            throw "Authentication method does not exist: $($n)"
+        }
+    }
+
+    $PodeContext.Server.OpenAPI.security = @(foreach ($n in @($Name)) {
+        @{
+            "$($n -replace '\s+', '')" = @()
+        }
+    })
+}

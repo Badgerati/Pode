@@ -545,6 +545,8 @@ function Add-PodeAuthMiddleware
     Get-PodeAuthMiddlewareScript |
         New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
         Add-PodeMiddleware -Name $Name -Route $Route
+
+    Set-PodeOAGlobalAuth -Name $Authentication
 }
 
 <#

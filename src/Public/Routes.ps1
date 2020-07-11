@@ -221,6 +221,10 @@ function Add-PodeRoute
         }
     })
 
+    if (![string]::IsNullOrWhiteSpace($Authentication)) {
+        Set-PodeOAAuth -Route $newRoutes -Name $Authentication
+    }
+
     $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
 
     # return the routes?
@@ -429,6 +433,10 @@ function Add-PodeStaticRoute
             }
         }
     })
+
+    if (![string]::IsNullOrWhiteSpace($Authentication)) {
+        Set-PodeOAAuth -Route $newRoutes -Name $Authentication
+    }
 
     $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
 
@@ -889,6 +897,11 @@ function Add-PodePage
         [object[]]
         $Middleware,
 
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
+
         [Parameter(ParameterSetName='View')]
         [switch]
         $FlashMessages
@@ -955,7 +968,13 @@ function Add-PodePage
     $_path = ("$($Path)/$($Name)" -replace '[/]+', '/')
 
     # create the route
-    Add-PodeRoute -Method Get -Path $_path -Middleware $Middleware -ArgumentList $arg -ScriptBlock $logic
+    Add-PodeRoute `
+        -Method Get `
+        -Path $_path `
+        -Middleware $Middleware `
+        -Authentication $Authentication `
+        -ArgumentList $arg `
+        -ScriptBlock $logic
 }
 
 <#

@@ -74,7 +74,7 @@ When authenticating a user in Pode, any failures will return a 401 response with
 You can return a custom status code as follows:
 
 ```powershell
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
     return @{ Code = 403 }
 }
 ```
@@ -82,7 +82,7 @@ New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
 or a custom message (the status description) as follows, which can be used with a custom status code or on its own:
 
 ```powershell
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
     return @{ Message = 'Custom authentication failed message' }
 }
 ```
@@ -90,7 +90,7 @@ New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
 You can also set custom headers on the response; these will be set regardless if authentication fails or succeeds:
 
 ```powershell
-New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
     return @{
         Headers = @{
             HeaderName = 'HeaderValue'
@@ -132,31 +132,37 @@ WWW-Authenticate: Basic realm="Enter creds to access site"
 !!! note
     If no Realm was set then it would just look as follows: `WWW-Authenticate: Basic`
 
-### Middleware/Routes
+### Routes/Middleware
 
-The [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) function allows you to define which authentication method to validate a Request against. It returns valid Middleware, meaning you can either use it on specific Routes, or globally for all routes as global Middleware. If this action fails, then a 401 response is returned.
+To use an authentication type on a specific route, you can use the `-Authentication` parameter on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function; this takes the Name supplied to the `-Name` parameter on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). This will set the authentication up to run before other route middleware.
 
-An example of using [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) against Basic authentication is as follows. The first example sets up global middleware, whereas the second example sets up custom Route Middleware:
+An example of using some Basic authentication on a REST API route is as follows:
 
 ```powershell
 Start-PodeServer {
-    # 1. apply as global middleware
-    Get-PodeAuthMiddleware -Name 'Login' | Add-PodeMiddleware -Name 'GlobalAuthValidation'
-
-    # 2. or, apply as custom route middleware
-    Add-PodeRoute -Method Get -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/api/users' -Authentication 'BasicAuth' -ScriptBlock {
         # route logic
     }
 }
 ```
 
-On success, it will allow the Route logic to be invoked. If Session Middleware has been configured then an authenticated session is also created for future requests, using a signed session-cookie.
+The [`Add-PodeAuthMiddleware`](../../../Functions/Authentication/Add-PodeAuthMiddleware) function lets you setup authentication as global middleware - so it will run against all routes.
 
-When the user makes another call using the same authenticated session and that cookie is present, then [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) will detect the already authenticated session and skip validation. If you're using sessions and you don't want to check the session, or store the user against a session, then use the `-Sessionless` switch.
+An example of using some Basic authentication on all REST API routes is as follows:
+
+```powershell
+Start-PodeServer {
+    Add-PodeAuthMiddleware -Name 'GlobalAuth' -Authentication 'BasicAuth' -Route '/api/*'
+}
+```
+
+If any of the authentication middleware fails, then a 401 response is returned for the route. On success, it will allow the Route logic to be invoked. If Session Middleware has been configured then an authenticated session is also created for future requests, using a signed session cookie/header.
+
+When the user makes another call using the same authenticated session and that cookie/header is present, then the authentication middleware will detect the already authenticated session and skip validation. If you're using sessions and you don't want to check the session, or store the user against a session, then use the `-Sessionless` switch on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth).
 
 ## Users
 
-After successful validation, an `Auth` object will be created for use against the current [web event](../../WebEvent). This `Auth` object will be accessible via the argument supplied to Routes and Middleware (though it will only be available in Middleware created after the Middleware from [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware) is invoked).
+After successful validation, an `Auth` object will be created for use against the current [web event](../../WebEvent). This `Auth` object will be accessible via the argument supplied to Routes and Middleware.
 
 The `Auth` object will also contain:
 
@@ -169,7 +175,7 @@ The `Auth` object will also contain:
 The following example get the user's name from the `Auth` object:
 
 ```powershell
-Add-PodeRoute -Method Get -Path '/' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -Login -ScriptBlock {
     param($e)
 
     Write-PodeViewResponse -Path 'index' -Data @{

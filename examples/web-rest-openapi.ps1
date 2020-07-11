@@ -27,10 +27,8 @@ Start-PodeServer {
         Set-PodeResponseStatus -Code 200
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Resources' -PassThru |
-        Set-PodeOAAuth -Name 'Validate' -PassThru |
         Add-PodeOAResponse -StatusCode 200 -PassThru |
         Add-PodeOAResponse -StatusCode 404
-
 
     Add-PodeRoute -Method Post -Path "/api/resources" -ScriptBlock {
         Set-PodeResponseStatus -Code 200
@@ -72,14 +70,12 @@ Start-PodeServer {
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
-        Set-PodeOAAuth -Name 'Validate' -PassThru |
         Set-PodeOARequest -RequestBody (
             New-PodeOARequestBody -Required -ContentSchemas @{
                 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object)
             }
         ) -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Description 'A user object'
-
 
     Add-PodeRoute -Method Put -Path '/api/users' -ScriptBlock {
         param($e)

@@ -75,7 +75,7 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Authentication -Name 'Login' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/cpu' -Authentication 'Login' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 
