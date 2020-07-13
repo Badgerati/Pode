@@ -371,9 +371,6 @@ function Set-PodeOAAuth
         [Parameter()]
         [string[]]
         $Name
-
-        # [switch]
-        # $PassThru
     )
 
     foreach ($n in @($Name)) {
@@ -389,10 +386,6 @@ function Set-PodeOAAuth
             }
         })
     }
-
-    # if ($PassThru) {
-    #     return $Route
-    # }
 }
 
 function Set-PodeOAGlobalAuth
