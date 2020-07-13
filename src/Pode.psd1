@@ -198,8 +198,6 @@
         'Get-PodeOpenApiDefinition',
         'Add-PodeOAResponse',
         'Add-PodeOAComponentResponse',
-        'Set-PodeOAAuth',
-        'Set-PodeOAGlobalAuth',
         'Set-PodeOARequest',
         'New-PodeOARequestBody',
         'Add-PodeOAComponentSchema',

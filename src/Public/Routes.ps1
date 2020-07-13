@@ -41,6 +41,15 @@ A literal, or relative, path to a file containing a ScriptBlock for the Route's 
 .PARAMETER ArgumentList
 An array of arguments to supply to the Route's ScriptBlock.
 
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on this Route.
+
+.PARAMETER Login
+If supplied, the Route will be flagged to Authentication as being a Route that handles user logins.
+
+.PARAMETER Logout
+If supplied, the Route will be flagged to Authentication as being a Route that handles users logging out.
+
 .PARAMETER PassThru
 If supplied, the route created will be returned so it can be passed through a pipe.
 
@@ -269,6 +278,9 @@ An array of default pages to display, such as 'index.html'.
 
 .PARAMETER ErrorContentType
 The content type of any error pages that may get returned.
+
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on this Route.
 
 .PARAMETER DownloadOnly
 When supplied, all static content on this Route will be attached as downloads - rather than rendered.
@@ -657,6 +669,9 @@ An optional Path for the Route, to prepend before the Command Name and Module.
 .PARAMETER Middleware
 Like normal Routes, an array of Middleware that will be applied to all generated Routes.
 
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on this Route.
+
 .PARAMETER NoVerb
 If supplied, the Command's Verb will not be included in the Route's path.
 
@@ -851,6 +866,9 @@ An optional Path for the Route, to prepend before the Name.
 
 .PARAMETER Middleware
 Like normal Routes, an array of Middleware that will be applied to all generated Routes.
+
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on this Route.
 
 .PARAMETER FlashMessages
 If supplied, Views will have any flash messages supplied to them for rendering.
