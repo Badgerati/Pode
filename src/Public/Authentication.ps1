@@ -231,6 +231,18 @@ The ScriptBlock defining logic that retrieves and verifys a user.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Authentication's ScriptBlock.
 
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
+
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
 #>
@@ -332,6 +344,18 @@ An array of Group names to only allow access.
 
 .PARAMETER Users
 An array of Usernames to only allow access.
+
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
@@ -565,6 +589,18 @@ An array of Group names to only allow access.
 .PARAMETER Users
 An array of Usernames to only allow access.
 
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
+
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
 
@@ -690,6 +726,18 @@ An array of Usernames to only allow access.
 
 .PARAMETER HmacSecret
 An optional secret if the passwords are HMAC SHA256 hashed.
+
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login'
