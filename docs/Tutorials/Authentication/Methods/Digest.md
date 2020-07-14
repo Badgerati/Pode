@@ -4,11 +4,11 @@ Digest Authentication lets you authenticate a user without actually sending the 
 
 ## Setup
 
-To setup and start using Digest Authentication in Pode you use the `New-PodeAuthType -Digest` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The parameters supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock are the `$username`, and a HashTable containing the parameters from the Authorization header:
+To setup and start using Digest Authentication in Pode you use the `New-PodeAuthScheme -Digest` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The parameters supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock are the `$username`, and a HashTable containing the parameters from the Authorization header:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Digest | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
         param($username, $params)
 
         # check if the user is valid
@@ -43,7 +43,7 @@ The following will use Digest Authentication to validate every request on every 
 
 ```powershell
 Start-PodeServer {
-    Get-PodeAuthMiddleware -Name 'Authenticate' | Add-PodeMiddleware -Name 'GlobalAuthValidation'
+    Add-PodeAuthMiddleware -Name 'GlobalAuthValidation' -Authentication 'Authenticate'
 }
 ```
 
@@ -51,7 +51,7 @@ Whereas the following example will use Digest authentication to only validate re
 
 ```powershell
 Start-PodeServer {
-    Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Authenticate') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/info' -Authentication 'Authenticate' -ScriptBlock {
         # logic
     }
 }
@@ -66,7 +66,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup digest authentication to validate a user
-    New-PodeAuthType -Digest | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($username, $params)
 
         # here you'd check a real user storage, this is just for example
@@ -86,7 +86,7 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (Get-PodeAuthMiddleware -Name 'Authenticate') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/cpu' -Authentication 'Authenticate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 

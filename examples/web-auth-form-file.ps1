@@ -31,14 +31,12 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 
     # setup form auth against user file (<form> in HTML)
-    New-PodeAuthType -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './users/users.json'
+    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './users/users.json' -FailureUrl '/login' -SuccessUrl '/'
 
 
     # home page:
     # redirects to login page if not authenticated
-    $auth_check = Get-PodeAuthMiddleware -Name 'Login' -FailureUrl '/login'
-
-    Add-PodeRoute -Method Get -Path '/' -Middleware $auth_check -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/' -Authentication Login -ScriptBlock {
         param($e)
 
         $e.Session.Data.Views++
@@ -54,9 +52,7 @@ Start-PodeServer -Threads 2 {
     # the login flag set below checks if there is already an authenticated session cookie. If there is, then
     # the user is redirected to the home page. If there is no session then the login page will load without
     # checking user authetication (to prevent a 401 status)
-    $auth_login = Get-PodeAuthMiddleware -Name 'Login' -AutoLogin -SuccessUrl '/'
-
-    Add-PodeRoute -Method Get -Path '/login' -Middleware $auth_login -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/login' -Authentication Login -Login -ScriptBlock {
         Write-PodeViewResponse -Path 'auth-login' -FlashMessages
     }
 
@@ -64,18 +60,11 @@ Start-PodeServer -Threads 2 {
     # login check:
     # this is the endpoint the <form>'s action will invoke. If the user validates then they are set against
     # the session as authenticated, and redirect to the home page. If they fail, then the login page reloads
-    Add-PodeRoute -Method Post -Path '/login' -Middleware (Get-PodeAuthMiddleware `
-        -Name 'Login' `
-        -FailureUrl '/login' `
-        -SuccessUrl '/' `
-        -EnableFlash)
+    Add-PodeRoute -Method Post -Path '/login' -Authentication Login -Login
 
 
     # logout check:
     # when the logout button is click, this endpoint is invoked. The logout flag set below informs this call
     # to purge the currently authenticated session, and then redirect back to the login page
-    Add-PodeRoute -Method Post -Path '/logout' -Middleware (Get-PodeAuthMiddleware `
-        -Name 'Login' `
-        -FailureUrl '/login' `
-        -Logout)
+    Add-PodeRoute -Method Post -Path '/logout' -Authentication Login -Logout
 }

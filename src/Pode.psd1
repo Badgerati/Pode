@@ -163,11 +163,11 @@
         'Get-PodeSessionId',
 
         # auth
-        'New-PodeAuthType',
+        'New-PodeAuthScheme',
         'Add-PodeAuth',
         'Add-PodeAuthWindowsAd',
         'Remove-PodeAuth',
-        'Get-PodeAuthMiddleware',
+        'Add-PodeAuthMiddleware',
         'Add-PodeAuthIIS',
         'Add-PodeAuthUserFile',
 
@@ -198,8 +198,6 @@
         'Get-PodeOpenApiDefinition',
         'Add-PodeOAResponse',
         'Add-PodeOAComponentResponse',
-        'Set-PodeOAAuth',
-        'Set-PodeOAGlobalAuth',
         'Set-PodeOARequest',
         'New-PodeOARequestBody',
         'Add-PodeOAComponentSchema',

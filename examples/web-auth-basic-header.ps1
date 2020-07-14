@@ -31,7 +31,7 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -UseHeaders -Strict
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -49,13 +49,13 @@ Start-PodeServer -Threads 2 {
     }
 
     # POST request to login
-    Add-PodeRoute -Method Post -Path '/login' -Middleware (Get-PodeAuthMiddleware -Name 'Login')
+    Add-PodeRoute -Method Post -Path '/login' -Authentication 'Login'
 
     # POST request to logout
-    Add-PodeRoute -Method Post -Path '/logout' -Middleware (Get-PodeAuthMiddleware -Name 'Login' -Logout)
+    Add-PodeRoute -Method Post -Path '/logout' -Authentication 'Login' -Logout
 
     # POST request to get list of users - the "pode.sid" header is expected
-    Add-PodeRoute -Method Post -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+    Add-PodeRoute -Method Post -Path '/users' -Authentication 'Login' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

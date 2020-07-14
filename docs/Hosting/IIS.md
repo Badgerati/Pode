@@ -85,9 +85,9 @@ If you decide to use IIS for Windows Authentication, then you can retrieve the a
 Start-PodeServer {
     Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
 
-    Add-PodeAuthIIS -Name 'IISAuth'
+    Add-PodeAuthIIS -Name 'IISAuth' -Sessionless
 
-    Add-PodeRoute -Method Get -Path '/test' -Middleware (Get-PodeAuthMiddleware -Name 'IISAuth' -Sessionless) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/test' -Authentication 'IISAuth' -ScriptBlock {
         param($e)
         Write-PodeJsonResponse -Value @{ User = $e.Auth.User }
     }

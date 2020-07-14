@@ -13,7 +13,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
 
     # setup bearer auth
-    New-PodeAuthType -Bearer -Scope write | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthScheme -Bearer -Scope write | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($token)
 
         # here you'd check a real user storage, this is just for example
@@ -32,7 +32,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

@@ -40,11 +40,14 @@ Start-PodeServer {
 }
 ```
 
-Where as the following example is Middleware that will only be run on requests against the `/api` route. Here, it will run Basic Authentication on every API request. You'll notice that this time we're piping  [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware), this is because it returns valid Middleware.
+Where as the following example is Middleware that will only be run on requests against the `/api` route. Here, we're just going to do something simple, which is to write a message to the console for all `/api` requests:
 
 ```powershell
 Start-PodeServer {
-    Get-PodeAuthMiddleware -Name 'Main' | Add-PodeMiddleware -Name 'GlobalApiAuthCheck' -Route '/api'
+    Add-PodeMiddleware -Name 'GlobalApiAuthCheck' -Route '/api' -ScriptBlock {
+        'Hello!' | Out-PodeHost
+        return $true
+    }
 }
 ```
 

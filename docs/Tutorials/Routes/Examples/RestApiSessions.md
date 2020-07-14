@@ -31,10 +31,10 @@ Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -UseHeader
 
 ## Authentication
 
-Once we have the Sessions enabled, we need to setup Basic Authentication - the username/password here are hardcoded, but normally you would validate against a database:
+Once we have the Sessions enabled, we need to setup Basic Authentication - the username/password here are hard-coded, but normally you would validate against some database:
 
 ```powershell
-New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
+New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
     param($username, $password)
 
     # here you'd check a real user storage, this is just for example
@@ -58,15 +58,15 @@ New-PodeAuthType -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {
 The first two routes will be two POST routes to login/logout a user. This first route will authenticate the user, and then respond back with a session in the response's `pode.sid` header:
 
 ```powershell
-Add-PodeRoute -Method Post -Path '/login' -Middleware (Get-PodeAuthMiddleware -Name 'Login')
+Add-PodeRoute -Method Post -Path '/login' -Authentication 'Login'
 ```
 
 For the login endpoint, you would the request and supply the normal `Authorization` header.
 
-The second route will require the session to be sent in the request's `pode.sid` header, and will expire and destory the session:
+The second route will require the session to be sent in the request's `pode.sid` header, and will expire and destroy the session:
 
 ```powershell
-Add-PodeRoute -Method Post -Path '/logout' -Middleware (Get-PodeAuthMiddleware -Name 'Login' -Logout)
+Add-PodeRoute -Method Post -Path '/logout' -Authentication 'Login' -Logout
 ```
 
 The first route on success will return with a 200 response, the logout route will respond with a 401 since the session no longer exists. And other routes called using the same session will also return with a 401.
@@ -76,7 +76,7 @@ The first route on success will return with a 200 response, the logout route wil
 This is a very basic POST route, but it will return a list of users if a valid `pode.sid` header has been supplied on the request:
 
 ```powershell
-Add-PodeRoute -Method Post -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+Add-PodeRoute -Method Post -Path '/users' -Authentication 'Login' -ScriptBlock {
     Write-PodeJsonResponse -Value @{
         Users = @(
             @{

@@ -12,7 +12,7 @@ Start-PodeServer {
     Enable-PodeOpenApiViewer -Type ReDoc
 
 
-    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         return @{
             User = @{
                 ID ='M0R7Y302'
@@ -35,8 +35,7 @@ Start-PodeServer {
         Add-PodeOAComponentParameter -Name 'UserId'
 
 
-    Get-PodeAuthMiddleware -Name 'Validate' -Sessionless | Add-PodeMiddleware -Name 'AuthMiddleware' -Route '/api/*'
-    Set-PodeOAGlobalAuth -Name 'Validate'
+    Add-PodeAuthMiddleware -Name AuthMiddleware -Authentication Validate -Route '/api/*'
 
 
     Add-PodeRoute -Method Get -Path "/api/resources" -EndpointName 'user' -ScriptBlock {

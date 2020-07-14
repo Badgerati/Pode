@@ -4,11 +4,11 @@ Bearer Authentication lets you authenticate a user based on a token, with option
 
 ## Setup
 
-To setup and start using Bearer Authentication in Pode you use the `New-PodeAuthType -Bearer` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token`:
+To setup and start using Bearer Authentication in Pode you use the `New-PodeAuthScheme -Bearer` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token`:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Bearer | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Bearer | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
@@ -20,11 +20,11 @@ Start-PodeServer {
 
 By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Bearer`.
 
-You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
+You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Bearer -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Bearer -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
@@ -42,7 +42,7 @@ The following will use Bearer Authentication to validate every request on every 
 
 ```powershell
 Start-PodeServer {
-    Get-PodeAuthMiddleware -Name 'Authenticate' | Add-PodeMiddleware -Name 'GlobalAuthValidation'
+    Add-PodeAuthMiddleware -Name 'GlobalAuthValidation' -Authentication 'Authenticate'
 }
 ```
 
@@ -50,7 +50,7 @@ Whereas the following example will use Bearer authentication to only validate re
 
 ```powershell
 Start-PodeServer {
-    Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Authenticate') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/info' -Authentication 'Authenticate' -ScriptBlock {
         # logic
     }
 }
@@ -65,7 +65,7 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # setup bearer authentication to validate a user
-    New-PodeAuthType -Bearer | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Bearer | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # here you'd check a real storage, this is just for example
@@ -85,7 +85,7 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (Get-PodeAuthMiddleware -Name 'Authenticate') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/cpu' -Authentication 'Authenticate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 

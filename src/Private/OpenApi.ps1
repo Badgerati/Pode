@@ -237,7 +237,7 @@ function Get-PodeOpenApiDefinitionInternal
     # auth/security components
     if ($PodeContext.Server.Authentications.Count -gt 0) {
         foreach ($authName in $PodeContext.Server.Authentications.Keys) {
-            $authType = $PodeContext.Server.Authentications[$authName].Type
+            $authType = (Find-PodeAuth -Name $authName).Type
 
             $def.components.securitySchemas[($authName -replace '\s+', '')] = @{
                 type = $authType.Scheme.ToLowerInvariant()
@@ -358,4 +358,53 @@ function Get-PodeOABaseObject
         }
         security = @()
     }
+}
+
+function Set-PodeOAAuth
+{
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    foreach ($n in @($Name)) {
+        if (!(Test-PodeAuth -Name $n)) {
+            throw "Authentication method does not exist: $($n)"
+        }
+    }
+
+    foreach ($r in @($Route)) {
+        $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
+            @{
+                "$($n -replace '\s+', '')" = @()
+            }
+        })
+    }
+}
+
+function Set-PodeOAGlobalAuth
+{
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    foreach ($n in @($Name)) {
+        if (!(Test-PodeAuth -Name $n)) {
+            throw "Authentication method does not exist: $($n)"
+        }
+    }
+
+    $PodeContext.Server.OpenAPI.security = @(foreach ($n in @($Name)) {
+        @{
+            "$($n -replace '\s+', '')" = @()
+        }
+    })
 }

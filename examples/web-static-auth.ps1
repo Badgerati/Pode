@@ -14,7 +14,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthType -Basic -Realm 'Pode Static Page' | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthScheme -Basic -Realm 'Pode Static Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -35,7 +35,7 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type Pode
 
     # STATIC asset folder route
-    Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html') -Middleware (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless)
+    Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html') -Authentication 'Validate'
     Add-PodeStaticRoute -Path '/assets/download' -Source './assets' -DownloadOnly
 
     # GET request for web page on "localhost:8085/"

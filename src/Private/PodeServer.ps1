@@ -140,7 +140,7 @@ function Start-PodeWebServer
                                         Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
                                     }
                                 }
-                                else {
+                                elseif ($null -ne $WebEvent.Route.Logic) {
                                     Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments (@($WebEvent) + @($WebEvent.Route.Arguments)) -Scoped -Splat
                                 }
                             }
