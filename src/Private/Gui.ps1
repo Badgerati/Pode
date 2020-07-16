@@ -52,7 +52,10 @@ function Start-PodeGuiRunspace
             # setup the WPF XAML for the server
             
             # Check for CefSharp and used Chromium based WPF if Modules exists
-            if(Get-Module -Name "CefSharp" -ErrorAction SilentlyContinue){
+            if(
+                # This seems to be the safest method to detect if it is loaded or not, feel free to suggest a better one
+                ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName.StartsWith("CefSharp.Wpf,") })
+            ){
                 $gui_browser = "
                 <Window
                     xmlns=`"http://schemas.microsoft.com/winfx/2006/xaml/presentation`"
