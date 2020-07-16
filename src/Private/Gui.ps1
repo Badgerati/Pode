@@ -51,7 +51,7 @@ function Start-PodeGuiRunspace
 
             # setup the WPF XAML for the server
             
-            #Check for CefSharp and used Chromium based WPF if Modules exists
+            # Check for CefSharp and used Chromium based WPF if Modules exists
             if(Get-Module -Name "CefSharp" -ErrorAction SilentlyContinue){
                 $gui_browser = "
                 <Window
