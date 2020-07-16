@@ -8,14 +8,14 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # listen on localhost:8080/8443
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http -Name Endpoint1
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Name Endpoint2
 
     # set view engine to pode
     Set-PodeViewEngine -Type Pode
 
     # GET request for web page
-    Add-PodeRoute -Method Get -Path '/' -Endpoint *:8443 -Protocol Http -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/' -EndpointName Endpoint2 -ScriptBlock {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
@@ -26,13 +26,13 @@ Start-PodeServer {
 
     # GET request with parameters
     Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
-        param($event)
-        Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
+        param($e)
+        Write-PodeJsonResponse -Value @{ 'userId' = $e.Parameters['userId'] }
     }
 
     # ALL requests for http only to redirect to https
-    Add-PodeRoute -Method * -Path * -Protocol Http {
-        Move-PodeResponseUrl -Protocol https -Port 8443
+    Add-PodeRoute -Method * -Path * -EndpointName Endpoint1 {
+        Move-PodeResponseUrl -Protocol Https -Port 8443
     }
 
 }

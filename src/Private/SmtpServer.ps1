@@ -79,7 +79,7 @@ function Start-PodeSmtpServer
                     }
 
                     # convert the ip
-                    $ip = (ConvertTo-PodeIPAddress -Endpoint $Request.RemoteEndPoint)
+                    $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
 
                     # ensure the request ip is allowed
                     if (!(Test-PodeIPAccess -IP $ip)) {

@@ -185,13 +185,13 @@ function Get-PodeEndpointInfo
     param (
         [Parameter()]
         [string]
-        $Endpoint,
+        $Address,
 
         [switch]
         $AnyPortOnZero
     )
 
-    if ([string]::IsNullOrWhiteSpace($Endpoint)) {
+    if ([string]::IsNullOrWhiteSpace($Address)) {
         return $null
     }
 
@@ -200,8 +200,8 @@ function Get-PodeEndpointInfo
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip/host:port address
-    if (!(($Endpoint -imatch "^$($cmbdRgx)$") -or ($Endpoint -imatch "^$($hostRgx)[\:]{0,1}") -or ($Endpoint -imatch "[\:]{0,1}$($portRgx)$"))) {
-        throw "Failed to parse '$($Endpoint)' as a valid IP/Host:Port address"
+    if (!(($Address -imatch "^$($cmbdRgx)$") -or ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or ($Address -imatch "[\:]{0,1}$($portRgx)$"))) {
+        throw "Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
 
     # grab the ip address/hostname
@@ -277,10 +277,10 @@ function ConvertTo-PodeIPAddress
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Endpoint
+        $Address
     )
 
-    return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Endpoint).Address.ToString())
+    return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Address).Address.ToString())
 }
 
 function Get-PodeIPAddressesForHostname
@@ -1582,7 +1582,7 @@ function Get-PodeModuleMiscPath
 
 function Get-PodeUrl
 {
-    return "$($WebEvent.Protocol)://$($WebEvent.Endpoint)$($WebEvent.Path)"
+    return "$($WebEvent.Endpoint.Protocol)://$($WebEvent.Endpoint.Address)$($WebEvent.Path)"
 }
 
 function Find-PodeErrorPage

@@ -22,7 +22,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 | ContentType | string | The content type of the data in the Request's payload |
 | Cookies | hashtable | Contains all cookies parsed from the Request's headers |
 | Data | hashtable | Contains the parsed items from the Request's payload |
-| Endpoint | string | The current endpoint being hit - such as "pode.example.com" or "127.0.0.2" |
+| Endpoint | hashtable | Contains the Address and Protocol of the endpoint being hit - such as "pode.example.com" or "127.0.0.2", or HTTP or HTTPS for the Protocol |
 | ErrorType | string | Set by the current Route being hit, this is the content type of the Error Page that will be used if an error occurs |
 | Files | hashtable | Contains any file data from the Request's payload |
 | Lockable | hashtable | A synchronized hashtable that can be used with `Lock-PodeObject` |
@@ -31,7 +31,6 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 | Parameters | hashtable | Contains the parsed parameter values from the Route's path |
 | Path | string | The current path of the Request, after the endpoint - such as "/about" |
 | PendingCookies | hashtable | Contains cookies that will be written back on the Response |
-| Protocol | string | The current protocol of the Request - HTTP or HTTPS |
 | Query | hashtable | Contains the parsed items from the Request's query string |
 | Request | object | The raw Request object |
 | Response | object | The raw Response object |

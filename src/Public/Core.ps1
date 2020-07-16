@@ -724,6 +724,11 @@ function Add-PodeEndpoint
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeEndpoint' -ThrowError
 
+    # if RedirectTo is supplied, then a Name is mandatory
+    if (![string]::IsNullOrWhiteSpace($RedirectTo) -and [string]::IsNullOrWhiteSpace($Name)) {
+        throw "A Name is required for the endpoint if the RedirectTo parameter is supplied"
+    }
+
     # are we running as IIS for HTTP/HTTPS? (if yes, force the port, address and protocol)
     $isIIS = ($PodeContext.Server.IsIIS -and (@('Http', 'Https') -icontains $Protocol))
     if ($isIIS) {
@@ -742,7 +747,7 @@ function Add-PodeEndpoint
 
     # parse the endpoint for host/port info
     $FullAddress = "$($Address):$($Port)"
-    $_endpoint = Get-PodeEndpointInfo -Endpoint $FullAddress
+    $_endpoint = Get-PodeEndpointInfo -Address $FullAddress
 
     # if a name was supplied, check it is unique
     if (!(Test-IsEmpty $Name) -and
@@ -863,9 +868,8 @@ function Add-PodeEndpoint
         }
 
         # build the redirect route
-        Add-PodeRoute -Method * -Path * -Endpoint $obj.RawAddress -Protocol $obj.Protocol -ArgumentList $redir_endpoint -ScriptBlock {
+        Add-PodeRoute -Method * -Path * -EndpointName $obj.Name -ArgumentList $redir_endpoint -ScriptBlock {
             param($e, $endpoint)
-
             $addr = Resolve-PodeValue -Check (Test-PodeIPAddressAny -IP $endpoint.Address) -TrueValue 'localhost' -FalseValue $endpoint.Address
             Move-PodeResponseUrl -Address $addr -Port $endpoint.Port -Protocol $endpoint.Protocol
         }
