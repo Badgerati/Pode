@@ -49,12 +49,19 @@ function Start-PodeGuiRunspace
             [System.Reflection.Assembly]::LoadWithPartialName('PresentationFramework') | Out-Null
             [System.Reflection.Assembly]::LoadWithPartialName('PresentationCore') | Out-Null
 
-            # setup the WPF XAML for the server
-            
-            # Check for CefSharp and used Chromium based WPF if Modules exists
-            if(
+            # Check for CefSharp
+            $loadCef = $false
+            if (
                 # This seems to be the safest method to detect if it is loaded or not, feel free to suggest a better one
                 ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName.StartsWith("CefSharp.Wpf,") })
+            ) {
+                $loadCef = $true
+            }
+
+            # setup the WPF XAML for the server          
+            # Check for CefSharp and used Chromium based WPF if Modules exists
+            if (
+                $loadCef
             ){
                 $gui_browser = "
                 <Window
@@ -113,8 +120,10 @@ function Start-PodeGuiRunspace
                 $form.WindowState = $PodeContext.Server.Gui.WindowState
             }
 
-            # get the browser object from XAML and navigate to base page
-            $form.FindName("WebBrowser").Navigate($endpoint)
+            # get the browser object from XAML and navigate to base page if Cef is not loaded
+            if(!$loadCef){
+                $form.FindName("WebBrowser").Navigate($endpoint)
+            }
 
             # display the form
             $form.ShowDialog() | Out-Null
