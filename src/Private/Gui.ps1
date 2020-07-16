@@ -50,9 +50,13 @@ function Start-PodeGuiRunspace
             [System.Reflection.Assembly]::LoadWithPartialName('PresentationCore') | Out-Null
 
             # setup the WPF XAML for the server
-            $gui_browser = "
+            
+            #Check for CefSharp and used Chromium based WPF if Modules exists
+            if(Get-Module -Name "CefSharp" -ErrorAction SilentlyContinue){
+                $gui_browser = "
                 <Window
                     xmlns=`"http://schemas.microsoft.com/winfx/2006/xaml/presentation`"
+                    xmlns:wpf=`"clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf`"
                     xmlns:x=`"http://schemas.microsoft.com/winfx/2006/xaml`"
                     Title=`"$($PodeContext.Server.Gui.Title)`"
                     Height=`"$($PodeContext.Server.Gui.Height)`"
@@ -64,8 +68,29 @@ function Start-PodeGuiRunspace
                         <Window.TaskbarItemInfo>
                             <TaskbarItemInfo />
                         </Window.TaskbarItemInfo>
-                        <WebBrowser Name=`"WebBrowser`"></WebBrowser>
+                        <Border Grid.Row=`"1`" BorderBrush=`"Gray`" BorderThickness=`"0,1`">
+                            <wpf:ChromiumWebBrowser x:Name=`"Browser`" Address=`"$endpoint`"/>
+                        </Border>
                 </Window>"
+            }else{
+                # Fall back to the IE based WPF Browser
+                $gui_browser = "
+                    <Window
+                        xmlns=`"http://schemas.microsoft.com/winfx/2006/xaml/presentation`"
+                        xmlns:x=`"http://schemas.microsoft.com/winfx/2006/xaml`"
+                        Title=`"$($PodeContext.Server.Gui.Title)`"
+                        Height=`"$($PodeContext.Server.Gui.Height)`"
+                        Width=`"$($PodeContext.Server.Gui.Width)`"
+                        ResizeMode=`"$($PodeContext.Server.Gui.ResizeMode)`"
+                        WindowStartupLocation=`"CenterScreen`"
+                        ShowInTaskbar = `"$($PodeContext.Server.Gui.ShowInTaskbar)`"
+                        WindowStyle = `"$($PodeContext.Server.Gui.WindowStyle)`">
+                            <Window.TaskbarItemInfo>
+                                <TaskbarItemInfo />
+                            </Window.TaskbarItemInfo>
+                            <WebBrowser Name=`"WebBrowser`"></WebBrowser>
+                    </Window>"
+            }
 
             # read in the XAML
             $reader = [System.Xml.XmlNodeReader]::new([xml]$gui_browser)
