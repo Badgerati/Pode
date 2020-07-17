@@ -47,17 +47,17 @@ to:
 
 Authentication underwent a hefty change in 2.0, with `Get-PodeAuthMiddleware` being removed.
 
-First, `New-PodeAuthType` has been renamed to [`New-PodeAuthScheme`] - with its `-Scheme` parameter also being renamed to `-Type`.
+First, `New-PodeAuthType` has been renamed to [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) - with its `-Scheme` parameter also being renamed to `-Type`.
 
-The old `-AutoLogin` (now just `-Login`), and `-Logout` switches, from `Get-PodeAuthMiddleware`, have been moved onto the [`Add-PodeRoute`] function. The [`Add-PodeRoute`] function now also has a new `-Authentication` parameter, which accepts the name of an Auth supplied to [`Add-PodeAuth`]; this will automatically setup authentication middleware for that route.
+The old `-AutoLogin` (now just `-Login`), and `-Logout` switches, from `Get-PodeAuthMiddleware`, have been moved onto the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function. The [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function now also has a new `-Authentication` parameter, which accepts the name of an Auth supplied to [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth); this will automatically setup authentication middleware for that route.
 
-The old `-Sessionless`, `-FailureUrl`, `-FailureMessage` and `-SuccessUrl` parameters, from `Get-PodeAuthMiddleware`, have all been moved onto the [`Add-PodeAuth`] function.
+The old `-Sessionless`, `-FailureUrl`, `-FailureMessage` and `-SuccessUrl` parameters, from `Get-PodeAuthMiddleware`, have all been moved onto the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function.
 
 The old `-EnabledFlash` switch has been removed (it's just enabled by default if sessions are enabled).
 
-There's also a new [`Add-PodeAuthMiddleware`] function, which will let you setup global authentication middleware.
+There's also a new [`Add-PodeAuthMiddleware`](../../../Functions/Authentication/Add-PodeAuthMiddleware) function, which will let you setup global authentication middleware.
 
-Furthermore, the OpenAPI functions for `Set-PodeOAAuth` and `Set-PodeOAGlobalAuth` have been removed. The new [`Add-PodeAuthMiddleware`] function and `-Authentication` parameter on [`Add-PodeRoute`] set these up for you automatically in OpenAPI.
+Furthermore, the OpenAPI functions for `Set-PodeOAAuth` and `Set-PodeOAGlobalAuth` have been removed. The new [`Add-PodeAuthMiddleware`](../../../Functions/Authentication/Add-PodeAuthMiddleware) function and `-Authentication` parameter on [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) set these up for you automatically in OpenAPI.
 
 ### Endpoint and Protocol
 
