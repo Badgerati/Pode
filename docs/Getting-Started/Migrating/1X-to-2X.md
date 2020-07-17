@@ -58,3 +58,16 @@ The old `-EnabledFlash` switch has been removed (it's just enabled by default if
 There's also a new [`Add-PodeAuthMiddleware`] function, which will let you setup global authentication middleware.
 
 Furthermore, the OpenAPI functions for `Set-PodeOAAuth` and `Set-PodeOAGlobalAuth` have been removed. The new [`Add-PodeAuthMiddleware`] function and `-Authentication` parameter on [`Add-PodeRoute`] set these up for you automatically in OpenAPI.
+
+### Endpoint and Protocol
+
+On the following functions:
+
+* `Add-PodeRoute`
+* `Add-PodeStaticRoute`
+* `Get-PodeRoute`
+* `Get-PodeStaticRoute`
+* `Remove-PodeRoute`
+* `Remove-PodeStaticRoute`
+
+The `-Endpoint` and `-Protocol` parameters have been removed in favour of `-EndpointName`.

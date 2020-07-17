@@ -908,6 +908,9 @@ Redirecting a user to a new URL, or the same URL as the Request but a different 
 .PARAMETER Url
 Redirect the user to a new URL, or a relative path.
 
+.PARAMETER EndpointName
+The Name of an Endpoint to redirect to.
+
 .PARAMETER Port
 Change the port of the current Request before redirecting.
 
@@ -935,10 +938,14 @@ Move-PodeResponseUrl -Port 9000 -Moved
 function Move-PodeResponseUrl
 {
     [CmdletBinding(DefaultParameterSetName='Url')]
-    param (
+    param(
         [Parameter(Mandatory=$true, ParameterSetName='Url')]
         [string]
         $Url,
+
+        [Parameter(ParameterSetName='Endpoint')]
+        [string]
+        $EndpointName,
 
         [Parameter(ParameterSetName='Components')]
         [int]
@@ -957,6 +964,7 @@ function Move-PodeResponseUrl
         $Moved
     )
 
+    # build the url
     if ($PSCmdlet.ParameterSetName -ieq 'components') {
         $uri = $WebEvent.Request.Url
 
@@ -983,6 +991,19 @@ function Move-PodeResponseUrl
 
         # combine to form the url
         $Url = "$($Protocol)://$($Address)$($PortStr)$($uri.PathAndQuery)"
+    }
+
+    # build the url from an endpoint
+    elseif ($PSCmdlet.ParameterSetName -ieq 'endpoint') {
+        $endpoint = Get-PodeEndpointByName -Name $EndpointName -ThrowError
+
+        # set the port
+        $PortStr = [string]::Empty
+        if (@(80, 443) -notcontains $endpoint.Port) {
+            $PortStr = ":$($endpoint.Port)"
+        }
+
+        $Url = "$($endpoint.Protocol)://$($endpoint.HostName)$($PortStr)$($WebEvent.Request.Url.PathAndQuery)"
     }
 
     Set-PodeHeader -Name 'Location' -Value $Url
