@@ -1897,7 +1897,11 @@ function Get-PodeWildcardFiles
 
         [Parameter()]
         [string]
-        $Wildcard = '*.*'
+        $Wildcard = '*.*',
+
+        [Parameter()]
+        [string]
+        $RootPath
     )
 
     # if the OriginalPath is a directory, add wildcard
@@ -1907,7 +1911,7 @@ function Get-PodeWildcardFiles
 
     # if path has a *, assume wildcard
     if (Test-PodePathIsWildcard -Path $Path) {
-        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+        $Path = Get-PodeRelativePath -Path $Path -RootPath $RootPath -JoinRoot
         return @((Get-ChildItem $Path -Recurse -Force).FullName)
     }
 

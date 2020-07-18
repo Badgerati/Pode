@@ -409,9 +409,6 @@ The name of a globally installed Module, or one within the ps_modules directory,
 .PARAMETER Path
 The path, literal or relative, to a Module to import.
 
-.PARAMETER Now
-Import the Module now, into the current runspace.
-
 .EXAMPLE
 Import-PodeModule -Name IISManager
 
@@ -421,23 +418,26 @@ Import-PodeModule -Path './modules/utilities.psm1'
 function Import-PodeModule
 {
     [CmdletBinding(DefaultParameterSetName='Name')]
-    param (
+    param(
         [Parameter(Mandatory=$true, ParameterSetName='Name')]
         [string]
         $Name,
 
         [Parameter(Mandatory=$true, ParameterSetName='Path')]
         [string]
-        $Path,
-
-        [switch]
-        $Now
+        $Path
     )
+
+    # script root path
+    $rootPath = $null
+    if ($null -eq $PodeContext) {
+        $rootPath = (Protect-PodeValue -Value $MyInvocation.PSScriptRoot -Default $pwd.Path)
+    }
 
     # get the path of a module, or import modules on mass
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'name' {
-            $modulePath = Join-PodeServerRoot -Folder (Join-PodePaths @('ps_modules', $Name))
+            $modulePath = Join-PodeServerRoot -Folder (Join-PodePaths @('ps_modules', $Name)) -Root $rootPath
             if (Test-PodePath -Path $modulePath -NoStatus) {
                 $Path = (Get-ChildItem (Join-PodePaths @($modulePath, '*', "$($Name).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
             }
@@ -447,11 +447,11 @@ function Import-PodeModule
         }
 
         'path' {
-            $Path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
-            $paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps*1'
+            $Path = Get-PodeRelativePath -Path $Path -RootPath $rootPath -JoinRoot -Resolve
+            $paths = Get-PodeWildcardFiles -Path $Path -RootPath $rootPath -Wildcard '*.ps*1'
             if (!(Test-IsEmpty $paths)) {
                 foreach ($_path in $paths) {
-                    Import-PodeModule -Path $_path -Now:$Now
+                    Import-PodeModule -Path $_path
                 }
 
                 return
@@ -469,14 +469,7 @@ function Import-PodeModule
         throw "The module path does not exist: $(Protect-PodeValue -Value $Path -Default $Name)"
     }
 
-    # import the module into the runspace state
-    $PodeContext.RunspaceState.ImportPSModule($Path)
-
-    # import the module now, if specified
-    if ($Now) {
-        Write-Verbose "Importing module now: $($Path)"
-        Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
-    }
+    Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
 }
 
 <#

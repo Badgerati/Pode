@@ -279,9 +279,11 @@ function New-PodeContext
 
 function New-PodeRunspaceState
 {
+    # create the state, and add the pode module
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule($PodeContext.Server.PodeModulePath)
 
+    # load the vars into the share state
     $session = New-PodeStateContext -Context $PodeContext
 
     $variables = @(
@@ -295,6 +297,19 @@ function New-PodeRunspaceState
     }
 
     $PodeContext.RunspaceState = $state
+}
+
+function Import-PodeModulesIntoRunspaceState
+{
+    (Get-Module | Where-Object { ($_.ModuleType -ieq 'script') -and ($_.Name -ine 'pode') }).Name |
+        Sort-Object -Unique |
+        ForEach-Object {
+            $_path = (Get-Module -Name $_ |
+                Sort-Object -Property Version -Descending |
+                Select-Object -First 1 -ExpandProperty Path)
+
+            $PodeContext.RunspaceState.ImportPSModule($_path)
+        }
 }
 
 function New-PodeRunspacePools

@@ -22,6 +22,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Start-PodeTcpServer { }
     Mock Start-PodeWebServer { }
     Mock Start-PodeServiceServer { }
+    Mock Import-PodeModulesIntoRunspaceState { }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Type = ([string]::Empty); Logic = {} }

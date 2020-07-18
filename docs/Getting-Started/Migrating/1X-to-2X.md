@@ -71,3 +71,9 @@ On the following functions:
 * `Remove-PodeStaticRoute`
 
 The `-Endpoint` and `-Protocol` parameters have been removed in favour of `-EndpointName`.
+
+### Modules
+
+You can now use `Import-Module` just normally import any modules, and Pode will automatically load these into its runspaces.
+
+[`Import-PodeModule`](../../../Functions/Utilities/Import-PodeModule) still exists, as it supports the use of local modules in `ps_modules`. The only difference is that the `-Now` switch has been removed, and you can now use [`Import-PodeModule`](../../../Functions/Utilities/Import-PodeModule) outside of the [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) block.

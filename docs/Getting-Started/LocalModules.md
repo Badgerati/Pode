@@ -59,4 +59,6 @@ package.json
 
 ## Importing
 
-When the modules have been downloaded, you can utilise them using the  [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) function.
+When the modules have been downloaded, you can import them using the [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) function.
+
+Unlike `Import-Module`, [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) will check if some module is within the `ps_modules` directory first, then it will check the global modules.

@@ -24,6 +24,9 @@ function Start-PodeInternalServer
 
         Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
 
+        # load any modules
+        Import-PodeModulesIntoRunspaceState
+
         # start the runspace pools for web, schedules, etc
         New-PodeRunspacePools
         Open-PodeRunspacePools
