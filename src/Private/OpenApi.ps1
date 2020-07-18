@@ -202,7 +202,7 @@ function Get-PodeOpenApiDefinitionInternal
         $Protocol,
 
         [Parameter()]
-        $Endpoint,
+        $Address,
 
         [switch]
         $RestrictRoutes
@@ -262,7 +262,7 @@ function Get-PodeOpenApiDefinitionInternal
             # the current route
             $_routes = @($PodeContext.Server.Routes[$method][$path])
             if ($RestrictRoutes) {
-                $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -Protocol $Protocol -Endpoint $Endpoint)
+                $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -Protocol $Protocol -Address $Address)
             }
 
             # continue if no routes
@@ -298,7 +298,7 @@ function Get-PodeOpenApiDefinitionInternal
 
             # add any custom server endpoints for route
             foreach ($_route in $_routes) {
-                if ([string]::IsNullOrWhiteSpace($_route.Endpoint) -or ($_route.Endpoint -ieq '*:*')) {
+                if ([string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -or ($_route.Endpoint.Address -ieq '*:*')) {
                     continue
                 }
 
@@ -307,7 +307,7 @@ function Get-PodeOpenApiDefinitionInternal
                 }
 
                 $def.paths[$_route.OpenApi.Path][$method].servers += @{
-                    url = "$($_route.Protocol)://$($_route.Endpoint)"
+                    url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
                 }
             }
         }

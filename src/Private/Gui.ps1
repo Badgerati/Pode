@@ -20,14 +20,14 @@ function Start-PodeGuiRunspace
             }
 
             # get the endpoint on which we're currently listening, or use explicitly passed one
-            $endpoint = (Get-PodeEndpointUrl -Endpoint $PodeContext.Server.Gui.Endpoint)
+            $uri = (Get-PodeEndpointUrl -Endpoint $PodeContext.Server.Gui.Endpoint)
 
             # poll the server for a response
             $count = 0
 
             while ($true) {
                 try {
-                    Invoke-WebRequest -Method Get -Uri $endpoint -UseBasicParsing -ErrorAction Stop | Out-Null
+                    Invoke-WebRequest -Method Get -Uri $uri -UseBasicParsing -ErrorAction Stop | Out-Null
                     if (!$?) {
                         throw
                     }
@@ -40,7 +40,7 @@ function Start-PodeGuiRunspace
                         Start-Sleep -Milliseconds 200
                     }
                     else {
-                        throw "Failed to connect to URL: $($endpoint)"
+                        throw "Failed to connect to URL: $($uri)"
                     }
                 }
             }
@@ -86,7 +86,7 @@ function Start-PodeGuiRunspace
             }
 
             # get the browser object from XAML and navigate to base page
-            $form.FindName("WebBrowser").Navigate($endpoint)
+            $form.FindName("WebBrowser").Navigate($uri)
 
             # display the form
             $form.ShowDialog() | Out-Null
