@@ -1,5 +1,4 @@
-function Start-PodeGuiRunspace
-{
+function Start-PodeGuiRunspace {
     # do nothing if gui not enabled, or running as serverless
     if (!$PodeContext.Server.Gui.Enabled -or
         $PodeContext.Server.IsServerless -or
@@ -9,11 +8,9 @@ function Start-PodeGuiRunspace
     }
 
     $script = {
-        try
-        {
+        try {
             # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
-            if ($null -eq $PodeContext.Server.Gui.Endpoint)
-            {
+            if ($null -eq $PodeContext.Server.Gui.Endpoint) {
                 if (($PodeContext.Server.Endpoints | Measure-Object).Count -gt 1) {
                     Write-PodeHost "Multiple endpoints defined, only the first will be used for the GUI" -ForegroundColor Yellow
                 }
@@ -50,19 +47,11 @@ function Start-PodeGuiRunspace
             [System.Reflection.Assembly]::LoadWithPartialName('PresentationCore') | Out-Null
 
             # Check for CefSharp
-            $loadCef = $false
-            if (
-                # This seems to be the safest method to detect if it is loaded or not, feel free to suggest a better one
-                ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName.StartsWith("CefSharp.Wpf,") })
-            ) {
-                $loadCef = $true
-            }
+            $loadCef = [bool]([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName.StartsWith("CefSharp.Wpf,") })
 
             # setup the WPF XAML for the server          
             # Check for CefSharp and used Chromium based WPF if Modules exists
-            if (
-                $loadCef
-            ){
+            if ($loadCef) {
                 $gui_browser = "
                 <Window
                     xmlns=`"http://schemas.microsoft.com/winfx/2006/xaml/presentation`"
@@ -82,7 +71,8 @@ function Start-PodeGuiRunspace
                             <wpf:ChromiumWebBrowser x:Name=`"Browser`" Address=`"$endpoint`"/>
                         </Border>
                 </Window>"
-            }else{
+            }
+            else {
                 # Fall back to the IE based WPF Browser
                 $gui_browser = "
                     <Window
@@ -121,7 +111,7 @@ function Start-PodeGuiRunspace
             }
 
             # get the browser object from XAML and navigate to base page if Cef is not loaded
-            if(!$loadCef){
+            if (!$loadCef) {
                 $form.FindName("WebBrowser").Navigate($endpoint)
             }
 
