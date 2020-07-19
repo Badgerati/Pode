@@ -3,7 +3,8 @@
 Normally in Pode you define a server and run it, however if you use the [`Show-PodeGui`](../../../Functions/Core/Show-PodeGui) function Pode will serve the server up as a desktop application.
 
 !!! warning
-Currently only supported in Windows PowerShell, and PowerShell 7 on Windows due to using WPF.
+    Currently only supported in Windows PowerShell, and PowerShell 7 on Windows due to using WPF.
+
 
 ## Setting Server to run as Application
 
@@ -52,7 +53,7 @@ exit
 
 ## Using Chromium instead of Internet Explorer
 
-The default WPF Browser Element used by Pode is based on the system internal Internet Explorer API which is also bound to the same Javascript and Webbrowser Limitations as Internet Explorer itself.
+The default WPF Browser Element used by Pode is based on the system internal Internet Explorer API, which is also bound to the same Javascript and Webbrowser Limitations as Internet Explorer itself.
 
 To utilize Chromium in WPF, Pode offers support for CefSharp which adds a Chromium Web Element to WPF.
 In order to switch to [`CefSharp`](http://cefsharp.github.io/), either compile or download its precompiled binaries.
