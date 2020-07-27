@@ -52,7 +52,7 @@ function Start-PodeTcpServer
                 $client = (Wait-PodeTask -Task $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
-                $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
+                $ip = (ConvertTo-PodeIPAddress -Address $client.Client.RemoteEndPoint)
 
                 # ensure the request ip is allowed and deal with the tcp call
                 if ((Test-PodeIPAccess -IP $ip) -and (Test-PodeIPLimit -IP $ip)) {

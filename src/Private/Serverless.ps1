@@ -36,8 +36,10 @@ function Start-PodeAzFuncServer
                 Lockable = $PodeContext.Lockable
                 Method = $request.Method.ToLowerInvariant()
                 Query = $request.Query
-                Protocol = ($request.Url -split '://')[0]
-                Endpoint = $null
+                Endpoint = @{
+                    Protocol = ($request.Url -split '://')[0]
+                    Address = $null
+                }
                 ContentType = $null
                 ErrorType = $null
                 Cookies = @{}
@@ -49,7 +51,7 @@ function Start-PodeAzFuncServer
                 Timestamp = [datetime]::UtcNow
             }
 
-            $WebEvent.Endpoint = ((Get-PodeHeader -Name 'host') -split ':')[0]
+            $WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'host') -split ':')[0]
             $WebEvent.ContentType = (Get-PodeHeader -Name 'content-type')
 
             # set the path, using static content query parameter if passed
@@ -147,8 +149,10 @@ function Start-PodeAwsLambdaServer
                 Path = [System.Web.HttpUtility]::UrlDecode($request.path)
                 Method = $request.httpMethod.ToLowerInvariant()
                 Query = $request.queryStringParameters
-                Protocol = $null
-                Endpoint = $null
+                Endpoint = @{
+                    Protocol = $null
+                    Address = $null
+                }
                 ContentType = $null
                 ErrorType = $null
                 Cookies = @{}
@@ -159,8 +163,8 @@ function Start-PodeAwsLambdaServer
                 Timestamp = [datetime]::UtcNow
             }
 
-            $WebEvent.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
-            $WebEvent.Endpoint = ((Get-PodeHeader -Name 'Host') -split ':')[0]
+            $WebEvent.Endpoint.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
+            $WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'Host') -split ':')[0]
             $WebEvent.ContentType = (Get-PodeHeader -Name 'Content-Type')
 
             # set pode in server response header

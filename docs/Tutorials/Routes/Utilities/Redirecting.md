@@ -30,20 +30,20 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8086 -Protocol HTTPS
 
     Add-PodeRoute -Method Get -Path '/redirect' -ScriptBlock {
-        Move-PodeResponseUrl -Port 8086 -Protocol https
+        Move-PodeResponseUrl -Port 8086 -Protocol Https
     }
 }
 ```
 
-This final example will redirect every HTTP request, on every action and route, to https:
+This final example will redirect every HTTP request, on every action and route, to HTTPS:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http -Name EndpointHttp
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Name EndpointHttps
 
-    Add-PodeRoute -Method * -Path * -Protocol Http -ScriptBlock {
-        Move-PodeResponseUrl -Port 8443 -Protocol https
+    Add-PodeRoute -Method * -Path * -EndpointName EndpointHttp -ScriptBlock {
+        Move-PodeResponseUrl -Port 8443 -Protocol Https
     }
 }
 ```

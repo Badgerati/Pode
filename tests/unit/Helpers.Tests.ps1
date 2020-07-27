@@ -254,14 +254,14 @@ Describe 'Test-PodeIPAddress' {
 Describe 'ConvertTo-PodeIPAddress' {
     Context 'Null values' {
         It 'Throws error for null' {
-            { ConvertTo-PodeIPAddress -Endpoint $null } | Should Throw 'the argument is null'
+            { ConvertTo-PodeIPAddress -Address $null } | Should Throw 'the argument is null'
         }
     }
 
     Context 'Valid parameters' {
         It 'Returns IPAddress from IPEndpoint' {
             $_a = [System.Net.IPAddress]::Parse('127.0.0.1')
-            $addr = ConvertTo-PodeIPAddress -Endpoint ([System.Net.IPEndpoint]::new($_a, 8080))
+            $addr = ConvertTo-PodeIPAddress -Address ([System.Net.IPEndpoint]::new($_a, 8080))
             $addr | Should Not Be $null
             $addr.ToString() | Should Be '127.0.0.1'
         }
@@ -269,7 +269,7 @@ Describe 'ConvertTo-PodeIPAddress' {
         It 'Returns IPAddress from Endpoint' {
             $_a = [System.Net.IPAddress]::Parse('127.0.0.1')
             $_a = [System.Net.IPEndpoint]::new($_a, 8080)
-            $addr = ConvertTo-PodeIPAddress -Endpoint ([System.Net.Endpoint]$_a)
+            $addr = ConvertTo-PodeIPAddress -Address ([System.Net.Endpoint]$_a)
             $addr | Should Not Be $null
             $addr.ToString() | Should Be '127.0.0.1'
         }
@@ -778,19 +778,19 @@ Describe 'Join-PodePaths' {
 
 Describe 'Get-PodeEndpointInfo' {
     It 'Returns null for no endpoint' {
-        Get-PodeEndpointInfo -Endpoint ([string]::Empty) | Should Be $null
+        Get-PodeEndpointInfo -Address ([string]::Empty) | Should Be $null
     }
 
     It 'Throws an error for an invalid IP endpoint' {
-        { Get-PodeEndpointInfo -Endpoint '700.0.0.a' } | Should Throw 'Failed to parse'
+        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should Throw 'Failed to parse'
     }
 
     It 'Throws an error for an out-of-range IP endpoint' {
-        { Get-PodeEndpointInfo -Endpoint '700.0.0.0' } | Should Throw 'The IP address supplied is invalid'
+        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should Throw 'The IP address supplied is invalid'
     }
 
     It 'Throws an error for an invalid Hostname endpoint' {
-        { Get-PodeEndpointInfo -Endpoint '@test.host.com' } | Should Throw 'Failed to parse'
+        { Get-PodeEndpointInfo -Address '@test.host.com' } | Should Throw 'Failed to parse'
     }
 }
 
@@ -881,9 +881,11 @@ Describe 'ConvertFrom-PodeNameValueToHashTable' {
 Describe 'Get-PodeUrl' {
     It 'Returns a url from the web event' {
         $WebEvent = @{
-            'Protocol' = 'http';
-            'Endpoint' = 'foo.com/';
-            'Path' = 'about'
+            Endpoint = @{
+                Protocol = 'http'
+                Address = 'foo.com/';
+            }
+            Path = 'about'
         }
 
         Get-PodeUrl | Should Be 'http://foo.com/about'

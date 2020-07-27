@@ -96,8 +96,10 @@ function Start-PodeWebServer
                             Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
                             Method = $Request.HttpMethod.ToLowerInvariant()
                             Query = $null
-                            Protocol = $Request.Url.Scheme
-                            Endpoint = $Request.Host
+                            Endpoint = @{
+                                Protocol = $Request.Url.Scheme
+                                Address = $Request.Host
+                            }
                             ContentType = $Request.ContentType
                             ErrorType = $null
                             Cookies = @{}

@@ -151,9 +151,9 @@ function Get-PodeRouteValidateMiddleware
             param($e)
 
             # check if the path is static route first, then check the main routes
-            $route = Find-PodeStaticRoute -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+            $route = Find-PodeStaticRoute -Path $e.Path -Protocol $e.Endpoint.Protocol -Address $e.Endpoint.Address
             if ($null -eq $route) {
-                $route = Find-PodeRoute -Method $e.Method -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint -CheckWildMethod
+                $route = Find-PodeRoute -Method $e.Method -Path $e.Path -Protocol $e.Endpoint.Protocol -Address $e.Endpoint.Address -CheckWildMethod
             }
 
             # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
@@ -161,7 +161,7 @@ function Get-PodeRouteValidateMiddleware
                 # check if a route exists for another method
                 $methods = @('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
                 $diff_route = @(foreach ($method in $methods) {
-                    $r = Find-PodeRoute -Method $method -Path $e.Path -Protocol $e.Protocol -Endpoint $e.Endpoint
+                    $r = Find-PodeRoute -Method $method -Path $e.Path -Protocol $e.Endpoint.Protocol -Address $e.Endpoint.Address
                     if ($null -ne $r) {
                         $r
                         break
