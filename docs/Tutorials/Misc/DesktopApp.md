@@ -60,6 +60,13 @@ In order to switch to [`CefSharp`](http://cefsharp.github.io/), either compile o
 
 Pode will automatically switch to CefSharp, if the binaries are loaded into the Powershell Session before the Pode Module itself gets initialized.
 
+The required packages are the following and can be compiled from scratch or downloaded from the Nuget Repository:
+```
+[`cef.redist.x64`](https://www.nuget.org/packages/cef.redist.x64/)
+[`cefsharp.common`](https://www.nuget.org/packages/cefsharp.common)
+[`cefsharp.wpf`](https://www.nuget.org/packages/cefsharp.wpf)
+```
+
 This example shows how to load them:
 
 ```Powershell
