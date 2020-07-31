@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.8.2
+
+```plain
+### Bugs
+* #594: Add `Import-PodeSnapIn` to FunctionsToExport list
+```
+
 ## v1.8.1
 
 ```plain
