@@ -96,6 +96,7 @@
         'Get-PodeConfig',
         'Add-PodeEndware',
         'Import-PodeModule',
+        'Import-PodeSnapIn',
         'Protect-PodeValue',
         'Resolve-PodeValue',
         'Invoke-PodeScriptBlock',
