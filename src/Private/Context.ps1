@@ -301,6 +301,7 @@ function New-PodeRunspaceState
 
 function Import-PodeModulesIntoRunspaceState
 {
+    # load modules into runspaces
     (Get-Module | Where-Object { ($_.ModuleType -ieq 'script') -and ($_.Name -ine 'pode') }).Name |
         Sort-Object -Unique |
         ForEach-Object {
@@ -314,6 +315,12 @@ function Import-PodeModulesIntoRunspaceState
 
 function Import-PodeSnapInsIntoRunspaceState
 {
+    # if non-windows or core, do nothing
+    if ((Test-IsPSCore) -or (Test-IsUnix)) {
+        return
+    }
+
+    # load snapins into runspaces
     (Get-PSSnapin | Where-Object { !$_.IsDefault }).Name |
         Sort-Object -Unique |
         ForEach-Object {
