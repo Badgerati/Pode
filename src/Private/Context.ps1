@@ -312,6 +312,16 @@ function Import-PodeModulesIntoRunspaceState
         }
 }
 
+function Import-PodeSnapInsIntoRunspaceState
+{
+    (Get-PSSnapin | Where-Object { !$_.IsDefault }).Name |
+        Sort-Object -Unique |
+        ForEach-Object {
+            $exp = $null
+            $PodeContext.RunspaceState.ImportPSSnapIn($_, ([ref]$exp))
+        }
+}
+
 function New-PodeRunspacePools
 {
     if ($PodeContext.Server.IsServerless) {

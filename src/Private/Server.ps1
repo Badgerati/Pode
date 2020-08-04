@@ -26,6 +26,7 @@ function Start-PodeInternalServer
 
         # load any modules
         Import-PodeModulesIntoRunspaceState
+        Import-PodeSnapInsIntoRunspaceState
 
         # start the runspace pools for web, schedules, etc
         New-PodeRunspacePools

@@ -482,9 +482,6 @@ Imports a SnapIn into the current, and all runspaces that Pode uses.
 .PARAMETER Name
 The name of a SnapIn to import.
 
-.PARAMETER Now
-Import the SnapIn now, into the current runspace.
-
 .EXAMPLE
 Import-PodeSnapIn -Name 'WDeploySnapin3.0'
 #>
@@ -494,10 +491,7 @@ function Import-PodeSnapIn
     param (
         [Parameter(Mandatory=$true)]
         [string]
-        $Name,
-
-        [switch]
-        $Now
+        $Name
     )
 
     # if non-windows or core, fail
@@ -505,14 +499,8 @@ function Import-PodeSnapIn
         throw 'SnapIns are only supported on Windows PowerShell'
     }
 
-    # import the snap-in into the runspace state
-    $exp = $null
-    $PodeContext.RunspaceState.ImportPSSnapIn($Name, ([ref]$exp))
-
-    # import the snap-in now, if specified
-    if ($Now) {
-        Add-PSSnapin -Name $Name | Out-Null
-    }
+    # import the snap-in
+    Add-PSSnapin -Name $Name | Out-Null
 }
 
 <#

@@ -1,11 +1,8 @@
 # Importing Modules/SnapIns
 
-Modules in Pode have recently undergone a change, making them easier to use with Pode's many runspaces. This change means you can use the normal `Import-Module` at the top of your scripts, and Pode will automatically import them into its runspaces.
+Modules/SnapIns in Pode have recently undergone a change, making them easier to use with Pode's many runspaces. This change means you can use the normal `Import-Module`/`Add-Snapin` at the top of your scripts, and Pode will automatically import them into its runspaces.
 
-Snap-ins still suffer from the same runspace issue, meaning you still have to use the [`Import-PodeSnapIn`](../../Functions/Utilities/Import-PodeSnapIn) function to declare paths/names of snap-ins that need to be imported into all of the runspaces.
-
-
-Because Pode runs most things in isolated runspaces, importing and using modules or snap-ins can be quite bothersome. To overcome this, you can use the [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) or [`Import-PodeSnapIn`](../../Functions/Utilities/Import-PodeSnapIn) functions to declare paths/names of modules or snap-ins that need to be imported into all of the runspaces.
+The older [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) and [`Import-PodeSnapIn`](../../Functions/Utilities/Import-PodeSnapIn) still exist - but now mostly just directly call the main module/snapin functions.
 
 !!! important
     Snap-ins are only supported in Windows PowerShell.
@@ -43,7 +40,8 @@ Import-Module -Name EPS
 The following example will tell Pode to import the `WDeploySnapin3.0` snap-in into all runspaces:
 
 ```powershell
-Start-PodeServer {
-    Import-PodeSnapIn -Name 'WDeploySnapin3.0'
-}
+Import-PodeSnapIn -Name 'WDeploySnapin3.0'
+
+# or just:
+Add-Snapin -Name 'WDeploySnapin3.0'
 ```
