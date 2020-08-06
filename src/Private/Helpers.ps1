@@ -2122,8 +2122,8 @@ function Get-PodeScriptFunctions
 
     # get each function in the callstack
     $callstack = Get-PSCallStack
-    if ($callstack.Count -gt 1) {
-        $callstack = ($callstack | Select-Object -Skip 2)
+    if ($callstack.Count -gt 3) {
+        $callstack = ($callstack | Select-Object -Skip 4)
         $flags = [System.Reflection.BindingFlags]'NonPublic, Instance, Static'
 
         foreach ($call in $callstack)
