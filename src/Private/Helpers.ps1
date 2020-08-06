@@ -2075,3 +2075,68 @@ function Convert-PodeQueryStringToHashTable
     $tmpQuery = [System.Web.HttpUtility]::ParseQueryString($Uri)
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 }
+
+function Get-PodeScriptUsingVariables
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $true)
+}
+
+function Get-PodeScriptFunctions
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # functions that have been found
+    $found = @{}
+
+    # quick function for getting functions from a scriptblock
+    function Get-PodeFunctionsFromScriptBlock
+    {
+        param(
+            [Parameter(Mandatory=$true)]
+            [scriptblock]
+            $ScriptBlock
+        )
+
+        $_funcs = @(($ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)))
+
+        foreach ($_func in $_funcs) {
+            if ($null -eq $_func) {
+                continue
+            }
+
+            if (!$found.ContainsKey($_func.Name)) {
+                $found[$_func.Name] = "$($_func.Body)"
+            }
+        }
+    }
+
+    # get each function in the callstack
+    $callstack = Get-PSCallStack
+    if ($callstack.Count -gt 1) {
+        $callstack = ($callstack | Select-Object -Skip 2)
+        $flags = [System.Reflection.BindingFlags]'NonPublic, Instance, Static'
+
+        foreach ($call in $callstack)
+        {
+            $_funcContext = $call.GetType().GetProperty('FunctionContext', $flags).GetValue($call, $null)
+            $_scriptBlock = $_funcContext.GetType().GetField('_scriptBlock', $flags).GetValue($_funcContext)
+            Get-PodeFunctionsFromScriptBlock -ScriptBlock $_scriptBlock
+        }
+    }
+
+    # get each function from the main script
+    Get-PodeFunctionsFromScriptBlock -ScriptBlock $ScriptBlock
+
+    # return the found functions
+    return $found
+}

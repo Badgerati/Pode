@@ -299,6 +299,22 @@ function New-PodeRunspaceState
     $PodeContext.RunspaceState = $state
 }
 
+function Import-PodeFunctionsIntoRunspaceState
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    $funcs = Get-PodeScriptFunctions -ScriptBlock $ScriptBlock
+
+    foreach ($funcName in $funcs.Keys) {
+        $funcDef = [System.Management.Automation.Runspaces.SessionStateFunctionEntry]::new($funcName, $funcs[$funcName].Trim('{}'))
+        $PodeContext.RunspaceState.Commands.Add($funcDef)
+    }
+}
+
 function Import-PodeModulesIntoRunspaceState
 {
     # load modules into runspaces

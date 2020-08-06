@@ -24,6 +24,9 @@ function Start-PodeInternalServer
 
         Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
 
+        # load any functions
+        Import-PodeFunctionsIntoRunspaceState -ScriptBlock $_script
+
         # load any modules
         Import-PodeModulesIntoRunspaceState
         Import-PodeSnapInsIntoRunspaceState
