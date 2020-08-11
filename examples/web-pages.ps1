@@ -93,6 +93,7 @@ Start-PodeServer -Threads 2 {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every hello route' }
     }
 
+    $hmm = 'well well'
     Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/route_script.ps1'
 
 }

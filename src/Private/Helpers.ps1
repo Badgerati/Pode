@@ -2076,6 +2076,34 @@ function Convert-PodeQueryStringToHashTable
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 }
 
+function Invoke-PodeUsingScriptConversion
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.SessionState]
+        $PSSession
+    )
+
+    # get any using variables
+    $usingVars = Get-PodeScriptUsingVariables -ScriptBlock $ScriptBlock
+    if (Test-IsEmpty $usingVars) {
+        return @($ScriptBlock, $null)
+    }
+
+    # convert any using vars to use new names
+    $usingVars = ConvertTo-PodeUsingVariables -UsingVariables $usingVars -PSSession $PSSession
+
+    # now convert the script
+    $newScriptBlock = ConvertTo-PodeUsingScript -ScriptBlock $ScriptBlock -UsingVariables $usingVars
+
+    # return converted script
+    return @($newScriptBlock, $usingVars)
+}
+
 function Get-PodeScriptUsingVariables
 {
     param(
@@ -2084,7 +2112,79 @@ function Get-PodeScriptUsingVariables
         $ScriptBlock
     )
 
-    return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $true)
+    return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $false)
+}
+
+function ConvertTo-PodeUsingVariables
+{
+    param(
+        [Parameter()]
+        $UsingVariables,
+
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.SessionState]
+        $PSSession
+    )
+
+    if (Test-IsEmpty $UsingVariables) {
+        return $null
+    }
+
+    $singleUsingVars = ($UsingVariables | Group-Object SubExpression | ForEach-Object { $_.Group | Select-Object -First 1 })
+
+    return @(foreach ($usingVar in $singleUsingVars) {
+        $value = $PSSession.PSVariable.Get($usingVar.SubExpression.VariablePath.UserPath)
+        if ([string]::IsNullOrEmpty($value)) {
+            throw "Variable for `$using:$($usingVar.SubExpression.VariablePath.UserPath) could not be found: $($value)"
+        }
+
+        @{
+            OldName = $usingVar.SubExpression.Extent.Text
+            NewName = "__using_$($usingVar.SubExpression.VariablePath.UserPath)"
+            NewNameWithDollar = "`$__using_$($usingVar.SubExpression.VariablePath.UserPath)"
+            SubExpression = $usingVar.SubExpression
+            Value = $value.Value
+        }
+    })
+}
+
+function ConvertTo-PodeUsingScript
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [hashtable[]]
+        $UsingVariables
+    )
+
+    # return original script if no using vars
+    if (Test-IsEmpty $UsingVariables) {
+        return $ScriptBlock
+    }
+
+    $varsList = New-Object 'System.Collections.Generic.List`1[System.Management.Automation.Language.VariableExpressionAst]'
+    $newParams = New-Object System.Collections.ArrayList
+
+    foreach ($usingVar in $UsingVariables) {
+        $varsList.Add($usingVar.SubExpression) | Out-Null
+    }
+
+    $newParams.AddRange(@($UsingVariables.NewNameWithDollar))
+    $newParams = ($newParams -join ', ')
+    $tupleParams = [tuple]::Create($varsList, $newParams)
+
+    $bindingFlags = [System.Reflection.BindingFlags]'Default, NonPublic, Instance'
+    $_varReplacerMethod = $ScriptBlock.Ast.GetType().GetMethod('GetWithInputHandlingForInvokeCommandImpl', $bindingFlags)
+    $convertedScriptBlock = $_varReplacerMethod.Invoke($ScriptBlock.Ast, @($tupleParams))
+
+    if (!$ScriptBlock.Ast.ParamBlock) {
+        $convertedScriptBlock = "param($($newParams))`n$($convertedScriptBlock)"
+    }
+
+    return [scriptblock]::Create($convertedScriptBlock)
 }
 
 function Get-PodeScriptFunctions
@@ -2114,6 +2214,10 @@ function Get-PodeScriptFunctions
                 continue
             }
 
+            if ($_func.Name -ilike '*-Pode*') {
+                continue
+            }
+
             if (!$found.ContainsKey($_func.Name)) {
                 $found[$_func.Name] = "$($_func.Body)"
             }
@@ -2124,12 +2228,12 @@ function Get-PodeScriptFunctions
     $callstack = Get-PSCallStack
     if ($callstack.Count -gt 3) {
         $callstack = ($callstack | Select-Object -Skip 4)
-        $flags = [System.Reflection.BindingFlags]'NonPublic, Instance, Static'
+        $bindingFlags = [System.Reflection.BindingFlags]'NonPublic, Instance, Static'
 
         foreach ($call in $callstack)
         {
-            $_funcContext = $call.GetType().GetProperty('FunctionContext', $flags).GetValue($call, $null)
-            $_scriptBlock = $_funcContext.GetType().GetField('_scriptBlock', $flags).GetValue($_funcContext)
+            $_funcContext = $call.GetType().GetProperty('FunctionContext', $bindingFlags).GetValue($call, $null)
+            $_scriptBlock = $_funcContext.GetType().GetField('_scriptBlock', $bindingFlags).GetValue($_funcContext)
             Get-PodeFunctionsFromScriptBlock -ScriptBlock $_scriptBlock
         }
     }

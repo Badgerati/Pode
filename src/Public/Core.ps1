@@ -1104,6 +1104,9 @@ function Add-PodeTimer
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # calculate the next tick time (based on Skip)
     $NextTriggerTime = [DateTime]::Now.AddSeconds($Interval)
     if ($Skip -gt 1) {
@@ -1119,6 +1122,7 @@ function Add-PodeTimer
         Skip = $Skip
         NextTriggerTime = $NextTriggerTime
         Script = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = $ArgumentList
         OnStart = $OnStart
         Completed = $false
@@ -1420,6 +1424,9 @@ function Add-PodeSchedule
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # add the schedule
     $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
     $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime
@@ -1434,6 +1441,7 @@ function Add-PodeSchedule
         Count = 0
         NextTriggerTime = $nextTrigger
         Script = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart = $OnStart
         Completed = ($null -eq $nextTrigger)

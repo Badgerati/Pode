@@ -155,6 +155,9 @@ function Add-PodeRoute
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware)
 
@@ -184,6 +187,7 @@ function Add-PodeRoute
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
         @{
             Logic = $ScriptBlock
+            UsingVariables = $usingVars
             Middleware = $Middleware
             Authentication = $Authentication
             Endpoint = @{
