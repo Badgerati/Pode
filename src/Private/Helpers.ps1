@@ -2088,6 +2088,19 @@ function Invoke-PodeUsingScriptConversion
         $PSSession
     )
 
+    # rename any __using_ vars for inner timers, etcs
+    $scriptStr = "$($ScriptBlock)"
+    $foundInnerUsing = $false
+
+    while ($scriptStr -imatch '(?<full>\$__using_(?<name>[a-z0-9_\?]+))') {
+        $foundInnerUsing = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "`$using:$($Matches['name'])")
+    }
+
+    if ($foundInnerUsing) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
     # get any using variables
     $usingVars = Get-PodeScriptUsingVariables -ScriptBlock $ScriptBlock
     if (Test-IsEmpty $usingVars) {
@@ -2112,7 +2125,7 @@ function Get-PodeScriptUsingVariables
         $ScriptBlock
     )
 
-    return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $false)
+    return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $true)
 }
 
 function ConvertTo-PodeUsingVariables
@@ -2130,22 +2143,39 @@ function ConvertTo-PodeUsingVariables
         return $null
     }
 
-    $singleUsingVars = ($UsingVariables | Group-Object SubExpression | ForEach-Object { $_.Group | Select-Object -First 1 })
+    $mapped = @{}
 
-    return @(foreach ($usingVar in $singleUsingVars) {
-        $value = $PSSession.PSVariable.Get($usingVar.SubExpression.VariablePath.UserPath)
-        if ([string]::IsNullOrEmpty($value)) {
-            throw "Variable for `$using:$($usingVar.SubExpression.VariablePath.UserPath) could not be found: $($value)"
+    foreach ($usingVar in $UsingVariables) {
+        # var name
+        $varName = $usingVar.SubExpression.VariablePath.UserPath
+
+        # only retrieve value if new var
+        if (!$mapped.ContainsKey($varName)) {
+            # get value, or get __using_ value for child scripts
+            $value = $PSSession.PSVariable.Get($varName)
+            if ([string]::IsNullOrEmpty($value)) {
+                $value = $PSSession.PSVariable.Get("__using_$($varName)")
+            }
+
+            if ([string]::IsNullOrEmpty($value)) {
+                throw "Value for `$using:$($varName) could not be found"
+            }
+
+            # add to mapped
+            $mapped[$varName] = @{
+                OldName = $usingVar.SubExpression.Extent.Text
+                NewName = "__using_$($varName)"
+                NewNameWithDollar = "`$__using_$($varName)"
+                SubExpressions = @()
+                Value = $value.Value
+            }
         }
 
-        @{
-            OldName = $usingVar.SubExpression.Extent.Text
-            NewName = "__using_$($usingVar.SubExpression.VariablePath.UserPath)"
-            NewNameWithDollar = "`$__using_$($usingVar.SubExpression.VariablePath.UserPath)"
-            SubExpression = $usingVar.SubExpression
-            Value = $value.Value
-        }
-    })
+        # add the vars sub-expression for replacing later
+        $mapped[$varName].SubExpressions += $usingVar.SubExpression
+    }
+
+    return @($mapped.Values)
 }
 
 function ConvertTo-PodeUsingScript
@@ -2169,7 +2199,9 @@ function ConvertTo-PodeUsingScript
     $newParams = New-Object System.Collections.ArrayList
 
     foreach ($usingVar in $UsingVariables) {
-        $varsList.Add($usingVar.SubExpression) | Out-Null
+        foreach ($subExp in $usingVar.SubExpressions) {
+            $varsList.Add($subExp) | Out-Null
+        }
     }
 
     $newParams.AddRange(@($UsingVariables.NewNameWithDollar))
@@ -2178,13 +2210,20 @@ function ConvertTo-PodeUsingScript
 
     $bindingFlags = [System.Reflection.BindingFlags]'Default, NonPublic, Instance'
     $_varReplacerMethod = $ScriptBlock.Ast.GetType().GetMethod('GetWithInputHandlingForInvokeCommandImpl', $bindingFlags)
-    $convertedScriptBlock = $_varReplacerMethod.Invoke($ScriptBlock.Ast, @($tupleParams))
+    $convertedScriptBlockStr = $_varReplacerMethod.Invoke($ScriptBlock.Ast, @($tupleParams))
 
     if (!$ScriptBlock.Ast.ParamBlock) {
-        $convertedScriptBlock = "param($($newParams))`n$($convertedScriptBlock)"
+        $convertedScriptBlockStr = "param($($newParams))`n$($convertedScriptBlockStr)"
     }
 
-    return [scriptblock]::Create($convertedScriptBlock)
+    $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
+
+    if ($convertedScriptBlock.Ast.EndBlock[0].Statements.Extent.Text.StartsWith('$input |')) {
+        $convertedScriptBlockStr = ($convertedScriptBlockStr -ireplace '\$input \|')
+        $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
+    }
+
+    return $convertedScriptBlock
 }
 
 function Get-PodeScriptFunctions
