@@ -298,7 +298,12 @@ function Start-PodeLoggingRunspace
             }
 
             # convert to log item into a writable format
-            $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments (@($log.Item) + @($logger.Arguments)) -Return -Splat)
+            $_args = @($log.Item) + @($logger.Arguments)
+            if ($null -ne $logger.UsingVariables) {
+                $_args = @($logger.UsingVariables.Value) + $_args
+            }
+
+            $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -Return -Splat)
 
             # check batching
             $batch = $logger.Method.Batch
@@ -321,7 +326,12 @@ function Start-PodeLoggingRunspace
 
             # send the writable log item off to the log writer
             if ($null -ne $result) {
-                Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments (@(,$result) + @($logger.Method.Arguments)) -Splat
+                $_args = @(,$result) + @($logger.Method.Arguments)
+                if ($null -ne $logger.Method.UsingVariables) {
+                    $_args = @($logger.Method.UsingVariables.Value) + $_args
+                }
+
+                Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -Splat
             }
 
             # small sleep to lower cpu usage
@@ -345,7 +355,13 @@ function Test-PodeLoggerBatches
         {
             $result = $batch.Items
             $batch.Items = @()
-            Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments (@(,$result) + @($logger.Method.Arguments)) -Splat
+
+            $_args = @(,$result) + @($logger.Method.Arguments)
+            if ($null -ne $logger.Method.UsingVariables) {
+                $_args = @($logger.Method.UsingVariables.Value) + $_args
+            }
+
+            Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -Splat
         }
     }
 }
