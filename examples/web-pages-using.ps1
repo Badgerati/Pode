@@ -27,11 +27,11 @@ Start-PodeServer -Threads 2 {
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($e)
 
-        $using:innerfoo | out-default
-        $using:outerfoo | out-default
-        $using:innerfoo | out-default
+        $using:innerfoo | Out-Default
+        $using:outerfoo | Out-Default
+        $using:innerfoo | Out-Default
 
-        $e.Method | out-default
+        $e.Method | Out-Default
 
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }

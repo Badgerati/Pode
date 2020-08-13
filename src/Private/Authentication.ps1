@@ -634,16 +634,31 @@ function Get-PodeAuthMiddlewareScript
 
         try {
             # run auth type script to parse request for data
-            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.ScriptBlock -Arguments (@($e) + @($auth.Type.Arguments)) -Return -Splat)
+            $_args = @($e) + @($auth.Type.Arguments)
+            if ($null -ne $auth.Type.ScriptBlock.UsingVariables) {
+                $_args = @($auth.Type.ScriptBlock.UsingVariables.Value) + $_args
+            }
+
+            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.ScriptBlock.Script -Arguments $_args -Return -Splat)
 
             # if data is a hashtable, then don't call validator (parser either failed, or forced a success)
             if ($result -isnot [hashtable]) {
                 $original = $result
-                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments (@($result) + @($auth.Arguments)) -Return -Splat)
+                $_args = @($result) + @($auth.Arguments)
+                if ($null -ne $auth.UsingVariables) {
+                    $_args = @($auth.UsingVariables.Value) + $_args
+                }
+
+                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -Return -Splat)
 
                 # if we have user, then run post validator if present
-                if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-IsEmpty $auth.Type.PostValidator)) {
-                    $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.PostValidator -Arguments (@($e) + @($original) + @($result) + @($auth.Type.Arguments)) -Return -Splat)
+                if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-IsEmpty $auth.Type.PostValidator.Script)) {
+                    $_args = @($e) + @($original) + @($result) + @($auth.Type.Arguments)
+                    if ($null -ne $auth.Type.PostValidator.UsingVariables) {
+                        $_args = @($auth.Type.PostValidator.UsingVariables.Value) + $_args
+                    }
+
+                    $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.PostValidator.Script -Arguments $_args -Return -Splat)
                 }
             }
         }

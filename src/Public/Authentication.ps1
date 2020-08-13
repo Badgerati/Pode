@@ -149,7 +149,10 @@ function New-PodeAuthScheme
             return @{
                 Name = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = (Get-PodeAuthBasicType)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthBasicType)
+                    UsingVariables = $null
+                }
                 PostValidator = $null
                 Scheme = 'http'
                 Arguments = @{
@@ -163,8 +166,14 @@ function New-PodeAuthScheme
             return @{
                 Name = 'Digest'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = (Get-PodeAuthDigestType)
-                PostValidator = (Get-PodeAuthDigestPostValidator)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthDigestType)
+                    UsingVariables = $null
+                }
+                PostValidator = @{
+                    Script = (Get-PodeAuthDigestPostValidator)
+                    UsingVariables = $null
+                }
                 Scheme = 'http'
                 Arguments = @{}
             }
@@ -174,8 +183,14 @@ function New-PodeAuthScheme
             return @{
                 Name = 'Bearer'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = (Get-PodeAuthBearerType)
-                PostValidator = (Get-PodeAuthBearerPostValidator)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthBearerType)
+                    UsingVariables = $null
+                }
+                PostValidator = @{
+                    Script = (Get-PodeAuthBearerPostValidator)
+                    UsingVariables = $null
+                }
                 Scheme = 'http'
                 Arguments = @{
                     Scopes = $Scope
@@ -187,7 +202,10 @@ function New-PodeAuthScheme
             return @{
                 Name = 'Form'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = (Get-PodeAuthFormType)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthFormType)
+                    UsingVariables = $null
+                }
                 PostValidator = $null
                 Scheme = 'http'
                 Arguments = @{
@@ -200,12 +218,24 @@ function New-PodeAuthScheme
         }
 
         'custom' {
+            $ScriptBlock, $usingScriptVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+            if (!(Test-IsEmpty $PostValidator)) {
+                $PostValidator, $usingPostVars = Invoke-PodeUsingScriptConversion -ScriptBlock $PostValidator -PSSession $PSCmdlet.SessionState
+            }
+
             return @{
                 Name = $Name
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
                 Scheme = $Type.ToLowerInvariant()
-                ScriptBlock = $ScriptBlock
-                PostValidator = $PostValidator
+                ScriptBlock = @{
+                    Script = $ScriptBlock
+                    UsingVariables = $usingScriptVars
+                }
+                PostValidator = @{
+                    Script = $PostValidator
+                    UsingVariables = $usingPostVars
+                }
                 Arguments = $ArgumentList
             }
         }
@@ -304,10 +334,14 @@ function Add-PodeAuth
         throw 'Sessions are required to use session persistent authentication'
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # add auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
         Type = $Type
         ScriptBlock = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = $ArgumentList
         Sessionless = $Sessionless
         Failure = @{

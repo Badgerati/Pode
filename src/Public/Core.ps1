@@ -1251,19 +1251,23 @@ function Edit-PodeTimer
         throw "Timer '$($Name)' does not exist"
     }
 
+    $_timer = $PodeContext.Timers[$Name]
+
     # edit interval if supplied
     if ($Interval -gt 0) {
-        $PodeContext.Timers[$Name].Interval = $Interval
+        $_timer.Interval = $Interval
     }
 
     # edit scriptblock if supplied
     if (!(Test-IsEmpty $ScriptBlock)) {
-        $PodeContext.Timers[$Name].Script = $ScriptBlock
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $_timer.Script = $ScriptBlock
+        $_timer.UsingVariables = $usingVars
     }
 
     # edit arguments if supplied
     if (!(Test-IsEmpty $ArgumentList)) {
-        $PodeContext.Timers[$Name].Arguments = $ArgumentList
+        $_timer.Arguments = $ArgumentList
     }
 }
 
@@ -1628,7 +1632,9 @@ function Edit-PodeSchedule
 
     # edit scriptblock if supplied
     if (!(Test-IsEmpty $ScriptBlock)) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $_schedule.Script = $ScriptBlock
+        $_schedule.UsingVariables = $usingVars
     }
 
     # edit arguments if supplied
