@@ -23,6 +23,16 @@ Start-PodeServer -Threads 2 {
     $innerfoo = 'inner-bar'
     $inner_ken = 'General Kenobi'
 
+    New-PodeMiddleware -ScriptBlock {
+        "M1: $($using:outer_ken) ... $($using:inner_ken)" | Out-Default
+        return $true
+    } |  Add-PodeMiddleware -Name 'TestUsingMiddleware1'
+
+    Add-PodeMiddleware -Name 'TestUsingMiddleware2' -ScriptBlock {
+        "M2: $($using:outer_ken) ... $($using:inner_ken)" | Out-Default
+        return $true
+    }
+
     # GET request for web page on "localhost:8090/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         param($e)

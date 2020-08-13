@@ -43,7 +43,12 @@ function Invoke-PodeMiddleware
         }
 
         try {
-            $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments (@($WebEvent) + @($midware.Arguments)) -Return -Scoped -Splat
+            $_args = @($WebEvent) + @($midware.Arguments)
+            if ($null -ne $midware.UsingVariables) {
+                $_args = @($midware.UsingVariables.Value) + $_args
+            }
+
+            $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments $_args -Return -Scoped -Splat
         }
         catch {
             Set-PodeResponseStatus -Code 500 -Exception $_
@@ -57,6 +62,49 @@ function Invoke-PodeMiddleware
     }
 
     return $continue
+}
+
+function New-PodeMiddlewareInternal
+{
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [string]
+        $Route,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.SessionState]
+        $PSSession
+    )
+
+    if (Test-IsEmpty $ScriptBlock) {
+        throw "[Middleware]: No ScriptBlock supplied"
+    }
+
+    # if route is empty, set it to root
+    $Route = ConvertTo-PodeRouteRegex -Path $Route
+
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSSession
+
+    # create the middleware hashtable from a scriptblock
+    $HashTable = @{
+        Route = $Route
+        Logic = $ScriptBlock
+        Arguments = $ArgumentList
+        UsingVariables = $usingVars
+    }
+
+    # return the middleware, so it can be cached/added at a later date
+    return $HashTable
 }
 
 function Get-PodeInbuiltMiddleware

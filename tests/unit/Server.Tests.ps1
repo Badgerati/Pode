@@ -177,7 +177,8 @@ Describe 'Restart-PodeInternalServer' {
 
         $PodeContext.Server.ViewEngine.Type | Should Be 'html'
         $PodeContext.Server.ViewEngine.Extension | Should Be 'html'
-        $PodeContext.Server.ViewEngine.Script | Should Be $null
+        $PodeContext.Server.ViewEngine.ScriptBlock | Should Be $null
+        $PodeContext.Server.ViewEngine.UsingVariables | Should Be $null
         $PodeContext.Server.ViewEngine.IsDynamic | Should Be $false
 
         $PodeContext.Metrics.Server.RestartCount | Should Be 1

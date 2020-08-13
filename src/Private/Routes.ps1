@@ -626,7 +626,11 @@ function ConvertTo-PodeRouteMiddleware
 
         [Parameter()]
         [object[]]
-        $Middleware
+        $Middleware,
+
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.SessionState]
+        $PSSession
     )
 
     # return if no middleware
@@ -658,8 +662,11 @@ function ConvertTo-PodeRouteMiddleware
 
     for ($i = 0; $i -lt $Middleware.Length; $i++) {
         if ($Middleware[$i] -is [scriptblock]) {
+            $_script, $_usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Middleware[$i] -PSSession $PSSession
+
             $Middleware[$i] = @{
-                Logic = $Middleware[$i]
+                Logic = $_script
+                UsingVariables = $_usingVars
             }
         }
     }

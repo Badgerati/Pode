@@ -172,7 +172,8 @@ function New-PodeContext
     $ctx.Server.ViewEngine = @{
         Type = 'html'
         Extension = 'html'
-        Script = $null
+        ScriptBlock = $null
+        UsingVariables = $null
         IsDynamic = $false
     }
 

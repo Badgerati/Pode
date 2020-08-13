@@ -389,9 +389,13 @@ function Add-PodeEndware
         $ArgumentList
     )
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # add the scriptblock to array of endware that needs to be run
     $PodeContext.Server.Endware += @{
         Logic = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = $ArgumentList
     }
 }

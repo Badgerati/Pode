@@ -1832,7 +1832,7 @@ Add-PodeMiddleware -Name 'CheckEmailOnApi' -Route '/api/*' -ScriptBlock { /* log
 function Add-PodeMiddleware
 {
     [CmdletBinding(DefaultParameterSetName='Script')]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -1861,7 +1861,11 @@ function Add-PodeMiddleware
 
     # if it's a script - call New-PodeMiddleware
     if ($PSCmdlet.ParameterSetName -ieq 'script') {
-        $InputObject = New-PodeMiddleware -ScriptBlock $ScriptBlock -Route $Route -ArgumentList $ArgumentList
+        $InputObject = (New-PodeMiddlewareInternal `
+            -ScriptBlock $ScriptBlock `
+            -Route $Route `
+            -ArgumentList $ArgumentList `
+            -PSSession $PSCmdlet.SessionState)
     }
     else {
         if (![string]::IsNullOrWhiteSpace($Route)) {
@@ -1907,7 +1911,7 @@ function New-PodeMiddleware
 {
     [CmdletBinding()]
     [OutputType([hashtable])]
-    param (
+    param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
         $ScriptBlock,
@@ -1921,22 +1925,11 @@ function New-PodeMiddleware
         $ArgumentList
     )
 
-    # if route is empty, set it to root
-    $Route = ConvertTo-PodeRouteRegex -Path $Route
-
-    # create the middleware hashtable from a scriptblock
-    $HashTable = @{
-        Route = $Route
-        Logic = $ScriptBlock
-        Arguments = $ArgumentList
-    }
-
-    if (Test-IsEmpty $HashTable.Logic) {
-        throw "[Middleware]: No logic supplied in ScriptBlock"
-    }
-
-    # return the middleware, so it can be cached/added at a later date
-    return $HashTable
+    return (New-PodeMiddlewareInternal `
+        -ScriptBlock $ScriptBlock `
+        -Route $Route `
+        -ArgumentList $ArgumentList `
+        -PSSession $PSCmdlet.SessionState)
 }
 
 <#
@@ -1955,7 +1948,7 @@ Remove-PodeMiddleware -Name 'Sessions'
 function Remove-PodeMiddleware
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name

@@ -155,7 +155,8 @@ function Restart-PodeInternalServer
         $PodeContext.Server.ViewEngine = @{
             Type = 'html'
             Extension = 'html'
-            Script = $null
+            ScriptBlock = $null
+            UsingVariables = $null
             IsDynamic = $false
         }
 

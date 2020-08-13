@@ -1217,10 +1217,16 @@ function Set-PodeViewEngine
         $Extension = $Type.ToLowerInvariant()
     }
 
+    # check if the scriptblock has any using vars
+    if ($null -ne $ScriptBlock) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
     # setup view engine config
     $PodeContext.Server.ViewEngine.Type = $Type.ToLowerInvariant()
     $PodeContext.Server.ViewEngine.Extension = $Extension
-    $PodeContext.Server.ViewEngine.Script = $ScriptBlock
+    $PodeContext.Server.ViewEngine.ScriptBlock = $ScriptBlock
+    $PodeContext.Server.ViewEngine.UsingVariables = $usingVars
     $PodeContext.Server.ViewEngine.IsDynamic = (@('html', 'md') -inotcontains $Type)
 }
 

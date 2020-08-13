@@ -77,13 +77,17 @@ function Get-PodeFileContentUsingViewEngine
         }
 
         default {
-            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                if ($null -eq $Data -or $Data.Count -eq 0) {
-                    $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
+            if ($null -ne $PodeContext.Server.ViewEngine.ScriptBlock) {
+                $_args = $Path
+                if (($null -ne $Data) -and ($Data.Count -gt 0)) {
+                    $_args = @($Path, $Data)
                 }
-                else {
-                    $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+
+                if ($null -ne $PodeContext.Server.ViewEngine.UsingVariables) {
+                    $_args = @($PodeContext.Server.ViewEngine.UsingVariables.Value) + $_args
                 }
+
+                $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
             }
         }
     }
@@ -1143,7 +1147,14 @@ function ConvertFrom-PodeRequestContent
 
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($MetaData.ContentType)) {
-            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.BodyParsers[$MetaData.ContentType] -Arguments $Content -Return)
+            $parser = $PodeContext.Server.BodyParsers[$MetaData.ContentType]
+
+            $_args = $Content
+            if ($null -ne $parser.UsingVariables) {
+                $_args = @($parser.UsingVariables.Value) + $_args
+            }
+
+            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
             return $Result
         }
     }
