@@ -339,6 +339,9 @@ function Use-PodeScript
 
     # dot-source the script
     . $_path
+
+    # load any functions from the file into pode's runspaces
+    Import-PodeFunctionsIntoRunspaceState -FilePath $_path
 }
 
 <#

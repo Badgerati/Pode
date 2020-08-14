@@ -303,15 +303,33 @@ function New-PodeRunspaceState
 function Import-PodeFunctionsIntoRunspaceState
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath
     )
 
-    $funcs = Get-PodeScriptFunctions -ScriptBlock $ScriptBlock
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'script' {
+            $funcs = (Get-PodeFunctionsFromScriptBlock -ScriptBlock $ScriptBlock)
+        }
 
-    foreach ($funcName in $funcs.Keys) {
-        $funcDef = [System.Management.Automation.Runspaces.SessionStateFunctionEntry]::new($funcName, $funcs[$funcName].Trim('{}'))
+        'file' {
+            $funcs = (Get-PodeFunctionsFromFile -FilePath $FilePath)
+        }
+    }
+
+    if (($null -eq $funcs) -or ($funcs.Length -eq 0)) {
+        return
+    }
+
+    $funcs = ($funcs | Group-Object -Property { $_.Name })
+
+    foreach ($func in $funcs) {
+        $funcDef = [System.Management.Automation.Runspaces.SessionStateFunctionEntry]::new($func.Name, $func.Group[-1].Definition)
         $PodeContext.RunspaceState.Commands.Add($funcDef)
     }
 }

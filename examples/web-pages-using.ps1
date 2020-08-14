@@ -7,6 +7,11 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 $outerfoo = 'outer-bar'
 $outer_ken = 'Hello, there'
 
+function Write-MyOuterResponse
+{
+    Write-PodeJsonResponse -Value @{ Message = 'From an outer function' }
+}
+
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 
@@ -20,8 +25,16 @@ Start-PodeServer -Threads 2 {
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
 
+    # load file funcs
+    Use-PodeScript -Path ./modules/imported-funcs.ps1
+
     $innerfoo = 'inner-bar'
     $inner_ken = 'General Kenobi'
+
+    function Write-MyInnerResponse
+    {
+        Write-PodeJsonResponse -Value @{ Message = 'From an inner function' }
+    }
 
     New-PodeMiddleware -ScriptBlock {
         "M1: $($using:outer_ken) ... $($using:inner_ken)" | Out-Default
@@ -48,6 +61,22 @@ Start-PodeServer -Threads 2 {
 
     Add-PodeRoute -Method Get -Path '/random' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Message = "$($using:outer_ken) ... $($using:inner_ken)" }
+    }
+
+    Add-PodeRoute -Method Get -Path '/inner-func' -ScriptBlock {
+        Write-MyInnerResponse
+    }
+
+    Add-PodeRoute -Method Get -Path '/outer-func' -ScriptBlock {
+        Write-MyOuterResponse
+    }
+
+    Add-PodeRoute -Method Get -Path '/greetings' -ScriptBlock {
+        Write-MyGreeting
+    }
+
+    Add-PodeRoute -Method Get -Path '/sub-greetings' -ScriptBlock {
+        Write-MySubGreeting
     }
 
     Add-PodeTimer -Name 'empty' -Interval 60 -ScriptBlock {}

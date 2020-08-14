@@ -2237,7 +2237,112 @@ function ConvertTo-PodeUsingScript
     return $convertedScriptBlock
 }
 
-function Get-PodeScriptFunctions
+function Get-PodeDotSourcedFiles
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.Language.Ast]
+        $Ast,
+
+        [Parameter()]
+        [string]
+        $RootPath
+    )
+
+    # set default root path
+    if ([string]::IsNullOrWhiteSpace($RootPath)) {
+        $RootPath = $PodeContext.Server.Root
+    }
+
+    # get all dot-sourced files
+    $cmdTypes = @('dot', 'ampersand')
+    $files = ($Ast.FindAll({
+        ($args[0] -is [System.Management.Automation.Language.CommandAst]) -and
+        ($args[0].InvocationOperator -iin $cmdTypes) -and
+        ($args[0].CommandElements.StaticType.Name -ieq 'string')
+    }, $false)).CommandElements.Value
+
+    $fileOrder = @()
+
+    # no files found
+    if (($null -eq $files) -or ($files.Length -eq 0)) {
+        return $fileOrder
+    }
+
+    # get any sub sourced files
+    foreach ($file in $files) {
+        $file = Get-PodeRelativePath -Path $file -RootPath $RootPath -JoinRoot
+        $fileOrder += $file
+
+        $ast = Get-PodeAstFromFile -FilePath $file
+
+        $result = Get-PodeDotSourcedFiles -Ast $ast -RootPath (Split-Path -Parent -Path $file)
+        if (($null -ne $result) -and ($result.Length -gt 0)) {
+            $fileOrder += $result
+        }
+    }
+
+    # return all found files
+    return $fileOrder
+}
+
+function Get-PodeAstFromFile
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FilePath
+    )
+
+    if (!(Test-Path $FilePath)) {
+        throw "Path to script file does not exist: $($FilePath)"
+    }
+
+    return [System.Management.Automation.Language.Parser]::ParseFile($FilePath, [ref]$null, [ref]$null)
+}
+
+function Get-PodeFunctionsFromFile
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FilePath
+    )
+
+    $ast = Get-PodeAstFromFile -FilePath $FilePath
+    return @(Get-PodeFunctionsFromAst -Ast $ast)
+}
+
+function Get-PodeFunctionsFromAst
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.Language.Ast]
+        $Ast
+    )
+
+    $funcs = @(($Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)))
+
+    return @(foreach ($func in $funcs) {
+        # skip null
+        if ($null -eq $func) {
+            continue
+        }
+
+        # skip pode funcs
+        if ($func.Name -ilike '*-Pode*') {
+            continue
+        }
+
+        # the found func
+        @{
+            Name = $func.Name
+            Definition = "$($func.Body)".Trim('{}')
+        }
+    })
+}
+
+function Get-PodeFunctionsFromScriptBlock
 {
     param(
         [Parameter(Mandatory=$true)]
@@ -2246,33 +2351,7 @@ function Get-PodeScriptFunctions
     )
 
     # functions that have been found
-    $found = @{}
-
-    # quick function for getting functions from a scriptblock
-    function Get-PodeFunctionsFromScriptBlock
-    {
-        param(
-            [Parameter(Mandatory=$true)]
-            [scriptblock]
-            $ScriptBlock
-        )
-
-        $_funcs = @(($ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)))
-
-        foreach ($_func in $_funcs) {
-            if ($null -eq $_func) {
-                continue
-            }
-
-            if ($_func.Name -ilike '*-Pode*') {
-                continue
-            }
-
-            if (!$found.ContainsKey($_func.Name)) {
-                $found[$_func.Name] = "$($_func.Body)"
-            }
-        }
-    }
+    $foundFuncs = @()
 
     # get each function in the callstack
     $callstack = Get-PSCallStack
@@ -2284,13 +2363,13 @@ function Get-PodeScriptFunctions
         {
             $_funcContext = $call.GetType().GetProperty('FunctionContext', $bindingFlags).GetValue($call, $null)
             $_scriptBlock = $_funcContext.GetType().GetField('_scriptBlock', $bindingFlags).GetValue($_funcContext)
-            Get-PodeFunctionsFromScriptBlock -ScriptBlock $_scriptBlock
+            $foundFuncs += @(Get-PodeFunctionsFromAst -Ast $_scriptBlock.Ast)
         }
     }
 
     # get each function from the main script
-    Get-PodeFunctionsFromScriptBlock -ScriptBlock $ScriptBlock
+    $foundFuncs += @(Get-PodeFunctionsFromAst -Ast $ScriptBlock.Ast)
 
     # return the found functions
-    return $found
+    return $foundFuncs
 }
