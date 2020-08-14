@@ -77,6 +77,25 @@ function New-PodeContext
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
 
+    # auto importing (modules, funcs, snap-ins)
+    $ctx.Server.AutoImporters = @{
+        Modules = @{
+            Enabled = $true
+            Exported = @()
+            OnlyExported = $false
+        }
+        Snapins = @{
+            Enabled = $true
+            Exported = @()
+            OnlyExported = $false
+        }
+        Functions = @{
+            Enabled = $true
+            Exported = @()
+            OnlyExported = $false
+        }
+    }
+
     # basic logging setup
     $ctx.Server.Logging = @{
         Enabled = $true
@@ -312,6 +331,17 @@ function Import-PodeFunctionsIntoRunspaceState
         $FilePath
     )
 
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImporters.Functions.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImporters.Functions.OnlyExported -and ($PodeContext.Server.AutoImporters.Functions.Exported.Length -eq 0)) {
+        return
+    }
+
+    # script or file functions?
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'script' {
             $funcs = (Get-PodeFunctionsFromScriptBlock -ScriptBlock $ScriptBlock)
@@ -322,13 +352,22 @@ function Import-PodeFunctionsIntoRunspaceState
         }
     }
 
+    # looks like we have nothing!
     if (($null -eq $funcs) -or ($funcs.Length -eq 0)) {
         return
     }
 
+    # groups funcs in case there or multiple definitions
     $funcs = ($funcs | Group-Object -Property { $_.Name })
 
+    # import them, but also check if they're exported
     foreach ($func in $funcs) {
+        # only exported funcs? is the func exported?
+        if ($PodeContext.Server.AutoImporters.Functions.OnlyExported -and ($PodeContext.Server.AutoImporters.Functions.Exported -inotcontains $func.Name)) {
+            continue
+        }
+
+        # load the function
         $funcDef = [System.Management.Automation.Runspaces.SessionStateFunctionEntry]::new($func.Name, $func.Group[-1].Definition)
         $PodeContext.RunspaceState.Commands.Add($funcDef)
     }
@@ -336,32 +375,58 @@ function Import-PodeFunctionsIntoRunspaceState
 
 function Import-PodeModulesIntoRunspaceState
 {
-    # load modules into runspaces
-    (Get-Module | Where-Object { ($_.ModuleType -ieq 'script') -and ($_.Name -ine 'pode') }).Name |
-        Sort-Object -Unique |
-        ForEach-Object {
-            $_path = (Get-Module -Name $_ |
-                Sort-Object -Property Version -Descending |
-                Select-Object -First 1 -ExpandProperty Path)
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImporters.Modules.Enabled) {
+        return
+    }
 
-            $PodeContext.RunspaceState.ImportPSModule($_path)
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImporters.Modules.OnlyExported -and ($PodeContext.Server.AutoImporters.Modules.Exported.Length -eq 0)) {
+        return
+    }
+
+    # load modules into runspaces, if allowed
+    $modules = (Get-Module | Where-Object { ($_.ModuleType -ieq 'script') -and ($_.Name -ine 'pode') }).Name | Sort-Object -Unique
+
+    foreach ($module in $modules) {
+        # only exported modules? is the module exported?
+        if ($PodeContext.Server.AutoImporters.Modules.OnlyExported -and ($PodeContext.Server.AutoImporters.Modules.Exported -inotcontains $module)) {
+            continue
         }
+
+        $path = (Get-Module -Name $module | Sort-Object -Property Version -Descending | Select-Object -First 1 -ExpandProperty Path)
+        $PodeContext.RunspaceState.ImportPSModule($path)
+    }
 }
 
-function Import-PodeSnapInsIntoRunspaceState
+function Import-PodeSnapinsIntoRunspaceState
 {
     # if non-windows or core, do nothing
     if ((Test-IsPSCore) -or (Test-IsUnix)) {
         return
     }
 
-    # load snapins into runspaces
-    (Get-PSSnapin | Where-Object { !$_.IsDefault }).Name |
-        Sort-Object -Unique |
-        ForEach-Object {
-            $exp = $null
-            $PodeContext.RunspaceState.ImportPSSnapIn($_, ([ref]$exp))
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImporters.Snapins.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImporters.Snapins.OnlyExported -and ($PodeContext.Server.AutoImporters.Snapins.Exported.Length -eq 0)) {
+        return
+    }
+
+    # load snapins into runspaces, if allowed
+    $snapins = (Get-PSSnapin | Where-Object { !$_.IsDefault }).Name | Sort-Object -Unique
+
+    foreach ($snapin in $snapins) {
+        # only exported snapins? is the snapin exported?
+        if ($PodeContext.Server.AutoImporters.Snapins.OnlyExported -and ($PodeContext.Server.AutoImporters.Snapins.Exported -inotcontains $snapin)) {
+            continue
         }
+
+        $PodeContext.RunspaceState.ImportPSSnapIn($snapin, [ref]$null)
+    }
 }
 
 function New-PodeRunspacePools

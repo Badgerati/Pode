@@ -23,7 +23,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Start-PodeWebServer { }
     Mock Start-PodeServiceServer { }
     Mock Import-PodeModulesIntoRunspaceState { }
-    Mock Import-PodeSnapInsIntoRunspaceState { }
+    Mock Import-PodeSnapinsIntoRunspaceState { }
     Mock Import-PodeFunctionsIntoRunspaceState { }
 
     It 'Calls one-off script logic' {
@@ -151,6 +151,11 @@ Describe 'Restart-PodeInternalServer' {
                 }
                 OpenAPI = @{}
                 BodyParsers = @{}
+                AutoImporters = @{
+                    Modules = @{ Exported = @() }
+                    Snapins = @{ Exported = @() }
+                    Functions = @{ Exported = @() }
+                }
             };
             Metrics = @{
                 Server = @{

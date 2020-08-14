@@ -29,7 +29,7 @@ function Start-PodeInternalServer
 
         # load any modules
         Import-PodeModulesIntoRunspaceState
-        Import-PodeSnapInsIntoRunspaceState
+        Import-PodeSnapinsIntoRunspaceState
 
         # start the runspace pools for web, schedules, etc
         New-PodeRunspacePools
@@ -133,6 +133,11 @@ function Restart-PodeInternalServer
         $PodeContext.Timers.Clear()
         $PodeContext.Schedules.Clear()
         $PodeContext.Server.Logging.Types.Clear()
+
+        # auto-importers
+        $PodeContext.Server.AutoImporters.Modules.Exported = @()
+        $PodeContext.Server.AutoImporters.Snapins.Exported = @()
+        $PodeContext.Server.AutoImporters.Functions.Exported = @()
 
         # clear middle/endware
         $PodeContext.Server.Middleware = @()

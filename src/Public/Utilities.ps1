@@ -481,18 +481,18 @@ function Import-PodeModule
 
 <#
 .SYNOPSIS
-Imports a SnapIn into the current, and all runspaces that Pode uses.
+Imports a Snapin into the current, and all runspaces that Pode uses.
 
 .DESCRIPTION
-Imports a SnapIn into the current, and all runspaces that Pode uses.
+Imports a Snapin into the current, and all runspaces that Pode uses.
 
 .PARAMETER Name
-The name of a SnapIn to import.
+The name of a Snapin to import.
 
 .EXAMPLE
-Import-PodeSnapIn -Name 'WDeploySnapin3.0'
+Import-PodeSnapin -Name 'WDeploySnapin3.0'
 #>
-function Import-PodeSnapIn
+function Import-PodeSnapin
 {
     [CmdletBinding()]
     param (
@@ -503,7 +503,7 @@ function Import-PodeSnapIn
 
     # if non-windows or core, fail
     if ((Test-IsPSCore) -or (Test-IsUnix)) {
-        throw 'SnapIns are only supported on Windows PowerShell'
+        throw 'Snapins are only supported on Windows PowerShell'
     }
 
     # import the snap-in

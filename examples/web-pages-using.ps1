@@ -14,6 +14,10 @@ function Write-MyOuterResponse
 
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
+    # disable module/snapin loading
+    Disable-PodeModuleImport
+    Disable-PodeSnapinImport
+    Enable-PodeFunctionImport -OnlyExported
 
     # listen on localhost:8090
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
@@ -35,6 +39,8 @@ Start-PodeServer -Threads 2 {
     {
         Write-PodeJsonResponse -Value @{ Message = 'From an inner function' }
     }
+
+    Export-PodeFunction -Name 'Write-MyOuterResponse', 'Write-MyInnerResponse'
 
     New-PodeMiddleware -ScriptBlock {
         "M1: $($using:outer_ken) ... $($using:inner_ken)" | Out-Default

@@ -215,7 +215,18 @@
         # Metrics
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',
-        'Get-PodeServerRequestMetric'
+        'Get-PodeServerRequestMetric',
+
+        # AutoImport
+        'Disable-PodeModuleImport',
+        'Enable-PodeModuleImport',
+        'Export-PodeModule',
+        'Disable-PodeSnapinImport',
+        'Enable-PodeSnapinImport',
+        'Export-PodeSnapin',
+        'Disable-PodeFunctionImport',
+        'Enable-PodeFunctionImport',
+        'Export-PodeFunction'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

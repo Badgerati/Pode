@@ -11,6 +11,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
+    # disable module loading
+    Disable-PodeModuleImport
 
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http -Name '8090Address'
