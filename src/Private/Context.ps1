@@ -78,21 +78,21 @@ function New-PodeContext
     $ctx.Server.Quiet = $Quiet.IsPresent
 
     # auto importing (modules, funcs, snap-ins)
-    $ctx.Server.AutoImporters = @{
+    $ctx.Server.AutoImport = @{
         Modules = @{
             Enabled = $true
-            Exported = @()
-            OnlyExported = $false
+            ExportList = @()
+            ExportOnly = $false
         }
         Snapins = @{
             Enabled = $true
-            Exported = @()
-            OnlyExported = $false
+            ExportList = @()
+            ExportOnly = $false
         }
         Functions = @{
             Enabled = $true
-            Exported = @()
-            OnlyExported = $false
+            ExportList = @()
+            ExportOnly = $false
         }
     }
 
@@ -332,12 +332,12 @@ function Import-PodeFunctionsIntoRunspaceState
     )
 
     # do nothing if disabled
-    if (!$PodeContext.Server.AutoImporters.Functions.Enabled) {
+    if (!$PodeContext.Server.AutoImport.Functions.Enabled) {
         return
     }
 
     # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImporters.Functions.OnlyExported -and ($PodeContext.Server.AutoImporters.Functions.Exported.Length -eq 0)) {
+    if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList.Length -eq 0)) {
         return
     }
 
@@ -363,7 +363,7 @@ function Import-PodeFunctionsIntoRunspaceState
     # import them, but also check if they're exported
     foreach ($func in $funcs) {
         # only exported funcs? is the func exported?
-        if ($PodeContext.Server.AutoImporters.Functions.OnlyExported -and ($PodeContext.Server.AutoImporters.Functions.Exported -inotcontains $func.Name)) {
+        if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList -inotcontains $func.Name)) {
             continue
         }
 
@@ -376,12 +376,12 @@ function Import-PodeFunctionsIntoRunspaceState
 function Import-PodeModulesIntoRunspaceState
 {
     # do nothing if disabled
-    if (!$PodeContext.Server.AutoImporters.Modules.Enabled) {
+    if (!$PodeContext.Server.AutoImport.Modules.Enabled) {
         return
     }
 
     # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImporters.Modules.OnlyExported -and ($PodeContext.Server.AutoImporters.Modules.Exported.Length -eq 0)) {
+    if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList.Length -eq 0)) {
         return
     }
 
@@ -390,7 +390,7 @@ function Import-PodeModulesIntoRunspaceState
 
     foreach ($module in $modules) {
         # only exported modules? is the module exported?
-        if ($PodeContext.Server.AutoImporters.Modules.OnlyExported -and ($PodeContext.Server.AutoImporters.Modules.Exported -inotcontains $module)) {
+        if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList -inotcontains $module)) {
             continue
         }
 
@@ -407,12 +407,12 @@ function Import-PodeSnapinsIntoRunspaceState
     }
 
     # do nothing if disabled
-    if (!$PodeContext.Server.AutoImporters.Snapins.Enabled) {
+    if (!$PodeContext.Server.AutoImport.Snapins.Enabled) {
         return
     }
 
     # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImporters.Snapins.OnlyExported -and ($PodeContext.Server.AutoImporters.Snapins.Exported.Length -eq 0)) {
+    if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList.Length -eq 0)) {
         return
     }
 
@@ -421,7 +421,7 @@ function Import-PodeSnapinsIntoRunspaceState
 
     foreach ($snapin in $snapins) {
         # only exported snapins? is the snapin exported?
-        if ($PodeContext.Server.AutoImporters.Snapins.OnlyExported -and ($PodeContext.Server.AutoImporters.Snapins.Exported -inotcontains $snapin)) {
+        if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList -inotcontains $snapin)) {
             continue
         }
 
@@ -549,7 +549,7 @@ function Set-PodeServerConfiguration
 
     # logging
     $Context.Server.Logging = @{
-        Enabled = !([bool]$Configuration.Logging.Enable)
+        Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
         Masking = @{
             Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
             Mask = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
@@ -564,6 +564,25 @@ function Set-PodeServerConfiguration
 
     if ([int]$Configuration.ReceiveTimeout -gt 0) {
         $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
+    }
+
+    # auto-import
+    $Context.Server.AutoImport = @{
+        Modules = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Modules.Enable) -or [bool]$Configuration.AutoImport.Modules.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Modules.ExportOnly)
+        }
+        Snapins = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Snapins.Enable) -or [bool]$Configuration.AutoImport.Snapins.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Snapins.ExportOnly)
+        }
+        Functions = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Functions.Enable) -or [bool]$Configuration.AutoImport.Functions.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Functions.ExportOnly)
+        }
     }
 }
 

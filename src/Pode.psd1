@@ -218,14 +218,8 @@
         'Get-PodeServerRequestMetric',
 
         # AutoImport
-        'Disable-PodeModuleImport',
-        'Enable-PodeModuleImport',
         'Export-PodeModule',
-        'Disable-PodeSnapinImport',
-        'Enable-PodeSnapinImport',
         'Export-PodeSnapin',
-        'Disable-PodeFunctionImport',
-        'Enable-PodeFunctionImport',
         'Export-PodeFunction'
     )
 

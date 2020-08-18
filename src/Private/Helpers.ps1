@@ -78,7 +78,7 @@ function Get-PodeFileContentUsingViewEngine
 
         default {
             if ($null -ne $PodeContext.Server.ViewEngine.ScriptBlock) {
-                $_args = $Path
+                $_args = @($Path)
                 if (($null -ne $Data) -and ($Data.Count -gt 0)) {
                     $_args = @($Path, $Data)
                 }
@@ -1149,7 +1149,7 @@ function ConvertFrom-PodeRequestContent
         if ($PodeContext.Server.BodyParsers.ContainsKey($MetaData.ContentType)) {
             $parser = $PodeContext.Server.BodyParsers[$MetaData.ContentType]
 
-            $_args = $Content
+            $_args = @($Content)
             if ($null -ne $parser.UsingVariables) {
                 $_args = @($parser.UsingVariables.Value) + $_args
             }
@@ -2090,7 +2090,7 @@ function Convert-PodeQueryStringToHashTable
 function Invoke-PodeUsingScriptConversion
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [scriptblock]
         $ScriptBlock,
 
@@ -2098,6 +2098,11 @@ function Invoke-PodeUsingScriptConversion
         [System.Management.Automation.SessionState]
         $PSSession
     )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return @($ScriptBlock, $null)
+    }
 
     # rename any __using_ vars for inner timers, etcs
     $scriptStr = "$($ScriptBlock)"

@@ -72,8 +72,119 @@ On the following functions:
 
 The `-Endpoint` and `-Protocol` parameters have been removed in favour of `-EndpointName`.
 
-### Modules
+### Scoping and Auto-Importing
 
-You can now use `Import-Module` just normally import any modules, and Pode will automatically load these into its runspaces.
+The 2.0 release sees a big change to some scoping issues in Pode, around modules/snapins/functions and variables. For more information, see the new page on [Scoping](../../../Tutorials/Scoping).
 
-[`Import-PodeModule`](../../../Functions/Utilities/Import-PodeModule) still exists, as it supports the use of local modules in `ps_modules`. The only difference is that the `-Now` switch has been removed, and you can now use [`Import-PodeModule`](../../../Functions/Utilities/Import-PodeModule) outside of the [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) block.
+#### Modules/Snapins
+
+You can now use `Import-Module`, or `Add-PSSnapin`, and Pode will automatically import all loaded modules/snapins into its runspaces:
+
+```powershell
+Import-Module SomeModule
+
+Start-PodeServer -ScriptBlock {
+    Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Use-SomeModuleFunction
+    }
+}
+```
+
+[`Import-PodeModule`](../../../Functions/Utilities/Import-PodeModule) still exists, as it supports the use of local modules in `ps_modules`. The only difference is that the `-Now` switch has been removed, and you can now use `Import-PodeModule` outside of the [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) block.
+
+[`Import-PodeSnapin`](../../../Functions/Utilities/Import-PodeSnapin) also still exists, and has the same differences as `Import-PodeModule` above.
+
+To disable the auto-import, you can do so via the `server.psd1` configuration file. You can also set auto-imported modules to only used exported ones via [`Export-PodeModule`](../../../Functions/AutoImport/Export-PodeModule)/[`Export-PodeSnapin`](../../../Functions/AutoImport/Export-PodeSnapin).
+
+```powershell
+@{
+    Server = @{
+        AutoImport = @{
+            Modules = @{
+                Enable = $false
+                ExportOnly = $true
+            }
+            Snapins = @{
+                Enable = $false
+                ExportOnly = $true
+            }
+        }
+    }
+}
+```
+
+#### Functions
+
+Local functions are now automatically imported into Pode's runspaces! This makes it a little simpler to use quick functions in Pode:
+
+```powershell
+function Write-HelloResponse
+{
+    Write-PodeJsonResponse -Value @{ Message = 'Hello!' }
+}
+
+Start-PodeServer -ScriptBlock {
+    function Write-ByeResponse
+    {
+        Write-PodeJsonResponse -Value @{ Message = 'Bye!' }
+    }
+
+    Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/hello' -ScriptBlock {
+        Write-HelloResponse
+    }
+
+    Add-PodeRoute -Method Get -Path '/bye' -ScriptBlock {
+        Write-ByeResponse
+    }
+}
+```
+
+If you store Routes/etc in other files, you can also have local functions in these files as well. However, for Pode to import them you must use [`Use-PodeScript`](../../../Functions/Utilities/Use-PodeScript) to dot-source the scripts - this will trigger Pode to scan the file for functions.
+
+To disable the auto-import, you can do so via the `server.psd1` configuration file. You can also set auto-imported modules to only used exported ones via [`Export-PodeFunction`](../../../Functions/AutoImport/Export-PodeFunction).
+
+```powershell
+@{
+    Server = @{
+        AutoImport = @{
+            Functions = @{
+                Enable = $false
+                ExportOnly = $true
+            }
+        }
+    }
+}
+```
+
+#### Variables
+
+You can now define local variables, and use the `$using:` syntax in almost all `-ScriptBlock` parameters, like:
+
+* Routes
+* Middleware
+* Authentication
+* Logging
+* Endware
+* Timers
+* Schedules
+* Handlers
+
+This allows you to do something like:
+
+```powershell
+$outer_msg = 'Hello, there'
+
+Start-PodeServer -ScriptBlock {
+    Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Http
+
+    $inner_msg = 'General Kenobi'
+
+    Add-PodeRoute -Method Get -Path '/random' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Message = "$($using:outer_msg) ... $($using:inner_msg)" }
+    }
+}
+```

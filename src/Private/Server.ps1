@@ -135,9 +135,9 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Logging.Types.Clear()
 
         # auto-importers
-        $PodeContext.Server.AutoImporters.Modules.Exported = @()
-        $PodeContext.Server.AutoImporters.Snapins.Exported = @()
-        $PodeContext.Server.AutoImporters.Functions.Exported = @()
+        $PodeContext.Server.AutoImport.Modules.ExportList = @()
+        $PodeContext.Server.AutoImport.Snapins.ExportList = @()
+        $PodeContext.Server.AutoImport.Functions.ExportList = @()
 
         # clear middle/endware
         $PodeContext.Server.Middleware = @()

@@ -151,7 +151,7 @@ Describe 'Restart-PodeInternalServer' {
                 }
                 OpenAPI = @{}
                 BodyParsers = @{}
-                AutoImporters = @{
+                AutoImport = @{
                     Modules = @{ Exported = @() }
                     Snapins = @{ Exported = @() }
                     Functions = @{ Exported = @() }
