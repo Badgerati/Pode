@@ -385,7 +385,7 @@ function ConvertTo-PodeRouteRegex
 
 function Get-PodeStaticRouteDefaults
 {
-    if (!(Test-IsEmpty $PodeContext.Server.Web.Static.Defaults)) {
+    if (!(Test-PodeIsEmpty $PodeContext.Server.Web.Static.Defaults)) {
         return @($PodeContext.Server.Web.Static.Defaults)
     }
 
@@ -572,7 +572,7 @@ function Find-PodeRouteTransferEncoding
     } | Select-Object -First 1)
 
     # if we get a match, set it
-    if (!(Test-IsEmpty $matched)) {
+    if (!(Test-PodeIsEmpty $matched)) {
         $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Routes[$matched]
     }
 
@@ -605,7 +605,7 @@ function Find-PodeRouteContentType
     } | Select-Object -First 1)
 
     # if we get a match, set it
-    if (!(Test-IsEmpty $matched)) {
+    if (!(Test-PodeIsEmpty $matched)) {
         $ContentType = $PodeContext.Server.Web.ContentType.Routes[$matched]
     }
 
@@ -634,7 +634,7 @@ function ConvertTo-PodeRouteMiddleware
     )
 
     # return if no middleware
-    if (Test-IsEmpty $Middleware) {
+    if (Test-PodeIsEmpty $Middleware) {
         return $null
     }
 

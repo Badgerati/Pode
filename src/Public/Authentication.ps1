@@ -97,7 +97,7 @@ function New-PodeAuthScheme
 
         [Parameter(Mandatory=$true, ParameterSetName='Custom')]
         [ValidateScript({
-            if (Test-IsEmpty $_) {
+            if (Test-PodeIsEmpty $_) {
                 throw "A non-empty ScriptBlock is required for the Custom authentication type"
             }
 
@@ -220,7 +220,7 @@ function New-PodeAuthScheme
         'custom' {
             $ScriptBlock, $usingScriptVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
-            if (!(Test-IsEmpty $PostValidator)) {
+            if (!(Test-PodeIsEmpty $PostValidator)) {
                 $PostValidator, $usingPostVars = Invoke-PodeUsingScriptConversion -ScriptBlock $PostValidator -PSSession $PSCmdlet.SessionState
             }
 
@@ -290,7 +290,7 @@ function Add-PodeAuth
 
         [Parameter(Mandatory=$true)]
         [ValidateScript({
-            if (Test-IsEmpty $_) {
+            if (Test-PodeIsEmpty $_) {
                 throw "A non-empty ScriptBlock is required for the authentication method"
             }
 
@@ -325,7 +325,7 @@ function Add-PodeAuth
     }
 
     # ensure the Type contains a scriptblock
-    if (Test-IsEmpty $Type.ScriptBlock) {
+    if (Test-PodeIsEmpty $Type.ScriptBlock) {
         throw "The supplied Type for the '$($Name)' authentication method requires a valid ScriptBlock"
     }
 
@@ -467,7 +467,7 @@ function Add-PodeAuthWindowsAd
     }
 
     # ensure the Type contains a scriptblock
-    if (Test-IsEmpty $Type.ScriptBlock) {
+    if (Test-PodeIsEmpty $Type.ScriptBlock) {
         throw "The supplied Type for the '$($Name)' Windows AD authentication method requires a valid ScriptBlock"
     }
 
@@ -690,7 +690,7 @@ function Add-PodeAuthIIS
     )
 
     # ensure we're on Windows!
-    if (!(Test-IsWindows)) {
+    if (!(Test-PodeIsWindows)) {
         throw "IIS Authentication support is for Windows only"
     }
 
@@ -829,7 +829,7 @@ function Add-PodeAuthUserFile
     }
 
     # ensure the Type contains a scriptblock
-    if (Test-IsEmpty $Type.ScriptBlock) {
+    if (Test-PodeIsEmpty $Type.ScriptBlock) {
         throw "The supplied Type for the '$($Name)' User File authentication method requires a valid ScriptBlock"
     }
 

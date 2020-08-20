@@ -146,7 +146,7 @@ function Add-PodeRoute
     }
 
     # if middleware, scriptblock and file path are all null/empty, error
-    if ((Test-IsEmpty $Middleware) -and (Test-IsEmpty $ScriptBlock) -and (Test-IsEmpty $FilePath) -and (Test-IsEmpty $Authentication)) {
+    if ((Test-PodeIsEmpty $Middleware) -and (Test-PodeIsEmpty $ScriptBlock) -and (Test-PodeIsEmpty $FilePath) -and (Test-PodeIsEmpty $Authentication)) {
         throw "[$($Method)] $($Path): No logic passed"
     }
 
@@ -694,7 +694,7 @@ function ConvertTo-PodeRoute
         $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys
 
         # if commands were supplied validate them - otherwise use all exported ones
-        if (Test-IsEmpty $Commands) {
+        if (Test-PodeIsEmpty $Commands) {
             Write-Verbose "Using all commands in $($Module) for converting to routes"
             $Commands = $ModuleCommands
         }
@@ -709,7 +709,7 @@ function ConvertTo-PodeRoute
     }
 
     # if there are no commands, fail
-    if (Test-IsEmpty $Commands) {
+    if (Test-PodeIsEmpty $Commands) {
         throw 'No commands supplied to convert to Routes'
     }
 
@@ -762,7 +762,7 @@ function ConvertTo-PodeRoute
             $result = (. $cmd @parameters)
 
             # if we have a result, convert it to json
-            if (!(Test-IsEmpty $result)) {
+            if (!(Test-PodeIsEmpty $result)) {
                 Write-PodeJsonResponse -Value $result -Depth 1
             }
         } -PassThru)
@@ -900,7 +900,7 @@ function Add-PodePage
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
     {
         'scriptblock' {
-            if (Test-IsEmpty $ScriptBlock){
+            if (Test-PodeIsEmpty $ScriptBlock){
                 throw 'A non-empty ScriptBlock is required to created a Page Route'
             }
 
@@ -909,7 +909,7 @@ function Add-PodePage
                 param($e, $script, $data)
 
                 # invoke the function (optional splat data)
-                if (Test-IsEmpty $data) {
+                if (Test-PodeIsEmpty $data) {
                     $result = (. $script)
                 }
                 else {
@@ -917,7 +917,7 @@ function Add-PodePage
                 }
 
                 # if we have a result, convert it to html
-                if (!(Test-IsEmpty $result)) {
+                if (!(Test-PodeIsEmpty $result)) {
                     Write-PodeHtmlResponse -Value $result
                 }
             }

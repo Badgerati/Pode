@@ -85,7 +85,7 @@ function New-PodeMiddlewareInternal
         $PSSession
     )
 
-    if (Test-IsEmpty $ScriptBlock) {
+    if (Test-PodeIsEmpty $ScriptBlock) {
         throw "[Middleware]: No ScriptBlock supplied"
     }
 

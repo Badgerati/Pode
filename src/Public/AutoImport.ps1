@@ -46,7 +46,7 @@ function Export-PodeSnapin
     )
 
     # if non-windows or core, fail
-    if ((Test-IsPSCore) -or (Test-IsUnix)) {
+    if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
         throw 'Snapins are only supported on Windows PowerShell'
     }
 

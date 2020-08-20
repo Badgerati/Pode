@@ -312,7 +312,7 @@ function Set-PodeSessionInMemClearDown
     # cleardown expired inmem session every 10 minutes
     Add-PodeSchedule -Name '__pode_session_inmem_cleanup__' -Cron '0/10 * * * *' -ScriptBlock {
         $store = $PodeContext.Server.Sessions.Store
-        if (Test-IsEmpty $store.Memory) {
+        if (Test-PodeIsEmpty $store.Memory) {
             return
         }
 

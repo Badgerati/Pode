@@ -6,7 +6,7 @@ function ConvertTo-PodeOAContentTypeSchema
         $Schemas
     )
 
-    if (Test-IsEmpty $Schemas) {
+    if (Test-PodeIsEmpty $Schemas) {
         return $null
     }
 
@@ -29,7 +29,7 @@ function ConvertTo-PodeOAHeaderSchema
         $Schemas
     )
 
-    if (Test-IsEmpty $Schemas) {
+    if (Test-PodeIsEmpty $Schemas) {
         return $null
     }
 

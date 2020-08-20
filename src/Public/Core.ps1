@@ -131,7 +131,7 @@ function Start-PodeServer
         }
 
         # configure the server's root path
-        if (!(Test-IsEmpty $RootPath)) {
+        if (!(Test-PodeIsEmpty $RootPath)) {
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
@@ -557,7 +557,7 @@ function Show-PodeGui
     Test-PodeIsServerless -FunctionName 'Show-PodeGui' -ThrowError
 
     # only valid for Windows PowerShell
-    if ((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
+    if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
         throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7 on Windows'
     }
 
@@ -750,7 +750,7 @@ function Add-PodeEndpoint
     $_endpoint = Get-PodeEndpointInfo -Address $FullAddress
 
     # if a name was supplied, check it is unique
-    if (!(Test-IsEmpty $Name) -and
+    if (!(Test-PodeIsEmpty $Name) -and
         (Get-PodeCount ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
     {
         throw "An endpoint with the name '$($Name)' has already been defined"
@@ -792,7 +792,7 @@ function Add-PodeEndpoint
     $obj.Url = "$($obj.Protocol)://$($obj.HostName):$($obj.Port)/"
 
     # if the address is non-local, then check admin privileges
-    if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {
+    if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
         throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
     }
 
@@ -863,7 +863,7 @@ function Add-PodeEndpoint
         $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
 
         # ensure the name exists
-        if (Test-IsEmpty $redir_endpoint) {
+        if (Test-PodeIsEmpty $redir_endpoint) {
             throw "An endpoint with the name '$($RedirectTo)' has not been defined for redirecting"
         }
 
@@ -1259,14 +1259,14 @@ function Edit-PodeTimer
     }
 
     # edit scriptblock if supplied
-    if (!(Test-IsEmpty $ScriptBlock)) {
+    if (!(Test-PodeIsEmpty $ScriptBlock)) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $_timer.Script = $ScriptBlock
         $_timer.UsingVariables = $usingVars
     }
 
     # edit arguments if supplied
-    if (!(Test-IsEmpty $ArgumentList)) {
+    if (!(Test-PodeIsEmpty $ArgumentList)) {
         $_timer.Arguments = $ArgumentList
     }
 }
@@ -1624,21 +1624,21 @@ function Edit-PodeSchedule
     $_schedule = $PodeContext.Schedules[$Name]
 
     # edit cron if supplied
-    if (!(Test-IsEmpty $Cron)) {
+    if (!(Test-PodeIsEmpty $Cron)) {
         $_schedule.Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
         $_schedule.CronsRaw = $Cron
         $_schedule.NextTriggerTime = Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $_schedule.StartTime -EndTime $_schedule.EndTime
     }
 
     # edit scriptblock if supplied
-    if (!(Test-IsEmpty $ScriptBlock)) {
+    if (!(Test-PodeIsEmpty $ScriptBlock)) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $_schedule.Script = $ScriptBlock
         $_schedule.UsingVariables = $usingVars
     }
 
     # edit arguments if supplied
-    if (!(Test-IsEmpty $ArgumentList)) {
+    if (!(Test-PodeIsEmpty $ArgumentList)) {
         $_schedule.Arguments = $ArgumentList
     }
 }
@@ -1877,7 +1877,7 @@ function Add-PodeMiddleware
     }
 
     # ensure we have a script to run
-    if (Test-IsEmpty $InputObject.Logic) {
+    if (Test-PodeIsEmpty $InputObject.Logic) {
         throw "[Middleware]: No logic supplied in ScriptBlock"
     }
 

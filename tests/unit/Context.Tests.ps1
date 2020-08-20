@@ -23,7 +23,7 @@ Describe 'Add-PodeEndpoint' {
 
     Context 'Valid parameters supplied' {
         Mock Test-PodeIPAddress { return $true }
-        Mock Test-IsAdminUser { return $true }
+        Mock Test-PodeIsAdminUser { return $true }
 
         It 'Set just a Hostname address' {
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
@@ -274,7 +274,7 @@ Describe 'Add-PodeEndpoint' {
         }
 
         It 'Throws an error for not running as admin' {
-            Mock Test-IsAdminUser { return $false }
+            Mock Test-PodeIsAdminUser { return $false }
             $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
             { Add-PodeEndpoint -Address 'foo.com' -Protocol 'HTTP' } | Should Throw 'Must be running with admin'
         }
@@ -283,7 +283,7 @@ Describe 'Add-PodeEndpoint' {
 
 Describe 'Get-PodeEndpoint' {
     Mock Test-PodeIPAddress { return $true }
-    Mock Test-IsAdminUser { return $true }
+    Mock Test-PodeIsAdminUser { return $true }
 
     It 'Returns no Endpoints' {
         $PodeContext.Server = @{ Endpoints = @(); Type = $null }
