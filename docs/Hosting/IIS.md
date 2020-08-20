@@ -45,9 +45,26 @@ The first thing you'll need to do so IIS can host your server is, in the same di
   <location path="." inheritInChildApplications="false">
     <system.webServer>
       <handlers>
+        <remove name="WebDAV" />
         <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+        <remove name="ExtensionlessUrlHandler-Integrated-4.0" />
+        <add name="ExtensionlessUrlHandler-Integrated-4.0" path="*." verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
+        <remove name="ExtensionlessUrl-Integrated-4.0" />
+        <add name="ExtensionlessUrl-Integrated-4.0" path="*." verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
       </handlers>
+
+      <modules>
+        <remove name="WebDAVModule" />
+      </modules>
+
       <aspNetCore processPath="pwsh.exe" arguments=".\server.ps1" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout" hostingModel="OutOfProcess"/>
+
+      <security>
+        <authorization>
+          <remove users="*" roles="" verbs="" />
+          <add accessType="Allow" users="*" verbs="GET,HEAD,POST,PUT,DELETE,DEBUG,OPTIONS" />
+        </authorization>
+      </security>
     </system.webServer>
   </location>
 </configuration>
