@@ -11,8 +11,9 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # schedule minutely using predefined cron
+    $message = 'Hello, world!'
     Add-PodeSchedule -Name 'predefined' -Cron '@minutely' -Limit 2 -ScriptBlock {
-        'hello, world!' | Out-Default
+        $using:message | Out-Default
         Get-PodeSchedule -Name 'predefined' | Out-Default
     }
 

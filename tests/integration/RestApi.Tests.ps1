@@ -7,12 +7,20 @@ Describe 'REST API Requests' {
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
+            function Write-OuterImportedResponse {
+                Write-PodeJsonResponse -Value @{ Message = 'Outer Hello' }
+            }
+
             Start-PodeServer -RootPath $using:PSScriptRoot {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
 
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
+                }
+
+                function Write-InnerImportedResponse {
+                    Write-PodeJsonResponse -Value @{ Message = 'Inner Hello' }
                 }
 
                 Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
@@ -73,6 +81,14 @@ Describe 'REST API Requests' {
 
                 Add-PodeRoute -Method Get -Path '/api/*/hello' -ScriptBlock {
                     Write-PodeJsonResponse -Value @{ Result ='OK' }
+                }
+
+                Add-PodeRoute -Method Get -Path '/imported/func/outer' -ScriptBlock {
+                    Write-OuterImportedResponse
+                }
+
+                Add-PodeRoute -Method Get -Path '/imported/func/inner' -ScriptBlock {
+                    Write-InnerImportedResponse
                 }
             }
         }
@@ -218,5 +234,15 @@ Describe 'REST API Requests' {
 
         $result = Invoke-RestMethod -Uri "$($Endpoint)/api/123/hello" -Method Get
         $result.Result | Should Be 'OK'
+    }
+
+    It 'route importing outer function' {
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/imported/func/outer" -Method Get
+        $result.Message | Should Be 'Outer Hello'
+    }
+
+    It 'route importing outer function' {
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/imported/func/inner" -Method Get
+        $result.Message | Should Be 'Inner Hello'
     }
 }

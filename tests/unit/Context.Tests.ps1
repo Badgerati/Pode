@@ -408,16 +408,12 @@ Describe 'Import-PodeModule' {
 
     Context 'Valid parameters supplied' {
         Mock Resolve-Path { return @{ 'Path' = 'c:/some/file.txt' } }
+        Mock Import-Module { }
         Mock Test-PodePath { return $true }
 
         It 'Returns null for no shared state in context' {
-            $PodeContext = @{ 'RunspaceState' = [initialsessionstate]::CreateDefault() }
-
             Import-PodeModule -Path 'file.txt'
-
-            $modules = @($PodeContext.RunspaceState.Modules)
-            $modules.Length | Should Be 1
-            $modules[0].Name | Should Be 'c:/some/file.txt'
+            Assert-MockCalled Import-Module -Times 1 -Scope It
         }
     }
 }

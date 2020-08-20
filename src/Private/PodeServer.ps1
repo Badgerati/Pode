@@ -143,7 +143,12 @@ function Start-PodeWebServer
                                     }
                                 }
                                 elseif ($null -ne $WebEvent.Route.Logic) {
-                                    Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments (@($WebEvent) + @($WebEvent.Route.Arguments)) -Scoped -Splat
+                                    $_args = @($WebEvent) + @($WebEvent.Route.Arguments)
+                                    if ($null -ne $WebEvent.Route.UsingVariables) {
+                                        $_args = @($WebEvent.Route.UsingVariables.Value) + $_args
+                                    }
+
+                                    Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                                 }
                             }
                         }

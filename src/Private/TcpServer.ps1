@@ -65,7 +65,13 @@ function Start-PodeTcpServer
                     $handlers = Get-PodeHandler -Type Tcp
                     foreach ($name in $handlers.Keys) {
                         $handler = $handlers[$name]
-                        Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments (@($TcpEvent) + @($handler.Arguments)) -Scoped -Splat
+
+                        $_args = @($TcpEvent) + @($handler.Arguments)
+                        if ($null -ne $handler.UsingVariables) {
+                            $_args = @($handler.UsingVariables.Value) + $_args
+                        }
+
+                        Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $_args -Scoped -Splat
                     }
                 }
 

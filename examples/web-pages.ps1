@@ -11,7 +11,6 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
-
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http -Name '8090Address'
     Add-PodeEndpoint -Address * -Port $Port -Protocol Http -Name '8085Address' -RedirectTo '8090Address'
@@ -93,6 +92,7 @@ Start-PodeServer -Threads 2 {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every hello route' }
     }
 
+    $hmm = 'well well'
     Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/route_script.ps1'
 
 }

@@ -4,6 +4,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+Import-Module -Name EPS
+
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 
@@ -13,18 +15,16 @@ Start-PodeServer -Threads 2 {
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 
-    # import the EPS module to each runspace
-    Import-PodeModule -Name EPS
-
     # set view engine to EPS renderer
     Set-PodeViewEngine -Type EPS -ScriptBlock {
         param($path, $data)
+        $template = Get-Content -Path $path -Raw -Force
 
         if ($null -eq $data) {
-            return (Invoke-EpsTemplate -Path $path)
+            return (Invoke-EpsTemplate -Template $template)
         }
         else {
-            return (Invoke-EpsTemplate -Path $path -Binding $data)
+            return (Invoke-EpsTemplate -Template $template -Binding $data)
         }
     }
 

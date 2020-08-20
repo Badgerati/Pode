@@ -9,25 +9,26 @@ This custom `scriptblock` will be supplied with two arguments:
 
 ## EPS
 
-If you were to use `EPS` engine, and already have the module installed, then the following server example would work for views and static content:
+If you were to use the `EPS` engine, and already have the module installed, then the following server example would work for views and static content:
 
 ```powershell
+# import the EPS module
+Import-Module -Name EPS
+
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    # import the EPS module into the runspaces
-    Import-PodeModule -Name EPS
 
     # set the engine to use and render EPS files
     # (could be index.eps, or for content scripts.css.eps)
     Set-PodeViewEngine -Type EPS -ScriptBlock {
         param($path, $data)
+        $template = Get-Content -Path $path -Raw -Force
 
         if ($null -eq $data) {
-            return (Invoke-EpsTemplate -Path $path)
+            return (Invoke-EpsTemplate -Template $template)
         }
         else {
-            return (Invoke-EpsTemplate -Path $path -Binding $data)
+            return (Invoke-EpsTemplate -Template $template -Binding $data)
         }
     }
 
@@ -53,11 +54,11 @@ The following example structure could be used for the views and static content:
 If you were to use `PSHTML` engine, and already have the module installed, then the following server example would work for views and static content:
 
 ```powershell
+# import the PSHTML module
+Import-Module -Name PSHTML
+
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    # import the PSHTML module into the runspaces
-    Import-PodeModule -Name PSHTML
 
     # set the engine to use and render PSHTML (which are just ps1) files
     # (could be index.ps1, or for content scripts.css.ps1)

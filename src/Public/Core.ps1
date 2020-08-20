@@ -1104,6 +1104,9 @@ function Add-PodeTimer
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # calculate the next tick time (based on Skip)
     $NextTriggerTime = [DateTime]::Now.AddSeconds($Interval)
     if ($Skip -gt 1) {
@@ -1119,6 +1122,7 @@ function Add-PodeTimer
         Skip = $Skip
         NextTriggerTime = $NextTriggerTime
         Script = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = $ArgumentList
         OnStart = $OnStart
         Completed = $false
@@ -1247,19 +1251,23 @@ function Edit-PodeTimer
         throw "Timer '$($Name)' does not exist"
     }
 
+    $_timer = $PodeContext.Timers[$Name]
+
     # edit interval if supplied
     if ($Interval -gt 0) {
-        $PodeContext.Timers[$Name].Interval = $Interval
+        $_timer.Interval = $Interval
     }
 
     # edit scriptblock if supplied
     if (!(Test-IsEmpty $ScriptBlock)) {
-        $PodeContext.Timers[$Name].Script = $ScriptBlock
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $_timer.Script = $ScriptBlock
+        $_timer.UsingVariables = $usingVars
     }
 
     # edit arguments if supplied
     if (!(Test-IsEmpty $ArgumentList)) {
-        $PodeContext.Timers[$Name].Arguments = $ArgumentList
+        $_timer.Arguments = $ArgumentList
     }
 }
 
@@ -1420,6 +1428,9 @@ function Add-PodeSchedule
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # add the schedule
     $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
     $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime
@@ -1434,6 +1445,7 @@ function Add-PodeSchedule
         Count = 0
         NextTriggerTime = $nextTrigger
         Script = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart = $OnStart
         Completed = ($null -eq $nextTrigger)
@@ -1620,7 +1632,9 @@ function Edit-PodeSchedule
 
     # edit scriptblock if supplied
     if (!(Test-IsEmpty $ScriptBlock)) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $_schedule.Script = $ScriptBlock
+        $_schedule.UsingVariables = $usingVars
     }
 
     # edit arguments if supplied
@@ -1818,7 +1832,7 @@ Add-PodeMiddleware -Name 'CheckEmailOnApi' -Route '/api/*' -ScriptBlock { /* log
 function Add-PodeMiddleware
 {
     [CmdletBinding(DefaultParameterSetName='Script')]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -1847,7 +1861,11 @@ function Add-PodeMiddleware
 
     # if it's a script - call New-PodeMiddleware
     if ($PSCmdlet.ParameterSetName -ieq 'script') {
-        $InputObject = New-PodeMiddleware -ScriptBlock $ScriptBlock -Route $Route -ArgumentList $ArgumentList
+        $InputObject = (New-PodeMiddlewareInternal `
+            -ScriptBlock $ScriptBlock `
+            -Route $Route `
+            -ArgumentList $ArgumentList `
+            -PSSession $PSCmdlet.SessionState)
     }
     else {
         if (![string]::IsNullOrWhiteSpace($Route)) {
@@ -1893,7 +1911,7 @@ function New-PodeMiddleware
 {
     [CmdletBinding()]
     [OutputType([hashtable])]
-    param (
+    param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
         $ScriptBlock,
@@ -1907,22 +1925,11 @@ function New-PodeMiddleware
         $ArgumentList
     )
 
-    # if route is empty, set it to root
-    $Route = ConvertTo-PodeRouteRegex -Path $Route
-
-    # create the middleware hashtable from a scriptblock
-    $HashTable = @{
-        Route = $Route
-        Logic = $ScriptBlock
-        Arguments = $ArgumentList
-    }
-
-    if (Test-IsEmpty $HashTable.Logic) {
-        throw "[Middleware]: No logic supplied in ScriptBlock"
-    }
-
-    # return the middleware, so it can be cached/added at a later date
-    return $HashTable
+    return (New-PodeMiddlewareInternal `
+        -ScriptBlock $ScriptBlock `
+        -Route $Route `
+        -ArgumentList $ArgumentList `
+        -PSSession $PSCmdlet.SessionState)
 }
 
 <#
@@ -1941,7 +1948,7 @@ Remove-PodeMiddleware -Name 'Sessions'
 function Remove-PodeMiddleware
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name

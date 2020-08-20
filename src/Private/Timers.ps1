@@ -61,7 +61,12 @@ function Invoke-PodeInternalTimer
 
     try {
         $_event = @{ Lockable = $PodeContext.Lockable }
+
         $_args = @($_event) + @($Timer.Arguments)
+        if ($null -ne $Timer.UsingVariables) {
+            $_args = @($Timer.UsingVariables.Value) + $_args
+        }
+
         Invoke-PodeScriptBlock -ScriptBlock $Timer.Script -Arguments $_args -Scoped -Splat
     }
     catch {

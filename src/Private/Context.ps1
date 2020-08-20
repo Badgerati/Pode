@@ -77,6 +77,25 @@ function New-PodeContext
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
 
+    # auto importing (modules, funcs, snap-ins)
+    $ctx.Server.AutoImport = @{
+        Modules = @{
+            Enabled = $true
+            ExportList = @()
+            ExportOnly = $false
+        }
+        Snapins = @{
+            Enabled = $true
+            ExportList = @()
+            ExportOnly = $false
+        }
+        Functions = @{
+            Enabled = $true
+            ExportList = @()
+            ExportOnly = $false
+        }
+    }
+
     # basic logging setup
     $ctx.Server.Logging = @{
         Enabled = $true
@@ -172,7 +191,8 @@ function New-PodeContext
     $ctx.Server.ViewEngine = @{
         Type = 'html'
         Extension = 'html'
-        Script = $null
+        ScriptBlock = $null
+        UsingVariables = $null
         IsDynamic = $false
     }
 
@@ -279,9 +299,11 @@ function New-PodeContext
 
 function New-PodeRunspaceState
 {
+    # create the state, and add the pode module
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule($PodeContext.Server.PodeModulePath)
 
+    # load the vars into the share state
     $session = New-PodeStateContext -Context $PodeContext
 
     $variables = @(
@@ -295,6 +317,116 @@ function New-PodeRunspaceState
     }
 
     $PodeContext.RunspaceState = $state
+}
+
+function Import-PodeFunctionsIntoRunspaceState
+{
+    param(
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath
+    )
+
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImport.Functions.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList.Length -eq 0)) {
+        return
+    }
+
+    # script or file functions?
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'script' {
+            $funcs = (Get-PodeFunctionsFromScriptBlock -ScriptBlock $ScriptBlock)
+        }
+
+        'file' {
+            $funcs = (Get-PodeFunctionsFromFile -FilePath $FilePath)
+        }
+    }
+
+    # looks like we have nothing!
+    if (($null -eq $funcs) -or ($funcs.Length -eq 0)) {
+        return
+    }
+
+    # groups funcs in case there or multiple definitions
+    $funcs = ($funcs | Group-Object -Property { $_.Name })
+
+    # import them, but also check if they're exported
+    foreach ($func in $funcs) {
+        # only exported funcs? is the func exported?
+        if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList -inotcontains $func.Name)) {
+            continue
+        }
+
+        # load the function
+        $funcDef = [System.Management.Automation.Runspaces.SessionStateFunctionEntry]::new($func.Name, $func.Group[-1].Definition)
+        $PodeContext.RunspaceState.Commands.Add($funcDef)
+    }
+}
+
+function Import-PodeModulesIntoRunspaceState
+{
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImport.Modules.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList.Length -eq 0)) {
+        return
+    }
+
+    # load modules into runspaces, if allowed
+    $modules = (Get-Module | Where-Object { ($_.ModuleType -ieq 'script') -and ($_.Name -ine 'pode') }).Name | Sort-Object -Unique
+
+    foreach ($module in $modules) {
+        # only exported modules? is the module exported?
+        if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList -inotcontains $module)) {
+            continue
+        }
+
+        $path = (Get-Module -Name $module | Sort-Object -Property Version -Descending | Select-Object -First 1 -ExpandProperty Path)
+        $PodeContext.RunspaceState.ImportPSModule($path)
+    }
+}
+
+function Import-PodeSnapinsIntoRunspaceState
+{
+    # if non-windows or core, do nothing
+    if ((Test-IsPSCore) -or (Test-IsUnix)) {
+        return
+    }
+
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImport.Snapins.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList.Length -eq 0)) {
+        return
+    }
+
+    # load snapins into runspaces, if allowed
+    $snapins = (Get-PSSnapin | Where-Object { !$_.IsDefault }).Name | Sort-Object -Unique
+
+    foreach ($snapin in $snapins) {
+        # only exported snapins? is the snapin exported?
+        if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList -inotcontains $snapin)) {
+            continue
+        }
+
+        $PodeContext.RunspaceState.ImportPSSnapIn($snapin, [ref]$null)
+    }
 }
 
 function New-PodeRunspacePools
@@ -417,7 +549,7 @@ function Set-PodeServerConfiguration
 
     # logging
     $Context.Server.Logging = @{
-        Enabled = !([bool]$Configuration.Logging.Enable)
+        Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
         Masking = @{
             Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
             Mask = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
@@ -432,6 +564,25 @@ function Set-PodeServerConfiguration
 
     if ([int]$Configuration.ReceiveTimeout -gt 0) {
         $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
+    }
+
+    # auto-import
+    $Context.Server.AutoImport = @{
+        Modules = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Modules.Enable) -or [bool]$Configuration.AutoImport.Modules.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Modules.ExportOnly)
+        }
+        Snapins = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Snapins.Enable) -or [bool]$Configuration.AutoImport.Snapins.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Snapins.ExportOnly)
+        }
+        Functions = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Functions.Enable) -or [bool]$Configuration.AutoImport.Functions.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Functions.ExportOnly)
+        }
     }
 }
 

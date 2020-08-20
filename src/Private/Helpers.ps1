@@ -77,13 +77,17 @@ function Get-PodeFileContentUsingViewEngine
         }
 
         default {
-            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                if ($null -eq $Data -or $Data.Count -eq 0) {
-                    $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
+            if ($null -ne $PodeContext.Server.ViewEngine.ScriptBlock) {
+                $_args = @($Path)
+                if (($null -ne $Data) -and ($Data.Count -gt 0)) {
+                    $_args = @($Path, $Data)
                 }
-                else {
-                    $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+
+                if ($null -ne $PodeContext.Server.ViewEngine.UsingVariables) {
+                    $_args = @($PodeContext.Server.ViewEngine.UsingVariables.Value) + $_args
                 }
+
+                $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
             }
         }
     }
@@ -1143,7 +1147,14 @@ function ConvertFrom-PodeRequestContent
 
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($MetaData.ContentType)) {
-            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.BodyParsers[$MetaData.ContentType] -Arguments $Content -Return)
+            $parser = $PodeContext.Server.BodyParsers[$MetaData.ContentType]
+
+            $_args = @($Content)
+            if ($null -ne $parser.UsingVariables) {
+                $_args = @($parser.UsingVariables.Value) + $_args
+            }
+
+            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
             return $Result
         }
     }
@@ -1897,7 +1908,11 @@ function Get-PodeWildcardFiles
 
         [Parameter()]
         [string]
-        $Wildcard = '*.*'
+        $Wildcard = '*.*',
+
+        [Parameter()]
+        [string]
+        $RootPath
     )
 
     # if the OriginalPath is a directory, add wildcard
@@ -1907,7 +1922,7 @@ function Get-PodeWildcardFiles
 
     # if path has a *, assume wildcard
     if (Test-PodePathIsWildcard -Path $Path) {
-        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+        $Path = Get-PodeRelativePath -Path $Path -RootPath $RootPath -JoinRoot
         return @((Get-ChildItem $Path -Recurse -Force).FullName)
     }
 
@@ -2070,4 +2085,296 @@ function Convert-PodeQueryStringToHashTable
 
     $tmpQuery = [System.Web.HttpUtility]::ParseQueryString($Uri)
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
+}
+
+function Invoke-PodeUsingScriptConversion
+{
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.SessionState]
+        $PSSession
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return @($ScriptBlock, $null)
+    }
+
+    # rename any __using_ vars for inner timers, etcs
+    $scriptStr = "$($ScriptBlock)"
+    $foundInnerUsing = $false
+
+    while ($scriptStr -imatch '(?<full>\$__using_(?<name>[a-z0-9_\?]+))') {
+        $foundInnerUsing = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "`$using:$($Matches['name'])")
+    }
+
+    if ($foundInnerUsing) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
+    # get any using variables
+    $usingVars = Get-PodeScriptUsingVariables -ScriptBlock $ScriptBlock
+    if (Test-IsEmpty $usingVars) {
+        return @($ScriptBlock, $null)
+    }
+
+    # convert any using vars to use new names
+    $usingVars = ConvertTo-PodeUsingVariables -UsingVariables $usingVars -PSSession $PSSession
+
+    # now convert the script
+    $newScriptBlock = ConvertTo-PodeUsingScript -ScriptBlock $ScriptBlock -UsingVariables $usingVars
+
+    # return converted script
+    return @($newScriptBlock, $usingVars)
+}
+
+function Get-PodeScriptUsingVariables
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $true)
+}
+
+function ConvertTo-PodeUsingVariables
+{
+    param(
+        [Parameter()]
+        $UsingVariables,
+
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.SessionState]
+        $PSSession
+    )
+
+    if (Test-IsEmpty $UsingVariables) {
+        return $null
+    }
+
+    $mapped = @{}
+
+    foreach ($usingVar in $UsingVariables) {
+        # var name
+        $varName = $usingVar.SubExpression.VariablePath.UserPath
+
+        # only retrieve value if new var
+        if (!$mapped.ContainsKey($varName)) {
+            # get value, or get __using_ value for child scripts
+            $value = $PSSession.PSVariable.Get($varName)
+            if ([string]::IsNullOrEmpty($value)) {
+                $value = $PSSession.PSVariable.Get("__using_$($varName)")
+            }
+
+            if ([string]::IsNullOrEmpty($value)) {
+                throw "Value for `$using:$($varName) could not be found"
+            }
+
+            # add to mapped
+            $mapped[$varName] = @{
+                OldName = $usingVar.SubExpression.Extent.Text
+                NewName = "__using_$($varName)"
+                NewNameWithDollar = "`$__using_$($varName)"
+                SubExpressions = @()
+                Value = $value.Value
+            }
+        }
+
+        # add the vars sub-expression for replacing later
+        $mapped[$varName].SubExpressions += $usingVar.SubExpression
+    }
+
+    return @($mapped.Values)
+}
+
+function ConvertTo-PodeUsingScript
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [hashtable[]]
+        $UsingVariables
+    )
+
+    # return original script if no using vars
+    if (Test-IsEmpty $UsingVariables) {
+        return $ScriptBlock
+    }
+
+    $varsList = New-Object 'System.Collections.Generic.List`1[System.Management.Automation.Language.VariableExpressionAst]'
+    $newParams = New-Object System.Collections.ArrayList
+
+    foreach ($usingVar in $UsingVariables) {
+        foreach ($subExp in $usingVar.SubExpressions) {
+            $varsList.Add($subExp) | Out-Null
+        }
+    }
+
+    $newParams.AddRange(@($UsingVariables.NewNameWithDollar))
+    $newParams = ($newParams -join ', ')
+    $tupleParams = [tuple]::Create($varsList, $newParams)
+
+    $bindingFlags = [System.Reflection.BindingFlags]'Default, NonPublic, Instance'
+    $_varReplacerMethod = $ScriptBlock.Ast.GetType().GetMethod('GetWithInputHandlingForInvokeCommandImpl', $bindingFlags)
+    $convertedScriptBlockStr = $_varReplacerMethod.Invoke($ScriptBlock.Ast, @($tupleParams))
+
+    if (!$ScriptBlock.Ast.ParamBlock) {
+        $convertedScriptBlockStr = "param($($newParams))`n$($convertedScriptBlockStr)"
+    }
+
+    $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
+
+    if ($convertedScriptBlock.Ast.EndBlock[0].Statements.Extent.Text.StartsWith('$input |')) {
+        $convertedScriptBlockStr = ($convertedScriptBlockStr -ireplace '\$input \|')
+        $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
+    }
+
+    return $convertedScriptBlock
+}
+
+function Get-PodeDotSourcedFiles
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.Language.Ast]
+        $Ast,
+
+        [Parameter()]
+        [string]
+        $RootPath
+    )
+
+    # set default root path
+    if ([string]::IsNullOrWhiteSpace($RootPath)) {
+        $RootPath = $PodeContext.Server.Root
+    }
+
+    # get all dot-sourced files
+    $cmdTypes = @('dot', 'ampersand')
+    $files = ($Ast.FindAll({
+        ($args[0] -is [System.Management.Automation.Language.CommandAst]) -and
+        ($args[0].InvocationOperator -iin $cmdTypes) -and
+        ($args[0].CommandElements.StaticType.Name -ieq 'string')
+    }, $false)).CommandElements.Value
+
+    $fileOrder = @()
+
+    # no files found
+    if (($null -eq $files) -or ($files.Length -eq 0)) {
+        return $fileOrder
+    }
+
+    # get any sub sourced files
+    foreach ($file in $files) {
+        $file = Get-PodeRelativePath -Path $file -RootPath $RootPath -JoinRoot
+        $fileOrder += $file
+
+        $ast = Get-PodeAstFromFile -FilePath $file
+
+        $result = Get-PodeDotSourcedFiles -Ast $ast -RootPath (Split-Path -Parent -Path $file)
+        if (($null -ne $result) -and ($result.Length -gt 0)) {
+            $fileOrder += $result
+        }
+    }
+
+    # return all found files
+    return $fileOrder
+}
+
+function Get-PodeAstFromFile
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FilePath
+    )
+
+    if (!(Test-Path $FilePath)) {
+        throw "Path to script file does not exist: $($FilePath)"
+    }
+
+    return [System.Management.Automation.Language.Parser]::ParseFile($FilePath, [ref]$null, [ref]$null)
+}
+
+function Get-PodeFunctionsFromFile
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FilePath
+    )
+
+    $ast = Get-PodeAstFromFile -FilePath $FilePath
+    return @(Get-PodeFunctionsFromAst -Ast $ast)
+}
+
+function Get-PodeFunctionsFromAst
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.Language.Ast]
+        $Ast
+    )
+
+    $funcs = @(($Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)))
+
+    return @(foreach ($func in $funcs) {
+        # skip null
+        if ($null -eq $func) {
+            continue
+        }
+
+        # skip pode funcs
+        if ($func.Name -ilike '*-Pode*') {
+            continue
+        }
+
+        # the found func
+        @{
+            Name = $func.Name
+            Definition = "$($func.Body)".Trim('{}')
+        }
+    })
+}
+
+function Get-PodeFunctionsFromScriptBlock
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # functions that have been found
+    $foundFuncs = @()
+
+    # get each function in the callstack
+    $callstack = Get-PSCallStack
+    if ($callstack.Count -gt 3) {
+        $callstack = ($callstack | Select-Object -Skip 4)
+        $bindingFlags = [System.Reflection.BindingFlags]'NonPublic, Instance, Static'
+
+        foreach ($call in $callstack)
+        {
+            $_funcContext = $call.GetType().GetProperty('FunctionContext', $bindingFlags).GetValue($call, $null)
+            $_scriptBlock = $_funcContext.GetType().GetField('_scriptBlock', $bindingFlags).GetValue($_funcContext)
+            $foundFuncs += @(Get-PodeFunctionsFromAst -Ast $_scriptBlock.Ast)
+        }
+    }
+
+    # get each function from the main script
+    $foundFuncs += @(Get-PodeFunctionsFromAst -Ast $ScriptBlock.Ast)
+
+    # return the found functions
+    return $foundFuncs
 }

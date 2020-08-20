@@ -4,6 +4,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+Import-Module -Name PSHTML
+
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 
@@ -12,9 +14,6 @@ Start-PodeServer -Threads 2 {
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
-
-    # import the PSHTML module to each runspace
-    Import-PodeModule -Name PSHTML
 
     # set view engine to PSHTML renderer
     Set-PodeViewEngine -Type PSHTML -Extension PS1 -ScriptBlock {

@@ -157,8 +157,11 @@ function New-PodeLoggingMethod
         }
 
         'custom' {
+            $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
             return @{
                 ScriptBlock = $ScriptBlock
+                UsingVariables = $usingVars
                 Batch = $batchInfo
                 Arguments = $ArgumentList
             }
@@ -375,10 +378,14 @@ function Add-PodeLogger
         throw "The supplied output Method for the '$($Name)' Logging method requires a valid ScriptBlock"
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # add logging method to server
     $PodeContext.Server.Logging.Types[$Name] = @{
         Method = $Method
         ScriptBlock = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = $ArgumentList
     }
 }

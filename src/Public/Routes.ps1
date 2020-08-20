@@ -155,8 +155,11 @@ function Add-PodeRoute
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # convert any middleware into valid hashtables
-    $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware)
+    $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
@@ -184,6 +187,7 @@ function Add-PodeRoute
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
         @{
             Logic = $ScriptBlock
+            UsingVariables = $usingVars
             Middleware = $Middleware
             Authentication = $Authentication
             Endpoint = @{
@@ -364,7 +368,7 @@ function Add-PodeStaticRoute
     }
 
     # convert any middleware into valid hashtables
-    $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware)
+    $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
@@ -684,7 +688,7 @@ function ConvertTo-PodeRoute
 
     # if a module was supplied, import it - then validate the commands
     if (![string]::IsNullOrWhiteSpace($Module)) {
-        Import-PodeModule -Name $Module -Now
+        Import-PodeModule -Name $Module
 
         Write-Verbose "Getting exported commands from module"
         $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys

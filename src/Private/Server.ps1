@@ -24,6 +24,13 @@ function Start-PodeInternalServer
 
         Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
 
+        # load any modules/snapins
+        Import-PodeSnapinsIntoRunspaceState
+        Import-PodeModulesIntoRunspaceState
+
+        # load any functions
+        Import-PodeFunctionsIntoRunspaceState -ScriptBlock $_script
+
         # start the runspace pools for web, schedules, etc
         New-PodeRunspacePools
         Open-PodeRunspacePools
@@ -127,6 +134,11 @@ function Restart-PodeInternalServer
         $PodeContext.Schedules.Clear()
         $PodeContext.Server.Logging.Types.Clear()
 
+        # auto-importers
+        $PodeContext.Server.AutoImport.Modules.ExportList = @()
+        $PodeContext.Server.AutoImport.Snapins.ExportList = @()
+        $PodeContext.Server.AutoImport.Functions.ExportList = @()
+
         # clear middle/endware
         $PodeContext.Server.Middleware = @()
         $PodeContext.Server.Endware = @()
@@ -148,7 +160,8 @@ function Restart-PodeInternalServer
         $PodeContext.Server.ViewEngine = @{
             Type = 'html'
             Extension = 'html'
-            Script = $null
+            ScriptBlock = $null
+            UsingVariables = $null
             IsDynamic = $false
         }
 

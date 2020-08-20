@@ -22,6 +22,9 @@ Describe 'Start-PodeInternalServer' {
     Mock Start-PodeTcpServer { }
     Mock Start-PodeWebServer { }
     Mock Start-PodeServiceServer { }
+    Mock Import-PodeModulesIntoRunspaceState { }
+    Mock Import-PodeSnapinsIntoRunspaceState { }
+    Mock Import-PodeFunctionsIntoRunspaceState { }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Type = ([string]::Empty); Logic = {} }
@@ -148,6 +151,11 @@ Describe 'Restart-PodeInternalServer' {
                 }
                 OpenAPI = @{}
                 BodyParsers = @{}
+                AutoImport = @{
+                    Modules = @{ Exported = @() }
+                    Snapins = @{ Exported = @() }
+                    Functions = @{ Exported = @() }
+                }
             };
             Metrics = @{
                 Server = @{
@@ -174,7 +182,8 @@ Describe 'Restart-PodeInternalServer' {
 
         $PodeContext.Server.ViewEngine.Type | Should Be 'html'
         $PodeContext.Server.ViewEngine.Extension | Should Be 'html'
-        $PodeContext.Server.ViewEngine.Script | Should Be $null
+        $PodeContext.Server.ViewEngine.ScriptBlock | Should Be $null
+        $PodeContext.Server.ViewEngine.UsingVariables | Should Be $null
         $PodeContext.Server.ViewEngine.IsDynamic | Should Be $false
 
         $PodeContext.Metrics.Server.RestartCount | Should Be 1
