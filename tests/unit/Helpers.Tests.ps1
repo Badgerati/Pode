@@ -61,62 +61,62 @@ Describe 'Get-PodeType' {
     }
 }
 
-Describe 'Test-IsEmpty' {
+Describe 'Test-PodeIsEmpty' {
     Context 'No value is passed' {
         It 'Return true for no value' {
-            Test-IsEmpty | Should be $true
+            Test-PodeIsEmpty | Should be $true
         }
         
         It 'Return true for null value' {
-            Test-IsEmpty -Value $null | Should be $true
+            Test-PodeIsEmpty -Value $null | Should be $true
         }
     }
 
     Context 'Empty value is passed' {
         It 'Return true for an empty arraylist' {
-            Test-IsEmpty -Value ([System.Collections.ArrayList]::new()) | Should Be $true
+            Test-PodeIsEmpty -Value ([System.Collections.ArrayList]::new()) | Should Be $true
         }
 
         It 'Return true for an empty array' {
-            Test-IsEmpty -Value @() | Should Be $true
+            Test-PodeIsEmpty -Value @() | Should Be $true
         }
 
         It 'Return true for an empty hashtable' {
-            Test-IsEmpty -Value @{} | Should Be $true
+            Test-PodeIsEmpty -Value @{} | Should Be $true
         }
 
         It 'Return true for an empty string' {
-            Test-IsEmpty -Value ([string]::Empty) | Should Be $true
+            Test-PodeIsEmpty -Value ([string]::Empty) | Should Be $true
         }
 
         It 'Return true for a whitespace string' {
-            Test-IsEmpty -Value "  " | Should Be $true
+            Test-PodeIsEmpty -Value "  " | Should Be $true
         }
 
         It 'Return true for an empty scriptblock' {
-            Test-IsEmpty -Value {} | Should Be $true
+            Test-PodeIsEmpty -Value {} | Should Be $true
         }
     }
 
     Context 'Valid value is passed' {
         It 'Return false for a string' {
-            Test-IsEmpty -Value "test" | Should Be $false
+            Test-PodeIsEmpty -Value "test" | Should Be $false
         }
 
         It 'Return false for a number' {
-            Test-IsEmpty -Value 1 | Should Be $false
+            Test-PodeIsEmpty -Value 1 | Should Be $false
         }
 
         It 'Return false for an array' {
-            Test-IsEmpty -Value @('test') | Should Be $false
+            Test-PodeIsEmpty -Value @('test') | Should Be $false
         }
 
         It 'Return false for a hashtable' {
-            Test-IsEmpty -Value @{'key'='value';} | Should Be $false
+            Test-PodeIsEmpty -Value @{'key'='value';} | Should Be $false
         }
 
         It 'Return false for a scriptblock' {
-            Test-IsEmpty -Value { write-host '' } | Should Be $false
+            Test-PodeIsEmpty -Value { write-host '' } | Should Be $false
         }
     }
 }
@@ -129,50 +129,50 @@ Describe 'Get-PodePSVersionTable' {
     }
 }
 
-Describe 'Test-IsUnix' {
+Describe 'Test-PodeIsUnix' {
     It 'Returns false for non-unix' {
         Mock Get-PodePSVersionTable { return @{ 'Platform' = 'Windows' } }
-        Test-IsUnix | Should Be $false
+        Test-PodeIsUnix | Should Be $false
         Assert-MockCalled Get-PodePSVersionTable -Times 1
     }
 
     It 'Returns true for unix' {
         Mock Get-PodePSVersionTable { return @{ 'Platform' = 'Unix' } }
-        Test-IsUnix | Should Be $true
+        Test-PodeIsUnix | Should Be $true
         Assert-MockCalled Get-PodePSVersionTable -Times 1
     }
 }
 
-Describe 'Test-IsWindows' {
+Describe 'Test-PodeIsWindows' {
     It 'Returns false for non-windows' {
         Mock Get-PodePSVersionTable { return @{ 'Platform' = 'Unix' } }
-        Test-IsWindows | Should Be $false
+        Test-PodeIsWindows | Should Be $false
         Assert-MockCalled Get-PodePSVersionTable -Times 1
     }
 
     It 'Returns true for windows and desktop' {
         Mock Get-PodePSVersionTable { return @{ 'PSEdition' = 'Desktop' } }
-        Test-IsWindows | Should Be $true
+        Test-PodeIsWindows | Should Be $true
         Assert-MockCalled Get-PodePSVersionTable -Times 1
     }
 
     It 'Returns true for windows and core' {
         Mock Get-PodePSVersionTable { return @{ 'Platform' = 'Win32NT'; 'PSEdition' = 'Core' } }
-        Test-IsWindows | Should Be $true
+        Test-PodeIsWindows | Should Be $true
         Assert-MockCalled Get-PodePSVersionTable -Times 1
     }
 }
 
-Describe 'Test-IsPSCore' {
+Describe 'Test-PodeIsPSCore' {
     It 'Returns false for non-core' {
         Mock Get-PodePSVersionTable { return @{ 'PSEdition' = 'Desktop' } }
-        Test-IsPSCore | Should Be $false
+        Test-PodeIsPSCore | Should Be $false
         Assert-MockCalled Get-PodePSVersionTable -Times 1
     }
 
     It 'Returns true for unix' {
         Mock Get-PodePSVersionTable { return @{ 'PSEdition' = 'Core' } }
-        Test-IsPSCore | Should Be $true
+        Test-PodeIsPSCore | Should Be $true
         Assert-MockCalled Get-PodePSVersionTable -Times 1
     }
 }

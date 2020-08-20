@@ -272,7 +272,7 @@ function Restore-PodeState
     # restore the state from file
     $state = @{}
 
-    if (Test-IsPSCore) {
+    if (Test-PodeIsPSCore) {
         $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
     }
     else {

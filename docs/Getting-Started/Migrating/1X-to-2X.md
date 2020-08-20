@@ -188,3 +188,19 @@ Start-PodeServer -ScriptBlock {
     }
 }
 ```
+
+### Test Functions
+
+If you're using any of the following:
+
+* `Test-IsEmpty`
+* `Test-IsUnix`
+* `Test-IsWindows`
+* `Test-IsPSCore`
+
+these have been updated to:
+
+* `Test-PodeIsEmpty`
+* `Test-PodeIsUnix`
+* `Test-PodeIsWindows`
+* `Test-PodeIsPSCore`

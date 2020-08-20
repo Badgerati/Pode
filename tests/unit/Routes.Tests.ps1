@@ -1055,7 +1055,7 @@ Describe 'Get-PodeRouteByUrl' {
 
 Describe 'Get-PodeRoute' {
     Mock Test-PodeIPAddress { return $true }
-    Mock Test-IsAdminUser { return $true }
+    Mock Test-PodeIsAdminUser { return $true }
 
     It 'Returns both routes whe nothing supplied' {
         $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; }

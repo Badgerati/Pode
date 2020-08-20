@@ -144,7 +144,7 @@ function ConvertFrom-PodeBytesToString
         $RemoveNewLine
     )
 
-    if (Test-IsEmpty $Bytes) {
+    if (Test-PodeIsEmpty $Bytes) {
         return $Bytes
     }
 

@@ -414,7 +414,7 @@ function Get-PodeAuthWindowsADMethod
         }
 
         # if there's no user, then, err, oops
-        if (Test-IsEmpty $result.User) {
+        if (Test-PodeIsEmpty $result.User) {
             return @{ Message = 'An unexpected error occured' }
         }
 
@@ -600,7 +600,7 @@ function Get-PodeAuthMiddlewareScript
 
         # route options for using sessions
         $sessionless = $auth.Sessionless
-        $usingSessions = (!(Test-IsEmpty $e.Session))
+        $usingSessions = (!(Test-PodeIsEmpty $e.Session))
         $useHeaders = [bool]($e.Session.Properties.UseHeaders)
         $loginRoute = $opts.Login
 
@@ -618,14 +618,14 @@ function Get-PodeAuthMiddlewareScript
         }
 
         # if the session already has a user/isAuth'd, then skip auth
-        if ($usingSessions -and !(Test-IsEmpty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
+        if ($usingSessions -and !(Test-PodeIsEmpty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
             $e.Auth = $e.Session.Data.Auth
             return (Set-PodeAuthStatus -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless)
         }
 
         # check if the login flag is set, in which case just return and load a login get-page
         if ($loginRoute -and !$useHeaders -and ($e.Method -ieq 'get')) {
-            if (!(Test-IsEmpty $e.Session.Data.Auth)) {
+            if (!(Test-PodeIsEmpty $e.Session.Data.Auth)) {
                 Revoke-PodeSession -Session $e.Session
             }
 
@@ -652,7 +652,7 @@ function Get-PodeAuthMiddlewareScript
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -Return -Splat)
 
                 # if we have user, then run post validator if present
-                if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-IsEmpty $auth.Type.PostValidator.Script)) {
+                if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-PodeIsEmpty $auth.Type.PostValidator.Script)) {
                     $_args = @($e) + @($original) + @($result) + @($auth.Type.Arguments)
                     if ($null -ne $auth.Type.PostValidator.UsingVariables) {
                         $_args = @($auth.Type.PostValidator.UsingVariables.Value) + $_args
@@ -668,7 +668,7 @@ function Get-PodeAuthMiddlewareScript
         }
 
         # if there is no result, return false (failed auth)
-        if ((Test-IsEmpty $result) -or (Test-IsEmpty $result.User)) {
+        if ((Test-PodeIsEmpty $result) -or (Test-PodeIsEmpty $result.User)) {
             $_code = (Protect-PodeValue -Value $result.Code -Default 401)
 
             # set the www-auth header
@@ -747,7 +747,7 @@ function Remove-PodeAuthSession
     $Event.Auth = @{}
 
     # if a session auth is found, blank it
-    if (!(Test-IsEmpty $Event.Session.Data.Auth)) {
+    if (!(Test-PodeIsEmpty $Event.Session.Data.Auth)) {
         $Event.Session.Data.Remove('Auth')
     }
 
@@ -912,7 +912,7 @@ function Get-PodeAuthADResult
         }
     }
     finally {
-        if ((Test-IsWindows) -and !$OpenLDAP -and ($null -ne $connection)) {
+        if ((Test-PodeIsWindows) -and !$OpenLDAP -and ($null -ne $connection)) {
             Close-PodeDisposable -Disposable $connection.Searcher
             Close-PodeDisposable -Disposable $connection.Entry -Close
         }
@@ -951,7 +951,7 @@ function Open-PodeAuthADConnection
     $connection = $null
 
     # validate the user's AD creds
-    if ((Test-IsWindows) -and !$OpenLDAP) {
+    if ((Test-PodeIsWindows) -and !$OpenLDAP) {
         if ([string]::IsNullOrWhiteSpace($Password)) {
             $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)")
         }
@@ -959,7 +959,7 @@ function Open-PodeAuthADConnection
             $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)", "$($Username)", "$($Password)")
         }
 
-        if (Test-IsEmpty $ad.distinguishedName) {
+        if (Test-PodeIsEmpty $ad.distinguishedName) {
             $result = $false
         }
         else {
@@ -1026,12 +1026,12 @@ function Get-PodeAuthADUser
     $query = (Get-PodeAuthADQuery -Username $Username)
 
     # generate query to find user
-    if ((Test-IsWindows) -and !$OpenLDAP) {
+    if ((Test-PodeIsWindows) -and !$OpenLDAP) {
         $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
         $Connection.Searcher.filter = $query
 
         $result = $Connection.Searcher.FindOne().Properties
-        if (Test-IsEmpty $result) {
+        if (Test-PodeIsEmpty $result) {
             return $null
         }
 
@@ -1104,7 +1104,7 @@ function Get-PodeAuthADGroups
     $groups = @()
 
     # get the groups
-    if ((Test-IsWindows) -and !$OpenLDAP) {
+    if ((Test-PodeIsWindows) -and !$OpenLDAP) {
         if ($null -eq $Connection.Searcher) {
             $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
         }
@@ -1123,7 +1123,7 @@ function Get-PodeAuthADGroups
 
 function Get-PodeAuthDomainName
 {
-    if (Test-IsUnix) {
+    if (Test-PodeIsUnix) {
         $dn = (dnsdomainname)
         if ([string]::IsNullOrWhiteSpace($dn)) {
             $dn = (/usr/sbin/realm list --name-only)

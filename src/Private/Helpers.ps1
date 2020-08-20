@@ -129,10 +129,10 @@ function Get-PodePSVersionTable
     return $PSVersionTable
 }
 
-function Test-IsAdminUser
+function Test-PodeIsAdminUser
 {
     # check the current platform, if it's unix then return true
-    if (Test-IsUnix) {
+    if (Test-PodeIsUnix) {
         return $true
     }
 
@@ -518,7 +518,7 @@ function Add-PodeRunspace
         $ps.AddScript({ Add-PodePSDrives }) | Out-Null
         $ps.AddScript($ScriptBlock) | Out-Null
 
-        if (!(Test-IsEmpty $Parameters)) {
+        if (!(Test-PodeIsEmpty $Parameters)) {
             $Parameters.Keys | ForEach-Object {
                 $ps.AddParameter($_, $Parameters[$_]) | Out-Null
             }
@@ -554,7 +554,7 @@ function Close-PodeRunspaces
     }
 
     try {
-        if (!(Test-IsEmpty $PodeContext.Runspaces)) {
+        if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
             # sleep for 1s before doing this, to let listeners dispose
             Start-Sleep -Seconds 1
 
@@ -639,7 +639,7 @@ function Test-PodeKeyPressed
     }
 
     return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
-        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
+        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-PodeIsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
 function Close-PodeServerInternal
@@ -1162,7 +1162,7 @@ function ConvertFrom-PodeRequestContent
     # run action for the content type
     switch ($MetaData.ContentType) {
         { $_ -ilike '*/json' } {
-            if (Test-IsPSCore) {
+            if (Test-PodeIsPSCore) {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
             }
             else {
@@ -1513,17 +1513,17 @@ function Convert-PodePathPatternsToRegex
 
     # remove any empty entries
     $Paths = @($Paths | Where-Object {
-        !(Test-IsEmpty $_)
+        !(Test-PodeIsEmpty $_)
     })
 
     # if no paths, return null
-    if (Test-IsEmpty $Paths) {
+    if (Test-PodeIsEmpty $Paths) {
         return $null
     }
 
     # replace certain chars
     $Paths = @($Paths | ForEach-Object {
-        if (!(Test-IsEmpty $_)) {
+        if (!(Test-PodeIsEmpty $_)) {
             Convert-PodePathPatternToRegex -Path $_ -NotStrict -NotSlashes:$NotSlashes
         }
     })
@@ -1625,7 +1625,7 @@ function Find-PodeErrorPage
     }
 
     # if route patterns have been defined, see if an error content type matches and attempt that
-    if (!(Test-IsEmpty $PodeContext.Server.Web.ErrorPages.Routes)) {
+    if (!(Test-PodeIsEmpty $PodeContext.Server.Web.ErrorPages.Routes)) {
         # find type by pattern
         $matched = @(foreach ($key in $PodeContext.Server.Web.ErrorPages.Routes.Keys) {
             if ($WebEvent.Path -imatch $key) {
@@ -1634,7 +1634,7 @@ function Find-PodeErrorPage
         })[0]
 
         # if we have a match, see if a page exists
-        if (!(Test-IsEmpty $matched)) {
+        if (!(Test-PodeIsEmpty $matched)) {
             $type = $PodeContext.Server.Web.ErrorPages.Routes[$matched]
             $path = Get-PodeErrorPage -Code $Code -ContentType $type
             if (![string]::IsNullOrWhiteSpace($path)) {
@@ -1652,7 +1652,7 @@ function Find-PodeErrorPage
     }
 
     # if we have a default defined, attempt that
-    if (!(Test-IsEmpty $PodeContext.Server.Web.ErrorPages.Default)) {
+    if (!(Test-PodeIsEmpty $PodeContext.Server.Web.ErrorPages.Default)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $PodeContext.Server.Web.ErrorPages.Default
         if (![string]::IsNullOrWhiteSpace($path)) {
             return @{ 'Path' = $path; 'ContentType' = $PodeContext.Server.Web.ErrorPages.Default }
@@ -2119,7 +2119,7 @@ function Invoke-PodeUsingScriptConversion
 
     # get any using variables
     $usingVars = Get-PodeScriptUsingVariables -ScriptBlock $ScriptBlock
-    if (Test-IsEmpty $usingVars) {
+    if (Test-PodeIsEmpty $usingVars) {
         return @($ScriptBlock, $null)
     }
 
@@ -2155,7 +2155,7 @@ function ConvertTo-PodeUsingVariables
         $PSSession
     )
 
-    if (Test-IsEmpty $UsingVariables) {
+    if (Test-PodeIsEmpty $UsingVariables) {
         return $null
     }
 
@@ -2207,7 +2207,7 @@ function ConvertTo-PodeUsingScript
     )
 
     # return original script if no using vars
-    if (Test-IsEmpty $UsingVariables) {
+    if (Test-PodeIsEmpty $UsingVariables) {
         return $ScriptBlock
     }
 

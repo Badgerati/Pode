@@ -42,7 +42,7 @@ function New-PodeContext
     )
 
     # set a random server name if one not supplied
-    if (Test-IsEmpty $Name) {
+    if (Test-PodeIsEmpty $Name) {
         $Name = Get-PodeRandomName
     }
 
@@ -126,7 +126,7 @@ function New-PodeContext
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
     # over status page exceptions
-    if (!(Test-IsEmpty $StatusPageExceptions)) {
+    if (!(Test-PodeIsEmpty $StatusPageExceptions)) {
         if ($null -eq $ctx.Server.Web) {
             $ctx.Server.Web = @{ ErrorPages = @{} }
         }
@@ -136,7 +136,7 @@ function New-PodeContext
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
-    if (!(Test-IsEmpty $ctx.Server.Configuration.Server.Root)) {
+    if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
@@ -153,18 +153,18 @@ function New-PodeContext
     }
 
     # is the server running under IIS? (also, disable termination)
-    $ctx.Server.IsIIS = (!$isServerless -and (!(Test-IsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-IsEmpty $env:ASPNETCORE_TOKEN)))
+    $ctx.Server.IsIIS = (!$isServerless -and (!(Test-PodeIsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-PodeIsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
         $ctx.Server.DisableTermination = $true
 
         # if under IIS and Azure Web App, force quiet
-        if (!(Test-IsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
+        if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
             $ctx.Server.Quiet = $true
         }
     }
 
     # is the server running under Heroku?
-    $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-IsEmpty $env:PORT)) -and (!(Test-IsEmpty $env:DYNO)))
+    $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:DYNO)))
 
     # if we're inside a remote host, stop termination
     if ($Host.Name -ieq 'ServerRemoteHost') {
@@ -402,7 +402,7 @@ function Import-PodeModulesIntoRunspaceState
 function Import-PodeSnapinsIntoRunspaceState
 {
     # if non-windows or core, do nothing
-    if ((Test-IsPSCore) -or (Test-IsUnix)) {
+    if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
         return
     }
 
@@ -454,7 +454,7 @@ function New-PodeRunspacePools
     $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
 
     # setup gui runspace pool (only for non-ps-core)
-    if (!((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
+    if (!((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
         $PodeContext.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         $PodeContext.RunspacePools.Gui.ApartmentState = 'STA'
     }
@@ -510,7 +510,7 @@ function Open-PodeConfiguration
     $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'server.psd1' -Root $ServerRoot)
 
     # check to see if an environmental config exists (if the env var is set)
-    if (!(Test-IsEmpty $env:PODE_ENVIRONMENT)) {
+    if (!(Test-PodeIsEmpty $env:PODE_ENVIRONMENT)) {
         $_path = (Join-PodeServerRoot -Folder '.' -FilePath "server.$($env:PODE_ENVIRONMENT).psd1" -Root $ServerRoot)
         if (Test-PodePath -Path $_path -NoStatus) {
             $configPath = $_path
@@ -558,7 +558,7 @@ function Set-PodeServerConfiguration
     }
 
     # sockets
-    if (!(Test-IsEmpty $Configuration.Ssl.Protocols)) {
+    if (!(Test-PodeIsEmpty $Configuration.Ssl.Protocols)) {
         $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Ssl.Protocols)
     }
 

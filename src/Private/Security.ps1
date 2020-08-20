@@ -323,18 +323,18 @@ function Get-PodeCsrfToken
     $key = $PodeContext.Server.Cookies.Csrf.Name
 
     # check the payload
-    if (!(Test-IsEmpty $WebEvent.Data[$key])) {
+    if (!(Test-PodeIsEmpty $WebEvent.Data[$key])) {
         return $WebEvent.Data[$key]
     }
 
     # check the query string
-    if (!(Test-IsEmpty $WebEvent.Query[$key])) {
+    if (!(Test-PodeIsEmpty $WebEvent.Query[$key])) {
         return $WebEvent.Query[$key]
     }
 
     # check the headers
     $value = (Get-PodeHeader -Name $key)
-    if (!(Test-IsEmpty $value)) {
+    if (!(Test-PodeIsEmpty $value)) {
         return $value
     }
 
@@ -354,7 +354,7 @@ function Test-PodeCsrfToken
     )
 
     # if there's no token/secret, fail
-    if ((Test-IsEmpty $Secret) -or (Test-IsEmpty $Token)) {
+    if ((Test-PodeIsEmpty $Secret) -or (Test-PodeIsEmpty $Token)) {
         return $false
     }
 
@@ -384,7 +384,7 @@ function New-PodeCsrfSecret
 {
     # see if there's already a secret in session/cookie
     $secret = (Get-PodeCsrfSecret)
-    if (!(Test-IsEmpty $secret)) {
+    if (!(Test-PodeIsEmpty $secret)) {
         return $secret
     }
 
@@ -454,7 +454,7 @@ function Restore-PodeCsrfToken
 
 function Test-PodeCsrfConfigured
 {
-    return (!(Test-IsEmpty $PodeContext.Server.Cookies.Csrf))
+    return (!(Test-PodeIsEmpty $PodeContext.Server.Cookies.Csrf))
 }
 
 function Get-PodeCertificateByFile
@@ -495,7 +495,7 @@ function Find-PodeCertificateInCertStore
     )
 
     # fail if not windows
-    if (!(Test-IsWindows)) {
+    if (!(Test-PodeIsWindows)) {
         throw "Certificate Thumbprints/Name are only supported on Windows"
     }
 
@@ -598,7 +598,7 @@ function New-PodeSelfSignedCertificate
         [System.DateTimeOffset]::UtcNow.AddYears(10)
     )
 
-    if (Test-IsWindows) {
+    if (Test-PodeIsWindows) {
         $cert.FriendlyName = 'localhost'
     }
 

@@ -100,13 +100,13 @@ function Start-PodeGuiRunspace {
             $form.TaskbarItemInfo.Description = $form.Title
 
             # add the icon to the form
-            if (!(Test-IsEmpty $PodeContext.Server.Gui.Icon)) {
+            if (!(Test-PodeIsEmpty $PodeContext.Server.Gui.Icon)) {
                 $icon = [Uri]::new($PodeContext.Server.Gui.Icon)
                 $form.Icon = [Windows.Media.Imaging.BitmapFrame]::Create($icon)
             }
 
             # set the state of the window onload
-            if (!(Test-IsEmpty $PodeContext.Server.Gui.WindowState)) {
+            if (!(Test-PodeIsEmpty $PodeContext.Server.Gui.WindowState)) {
                 $form.WindowState = $PodeContext.Server.Gui.WindowState
             }
 
