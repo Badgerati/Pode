@@ -24,12 +24,12 @@ function Start-PodeInternalServer
 
         Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
 
+        # load any modules/snapins
+        Import-PodeSnapinsIntoRunspaceState
+        Import-PodeModulesIntoRunspaceState
+
         # load any functions
         Import-PodeFunctionsIntoRunspaceState -ScriptBlock $_script
-
-        # load any modules
-        Import-PodeModulesIntoRunspaceState
-        Import-PodeSnapinsIntoRunspaceState
 
         # start the runspace pools for web, schedules, etc
         New-PodeRunspacePools
