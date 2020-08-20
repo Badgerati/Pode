@@ -27,7 +27,7 @@ jobs:
       shell: pwsh
       env:
         PODE_COVERALLS_TOKEN: ${{ secrets.PODE_COVERALLS_TOKEN }}
-        PODE_RUN_CODE_COVERAGE: true
+        PODE_RUN_CODE_COVERAGE: false
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-Build Test
