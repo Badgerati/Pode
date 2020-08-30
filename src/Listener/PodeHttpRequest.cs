@@ -31,7 +31,13 @@ namespace Pode
         public string Body { get; private set; }
         public byte[] RawBody { get; private set; }
         public string Host { get; private set; }
-        public bool IsWebSocket { get; private set; }
+        public PodeWebSocket WebSocket { get; set; }
+
+        private bool _isWebSocket = false;
+        public bool IsWebSocket
+        {
+            get => (_isWebSocket || WebSocket != default(PodeWebSocket));
+        }
 
         public override bool CloseImmediately
         {
@@ -45,12 +51,74 @@ namespace Pode
             Protocol = "HTTP/1.1";
         }
 
+        public PodeClientSignal NewClientSignal()
+        {
+            return new PodeClientSignal(WebSocket, Body);
+        }
+
+        protected void ParseWebSocket(byte[] bytes)
+        {
+            var dataLength = bytes[1] - 128;
+            var offset = 0;
+            //var totalLength = 0;
+
+            if (dataLength < 126)
+            {
+                offset = 2;
+                //totalLength = dataLength + 6;
+            }
+            else if (dataLength == 126)
+            {
+                dataLength = BitConverter.ToInt16(new byte[] { bytes[3], bytes[2] }, 0);
+                offset = 4;
+                //totalLength = dataLength + 8;
+            }
+            else
+            {
+                dataLength = (int)BitConverter.ToInt64(new byte[] { bytes[9], bytes[8], bytes[7], bytes[6], bytes[5], bytes[4], bytes[3], bytes[2] }, 0);
+                offset = 10;
+                //totalLength = dataLength + 14;
+            }
+
+            var key = new byte[] { bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3] };
+            offset += 4;
+
+            //var count = 0;
+            var decoded = new byte[dataLength];
+            // for (var i = offset; i < totalLength; i++)
+            // {
+            //     bytes[i] = (byte)(bytes[i] ^ key[count % 4]);
+            //     count++;
+            // }
+            for (var i = 0; i < dataLength; ++i)
+            {
+                decoded[i] = (byte)(bytes[offset + i] ^ key[i % 4]);
+            }
+
+            RawBody = bytes;
+            //Body = Encoding.GetString(bytes, offset, dataLength);
+            Body = Encoding.GetString(decoded);
+            Console.WriteLine(Body);
+
+
+            //TODO: here, or in a PodeWsRequest class?
+            // https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_server
+            // https://stackoverflow.com/questions/10200910/creating-a-hello-world-websocket-example
+        }
+
         protected override void Parse(byte[] bytes)
         {
             // if there are no bytes, return (0 bytes read means we can close the socket)
             if (bytes.Length == 0)
             {
                 HttpMethod = string.Empty;
+                return;
+            }
+
+            // check if websocket, and parse
+            if (IsWebSocket)
+            {
+                ParseWebSocket(bytes);
                 return;
             }
 
@@ -201,12 +269,13 @@ namespace Pode
             UserAgent = $"{Headers["User-Agent"]}";
             ContentType = $"{Headers["Content-Type"]}";
 
-            // keep-alive?
-            IsKeepAlive = (Headers.ContainsKey("Connection")
-                && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase));
-
             // is web-socket?
-            IsWebSocket = Headers.ContainsKey("Sec-WebSocket-Key");
+            _isWebSocket = Headers.ContainsKey("Sec-WebSocket-Key");
+
+            // keep-alive?
+            IsKeepAlive = (_isWebSocket ||
+                (Headers.ContainsKey("Connection")
+                    && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase)));
 
             // set content encoding
             ContentEncoding = System.Text.Encoding.UTF8;

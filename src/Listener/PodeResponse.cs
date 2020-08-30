@@ -105,7 +105,7 @@ namespace Pode
             }
         }
 
-        public void SendSignal(PodeSignal signal)
+        public void SendSignal(PodeServerSignal signal)
         {
             Write(signal.Value);
         }

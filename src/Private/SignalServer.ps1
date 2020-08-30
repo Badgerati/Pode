@@ -53,7 +53,7 @@ function Start-PodeSignalServer
         try {
             while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
-                $message = (Wait-PodeTask -Task $Listener.GetSignalAsync($PodeContext.Tokens.Cancellation.Token))
+                $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
                 # get the sockets for the message
                 $sockets = @()
