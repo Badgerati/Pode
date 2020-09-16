@@ -31,6 +31,17 @@ namespace Pode
             RemoteEndPoint = socket.RemoteEndPoint;
         }
 
+        public PodeRequest(PodeRequest request)
+        {
+            IsSsl = request.IsSsl;
+            InputStream = request.InputStream;
+            IsKeepAlive = request.IsKeepAlive;
+            Socket = request.Socket;
+            RemoteEndPoint = Socket.RemoteEndPoint;
+            Error = request.Error;
+            Context = request.Context;
+        }
+
         public void Open(X509Certificate certificate, SslProtocols protocols)
         {
             // ssl or not?
@@ -97,7 +108,7 @@ namespace Pode
             Context = context;
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (Socket != default(Socket))
             {

@@ -87,7 +87,7 @@ function Start-PodeSignalServer
                         $socket.Context.Response.SendSignal($message)
                     }
                     catch {
-                        $Listener.WebSockets.Remove($socket.ClientId) | Out-Nul
+                        $Listener.WebSockets.Remove($socket.ClientId) | Out-Null
                     }
                 }
             }
@@ -101,6 +101,32 @@ function Start-PodeSignalServer
     }
 
     Add-PodeRunspace -Type 'Signals' -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
+
+    # script to queue messages from clients to send back to other clients from the server
+    $clientScript = {
+        param(
+            [Parameter(Mandatory=$true)]
+            [ValidateNotNull()]
+            $Listener
+        )
+
+        try {
+            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+            {
+                $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
+                $context = ($context.Message | ConvertFrom-Json)
+                Send-PodeSignal -Value $context.message
+            }
+        }
+        catch [System.OperationCanceledException] {}
+        catch {
+            $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
+            throw $_.Exception
+        }
+    }
+
+    Add-PodeRunspace -Type 'Signals' -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener }
 
     # script to keep web server listening until cancelled
     $waitScript = {

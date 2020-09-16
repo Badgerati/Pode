@@ -32,7 +32,7 @@ namespace Pode
 
         public bool IsWebSocketUpgraded
         {
-            get => (IsWebSocket && HttpRequest.WebSocket != default(PodeWebSocket));
+            get => (IsWebSocket && Request is PodeWsRequest);
         }
 
         public bool IsSmtp
@@ -53,6 +53,11 @@ namespace Pode
         public PodeHttpRequest HttpRequest
         {
             get => (PodeHttpRequest)Request;
+        }
+
+        public PodeWsRequest WsRequest
+        {
+            get => (PodeWsRequest)Request;
         }
 
         public bool IsKeepAlive
@@ -224,8 +229,16 @@ namespace Pode
             Response.Send();
 
             // add open web socket to listener
-            HttpRequest.WebSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
-            Listener.AddWebSocket(HttpRequest.WebSocket);
+            var webSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
+
+            var wsRequest = new PodeWsRequest(HttpRequest);
+            wsRequest.WebSocket = webSocket;
+            Request = wsRequest;
+
+            Listener.AddWebSocket(WsRequest.WebSocket);
+
+            // HttpRequest.WebSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
+            // Listener.AddWebSocket(HttpRequest.WebSocket);
         }
 
         public void Dispose()
@@ -255,13 +268,13 @@ namespace Pode
                     SmtpRequest.Reset();
                 }
 
-                Response.Dispose();
-
                 if (!IsKeepAlive || force)
                 {
                     State = PodeContextState.Closed;
                     Request.Dispose();
                 }
+
+                Response.Dispose();
             }
             catch {}
 

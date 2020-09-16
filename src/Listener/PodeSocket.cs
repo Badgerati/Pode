@@ -237,7 +237,7 @@ namespace Pode
                 {
                     if (context.IsWebSocket)
                     {
-                        Listener.AddClientSignal(context.HttpRequest.NewClientSignal());
+                        Listener.AddClientSignal(context.WsRequest.NewClientSignal());
                         context.Dispose();
                     }
                     else
