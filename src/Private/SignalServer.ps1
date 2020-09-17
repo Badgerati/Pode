@@ -115,7 +115,7 @@ function Start-PodeSignalServer
             {
                 $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
                 $context = ($context.Message | ConvertFrom-Json)
-                Send-PodeSignal -Value $context.message
+                Send-PodeSignal -Value $context.message -Path $context.path -ClientId $context.clientId
             }
         }
         catch [System.OperationCanceledException] {}

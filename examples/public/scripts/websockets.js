@@ -9,10 +9,10 @@ $(document).ready(() => {
         $('#messages').append(`<p>${evt.data}</p>`);
     }
 
-    // send message on the socket
+    // send message on the socket, to all clients
     $('#bc-form').submit(function(e) {
         e.preventDefault();
         ws.send(JSON.stringify({ message: $('#bc-message').val() }));
-        $('input[name=message]').val('')
+        $('input[name=message]').val('');
     })
 })
