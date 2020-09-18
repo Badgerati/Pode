@@ -1340,5 +1340,5 @@ function Send-PodeSignal
         }
     }
 
-    $PodeContext.Server.WebSockets.Listener.AddSignal($Value, $Path, $ClientId)
+    $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
 }

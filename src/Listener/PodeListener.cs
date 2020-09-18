@@ -16,7 +16,8 @@ namespace Pode
 
         private IList<PodeSocket> Sockets;
         private BlockingCollection<PodeContext> Contexts;
-        private BlockingCollection<PodeSignal> Signals;
+        private BlockingCollection<PodeServerSignal> ServerSignals;
+        private BlockingCollection<PodeClientSignal> ClientSignals;
 
         public PodeListener(CancellationToken cancellationToken, PodeListenerType type = PodeListenerType.Http)
         {
@@ -26,7 +27,8 @@ namespace Pode
             Sockets = new List<PodeSocket>();
             WebSockets = new Dictionary<string, PodeWebSocket>();
             Contexts = new BlockingCollection<PodeContext>();
-            Signals = new BlockingCollection<PodeSignal>();
+            ServerSignals = new BlockingCollection<PodeServerSignal>();
+            ClientSignals = new BlockingCollection<PodeClientSignal>();
         }
 
         public void Add(PodeSocket socket)
@@ -68,21 +70,39 @@ namespace Pode
             }
         }
 
-        public PodeSignal GetSignal(CancellationToken cancellationToken)
+        public PodeServerSignal GetServerSignal(CancellationToken cancellationToken)
         {
-            return Signals.Take(cancellationToken);
+            return ServerSignals.Take(cancellationToken);
         }
 
-        public Task<PodeSignal> GetSignalAsync(CancellationToken cancellationToken)
+        public Task<PodeServerSignal> GetServerSignalAsync(CancellationToken cancellationToken)
         {
-            return Task.Factory.StartNew(() => GetSignal(cancellationToken), cancellationToken);
+            return Task.Factory.StartNew(() => GetServerSignal(cancellationToken), cancellationToken);
         }
 
-        public void AddSignal(string value, string path, string clientId)
+        public void AddServerSignal(string value, string path, string clientId)
         {
-            lock (Signals)
+            lock (ServerSignals)
             {
-                Signals.Add(new PodeSignal(value, path, clientId));
+                ServerSignals.Add(new PodeServerSignal(value, path, clientId));
+            }
+        }
+
+        public PodeClientSignal GetClientSignal(CancellationToken cancellationToken)
+        {
+            return ClientSignals.Take(cancellationToken);
+        }
+
+        public Task<PodeClientSignal> GetClientSignalAsync(CancellationToken cancellationToken)
+        {
+            return Task.Factory.StartNew(() => GetClientSignal(cancellationToken), cancellationToken);
+        }
+
+        public void AddClientSignal(PodeClientSignal signal)
+        {
+            lock (ClientSignals)
+            {
+                ClientSignals.Add(signal);
             }
         }
 

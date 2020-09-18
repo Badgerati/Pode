@@ -30,9 +30,19 @@ namespace Pode
             get => (Type == PodeContextType.WebSocket);
         }
 
+        public bool IsWebSocketUpgraded
+        {
+            get => (IsWebSocket && Request is PodeWsRequest);
+        }
+
         public bool IsSmtp
         {
             get => (Type == PodeContextType.Smtp);
+        }
+
+        public bool IsHttp
+        {
+            get => (Type == PodeContextType.Http);
         }
 
         public PodeSmtpRequest SmtpRequest
@@ -43,6 +53,11 @@ namespace Pode
         public PodeHttpRequest HttpRequest
         {
             get => (PodeHttpRequest)Request;
+        }
+
+        public PodeWsRequest WsRequest
+        {
+            get => (PodeWsRequest)Request;
         }
 
         public bool IsKeepAlive
@@ -134,15 +149,20 @@ namespace Pode
                 case PodeListenerType.WebSocket:
                     if (!HttpRequest.IsWebSocket)
                     {
-                        throw new HttpRequestException("Request is not for a websocket");
+                        throw new HttpRequestException("Request is not for a WebSocket");
                     }
 
                     Type = PodeContextType.WebSocket;
                     break;
 
-                // - only allow http, with upgrade to web-socket
+                // - only allow http
                 case PodeListenerType.Http:
-                    Type = HttpRequest.IsWebSocket ? PodeContextType.WebSocket : PodeContextType.Http;
+                    if (HttpRequest.IsWebSocket)
+                    {
+                        throw new HttpRequestException("Request is not Http");
+                    }
+
+                    Type = PodeContextType.Http;
                     break;
             }
         }
@@ -209,7 +229,16 @@ namespace Pode
             Response.Send();
 
             // add open web socket to listener
-            Listener.AddWebSocket(new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId));
+            var webSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
+
+            var wsRequest = new PodeWsRequest(HttpRequest);
+            wsRequest.WebSocket = webSocket;
+            Request = wsRequest;
+
+            Listener.AddWebSocket(WsRequest.WebSocket);
+
+            // HttpRequest.WebSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
+            // Listener.AddWebSocket(HttpRequest.WebSocket);
         }
 
         public void Dispose()
@@ -227,7 +256,8 @@ namespace Pode
                     Response.StatusCode = 500;
                 }
 
-                if (!IsSmtp && State != PodeContextState.SslError)
+                // only send a response if Http
+                if (IsHttp && State != PodeContextState.SslError)
                 {
                     Response.Send();
                 }
@@ -238,13 +268,13 @@ namespace Pode
                     SmtpRequest.Reset();
                 }
 
-                Response.Dispose();
-
                 if (!IsKeepAlive || force)
                 {
                     State = PodeContextState.Closed;
                     Request.Dispose();
                 }
+
+                Response.Dispose();
             }
             catch {}
 

@@ -2,13 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.IO;
-using System.Net;
 using System.Net.Http;
-using System.Net.Security;
 using System.Net.Sockets;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -31,7 +26,12 @@ namespace Pode
         public string Body { get; private set; }
         public byte[] RawBody { get; private set; }
         public string Host { get; private set; }
-        public bool IsWebSocket { get; private set; }
+
+        private bool _isWebSocket = false;
+        public bool IsWebSocket
+        {
+            get => _isWebSocket;
+        }
 
         public override bool CloseImmediately
         {
@@ -201,12 +201,13 @@ namespace Pode
             UserAgent = $"{Headers["User-Agent"]}";
             ContentType = $"{Headers["Content-Type"]}";
 
-            // keep-alive?
-            IsKeepAlive = (Headers.ContainsKey("Connection")
-                && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase));
-
             // is web-socket?
-            IsWebSocket = Headers.ContainsKey("Sec-WebSocket-Key");
+            _isWebSocket = Headers.ContainsKey("Sec-WebSocket-Key");
+
+            // keep-alive?
+            IsKeepAlive = (_isWebSocket ||
+                (Headers.ContainsKey("Connection")
+                    && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase)));
 
             // set content encoding
             ContentEncoding = System.Text.Encoding.UTF8;

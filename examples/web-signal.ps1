@@ -23,10 +23,4 @@ Start-PodeServer -Threads 5 {
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'websockets'
     }
-
-    # POST broadcast a received message back out to ever connected client via websockets
-    Add-PodeRoute -Method Post -Path '/broadcast' -ScriptBlock {
-        param($e)
-        Send-PodeSignal -Value @{ Message = $e.Data['message'] }
-    }
 }

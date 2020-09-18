@@ -105,24 +105,30 @@ namespace Pode
             }
         }
 
-        public void SendSignal(PodeSignal signal)
+        public void SendSignal(PodeServerSignal signal)
         {
             Write(signal.Value);
         }
 
         public void Write(string message, bool flush = false)
         {
-            var msgBytes = Encoding.GetBytes(message);
-
             // simple messages
             if (!Context.IsWebSocket)
             {
-                Write(msgBytes, flush);
-                return;
+                Write(Encoding.GetBytes(message), flush);
             }
 
             // web socket message
-            var buffer = new List<byte>() { (byte)((byte)0x80 | (byte)1) };
+            else
+            {
+                WriteFrame(message, PodeWsOpCode.Text, flush);
+            }
+        }
+
+        public void WriteFrame(string message, PodeWsOpCode opCode = PodeWsOpCode.Text, bool flush = false)
+        {
+            var msgBytes = Encoding.GetBytes(message);
+            var buffer = new List<byte>() { (byte)((byte)0x80 | (byte)opCode) };
 
             if (msgBytes.Length < 126)
             {

@@ -214,11 +214,12 @@ namespace Pode
                     process = false;
                 }
 
-                // if it's a websocket, upgrade it
-                else if (context.IsWebSocket)
+                // if it's a websocket, upgrade it, then add context back for re-receiving
+                else if (context.IsWebSocket && !context.IsWebSocketUpgraded)
                 {
                     context.UpgradeWebSocket();
                     process = false;
+                    context.Dispose();
                 }
 
                 // if it's an email, re-receive unless processable
@@ -234,7 +235,15 @@ namespace Pode
                 // add the context for processing
                 if (process)
                 {
-                    Listener.AddContext(context);
+                    if (context.IsWebSocket)
+                    {
+                        Listener.AddClientSignal(context.WsRequest.NewClientSignal());
+                        context.Dispose();
+                    }
+                    else
+                    {
+                        Listener.AddContext(context);
+                    }
                 }
             }
             catch (Exception ex)
