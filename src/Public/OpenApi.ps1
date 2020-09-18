@@ -779,6 +779,10 @@ function New-PodeOAIntProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [int[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -801,6 +805,7 @@ function New-PodeOAIntProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $Format.ToLowerInvariant()
+        enum = $Enum
         default = $Default
     }
 
@@ -895,6 +900,10 @@ function New-PodeOANumberProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [double[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -917,6 +926,7 @@ function New-PodeOANumberProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $Format.ToLowerInvariant()
+        enum = $Enum
         default = $Default
     }
 
@@ -1021,6 +1031,10 @@ function New-PodeOAStringProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [string[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -1048,6 +1062,7 @@ function New-PodeOAStringProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $_format.ToLowerInvariant()
+        enum = $Enum
         pattern = $Pattern
         default = $Default
     }
@@ -1110,6 +1125,10 @@ function New-PodeOABoolProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [bool[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -1131,6 +1150,7 @@ function New-PodeOABoolProperty
         required = $Required.IsPresent
         deprecated = $Deprecated.IsPresent
         description = $Description
+        enum = $Enum
         default = $Default
     }
 
@@ -1272,6 +1292,7 @@ function ConvertTo-PodeOAParameter
         schema = @{
             type = $Property.type
             format = $Property.format
+            enum = $Property.enum
         }
     }
 

@@ -25,7 +25,7 @@ Start-PodeServer {
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Parameters['userId'] }
     } -PassThru |
         Set-PodeOARequest -Parameters @(
-            (New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In Path)
+            (New-PodeOAIntProperty -Name 'userId' -Enum @(100,300,999) -Required | ConvertTo-PodeOAParameter -In Path)
         )
 
 
