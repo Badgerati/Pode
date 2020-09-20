@@ -84,7 +84,7 @@ Each of the following OpenAPI functions have a `-PassThru` switch, allowing you 
 
 ### Responses
 
-You can define multiple responses for a route, but only one of each status code, using the [`Add-PodeOAResponse`](../../Functions/OpenApi/Add-PodeOAResponse) function. You can either just define the response and status code; with a custom description; or with a schema defining the payload of the response.
+You can define multiple responses for a route, but only one of each status code, using the [`Add-PodeOAResponse`](../../Functions/OpenApi/Add-PodeOAResponse) function. You can either just define the response and status code, with a custom description, or with a schema defining the payload of the response.
 
 The following is an example of defining simple 200 and 404 responses on a route:
 
@@ -121,6 +121,15 @@ the JSON response payload defined is as follows:
     "Name": [string],
     "UserId": [integer]
 }
+```
+
+Internally, each route is created with an empty default 200 and 500 response. You can remove these, or other added responses, by using [`Remove-PodeOAResponse`](../../Functions/OpenApi/Add-PodeOAResponse):
+
+```powershell
+Add-PodeRoute -Method Get -Path "/api/user/:userId" -ScriptBlock {
+    # logic
+} -PassThru |
+    Remove-PodeOAResponse -StatusCode 200
 ```
 
 ### Requests

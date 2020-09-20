@@ -303,6 +303,69 @@ function Add-PodeOAResponse
 
 <#
 .SYNOPSIS
+Remove a response definition from the supplied route.
+
+.DESCRIPTION
+Remove a response definition from the supplied route.
+
+.PARAMETER Route
+The route to remove the response definition, usually from -PassThru on Add-PodeRoute.
+
+.PARAMETER StatusCode
+The HTTP StatusCode for the response to remove.
+
+.PARAMETER Default
+If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Remove-PodeOAResponse -StatusCode 200
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Remove-PodeOAResponse -StatusCode 201 -Default
+#>
+function Remove-PodeOAResponse
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $StatusCode,
+
+        [switch]
+        $Default,
+
+        [switch]
+        $PassThru
+    )
+
+    # override status code with default
+    $code = "$($StatusCode)"
+    if ($Default) {
+        $code = 'default'
+    }
+
+    # remove the respones from the routes
+    foreach ($r in @($Route)) {
+        if ($r.OpenApi.Responses.ContainsKey($code)) {
+            $r.OpenApi.Responses.Remove($code) | Out-Null
+        }
+    }
+
+    if ($PassThru) {
+        return $Route
+    }
+}
+
+<#
+.SYNOPSIS
 Adds a reusable component for responses.
 
 .DESCRIPTION
