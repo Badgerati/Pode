@@ -1761,6 +1761,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../Functions/OpenApi/Remove-PodeOAResponse/" title="Remove-PodeOAResponse" class="md-nav__link">
+      Remove-PodeOAResponse
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../Functions/OpenApi/Set-PodeOAAuth/" title="Set-PodeOAAuth" class="md-nav__link">
       Set-PodeOAAuth
     </a>
@@ -4656,7 +4668,7 @@
 
 <p>Each of the following OpenAPI functions have a <code>-PassThru</code> switch, allowing you to chain many of them together.</p>
 <h3 id="responses">Responses</h3>
-<p>You can define multiple responses for a route, but only one of each status code, using the <a href="../../Functions/OpenApi/Add-PodeOAResponse"><code>Add-PodeOAResponse</code></a> function. You can either just define the response and status code; with a custom description; or with a schema defining the payload of the response.</p>
+<p>You can define multiple responses for a route, but only one of each status code, using the <a href="../../Functions/OpenApi/Add-PodeOAResponse"><code>Add-PodeOAResponse</code></a> function. You can either just define the response and status code, with a custom description, or with a schema defining the payload of the response.</p>
 <p>The following is an example of defining simple 200 and 404 responses on a route:</p>
 <div class="codehilite"><pre><span></span><code><span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Get</span> <span class="n">-Path</span> <span class="s2">&quot;/api/user/:userId&quot;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
     <span class="c"># logic</span>
@@ -4688,6 +4700,14 @@
     <span class="nt">&quot;Name&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">string</span><span class="p">],</span>
     <span class="nt">&quot;UserId&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">integer</span><span class="p">]</span>
 <span class="p">}</span>
+</code></pre></div>
+
+
+<p>Internally, each route is created with an empty default 200 and 500 response. You can remove these, or other added responses, by using <a href="../../Functions/OpenApi/Add-PodeOAResponse"><code>Remove-PodeOAResponse</code></a>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Get</span> <span class="n">-Path</span> <span class="s2">&quot;/api/user/:userId&quot;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="c"># logic</span>
+<span class="p">}</span> <span class="n">-PassThru</span> <span class="p">|</span>
+    <span class="nb">Remove-PodeOAResponse</span> <span class="n">-StatusCode</span> <span class="n">200</span>
 </code></pre></div>
 
 
@@ -4895,8 +4915,8 @@
 <span class="c"># a float number with a max value of 100</span>
 <span class="nb">New-PodeOANumberProperty</span> <span class="n">-Name</span> <span class="s1">&#39;ratio&#39;</span> <span class="n">-Format</span> <span class="n">Float</span> <span class="n">-Maximum</span> <span class="n">100</span>
 
-<span class="c"># a string with a default value</span>
-<span class="nb">New-PodeOAStringProperty</span> <span class="n">-Name</span> <span class="s1">&#39;type&#39;</span> <span class="n">-Default</span> <span class="s1">&#39;admin&#39;</span>
+<span class="c"># a string with a default value, and enum of options</span>
+<span class="nb">New-PodeOAStringProperty</span> <span class="n">-Name</span> <span class="s1">&#39;type&#39;</span> <span class="n">-Default</span> <span class="s1">&#39;admin&#39;</span> <span class="n">-Enum</span> <span class="p">@(</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span>
 
 <span class="c"># a boolean that&#39;s required</span>
 <span class="nb">New-PodeOABoolProperty</span> <span class="n">-Name</span> <span class="s1">&#39;enabled&#39;</span> <span class="n">-Required</span>
@@ -4905,7 +4925,7 @@
 
 <p>On their own, like above, the simple properties don't really do much. However, you can combine that together to make complex objects/arrays as defined below.</p>
 <h3 id="arrays">Arrays</h3>
-<p>There isn't a dedicated function to create an array property, instead there is an <code>-Array</code> swicth on each of the propery functions - both Object and the above simple properties.</p>
+<p>There isn't a dedicated function to create an array property, instead there is an <code>-Array</code> switch on each of the property functions - both Object and the above simple properties.</p>
 <p>If you supply the <code>-Array</code> switch to any of the above simple properties, this will define an array of that type - the <code>-Name</code> parameter can also be omitted if only a simple array if required.</p>
 <p>For example, the below will define an integer array:</p>
 <div class="codehilite"><pre><span></span><code><span class="nb">New-PodeOAIntProperty</span> <span class="n">-Array</span>
