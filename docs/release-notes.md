@@ -1,5 +1,13 @@
 # Release Notes
 
+## v1.8.3
+
+```plain
+### Enhancements
+* #602: Adds a new `Remove-PodeOAResponse` function to allow removing of default responses
+* #603: Adds a new `-Enum` parameter onto the OpenAPI property functions
+```
+
 ## v1.8.2
 
 ```plain
