@@ -198,6 +198,7 @@
         'Enable-PodeOpenApi',
         'Get-PodeOpenApiDefinition',
         'Add-PodeOAResponse',
+        'Remove-PodeOAResponse',
         'Add-PodeOAComponentResponse',
         'Set-PodeOARequest',
         'New-PodeOARequestBody',

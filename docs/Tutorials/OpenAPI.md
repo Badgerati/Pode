@@ -69,7 +69,7 @@ Each of the following OpenAPI functions have a `-PassThru` switch, allowing you 
 
 ### Responses
 
-You can define multiple responses for a route, but only one of each status code, using the [`Add-PodeOAResponse`](../../Functions/OpenApi/Add-PodeOAResponse) function. You can either just define the response and status code; with a custom description; or with a schema defining the payload of the response.
+You can define multiple responses for a route, but only one of each status code, using the [`Add-PodeOAResponse`](../../Functions/OpenApi/Add-PodeOAResponse) function. You can either just define the response and status code, with a custom description, or with a schema defining the payload of the response.
 
 The following is an example of defining simple 200 and 404 responses on a route:
 
@@ -106,6 +106,15 @@ the JSON response payload defined is as follows:
     "Name": [string],
     "UserId": [integer]
 }
+```
+
+Internally, each route is created with an empty default 200 and 500 response. You can remove these, or other added responses, by using [`Remove-PodeOAResponse`](../../Functions/OpenApi/Add-PodeOAResponse):
+
+```powershell
+Add-PodeRoute -Method Get -Path "/api/user/:userId" -ScriptBlock {
+    # logic
+} -PassThru |
+    Remove-PodeOAResponse -StatusCode 200
 ```
 
 ### Requests
@@ -325,8 +334,8 @@ New-PodeOAIntProperty -Name 'userId'
 # a float number with a max value of 100
 New-PodeOANumberProperty -Name 'ratio' -Format Float -Maximum 100
 
-# a string with a default value
-New-PodeOAStringProperty -Name 'type' -Default 'admin'
+# a string with a default value, and enum of options
+New-PodeOAStringProperty -Name 'type' -Default 'admin' -Enum @('admin', 'user')
 
 # a boolean that's required
 New-PodeOABoolProperty -Name 'enabled' -Required
@@ -336,7 +345,7 @@ On their own, like above, the simple properties don't really do much. However, y
 
 ### Arrays
 
-There isn't a dedicated function to create an array property, instead there is an `-Array` swicth on each of the propery functions - both Object and the above simple properties.
+There isn't a dedicated function to create an array property, instead there is an `-Array` switch on each of the property functions - both Object and the above simple properties.
 
 If you supply the `-Array` switch to any of the above simple properties, this will define an array of that type - the `-Name` parameter can also be omitted if only a simple array if required.
 

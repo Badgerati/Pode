@@ -303,6 +303,69 @@ function Add-PodeOAResponse
 
 <#
 .SYNOPSIS
+Remove a response definition from the supplied route.
+
+.DESCRIPTION
+Remove a response definition from the supplied route.
+
+.PARAMETER Route
+The route to remove the response definition, usually from -PassThru on Add-PodeRoute.
+
+.PARAMETER StatusCode
+The HTTP StatusCode for the response to remove.
+
+.PARAMETER Default
+If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Remove-PodeOAResponse -StatusCode 200
+
+.EXAMPLE
+Add-PodeRoute -PassThru | Remove-PodeOAResponse -StatusCode 201 -Default
+#>
+function Remove-PodeOAResponse
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $StatusCode,
+
+        [switch]
+        $Default,
+
+        [switch]
+        $PassThru
+    )
+
+    # override status code with default
+    $code = "$($StatusCode)"
+    if ($Default) {
+        $code = 'default'
+    }
+
+    # remove the respones from the routes
+    foreach ($r in @($Route)) {
+        if ($r.OpenApi.Responses.ContainsKey($code)) {
+            $r.OpenApi.Responses.Remove($code) | Out-Null
+        }
+    }
+
+    if ($PassThru) {
+        return $Route
+    }
+}
+
+<#
+.SYNOPSIS
 Adds a reusable component for responses.
 
 .DESCRIPTION
@@ -641,6 +704,9 @@ The integer must be in multiples of the supplied value.
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
+
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
 
@@ -689,6 +755,10 @@ function New-PodeOAIntProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [int[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -711,6 +781,7 @@ function New-PodeOAIntProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $Format.ToLowerInvariant()
+        enum = $Enum
         default = $Default
     }
 
@@ -756,6 +827,9 @@ The number must be in multiples of the supplied value.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -805,6 +879,10 @@ function New-PodeOANumberProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [double[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -827,6 +905,7 @@ function New-PodeOANumberProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $Format.ToLowerInvariant()
+        enum = $Enum
         default = $Default
     }
 
@@ -875,6 +954,9 @@ A Regex pattern that the string must match.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -931,6 +1013,10 @@ function New-PodeOAStringProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [string[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -958,6 +1044,7 @@ function New-PodeOAStringProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $_format.ToLowerInvariant()
+        enum = $Enum
         pattern = $Pattern
         default = $Default
     }
@@ -988,6 +1075,9 @@ The default value of the property. (Default: $false)
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -1020,6 +1110,10 @@ function New-PodeOABoolProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [bool[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -1041,6 +1135,7 @@ function New-PodeOABoolProperty
         required = $Required.IsPresent
         deprecated = $Deprecated.IsPresent
         description = $Description
+        enum = $Enum
         default = $Default
     }
 
@@ -1182,6 +1277,7 @@ function ConvertTo-PodeOAParameter
         schema = @{
             type = $Property.type
             format = $Property.format
+            enum = $Property.enum
         }
     }
 
