@@ -731,6 +731,9 @@ The integer must be in multiples of the supplied value.
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
+
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
 
@@ -851,6 +854,9 @@ The number must be in multiples of the supplied value.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -976,6 +982,9 @@ A Regex pattern that the string must match.
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
+
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
 
@@ -1093,6 +1102,9 @@ The default value of the property. (Default: $false)
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
