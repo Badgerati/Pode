@@ -194,6 +194,7 @@
         'Enable-PodeOpenApi',
         'Get-PodeOpenApiDefinition',
         'Add-PodeOAResponse',
+        'Remove-PodeOAResponse',
         'Add-PodeOAComponentResponse',
         'Set-PodeOAAuth',
         'Set-PodeOAGlobalAuth',
