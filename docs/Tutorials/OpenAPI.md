@@ -359,8 +359,8 @@ New-PodeOAIntProperty -Name 'userId'
 # a float number with a max value of 100
 New-PodeOANumberProperty -Name 'ratio' -Format Float -Maximum 100
 
-# a string with a default value
-New-PodeOAStringProperty -Name 'type' -Default 'admin'
+# a string with a default value, and enum of options
+New-PodeOAStringProperty -Name 'type' -Default 'admin' -Enum @('admin', 'user')
 
 # a boolean that's required
 New-PodeOABoolProperty -Name 'enabled' -Required
@@ -370,7 +370,7 @@ On their own, like above, the simple properties don't really do much. However, y
 
 ### Arrays
 
-There isn't a dedicated function to create an array property, instead there is an `-Array` swicth on each of the propery functions - both Object and the above simple properties.
+There isn't a dedicated function to create an array property, instead there is an `-Array` switch on each of the property functions - both Object and the above simple properties.
 
 If you supply the `-Array` switch to any of the above simple properties, this will define an array of that type - the `-Name` parameter can also be omitted if only a simple array if required.
 

@@ -731,6 +731,9 @@ The integer must be in multiples of the supplied value.
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
+
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
 
@@ -779,6 +782,10 @@ function New-PodeOAIntProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [int[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -801,6 +808,7 @@ function New-PodeOAIntProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $Format.ToLowerInvariant()
+        enum = $Enum
         default = $Default
     }
 
@@ -846,6 +854,9 @@ The number must be in multiples of the supplied value.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -895,6 +906,10 @@ function New-PodeOANumberProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [double[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -917,6 +932,7 @@ function New-PodeOANumberProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $Format.ToLowerInvariant()
+        enum = $Enum
         default = $Default
     }
 
@@ -965,6 +981,9 @@ A Regex pattern that the string must match.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -1021,6 +1040,10 @@ function New-PodeOAStringProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [string[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -1048,6 +1071,7 @@ function New-PodeOAStringProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $_format.ToLowerInvariant()
+        enum = $Enum
         pattern = $Pattern
         default = $Default
     }
@@ -1078,6 +1102,9 @@ The default value of the property. (Default: $false)
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -1110,6 +1137,10 @@ function New-PodeOABoolProperty
         [string]
         $Description,
 
+        [Parameter()]
+        [bool[]]
+        $Enum,
+
         [switch]
         $Required,
 
@@ -1131,6 +1162,7 @@ function New-PodeOABoolProperty
         required = $Required.IsPresent
         deprecated = $Deprecated.IsPresent
         description = $Description
+        enum = $Enum
         default = $Default
     }
 
@@ -1272,6 +1304,7 @@ function ConvertTo-PodeOAParameter
         schema = @{
             type = $Property.type
             format = $Property.format
+            enum = $Property.enum
         }
     }
 
