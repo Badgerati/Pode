@@ -112,7 +112,7 @@ namespace Pode
             // attempt to open the request stream
             try
             {
-                Request.Open(PodeSocket.Certificate, PodeSocket.Protocols);
+                Request.Open(PodeSocket.Certificate, PodeSocket.Protocols, PodeSocket.AllowClientCertificate);
                 State = PodeContextState.Open;
             }
             catch

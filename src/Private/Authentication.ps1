@@ -59,6 +59,42 @@ function Get-PodeAuthBasicType
     }
 }
 
+function Get-PodeAuthClientCertificateType
+{
+    return {
+        param($e, $options)
+        $cert = $e.Request.ClientCertificate
+
+        # ensure we have a client cert
+        if ($null -eq $cert) {
+            return @{
+                Message = 'No client certificate supplied'
+                Code = 401
+            }
+        }
+
+        # ensure the cert has a thumbprint
+        if ([string]::IsNullOrWhiteSpace($cert.Thumbprint)) {
+            return @{
+                Message = 'Invalid client certificate supplied'
+                Code = 401
+            }
+        }
+
+        # ensure the cert hasn't expired, or has it even started
+        $now = [datetime]::Now
+        if (($cert.NotAfter -lt $now) -or ($cert.NotBefore -gt $now)) {
+            return @{
+                Message = 'Invalid client certificate supplied'
+                Code = 401
+            }
+        }
+
+        # return data for calling validator
+        return @($cert, $e.Request.ClientCertificateErrors)
+    }
+}
+
 function Get-PodeAuthBearerType
 {
     return {

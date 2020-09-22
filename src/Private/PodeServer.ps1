@@ -33,6 +33,7 @@ function Start-PodeWebServer
             Address = $_ip
             Port = $_.Port
             Certificate = $_.Certificate.Raw
+            AllowClientCertificate = $_.Certificate.AllowClientCertificate
             HostName = $_.Url
         }
     }
@@ -45,7 +46,7 @@ function Start-PodeWebServer
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate)
+            $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate, $_.AllowClientCertificate)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $listener.Add($socket)
         }

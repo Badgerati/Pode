@@ -15,6 +15,7 @@ namespace Pode
         public int Port { get; private set; }
         public IPEndPoint Endpoint { get; private set; }
         public X509Certificate Certificate { get; private set; }
+        public bool AllowClientCertificate { get; private set; }
         public SslProtocols Protocols { get; private set; }
         public Socket Socket { get; private set; }
 
@@ -35,11 +36,12 @@ namespace Pode
             set => Socket.ReceiveTimeout = value;
         }
 
-        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, X509Certificate certificate = null)
+        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, X509Certificate certificate = null, bool allowClientCertificate = false)
         {
             IPAddress = ipAddress;
             Port = port;
             Certificate = certificate;
+            AllowClientCertificate = allowClientCertificate;
             Protocols = protocols;
             Endpoint = new IPEndPoint(ipAddress, port);
 

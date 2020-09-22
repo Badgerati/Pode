@@ -19,6 +19,8 @@ namespace Pode
         public virtual bool CloseImmediately { get => false; }
 
         public Stream InputStream { get; private set; }
+        public X509Certificate2 ClientCertificate { get; private set; }
+        public SslPolicyErrors ClientCertificateErrors { get; private set; }
         public HttpRequestException Error { get; private set; }
 
         private Socket Socket;
@@ -42,7 +44,7 @@ namespace Pode
             Context = request.Context;
         }
 
-        public void Open(X509Certificate certificate, SslProtocols protocols)
+        public void Open(X509Certificate certificate, SslProtocols protocols, bool allowClientCertificate)
         {
             // ssl or not?
             IsSsl = (certificate != default(X509Certificate));
@@ -57,18 +59,19 @@ namespace Pode
 
             // otherwise, convert the stream to an ssl stream
             var ssl = new SslStream(InputStream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
-            ssl.AuthenticateAsServerAsync(certificate, false, protocols, false).Wait(Context.Listener.CancellationToken);
+            ssl.AuthenticateAsServerAsync(certificate, allowClientCertificate, protocols, false).Wait(Context.Listener.CancellationToken);
             InputStream = ssl;
         }
 
         private bool ValidateCertificateCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-            if (certificate == default(X509Certificate))
-            {
-                return true;
-            }
+            ClientCertificateErrors = sslPolicyErrors;
 
-            return (sslPolicyErrors != SslPolicyErrors.None);
+            ClientCertificate = certificate == default(X509Certificate)
+                ? default(X509Certificate2)
+                : new X509Certificate2(certificate);
+
+            return true;
         }
 
         public void Receive()

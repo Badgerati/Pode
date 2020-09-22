@@ -50,6 +50,9 @@ If supplied, will use the inbuilt Digest Authentication credentials retriever.
 .PARAMETER Bearer
 If supplied, will use the inbuilt Bearer Authentication token retriever.
 
+.PARAMETER ClientCertificate
+If supplied, will use the inbuilt Client Certificate Authentication validation.
+
 .PARAMETER Scope
 An optional array of Scopes for Bearer Authentication. (These are case-sensitive)
 
@@ -135,6 +138,10 @@ function New-PodeAuthScheme
         [switch]
         $Bearer,
 
+        [Parameter(ParameterSetName='ClientCertificate')]
+        [switch]
+        $ClientCertificate,
+
         [Parameter(ParameterSetName='Bearer')]
         [string[]]
         $Scope
@@ -159,6 +166,20 @@ function New-PodeAuthScheme
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                     Encoding = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
                 }
+            }
+        }
+
+        'clientcertificate' {
+            return @{
+                Name = 'Mutual'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthClientCertificateType)
+                    UsingVariables = $null
+                }
+                PostValidator = $null
+                Scheme = 'http'
+                Arguments = @{}
             }
         }
 
