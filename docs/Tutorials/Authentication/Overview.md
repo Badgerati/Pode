@@ -9,11 +9,11 @@ To setup and use authentication in Pode you need to use the [`New-PodeAuthScheme
 
 ## Usage
 
-### Types/Parsers
+### Schemes
 
-The [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function allows you to create and configure authentication types/parsers, or you can create your own Custom authentication types. These types can then be used on the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function. There job is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
+The [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function allows you to create and configure authentication schemes, or you can create your own Custom authentication schemes. These schemes can then be used on the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function. There job is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
 
-An example of creating some authentication types is as follows:
+An example of creating some authentication schemes is as follows:
 
 ```powershell
 Start-PodeServer {
@@ -21,10 +21,11 @@ Start-PodeServer {
     $digest_auth = New-PodeAuthScheme -Digest
     $bearer_auth = New-PodeAuthScheme -Bearer
     $form_auth = New-PodeAuthScheme -Form
+    $cert_auth = New-PodeAuthScheme -ClientCertificate
 }
 ```
 
-Where as the following example defines a Custom type that retrieves the user's credentials from the Request's Payload:
+Where as the following example defines a Custom scheme that retrieves the user's credentials from the Request's Payload:
 
 ```powershell
 Start-PodeServer {
@@ -47,9 +48,9 @@ Start-PodeServer {
 }
 ```
 
-### Method/Validator
+### Validators
 
-The [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function allows you to add authentication methods/validators to your server. You can have many methods configured, defining which one to validate against using the `-Authentication` parameter on Routes. Their job is to validate the information parsed from the supplied scheme to ensure a user is valid.
+The [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function allows you to add authentication validators to your server. You can have many methods configured, defining which one to validate against using the `-Authentication` parameter on Routes. Their job is to validate the information parsed from the supplied scheme to ensure a user is valid.
 
 An example of using [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) for Basic sessionless authentication is as follows:
 
@@ -63,7 +64,7 @@ Start-PodeServer {
 }
 ```
 
-The `-Name` of the authentication method must be unique. The `-Type` comes from the object returned via the [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function, and can also be piped in.
+The `-Name` of the authentication method must be unique. The `-Scheme` comes from the object returned via the [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function, and can also be piped in.
 
 The `-ScriptBlock` is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a `User` object needs to be returned from the script as `@{ User = $user }`. If `$null`, or a null user, is returned then the script is assumed to have failed - meaning the user will have failed authentication, and a 401 response is returned.
 
@@ -132,9 +133,24 @@ WWW-Authenticate: Basic realm="Enter creds to access site"
 !!! note
     If no Realm was set then it would just look as follows: `WWW-Authenticate: Basic`
 
+#### WebEvent
+
+By default the web event for the current request is not supplied to the validator's ScriptBlock. If you ever need the web event though, such as for accessing other request details like a client certificate, then you can supply the `-PassEvent` switch on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). With this, Pode will supply the current web event as the first parameter:
+
+```powershell
+Start-PodeServer {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -PassEvent -ScriptBlock {
+        param($e, $username, $pass)
+        # logic to check user
+        # logic to check client cert (found at: $e.Request.ClientCertificate)
+        return @{ 'user' = $user }
+    }
+}
+```
+
 ### Routes/Middleware
 
-To use an authentication type on a specific route, you can use the `-Authentication` parameter on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function; this takes the Name supplied to the `-Name` parameter on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). This will set the authentication up to run before other route middleware.
+To use an authentication on a specific route, you can use the `-Authentication` parameter on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function; this takes the Name supplied to the `-Name` parameter on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). This will set the authentication up to run before other route middleware.
 
 An example of using some Basic authentication on a REST API route is as follows:
 

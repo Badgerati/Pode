@@ -101,7 +101,7 @@ function New-PodeAuthScheme
         [Parameter(Mandatory=$true, ParameterSetName='Custom')]
         [ValidateScript({
             if (Test-PodeIsEmpty $_) {
-                throw "A non-empty ScriptBlock is required for the Custom authentication type"
+                throw "A non-empty ScriptBlock is required for the Custom authentication scheme"
             }
 
             return $true
@@ -150,7 +150,7 @@ function New-PodeAuthScheme
     # default realm
     $_realm = 'User'
 
-    # configure the auth type
+    # configure the auth scheme
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'basic' {
             return @{
@@ -273,8 +273,8 @@ Adds a custom Authentication method for verifying users.
 .PARAMETER Name
 A unique Name for the Authentication method.
 
-.PARAMETER Type
-The Type to use for retrieving credentials (From New-PodeAuthScheme).
+.PARAMETER Scheme
+The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that retrieves and verifys a user.
@@ -294,6 +294,9 @@ The URL to redirect to when authentication succeeds when logging in.
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
+.PARAMETER PassEvent
+If supplied, the current web event will be supplied as the first parameter to the ScriptBlock.
+
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
 #>
@@ -307,7 +310,7 @@ function Add-PodeAuth
 
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
-        $Type,
+        $Scheme,
 
         [Parameter(Mandatory=$true)]
         [ValidateScript({
@@ -337,7 +340,10 @@ function Add-PodeAuth
         $SuccessUrl,
 
         [switch]
-        $Sessionless
+        $Sessionless,
+
+        [switch]
+        $PassEvent
     )
 
     # ensure the name doesn't already exist
@@ -345,9 +351,9 @@ function Add-PodeAuth
         throw "Authentication method already defined: $($Name)"
     }
 
-    # ensure the Type contains a scriptblock
-    if (Test-PodeIsEmpty $Type.ScriptBlock) {
-        throw "The supplied Type for the '$($Name)' authentication method requires a valid ScriptBlock"
+    # ensure the Scheme contains a scriptblock
+    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+        throw "The supplied Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
     }
 
     # if we're using sessions, ensure sessions have been setup
@@ -360,11 +366,12 @@ function Add-PodeAuth
 
     # add auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
-        Type = $Type
+        Scheme = $Scheme
         ScriptBlock = $ScriptBlock
         UsingVariables = $usingVars
         Arguments = $ArgumentList
         Sessionless = $Sessionless
+        PassEvent = $PassEvent
         Failure = @{
             Url = $FailureUrl
             Message = $FailureMessage
@@ -385,8 +392,8 @@ Adds the inbuilt Windows AD Authentication method for verifying users.
 .PARAMETER Name
 A unique Name for the Authentication method.
 
-.PARAMETER Type
-The Type to use for retrieving credentials (From New-PodeAuthScheme).
+.PARAMETER Scheme
+The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER Fqdn
 A custom FQDN for the DNS of the AD you wish to authenticate against. (Alias: Server)
@@ -440,7 +447,7 @@ function Add-PodeAuthWindowsAd
 
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
-        $Type,
+        $Scheme,
 
         [Parameter()]
         [Alias('Server')]
@@ -487,9 +494,9 @@ function Add-PodeAuthWindowsAd
         throw "Windows AD Authentication method already defined: $($Name)"
     }
 
-    # ensure the Type contains a scriptblock
-    if (Test-PodeIsEmpty $Type.ScriptBlock) {
-        throw "The supplied Type for the '$($Name)' Windows AD authentication method requires a valid ScriptBlock"
+    # ensure the Scheme contains a scriptblock
+    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+        throw "The supplied Scheme for the '$($Name)' Windows AD authentication validator requires a valid ScriptBlock"
     }
 
     # if we're using sessions, ensure sessions have been setup
@@ -513,7 +520,7 @@ function Add-PodeAuthWindowsAd
 
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
-        Type = $Type
+        Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsADMethod)
         Arguments = @{
             Server = $Fqdn
@@ -720,8 +727,8 @@ function Add-PodeAuthIIS
         throw "IIS Authentication method already defined: $($Name)"
     }
 
-    # create the auth tye for getting the token header
-    $type = New-PodeAuthScheme -Custom -ScriptBlock {
+    # create the auth scheme for getting the token header
+    $scheme = New-PodeAuthScheme -Custom -ScriptBlock {
         param($e, $options)
 
         $header = 'MS-ASPNETCORE-WINAUTHTOKEN'
@@ -742,7 +749,7 @@ function Add-PodeAuthIIS
     # add a custom auth method to validate the user
     $method = Get-PodeAuthWindowsADIISMethod
 
-    $type | Add-PodeAuth `
+    $scheme | Add-PodeAuth `
         -Name $Name `
         -ScriptBlock $method `
         -FailureUrl $FailureUrl `
@@ -767,8 +774,8 @@ Adds the inbuilt User File Authentication method for verifying users.
 .PARAMETER Name
 A unique Name for the Authentication method.
 
-.PARAMETER Type
-The Type to use for retrieving credentials (From New-PodeAuthScheme).
+.PARAMETER Scheme
+The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER FilePath
 A path to a users JSON file (Default: ./users.json)
@@ -810,7 +817,7 @@ function Add-PodeAuthUserFile
 
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
-        $Type,
+        $Scheme,
 
         [Parameter()]
         [string]
@@ -849,9 +856,9 @@ function Add-PodeAuthUserFile
         throw "User File Authentication method already defined: $($Name)"
     }
 
-    # ensure the Type contains a scriptblock
-    if (Test-PodeIsEmpty $Type.ScriptBlock) {
-        throw "The supplied Type for the '$($Name)' User File authentication method requires a valid ScriptBlock"
+    # ensure the Scheme contains a scriptblock
+    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+        throw "The supplied Scheme for the '$($Name)' User File authentication validator requires a valid ScriptBlock"
     }
 
     # if we're using sessions, ensure sessions have been setup
@@ -874,7 +881,7 @@ function Add-PodeAuthUserFile
 
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
-        Type = $Type
+        Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthUserFileMethod)
         Arguments = @{
             FilePath = $FilePath

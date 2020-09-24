@@ -18,7 +18,7 @@ Start-PodeServer {
         param($cert, $errors)
 
         # validate the thumbprint - here you would check a real cert store, or database
-        if ($cert.Thumbprint -ieq '2561B2BD3CF292FF55F72692FB252E6B3D9879C2') {
+        if ($cert.Thumbprint -ieq '3571B3BE3CA202FA56F73691FC258E653D0874C1') {
             return @{
                 User = @{
                     ID ='M0R7Y302'
