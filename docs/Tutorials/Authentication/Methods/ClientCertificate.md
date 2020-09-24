@@ -2,6 +2,8 @@
 
 Client Certificate Authentication is when the server requires the client to supply a certificate on the request, to verify themselves with the server. This only works over HTTPS connections.
 
+If at any point to you need to access the client's certificate outside of this validator, then it can be found on the web event object at `Request.ClientCertificate`.
+
 ## Setup
 
 To setup and start using Client Certificate Authentication in Pode you use the `New-PodeAuthScheme -ClientCertificate` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the client's certificate, and any SSL errors that may have occurred (like chain issues, etc).

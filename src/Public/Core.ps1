@@ -762,6 +762,11 @@ function Add-PodeEndpoint
         throw "An endpoint with the name '$($Name)' has already been defined"
     }
 
+    # protocol must be https for client certs
+    if (($Protocol -ine 'https') -and $AllowClientCertificate) {
+        throw "Client certificates are only supported on HTTPS endpoints"
+    }
+
     # new endpoint object
     $obj = @{
         Name = $Name
