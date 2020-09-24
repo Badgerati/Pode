@@ -651,6 +651,9 @@ Ignore Adminstrator checks for non-localhost endpoints.
 .PARAMETER SelfSigned
 Create and bind a self-signed certifcate for HTTPS endpoints.
 
+.PARAMETER AllowClientCertificate
+Allow for client certificates to be sent on requests.
+
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 
@@ -718,7 +721,10 @@ function Add-PodeEndpoint
 
         [Parameter(ParameterSetName='CertSelf')]
         [switch]
-        $SelfSigned
+        $SelfSigned,
+
+        [switch]
+        $AllowClientCertificate
     )
 
     # error if serverless
@@ -756,6 +762,11 @@ function Add-PodeEndpoint
         throw "An endpoint with the name '$($Name)' has already been defined"
     }
 
+    # protocol must be https for client certs
+    if (($Protocol -ine 'https') -and $AllowClientCertificate) {
+        throw "Client certificates are only supported on HTTPS endpoints"
+    }
+
     # new endpoint object
     $obj = @{
         Name = $Name
@@ -771,6 +782,7 @@ function Add-PodeEndpoint
         Certificate = @{
             Raw = $X509Certificate
             SelfSigned = $SelfSigned
+            AllowClientCertificate = $AllowClientCertificate
         }
     }
 

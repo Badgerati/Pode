@@ -43,3 +43,5 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 ## Customise
 
 The web event itself is just a HashTable, which means you can add your own properties to it within Middleware for further use in other Middleware down the flow, or in the Route itself.
+
+Make sure these custom properties have a unique name, so as to not clash with already existing properties.

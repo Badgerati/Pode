@@ -59,6 +59,42 @@ function Get-PodeAuthBasicType
     }
 }
 
+function Get-PodeAuthClientCertificateType
+{
+    return {
+        param($e, $options)
+        $cert = $e.Request.ClientCertificate
+
+        # ensure we have a client cert
+        if ($null -eq $cert) {
+            return @{
+                Message = 'No client certificate supplied'
+                Code = 401
+            }
+        }
+
+        # ensure the cert has a thumbprint
+        if ([string]::IsNullOrWhiteSpace($cert.Thumbprint)) {
+            return @{
+                Message = 'Invalid client certificate supplied'
+                Code = 401
+            }
+        }
+
+        # ensure the cert hasn't expired, or has it even started
+        $now = [datetime]::Now
+        if (($cert.NotAfter -lt $now) -or ($cert.NotBefore -gt $now)) {
+            return @{
+                Message = 'Invalid client certificate supplied'
+                Code = 401
+            }
+        }
+
+        # return data for calling validator
+        return @($cert, $e.Request.ClientCertificateErrors)
+    }
+}
+
 function Get-PodeAuthBearerType
 {
     return {
@@ -633,18 +669,23 @@ function Get-PodeAuthMiddlewareScript
         }
 
         try {
-            # run auth type script to parse request for data
-            $_args = @($e) + @($auth.Type.Arguments)
-            if ($null -ne $auth.Type.ScriptBlock.UsingVariables) {
-                $_args = @($auth.Type.ScriptBlock.UsingVariables.Value) + $_args
+            # run auth scheme script to parse request for data
+            $_args = @($e) + @($auth.Scheme.Arguments)
+            if ($null -ne $auth.Scheme.ScriptBlock.UsingVariables) {
+                $_args = @($auth.Scheme.ScriptBlock.UsingVariables.Value) + $_args
             }
 
-            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.ScriptBlock.Script -Arguments $_args -Return -Splat)
+            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.ScriptBlock.Script -Arguments $_args -Return -Splat)
 
             # if data is a hashtable, then don't call validator (parser either failed, or forced a success)
             if ($result -isnot [hashtable]) {
                 $original = $result
+
                 $_args = @($result) + @($auth.Arguments)
+                if ($auth.PassEvent) {
+                    $_args = @($e) + $_args
+                }
+
                 if ($null -ne $auth.UsingVariables) {
                     $_args = @($auth.UsingVariables.Value) + $_args
                 }
@@ -652,13 +693,13 @@ function Get-PodeAuthMiddlewareScript
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -Return -Splat)
 
                 # if we have user, then run post validator if present
-                if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-PodeIsEmpty $auth.Type.PostValidator.Script)) {
-                    $_args = @($e) + @($original) + @($result) + @($auth.Type.Arguments)
-                    if ($null -ne $auth.Type.PostValidator.UsingVariables) {
-                        $_args = @($auth.Type.PostValidator.UsingVariables.Value) + $_args
+                if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-PodeIsEmpty $auth.Scheme.PostValidator.Script)) {
+                    $_args = @($e) + @($original) + @($result) + @($auth.Scheme.Arguments)
+                    if ($null -ne $auth.Scheme.PostValidator.UsingVariables) {
+                        $_args = @($auth.Scheme.PostValidator.UsingVariables.Value) + $_args
                     }
 
-                    $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Type.PostValidator.Script -Arguments $_args -Return -Splat)
+                    $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -Return -Splat)
                 }
             }
         }
@@ -676,7 +717,7 @@ function Get-PodeAuthMiddlewareScript
             $validHeaders = (($null -eq $result.Headers) -or !$result.Headers.ContainsKey('WWW-Authenticate'))
 
             if ($validCode -and $validHeaders) {
-                $_wwwHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Type.Name -Realm $auth.Type.Realm -Challenge $result.Challenge
+                $_wwwHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Scheme.Name -Realm $auth.Scheme.Realm -Challenge $result.Challenge
                 if (![string]::IsNullOrWhiteSpace($_wwwHeader)) {
                     Set-PodeHeader -Name 'WWW-Authenticate' -Value $_wwwHeader
                 }
