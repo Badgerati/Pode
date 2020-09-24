@@ -59,6 +59,8 @@ There's also a new [`Add-PodeAuthMiddleware`](../../../Functions/Authentication/
 
 Furthermore, the OpenAPI functions for `Set-PodeOAAuth` and `Set-PodeOAGlobalAuth` have been removed. The new [`Add-PodeAuthMiddleware`](../../../Functions/Authentication/Add-PodeAuthMiddleware) function and `-Authentication` parameter on [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) set these up for you automatically in OpenAPI.
 
+On `Add-PodeAuth`, `Add-PodeAuthWindowsAd`, and `Add-PodeAuthUserFile` the `-Type` parameter has been renamed to `-Scheme`. If you have always piped `New-PodeAuthScheme` (formally `New-PodeAuthType`) into them, then this won't affect you.
+
 ### Endpoint and Protocol
 
 On the following functions:
