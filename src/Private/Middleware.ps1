@@ -158,13 +158,28 @@ function Get-PodeLimitMiddleware
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
         param($e)
 
-        # ensure the request IP address has not hit a rate limit
+        # check the request IP address has not hit a rate limit
         if (!(Test-PodeIPLimit -IP $e.Request.RemoteEndPoint.Address)) {
             Set-PodeResponseStatus -Code 429
             return $false
         }
 
-        # IP address is allowed
+        #TODO: check the route
+        if (!(Test-PodeRouteLimit -Path $e.Path)) {
+            Set-PodeResponseStatus -Code 429
+            return $false
+        }
+
+        #TODO: check the endpoint
+        if (!(Test-PodeEndpointLimit -Protocol $e.Endpoint.Protocol -Address $e.Endpoint.Address)) {
+            Set-PodeResponseStatus -Code 429
+            return $false
+        }
+
+        #TODO: can we shrink proto/addr searches by doing a one off "what's the endpoint name search?"
+        # - might increase perf else where
+
+        # request is allowed
         return $true
     })
 }

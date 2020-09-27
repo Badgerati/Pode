@@ -86,7 +86,7 @@ function Add-PodeLimitRule
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('IP')]
+        [ValidateSet('IP', 'Route', 'Endpoint')]
         [string]
         $Type,
 
@@ -106,15 +106,22 @@ function Add-PodeLimitRule
         $Group
     )
 
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'Add-PodeLimitRule' -ThrowError
-
     # call the appropriate limit method
-    switch ($Type.ToLowerInvariant())
+    foreach ($value in $Values)
     {
-        'ip' {
-            foreach ($ip in $Values) {
-                Add-PodeIPLimit -IP $ip -Limit $Limit -Seconds $Seconds -Group:$Group
+        switch ($Type.ToLowerInvariant())
+        {
+            'ip' {
+                Test-PodeIsServerless -FunctionName 'Add-PodeLimitRule' -ThrowError
+                Add-PodeIPLimit -IP $value -Limit $Limit -Seconds $Seconds -Group:$Group
+            }
+
+            'route' {
+                Add-PodeRouteLimit -Path $value -Limit $Limit -Seconds $Seconds -Group:$Group
+            }
+
+            'endpoint' {
+                Add-PodeEndpointLimit -EndpointName $value -Limit $Limit -Seconds $Seconds -Group:$Group
             }
         }
     }
