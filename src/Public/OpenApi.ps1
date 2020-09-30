@@ -94,6 +94,7 @@ function Enable-PodeOpenApi
             -RouteFilter $meta.RouteFilter `
             -Protocol $e.Endpoint.Protocol `
             -Address $e.Endpoint.Address `
+            -EndpointName $e.Endpoint.Name `
             -RestrictRoutes:$strict
 
         # write the openapi definition
@@ -164,6 +165,7 @@ function Get-PodeOpenApiDefinition
         -RouteFilter $RouteFilter `
         -Protocol $WebEvent.Endpoint.Protocol `
         -Address $WebEvent.Endpoint.Address `
+        -EndpointName $WebEvent.Endpoint.Name `
         -RestrictRoutes:$RestrictRoutes)
 }
 

@@ -172,7 +172,8 @@ function New-PodeContext
     }
 
     # set the IP address details
-    $ctx.Server.Endpoints = @()
+    $ctx.Server.Endpoints = @{}
+    $ctx.Server.EndpointsMap = @{}
 
     # general encoding for the server
     $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
@@ -689,28 +690,4 @@ function New-PodeAutoRestartServer
             $PodeContext.Tokens.Restart.Cancel()
         }
     }
-}
-
-function Get-PodeEndpoints
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('Http', 'Ws')]
-        [string]
-        $Type
-    )
-
-    $endpoints = $null
-
-    switch ($Type.ToLowerInvariant()) {
-        'http' {
-            $endpoints = @($PodeContext.Server.Endpoints | Where-Object { @('http', 'https') -icontains $_.Protocol })
-        }
-
-        'ws' {
-            $endpoints = @($PodeContext.Server.Endpoints | Where-Object { @('ws', 'wss') -icontains $_.Protocol })
-        }
-    }
-
-    return $endpoints
 }

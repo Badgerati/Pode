@@ -11,7 +11,7 @@ function Start-PodeGuiRunspace {
         try {
             # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
             if ($null -eq $PodeContext.Server.Gui.Endpoint) {
-                if (($PodeContext.Server.Endpoints | Measure-Object).Count -gt 1) {
+                if ($PodeContext.Server.Endpoints.Values.Count -gt 1) {
                     Write-PodeHost "Multiple endpoints defined, only the first will be used for the GUI" -ForegroundColor Yellow
                 }
             }

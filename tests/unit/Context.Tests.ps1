@@ -26,256 +26,285 @@ Describe 'Add-PodeEndpoint' {
         Mock Test-PodeIsAdminUser { return $true }
 
         It 'Set just a Hostname address' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address 'foo.com' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
-            $PodeContext.Server.Endpoints[0].Name | Should Be ([string]::Empty)
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'foo.com'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
-            $PodeContext.Server.Endpoints[0].RawAddress | Should Be 'foo.com:0'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 8080
+            $endpoint.Name | Should Not Be ([string]::Empty)
+            $endpoint.HostName | Should Be 'foo.com'
+            $endpoint.Address.ToString() | Should Be 'foo.com'
+            $endpoint.RawAddress | Should Be 'foo.com:8080'
         }
 
         It 'Set Hostname address with a Name' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address 'foo.com' -Protocol 'HTTP' -Name 'Example'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
-            $PodeContext.Server.Endpoints[0].Name | Should Be 'Example'
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'foo.com'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 8080
+            $endpoint.Name | Should Be 'Example'
+            $endpoint.HostName | Should Be 'foo.com'
+            $endpoint.Address.ToString() | Should Be 'foo.com'
         }
 
         It 'Set just a Hostname address with colon' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address 'foo.com' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'foo.com'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
-            $PodeContext.Server.Endpoints[0].RawAddress | Should Be 'foo.com:0'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 8080
+            $endpoint.HostName | Should Be 'foo.com'
+            $endpoint.Address.ToString() | Should Be 'foo.com'
+            $endpoint.RawAddress | Should Be 'foo.com:8080'
         }
 
         It 'Set both the Hostname address and port' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address 'foo.com' -Port 80 -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'foo.com'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'foo.com'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'foo.com'
+            $endpoint.Address.ToString() | Should Be 'foo.com'
         }
 
         It 'Set just an IPv4 address' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 8080
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set just an IPv4 address for all' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address 'all' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
-            $PodeContext.Server.Endpoints[0].RawAddress | Should Be 'all:0'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 8080
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '0.0.0.0'
+            $endpoint.RawAddress | Should Be 'all:8080'
         }
 
         It 'Set just an IPv4 address with colon' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 8080
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 8080
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set just a port' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Port 80 -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'localhost'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be 'localhost'
         }
 
         It 'Set just a port with colon' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Port 80 -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be 'localhost'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be 'localhost'
         }
 
         It 'Set both IPv4 address and port' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set both IPv4 address and port for all' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '*' -Port 80 -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '0.0.0.0'
-            $PodeContext.Server.Endpoints[0].RawAddress | Should Be '*:80'
+            $PodeContext.Server.Endpoints.Count | Should Be 1
+
+            $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '0.0.0.0'
+            $endpoint.RawAddress | Should Be '*:80'
         }
 
         It 'Throws error for an invalid IPv4' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             { Add-PodeEndpoint -Address '256.0.0.1' -Protocol 'HTTP' } | Should Throw 'Invalid IP Address'
 
             $PodeContext.Server.Type | Should Be $null
-            $PodeContext.Server.Endpoints | Should Be $null
+            $PodeContext.Server.Endpoints.Count | Should Be 0
         }
 
         It 'Throws error for an invalid IPv4 address with port' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             { Add-PodeEndpoint -Address '256.0.0.1' -Port 80 -Protocol 'HTTP' } | Should Throw 'Invalid IP Address'
 
             $PodeContext.Server.Type | Should Be $null
-            $PodeContext.Server.Endpoints | Should Be $null
+            $PodeContext.Server.Endpoints.Count | Should Be 0
         }
 
         It 'Add two endpoints to listen on, of the same type' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
-            Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
+            $ep1 = (Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -PassThru)
+            $ep2 = (Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -PassThru)
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 2
+            $PodeContext.Server.Endpoints.Count | Should Be 2
 
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+            $endpoint = $PodeContext.Server.Endpoints[$ep1.Name]
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
 
-            $PodeContext.Server.Endpoints[1].Port | Should Be 80
-            $PodeContext.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
-            $PodeContext.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
+            $endpoint = $PodeContext.Server.Endpoints[$ep2.Name]
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'pode.foo.com'
+            $endpoint.Address.ToString() | Should Be 'pode.foo.com'
         }
 
         It 'Add two endpoints to listen on, with different names' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -Name 'Example1'
             Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'Example2'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 2
+            $PodeContext.Server.Endpoints.Count | Should Be 2
 
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].Name | Should Be 'Example1'
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+            $endpoint = $PodeContext.Server.Endpoints['Example1']
+            $endpoint.Port | Should Be 80
+            $endpoint.Name | Should Be 'Example1'
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
 
-            $PodeContext.Server.Endpoints[1].Port | Should Be 80
-            $PodeContext.Server.Endpoints[1].Name | Should Be 'Example2'
-            $PodeContext.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
-            $PodeContext.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
+            $endpoint = $PodeContext.Server.Endpoints['Example2']
+            $endpoint.Port | Should Be 80
+            $endpoint.Name | Should Be 'Example2'
+            $endpoint.HostName | Should Be 'pode.foo.com'
+            $endpoint.Address.ToString() | Should Be 'pode.foo.com'
         }
 
         It 'Add two endpoints to listen on, one of HTTP and one of HTTPS' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
-            Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
-            Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTPS'
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
+            Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -Name 'Http'
+            Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTPS' -Name 'Https'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 2
+            $PodeContext.Server.Endpoints.Count | Should Be 2
 
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+            $endpoint = $PodeContext.Server.Endpoints['Http']
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
 
-            $PodeContext.Server.Endpoints[1].Port | Should Be 80
-            $PodeContext.Server.Endpoints[1].HostName | Should Be 'pode.foo.com'
-            $PodeContext.Server.Endpoints[1].Address.ToString() | Should Be 'pode.foo.com'
+            $endpoint = $PodeContext.Server.Endpoints['Https']
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'pode.foo.com'
+            $endpoint.Address.ToString() | Should Be 'pode.foo.com'
         }
 
         It 'Add two endpoints to listen on, but one added as they are the same' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
 
             $PodeContext.Server.Type | Should Be 'HTTP'
             $PodeContext.Server.Endpoints | Should Not Be $null
-            $PodeContext.Server.Endpoints.Length | Should Be 1
+            $PodeContext.Server.Endpoints.Count | Should Be 1
 
-            $PodeContext.Server.Endpoints[0].Port | Should Be 80
-            $PodeContext.Server.Endpoints[0].HostName | Should Be 'localhost'
-            $PodeContext.Server.Endpoints[0].Address.ToString() | Should Be '127.0.0.1'
+            $endpoint = @($PodeContext.Server.Endpoints.Values)[0]
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Throws error when adding two endpoints of different types' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
             { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'SMTP' } | Should Throw 'cannot add smtp endpoint'
         }
 
         It 'Throws error when adding two endpoints with the same name' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -Name 'Example'
             { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'Example' } | Should Throw 'already been defined'
         }
 
         It 'Throws error when adding two SMTP endpoints' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'SMTP'
             { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'SMTP' } | Should Throw 'already been defined'
         }
 
         It 'Throws error when adding two TCP endpoints' {
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'TCP'
             { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'TCP' } | Should Throw 'already been defined'
         }
 
         It 'Throws an error for not running as admin' {
             Mock Test-PodeIsAdminUser { return $false }
-            $PodeContext.Server = @{ 'Endpoints' = @(); 'Type' = $null }
+            $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             { Add-PodeEndpoint -Address 'foo.com' -Protocol 'HTTP' } | Should Throw 'Must be running with admin'
         }
     }
@@ -286,13 +315,13 @@ Describe 'Get-PodeEndpoint' {
     Mock Test-PodeIsAdminUser { return $true }
 
     It 'Returns no Endpoints' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
         $endpoints = Get-PodeEndpoint
         $endpoints.Length | Should Be 0
     }
 
     It 'Returns all Endpoints' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
         Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
@@ -303,7 +332,7 @@ Describe 'Get-PodeEndpoint' {
     }
 
     It 'Returns 1 endpoint by address' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
         Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
@@ -314,7 +343,7 @@ Describe 'Get-PodeEndpoint' {
     }
 
     It 'Returns 2 endpoints by address' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
         Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
@@ -325,7 +354,7 @@ Describe 'Get-PodeEndpoint' {
     }
 
     It 'Returns 2 endpoints by port' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
         Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
@@ -336,7 +365,7 @@ Describe 'Get-PodeEndpoint' {
     }
 
     It 'Returns all endpoints by protocol' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP'
         Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP'
@@ -347,7 +376,7 @@ Describe 'Get-PodeEndpoint' {
     }
 
     It 'Returns 2 endpoints by name' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -Name 'Admin'
         Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'User'
@@ -358,7 +387,7 @@ Describe 'Get-PodeEndpoint' {
     }
 
     It 'Returns 1 endpoint using everything' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -Name 'Admin'
         Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'User'
@@ -369,7 +398,7 @@ Describe 'Get-PodeEndpoint' {
     }
 
     It 'Returns endpoint set using wildcard' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '*' -Port 80 -Protocol 'HTTP'
 
@@ -378,7 +407,7 @@ Describe 'Get-PodeEndpoint' {
     }
 
     It 'Returns endpoint set using localhost' {
-        $PodeContext.Server = @{ Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address 'localhost' -Port 80 -Protocol 'HTTP'
 

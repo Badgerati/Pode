@@ -100,6 +100,7 @@ function Start-PodeWebServer
                             Endpoint = @{
                                 Protocol = $Request.Url.Scheme
                                 Address = $Request.Host
+                                Name = $null
                             }
                             ContentType = $Request.ContentType
                             ErrorType = $null
@@ -119,6 +120,9 @@ function Start-PodeWebServer
                         # accept/transfer encoding
                         $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
                         $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
+
+                        # endpoint name
+                        $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address)
 
                         # add logging endware for post-request
                         Add-PodeRequestLogEndware -WebEvent $WebEvent

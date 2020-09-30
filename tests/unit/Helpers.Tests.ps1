@@ -1199,11 +1199,13 @@ Describe 'Close-PodeServerInternal' {
 Describe 'Get-PodeEndpointUrl' {
     It 'Returns default endpoint url' {
         $PodeContext = @{ Server = @{
-            Endpoints = @(@{
-                Port = 6000
-                Hostname = 'thing.com'
-                Protocol = 'https'
-            })
+            Endpoints = @{
+                Example1 = @{
+                    Port = 6000
+                    Hostname = 'thing.com'
+                    Protocol = 'https'
+                }
+            }
         } }
 
         Get-PodeEndpointUrl | Should Be 'https://thing.com:6000'

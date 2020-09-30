@@ -199,10 +199,16 @@ function Get-PodeOpenApiDefinitionInternal
         $RouteFilter,
 
         [Parameter()]
+        [string]
         $Protocol,
 
         [Parameter()]
+        [string]
         $Address,
+
+        [Parameter()]
+        [string]
+        $EndpointName,
 
         [switch]
         $RestrictRoutes
@@ -222,8 +228,8 @@ function Get-PodeOpenApiDefinitionInternal
 
     # servers
     $def['servers'] = $null
-    if (!$RestrictRoutes -and (@($PodeContext.Server.Endpoints).Length -gt 1)) {
-        $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints) {
+    if (!$RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1)) {
+        $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints.Values) {
             @{
                 url = $endpoint.Url
                 description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
@@ -237,7 +243,7 @@ function Get-PodeOpenApiDefinitionInternal
     # auth/security components
     if ($PodeContext.Server.Authentications.Count -gt 0) {
         foreach ($authName in $PodeContext.Server.Authentications.Keys) {
-            $authType = (Find-PodeAuth -Name $authName).Type
+            $authType = (Find-PodeAuth -Name $authName).Scheme
 
             $def.components.securitySchemas[($authName -replace '\s+', '')] = @{
                 type = $authType.Scheme.ToLowerInvariant()
@@ -262,7 +268,7 @@ function Get-PodeOpenApiDefinitionInternal
             # the current route
             $_routes = @($PodeContext.Server.Routes[$method][$path])
             if ($RestrictRoutes) {
-                $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -Protocol $Protocol -Address $Address)
+                $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -EndpointName $EndpointName)
             }
 
             # continue if no routes

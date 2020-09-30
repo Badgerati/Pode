@@ -253,7 +253,25 @@ Describe 'Get-PodeAccessMiddleware' {
         }) | Should Be $true
     }
 
+    It 'Returns a ScriptBlock and invokes it as true, no rule' {
+        $r = Get-PodeAccessMiddleware
+        $r.Name | Should Be '__pode_mw_access__'
+        $r.Logic | Should Not Be $null
+
+        (. $r.Logic @{
+            'Request' = @{ 'RemoteEndPoint' = @{ 'Address' = 'localhost' } }
+        }) | Should Be $true
+    }
+
     It 'Returns a ScriptBlock and invokes it as false' {
+        $PodeContext = @{
+            Server = @{
+                Access = @{
+                    Allow = @{ Key = 'Value' }
+                }
+            }
+        }
+
         $r = Get-PodeAccessMiddleware
         $r.Name | Should Be '__pode_mw_access__'
         $r.Logic | Should Not Be $null
@@ -283,7 +301,25 @@ Describe 'Get-PodeLimitMiddleware' {
         }) | Should Be $true
     }
 
+    It 'Returns a ScriptBlock and invokes it as true, no rules' {
+        $r = Get-PodeLimitMiddleware
+        $r.Name | Should Be '__pode_mw_rate_limit__'
+        $r.Logic | Should Not Be $null
+
+        (. $r.Logic @{
+            'Request' = @{ 'RemoteEndPoint' = @{ 'Address' = 'localhost' } }
+        }) | Should Be $true
+    }
+
     It 'Returns a ScriptBlock and invokes it as false' {
+        $PodeContext = @{
+            Server = @{
+                Limits = @{
+                    Rules = @{ Key = 'Value' }
+                }
+            }
+        }
+
         $r = Get-PodeLimitMiddleware
         $r.Name | Should Be '__pode_mw_rate_limit__'
         $r.Logic | Should Not Be $null

@@ -124,6 +124,8 @@ Describe 'Restart-PodeInternalServer' {
                     Types = @{ 'key' = 'value' };
                 };
                 Middleware = @{ 'key' = 'value' };
+                Endpoints = @{ 'key' = 'value' };
+                EndpointsMap = @{ 'key' = 'value' };
                 Endware = @{ 'key' = 'value' };
                 ViewEngine = @{
                     Type = 'pode';

@@ -592,16 +592,12 @@ function Show-PodeGui
     # set the gui to use a specific listener
     $PodeContext.Server.Gui.EndpointName = $EndpointName
 
-    if (![string]::IsNullOrWhiteSpace($PodeContext.Server.Gui.EndpointName)) {
-        $found = ($PodeContext.Server.Endpoints | Where-Object {
-            $_.Name -eq $PodeContext.Server.Gui.EndpointName
-        } | Select-Object -First 1)
-
-        if ($null -eq $found) {
+    if (![string]::IsNullOrWhiteSpace($EndpointName)) {
+        if (!$PodeContext.Server.Endpoints.ContainsKey($EndpointName)) {
             throw "Endpoint with name '$($EndpointName)' does not exist"
         }
 
-        $PodeContext.Server.Gui.Endpoint = $found
+        $PodeContext.Server.Gui.Endpoint = $PodeContext.Server.Endpoints[$EndpointName]
     }
 }
 
@@ -637,7 +633,7 @@ A certificate subject name to bind onto HTTPS endpoints (Windows).
 The raw X509 certificate that can be use to enable HTTPS
 
 .PARAMETER Name
-An optional name for the endpoint, that can be used with other functions.
+An optional name for the endpoint, that can be used with other functions (Default: GUID).
 
 .PARAMETER RedirectTo
 The Name of another Endpoint to automatically generate a redirect route for all traffic.
@@ -724,7 +720,10 @@ function Add-PodeEndpoint
         $SelfSigned,
 
         [switch]
-        $AllowClientCertificate
+        $AllowClientCertificate,
+
+        [switch]
+        $PassThru
     )
 
     # error if serverless
@@ -755,10 +754,12 @@ function Add-PodeEndpoint
     $FullAddress = "$($Address):$($Port)"
     $_endpoint = Get-PodeEndpointInfo -Address $FullAddress
 
-    # if a name was supplied, check it is unique
-    if (!(Test-PodeIsEmpty $Name) -and
-        (Get-PodeCount ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
-    {
+    # if no name, set to guid, then check uniqueness
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        $Name = New-PodeGuid -Secure
+    }
+
+    if ($PodeContext.Server.Endpoints.ContainsKey($Name)) {
         throw "An endpoint with the name '$($Name)' has already been defined"
     }
 
@@ -798,6 +799,7 @@ function Add-PodeEndpoint
     $obj.Port = $_endpoint.Port
     if (([int]$obj.Port) -eq 0) {
         $obj.Port = Get-PodeDefaultPort -Protocol $Protocol
+        $obj.RawAddress = "$($Address):$($obj.Port)"
     }
 
     # set the url of this endpoint
@@ -809,7 +811,7 @@ function Add-PodeEndpoint
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
-    $exists = ($PodeContext.Server.Endpoints | Where-Object {
+    $exists = ($PodeContext.Server.Endpoints.Values | Where-Object {
         ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
@@ -867,12 +869,13 @@ function Add-PodeEndpoint
         }
 
         # add the new endpoint
-        $PodeContext.Server.Endpoints += $obj
+        $PodeContext.Server.Endpoints[$Name] = $obj
+        $PodeContext.Server.EndpointsMap["$($obj.Protocol)|$($obj.RawAddress)"] = $Name
     }
 
     # if RedirectTo is set, attempt to build a redirecting route
     if (!$isIIS -and !$isHeroku -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
-        $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
+        $redir_endpoint = $PodeContext.Server.Endpoints[$RedirectTo]
 
         # ensure the name exists
         if (Test-PodeIsEmpty $redir_endpoint) {
@@ -884,6 +887,11 @@ function Add-PodeEndpoint
             param($e, $endpoint)
             Move-PodeResponseUrl -EndpointName $endpoint.Name
         }
+    }
+
+    # return the endpoint?
+    if ($PassThru) {
+        return $obj
     }
 }
 
@@ -937,7 +945,7 @@ function Get-PodeEndpoint
         $Name
     )
 
-    $endpoints = $PodeContext.Server.Endpoints
+    $endpoints = $PodeContext.Server.Endpoints.Values
 
     # if we have an address, filter
     if (![string]::IsNullOrWhiteSpace($Address)) {

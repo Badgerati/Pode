@@ -1958,7 +1958,7 @@ function Get-PodeEndpointUrl
 
     # get the endpoint on which we're currently listening - use first if there are many
     if ($null -eq $Endpoint) {
-        $Endpoint = $PodeContext.Server.Endpoints[0]
+        $Endpoint = @($PodeContext.Server.Endpoints.Values)[0]
     }
 
     $url = $Endpoint.Url
