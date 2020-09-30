@@ -4,7 +4,7 @@ Access rules in Pode are inbuilt Middleware that allow you to specify allow/deny
 
 ## Usage
 
-To setup access rules in Pode you use the  [`Add-PodeAccessRule`](../../../../Functions/Middleware/Add-PodeAccessRule) function.
+To setup access rules in Pode you use the [`Add-PodeAccessRule`](../../../../Functions/Middleware/Add-PodeAccessRule) function.
 
 You can either put a rule in for a specific IP address/subnet mask, or for every address (using `all`). You can also supply an array of addresses/subnets as well, rather than one at a time.
 
@@ -14,40 +14,32 @@ You can either put a rule in for a specific IP address/subnet mask, or for every
 The following example will allow access for requests from localhost:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeAccessRule -Access Allow -Type IP -Values 127.0.0.1
-}
+Add-PodeAccessRule -Access Allow -Type IP -Values 127.0.0.1
 ```
 
 Whereas the following example will deny access to requests from a subnet:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeAccessRule -Access Deny -Type IP -Values 10.10.0.0/24
-}
+Add-PodeAccessRule -Access Deny -Type IP -Values 10.10.0.0/24
 ```
 
 To allow access to requests from multiple addresses in one line, the following example will work:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeAccessRule -Access Allow -Type IP -Values @('192.168.1.1', '192.168.1.2')
-}
+Add-PodeAccessRule -Access Allow -Type IP -Values @('192.168.1.1', '192.168.1.2')
 ```
 
 Finally, to allow or deny access to requests from every address you can use the `all` keyword:
 
 ```powershell
-Start-PodeServer {
-    Add-PodeAccessRule -Access Deny -Type IP -Values 'all'
-}
+Add-PodeAccessRule -Access Deny -Type IP -Values 'all'
 ```
 
 ## Overriding
 
 Since access rules are an inbuilt Middleware in Pode, then when you setup rules the point at which the rules are checked on the request lifecycle is fixed (see [here](../../Overview/#order-of-running)).
 
-This means you can override the inbuilt access rule logic with your own custom logic, using the  [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function. To override the access rule logic you can pass `__pode_mw_access__` to the `-Name` parameter of the  [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function.
+This means you can override the inbuilt access rule logic with your own custom logic, using the  [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function. To override the access rule logic you can pass `__pode_mw_access__` to the `-Name` parameter of the [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function.
 
 The following example uses access rules, and defines Middleware that will override the inbuilt access logic:
 

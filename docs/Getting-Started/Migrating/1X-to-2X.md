@@ -74,6 +74,8 @@ On the following functions:
 
 The `-Endpoint` and `-Protocol` parameters have been removed in favour of `-EndpointName`.
 
+Further to this, if no `-Name` is supplied to [`Add-PodeEndpoint`] then a random GUID is used instead. To get the name back you can use `-PassThru` for the endpoint to be returned.
+
 ### Scoping and Auto-Importing
 
 The 2.0 release sees a big change to some scoping issues in Pode, around modules/snapins/functions and variables. For more information, see the new page on [Scoping](../../../Tutorials/Scoping).
