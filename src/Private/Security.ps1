@@ -105,6 +105,160 @@ function Test-PodeIPLimit
     }
 }
 
+function Test-PodeRouteLimit
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [string]
+        $Path
+    )
+
+    $type = 'Route'
+
+    # get the limit rules and active list
+    $rules = $PodeContext.Server.Limits.Rules[$type]
+    $active = $PodeContext.Server.Limits.Active[$type]
+
+    # if there are no rules, it's valid
+    if (($null -eq $rules) -or ($rules.Count -eq 0)) {
+        return $true
+    }
+
+    # now
+    $now = [DateTime]::UtcNow
+
+    # is the route active?
+    $_active_route = $active[$Path]
+
+    # the ip is active, or part of a grouped subnet
+    if ($null -ne $_active_route) {
+        # if limit is -1, always allowed
+        if ($_active_route.Rule.Limit -eq -1) {
+            return $true
+        }
+
+        # check expire time, a reset if needed
+        if ($now -ge $_active_route.Expire) {
+            $_active_route.Rate = 0
+            $_active_route.Expire = $now.AddSeconds($_active_route.Rule.Seconds)
+        }
+
+        # are we over the limit?
+        if ($_active_route.Rate -ge $_active_route.Rule.Limit) {
+            return $false
+        }
+
+        # increment the rate
+        $_active_route.Rate++
+        return $true
+    }
+
+    # the route isn't active
+    else {
+        # get the route's rule
+        $_rule_route = $rules[$Path]
+
+        # if route not in rules, it's valid (add to active list as always allowed)
+        if ($null -eq $_rule_route) {
+            $active.Add($Path, @{
+                Rule = @{
+                    Limit = -1
+                }
+            })
+
+            return $true
+        }
+
+        # add route to active list
+        $active.Add($Path, @{
+            Rule = $_rule_route
+            Rate = 1
+            Expire = $now.AddSeconds($_rule_route.Seconds)
+        })
+
+        # if limit is 0, it's never allowed
+        return ($_rule_route -ne 0)
+    }
+}
+
+function Test-PodeEndpointLimit
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [string]
+        $EndpointName
+    )
+
+    $type = 'Endpoint'
+
+    # get the limit rules and active list
+    $rules = $PodeContext.Server.Limits.Rules[$type]
+    $active = $PodeContext.Server.Limits.Active[$type]
+
+    # if there are no rules, it's valid
+    if (($null -eq $rules) -or ($rules.Count -eq 0)) {
+        return $true
+    }
+
+    # now
+    $now = [DateTime]::UtcNow
+
+    # is the endpoint active?
+    $_active_endpoint = $active[$EndpointName]
+
+    # the endpoint is active
+    if ($null -ne $_active_endpoint) {
+        # if limit is -1, always allowed
+        if ($_active_endpoint.Rule.Limit -eq -1) {
+            return $true
+        }
+
+        # check expire time, a reset if needed
+        if ($now -ge $_active_endpoint.Expire) {
+            $_active_endpoint.Rate = 0
+            $_active_endpoint.Expire = $now.AddSeconds($_active_endpoint.Rule.Seconds)
+        }
+
+        # are we over the limit?
+        if ($_active_endpoint.Rate -ge $_active_endpoint.Rule.Limit) {
+            return $false
+        }
+
+        # increment the rate
+        $_active_endpoint.Rate++
+        return $true
+    }
+
+    # the endpoint isn't active
+    else {
+        # get the endpoint's rule
+        $_rule_endpoint = $rules[$EndpointName]
+
+        # if endpoint not in rules, it's valid (add to active list as always allowed)
+        if ($null -eq $_rule_endpoint) {
+            $active.Add($EndpointName, @{
+                Rule = @{
+                    Limit = -1
+                }
+            })
+
+            return $true
+        }
+
+        # add endpoint to active list
+        $active.Add($EndpointName, @{
+            Rule = $_rule_endpoint
+            Rate = 1
+            Expire = $now.AddSeconds($_rule_endpoint.Seconds)
+        })
+
+        # if limit is 0, it's never allowed
+        return ($_rule_endpoint -ne 0)
+    }
+}
+
 function Test-PodeIPAccess
 {
     param (
@@ -247,6 +401,118 @@ function Add-PodeIPLimit
             Family = $_tmpHi.AddressFamily
             Bytes = $_tmpHi.GetAddressBytes()
         }
+    })
+}
+
+function Add-PodeRouteLimit
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Limit,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Seconds,
+
+        [switch]
+        $Group
+    )
+
+    # current limit type
+    $type = 'Route'
+
+    # ensure limit and seconds are non-zero and negative
+    if ($Limit -le 0) {
+        throw "Limit value cannot be 0 or less for $($IP)"
+    }
+
+    if ($Seconds -le 0) {
+        throw "Seconds value cannot be 0 or less for $($IP)"
+    }
+
+    # get current rules
+    $rules = $PodeContext.Server.Limits.Rules[$type]
+
+    # setup up perm type
+    if ($null -eq $rules) {
+        $PodeContext.Server.Limits.Rules[$type] = @{}
+        $PodeContext.Server.Limits.Active[$type] = @{}
+        $rules = $PodeContext.Server.Limits.Rules[$type]
+    }
+
+    # have we already added the route?
+    elseif ($rules.ContainsKey($Path)) {
+        return
+    }
+
+    # add limit rule for the route
+    $rules.Add($Path, @{
+        Limit = $Limit
+        Seconds = $Seconds
+        Grouped = [bool]$Group
+        Path = $Path
+    })
+}
+
+function Add-PodeEndpointLimit
+{
+    param (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [string]
+        $EndpointName,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Limit,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Seconds,
+
+        [switch]
+        $Group
+    )
+
+    # current limit type
+    $type = 'Endpoint'
+
+    # ensure limit and seconds are non-zero and negative
+    if ($Limit -le 0) {
+        throw "Limit value cannot be 0 or less for $($IP)"
+    }
+
+    if ($Seconds -le 0) {
+        throw "Seconds value cannot be 0 or less for $($IP)"
+    }
+
+    # get current rules
+    $rules = $PodeContext.Server.Limits.Rules[$type]
+
+    # setup up perm type
+    if ($null -eq $rules) {
+        $PodeContext.Server.Limits.Rules[$type] = @{}
+        $PodeContext.Server.Limits.Active[$type] = @{}
+        $rules = $PodeContext.Server.Limits.Rules[$type]
+    }
+
+    # have we already added the endpoint?
+    elseif ($rules.ContainsKey($EndpointName)) {
+        return
+    }
+
+    # add limit rule for the endpoint
+    $rules.Add($EndpointName, @{
+        Limit = $Limit
+        Seconds = $Seconds
+        Grouped = [bool]$Group
+        EndpointName = $EndpointName
     })
 }
 

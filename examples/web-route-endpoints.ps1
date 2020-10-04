@@ -32,7 +32,7 @@ Start-PodeServer {
 
     # ALL requests for 127.0.0.2 to 127.0.0.1
     Add-PodeRoute -Method * -Path * -EndpointName Endpoint2 -ScriptBlock {
-        Move-PodeResponseUrl -Domain 127.0.0.1
+        Move-PodeResponseUrl -Address 127.0.0.1
     }
 
 }

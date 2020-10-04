@@ -142,13 +142,18 @@ function Get-PodeAccessMiddleware
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_access__' -ScriptBlock {
         param($e)
 
+        # are there any rules?
+        if (($PodeContext.Server.Access.Allow.Count -eq 0) -and ($PodeContext.Server.Access.Deny.Count -eq 0)) {
+            return $true
+        }
+
         # ensure the request IP address is allowed
         if (!(Test-PodeIPAccess -IP $e.Request.RemoteEndPoint.Address)) {
             Set-PodeResponseStatus -Code 403
             return $false
         }
 
-        # IP address is allowed
+        # request is allowed
         return $true
     })
 }
@@ -158,13 +163,30 @@ function Get-PodeLimitMiddleware
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
         param($e)
 
-        # ensure the request IP address has not hit a rate limit
+        # are there any rules?
+        if ($PodeContext.Server.Limits.Rules.Count -eq 0) {
+            return $true
+        }
+
+        # check the request IP address has not hit a rate limit
         if (!(Test-PodeIPLimit -IP $e.Request.RemoteEndPoint.Address)) {
             Set-PodeResponseStatus -Code 429
             return $false
         }
 
-        # IP address is allowed
+        # check the route
+        if (!(Test-PodeRouteLimit -Path $e.Path)) {
+            Set-PodeResponseStatus -Code 429
+            return $false
+        }
+
+        # check the endpoint
+        if (!(Test-PodeEndpointLimit -EndpointName $e.Endpoint.Name)) {
+            Set-PodeResponseStatus -Code 429
+            return $false
+        }
+
+        # request is allowed
         return $true
     })
 }
@@ -199,9 +221,9 @@ function Get-PodeRouteValidateMiddleware
             param($e)
 
             # check if the path is static route first, then check the main routes
-            $route = Find-PodeStaticRoute -Path $e.Path -Protocol $e.Endpoint.Protocol -Address $e.Endpoint.Address
+            $route = Find-PodeStaticRoute -Path $e.Path -EndpointName $e.Endpoint.Name
             if ($null -eq $route) {
-                $route = Find-PodeRoute -Method $e.Method -Path $e.Path -Protocol $e.Endpoint.Protocol -Address $e.Endpoint.Address -CheckWildMethod
+                $route = Find-PodeRoute -Method $e.Method -Path $e.Path -EndpointName $e.Endpoint.Name -CheckWildMethod
             }
 
             # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
@@ -209,7 +231,7 @@ function Get-PodeRouteValidateMiddleware
                 # check if a route exists for another method
                 $methods = @('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
                 $diff_route = @(foreach ($method in $methods) {
-                    $r = Find-PodeRoute -Method $method -Path $e.Path -Protocol $e.Endpoint.Protocol -Address $e.Endpoint.Address
+                    $r = Find-PodeRoute -Method $method -Path $e.Path -EndpointName $e.Endpoint.Name
                     if ($null -ne $r) {
                         $r
                         break

@@ -13,17 +13,13 @@ function Test-PodeRoute
 
         [Parameter()]
         [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Address,
+        $EndpointName,
 
         [switch]
         $CheckWildMethod
     )
 
-    $route = Find-PodeRoute -Method $Method -Path $Path -Protocol $Protocol -Address $Address -CheckWildMethod:$CheckWildMethod
+    $route = Find-PodeRoute -Method $Method -Path $Path -EndpointName $EndpointName -CheckWildMethod:$CheckWildMethod
     return ($null -ne $route)
 }
 
@@ -42,11 +38,7 @@ function Find-PodeRoute
 
         [Parameter()]
         [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Address,
+        $EndpointName,
 
         [switch]
         $CheckWildMethod
@@ -54,7 +46,7 @@ function Find-PodeRoute
 
     # first, if supplied, check the wildcard method
     if ($CheckWildMethod -and ($PodeContext.Server.Routes['*'].Count -ne 0)) {
-        $found = Find-PodeRoute -Method '*' -Path $Path -Protocol $Protocol -Address $Address
+        $found = Find-PodeRoute -Method '*' -Path $Path -EndpointName $EndpointName
         if ($null -ne $found) {
             return $found
         }
@@ -70,7 +62,7 @@ function Find-PodeRoute
     }
 
     # if we have a perfect match for the route, return it if the protocol is right
-    $found = Get-PodeRouteByUrl -Routes $_method[$Path] -Protocol $Protocol -Address $Address
+    $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName
     if (!$isStatic -and ($null -ne $found)) {
         return $found
     }
@@ -90,7 +82,7 @@ function Find-PodeRoute
         }
 
         # is the route valid for any protocols/endpoints?
-        $found = Get-PodeRouteByUrl -Routes $_method[$valid] -Protocol $Protocol -Address $Address
+        $found = Get-PodeRouteByUrl -Routes $_method[$valid] -EndpointName $EndpointName
         if ($null -eq $found) {
             return $null
         }
@@ -136,18 +128,14 @@ function Find-PodeStaticRoute
 
         [Parameter()]
         [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Address,
+        $EndpointName,
 
         [switch]
         $CheckPublic
     )
 
     # attempt to get a static route for the path
-    $found = Find-PodeRoute -Method 'static' -Path $Path -Protocol $Protocol -Address $Address
+    $found = Find-PodeRoute -Method 'static' -Path $Path -EndpointName $EndpointName
     $download = ([bool]$found.Download)
     $source = $null
 
@@ -236,11 +224,7 @@ function Get-PodeRouteByUrl
 
         [Parameter()]
         [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Address
+        $EndpointName
     )
 
     # if routes is already null/empty just return
@@ -248,15 +232,8 @@ function Get-PodeRouteByUrl
         return $null
     }
 
-    # get the routes
-    $rs = @(Get-PodeRoutesByUrl -Routes $Routes -Protocol $Protocol -Address $Address)
-
-    # return null if empty
-    if (($rs.Length -eq 0) -or ($null -eq $rs[0])) {
-        return $null
-    }
-
-    return @($rs | Sort-Object -Property { $_.Endpoint.Protocol }, { $_.Endpoint.Address } -Descending)[0]
+    # get the route
+    return (Get-PodeRoutesByUrl -Routes $Routes -EndpointName $EndpointName)
 }
 
 function Get-PodeRoutesByUrl
@@ -268,22 +245,26 @@ function Get-PodeRoutesByUrl
 
         [Parameter()]
         [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Address
+        $EndpointName
     )
 
-    # get the routes for the protocol/endpoint
-    return @(foreach ($route in $Routes) {
-        if (
-            (($route.Endpoint.Protocol -ieq $Protocol) -or [string]::IsNullOrWhiteSpace($route.Endpoint.Protocol)) -and
-            ([string]::IsNullOrWhiteSpace($route.Endpoint.Address) -or ($Address -ilike $route.Endpoint.Address))
-        ) {
-            $route
+    # see if a route has the endpoint name
+    if (![string]::IsNullOrWhiteSpace($EndpointName)) {
+        foreach ($route in $Routes) {
+            if ($route.Endpoint.Name -ieq $EndpointName) {
+                return $route
+            }
         }
-    })
+    }
+
+    # else find first default route
+    foreach ($route in $Routes) {
+        if ([string]::IsNullOrWhiteSpace($route.Endpoint.Name)) {
+            return $route
+        }
+    }
+
+    return $null
 }
 
 function Update-PodeRoutePlaceholders
@@ -437,95 +418,6 @@ function Test-PodeRouteAndError
     else {
         throw "[$($Method)] $($Path): Already defined for $($_url)"
     }
-}
-
-function Get-PodeEndpointByName
-{
-    param (
-        [Parameter()]
-        [string]
-        $Name,
-
-        [switch]
-        $ThrowError
-    )
-
-    # if an EndpointName was supplied, find it and use it
-    if ([string]::IsNullOrWhiteSpace($Name)) {
-        return $null
-    }
-
-    # ensure it exists
-    $found = $(foreach ($i in $PodeContext.Server.Endpoints) {
-            if ($i.name -ieq $Name) {
-                $i
-                break
-            }
-        }
-    )
-
-    if ($null -eq $found) {
-        if ($ThrowError) {
-            throw "Endpoint with name '$($Name)' does not exist"
-        }
-
-        return $null
-    }
-
-    return $found
-}
-
-function Find-PodeEndpoints
-{
-    param(
-        [Parameter()]
-        [ValidateSet('', 'Http', 'Https')]
-        [string]
-        $Protocol,
-
-        [Parameter()]
-        [string]
-        $Address,
-
-        [Parameter()]
-        [string[]]
-        $EndpointName
-    )
-
-    $endpoints = @()
-
-    # just use a single endpoint/protocol
-    if ([string]::IsNullOrWhiteSpace($EndpointName)) {
-        $endpoints += @{
-            Protocol = $Protocol
-            Address = $Address
-            Name = [string]::Empty
-        }
-    }
-
-    # get all defined endpoints by name
-    else {
-        foreach ($name in @($EndpointName)) {
-            $_endpoint = Get-PodeEndpointByName -Name $name -ThrowError
-            if ($null -ne $_endpoint) {
-                $endpoints += @{
-                    Protocol = $_endpoint.Protocol
-                    Address = $_endpoint.RawAddress
-                    Name = $name
-                }
-            }
-        }
-    }
-
-    # convert the endpoint's address into host:port format
-    foreach ($_endpoint in $endpoints) {
-        if (![string]::IsNullOrWhiteSpace($_endpoint.Address)) {
-            $_addr = Get-PodeEndpointInfo -Address $_endpoint.Address -AnyPortOnZero
-            $_endpoint.Address = "$($_addr.Host):$($_addr.Port)"
-        }
-    }
-
-    return $endpoints
 }
 
 function Convert-PodeFunctionVerbToHttpMethod

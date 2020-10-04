@@ -41,26 +41,13 @@ Describe 'Find-PodeRoute' {
         It 'Returns logic for method and exact route and endpoint' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
                 @{ 'Logic'= { Write-Host 'Test' }; };
-                @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = @{ 'Address' = 'pode.foo.com' } };
+                @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = @{ Name = 'example'; 'Address' = 'pode.foo.com' } };
             ); }; }; }
 
-            $result = (Find-PodeRoute -Method GET -Path '/' -Address 'pode.foo.com')
+            $result = (Find-PodeRoute -Method GET -Path '/' -EndpointName 'example')
 
             $result | Should BeOfType System.Collections.Hashtable
             $result.Endpoint.Address | Should Be 'pode.foo.com'
-            $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
-        }
-
-        It 'Returns logic for method and exact route and wildcard endpoint' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
-                @{ 'Logic'= { Write-Host 'Test' }; };
-                @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = @{ 'Address' = '*:8080' } };
-            ); }; }; }
-
-            $result = (Find-PodeRoute -Method GET -Path '/' -Address 'localhost:8080')
-
-            $result | Should BeOfType System.Collections.Hashtable
-            $result.Endpoint.Address | Should Be '*:8080'
             $result.Logic.ToString() | Should Be ({ Write-Host 'Test' }).ToString()
         }
 
@@ -131,7 +118,7 @@ Describe 'Remove-PodeRoute' {
     }
 
     It 'Adds two routes with simple url, and then removes one' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; }; Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; }; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
 
@@ -285,7 +272,7 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Throws error on GET route for endpoint name not existing' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
+        $PodeContext.Server = @{ 'Endpoints' = @{}; 'Routes' = @{ 'GET' = @{}; }; }
         { Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -EndpointName 'test' } | Should Throw 'does not exist'
     }
 
@@ -776,280 +763,46 @@ Describe 'Split-PodeRouteQuery' {
 }
 
 Describe 'Get-PodeRouteByUrl' {
-    $routeBothSet = @{
+    $routeNameSet = @{
         Endpoint = @{
             Protocol = 'HTTP'
             Address = '/assets'
+            Name = 'Example1'
         }
     }
 
-    $routeEndpointSet = @{
+    $routeNoNameSet = @{
         Endpoint = @{
             Protocol = ''
             Address = '/assets'
-        }
-    }
-
-    $routeProtocolSet = @{
-        Endpoint = @{
-            Protocol = 'HTTP'
-            Address = ''
-        }
-    }
-
-    $routeNeitherSet = @{
-        Endpoint = @{
-            Protocol = ''
-            Address = ''
+            Name = 'Example2'
         }
     }
 
     It 'Single route' {
-        $Routes = @($routeBothSet)
+        $Routes = @($routeNameSet)
 
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
+        $Result = Get-PodeRouteByUrl -Routes $Routes -EndpointName 'Example1'
 
         $Result | Should Not Be $null
-        $Result | Should Be $routeBothSet
-    }
-
-    It 'Single route, no protocol on route' {
-        $Routes = @($routeEndpointSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeEndpointSet
-    }
-
-    It 'Single route, no endpoint on route' {
-        $Routes = @($routeProtocolSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeProtocolSet
-    }
-
-    It 'Single route, no protcol or endpoint on route' {
-        $Routes = @($routeNeitherSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeNeitherSet
-    }
-
-    It 'Single route, different casing, protcol' {
-        $Routes = @($routeBothSet)
-
-        $InputProtocol = 'HTTp'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeBothSet
-    }
-
-    It 'Single route, different casing, endpoint' {
-        $Routes = @($routeBothSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/asSets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeBothSet
-    }
-
-    It 'Single route, different casing, protocol endpoint' {
-        $Routes = @($routeBothSet)
-
-        $InputProtocol = 'HTtP'
-        $InputEndpoint = '/assEts'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeBothSet
-    }
-
-    It 'Single route, not passing protocol, no routes with no protocol' {
-        $Routes = @($routeBothSet)
-
-        $InputProtocol = ''
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Be $null
-    }
-
-    It 'Single route, not passing endpoint, no routes with no endpoint' {
-        $Routes = @($routeBothSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = ''
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Be $null
-    }
-
-    It 'Single route, not passing protocol and endpoint, no routes with no protocol and endpoint' {
-        $Routes = @($routeBothSet)
-
-        $InputProtocol = ''
-        $InputEndpoint = ''
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Be $null
-    }
-
-    It 'Single route, not passing protocol, route with no protocol and endpoint' {
-        $Routes = @($routeNeitherSet)
-
-        $InputProtocol = ''
-        $InputEndpoint = '/assests'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeNeitherSet
-    }
-
-    It 'Single route, not passing endpoint, route with no protocol and endpoint' {
-        $Routes = @($routeNeitherSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = ''
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeNeitherSet
-    }
-
-    It 'Single route, not passing protocol and endpoint, route with no protocol and endpoint' {
-        $Routes = @($routeNeitherSet)
-
-        $InputProtocol = ''
-        $InputEndpoint = ''
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeNeitherSet
+        $Result | Should Be $routeNameSet
     }
 
     It 'No routes' {
         $Routes = @()
 
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
+        $Result = Get-PodeRouteByUrl -Routes $Routes -EndpointName 'Example1'
 
         $Result | Should Be $null
     }
 
     It 'Two routes, sorting' {
-        $Routes = @($routeEndpointSet, $routeBothSet)
+        $Routes = @($routeNameSet, $routeNoNameSet)
 
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
+        $Result = Get-PodeRouteByUrl -Routes $Routes -EndpointName 'Example1'
 
         $Result | Should Not Be $null
-        $Result | Should Be $routeBothSet
-    }
-
-    It 'Two routes, sorting' {
-        $Routes = @($routeBothSet, $routeProtocolSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeBothSet
-    }
-
-    It 'Two routes, sorting' {
-        $Routes = @($routeBothSet, $routeNeitherSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeBothSet
-    }
-
-    It 'Many routes, sorting' {
-        $Routes = @($routeProtocolSet, $routeEndpointSet, $routeBothSet, $routeNeitherSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeBothSet
-    }
-
-    It 'Two routes, not passing protocol, route with no protocol and endpoint' {
-        $Routes = @($routeBothSet, $routeNeitherSet)
-
-        $InputProtocol = ''
-        $InputEndpoint = '/assets'
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeNeitherSet
-    }
-
-    It 'Two routes, not passing endpoint, route with no protocol and endpoint' {
-        $Routes = @($routeBothSet, $routeNeitherSet)
-
-        $InputProtocol = 'HTTP'
-        $InputEndpoint = ''
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeNeitherSet
-    }
-
-    It 'Two routes, not passing procotol and endpoint, route with no protocol and endpoint' {
-        $Routes = @($routeBothSet, $routeNeitherSet)
-
-        $InputProtocol = ''
-        $InputEndpoint = ''
-
-        $Result = Get-PodeRouteByUrl -Routes $Routes -Protocol $InputProtocol -Address $InputEndpoint
-
-        $Result | Should Not Be $null
-        $Result | Should Be $routeNeitherSet
+        $Result | Should Be $routeNameSet
     }
 }
 
@@ -1108,7 +861,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns one route for users path and endpoint name user' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -1123,7 +876,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns both routes for users path and endpoint names' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -1136,7 +889,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns both routes for user endpoint name' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -1172,7 +925,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns one static route for endpoint name user' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -1187,7 +940,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns both routes for users path and endpoint names' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -1200,7 +953,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns both routes for user endpoint' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @(); Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin

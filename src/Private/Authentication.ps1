@@ -840,7 +840,7 @@ function Set-PodeAuthStatus
         $Description = (Protect-PodeValue -Value $Failure.Message -Default $Description)
 
         # add error to flash
-        if (!$Sessionless -and ![string]::IsNullOrWhiteSpace($Description)) {
+        if ($LoginRoute -and !$Sessionless -and ![string]::IsNullOrWhiteSpace($Description)) {
             Add-PodeFlashMessage -Name 'auth-error' -Message $Description
         }
 

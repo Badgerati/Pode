@@ -147,7 +147,8 @@ function Restart-PodeInternalServer
         $PodeContext.Server.BodyParsers.Clear()
 
         # clear endpoints
-        $PodeContext.Server.Endpoints = @()
+        $PodeContext.Server.Endpoints.Clear()
+        $PodeContext.Server.EndpointsMap.Clear()
 
         # clear openapi
         $PodeContext.Server.OpenAPI = Get-PodeOABaseObject

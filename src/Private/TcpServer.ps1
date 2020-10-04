@@ -5,11 +5,14 @@ function Start-PodeTcpServer
         throw 'No TCP handlers have been defined'
     }
 
+    # the endpoint to listen on
+    $endpoint = @($PodeContext.Server.Endpoints.Values)[0]
+
     # grab the relavant port
-    $port = $PodeContext.Server.Endpoints[0].Port
+    $port = $endpoint.Port
 
     # get the IP address for the server
-    $ipAddress = $PodeContext.Server.Endpoints[0].Address
+    $ipAddress = $endpoint.Address
     if (Test-PodeHostname -Hostname $ipAddress) {
         $ipAddress = (Get-PodeIPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
         $ipAddress = (Get-PodeIPAddress $ipAddress)
@@ -122,5 +125,5 @@ function Start-PodeTcpServer
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
-    return @("tcp://$($PodeContext.Server.Endpoints[0].HostName):$($port)")
+    return @("tcp://$($endpoint.HostName):$($port)")
 }
