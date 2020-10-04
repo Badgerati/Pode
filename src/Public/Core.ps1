@@ -650,6 +650,9 @@ Create and bind a self-signed certifcate for HTTPS endpoints.
 .PARAMETER AllowClientCertificate
 Allow for client certificates to be sent on requests.
 
+.PARAMETER PassThru
+If supplied, the endpoint created will be returned.
+
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 

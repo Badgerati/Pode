@@ -74,7 +74,7 @@ On the following functions:
 
 The `-Endpoint` and `-Protocol` parameters have been removed in favour of `-EndpointName`.
 
-Further to this, if no `-Name` is supplied to [`Add-PodeEndpoint`] then a random GUID is used instead. To get the name back you can use `-PassThru` for the endpoint to be returned.
+Further to this, if no `-Name` is supplied to [`Add-PodeEndpoint`](../../../Functions/Core/Add-PodeEndpoint) then a random GUID is used instead. To get the name back you can use `-PassThru` for the endpoint to be returned.
 
 ### Scoping and Auto-Importing
 

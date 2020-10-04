@@ -8,7 +8,7 @@ If at any point to you need to access the client's certificate outside of this v
 
 To setup and start using Client Certificate Authentication in Pode you use the `New-PodeAuthScheme -ClientCertificate` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the client's certificate, and any SSL errors that may have occurred (like chain issues, etc).
 
-You will also need to supply `-AllowClientCertificate` to [`Add-PodeEndpoint`], and ensure the `-Protocol` is HTTPS:
+You will also need to supply `-AllowClientCertificate` to [`Add-PodeEndpoint`](../../../../Functions/Core/Add-PodeEndpoint), and ensure the `-Protocol` is HTTPS:
 
 ```powershell
 Start-PodeServer {

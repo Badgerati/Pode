@@ -55,13 +55,13 @@ function Add-PodeAccessRule
 
 <#
 .SYNOPSIS
-Adds rate limiting rules for an IP address.
+Adds rate limiting rules for an IP addresses, Routes, or Endpoints.
 
 .DESCRIPTION
-Adds rate limiting rules for an IP address.
+Adds rate limiting rules for an IP addresses, Routes, or Endpoints.
 
 .PARAMETER Type
-What type of request are we limiting?
+What type of request is being rate limited: IP, Route, or Endpoint?
 
 .PARAMETER Values
 A single, or an array of values.
@@ -73,13 +73,16 @@ The maximum number of requests to allow.
 The number of seconds to count requests before restarting the count.
 
 .PARAMETER Group
-If supplied, groups of IPs in a subnet will be concidered as one IP.
+If supplied, groups of IPs in a subnet will be considered as one IP.
 
 .EXAMPLE
 Add-PodeLimitRule -Type IP -Values '127.0.0.1' -Limit 10 -Seconds 1
 
 .EXAMPLE
 Add-PodeLimitRule -Type IP -Values @('192.168.1.1', '10.10.1.0/24') -Limit 50 -Seconds 1 -Group
+
+.EXAMPLE
+Add-PodeLimitRule -Type Route -Values '/downloads' -Limit 5 -Seconds 1
 #>
 function Add-PodeLimitRule
 {
