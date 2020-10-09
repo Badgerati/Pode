@@ -962,7 +962,7 @@ function Get-PodeEndpoint
             $Address = '0.0.0.0'
         }
 
-        if ($PodeContext.Server.IsIIS) {
+        if ($PodeContext.Server.IsIIS -or ($Address -ieq 'localhost')) {
             $Address = '127.0.0.1'
         }
 
