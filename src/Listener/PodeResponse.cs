@@ -9,7 +9,7 @@ namespace Pode
 {
     public class PodeResponse : IDisposable
     {
-        public Hashtable Headers { get; private set; }
+        public PodeResponseHeaders Headers { get; private set; }
         public int StatusCode = 200;
         public string StatusDescription = "OK";
         public bool SendChunked = false;
@@ -31,31 +31,14 @@ namespace Pode
             }
             set
             {
-                if (Headers.ContainsKey("Content-Length"))
-                {
-                    Headers["Content-Length"] = value;
-                }
-                else
-                {
-                    Headers.Add("Content-Length", value);
-                }
+                Headers.Set("Content-Length", value);
             }
         }
 
         public string ContentType
         {
             get => $"{Headers["Content-Type"]}";
-            set
-            {
-                if (Headers.ContainsKey("Content-Type"))
-                {
-                    Headers["Content-Type"] = value;
-                }
-                else
-                {
-                    Headers.Add("Content-Type", value);
-                }
-            }
+            set => Headers.Set("Content-Type", value);
         }
 
         public string HttpResponseLine
@@ -67,7 +50,7 @@ namespace Pode
 
         public PodeResponse()
         {
-            Headers = new Hashtable();
+            Headers = new PodeResponseHeaders();
             OutputStream = new MemoryStream();
         }
 
@@ -224,7 +207,7 @@ namespace Pode
             }
         }
 
-        private string BuildHeaders(Hashtable headers)
+        private string BuildHeaders(PodeResponseHeaders headers)
         {
             if (headers.Count == 0)
             {
@@ -235,16 +218,10 @@ namespace Pode
 
             foreach (var key in headers.Keys)
             {
-                if (headers[key] is object[])
+                var values = headers.Get(key);
+                foreach (var value in values)
                 {
-                    foreach (var value in (object[])headers[key])
-                    {
-                        str += $"{key}: {value}{PodeHelpers.NEW_LINE}";
-                    }
-                }
-                else
-                {
-                    str += $"{key}: {headers[key]}{PodeHelpers.NEW_LINE}";
+                    str += $"{key}: {value}{PodeHelpers.NEW_LINE}";
                 }
             }
 
