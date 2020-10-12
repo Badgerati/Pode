@@ -371,18 +371,27 @@ function Get-PodeIPAddress
         $IP
     )
 
+    # any address for IPv4
     if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
         return [System.Net.IPAddress]::Any
     }
 
+    # any address for IPv6
     if (($IP -ieq '::') -or ($IP -ieq '[::]')) {
         return [System.Net.IPAddress]::IPv6Any
     }
 
+    # localhost
+    if ($IP -ieq 'localhost') {
+        return [System.Net.IPAddress]::Loopback
+    }
+
+    # hostname
     if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
         return $IP
     }
 
+    # raw ip
     return [System.Net.IPAddress]::Parse($IP)
 }
 
@@ -864,6 +873,7 @@ function Test-PodeValidNetworkFailure
     $msgs = @(
         '*network name is no longer available*',
         '*nonexistent network connection*',
+        '*the response has completed*',
         '*broken pipe*'
     )
 

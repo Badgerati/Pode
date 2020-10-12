@@ -89,12 +89,17 @@ function Start-PodeServer
         [Parameter()]
         [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
         [string]
+        #TODO: Rename this to ServerlessType ??
         $Type = [string]::Empty,
 
         [Parameter()]
         [ValidateSet('', 'Hide', 'Show')]
         [string]
         $StatusPageExceptions = [string]::Empty,
+
+        [Parameter()]
+        [string]
+        $ListenerType = [string]::Empty,
 
         [switch]
         $DisableTermination,
@@ -143,6 +148,7 @@ function Start-PodeServer
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
             -ServerType $Type `
+            -ListenerType $ListenerType `
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
             -Quiet:$Quiet
@@ -956,7 +962,7 @@ function Get-PodeEndpoint
             $Address = '0.0.0.0'
         }
 
-        if ($PodeContext.Server.IsIIS) {
+        if ($PodeContext.Server.IsIIS -or ($Address -ieq 'localhost')) {
             $Address = '127.0.0.1'
         }
 

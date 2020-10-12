@@ -39,14 +39,14 @@ function Start-PodeWebServer
     }
 
     # create the listener
-    $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token, [PodeListenerType]::Http)
+    $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token -Type 'Http'")))
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
 
     try
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate, $_.AllowClientCertificate)
+            $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Address `$_.Address -Port `$_.Port -SslProtocols `$PodeContext.Server.Sockets.Ssl.Protocols -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate")))
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $listener.Add($socket)
         }
@@ -231,4 +231,48 @@ function Start-PodeWebServer
     }
 
     return @($endpoints.HostName)
+}
+
+function New-PodeListener
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Threading.CancellationToken]
+        $CancellationToken,
+
+        [Parameter(Mandatory=$true)]
+        [PodeListenerType]
+        $Type
+    )
+
+    return [PodeListener]::new($CancellationToken, $Type)
+}
+
+function New-PodeListenerSocket
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ipaddress]
+        $Address,
+
+        [Parameter(Mandatory=$true)]
+        [int]
+        $Port,
+
+        [Parameter()]
+        [System.Security.Authentication.SslProtocols]
+        $SslProtocols,
+
+        [Parameter()]
+        [X509Certificate]
+        $Certificate,
+
+        [Parameter()]
+        [bool]
+        $AllowClientCertificate
+    )
+
+    return [PodeSocket]::new($Address, $Port, $SslProtocols, $Certificate, $AllowClientCertificate)
 }

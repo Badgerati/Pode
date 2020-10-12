@@ -216,13 +216,13 @@ namespace Pode
 
             // compile the headers
             Response.Headers.Clear();
-            Response.Headers.Add("Connection", "Upgrade");
-            Response.Headers.Add("Upgrade", "websocket");
-            Response.Headers.Add("Sec-WebSocket-Accept", socketHash);
+            Response.Headers.Set("Connection", "Upgrade");
+            Response.Headers.Set("Upgrade", "websocket");
+            Response.Headers.Set("Sec-WebSocket-Accept", socketHash);
 
             if (!string.IsNullOrWhiteSpace(clientId))
             {
-                Response.Headers.Add("X-Pode-ClientId", clientId);
+                Response.Headers.Set("X-Pode-ClientId", clientId);
             }
 
             // send message to upgrade web socket
@@ -236,9 +236,6 @@ namespace Pode
             Request = wsRequest;
 
             Listener.AddWebSocket(WsRequest.WebSocket);
-
-            // HttpRequest.WebSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
-            // Listener.AddWebSocket(HttpRequest.WebSocket);
         }
 
         public void Dispose()

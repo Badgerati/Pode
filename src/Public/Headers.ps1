@@ -42,11 +42,7 @@ function Add-PodeHeader
     # add the header to the response
     switch ($PodeContext.Server.Type) {
         'http' {
-            if (!$WebEvent.Response.Headers.ContainsKey($Name)) {
-                $WebEvent.Response.Headers[$Name] = @()
-            }
-
-            $WebEvent.Response.Headers[$Name] += $Value
+            $WebEvent.Response.Headers.Add($Name, $Value)
         }
 
         default {
@@ -167,7 +163,7 @@ function Set-PodeHeader
     # set the header on the response
     switch ($PodeContext.Server.Type) {
         'http' {
-            $WebEvent.Response.Headers[$Name] = @($Value)
+            $WebEvent.Response.Headers.Set($Name, $Value)
         }
 
         default {

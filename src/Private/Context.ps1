@@ -34,6 +34,10 @@ function New-PodeContext
         [string]
         $StatusPageExceptions,
 
+        [Parameter()]
+        [string]
+        $ListenerType,
+
         [switch]
         $DisableTermination,
 
@@ -139,6 +143,9 @@ function New-PodeContext
     if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
+
+    # set the server's listener type
+    $ctx.Server.ListenerType = $ListenerType
 
     # set the server default type
     $ctx.Server.Type = $ServerType.ToUpperInvariant()

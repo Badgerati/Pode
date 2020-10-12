@@ -139,7 +139,7 @@ Describe 'Add-PodeEndpoint' {
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
             $endpoint.Port | Should Be 80
             $endpoint.HostName | Should Be 'localhost'
-            $endpoint.Address.ToString() | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set just a port with colon' {
@@ -153,7 +153,7 @@ Describe 'Add-PodeEndpoint' {
             $endpoint = ($PodeContext.Server.Endpoints.Values | Select-Object -First 1)
             $endpoint.Port | Should Be 80
             $endpoint.HostName | Should Be 'localhost'
-            $endpoint.Address.ToString() | Should Be 'localhost'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Set both IPv4 address and port' {
