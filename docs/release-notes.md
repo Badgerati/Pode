@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.8.4
+
+```plain
+### Bugs
+* #615: Fixes a bug with Azure Functions V3, where the sys property has now been removed
+```
+
 ## v1.8.3
 
 ```plain
