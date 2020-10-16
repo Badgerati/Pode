@@ -59,7 +59,12 @@ function Start-PodeAzFuncServer
                 $WebEvent.Path = $request.Query['static-file']
             }
             else {
-                $WebEvent.Path = "/api/$($Data.sys.MethodName)"
+                $funcName = $Data.sys.MethodName
+                if ([string]::IsNullOrWhiteSpace($funcName)) {
+                    $funcName = $Data.FunctionName
+                }
+
+                $WebEvent.Path = "/api/$($funcName)"
             }
 
             $WebEvent.Path = [System.Web.HttpUtility]::UrlDecode($WebEvent.Path)
