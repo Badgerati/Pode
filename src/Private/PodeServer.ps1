@@ -31,10 +31,12 @@ function Start-PodeWebServer
         # add endpoint to list
         $endpoints += @{
             Address = $_ip
+            Hostname = $_.HostName
+            IsIPAddress = $_.IsIPAddress
             Port = $_.Port
             Certificate = $_.Certificate.Raw
             AllowClientCertificate = $_.Certificate.AllowClientCertificate
-            HostName = $_.Url
+            Url = $_.Url
         }
     }
 
@@ -48,6 +50,11 @@ function Start-PodeWebServer
         $endpoints | ForEach-Object {
             $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Address `$_.Address -Port `$_.Port -SslProtocols `$PodeContext.Server.Sockets.Ssl.Protocols -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate")))
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
+
+            if (!$_.IsIPAddress) {
+                $socket.Hostname = $_.HostName
+            }
+
             $listener.Add($socket)
         }
 
@@ -227,10 +234,10 @@ function Start-PodeWebServer
 
     # browse to the first endpoint, if flagged
     if ($Browse) {
-        Start-Process $endpoints[0].HostName
+        Start-Process $endpoints[0].Url
     }
 
-    return @($endpoints.HostName)
+    return @($endpoints.Url)
 }
 
 function New-PodeListener

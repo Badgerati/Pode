@@ -119,6 +119,17 @@ namespace Pode
                 Headers.Add(h_name, h_value);
             }
 
+            // build required URI details
+            var _proto = (IsSsl ? "https" : "http");
+            Host = $"{Headers["Host"]}";
+            Url = new Uri($"{_proto}://{Host}{reqQuery}");
+
+            // check the host header
+            if (!Context.PodeSocket.CheckHostname(Host))
+            {
+                throw new HttpRequestException($"Invalid request Host: {Host}");
+            }
+
             // get the content length
             var strContentLength = $"{Headers["Content-Length"]}";
             if (string.IsNullOrWhiteSpace(strContentLength))
@@ -196,7 +207,6 @@ namespace Pode
             }
 
             // set values from headers
-            Host = $"{Headers["Host"]}";
             UrlReferrer = $"{Headers["Referer"]}";
             UserAgent = $"{Headers["User-Agent"]}";
             ContentType = $"{Headers["Content-Type"]}";
@@ -223,10 +233,6 @@ namespace Pode
                     }
                 }
             }
-
-            // build required URI details
-            var _proto = (IsSsl ? "https" : "http");
-            Url = new Uri($"{_proto}://{Host}{reqQuery}");
         }
     }
 }

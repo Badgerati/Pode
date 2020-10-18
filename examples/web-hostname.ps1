@@ -15,6 +15,10 @@ Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
     Add-PodeEndpoint -Address pode.foo.com -Port $Port -Protocol Http
+    #Add-PodeEndpoint -Address pode2.foo.com -Port $Port -Protocol Http
+
+    # logging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

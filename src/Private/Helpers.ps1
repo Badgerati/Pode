@@ -305,7 +305,12 @@ function Get-PodeIPAddressesForHostname
     }
 
     # get the ip addresses for the hostname
-    $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
+    try {
+        $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
+    }
+    catch {
+        return '0.0.0.0'
+    }
 
     # return ips based on type
     switch ($Type.ToLowerInvariant())

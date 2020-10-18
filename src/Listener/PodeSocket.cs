@@ -324,6 +324,16 @@ namespace Pode
             }
         }
 
+        public bool CheckHostname(string hostname)
+        {
+            if (string.IsNullOrWhiteSpace(Hostname))
+            {
+                return true;
+            }
+
+            return Hostname.Equals(hostname.Split(':')[0], StringComparison.InvariantCultureIgnoreCase);
+        }
+
         public void Dispose()
         {
             CloseSocket(Socket);
