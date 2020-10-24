@@ -615,10 +615,13 @@ Bind an endpoint to listen for incoming Requests.
 Bind an endpoint to listen for incoming Requests. The endpoints can be HTTP, HTTPS, TCP or SMTP, with the option to bind certificates.
 
 .PARAMETER Address
-The IP/Hostname of the endpoint.
+The IP/Hostname of the endpoint (Default: localhost).
 
 .PARAMETER Port
 The Port number of the endpoint.
+
+.PARAMETER Hostname
+An optional hostname for the endpoint, specifying a hostname restricts access to just the hostname.
 
 .PARAMETER Protocol
 The protocol of the supplied endpoint.
@@ -667,6 +670,9 @@ Add-PodeEndpoint -Address localhost -Protocol Smtp
 
 .EXAMPLE
 Add-PodeEndpoint -Address dev.pode.com -Port 8443 -Protocol Https -SelfSigned
+
+.EXAMPLE
+Add-PodeEndpoint -Address 127.0.0.2 -Hostname dev.pode.com -Port 8443 -Protocol Https -SelfSigned
 
 .EXAMPLE
 Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
@@ -940,6 +946,9 @@ An Address to filter the endpoints.
 
 .PARAMETER Port
 A Port to filter the endpoints.
+
+.PARAMETER Hostname
+A Hostname to filter the endpoints.
 
 .PARAMETER Protocol
 A Protocol to filter the endpoints.

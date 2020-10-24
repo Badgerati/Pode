@@ -155,5 +155,5 @@ function Start-PodeSmtpServer
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
-    return @("smtp://$($endpoint.HostName):$($port)")
+    return @("smtp://$($endpoint.FriendlyName):$($port)")
 }
