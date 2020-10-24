@@ -52,7 +52,7 @@ function Start-PodeWebServer
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
 
             if (!$_.IsIPAddress) {
-                $socket.Hostname = $_.HostName
+                $socket.Hostnames.Add($_.HostName)
             }
 
             $listener.Add($socket)

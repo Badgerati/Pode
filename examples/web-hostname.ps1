@@ -14,8 +14,9 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address pode.foo.com -Port $Port -Protocol Http
-    #Add-PodeEndpoint -Address pode2.foo.com -Port $Port -Protocol Http
+    Add-PodeEndpoint -Address pode3.foo.com -Port $Port -Protocol Http
+    Add-PodeEndpoint -Address pode2.foo.com -Port $Port -Protocol Http
+    Add-PodeEndpoint -Address 127.0.0.1 -Hostname pode.foo.com -Port $Port -Protocol Http
 
     # logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

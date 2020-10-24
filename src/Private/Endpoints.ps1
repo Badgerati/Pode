@@ -95,7 +95,12 @@ function Find-PodeEndpointName
     }
 
     # try and find endpoint
+    if ($Address -ilike 'localhost:*') {
+        $Address = ($Address -ireplace 'localhost\:', '127.0.0.1:')
+    }
+
     $key = "$($Protocol)|$($Address)"
+
     $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
         if ($key -ilike $k) {
             $k

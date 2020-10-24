@@ -1978,7 +1978,7 @@ function Get-PodeEndpointUrl
 
     $url = $Endpoint.Url
     if ([string]::IsNullOrWhiteSpace($url)) {
-        $url = "$($Endpoint.Protocol)://$($Endpoint.HostName):$($Endpoint.Port)"
+        $url = "$($Endpoint.Protocol)://$($Endpoint.FriendlyName):$($Endpoint.Port)"
     }
 
     return $url

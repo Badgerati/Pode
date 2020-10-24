@@ -52,7 +52,7 @@ namespace Pode
 
         public void SendAck()
         {
-            Context.Response.WriteLine($"220 {Context.PodeSocket.Hostname} -- Pode Proxy Server", true);
+            Context.Response.WriteLine($"220 {Context.PodeSocket.Hostnames[0]} -- Pode Proxy Server", true);
         }
 
         protected override void Parse(byte[] bytes)
