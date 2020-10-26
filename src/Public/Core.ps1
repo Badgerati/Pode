@@ -662,6 +662,9 @@ Allow for client certificates to be sent on requests.
 .PARAMETER PassThru
 If supplied, the endpoint created will be returned.
 
+.PARAMETER LookupHostname
+If supplied, a supplied Hostname will have its IP Address looked up from host file or DNS.
+
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 
@@ -742,7 +745,10 @@ function Add-PodeEndpoint
         $AllowClientCertificate,
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [switch]
+        $LookupHostname
     )
 
     # error if serverless
@@ -779,6 +785,10 @@ function Add-PodeEndpoint
     if ((Test-PodeHostname -Hostname $Address) -and ($Address -inotin @('localhost', 'all'))) {
         $Hostname = $Address
         $Address = 'localhost'
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Hostname) -and $LookupHostname) {
+        $Address = (Get-PodeIPAddressesForHostname -Hostname $Hostname -Type All | Select-Object -First 1)
     }
 
     $_endpoint = Get-PodeEndpointInfo -Address "$($Address):$($Port)"

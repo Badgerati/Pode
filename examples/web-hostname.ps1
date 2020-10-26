@@ -17,6 +17,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address pode3.foo.com -Port $Port -Protocol Http
     Add-PodeEndpoint -Address pode2.foo.com -Port $Port -Protocol Http
     Add-PodeEndpoint -Address 127.0.0.1 -Hostname pode.foo.com -Port $Port -Protocol Http
+    Add-PodeEndpoint -Hostname pode4.foo.com -Port $Port -Protocol Http -LookupHostname
 
     # logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
