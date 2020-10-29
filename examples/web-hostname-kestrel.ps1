@@ -9,9 +9,12 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+# you will require the Pode.Kestrel module for this example
+Import-Module Pode.Kestrel
+
 # create a server, and start listening on port 8085 at pode.foo.com
 # -- You will need to add "127.0.0.1  pode.foo.com" to your hosts file
-Start-PodeServer -Threads 2 {
+Start-PodeServer -Threads 2 -ListenerType Kestrel {
 
     # listen on localhost:8085
     Add-PodeEndpoint -Address pode3.foo.com -Port $Port -Protocol Http

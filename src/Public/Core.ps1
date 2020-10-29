@@ -615,10 +615,13 @@ Bind an endpoint to listen for incoming Requests.
 Bind an endpoint to listen for incoming Requests. The endpoints can be HTTP, HTTPS, TCP or SMTP, with the option to bind certificates.
 
 .PARAMETER Address
-The IP/Hostname of the endpoint.
+The IP/Hostname of the endpoint (Default: localhost).
 
 .PARAMETER Port
 The Port number of the endpoint.
+
+.PARAMETER Hostname
+An optional hostname for the endpoint, specifying a hostname restricts access to just the hostname.
 
 .PARAMETER Protocol
 The protocol of the supplied endpoint.
@@ -659,6 +662,9 @@ Allow for client certificates to be sent on requests.
 .PARAMETER PassThru
 If supplied, the endpoint created will be returned.
 
+.PARAMETER LookupHostname
+If supplied, a supplied Hostname will have its IP Address looked up from host file or DNS.
+
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 
@@ -667,6 +673,9 @@ Add-PodeEndpoint -Address localhost -Protocol Smtp
 
 .EXAMPLE
 Add-PodeEndpoint -Address dev.pode.com -Port 8443 -Protocol Https -SelfSigned
+
+.EXAMPLE
+Add-PodeEndpoint -Address 127.0.0.2 -Hostname dev.pode.com -Port 8443 -Protocol Https -SelfSigned
 
 .EXAMPLE
 Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
@@ -682,6 +691,10 @@ function Add-PodeEndpoint
         [Parameter()]
         [int]
         $Port = 0,
+
+        [Parameter()]
+        [string]
+        $Hostname,
 
         [Parameter()]
         [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
@@ -732,7 +745,10 @@ function Add-PodeEndpoint
         $AllowClientCertificate,
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [switch]
+        $LookupHostname
     )
 
     # error if serverless
@@ -748,6 +764,7 @@ function Add-PodeEndpoint
     if ($isIIS) {
         $Port = [int]$env:ASPNETCORE_PORT
         $Address = '127.0.0.1'
+        $Hostname = [string]::Empty
         $Protocol = 'Http'
     }
 
@@ -756,12 +773,25 @@ function Add-PodeEndpoint
     if ($isHeroku) {
         $Port = [int]$env:PORT
         $Address = '0.0.0.0'
+        $Hostname = [string]::Empty
         $Protocol = 'Http'
     }
 
     # parse the endpoint for host/port info
-    $FullAddress = "$($Address):$($Port)"
-    $_endpoint = Get-PodeEndpointInfo -Address $FullAddress
+    if (![string]::IsNullOrWhiteSpace($Hostname) -and !(Test-PodeHostname -Hostname $Hostname)) {
+        throw "Invalid hostname supplied: $($Hostname)"
+    }
+
+    if ((Test-PodeHostname -Hostname $Address) -and ($Address -inotin @('localhost', 'all'))) {
+        $Hostname = $Address
+        $Address = 'localhost'
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Hostname) -and $LookupHostname) {
+        $Address = (Get-PodeIPAddressesForHostname -Hostname $Hostname -Type All | Select-Object -First 1)
+    }
+
+    $_endpoint = Get-PodeEndpointInfo -Address "$($Address):$($Port)"
 
     # if no name, set to guid, then check uniqueness
     if ([string]::IsNullOrWhiteSpace($Name)) {
@@ -782,10 +812,11 @@ function Add-PodeEndpoint
         Name = $Name
         Description = $Description
         Address = $null
-        RawAddress = $FullAddress
+        RawAddress = $null
         Port = $null
         IsIPAddress = $true
-        HostName = 'localhost'
+        HostName = $Hostname
+        FriendlyName = $Hostname
         Url = $null
         Ssl = (@('https', 'wss') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
@@ -798,21 +829,30 @@ function Add-PodeEndpoint
 
     # set the ip for the context (force to localhost for IIS)
     $obj.Address = (Get-PodeIPAddress $_endpoint.Host)
-    if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
-        $obj.HostName = "$($obj.Address)"
-    }
+    $obj.IsIPAddress = [string]::IsNullOrWhiteSpace($obj.HostName)
 
-    $obj.IsIPAddress = (Test-PodeIPAddress -IP $obj.Address -IPOnly)
+    if ($obj.IsIPAddress) {
+        $obj.FriendlyName = 'localhost'
+        if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
+            $obj.FriendlyName = "$($obj.Address)"
+        }
+    }
 
     # set the port for the context, if 0 use a default port for protocol
     $obj.Port = $_endpoint.Port
     if (([int]$obj.Port) -eq 0) {
         $obj.Port = Get-PodeDefaultPort -Protocol $Protocol
-        $obj.RawAddress = "$($Address):$($obj.Port)"
+    }
+
+    if ($obj.IsIPAddress) {
+        $obj.RawAddress = "$($obj.Address):$($obj.Port)"
+    }
+    else {
+        $obj.RawAddress = "$($obj.FriendlyName):$($obj.Port)"
     }
 
     # set the url of this endpoint
-    $obj.Url = "$($obj.Protocol)://$($obj.HostName):$($obj.Port)/"
+    $obj.Url = "$($obj.Protocol)://$($obj.FriendlyName):$($obj.Port)/"
 
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
@@ -821,7 +861,7 @@ function Add-PodeEndpoint
 
     # has this endpoint been added before? (for http/https we can just not add it again)
     $exists = ($PodeContext.Server.Endpoints.Values | Where-Object {
-        ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
+        ($_.FriendlyName -eq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
     # if we're dealing with a certificate, attempt to import it
@@ -917,6 +957,9 @@ An Address to filter the endpoints.
 .PARAMETER Port
 A Port to filter the endpoints.
 
+.PARAMETER Hostname
+A Hostname to filter the endpoints.
+
 .PARAMETER Protocol
 A Protocol to filter the endpoints.
 
@@ -945,6 +988,10 @@ function Get-PodeEndpoint
         $Port = 0,
 
         [Parameter()]
+        [string]
+        $Hostname,
+
+        [Parameter()]
         [ValidateSet('', 'Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
         [string]
         $Protocol,
@@ -953,6 +1000,11 @@ function Get-PodeEndpoint
         [string[]]
         $Name
     )
+
+    if ((Test-PodeHostname -Hostname $Address) -and ($Address -inotin @('localhost', 'all'))) {
+        $Hostname = $Address
+        $Address = 'localhost'
+    }
 
     $endpoints = $PodeContext.Server.Endpoints.Values
 
@@ -968,6 +1020,17 @@ function Get-PodeEndpoint
 
         $endpoints = @(foreach ($endpoint in $endpoints) {
             if ($endpoint.Address.ToString() -ine $Address) {
+                continue
+            }
+
+            $endpoint
+        })
+    }
+
+    # if we have a hostname, filter
+    if (![string]::IsNullOrWhiteSpace($Hostname)) {
+        $endpoints = @(foreach ($endpoint in $endpoints) {
+            if ($endpoint.Hostname.ToString() -ine $Hostname) {
                 continue
             }
 

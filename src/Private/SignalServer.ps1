@@ -13,10 +13,12 @@ function Start-PodeSignalServer
         # add endpoint to list
         $endpoints += @{
             Address = $_ip
+            Hostname = $_.HostName
+            IsIPAddress = $_.IsIPAddress
             Port = $_.Port
             Certificate = $_.Certificate.Raw
             AllowClientCertificate = $_.Certificate.AllowClientCertificate
-            HostName = $_.Url
+            Url = $_.Url
         }
     }
 
@@ -30,6 +32,11 @@ function Start-PodeSignalServer
         $endpoints | ForEach-Object {
             $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, $_.Certificate, $_.AllowClientCertificate)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
+
+            if (!$_.IsIPAddress) {
+                $socket.Hostnames.Add($_.HostName)
+            }
+
             $listener.Add($socket)
         }
 
@@ -154,5 +161,5 @@ function Start-PodeSignalServer
     }
 
     Add-PodeRunspace -Type 'Signals' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
-    return @($endpoints.HostName)
+    return @($endpoints.Url)
 }

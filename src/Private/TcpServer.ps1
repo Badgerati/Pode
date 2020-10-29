@@ -125,5 +125,5 @@ function Start-PodeTcpServer
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
-    return @("tcp://$($endpoint.HostName):$($port)")
+    return @("tcp://$($endpoint.FriendlyName):$($port)")
 }

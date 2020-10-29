@@ -1,20 +1,49 @@
 # Basics
 
-Endpoints in Pode are used to bind your server to specific IPs and ports, over specific protocols (such as HTTP or HTTPS). Endpoints can have unique names, so you can bind Routes to certain endpoints only.
+Endpoints in Pode are used to bind your server to specific IPs, Hostnames and ports, over specific protocols (such as HTTP or HTTPS). Endpoints can have unique names, so you can bind Routes to certain endpoints only.
 
 ## Usage
 
-To add new endpoints to your server, you can use the [`Add-PodeEndpoint`](../../../Functions/Core/Add-PodeEndpoint) function. A quick and simple example is the following, which will bind your server to `http://localhost:8080`:
+To add new endpoints to your server, you can use [`Add-PodeEndpoint`](../../../Functions/Core/Add-PodeEndpoint). A quick and simple example is the following, which will bind your server to `http://localhost:8080`:
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 }
 ```
 
-The `-Address` can be local or private IP address, or a hostname that is bound to an IP address (either in the hosts file, or in DNS). The `-Port` is any valid port number, and the `-Protocol` defines which protocol the endpoint will use: HTTP, HTTPS, SMTP, TCP, WS and WSS.
+The `-Address` can be local or private IP address. The `-Port` is any valid port number, and the `-Protocol` defines which protocol the endpoint will use: HTTP, HTTPS, SMTP, TCP, WS and WSS.
 
 You can also supply an optional unique `-Name` to your endpoint. This name will allow you to bind routes to certain endpoints; so if you have endpoint A and B, and you bind some route to endpoint A, then it won't be accessible over endpoint B.
+
+## Hostnames
+
+You can specify a `-Hostname` for an endpoint, in doing so you can only access routes via the specified hostname. Using a hostname will allow you to have multiple endpoints all using the same IP/Port, but with different hostnames.
+
+The following will create an endpoint with hostname `example.pode.com`, bound to `127.0.0.1:8080`:
+
+```powershell
+Add-PodeEndpoint -Hostname example.pode.com -Port 8080 -Protocol Http
+```
+
+To bind a hostname to a specific IP you can use `-Address`:
+
+```powershell
+Add-PodeEndpoint -Address 127.0.0.2 -Hostname example.pode.com -Port 8080 -Protocol Http
+```
+
+or, lookup the hostnames IP from host file or DNS:
+
+```powershell
+Add-PodeEndpoint -Hostname example.pode.com -Port 8080 -Protocol Http -LookupHostname
+```
+
+Finally, you can bind multiple hostnames to one IP/Port:
+
+```powershell
+Add-PodeEndpoint -Address 127.0.0.3 -Hostname one.pode.com -Port 8080 -Protocol Http
+Add-PodeEndpoint -Address 127.0.0.3 -Hostname two.pode.com -Port 8080 -Protocol Http
+```
 
 ## Certificates
 
@@ -81,6 +110,7 @@ The following is the structure of the Endpoint object internally, as well as the
 | Port | int | The port the Endpoint will use |
 | IsIPAddress | bool | Whether or not the listener will bind using Hostname or IP address |
 | Hostname | string | The hostname of the Endpoint |
+| FriendlyName | string | A user friendly hostname to use when generating internal URLs |
 | Url | string | The full base URL of the Endpoint |
 | Ssl | bool | Whether or not this Endpoint support support SSL |
 | Protocol | string | The protocol of the Endpoint |

@@ -15,6 +15,8 @@ With the dropping of HttpListener, the `-Certificate` parameter is now the old `
 The `-CertificateThumbprint` parameter remains the same, and only works on Windows.
 The `-Certificate` parameter is now the `-CertificateName` parameter, and also only works on Windows.
 
+There is a new `-Hostname` parameter to specify a hostname for your endpoint. Using `-Address` still works for ease, and the IP for the hostname by default is `127.0.0.1`. If you used a host file/DNS entry for your hostname address, then supplying `-LookupHostname` will source the IP for your hostname appropriately.
+
 ### Configuration
 
 Settings that use to be under `Server > Pode` are now just under `Server`. For example, SSL protocols have moved from:

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
+using System.Linq;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -11,7 +12,7 @@ namespace Pode
     public class PodeSocket : IDisposable
     {
         public IPAddress IPAddress { get; private set; }
-        public string Hostname { get; set; }
+        public List<string> Hostnames { get; private set; }
         public int Port { get; private set; }
         public IPEndPoint Endpoint { get; private set; }
         public X509Certificate Certificate { get; private set; }
@@ -36,6 +37,8 @@ namespace Pode
             set => Socket.ReceiveTimeout = value;
         }
 
+        public bool HasHostnames => Hostnames.Any();
+
         public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, X509Certificate certificate = null, bool allowClientCertificate = false)
         {
             IPAddress = ipAddress;
@@ -43,6 +46,7 @@ namespace Pode
             Certificate = certificate;
             AllowClientCertificate = allowClientCertificate;
             Protocols = protocols;
+            Hostnames = new List<string>();
             Endpoint = new IPEndPoint(ipAddress, port);
 
             AcceptConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
@@ -324,6 +328,17 @@ namespace Pode
             }
         }
 
+        public bool CheckHostname(string hostname)
+        {
+            if (!HasHostnames)
+            {
+                return true;
+            }
+
+            var _name = hostname.Split(':')[0];
+            return Hostnames.Any(x => x.Equals(_name, StringComparison.InvariantCultureIgnoreCase));
+        }
+
         public void Dispose()
         {
             CloseSocket(Socket);
@@ -352,6 +367,12 @@ namespace Pode
         {
             e.AcceptSocket = default(Socket);
             e.UserToken = default(object);
+        }
+
+        public new bool Equals(object obj)
+        {
+            var _socket = (PodeSocket)obj;
+            return (Endpoint.ToString() == _socket.Endpoint.ToString() && Port == _socket.Port);
         }
     }
 }

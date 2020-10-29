@@ -29,7 +29,7 @@ function Start-PodeSmtpServer
         # register endpoint on the listener
         $socket = [PodeSocket]::new($ipAddress, $port, $PodeContext.Server.Sockets.Ssl.Protocols, $null)
         $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
-        $socket.Hostname = $endpoint.HostName
+        $socket.Hostnames.Add($endpoint.HostName)
         $listener.Add($socket)
         $listener.Start()
     }
@@ -155,5 +155,5 @@ function Start-PodeSmtpServer
     Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
-    return @("smtp://$($endpoint.HostName):$($port)")
+    return @("smtp://$($endpoint.FriendlyName):$($port)")
 }

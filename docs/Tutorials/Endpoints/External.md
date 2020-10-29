@@ -37,18 +37,27 @@ Invoke-RestMethod -Uri 'http://10.10.1.5:8080'
 
 The final way to expose your server externally is to allow only specific hostnames bound to the server's Private/Public IP address - something like SNI in IIS.
 
-To do this, let's say you want to allow only `one.pode.com` and `two.pode.com` on a server with IP `10.10.1.5`. The first thing to do is add the hostnames to the server's hosts file (or dns):
+To do this, let's say you want to allow only `one.pode.com` and `two.pode.com` on a server with IP `10.10.1.5`. There are two way of doing this:
+
+1. Specify the hostname/address directly on [`Add-PodeEndpoint`]:
+
+```powershell
+Add-PodeEndpoint -Address 10.10.1.5 -Hostname 'one.pode.com' -Port 8080 -Protocol Http
+Add-PodeEndpoint -Address 10.10.1.5 -Hostname 'two.pode.com' -Port 8080 -Protocol Http
+```
+
+2. Add the hostnames to the server's hosts file (or dns):
 
 ```plain
 10.10.1.5   one.pode.com
 10.10.1.5   two.pode.com
 ```
 
-Then, create the endpoints within your server:
+Then, create the endpoints within your server using the `-LookupHostname` switch:
 
 ```powershell
-Add-PodeEndpoint -Address 'one.pode.com' -Port 8080 -Protocol Http
-Add-PodeEndpoint -Address 'two.pode.com' -Port 8080 -Protocol Http
+Add-PodeEndpoint -Hostname 'one.pode.com' -Port 8080 -Protocol Http -LookupHostname
+Add-PodeEndpoint -Hostname 'two.pode.com' -Port 8080 -Protocol Http -LookupHostname
 ```
 
 Next, make sure to add the hostnames into your hosts file, or into DNS.

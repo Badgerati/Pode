@@ -1202,6 +1202,8 @@ Describe 'Get-PodeEndpointUrl' {
             Endpoints = @{
                 Example1 = @{
                     Port = 6000
+                    Address = '127.0.0.1'
+                    FriendlyName = 'thing.com'
                     Hostname = 'thing.com'
                     Protocol = 'https'
                 }
@@ -1214,6 +1216,8 @@ Describe 'Get-PodeEndpointUrl' {
     It 'Returns a passed endpoint url' {
         $endpoint = @{
             Port = 7000
+            Address = '127.0.0.1'
+            FriendlyName = 'stuff.com'
             Hostname = 'stuff.com'
             Protocol = 'http'
         }
@@ -1224,6 +1228,8 @@ Describe 'Get-PodeEndpointUrl' {
     It 'Returns a passed endpoint url, with default port for http' {
         $endpoint = @{
             Port = 8080
+            Address = '127.0.0.1'
+            FriendlyName = 'stuff.com'
             Hostname = 'stuff.com'
             Protocol = 'http'
         }
@@ -1234,6 +1240,8 @@ Describe 'Get-PodeEndpointUrl' {
     It 'Returns a passed endpoint url, with default port for https' {
         $endpoint = @{
             Port = 8443
+            Address = '127.0.0.1'
+            FriendlyName = 'stuff.com'
             Hostname = 'stuff.com'
             Protocol = 'https'
         }
