@@ -68,7 +68,7 @@ Add-PodeLimitRule -Type Endpoint -Values 'User' -Limit 5 -Seconds 1
 
 Since rate limiting is an inbuilt Middleware, then when you setup rules via the [`Add-PodeLimitRule`](../../../../Functions/Middleware/Add-PodeLimitRule) function the point at which the limit is checked on the request lifecycle is fixed (see [here](../../Overview/#order-of-running)).
 
-This means you can override the inbuilt rate limiting logic, with your own custom logic, using the  [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function. To override the rate limiting logic you can pass `__pode_mw_rate_limit__` to the `-Name` parameter of the [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function.
+This means you can override the inbuilt rate limiting logic, with your own custom logic, using the [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function. To override the rate limiting logic you can pass `__pode_mw_rate_limit__` to the `-Name` parameter of the [`Add-PodeMiddleware`](../../../../Functions/Core/Add-PodeMiddleware) function.
 
 The following example uses rate limiting, and defines Middleware that will override the inbuilt limiting logic:
 

@@ -4,7 +4,7 @@ Form Authentication is for when you're using a `<form>` in HTML, and you submit 
 
 ## Setup
 
-To setup and start using Form Authentication in Pode you use the `New-PodeAuthScheme -Form` function, and then pipe this into the  [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
+To setup and start using Form Authentication in Pode you use the `New-PodeAuthScheme -Form` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
 ```powershell
 Start-PodeServer {

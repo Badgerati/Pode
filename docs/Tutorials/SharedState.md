@@ -7,7 +7,7 @@ You also have the option of saving the current state to a file, and then restori
 You can also use the State in combination with the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function to ensure thread safety - if needed.
 
 !!! tip
-    It's wise to use the State in conjunction with the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function, to ensure thread safety between runspaces. The event argument supplied to Routes, Handlers, Timers, Schedules, Middleware, Endware and Loggers each contain a `.Lockable` resource that can be supplied to the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function.
+    It's wise to use the State in conjunction with the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function, to ensure thread safety between runspaces. The event objects available to Routes, Handlers, Timers, Schedules, Middleware, Endware and Loggers each contain a `.Lockable` resource that can be supplied to the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function.
 
 !!! warning
     If you omit the use of [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), you will run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).

@@ -100,7 +100,7 @@ Although you can define your own custom middleware, Pode does have some inbuilt 
 
 ## Overriding Inbuilt
 
-Pode has inbuilt Middleware as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt Middleware have a defined name, that you can pass to the  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) function via the `-Name` parameter:
+Pode has inbuilt Middleware as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt Middleware have a defined name, that you can pass to the [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) function via the `-Name` parameter:
 
 * Access Control    - `__pode_mw_access__`
 * Rate Limiting     - `__pode_mw_rate_limit__`
