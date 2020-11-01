@@ -54,10 +54,8 @@ Start-PodeServer {
 
     # render the search.pode view
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($event)
-
         # some logic to get accounts
-        $query = $event.Query['query']
+        $query = $WebEvent.Query['query']
         $accounts = Find-Account -Query $query
 
         # render the file

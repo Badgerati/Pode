@@ -1,6 +1,6 @@
 # Uploading Files
 
-Pode's inbuilt middleware supports parsing a request's body/payload and query string, and this also extends to uploading files via a `<form>`. Like how POST data can be accessed in a Route via the passed [web event](../../WebEvent) as `$e.Data[<name>]`, uploaded files can be accessed via `$e.Files[<filename>]`.
+Pode's inbuilt middleware supports parsing a request's body/payload and query string, and this also extends to uploading files via a `<form>`. Like how POST data can be accessed in a Route via the passed [web event](../../WebEvent) as `$WebEvent.Data[<name>]`, uploaded files can be accessed via `$WebEvent.Files[<filename>]`.
 
 !!! important
     In order for uploaded files to work, your `<form>` must contain `enctype="multipart/form-data"`
@@ -42,14 +42,14 @@ The inputs will be POSTed to the server, and accessible via the [web event](../.
 
 For the `.Data`:
 ```powershell
-$e.Data['username']     # the username entered
-$e.Data['password']     # the password entered
-$e.Data['avatar']       # the name of the file (assume image.png)
+$WebEvent.Data['username']     # the username entered
+$WebEvent.Data['password']     # the password entered
+$WebEvent.Data['avatar']       # the name of the file (assume image.png)
 ```
 
 For the `.Files`:
 ```powershell
-$e.Files['image.png']   # the bytes of the uploaded file
+$WebEvent.Files['image.png']   # the bytes of the uploaded file
 ```
 
 ## Script
@@ -72,13 +72,11 @@ Start-PodeServer {
 
     # POST request to save the avatar and create user
     Add-PodeRoute -Method Post -Path '/signup' -ScriptBlock {
-        param($e)
-
         # do some logic here to create user
-        New-User -Username $e.Data['username'] -Password $e.Data['password']
+        New-User -Username $WebEvent.Data['username'] -Password $WebEvent.Data['password']
 
-        # upload the avatar - this will retrieve the filename from $e.Data,
-        # and the bytes from $e.Files, saving to the server's root path
+        # upload the avatar - this will retrieve the filename from $WebEvent.Data,
+        # and the bytes from $WebEvent.Files, saving to the server's root path
         Save-PodeRequestFile -Key 'avatar'
     }
 
@@ -91,14 +89,12 @@ If you need to save the uploaded file elsewhere, then you can retrieve the raw b
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/upload' -ScriptBlock {
-    param($e)
-
     # using .Data will get you the file's name
-    $filename = $e.Data['avatar']
+    $filename = $WebEvent.Data['avatar']
 
     # with the filename, you can get the file's bytes from .File
     # as well as the Bytes, you can also get the ContentType
-    $bytes = $e.Files[$filename].Bytes
+    $bytes = $WebEvent.Files[$filename].Bytes
 
     # with the bytes, you can upload the file where ever you want
 }

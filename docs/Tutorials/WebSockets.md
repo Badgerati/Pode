@@ -25,8 +25,7 @@ To broadcast some data to all clients from a POST route, you could use the follo
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/broadcast' -ScriptBlock {
-    param($e)
-    Send-PodeSignal -Value @{ Message = $e.Data['message'] }
+    Send-PodeSignal -Value @{ Message = $WebEvent.Data['message'] }
 }
 ```
 

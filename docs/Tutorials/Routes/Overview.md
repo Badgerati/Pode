@@ -43,10 +43,8 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
-        param($s)
-
         # get the user
-        $user = Get-DummyUser -UserId $s.Data.userId
+        $user = Get-DummyUser -UserId $WebEvent.Data.userId
 
         # return the user
         Write-PodeJsonResponse -Value @{
@@ -67,7 +65,7 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
     The `ContentType` is required as it informs Pode on how to parse the requests payload. For example, if the content type were `application/json`, then Pode will attempt to parse the body of the request as JSON - converting it to a hashtable.
 
 !!! important
-    On PowerShell 4 and 5, referencing JSON data on `$s.Data` must be done as `$s.Data.userId`. This also works in PowerShell 6+, but you can also use `$s.Data['userId']` on PowerShell 6+.
+    On PowerShell 4 and 5, referencing JSON data on `$WebEvent.Data` must be done as `$WebEvent.Data.userId`. This also works in PowerShell 6+, but you can also use `$WebEvent.Data['userId']` on PowerShell 6+.
 
 ## Query Strings
 
@@ -78,10 +76,8 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {
-        param($s)
-
         # get the user
-        $user = Get-DummyUser -UserId $s.Query['userId']
+        $user = Get-DummyUser -UserId $WebEvent.Query['userId']
 
         # return the user
         Write-PodeJsonResponse -Value @{
@@ -107,10 +103,8 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/users/:userId' -ScriptBlock {
-        param($s)
-
         # get the user
-        $user = Get-DummyUser -UserId $s.Parameters['userId']
+        $user = Get-DummyUser -UserId $WebEvent.Parameters['userId']
 
         # return the user
         Write-PodeJsonResponse -Value @{

@@ -22,7 +22,7 @@ function Invoke-PodeEndware
         }
 
         try {
-            $_args = @($WebEvent) + @($eware.Arguments)
+            $_args = @($eware.Arguments)
             if ($null -ne $eware.UsingVariables) {
                 $_args = @($eware.UsingVariables.Value) + $_args
             }

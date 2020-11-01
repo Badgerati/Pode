@@ -23,9 +23,7 @@ An example of setting a hashtable variable in the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        param($e)
-
-        Lock-PodeObject -Object $e.Lockable {
+        Lock-PodeObject -Object $TimerEvent.Lockable {
             Set-PodeState -Name 'data' -Value @{ 'Name' = 'Rick Sanchez' } | Out-Null
         }
     }
@@ -41,10 +39,9 @@ An example of retrieving a value from the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        param($e)
         $value = $null
 
-        Lock-PodeObject -Object $e.Lockable {
+        Lock-PodeObject -Object $TimerEvent.Lockable {
             $value = (Get-PodeState -Name 'data')
         }
 
@@ -62,9 +59,7 @@ An example of removing a variable from the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        param($e)
-
-        Lock-PodeObject -Object $e.Lockable {
+        Lock-PodeObject -Object $TimerEvent.Lockable {
             Remove-PodeState -Name 'data' | Out-Null
         }
     }
@@ -119,10 +114,8 @@ Start-PodeServer {
 
     # timer to add a random number to the shared state
     Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
-        param($e)
-
         # ensure we're thread safe
-        Lock-PodeObject -Object $e.Lockable {
+        Lock-PodeObject -Object $TimerEvent.Lockable {
 
             # attempt to get the hashtable from the state
             $hash = (Get-PodeState -Name 'hash')
@@ -137,10 +130,8 @@ Start-PodeServer {
 
     # route to return the value of the hashtable from shared state
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($e)
-
         # again, ensure we're thread safe
-        Lock-PodeObject -Object $e.Lockable {
+        Lock-PodeObject -Object $WebEvent.Lockable {
 
             # get the hashtable from the state and return it
             $hash = (Get-PodeState -Name 'hash')
@@ -150,10 +141,8 @@ Start-PodeServer {
 
     # route to remove the hashtable from shared state
     Add-PodeRoute -Method Delete -Path '/' -ScriptBlock {
-        param($e)
-
         # ensure we're thread safe
-        Lock-PodeObject -Object $e.Lockable {
+        Lock-PodeObject -Object $WebEvent.Lockable {
 
             # remove the hashtable from the state
             Remove-PodeState -Name 'hash' | Out-Null

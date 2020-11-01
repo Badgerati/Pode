@@ -28,23 +28,19 @@ Describe 'REST API Requests' {
                 }
 
                 Add-PodeRoute -Method Get -Path '/data/query' -ScriptBlock {
-                    param($e)
-                    Write-PodeJsonResponse -Value @{ Username = $e.Query.username }
+                    Write-PodeJsonResponse -Value @{ Username = $WebEvent.Query.username }
                 }
 
                 Add-PodeRoute -Method Post -Path '/data/payload' -ScriptBlock {
-                    param($e)
-                    Write-PodeJsonResponse -Value @{ Username = $e.Data.username }
+                    Write-PodeJsonResponse -Value @{ Username = $WebEvent.Data.username }
                 }
 
                 Add-PodeRoute -Method Post -Path '/data/payload-forced-type' -ContentType 'application/json' -ScriptBlock {
-                    param($e)
-                    Write-PodeJsonResponse -Value @{ Username = $e.Data.username }
+                    Write-PodeJsonResponse -Value @{ Username = $WebEvent.Data.username }
                 }
 
                 Add-PodeRoute -Method Get -Path '/data/param/:username' -ScriptBlock {
-                    param($e)
-                    Write-PodeJsonResponse -Value @{ Username = $e.Parameters.username }
+                    Write-PodeJsonResponse -Value @{ Username = $WebEvent.Parameters.username }
                 }
 
                 Add-PodeRoute -Method Get -Path '/data/param/:username/messages' -ScriptBlock {
@@ -66,13 +62,11 @@ Describe 'REST API Requests' {
                 }
 
                 Add-PodeRoute -Method Post -Path '/encoding/transfer' -ScriptBlock {
-                    param($e)
-                    Write-PodeJsonResponse -Value @{ Username = $e.Data.username }
+                    Write-PodeJsonResponse -Value @{ Username = $WebEvent.Data.username }
                 }
 
                 Add-PodeRoute -Method Post -Path '/encoding/transfer-forced-type' -TransferEncoding 'gzip' -ScriptBlock {
-                    param($e)
-                    Write-PodeJsonResponse -Value @{ Username = $e.Data.username }
+                    Write-PodeJsonResponse -Value @{ Username = $WebEvent.Data.username }
                 }
 
                 Add-PodeRoute -Method * -Path '/all' -ScriptBlock {

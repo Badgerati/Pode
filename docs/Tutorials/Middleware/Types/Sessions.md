@@ -97,9 +97,8 @@ Start-PodeServer {
     Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($s)
-        $s.Session.Data.Views++
-        Write-PodeJsonResponse -Value @{ 'Views' = $s.Session.Data.Views }
+        $WebEvent.Session.Data.Views++
+        Write-PodeJsonResponse -Value @{ 'Views' = $WebEvent.Session.Data.Views }
     }
 }
 ```

@@ -69,7 +69,7 @@ Describe 'Remove-PodeAuthSession' {
     It 'Removes the user, and kills the session' {
         Mock Revoke-PodeSession {}
 
-        $event = @{
+        $WebEvent = @{
             Auth = @{ User = @{} }
             Session = @{
                 Data = @{
@@ -78,11 +78,11 @@ Describe 'Remove-PodeAuthSession' {
             }
         }
 
-        Remove-PodeAuthSession -Event $event
+        Remove-PodeAuthSession
 
-        $event.Auth.Count | Should Be 0
-        $event.Auth.User | Should Be $null
-        $event.Session.Data.Auth | Should be $null
+        $WebEvent.Auth.Count | Should Be 0
+        $WebEvent.Auth.User | Should Be $null
+        $WebEvent.Session.Data.Auth | Should be $null
 
         Assert-MockCalled Revoke-PodeSession -Times 1 -Scope It
     }
@@ -90,7 +90,7 @@ Describe 'Remove-PodeAuthSession' {
     It 'Removes the user, and kills the session, redirecting to root' {
         Mock Revoke-PodeSession {}
 
-        $event = @{
+        $WebEvent = @{
             Auth = @{ User = @{} }
             Session = @{
                 Data = @{
@@ -102,11 +102,11 @@ Describe 'Remove-PodeAuthSession' {
             }
         }
 
-        Remove-PodeAuthSession -Event $event
+        Remove-PodeAuthSession
 
-        $event.Auth.Count | Should Be 0
-        $event.Auth.User | Should Be $null
-        $event.Session.Data.Auth | Should be $null
+        $WebEvent.Auth.Count | Should Be 0
+        $WebEvent.Auth.User | Should Be $null
+        $WebEvent.Session.Data.Auth | Should be $null
 
         Assert-MockCalled Revoke-PodeSession -Times 1 -Scope It
     }

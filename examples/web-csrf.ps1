@@ -42,7 +42,6 @@ Start-PodeServer -Threads 2 {
 
     # POST route for form with and without csrf token
     Add-PodeRoute -Method Post -Path '/token' -ScriptBlock {
-        param($e)
         Move-PodeResponseUrl -Url '/'
     }
 

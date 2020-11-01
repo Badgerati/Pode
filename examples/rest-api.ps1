@@ -16,20 +16,17 @@ Start-PodeServer {
 
     # can be hit by sending a POST request to "localhost:8086/api/test"
     Add-PodeRoute -Method Post -Path '/api/test' -ContentType 'application/json' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ 'hello' = 'world'; 'name' = $e.Data['name']; }
+        Write-PodeJsonResponse -Value @{ 'hello' = 'world'; 'name' = $WebEvent.Data['name']; }
     }
 
     # returns details for an example user
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ 'user' = $e.Parameters['userId']; }
+        Write-PodeJsonResponse -Value @{ 'user' = $WebEvent.Parameters['userId']; }
     }
 
     # returns details for an example user
     Add-PodeRoute -Method Get -Path '/api/users/:userId/messages' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ 'user' = $e.Parameters['userId']; }
+        Write-PodeJsonResponse -Value @{ 'user' = $WebEvent.Parameters['userId']; }
     }
 
 }

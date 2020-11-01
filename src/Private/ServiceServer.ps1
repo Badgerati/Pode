@@ -24,6 +24,7 @@ function Start-PodeServiceServer
                 foreach ($name in $handlers.Keys) {
                     $handler = $handlers[$name]
 
+                    #TODO: Remove $ServiceEvent from args
                     $_args = @($ServiceEvent) + @($handler.Arguments)
                     if ($null -ne $handler.UsingVariables) {
                         $_args = @($handler.UsingVariables.Value) + $_args

@@ -32,11 +32,13 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type Pode
 
     # wire up a custom logger
+    #TODO: can we remove this param, for a "$LogItem"?
     $logType = New-PodeLoggingMethod -Custom -ScriptBlock {
         param($item)
         $item.HttpMethod | Out-Default
     }
 
+    #TODO: can we remove this param, for a "$LogItem"?
     $logType | Add-PodeLogger -Name 'custom' -ScriptBlock {
         param($item)
         return @{
@@ -46,8 +48,7 @@ Start-PodeServer -Threads 2 {
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($e)
-        # $e.Request | Write-PodeLog -Name 'custom'
+        # $WebEvent.Request | Write-PodeLog -Name 'custom'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
@@ -63,8 +64,7 @@ Start-PodeServer -Threads 2 {
 
     # GET request that redirects to same host, just different port
     Add-PodeRoute -Method Get -Path '/redirect-port' -ScriptBlock {
-        param($event)
-        if ($event.Request.Url.Port -ne 8086) {
+        if ($WebEvent.Request.Url.Port -ne 8086) {
             Move-PodeResponseUrl -Port 8086
         }
         else {
@@ -79,8 +79,7 @@ Start-PodeServer -Threads 2 {
 
     # GET request with parameters
     Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
-        param($event)
-        Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ 'userId' = $WebEvent.Parameters['userId'] }
     }
 
     # ALL request, that supports every method and it a default drop route

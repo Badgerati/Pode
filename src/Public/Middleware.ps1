@@ -295,7 +295,7 @@ function Remove-PodeSession
     }
 
     # remove the session, and from auth and cookies
-    Remove-PodeAuthSession -Event $WebEvent
+    Remove-PodeAuthSession
 }
 
 <#
@@ -437,8 +437,6 @@ function Get-PodeCsrfMiddleware
 
     # return scriptblock for the csrf route middleware to test tokens
     $script = {
-        param($e)
-
         # if there's not a secret, generate and store it
         $secret = New-PodeCsrfSecret
 
@@ -568,11 +566,9 @@ function Enable-PodeCsrfMiddleware
 
     # return scriptblock for the csrf middleware
     $script = {
-        param($e)
-
         # if the current route method is ignored, just return
         $ignored = @($PodeContext.Server.Cookies.Csrf.IgnoredMethods)
-        if (!(Test-PodeIsEmpty $ignored) -and ($ignored -icontains $e.Method)) {
+        if (!(Test-PodeIsEmpty $ignored) -and ($ignored -icontains $WebEvent.Method)) {
             return $true
         }
 

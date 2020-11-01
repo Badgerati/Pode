@@ -14,7 +14,7 @@ The `-ScriptBlock` on [`New-PodeAuthScheme`](../../../../Functions/Authenticatio
 Start-PodeServer {
     # define a new custom authentication scheme
     $custom_scheme = New-PodeAuthScheme -Custom -ScriptBlock {
-        param($e, $opts)
+        param($opts)
 
         # get client/user/password field names
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -22,9 +22,9 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/password from the request's post data
-        $client = $e.Data.$clientField
-        $username = $e.Data.$userField
-        $password = $e.Data.$passField
+        $client = $WebEvent.Data.$clientField
+        $username = $WebEvent.Data.$userField
+        $password = $WebEvent.Data.$passField
 
         # return the data in a array, which will be passed to the validator script
         return @($client, $username, $password)
@@ -67,7 +67,7 @@ For example:
 Start-PodeServer {
     # define a new custom authentication scheme
     $custom_scheme = New-PodeAuthScheme -Custom -ScriptBlock {
-        param($e, $opts)
+        param($opts)
 
         # get client/user/password field names
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -75,15 +75,15 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/password from the request's post data
-        $client = $e.Data.$clientField
-        $username = $e.Data.$userField
-        $password = $e.Data.$passField
+        $client = $WebEvent.Data.$clientField
+        $username = $WebEvent.Data.$userField
+        $password = $WebEvent.Data.$passField
 
         # return the data in a array, which will be passed to the validator script
         return @($client, $username, $password)
     } `
     -PostValidator {
-        param($e, $client, $username, $password, $result, $opts)
+        param($client, $username, $password, $result, $opts)
 
         # run any extra post-validation logic
 
@@ -135,7 +135,7 @@ Start-PodeServer {
 
     # define a new custom authentication scheme
     $custom_scheme = New-PodeAuthScheme -Custom -ScriptBlock {
-        param($e, $opts)
+        param($opts)
 
         # get client/user/pass field names to get from payload
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -143,9 +143,9 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/pass from the post data
-        $client = $e.Data.$clientField
-        $username = $e.Data.$userField
-        $password = $e.Data.$passField
+        $client = $WebEvent.Data.$clientField
+        $username = $WebEvent.Data.$userField
+        $password = $WebEvent.Data.$passField
 
         # return the data, to be passed to the validator script
         return @($client, $username, $password)

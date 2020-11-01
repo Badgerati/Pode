@@ -748,14 +748,14 @@ function ConvertTo-PodeRoute
 
         # create the route
         $route = (Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -Authentication $Authentication -ArgumentList $cmd -ScriptBlock {
-            param($e, $cmd)
+            param($cmd)
 
             # either get params from the QueryString or Payload
-            if ($e.Method -ieq 'get') {
-                $parameters = $e.Query
+            if ($WebEvent.Method -ieq 'get') {
+                $parameters = $WebEvent.Query
             }
             else {
-                $parameters = $e.Data
+                $parameters = $WebEvent.Data
             }
 
             # invoke the function
@@ -906,7 +906,7 @@ function Add-PodePage
 
             $arg = @($ScriptBlock, $Data)
             $logic = {
-                param($e, $script, $data)
+                param($script, $data)
 
                 # invoke the function (optional splat data)
                 if (Test-PodeIsEmpty $data) {
@@ -927,7 +927,7 @@ function Add-PodePage
             $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot -TestPath
             $arg = @($FilePath, $Data)
             $logic = {
-                param($e, $file, $data)
+                param($file, $data)
                 Write-PodeFileResponse -Path $file -ContentType 'text/html' -Data $data
             }
         }
@@ -935,7 +935,7 @@ function Add-PodePage
         'view' {
             $arg = @($View, $Data, $FlashMessages)
             $logic = {
-                param($e, $view, $data, [bool]$flash)
+                param($view, $data, [bool]$flash)
                 Write-PodeViewResponse -Path $view -Data $data -FlashMessages:$flash
             }
         }

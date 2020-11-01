@@ -39,8 +39,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Parameters['userId'] }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -Parameters @(
@@ -55,8 +54,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Query['userId'] }
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Query['userId'] }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -Parameters @(
@@ -66,8 +64,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Post -Path '/api/users' -Authentication Validate -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Data.userId }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -RequestBody (
@@ -78,10 +75,8 @@ Start-PodeServer {
         Add-PodeOAResponse -StatusCode 200 -Description 'A user object'
 
     Add-PodeRoute -Method Put -Path '/api/users' -ScriptBlock {
-        param($e)
-
         $users = @()
-        foreach ($id in $e.Data) {
+        foreach ($id in $WebEvent.Data) {
             $users += @{
                 Name = (New-Guid).Guid
                 UserIdd = $id

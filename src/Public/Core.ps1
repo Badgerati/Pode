@@ -933,7 +933,7 @@ function Add-PodeEndpoint
 
         # build the redirect route
         Add-PodeRoute -Method * -Path * -EndpointName $obj.Name -ArgumentList $redir_endpoint -ScriptBlock {
-            param($e, $endpoint)
+            param($endpoint)
             Move-PodeResponseUrl -EndpointName $endpoint.Name
         }
     }

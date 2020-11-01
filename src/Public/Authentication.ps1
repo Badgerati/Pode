@@ -294,9 +294,6 @@ The URL to redirect to when authentication succeeds when logging in.
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
-.PARAMETER PassEvent
-If supplied, the current web event will be supplied as the first parameter to the ScriptBlock.
-
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
 #>
@@ -340,10 +337,7 @@ function Add-PodeAuth
         $SuccessUrl,
 
         [switch]
-        $Sessionless,
-
-        [switch]
-        $PassEvent
+        $Sessionless
     )
 
     # ensure the name doesn't already exist
@@ -371,7 +365,6 @@ function Add-PodeAuth
         UsingVariables = $usingVars
         Arguments = $ArgumentList
         Sessionless = $Sessionless
-        PassEvent = $PassEvent
         Failure = @{
             Url = $FailureUrl
             Message = $FailureMessage
@@ -729,7 +722,7 @@ function Add-PodeAuthIIS
 
     # create the auth scheme for getting the token header
     $scheme = New-PodeAuthScheme -Custom -ScriptBlock {
-        param($e, $options)
+        param($options)
 
         $header = 'MS-ASPNETCORE-WINAUTHTOKEN'
 

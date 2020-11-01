@@ -64,7 +64,7 @@ function Start-PodeSmtpServer
                     $Request = $context.Request
                     $Response = $context.Response
 
-                    $TcpEvent = @{
+                    $SmtpEvent = @{
                         Response = $Response
                         Request = $Request
                         Lockable = $PodeContext.Lockable
@@ -100,7 +100,7 @@ function Start-PodeSmtpServer
                         foreach ($name in $handlers.Keys) {
                             $handler = $handlers[$name]
 
-                            $_args = @($TcpEvent) + @($handler.Arguments)
+                            $_args = @($handler.Arguments)
                             if ($null -ne $handler.UsingVariables) {
                                 $_args = @($handler.UsingVariables.Value) + $_args
                             }

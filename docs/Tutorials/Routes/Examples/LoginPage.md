@@ -67,13 +67,11 @@ Below is the Route for the root (`/`) endpoint. This will check the cookies in t
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -ScriptBlock {
-    param($e)
-
-    $e.Session.Data.Views++
+    $WebEvent.Session.Data.Views++
 
     Write-PodeViewResponse -Path 'auth-home' -Data @{
-        Username = $e.Auth.User.Name;
-        Views = $e.Session.Data.Views;
+        Username = $WebEvent.Auth.User.Name;
+        Views = $WebEvent.Session.Data.Views;
     }
 }
 ```
@@ -135,13 +133,11 @@ Start-PodeServer -Thread 2 {
 
     # the "GET /" endpoint for the homepage
     Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -ScriptBlock {
-        param($e)
-
-        $e.Session.Data.Views++
+        $WebEvent.Session.Data.Views++
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
-            Username = $e.Auth.User.Name;
-            Views = $e.Session.Data.Views;
+            Username = $WebEvent.Auth.User.Name;
+            Views = $WebEvent.Session.Data.Views;
         }
     }
 

@@ -19,11 +19,8 @@ The following example is middleware that observes the user agent of the request.
 ```powershell
 Start-PodeServer {
     Add-PodeMiddleware -Name 'BlockPowershell' -ScriptBlock {
-        # event which contains the Request/Response, and other keys
-        param($event)
-
         # if the user agent is powershell, deny access
-        if ($event.Request.UserAgent -ilike '*powershell*') {
+        if ($WebEvent.Request.UserAgent -ilike '*powershell*') {
             # forbidden
             Set-PodeResponseStatus -Code 403
 
@@ -32,7 +29,7 @@ Start-PodeServer {
         }
 
         # create a new key on the event for the next middleware/route
-        $event.Agent = $event.Request.UserAgent
+        $WebEvent.Agent = $WebEvent.Request.UserAgent
 
         # continue processing other middleware
         return $true
@@ -63,11 +60,8 @@ The following example defines a `scriptblock` to reject calls that come from a s
 Start-PodeServer {
     # custom middleware to reject access to a specific IP address
     $reject_ip = {
-        # same event object as supplied to global middleware/routes
-        param($event)
-
         # forbid access to the stated IP address
-        if ($event.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
+        if ($WebEvent.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
             Set-PodeResponseStatus -Code 403
             return $false
         }
