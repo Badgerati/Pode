@@ -25,7 +25,7 @@ Add-PodeBodyParser -ContentType 'application/json' -ScriptBlock {
 }
 ```
 
-This can then be accessed the normal way within a Route from the `.Data` object on the supplied event:
+This can then be accessed the normal way within a Route from the `.Data` property on the accessible `$WebEvent`:
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/' -ScriptBlock {

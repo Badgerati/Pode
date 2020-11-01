@@ -2,15 +2,15 @@
 
 Middleware in Pode allows you to observe and edit the request/response objects for a current [web event](../../WebEvent) - you can alter the response, add custom objects to the [web event](../../WebEvent) for later use, or terminate the response without processing the main Route logic.
 
-Middleware is supported in both a global scope, using  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware), as well as at the Route level using the `-Middleware` parameter on  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware),
+Middleware is supported in both a global scope, using [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware), as well as at the Route level using the `-Middleware` parameter on [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware).
 
-Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/AccessRules) and [Rate Limiting](../Types/RateLimiting) page).
+Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/AccessRules) and [Rate Limiting](../Types/RateLimiting) page).
 
 ## Global Middleware
 
-To setup and use middleware in Pode you use the Middleware function:  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware). This will setup global middleware that will run, in the order created, on every request prior to any Route logic being invoked.
+To setup and use middleware in Pode you use the Middleware function: [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware). This will setup global middleware that will run, in the order created, on every request prior to any Route logic being invoked.
 
-The function takes a ScriptBlock, which itself accepts a single parameter for the current [web event](../../WebEvent) (similar to Routes). The event object passed contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`.
+The function takes a ScriptBlock, which has access to the current [web event](../../WebEvent) variable: `$WebEvent`. The event object contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`.
 
 If you want to keep processing and proceed to the next Middleware/Route then `return $true` from the ScriptBlock, otherwise `return $false` and the response will be closed immediately.
 
@@ -50,7 +50,7 @@ Start-PodeServer {
 
 ## Route Middleware
 
-Custom middleware on a Route is basically the same as above however, you don't use the main Middleware functions and instead insert it straight on the Route. To do this, you can use the `-Middleware` parameter on the  [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function.
+Custom middleware on a Route is basically the same as above however, you don't use the main Middleware functions and instead insert it straight on the Route. To do this, you can use the `-Middleware` parameter on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function.
 
 The middleware on a route can either be a single `scriptblock` or an an array of `scriptblocks`. Middleware defined on routes will be run before the route itself, but after any global middleware that may have been configured.
 

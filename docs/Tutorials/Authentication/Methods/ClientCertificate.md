@@ -2,7 +2,7 @@
 
 Client Certificate Authentication is when the server requires the client to supply a certificate on the request, to verify themselves with the server. This only works over HTTPS connections.
 
-If at any point to you need to access the client's certificate outside of this validator, then it can be found on the web event object at `Request.ClientCertificate`.
+If at any point to you need to access the client's certificate outside of this validator, then it can be found on the [web event](../../../WebEvent) object at `Request.ClientCertificate`.
 
 ## Setup
 

@@ -1,6 +1,6 @@
 # Uploading Files
 
-Pode's inbuilt middleware supports parsing a request's body/payload and query string, and this also extends to uploading files via a `<form>`. Like how POST data can be accessed in a Route via the passed [web event](../../WebEvent) as `$WebEvent.Data[<name>]`, uploaded files can be accessed via `$WebEvent.Files[<filename>]`.
+Pode's inbuilt middleware supports parsing a request's body/payload and query string, and this also extends to uploading files via a `<form>`. Like how POST data can be accessed in a Route via the [web event](../../WebEvent) as `$WebEvent.Data[<name>]`, uploaded files can be accessed via `$WebEvent.Files[<filename>]`.
 
 !!! important
     In order for uploaded files to work, your `<form>` must contain `enctype="multipart/form-data"`

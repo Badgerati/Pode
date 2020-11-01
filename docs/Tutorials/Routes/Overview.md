@@ -32,11 +32,11 @@ Here, anyone who calls `http://localhost:8080/ping` will receive the following r
 }
 ```
 
-The scriptblock for the route will be supplied with a single argument that contains information about the current [web event](../../WebEvent). This argument will contain the `Request` and `Response` objects, `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
+The scriptblock for the route will have access to the `$WebEvent` variable which contains information about the current [web event](../../WebEvent). This argument will contain the `Request` and `Response` objects, `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
 ## Payloads
 
-The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` hashtable on the supplied web-session to a route's logic. This example will get the `userId` and "find" user, returning the users data:
+The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` property on the `$WebEvent` variable to a route's logic. This example will get the `userId` and "find" user, returning the users data:
 
 ```powershell
 Start-PodeServer {
@@ -69,7 +69,7 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
 
 ## Query Strings
 
-The following is an example of using data from a request's query string. To retrieve values from the query string you can use the `.Query` hashtable on the supplied web-session to a route's logic. This example will return a user based on the `userId` supplied:
+The following is an example of using data from a request's query string. To retrieve values from the query string you can use the `.Query` property from the `$WebEvent` variable. This example will return a user based on the `userId` supplied:
 
 ```powershell
 Start-PodeServer {
@@ -96,7 +96,7 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users?userId=12345' -Method Get
 
 ## Parameters
 
-The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the `.Parameters` hashtable on the supplied web-session to a route's logic. This example will get the `:userId` and "find" user, returning the users data:
+The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the `.Parameters` property from the `$WebEvent` variable. This example will get the `:userId` and "find" user, returning the users data:
 
 ```powershell
 Start-PodeServer {
@@ -169,7 +169,7 @@ The following is the structure of the Route object internally, as well as the ob
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| Arguments | object[] | Array of arguments that are splatted onto the route's scriptblock (after the web event) |
+| Arguments | object[] | Array of arguments that are splatted onto the route's scriptblock |
 | ContentType | string | The content type to use when parsing the payload in the request |
 | Endpoint | hashtable | Contains the Address, Protocol, and Name of the Endpoint the route is bound to |
 | ErrorType | string | Content type of the error page to use for the route |

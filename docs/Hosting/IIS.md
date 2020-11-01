@@ -110,7 +110,7 @@ Start-PodeServer {
 }
 ```
 
-If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set in the web event's `Auth.User` and contains the same information as Pode's inbuilt Windows AD authenticator:
+If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set on the [web event](../../../WebEvent)'s `$WebEvent.Auth.User` property, and contains the same information as Pode's inbuilt Windows AD authenticator:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

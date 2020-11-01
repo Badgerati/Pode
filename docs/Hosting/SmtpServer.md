@@ -18,7 +18,7 @@ Start-PodeServer {
 }
 ```
 
-The SMTP Handler will be passed the a `$SmtpEvent` object, that conatins te Request, Response, and Email:
+The SMTP Handler will be passed the a `$SmtpEvent` object, that contains te Request, Response, and Email:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

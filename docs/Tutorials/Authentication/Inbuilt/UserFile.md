@@ -61,7 +61,7 @@ Start-PodeServer {
 
 ### User Object
 
-The User object returned, and accessible on Routes, and other functions via the web event's `$WebEvent.Auth.User`, will contain the following information:
+The User object returned, and accessible on Routes, and other functions via the [web event](../../../WebEvent)'s `$WebEvent.Auth.User` property, will contain the following information:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

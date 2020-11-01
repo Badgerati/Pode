@@ -86,7 +86,7 @@ $store | Add-Member -MemberType NoteProperty -Name Delete -Value {
 
 ## Session Data
 
-To add data to a session you can utilise the `.Session.Data` object within the [web event](../../../WebEvent) object supplied to a Route - or other Middleware. The data will be saved at the end of the route automatically using Endware. When a request is made using the same sessionId, the data is loaded from the store.
+To add data to a session you can utilise the `.Session.Data` property within the [web event](../../../WebEvent) object accessible in a Route - or other Middleware. The data will be saved at the end of the route automatically using Endware. When a request is made using the same sessionId, the data is loaded from the store.
 
 ### Example
 
