@@ -77,14 +77,12 @@ Start-PodeServer -Request $TriggerMetadata -Type 'AzureFunctions' {
 
     # post route to create some data
     Add-PodeRoute -Method Post -Path $endpoint -ScriptBlock {
-        param($e)
-        New-Thing -Name $e.Data['Name']
+        New-Thing -Name $WebEvent.Data['Name']
     }
 
     # put route to update some data
     Add-PodeRoute -Method Put -Path $endpoint -ScriptBlock {
-        param($e)
-        Update-Thing -Name $e.Data['Name']
+        Update-Thing -Name $WebEvent.Data['Name']
     }
 }
 ```

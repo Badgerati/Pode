@@ -42,8 +42,7 @@ Start-PodeServer {
 
     # create a new timer via a route
     Add-PodeRoute -Method Get -Path '/api/timer' -ScriptBlock {
-        param($event)
-        $query = $event.Query
+        $query = $WebEvent.Query
 
         Add-PodeTimer -Name $query['Name'] -Interval $query['Seconds'] -ScriptBlock {
             # logic

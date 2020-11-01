@@ -83,7 +83,7 @@ function Enable-PodeOpenApi
 
     # add the OpenAPI route
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock {
-        param($e, $meta)
+        param($meta)
         $strict = $meta.RestrictRoutes
 
         # generate the openapi definition
@@ -92,9 +92,9 @@ function Enable-PodeOpenApi
             -Version $meta.Version `
             -Description $meta.Description `
             -RouteFilter $meta.RouteFilter `
-            -Protocol $e.Endpoint.Protocol `
-            -Address $e.Endpoint.Address `
-            -EndpointName $e.Endpoint.Name `
+            -Protocol $WebEvent.Endpoint.Protocol `
+            -Address $WebEvent.Endpoint.Address `
+            -EndpointName $WebEvent.Endpoint.Name `
             -RestrictRoutes:$strict
 
         # write the openapi definition
@@ -1448,7 +1448,7 @@ function Enable-PodeOpenApiViewer
 
     # add the viewer route
     Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
-        param($e, $meta)
+        param($meta)
         $podeRoot = Get-PodeModuleMiscPath
         Write-PodeFileResponse -Path (Join-Path $podeRoot "default-$($meta.Type).html.pode") -Data @{
             Title = $meta.Title

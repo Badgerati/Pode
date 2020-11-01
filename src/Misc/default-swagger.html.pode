@@ -26,6 +26,7 @@
                 .swagger-ui .parameter__type,
                 .swagger-ui .parameter__deprecated,
                 .swagger-ui .parameter__in,
+                .swagger-ui .parameter__enum,
                 .swagger-ui table thead tr th,
                 .swagger-ui .response-col_status,
                 .swagger-ui .response-col_description,

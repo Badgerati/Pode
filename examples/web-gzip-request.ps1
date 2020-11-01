@@ -14,8 +14,7 @@ Start-PodeServer -Threads 2 {
 
     # GET request that recieves gzip'd json
     Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value $e.Data
+        Write-PodeJsonResponse -Value $WebEvent.Data
     }
 
 }

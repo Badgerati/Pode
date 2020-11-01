@@ -26,13 +26,12 @@ Describe 'Session Requests' {
                 }
 
                 Add-PodeRoute -Method Post -Path '/auth/basic' -Authentication Auth -ScriptBlock {
-                    param($e)
-                    $e.Session.Data.Views++
+                    $WebEvent.Session.Data.Views++
 
                     Write-PodeJsonResponse -Value @{
                         Result = 'OK'
-                        Username = $e.Auth.User.ID
-                        Views = $e.Session.Data.Views
+                        Username = $WebEvent.Auth.User.ID
+                        Views = $WebEvent.Session.Data.Views
                     }
                 }
             }

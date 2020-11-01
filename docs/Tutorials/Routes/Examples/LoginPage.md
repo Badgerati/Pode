@@ -20,7 +20,7 @@ server.ps1
 
 ## Server
 
-To start off this script, you'll need to have the main  [`Start-PodeServer`](../../../../Functions/Core/Start-PodeServer) function; here we'll use 2 threads to handle requests:
+To start off this script, you'll need to have the main [`Start-PodeServer`](../../../../Functions/Core/Start-PodeServer) function; here we'll use 2 threads to handle requests:
 
 ```powershell
 Start-PodeServer -Thread 2 {
@@ -28,14 +28,14 @@ Start-PodeServer -Thread 2 {
 }
 ```
 
-Next, we'll need to use the  [`Add-PodeEndpoint`](../../../../Functions/Core/Add-PodeEndpoint) function to listen on an endpoint and then specify the View Engine as using `.pode` files:
+Next, we'll need to use the [`Add-PodeEndpoint`](../../../../Functions/Core/Add-PodeEndpoint) function to listen on an endpoint and then specify the View Engine as using `.pode` files:
 
 ```powershell
 Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 Set-PodeViewEngine -Type Pode
 ```
 
-To use sessions for our authentication (so we can stay logged in), we need to setup Session Middleware using the  [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. Here our sessions will last for 2 minutes, and will be extended on each request:
+To use sessions for our authentication (so we can stay logged in), we need to setup Session Middleware using the [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. Here our sessions will last for 2 minutes, and will be extended on each request:
 
 ```powershell
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
@@ -67,13 +67,11 @@ Below is the Route for the root (`/`) endpoint. This will check the cookies in t
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -ScriptBlock {
-    param($e)
-
-    $e.Session.Data.Views++
+    $WebEvent.Session.Data.Views++
 
     Write-PodeViewResponse -Path 'auth-home' -Data @{
-        Username = $e.Auth.User.Name;
-        Views = $e.Session.Data.Views;
+        Username = $WebEvent.Auth.User.Name;
+        Views = $WebEvent.Session.Data.Views;
     }
 }
 ```
@@ -135,13 +133,11 @@ Start-PodeServer -Thread 2 {
 
     # the "GET /" endpoint for the homepage
     Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -ScriptBlock {
-        param($e)
-
-        $e.Session.Data.Views++
+        $WebEvent.Session.Data.Views++
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
-            Username = $e.Auth.User.Name;
-            Views = $e.Session.Data.Views;
+            Username = $WebEvent.Auth.User.Name;
+            Views = $WebEvent.Session.Data.Views;
         }
     }
 

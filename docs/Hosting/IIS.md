@@ -105,13 +105,12 @@ Start-PodeServer {
     Add-PodeAuthIIS -Name 'IISAuth' -Sessionless
 
     Add-PodeRoute -Method Get -Path '/test' -Authentication 'IISAuth' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ User = $e.Auth.User }
+        Write-PodeJsonResponse -Value @{ User = $WebEvent.Auth.User }
     }
 }
 ```
 
-If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set in the web event's `Auth.User` and contains the same information as Pode's inbuilt Windows AD authenticator:
+If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set on the [web event](../../../WebEvent)'s `$WebEvent.Auth.User` property, and contains the same information as Pode's inbuilt Windows AD authenticator:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

@@ -155,7 +155,7 @@ function Start-PodeWebServer
                                     }
                                 }
                                 elseif ($null -ne $WebEvent.Route.Logic) {
-                                    $_args = @($WebEvent) + @($WebEvent.Route.Arguments)
+                                    $_args = @($WebEvent.Route.Arguments)
                                     if ($null -ne $WebEvent.Route.UsingVariables) {
                                         $_args = @($WebEvent.Route.UsingVariables.Value) + $_args
                                     }

@@ -257,8 +257,7 @@ function Add-PodeRequestLogEndware
     # add the request logging endware
     $WebEvent.OnEnd += @{
         Logic = {
-            param($e)
-            Write-PodeRequestLog -Request $e.Request -Response $e.Response -Path $e.Path
+            Write-PodeRequestLog -Request $WebEvent.Request -Response $WebEvent.Response -Path $WebEvent.Path
         }
     }
 }

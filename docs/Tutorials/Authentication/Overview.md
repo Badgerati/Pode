@@ -30,7 +30,7 @@ Where as the following example defines a Custom scheme that retrieves the user's
 ```powershell
 Start-PodeServer {
     $custom_type = New-PodeAuthScheme -Custom -ScriptBlock {
-        param($e, $opts)
+        param($opts)
 
         # get client/user/pass field names to get from payload
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -38,9 +38,9 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/pass from the post data
-        $client = $e.Data.$clientField
-        $username = $e.Data.$userField
-        $password = $e.Data.$passField
+        $client = $WebEvent.Data.$clientField
+        $username = $WebEvent.Data.$userField
+        $password = $WebEvent.Data.$passField
 
         # return the data as an array, to be passed to the validator script
         return @($client, $username, $password)
@@ -133,21 +133,6 @@ WWW-Authenticate: Basic realm="Enter creds to access site"
 !!! note
     If no Realm was set then it would just look as follows: `WWW-Authenticate: Basic`
 
-#### WebEvent
-
-By default the web event for the current request is not supplied to the validator's ScriptBlock. If you ever need the web event though, such as for accessing other request details like a client certificate, then you can supply the `-PassEvent` switch on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). With this, Pode will supply the current web event as the first parameter:
-
-```powershell
-Start-PodeServer {
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -PassEvent -ScriptBlock {
-        param($e, $username, $pass)
-        # logic to check user
-        # logic to check client cert (found at: $e.Request.ClientCertificate)
-        return @{ 'user' = $user }
-    }
-}
-```
-
 ### Routes/Middleware
 
 To use an authentication on a specific route, you can use the `-Authentication` parameter on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function; this takes the Name supplied to the `-Name` parameter on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). This will set the authentication up to run before other route middleware.
@@ -192,10 +177,8 @@ The following example get the user's name from the `Auth` object:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -Login -ScriptBlock {
-    param($e)
-
     Write-PodeViewResponse -Path 'index' -Data @{
-        'Username' = $e.Auth.User.Name
+        'Username' = $WebEvent.Auth.User.Name
     }
 }
 ```

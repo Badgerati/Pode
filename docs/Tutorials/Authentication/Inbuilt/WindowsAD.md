@@ -16,7 +16,7 @@ Start-PodeServer {
 
 ### User Object
 
-The User object returned, and accessible on Routes, and other functions via `$e.Auth.User`, will contain the following information:
+The User object returned, and accessible on Routes, and other functions via `$WebEvent.Auth.User`, will contain the following information:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -34,8 +34,7 @@ Such as:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
-    param($e)
-    Write-Host $e.Auth.User.Username
+    Write-Host $WebEvent.Auth.User.Username
 }
 ```
 

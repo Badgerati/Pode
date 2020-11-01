@@ -1,13 +1,12 @@
 # Web Event
 
-When a request is made to your server, a "web event" object is created that contains a lot of useful information about the request (and the response!).
+When a request is made to your server, a "web event" object is created. This object contains a lot of useful information about the request, and the response.
 
-This web event is a normal HashTable, and is always supplied as the first parameter to your Routes, Middleware, Endware, custom Authentication type ScriptBlocks:
+This web event is a normal HashTable, and is always accessible from your Routes, Middleware, Endware, and Authentication ScriptBlocks as the `$WebEvent` variable:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-    param($e)
-    # that $e is the web event!
+    $WebEvent | Out-Default
 }
 ```
 

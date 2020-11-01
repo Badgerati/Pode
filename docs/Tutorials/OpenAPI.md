@@ -41,8 +41,7 @@ For example:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-    param($e)
-    if ($e.Query.openapi -eq 1) {
+    if ($WebEvent.Query.openapi -eq 1) {
         Get-PodeOpenApiDefinition | Write-PodeJsonResponse
     }
 }
@@ -85,10 +84,9 @@ Whereas the following is a more complex definition, which also defines the respo
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Parameters['userId']
+        UserId = $WebEvent.Parameters['userId']
     }
 } -PassThru |
     Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -ContentSchemas @{
@@ -127,10 +125,9 @@ For example, to create some integer `userId` parameter that is supplied in the p
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Parameters['userId']
+        UserId = $WebEvent.Parameters['userId']
     }
 } -PassThru |
     Set-PodeOARequest -Parameters @(
@@ -142,10 +139,9 @@ Whereas you could use the next example to define 2 query parameters, both string
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Query['name']
+        UserId = $WebEvent.Query['name']
     }
 } -PassThru |
     Set-PodeOARequest -Parameters @(
@@ -162,10 +158,9 @@ For example, to define a request JSON payload of some `userId` and `name` you co
 
 ```powershell
 Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
-        Name = $e.Data.name
-        UserId = $e.Data.userId
+        Name = $WebEvent.Data.name
+        UserId = $WebEvent.Data.userId
     }
 } -PassThru |
     Set-PodeOARequest -RequestBody (
@@ -209,10 +204,9 @@ Add-PodeOAComponentSchema -Name 'UserSchema' -Schema (
 
 # reuse the above schema in a response
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Parameters['userId']
+        UserId = $WebEvent.Parameters['userId']
         Age = 42
     }
 } -PassThru |
@@ -239,7 +233,6 @@ Add-PodeOAComponentRequestBody -Name 'UserBody' -Required -ContentSchemas @{
 
 # use the request body in a route
 Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
-    param($e)
     Set-PodeResponseStatus -StatusCode 200
 } -PassThru |
     Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'UserBody')
@@ -267,10 +260,9 @@ New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In P
 
 # use this parameter in a route
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Parameters['userId']
+        UserId = $WebEvent.Parameters['userId']
     }
 } -PassThru |
     Set-PodeOARequest -Parameters @(ConvertTo-PodeOAParameter -Reference 'UserId')

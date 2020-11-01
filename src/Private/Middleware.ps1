@@ -43,7 +43,7 @@ function Invoke-PodeMiddleware
         }
 
         try {
-            $_args = @($WebEvent) + @($midware.Arguments)
+            $_args = @($midware.Arguments)
             if ($null -ne $midware.UsingVariables) {
                 $_args = @($midware.UsingVariables.Value) + $_args
             }
@@ -140,15 +140,13 @@ function Get-PodeInbuiltMiddleware
 function Get-PodeAccessMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_access__' -ScriptBlock {
-        param($e)
-
         # are there any rules?
         if (($PodeContext.Server.Access.Allow.Count -eq 0) -and ($PodeContext.Server.Access.Deny.Count -eq 0)) {
             return $true
         }
 
         # ensure the request IP address is allowed
-        if (!(Test-PodeIPAccess -IP $e.Request.RemoteEndPoint.Address)) {
+        if (!(Test-PodeIPAccess -IP $WebEvent.Request.RemoteEndPoint.Address)) {
             Set-PodeResponseStatus -Code 403
             return $false
         }
@@ -161,27 +159,25 @@ function Get-PodeAccessMiddleware
 function Get-PodeLimitMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
-        param($e)
-
         # are there any rules?
         if ($PodeContext.Server.Limits.Rules.Count -eq 0) {
             return $true
         }
 
         # check the request IP address has not hit a rate limit
-        if (!(Test-PodeIPLimit -IP $e.Request.RemoteEndPoint.Address)) {
+        if (!(Test-PodeIPLimit -IP $WebEvent.Request.RemoteEndPoint.Address)) {
             Set-PodeResponseStatus -Code 429
             return $false
         }
 
         # check the route
-        if (!(Test-PodeRouteLimit -Path $e.Path)) {
+        if (!(Test-PodeRouteLimit -Path $WebEvent.Path)) {
             Set-PodeResponseStatus -Code 429
             return $false
         }
 
         # check the endpoint
-        if (!(Test-PodeEndpointLimit -EndpointName $e.Endpoint.Name)) {
+        if (!(Test-PodeEndpointLimit -EndpointName $WebEvent.Endpoint.Name)) {
             Set-PodeResponseStatus -Code 429
             return $false
         }
@@ -194,16 +190,14 @@ function Get-PodeLimitMiddleware
 function Get-PodePublicMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {
-        param($e)
-
         # only find public static content here
-        $path = Find-PodePublicRoute -Path $e.Path
+        $path = Find-PodePublicRoute -Path $WebEvent.Path
         if ([string]::IsNullOrWhiteSpace($path)) {
             return $true
         }
 
         # check current state of caching
-        $cachable = Test-PodeRouteValidForCaching -Path $e.Path
+        $cachable = Test-PodeRouteValidForCaching -Path $WebEvent.Path
 
         # write the file to the response
         Write-PodeFileResponse -Path $path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
@@ -218,12 +212,10 @@ function Get-PodeRouteValidateMiddleware
     return @{
         Name = '__pode_mw_route_validation__'
         Logic = {
-            param($e)
-
             # check if the path is static route first, then check the main routes
-            $route = Find-PodeStaticRoute -Path $e.Path -EndpointName $e.Endpoint.Name
+            $route = Find-PodeStaticRoute -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
             if ($null -eq $route) {
-                $route = Find-PodeRoute -Method $e.Method -Path $e.Path -EndpointName $e.Endpoint.Name -CheckWildMethod
+                $route = Find-PodeRoute -Method $WebEvent.Method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name -CheckWildMethod
             }
 
             # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
@@ -231,7 +223,7 @@ function Get-PodeRouteValidateMiddleware
                 # check if a route exists for another method
                 $methods = @('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
                 $diff_route = @(foreach ($method in $methods) {
-                    $r = Find-PodeRoute -Method $method -Path $e.Path -EndpointName $e.Endpoint.Name
+                    $r = Find-PodeRoute -Method $method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
                     if ($null -ne $r) {
                         $r
                         break
@@ -250,31 +242,31 @@ function Get-PodeRouteValidateMiddleware
 
             # check if static and split
             if ($null -ne $route.Content) {
-                $e.StaticContent = $route.Content
+                $WebEvent.StaticContent = $route.Content
                 $route = $route.Route
             }
 
             # set the route parameters
-            $e.Parameters = @{}
-            if ($e.Path -imatch "$($route.Path)$") {
-                $e.Parameters = $Matches
+            $WebEvent.Parameters = @{}
+            if ($WebEvent.Path -imatch "$($route.Path)$") {
+                $WebEvent.Parameters = $Matches
             }
 
             # set the route on the WebEvent
-            $e.Route = $route
+            $WebEvent.Route = $route
 
             # override the content type from the route if it's not empty
             if (![string]::IsNullOrWhiteSpace($route.ContentType)) {
-                $e.ContentType = $route.ContentType
+                $WebEvent.ContentType = $route.ContentType
             }
 
             # override the transfer encoding from the route if it's not empty
             if (![string]::IsNullOrWhiteSpace($route.TransferEncoding)) {
-                $e.TransferEncoding = $route.TransferEncoding
+                $WebEvent.TransferEncoding = $route.TransferEncoding
             }
 
             # set the content type for any pages for the route if it's not empty
-            $e.ErrorType = $route.ErrorType
+            $WebEvent.ErrorType = $route.ErrorType
 
             # route exists
             return $true
@@ -285,15 +277,13 @@ function Get-PodeRouteValidateMiddleware
 function Get-PodeBodyMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_body_parsing__' -ScriptBlock {
-        param($e)
-
         try {
             # attempt to parse that data
-            $result = ConvertFrom-PodeRequestContent -Request $e.Request -ContentType $e.ContentType -TransferEncoding $e.TransferEncoding
+            $result = ConvertFrom-PodeRequestContent -Request $WebEvent.Request -ContentType $WebEvent.ContentType -TransferEncoding $WebEvent.TransferEncoding
 
             # set session data
-            $e.Data = $result.Data
-            $e.Files = $result.Files
+            $WebEvent.Data = $result.Data
+            $WebEvent.Files = $result.Files
 
             # payload parsed
             return $true
@@ -308,11 +298,9 @@ function Get-PodeBodyMiddleware
 function Get-PodeQueryMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_query_parsing__' -ScriptBlock {
-        param($e)
-
         try {
             # set the query string from the request
-            $e.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $e.Request.QueryString)
+            $WebEvent.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $WebEvent.Request.QueryString)
             return $true
         }
         catch {
@@ -325,10 +313,8 @@ function Get-PodeQueryMiddleware
 function Get-PodeCookieMiddleware
 {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_cookie_parsing__' -ScriptBlock {
-        param($e)
-
         # if cookies already set, return
-        if ($e.Cookies.Count -gt 0) {
+        if ($WebEvent.Cookies.Count -gt 0) {
             return $true
         }
 
@@ -340,7 +326,7 @@ function Get-PodeCookieMiddleware
 
         # parse the cookies from the header
         $cookies = @($h_cookie -split '; ')
-        $e.Cookies = @{}
+        $WebEvent.Cookies = @{}
 
         foreach ($cookie in $cookies) {
             $atoms = $cookie.Split('=', 2)
@@ -352,7 +338,7 @@ function Get-PodeCookieMiddleware
                 }
             }
 
-            $e.Cookies[$atoms[0]] = [System.Net.Cookie]::new($atoms[0], $value)
+            $WebEvent.Cookies[$atoms[0]] = [System.Net.Cookie]::new($atoms[0], $value)
         }
 
         return $true

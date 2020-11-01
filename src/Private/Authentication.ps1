@@ -1,7 +1,7 @@
 function Get-PodeAuthBasicType
 {
     return {
-        param($e, $options)
+        param($options)
 
         # get the auth header
         $header = (Get-PodeHeader -Name 'Authorization')
@@ -62,8 +62,8 @@ function Get-PodeAuthBasicType
 function Get-PodeAuthClientCertificateType
 {
     return {
-        param($e, $options)
-        $cert = $e.Request.ClientCertificate
+        param($options)
+        $cert = $WebEvent.Request.ClientCertificate
 
         # ensure we have a client cert
         if ($null -eq $cert) {
@@ -91,14 +91,14 @@ function Get-PodeAuthClientCertificateType
         }
 
         # return data for calling validator
-        return @($cert, $e.Request.ClientCertificateErrors)
+        return @($cert, $WebEvent.Request.ClientCertificateErrors)
     }
 }
 
 function Get-PodeAuthBearerType
 {
     return {
-        param($e, $options)
+        param($options)
 
         # get the auth header
         $header = (Get-PodeHeader -Name 'Authorization')
@@ -136,7 +136,7 @@ function Get-PodeAuthBearerType
 function Get-PodeAuthBearerPostValidator
 {
     return {
-        param($e, $token, $result, $options)
+        param($token, $result, $options)
 
         # if there's no user, fail with challenge
         if (($null -eq $result) -or ($null -eq $result.User)) {
@@ -219,7 +219,7 @@ function New-PodeAuthBearerChallenge
 function Get-PodeAuthDigestType
 {
     return {
-        param($e, $options)
+        param($options)
 
         # get the auth header - send challenge if missing
         $header = (Get-PodeHeader -Name 'Authorization')
@@ -267,7 +267,7 @@ function Get-PodeAuthDigestType
         }
 
         # return 400 if domain doesnt match request domain
-        if ($e.Path -ine $params.uri) {
+        if ($WebEvent.Path -ine $params.uri) {
             return @{
                 Message = 'Invalid Authorization header'
                 Code = 400
@@ -282,7 +282,7 @@ function Get-PodeAuthDigestType
 function Get-PodeAuthDigestPostValidator
 {
     return {
-        param($e, $username, $params, $result, $options)
+        param($username, $params, $result, $options)
 
         # if there's no user or password, fail with challenge
         if (($null -eq $result) -or ($null -eq $result.User) -or [string]::IsNullOrWhiteSpace($result.Password)) {
@@ -297,7 +297,7 @@ function Get-PodeAuthDigestPostValidator
         $hash1 = Invoke-PodeMD5Hash -Value "$($params.username):$($params.realm):$($result.Password)"
 
         # generate the second hash
-        $hash2 = Invoke-PodeMD5Hash -Value "$($e.Method.ToUpperInvariant()):$($params.uri)"
+        $hash2 = Invoke-PodeMD5Hash -Value "$($WebEvent.Method.ToUpperInvariant()):$($params.uri)"
 
         # generate final hash
         $final = Invoke-PodeMD5Hash -Value "$($hash1):$($params.nonce):$($params.nc):$($params.cnonce):$($params.qop):$($hash2)"
@@ -350,15 +350,15 @@ function New-PodeAuthDigestChallenge
 function Get-PodeAuthFormType
 {
     return {
-        param($e, $options)
+        param($options)
 
         # get user/pass keys to get from payload
         $userField = $options.Fields.Username
         $passField = $options.Fields.Password
 
         # get the user/pass
-        $username = $e.Data.$userField
-        $password = $e.Data.$passField
+        $username = $WebEvent.Data.$userField
+        $password = $WebEvent.Data.$passField
 
         # if either are empty, fail auth
         if ([string]::IsNullOrWhiteSpace($username) -or [string]::IsNullOrWhiteSpace($password)) {
@@ -629,40 +629,40 @@ function Test-PodeAuthUserGroups
 function Get-PodeAuthMiddlewareScript
 {
     return {
-        param($e, $opts)
+        param($opts)
 
         # get the auth method
         $auth = Find-PodeAuth -Name $opts.Name
 
         # route options for using sessions
         $sessionless = $auth.Sessionless
-        $usingSessions = (!(Test-PodeIsEmpty $e.Session))
-        $useHeaders = [bool]($e.Session.Properties.UseHeaders)
+        $usingSessions = (!(Test-PodeIsEmpty $WebEvent.Session))
+        $useHeaders = [bool]($WebEvent.Session.Properties.UseHeaders)
         $loginRoute = $opts.Login
 
         # check for logout command
         if ($opts.Logout) {
-            Remove-PodeAuthSession -Event $e
+            Remove-PodeAuthSession
 
             if ($useHeaders) {
                 return (Set-PodeAuthStatus -StatusCode 401 -Sessionless:$sessionless)
             }
             else {
-                $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $e.Request.Url.AbsolutePath)
+                $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $WebEvent.Request.Url.AbsolutePath)
                 return (Set-PodeAuthStatus -StatusCode 302 -Failure $auth.Failure -Sessionless:$sessionless)
             }
         }
 
         # if the session already has a user/isAuth'd, then skip auth
-        if ($usingSessions -and !(Test-PodeIsEmpty $e.Session.Data.Auth.User) -and $e.Session.Data.Auth.IsAuthenticated) {
-            $e.Auth = $e.Session.Data.Auth
+        if ($usingSessions -and !(Test-PodeIsEmpty $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
+            $WebEvent.Auth = $WebEvent.Session.Data.Auth
             return (Set-PodeAuthStatus -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless)
         }
 
         # check if the login flag is set, in which case just return and load a login get-page
-        if ($loginRoute -and !$useHeaders -and ($e.Method -ieq 'get')) {
-            if (!(Test-PodeIsEmpty $e.Session.Data.Auth)) {
-                Revoke-PodeSession -Session $e.Session
+        if ($loginRoute -and !$useHeaders -and ($WebEvent.Method -ieq 'get')) {
+            if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
+                Revoke-PodeSession -Session $WebEvent.Session
             }
 
             return $true
@@ -670,7 +670,7 @@ function Get-PodeAuthMiddlewareScript
 
         try {
             # run auth scheme script to parse request for data
-            $_args = @($e) + @($auth.Scheme.Arguments)
+            $_args = @($auth.Scheme.Arguments)
             if ($null -ne $auth.Scheme.ScriptBlock.UsingVariables) {
                 $_args = @($auth.Scheme.ScriptBlock.UsingVariables.Value) + $_args
             }
@@ -682,10 +682,6 @@ function Get-PodeAuthMiddlewareScript
                 $original = $result
 
                 $_args = @($result) + @($auth.Arguments)
-                if ($auth.PassEvent) {
-                    $_args = @($e) + $_args
-                }
-
                 if ($null -ne $auth.UsingVariables) {
                     $_args = @($auth.UsingVariables.Value) + $_args
                 }
@@ -694,7 +690,7 @@ function Get-PodeAuthMiddlewareScript
 
                 # if we have user, then run post validator if present
                 if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-PodeIsEmpty $auth.Scheme.PostValidator.Script)) {
-                    $_args = @($e) + @($original) + @($result) + @($auth.Scheme.Arguments)
+                    $_args = @($original) + @($result) + @($auth.Scheme.Arguments)
                     if ($null -ne $auth.Scheme.PostValidator.UsingVariables) {
                         $_args = @($auth.Scheme.PostValidator.UsingVariables.Value) + $_args
                     }
@@ -734,10 +730,10 @@ function Get-PodeAuthMiddlewareScript
         }
 
         # assign the user to the session, and wire up a quick method
-        $e.Auth = @{}
-        $e.Auth.User = $result.User
-        $e.Auth.IsAuthenticated = $true
-        $e.Auth.Store = !$sessionless
+        $WebEvent.Auth = @{}
+        $WebEvent.Auth.User = $result.User
+        $WebEvent.Auth.IsAuthenticated = $true
+        $WebEvent.Auth.Store = !$sessionless
 
         # continue
         return (Set-PodeAuthStatus -Headers $result.Headers -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless)
@@ -778,22 +774,16 @@ function Get-PodeAuthWwwHeaderValue
 
 function Remove-PodeAuthSession
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $Event
-    )
-
     # blank out the auth
-    $Event.Auth = @{}
+    $WebEvent.Auth = @{}
 
     # if a session auth is found, blank it
-    if (!(Test-PodeIsEmpty $Event.Session.Data.Auth)) {
-        $Event.Session.Data.Remove('Auth')
+    if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
+        $WebEvent.Session.Data.Remove('Auth')
     }
 
     # Delete the session (remove from store, blank it, and remove from Response)
-    Revoke-PodeSession -Session $Event.Session
+    Revoke-PodeSession -Session $WebEvent.Session
 }
 
 function Set-PodeAuthStatus

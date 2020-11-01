@@ -340,7 +340,7 @@ function Get-PodeSessionData
     )
 
     if ($PodeContext.Server.Sessions.Store.Get -is [psscriptmethod]) {
-        return $PodeContext.Server.Sessions.Store.Get($e.Session.Id)
+        return $PodeContext.Server.Sessions.Store.Get($WebEvent.Session.Id)
     }
     else {
         return (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Get -Arguments $SessionId -Return)
@@ -350,46 +350,44 @@ function Get-PodeSessionData
 function Get-PodeSessionMiddleware
 {
     return {
-        param($e)
-
         # if session already set, return
-        if ($e.Session) {
+        if ($WebEvent.Session) {
             return $true
         }
 
         try
         {
             # get the session from cookie/header
-            $e.Session = Get-PodeSession -Session $PodeContext.Server.Sessions
+            $WebEvent.Session = Get-PodeSession -Session $PodeContext.Server.Sessions
 
             # if no session found, create a new one on the current web event
-            if (!$e.Session) {
-                $e.Session = (New-PodeSession)
+            if (!$WebEvent.Session) {
+                $WebEvent.Session = (New-PodeSession)
                 $new = $true
             }
 
             # get the session's data
-            elseif ($null -ne ($data = (Get-PodeSessionData -SessionId $e.Session.Id))) {
-                $e.Session.Data = $data
-                Set-PodeSessionDataHash -Session $e.Session
+            elseif ($null -ne ($data = (Get-PodeSessionData -SessionId $WebEvent.Session.Id))) {
+                $WebEvent.Session.Data = $data
+                Set-PodeSessionDataHash -Session $WebEvent.Session
             }
 
             # session not in store, create a new one
             else {
-                $e.Session = (New-PodeSession)
+                $WebEvent.Session = (New-PodeSession)
                 $new = $true
             }
 
             # add helper methods to session
-            Set-PodeSessionHelpers -Session $e.Session
+            Set-PodeSessionHelpers -Session $WebEvent.Session
 
             # add session to response if it's new or extendible
-            if ($new -or $e.Session.Properties.Extend) {
-                Set-PodeSession -Session $e.Session
+            if ($new -or $WebEvent.Session.Properties.Extend) {
+                Set-PodeSession -Session $WebEvent.Session
             }
 
             # assign endware for session to set cookie/header
-            $e.OnEnd += @{
+            $WebEvent.OnEnd += @{
                 Logic = {
                     Save-PodeSession -Force
                 }

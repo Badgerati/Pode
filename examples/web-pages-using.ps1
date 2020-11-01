@@ -49,13 +49,11 @@ Start-PodeServer -Threads 2 {
 
     # GET request for web page on "localhost:8090/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($e)
-
         $using:innerfoo | Out-Default
         $using:outerfoo | Out-Default
         $using:innerfoo | Out-Default
 
-        $e.Method | Out-Default
+        $WebEvent.Method | Out-Default
 
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }

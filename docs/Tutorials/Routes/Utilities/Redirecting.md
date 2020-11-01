@@ -4,7 +4,7 @@ Sometimes you just want a Route to redirect the user else where, be it to anothe
 
 ## Usage
 
-When in a Route, to inform the client to redirect to a different endpoint you can use the  [`Move-PodeResponseUrl`](../../../../Functions/Responses/Move-PodeResponseUrl) function.
+When in a Route, to inform the client to redirect to a different endpoint you can use the [`Move-PodeResponseUrl`](../../../../Functions/Responses/Move-PodeResponseUrl) function.
 
 Supplying `-Url` will redirect the user to that URL, or you can supply a relative path o the server for the user to be redirected to. The `-Port` and `-Protocol` can be used separately or together, but not with `-Url`. Using `-Port`/`-Protocol` will use the URI of the current web request to generate the redirect URL.
 

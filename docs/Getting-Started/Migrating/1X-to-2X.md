@@ -8,7 +8,30 @@ In Pode v2.X the Server got the biggest overhaul with the dropping of HttpListen
 
 If you were previously specifying `-Type Pode` on your [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer), then you no longer need to - all servers now default to using Pode new .NET Core socket listener.
 
-### Endpoints
+## Web Event
+
+Originally the Web Event object was the first parameter supplied to the ScriptBlocks of Routes, Middleware, and Endware. These already all had access to the main `$WebEvent` object, including Authentication, without the need to supply it as a parameter.
+
+In 2.0, this first event parameter has been dropped, and you should now use the main `$WebEvent` object.
+
+So from the following:
+```powershell
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+    param($e)
+    Write-PodeJsonResponse -Value @{ Result = $e.Data['value']}
+}
+```
+
+To this:
+```powershell
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{ Result = $WebEvent.Data['value']}
+}
+```
+
+This also applies to Middleware, Endware, and Authentication.
+
+## Endpoints
 
 With the dropping of HttpListener, the `-Certificate` parameter is now the old `-CertificateFile` parameter. The `-RawCertificate` parameter has been renamed, and it now called `-X509Certificate`.
 
@@ -45,7 +68,7 @@ to:
 }
 ```
 
-### Authentication
+## Authentication
 
 Authentication underwent a hefty change in 2.0, with `Get-PodeAuthMiddleware` being removed.
 
@@ -63,7 +86,7 @@ Furthermore, the OpenAPI functions for `Set-PodeOAAuth` and `Set-PodeOAGlobalAut
 
 On `Add-PodeAuth`, `Add-PodeAuthWindowsAd`, and `Add-PodeAuthUserFile` the `-Type` parameter has been renamed to `-Scheme`. If you have always piped `New-PodeAuthScheme` (formally `New-PodeAuthType`) into them, then this won't affect you.
 
-### Endpoint and Protocol
+## Endpoint and Protocol
 
 On the following functions:
 
@@ -82,7 +105,7 @@ Further to this, if no `-Name` is supplied to [`Add-PodeEndpoint`](../../../Func
 
 The 2.0 release sees a big change to some scoping issues in Pode, around modules/snapins/functions and variables. For more information, see the new page on [Scoping](../../../Tutorials/Scoping).
 
-#### Modules/Snapins
+## Modules/Snapins
 
 You can now use `Import-Module`, or `Add-PSSnapin`, and Pode will automatically import all loaded modules/snapins into its runspaces:
 
@@ -121,7 +144,7 @@ To disable the auto-import, you can do so via the `server.psd1` configuration fi
 }
 ```
 
-#### Functions
+### Functions
 
 Local functions are now automatically imported into Pode's runspaces! This makes it a little simpler to use quick functions in Pode:
 
@@ -166,7 +189,7 @@ To disable the auto-import, you can do so via the `server.psd1` configuration fi
 }
 ```
 
-#### Variables
+### Variables
 
 You can now define local variables, and use the `$using:` syntax in almost all `-ScriptBlock` parameters, like:
 
@@ -195,7 +218,7 @@ Start-PodeServer -ScriptBlock {
 }
 ```
 
-### Test Functions
+## Test Functions
 
 If you're using any of the following:
 

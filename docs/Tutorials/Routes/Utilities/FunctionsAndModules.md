@@ -16,15 +16,13 @@ This will generate two Routes, similar to as if you did the below:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/Get-ChildItem' -ScriptBlock {
-    param($e)
-    $parameters = $e.Data
+    $parameters = $WebEvent.Data
     $result = (Get-ChildItem @parameters)
     Write-PodeJsonResponse -Value $result -Depth 1
 }
 
 Add-PodeRoute -Method Post -Path '/Invoke-Expression' -ScriptBlock {
-    param($e)
-    $parameters = $e.Data
+    $parameters = $WebEvent.Data
     $result = (Invoke-Expression @parameters)
     Write-PodeJsonResponse -Value $result -Depth 1
 }

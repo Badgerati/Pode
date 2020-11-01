@@ -69,7 +69,7 @@ function Start-PodeTcpServer
                     foreach ($name in $handlers.Keys) {
                         $handler = $handlers[$name]
 
-                        $_args = @($TcpEvent) + @($handler.Arguments)
+                        $_args = @($handler.Arguments)
                         if ($null -ne $handler.UsingVariables) {
                             $_args = @($handler.UsingVariables.Value) + $_args
                         }

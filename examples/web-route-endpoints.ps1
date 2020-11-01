@@ -26,8 +26,7 @@ Start-PodeServer {
 
     # GET request with parameters
     Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ 'userId' = $e.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ 'userId' = $WebEvent.Parameters['userId'] }
     }
 
     # ALL requests for 127.0.0.2 to 127.0.0.1

@@ -21,13 +21,11 @@ Start-PodeServer {
 
     # GET request for web page at "/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($e)
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
-        param($e)
         Set-PodeResponseStatus -Code 500
     }
 
