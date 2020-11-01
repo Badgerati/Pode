@@ -297,7 +297,6 @@ function Start-PodeLoggingRunspace
             }
 
             # convert to log item into a writable format
-        #TODO: "$LogItem" ?
             $_args = @($log.Item) + @($logger.Arguments)
             if ($null -ne $logger.UsingVariables) {
                 $_args = @($logger.UsingVariables.Value) + $_args
@@ -326,7 +325,6 @@ function Start-PodeLoggingRunspace
 
             # send the writable log item off to the log writer
             if ($null -ne $result) {
-                #TODO: "$LogItem" ?
                 $_args = @(,$result) + @($logger.Method.Arguments)
                 if ($null -ne $logger.Method.UsingVariables) {
                     $_args = @($logger.Method.UsingVariables.Value) + $_args
@@ -357,7 +355,6 @@ function Test-PodeLoggerBatches
             $result = $batch.Items
             $batch.Items = @()
 
-            #TODO: "$LogItem" ?
             $_args = @(,$result) + @($logger.Method.Arguments)
             if ($null -ne $logger.Method.UsingVariables) {
                 $_args = @($logger.Method.UsingVariables.Value) + $_args

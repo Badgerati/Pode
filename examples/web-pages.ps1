@@ -32,13 +32,11 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type Pode
 
     # wire up a custom logger
-    #TODO: can we remove this param, for a "$LogItem"?
     $logType = New-PodeLoggingMethod -Custom -ScriptBlock {
         param($item)
         $item.HttpMethod | Out-Default
     }
 
-    #TODO: can we remove this param, for a "$LogItem"?
     $logType | Add-PodeLogger -Name 'custom' -ScriptBlock {
         param($item)
         return @{
