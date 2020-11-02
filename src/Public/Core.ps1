@@ -27,8 +27,8 @@ An override for the Server's root path.
 .PARAMETER Request
 Intended for Serverless environments, this is Requests details that Pode can parse and use.
 
-.PARAMETER Type
-The server type, to define how Pode should run and deal with incoming Requests.
+.PARAMETER ServerlessType
+Optional, this is the serverless type, to define how Pode should run and deal with incoming Requests.
 
 .PARAMETER StatusPageExceptions
 An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
@@ -53,7 +53,7 @@ Start-PodeServer { /* logic */ }
 Start-PodeServer -Interval 10 { /* logic */ }
 
 .EXAMPLE
-Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' { /* logic */ }
+Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda { /* logic */ }
 #>
 function Start-PodeServer
 {
