@@ -6,7 +6,7 @@ function Start-PodeTcpServer
     }
 
     # the endpoint to listen on
-    $endpoint = @($PodeContext.Server.Endpoints.Values)[0]
+    $endpoint = @(Get-PodeEndpoints -Type Tcp)[0]
 
     # grab the relavant port
     $port = $endpoint.Port
@@ -90,9 +90,8 @@ function Start-PodeTcpServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeContext.Threads.Web | ForEach-Object {
-        Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
-            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+    1..$PodeContext.Threads.General | ForEach-Object {
+        Add-PodeRunspace -Type Tcp -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep tcp server listening until cancelled
@@ -122,7 +121,7 @@ function Start-PodeTcpServer
         }
     }
 
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Tcp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
     return @("tcp://$($endpoint.FriendlyName):$($port)")

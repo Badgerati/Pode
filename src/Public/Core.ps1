@@ -89,8 +89,7 @@ function Start-PodeServer
         [Parameter()]
         [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
         [string]
-        #TODO: Rename this to ServerlessType ??
-        $Type = [string]::Empty,
+        $ServerlessType = [string]::Empty,
 
         [Parameter()]
         [ValidateSet('', 'Hide', 'Show')]
@@ -147,7 +146,7 @@ function Start-PodeServer
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-            -ServerType $Type `
+            -ServerlessType $ServerlessType `
             -ListenerType $ListenerType `
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
@@ -165,7 +164,7 @@ function Start-PodeServer
         Start-PodeInternalServer -Request $Request -Browse:$Browse
 
         # at this point, if it's just a one-one off script, return
-        if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -or $PodeContext.Server.IsServerless) {
+        if (($PodeContext.Server.Types.Length -eq 0) -or $PodeContext.Server.IsServerless) {
             return
         }
 
@@ -898,23 +897,16 @@ function Add-PodeEndpoint
 
     if (!$exists) {
         # has an endpoint already been defined for smtp/tcp?
-        if ((@('smtp', 'tcp') -icontains $Protocol) -and ($Protocol -ieq $PodeContext.Server.Type)) {
+        if ((@('smtp', 'tcp') -icontains $Protocol) -and ($PodeContext.Server.Types -icontains $Protocol)) {
             throw "An endpoint for $($Protocol.ToUpperInvariant()) has already been defined"
         }
 
-        # set server type, ensure we aren't trying to change the server's type
-        if (@('ws', 'wss') -icontains $Protocol) {
-            $PodeContext.Server.WebSockets.Enabled = $true
-        }
-        else {
-            $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
+        # set server type
+        $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
+        $_type = (Resolve-PodeValue -Check ($_type -ieq 'wss') -TrueValue 'ws' -FalseValue $_type)
 
-            if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
-                $PodeContext.Server.Type = $_type
-            }
-            elseif ($PodeContext.Server.Type -ine $_type) {
-                throw "Cannot add $($Protocol.ToUpperInvariant()) endpoint when already listening to $($PodeContext.Server.Type.ToUpperInvariant()) endpoints"
-            }
+        if ($PodeContext.Server.Types -inotcontains $_type) {
+            $PodeContext.Server.Types += $_type
         }
 
         # add the new endpoint

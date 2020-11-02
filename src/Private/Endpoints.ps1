@@ -55,7 +55,7 @@ function Get-PodeEndpoints
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Http', 'Ws')]
+        [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
         [string]
         $Type
     )
@@ -70,9 +70,31 @@ function Get-PodeEndpoints
         'ws' {
             $endpoints = @($PodeContext.Server.Endpoints.Values | Where-Object { @('ws', 'wss') -icontains $_.Protocol })
         }
+
+        'smtp' {
+            $endpoints = @($PodeContext.Server.Endpoints.Values | Where-Object { @('smtp') -icontains $_.Protocol })
+        }
+
+        'tcp' {
+            $endpoints = @($PodeContext.Server.Endpoints.Values | Where-Object { @('tcp') -icontains $_.Protocol })
+        }
     }
 
     return $endpoints
+}
+
+function Test-PodeEndpoints
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
+        [string]
+        $Type
+    )
+
+    $endpoints = (Get-PodeEndpoints -Type $Type)
+    return (($null -ne $endpoints) -and ($endpoints.Length -gt 0))
+
 }
 
 function Find-PodeEndpointName

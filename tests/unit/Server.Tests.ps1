@@ -27,7 +27,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Import-PodeFunctionsIntoRunspaceState { }
 
     It 'Calls one-off script logic' {
-        $PodeContext.Server = @{ Type = ([string]::Empty); Logic = {} }
+        $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -41,7 +41,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls smtp server logic' {
-        $PodeContext.Server = @{ Type = 'SMTP'; Logic = {} }
+        $PodeContext.Server = @{ Types = 'SMTP'; Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -55,7 +55,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls tcp server logic' {
-        $PodeContext.Server = @{ Type = 'TCP'; Logic = {} }
+        $PodeContext.Server = @{ Types = 'TCP'; Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -69,21 +69,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls http web server logic' {
-        $PodeContext.Server = @{ Type = 'HTTP'; Logic = {} }
-        Start-PodeInternalServer | Out-Null
-
-        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-        Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
-        Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
-        Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
-        Assert-MockCalled Start-PodeWebServer -Times 1 -Scope It
-    }
-
-    It 'Calls https web server logic' {
-        $PodeContext.Server = @{ Type = 'HTTPS'; Logic = {} }
+        $PodeContext.Server = @{ Types = 'HTTP'; Logic = {} }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
