@@ -509,7 +509,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp')]
         [string]
         $Type,
 
@@ -543,10 +543,10 @@ function Add-PodeRunspace
         }
         else {
             $PodeContext.Runspaces += @{
-                Pool = $Type;
-                Runspace = $ps;
-                Status = $ps.BeginInvoke();
-                Stopped = $false;
+                Pool = $Type
+                Runspace = $ps
+                Status = $ps.BeginInvoke()
+                Stopped = $false
             }
         }
     }
@@ -663,7 +663,12 @@ function Close-PodeServerInternal
         $ShowDoneMessage
     )
 
-    # stpo all current runspaces
+    # ensure the token is cancelled
+    if ($null -ne $PodeContext.Tokens.Cancellation) {
+        $PodeContext.Tokens.Cancellation.Cancel()
+    }
+
+    # stop all current runspaces
     Close-PodeRunspaces -ClosePool
 
     # stop the file monitor if it's running
@@ -681,7 +686,7 @@ function Close-PodeServerInternal
     # remove all of the pode temp drives
     Remove-PodePSDrives
 
-    if ($ShowDoneMessage -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -and !$PodeContext.Server.IsServerless) {
+    if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
         Write-PodeHost " Done" -ForegroundColor Green
     }
 }
@@ -1128,30 +1133,31 @@ function ConvertFrom-PodeRequestContent
     # if the content-type is not multipart/form-data, get the string data
     if ($MetaData.ContentType -ine 'multipart/form-data') {
         # get the content based on server type
-        switch ($PodeContext.Server.Type.ToLowerInvariant()) {
-            'awslambda' {
-                $Content = $Request.body
-            }
-
-            'azurefunctions' {
-                $Content = $Request.RawBody
-            }
-
-            default {
-                # if the request is compressed, attempt to uncompress it
-                if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
-                    # create a compressed stream to decompress the req bytes
-                    $ms = New-Object -TypeName System.IO.MemoryStream
-                    $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
-                    $ms.Seek(0, 0) | Out-Null
-                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
-
-                    # read the decompressed bytes
-                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+        if ($PodeContext.Server.IsServerless) {
+            switch ($PodeContext.Server.ServerlessType.ToLowerInvariant()) {
+                'awslambda' {
+                    $Content = $Request.body
                 }
-                else {
-                    $Content = $Request.Body
+
+                'azurefunctions' {
+                    $Content = $Request.RawBody
                 }
+            }
+        }
+        else {
+            # if the request is compressed, attempt to uncompress it
+            if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
+                # create a compressed stream to decompress the req bytes
+                $ms = New-Object -TypeName System.IO.MemoryStream
+                $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
+                $ms.Seek(0, 0) | Out-Null
+                $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
+
+                # read the decompressed bytes
+                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+            }
+            else {
+                $Content = $Request.Body
             }
         }
 

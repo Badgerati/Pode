@@ -28,27 +28,33 @@ function Start-PodeAzFuncServer
             $response.Headers = @{}
 
             # reset event data
-            $WebEvent = @{
+            $global:WebEvent = @{
                 OnEnd = @()
                 Auth = @{}
                 Response = $response
                 Request = $request
                 Lockable = $PodeContext.Lockable
+                Path = [string]::Empty
                 Method = $request.Method.ToLowerInvariant()
                 Query = $request.Query
                 Endpoint = @{
                     Protocol = ($request.Url -split '://')[0]
                     Address = $null
+                    Name = $null
                 }
                 ContentType = $null
                 ErrorType = $null
                 Cookies = @{}
                 PendingCookies = @{}
-                Path = [string]::Empty
+                Parameters = $null
+                Data = $null
+                Files = $null
                 Streamed = $false
                 Route = $null
                 StaticContent = $null
                 Timestamp = [datetime]::UtcNow
+                TransferEncoding = $null
+                AcceptEncoding = $null
             }
 
             $WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'host') -split ':')[0]
@@ -87,13 +93,19 @@ function Start-PodeAzFuncServer
                         }
                     }
                     else {
-                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent -Scoped
+                        $_args = @($WebEvent.Route.Arguments)
+                        if ($null -ne $WebEvent.Route.UsingVariables) {
+                            $_args = @($WebEvent.Route.UsingVariables.Value) + $_args
+                        }
+
+                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                     }
                 }
             }
         }
         catch {
             $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
             Set-PodeResponseStatus -Code 500 -Exception $_
         }
         finally {
@@ -145,7 +157,7 @@ function Start-PodeAwsLambdaServer
             }
 
             # reset event data
-            $WebEvent = @{
+            $global:WebEvent = @{
                 OnEnd = @()
                 Auth = @{}
                 Response = $response
@@ -157,15 +169,21 @@ function Start-PodeAwsLambdaServer
                 Endpoint = @{
                     Protocol = $null
                     Address = $null
+                    Name = $null
                 }
                 ContentType = $null
                 ErrorType = $null
                 Cookies = @{}
                 PendingCookies = @{}
+                Parameters = $null
+                Data = $null
+                Files = $null
                 Streamed = $false
                 Route = $null
                 StaticContent = $null
                 Timestamp = [datetime]::UtcNow
+                TransferEncoding = $null
+                AcceptEncoding = $null
             }
 
             $WebEvent.Endpoint.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
@@ -190,13 +208,19 @@ function Start-PodeAwsLambdaServer
                         }
                     }
                     else {
-                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent -Scoped
+                        $_args = @($WebEvent.Route.Arguments)
+                        if ($null -ne $WebEvent.Route.UsingVariables) {
+                            $_args = @($WebEvent.Route.UsingVariables.Value) + $_args
+                        }
+
+                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                     }
                 }
             }
         }
         catch {
             $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
             Set-PodeResponseStatus -Code 500 -Exception $_
         }
         finally {

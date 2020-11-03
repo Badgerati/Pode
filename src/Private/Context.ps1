@@ -28,7 +28,7 @@ function New-PodeContext
 
         [Parameter()]
         [string]
-        $ServerType,
+        $ServerlessType,
 
         [Parameter()]
         [string]
@@ -51,7 +51,7 @@ function New-PodeContext
     }
 
     # are we running in a serverless context
-    $isServerless = (@('AzureFunctions', 'AwsLambda') -icontains $ServerType)
+    $isServerless = ![string]::IsNullOrWhiteSpace($ServerlessType)
 
     # ensure threads are always >0, for to 1 if we're serverless
     if (($Threads -le 0) -or $isServerless) {
@@ -108,7 +108,7 @@ function New-PodeContext
 
     # set thread counts
     $ctx.Threads = @{
-        Web = $Threads
+        General = $Threads
         Schedules = 10
     }
 
@@ -147,17 +147,16 @@ function New-PodeContext
     # set the server's listener type
     $ctx.Server.ListenerType = $ListenerType
 
-    # set the server default type
-    $ctx.Server.Type = $ServerType.ToUpperInvariant()
-    if ($Interval -gt 0) {
-        $ctx.Server.Type = 'SERVICE'
-    }
-
-    # if it's serverless, also disable termination
+    # set serverless info
+    $ctx.Server.ServerlessType = $ServerlessType
+    $ctx.Server.IsServerless = $isServerless
     if ($isServerless) {
-        $ctx.Server.IsServerless = $isServerless
         $ctx.Server.DisableTermination = $true
     }
+
+    # set the server types
+    $ctx.Server.IsService = ($Interval -gt 0)
+    $ctx.Server.Types = @()
 
     # is the server running under IIS? (also, disable termination)
     $ctx.Server.IsIIS = (!$isServerless -and (!(Test-PodeIsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-PodeIsEmpty $env:ASPNETCORE_TOKEN)))
@@ -290,6 +289,9 @@ function New-PodeContext
     # runspace pools
     $ctx.RunspacePools = @{
         Main = $null
+        Web = $null
+        Smtp = $null
+        Tcp = $null
         Signals = $null
         Schedules = $null
         Gui = $null
@@ -452,17 +454,35 @@ function New-PodeRunspacePools
         Misc = 1
     }
 
-    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $PodeContext.Threads.Web
+    # main runspace - for timers, schedules, etc
+    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
 
-    # setup signal runspace pool
-    $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.Web + 2), $PodeContext.RunspaceState, $Host)
+    # web runspace - if we have any http/s endpoints
+    if (Test-PodeEndpoints -Type Http) {
+        $PodeContext.RunspacePools.Web = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+    }
+
+    # smtp runspace - if we have any smtp endpoints
+    if (Test-PodeEndpoints -Type Smtp) {
+        $PodeContext.RunspacePools.Smtp = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+    }
+
+    # tcp runspace - if we have any tcp endpoints
+    if (Test-PodeEndpoints -Type Tcp) {
+        $PodeContext.RunspacePools.Tcp = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+    }
+
+    # web socket runspace - if we have any ws/s endpoints
+    if (Test-PodeEndpoints -Type Ws) {
+        $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, 3, $PodeContext.RunspaceState, $Host)
+    }
 
     # setup schedule runspace pool
     $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
 
     # setup gui runspace pool (only for non-ps-core)
-    if (!((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
+    if (!$PodeContext.Server.IsServerless -and !((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
         $PodeContext.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         $PodeContext.RunspacePools.Gui.ApartmentState = 'STA'
     }

@@ -108,7 +108,7 @@ function Start-PodeSignalServer
         }
     }
 
-    Add-PodeRunspace -Type 'Signals' -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Signals -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
 
     # script to queue messages from clients to send back to other clients from the server
     $clientScript = {
@@ -134,7 +134,7 @@ function Start-PodeSignalServer
         }
     }
 
-    Add-PodeRunspace -Type 'Signals' -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Signals -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener }
 
     # script to keep web server listening until cancelled
     $waitScript = {
@@ -160,6 +160,6 @@ function Start-PodeSignalServer
         }
     }
 
-    Add-PodeRunspace -Type 'Signals' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Signals -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
     return @($endpoints.Url)
 }

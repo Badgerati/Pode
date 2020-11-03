@@ -8,7 +8,7 @@ function Start-PodeSmtpServer
     }
 
     # the endpoint to listen on
-    $endpoint = @($PodeContext.Server.Endpoints.Values)[0]
+    $endpoint = @(Get-PodeEndpoints -Type Smtp)[0]
 
     # grab the relavant port
     $port = $endpoint.Port
@@ -123,9 +123,8 @@ function Start-PodeSmtpServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeContext.Threads.Web | ForEach-Object {
-        Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
-            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+    1..$PodeContext.Threads.General | ForEach-Object {
+        Add-PodeRunspace -Type Smtp -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep smtp server listening until cancelled
@@ -152,7 +151,7 @@ function Start-PodeSmtpServer
         }
     }
 
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Smtp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
     return @("smtp://$($endpoint.FriendlyName):$($port)")

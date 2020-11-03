@@ -38,8 +38,7 @@ function Start-PodeInternalServer
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
 
-        $_type = $PodeContext.Server.Type.ToUpperInvariant()
-        if (![string]::IsNullOrWhiteSpace($_type) -and !$PodeContext.Server.IsServerless)
+        if (!$PodeContext.Server.IsServerless -and ($PodeContext.Server.Types.Length -gt 0))
         {
             # start runspace for loggers
             Start-PodeLoggingRunspace
@@ -57,36 +56,47 @@ function Start-PodeInternalServer
         # start the appropriate server
         $endpoints = @()
 
-        switch ($_type)
-        {
-            'SMTP' {
-                $endpoints += (Start-PodeSmtpServer)
-            }
+        # - service
+        if ($PodeContext.Server.IsService) {
+            Start-PodeServiceServer
+        }
 
-            'TCP' {
-                $endpoints += (Start-PodeTcpServer)
-            }
+        # - serverless
+        elseif ($PodeContext.Server.IsServerless) {
+            switch ($PodeContext.Server.ServerlessType.ToUpperInvariant())
+            {
+                'AZUREFUNCTIONS' {
+                    Start-PodeAzFuncServer -Data $Request
+                }
 
-            { ($_ -ieq 'HTTP') -or ($_ -ieq 'HTTPS') } {
-                $endpoints += (Start-PodeWebServer -Browse:$Browse)
-            }
-
-            'SERVICE' {
-                Start-PodeServiceServer
-            }
-
-            'AZUREFUNCTIONS' {
-                Start-PodeAzFuncServer -Data $Request
-            }
-
-            'AWSLAMBDA' {
-                Start-PodeAwsLambdaServer -Data $Request
+                'AWSLAMBDA' {
+                    Start-PodeAwsLambdaServer -Data $Request
+                }
             }
         }
 
-        # start web sockets if enabled
-        if ($PodeContext.Server.WebSockets.Enabled) {
-            $endpoints += (Start-PodeSignalServer)
+        # - normal
+        else {
+            foreach ($_type in $PodeContext.Server.Types) {
+                switch ($_type.ToUpperInvariant())
+                {
+                    'SMTP' {
+                        $endpoints += (Start-PodeSmtpServer)
+                    }
+
+                    'TCP' {
+                        $endpoints += (Start-PodeTcpServer)
+                    }
+
+                    'HTTP' {
+                        $endpoints += (Start-PodeWebServer -Browse:$Browse)
+                    }
+
+                    'WS' {
+                        $endpoints += (Start-PodeSignalServer)
+                    }
+                }
+            }
         }
 
         # set the start time of the server (start and after restart)
@@ -94,7 +104,7 @@ function Start-PodeInternalServer
 
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
-            Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.Web) thread(s)]:" -ForegroundColor Yellow
+            Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
                 Write-PodeHost "`t- $($_)" -ForegroundColor Yellow
             }
@@ -176,9 +186,7 @@ function Restart-PodeInternalServer
         $PodeContext.Server.State.Clear()
 
         # reset type if smtp/tcp
-        if (@('smtp', 'tcp') -icontains $PodeContext.Server.Type) {
-            $PodeContext.Server.Type = [string]::Empty
-        }
+        $PodeContext.Server.Types = @()
 
         # recreate the session tokens
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation

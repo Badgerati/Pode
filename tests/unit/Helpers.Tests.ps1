@@ -662,7 +662,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data for azure-functions' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'AzureFunctions'; 'BodyParsers' = @{} } }
+            $PodeContext = @{ 'Server' = @{ 'ServerlessType' = 'AzureFunctions'; 'BodyParsers' = @{}; 'IsServerless' = $true } }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
@@ -674,7 +674,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
         }
 
         It 'Returns json data for aws-lambda' {
-            $PodeContext = @{ 'Server' = @{ 'Type' = 'AwsLambda'; 'BodyParsers' = @{} } }
+            $PodeContext = @{ 'Server' = @{ 'ServerlessType' = 'AwsLambda'; 'BodyParsers' = @{}; 'IsServerless' = $true } }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
                 'ContentEncoding' = [System.Text.Encoding]::UTF8;
@@ -1178,19 +1178,19 @@ Describe 'Close-PodeServerInternal' {
     Mock Write-Host { }
 
     It 'Closes out pode, but with no done flag' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
+        $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }
         Close-PodeServerInternal
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }
 
     It 'Closes out pode, but with the done flag' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server' } }
+        $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }
         Close-PodeServerInternal -ShowDoneMessage
         Assert-MockCalled Write-Host -Times 1 -Scope It
     }
 
     It 'Closes out pode, but with no done flag if serverless' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'Server'; 'IsServerless' = $true } }
+        $PodeContext = @{ 'Server' = @{ 'Types' = 'Server'; 'IsServerless' = $true } }
         Close-PodeServerInternal -ShowDoneMessage
         Assert-MockCalled Write-Host -Times 0 -Scope It
     }

@@ -48,7 +48,7 @@ Here, the `/{proxy+}` will enable one Function for all routes - which can be con
 With the above being done, your Pode `server` can be created as follows. The `$LambdaInput` is a parameter supplied to your Function by AWS:
 
 ```powershell
-Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' {
+Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda {
     # logic
 }
 ```
@@ -63,7 +63,7 @@ The following script would be a simple example of using Pode to aid with routing
 #Requires -Modules @{ModuleName='AWSPowerShell.NetCore';ModuleVersion='3.3.509.0'}
 #Requires -Modules @{ModuleName='Pode';ModuleVersion='<version>'}
 
-Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' {
+Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda {
     # get some user data
     Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'Users' = @() }
@@ -88,7 +88,7 @@ Then within your Function script, you need to read in the data from your S3 buck
 
 Read-S3Object -BucketName '<bucket-name>' -KeyPrefix '<dir-name>' -Folder '/tmp/www' | Out-Null
 
-Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' -RootPath '/tmp/www' {
+Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda -RootPath '/tmp/www' {
     # set your engine renderer
     Set-PodeViewEngine -Type Pode
 

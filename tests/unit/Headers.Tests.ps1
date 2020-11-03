@@ -156,7 +156,7 @@ Describe 'Set-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
+        $PodeContext = @{ 'Server' = @{ ServerlessType = 'azurefunctions'; IsServerless = $true } }
 
         It 'Sets a header to response' {
             $script:WebEvent = @{ 'Response' = @{

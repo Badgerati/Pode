@@ -201,9 +201,8 @@ function Start-PodeWebServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeContext.Threads.Web | ForEach-Object {
-        Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
-            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+    1..$PodeContext.Threads.General | ForEach-Object {
+        Add-PodeRunspace -Type Web -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep web server listening until cancelled
@@ -230,7 +229,7 @@ function Start-PodeWebServer
         }
     }
 
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Web -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # browse to the first endpoint, if flagged
     if ($Browse) {

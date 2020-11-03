@@ -44,5 +44,5 @@ function Start-PodeServiceServer
     }
 
     # start the runspace for the server
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $serverScript
+    Add-PodeRunspace -Type Main -ScriptBlock $serverScript
 }

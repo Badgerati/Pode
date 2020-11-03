@@ -8,6 +8,8 @@ In Pode v2.X the Server got the biggest overhaul with the dropping of HttpListen
 
 If you were previously specifying `-Type Pode` on your [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer), then you no longer need to - all servers now default to using Pode new .NET Core socket listener.
 
+Furthermore, the `-Type` parameter has been renamed to `-ServerlessType`.
+
 ## Web Event
 
 Originally the Web Event object was the first parameter supplied to the ScriptBlocks of Routes, Middleware, and Endware. These already all had access to the main `$WebEvent` object, including Authentication, without the need to supply it as a parameter.
