@@ -88,12 +88,10 @@ function Start-PodeInternalServer
                         $endpoints += (Start-PodeTcpServer)
                     }
 
-                    #{ ($_ -ieq 'HTTP') -or ($_ -ieq 'HTTPS') } {
                     'HTTP' {
                         $endpoints += (Start-PodeWebServer -Browse:$Browse)
                     }
 
-                    #{ ($_ -ieq 'WS') -or ($_ -ieq 'WSS') } {
                     'WS' {
                         $endpoints += (Start-PodeSignalServer)
                     }
