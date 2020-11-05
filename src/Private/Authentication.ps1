@@ -59,6 +59,72 @@ function Get-PodeAuthBasicType
     }
 }
 
+function Get-PodeAuthOAuth2Type
+{
+    return {
+        param($options)
+
+        if (($null -eq $options.Scopes) -or ($options.Scopes.Length -eq 0)) {
+            $options.Scopes = @('openid', 'profile', 'email')
+        }
+
+        # if there's an error, fail
+        if (![string]::IsNullOrWhiteSpace($WebEvent.Query['error'])) {
+            return @{
+                Message = $WebEvent.Query['error']
+                Code = 401
+            }
+        }
+
+        # if there's a code query param
+        if (![string]::IsNullOrWhiteSpace($WebEvent.Query['code'])) {
+            # POST the tokenUrl
+            $body = "client_id=$($options.Client.ID)"
+            $body += "&code=$($WebEvent.Query['code'])"
+            $body += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($options.Urls.Redirect))"
+            $body += "&grant_type=authorization_code"
+            $body += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
+
+            $result = Invoke-RestMethod -Method Post -Uri $options.Urls.Token -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
+            if (![string]::IsNullOrWhiteSpace($result.error)) {
+                return @{
+                    Message = $result.error
+                    Code = 401
+                }
+            }
+
+            # get user details - if url supplied
+            if (![string]::IsNullOrWhiteSpace($options.Urls.User)) {
+                $user = Invoke-RestMethod -Method Post -Uri $options.Urls.User -Headers @{ Authorization = "Bearer $($result.access_token)" }
+                if (![string]::IsNullOrWhiteSpace($user.error)) {
+                    return @{
+                        Message = $user.error
+                        Code = 401
+                    }
+                }
+            }
+            else {
+                $user = @{ Provider = 'OAuth2' }
+            }
+
+            # return the user for the validator
+            return @($user)
+        }
+
+        # redirect to the authUrl
+        $query = "client_id=$($options.Client.ID)"
+        $query += "&response_type=code"
+        $query += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($options.Urls.Redirect))"
+        $query += "&response_mode=query"
+
+        $scopes = ($options.Scopes -join ' ')
+        $query += "&scope=$([System.Web.HttpUtility]::UrlEncode($scopes))"
+
+        Move-PodeResponseUrl -Url "$($options.Urls.Authorise)?$($query)"
+        return @{ IsRedirected = $true }
+    }
+}
+
 function Get-PodeAuthClientCertificateType
 {
     return {
@@ -645,18 +711,18 @@ function Get-PodeAuthMiddlewareScript
             Remove-PodeAuthSession
 
             if ($useHeaders) {
-                return (Set-PodeAuthStatus -StatusCode 401 -Sessionless:$sessionless)
+                return (Set-PodeAuthStatus -StatusCode 401 -Sessionless:$sessionless -NoSuccessRedirect)
             }
             else {
                 $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $WebEvent.Request.Url.AbsolutePath)
-                return (Set-PodeAuthStatus -StatusCode 302 -Failure $auth.Failure -Sessionless:$sessionless)
+                return (Set-PodeAuthStatus -StatusCode 302 -Failure $auth.Failure -Sessionless:$sessionless -NoSuccessRedirect)
             }
         }
 
         # if the session already has a user/isAuth'd, then skip auth
         if ($usingSessions -and !(Test-PodeIsEmpty $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
             $WebEvent.Auth = $WebEvent.Session.Data.Auth
-            return (Set-PodeAuthStatus -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless)
+            return (Set-PodeAuthStatus -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless -NoSuccessRedirect)
         }
 
         # check if the login flag is set, in which case just return and load a login get-page
@@ -702,6 +768,11 @@ function Get-PodeAuthMiddlewareScript
         catch {
             $_ | Write-PodeErrorLog
             return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Failure $auth.Failure -Sessionless:$sessionless)
+        }
+
+        # did the auth force a redirect?
+        if ($result.IsRedirected) {
+            return $false
         }
 
         # if there is no result, return false (failed auth)
@@ -813,7 +884,10 @@ function Set-PodeAuthStatus
         $LoginRoute,
 
         [switch]
-        $Sessionless
+        $Sessionless,
+
+        [switch]
+        $NoSuccessRedirect
     )
 
     # if we have any headers, set them
@@ -846,7 +920,7 @@ function Set-PodeAuthStatus
     }
 
     # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
-    if ($LoginRoute -and ![string]::IsNullOrWhiteSpace($Success.Url)) {
+    if ((!$NoSuccessRedirect -or $LoginRoute) -and ![string]::IsNullOrWhiteSpace($Success.Url)) {
         Move-PodeResponseUrl -Url $Success.Url
         return $false
     }

@@ -142,7 +142,36 @@ function New-PodeAuthScheme
         [switch]
         $ClientCertificate,
 
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $ClientSecret,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $RedirectUrl,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $AuthoriseUrl,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $TokenUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [string]
+        $UserUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [switch]
+        $OAuth2,
+
         [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName='OAuth2')]
         [string[]]
         $Scope
     )
@@ -238,6 +267,32 @@ function New-PodeAuthScheme
             }
         }
 
+        'oauth2' {
+            return @{
+                Name = 'OAuth2'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthOAuth2Type)
+                    UsingVariables = $null
+                }
+                PostValidator = $null
+                Scheme = 'oauth2'
+                Arguments = @{
+                    Scopes = $Scope
+                    Client = @{
+                        ID = $ClientId
+                        Secret = $ClientSecret
+                    }
+                    Urls = @{
+                        Redirect = $RedirectUrl
+                        Authorise = $AuthoriseUrl
+                        Token = $TokenUrl
+                        User = $UserUrl
+                    }
+                }
+            }
+        }
+
         'custom' {
             $ScriptBlock, $usingScriptVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
@@ -261,6 +316,38 @@ function New-PodeAuthScheme
             }
         }
     }
+}
+
+function New-PodeAuthAzureADScheme
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Tenant = 'common',
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientSecret,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $RedirectUrl
+    )
+
+    return (New-PodeAuthScheme `
+        -OAuth2 `
+        -ClientId $ClientId `
+        -ClientSecret $ClientSecret `
+        -AuthoriseUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/authorize" `
+        -TokenUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/token" `
+        -UserUrl "https://graph.microsoft.com/oidc/userinfo" `
+        -RedirectUrl $RedirectUrl)
 }
 
 <#

@@ -165,6 +165,7 @@
 
         # auth
         'New-PodeAuthScheme',
+        'New-PodeAuthAzureADScheme',
         'Add-PodeAuth',
         'Add-PodeAuthWindowsAd',
         'Remove-PodeAuth',
