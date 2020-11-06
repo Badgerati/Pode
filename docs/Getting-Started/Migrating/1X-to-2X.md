@@ -6,9 +6,37 @@ In Pode v2.X the Server got the biggest overhaul with the dropping of HttpListen
 
 ## Server
 
-If you were previously specifying `-Type Pode` on your [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer), then you no longer need to - all servers now default to using Pode new .NET Core socket listener.
+If you were previously specifying `-Type Pode` on your [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer), then you no longer need to - all servers now default to using Pode's new .NET Core socket listener.
 
 Furthermore, the `-Type` parameter has been renamed to `-ServerlessType`.
+
+### Configuration
+
+Settings that use to be under `Server > Pode` are now just under `Server`. For example, SSL protocols have moved from:
+
+```powershell
+@{
+    Server = @{
+        Pode=  @{
+            Ssl= @{
+                Protocols = @('TLS', 'TLS11', 'TLS12')
+            }
+        }
+    }
+}
+```
+
+to:
+
+```powershell
+@{
+    Server = @{
+        Ssl= @{
+            Protocols = @('TLS', 'TLS11', 'TLS12')
+        }
+    }
+}
+```
 
 ## Web Event
 
@@ -42,45 +70,17 @@ The `-Certificate` parameter is now the `-CertificateName` parameter, and also o
 
 There is a new `-Hostname` parameter to specify a hostname for your endpoint. Using `-Address` still works for ease, and the IP for the hostname by default is `127.0.0.1`. If you used a host file/DNS entry for your hostname address, then supplying `-LookupHostname` will source the IP for your hostname appropriately.
 
-### Configuration
-
-Settings that use to be under `Server > Pode` are now just under `Server`. For example, SSL protocols have moved from:
-
-```powershell
-@{
-    Server = @{
-        Pode=  @{
-            Ssl= @{
-                Protocols = @('TLS', 'TLS11', 'TLS12')
-            }
-        }
-    }
-}
-```
-
-to:
-
-```powershell
-@{
-    Server = @{
-        Ssl= @{
-            Protocols = @('TLS', 'TLS11', 'TLS12')
-        }
-    }
-}
-```
-
 ## Authentication
 
 Authentication underwent a hefty change in 2.0, with `Get-PodeAuthMiddleware` being removed.
 
 First, `New-PodeAuthType` has been renamed to [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) - with its `-Scheme` parameter also being renamed to `-Type`.
 
-The old `-AutoLogin` (now just `-Login`), and `-Logout` switches, from `Get-PodeAuthMiddleware`, have been moved onto the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function. The [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function now also has a new `-Authentication` parameter, which accepts the name of an Auth supplied to [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth); this will automatically setup authentication middleware for that route.
+The old `-AutoLogin` (now just `-Login`), and `-Logout` switches, from `Get-PodeAuthMiddleware`, have been moved onto the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function. The [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function now also has a new `-Authentication` parameter, which accepts the name supplied to [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth); this will automatically setup authentication middleware for that route.
 
 The old `-Sessionless`, `-FailureUrl`, `-FailureMessage` and `-SuccessUrl` parameters, from `Get-PodeAuthMiddleware`, have all been moved onto the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function.
 
-The old `-EnabledFlash` switch has been removed (it's just enabled by default if sessions are enabled).
+The old `-EnableFlash` switch has been removed (it's just enabled by default if sessions are enabled).
 
 There's also a new [`Add-PodeAuthMiddleware`](../../../Functions/Authentication/Add-PodeAuthMiddleware) function, which will let you setup global authentication middleware.
 
@@ -103,13 +103,13 @@ The `-Endpoint` and `-Protocol` parameters have been removed in favour of `-Endp
 
 Further to this, if no `-Name` is supplied to [`Add-PodeEndpoint`](../../../Functions/Core/Add-PodeEndpoint) then a random GUID is used instead. To get the name back you can use `-PassThru` for the endpoint to be returned.
 
-### Scoping and Auto-Importing
+## Scoping and Auto-Importing
 
 The 2.0 release sees a big change to some scoping issues in Pode, around modules/snapins/functions and variables. For more information, see the new page on [Scoping](../../../Tutorials/Scoping).
 
-## Modules/Snapins
+### Modules/Snapins
 
-You can now use `Import-Module`, or `Add-PSSnapin`, and Pode will automatically import all loaded modules/snapins into its runspaces:
+You can now use the normal `Import-Module`, or `Add-PSSnapin`, and Pode will automatically import all loaded modules/snapins into its runspaces:
 
 ```powershell
 Import-Module SomeModule
@@ -219,6 +219,8 @@ Start-PodeServer -ScriptBlock {
     }
 }
 ```
+
+For more information, see the new page on [Scoping](../../../Tutorials/Scoping).
 
 ## Test Functions
 

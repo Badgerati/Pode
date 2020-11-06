@@ -18,7 +18,7 @@ Note: You'll need to register a new app in Azure, and note you clientId, secret,
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http -Default
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set the view engine
@@ -32,9 +32,9 @@ Start-PodeServer -Threads 2 {
     $clientSecret = '<client-secret-from-portal>'
     $tenantId = '<tenant-from-portal>'
 
-    $scheme = New-PodeAuthAzureADScheme -Tenant $tenantId -ClientId $clientId -ClientSecret $clientSecret -RedirectUrl 'http://localhost:8085/oauth2/callback'
+    $scheme = New-PodeAuthAzureADScheme -Tenant $tenantId -ClientId $clientId -ClientSecret $clientSecret
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($user)
+        param($user, $accessToken, $refreshToken)
         return @{ User = $user }
     }
 
@@ -53,7 +53,6 @@ Start-PodeServer -Threads 2 {
 
     # login - this will just redirect to azure
     Add-PodeRoute -Method Get -Path '/login' -Authentication Login
-    Add-PodeRoute -Method Get -Path '/oauth2/callback' -Authentication Login
 
 
     # logout check:

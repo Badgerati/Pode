@@ -1979,7 +1979,10 @@ function Get-PodeEndpointUrl
 
     # get the endpoint on which we're currently listening - use first http/https if there are many
     if ($null -eq $Endpoint) {
-        $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
+        $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') -and $_.Default })[0]
+        if ($null -eq $Endpoint) {
+            $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
+        }
     }
 
     $url = $Endpoint.Url

@@ -108,7 +108,7 @@ function Get-PodeAuthOAuth2Type
             }
 
             # return the user for the validator
-            return @($user)
+            return @($user, $result.access_token, $result.refresh_token)
         }
 
         # redirect to the authUrl

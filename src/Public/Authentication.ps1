@@ -51,10 +51,31 @@ If supplied, will use the inbuilt Digest Authentication credentials retriever.
 If supplied, will use the inbuilt Bearer Authentication token retriever.
 
 .PARAMETER ClientCertificate
-If supplied, will use the inbuilt Client Certificate Authentication validation.
+If supplied, will use the inbuilt Client Certificate Authentication scheme.
+
+.PARAMETER ClientId
+The Application ID generated when registering a new app for OAuth2.
+
+.PARAMETER ClientSecret
+The Application Secret generated when registering a new app for OAuth2.
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+
+.PARAMETER AuthoriseUrl
+The OAuth2 Authorisation URL to authenticate a User.
+
+.PARAMETER TokenUrl
+The OAuth2 Token URL to acquire an access token.
+
+.PARAMETER UserUrl
+An optional User profile URL to retrieve a user's details - for OAuth2
+
+.PARAMETER OAuth2
+If supplied, will use the inbuilt OAuth2 Authentication scheme.
 
 .PARAMETER Scope
-An optional array of Scopes for Bearer Authentication. (These are case-sensitive)
+An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-sensitive)
 
 .EXAMPLE
 $basic_auth = New-PodeAuthScheme -Basic
@@ -150,7 +171,7 @@ function New-PodeAuthScheme
         [string]
         $ClientSecret,
 
-        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [Parameter(ParameterSetName='OAuth2')]
         [string]
         $RedirectUrl,
 
@@ -318,6 +339,28 @@ function New-PodeAuthScheme
     }
 }
 
+<#
+.SYNOPSIS
+Create an OAuth2 auth scheme for Azure AD.
+
+.DESCRIPTION
+A wrapper for New-PodeAuthScheme and OAuth2, which builds an OAuth2 scheme for Azure AD.
+
+.PARAMETER Tenant
+The Directory/Tenant ID from registering a new app (default: common).
+
+.PARAMETER ClientId
+The Client ID from registering a new app.
+
+.PARAMETER ClientSecret
+The Client Secret from registering a new app.
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+
+.EXAMPLE
+New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -ClientSecret 1234.abc
+#>
 function New-PodeAuthAzureADScheme
 {
     [CmdletBinding()]
@@ -335,7 +378,7 @@ function New-PodeAuthAzureADScheme
         [string]
         $ClientSecret,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $RedirectUrl
     )
@@ -459,6 +502,14 @@ function Add-PodeAuth
         Success = @{
             Url = $SuccessUrl
         }
+    }
+
+    # if the scheme is oauth2, and there's no redirect, set up a default one
+    if (($Scheme.Name -ieq 'oauth2') -and [string]::IsNullOrWhiteSpace($Scheme.Arguments.Urls.Redirect)) {
+        $url = Get-PodeEndpointUrl
+        $path = 'oauth2/callback'
+        $Scheme.Arguments.Urls.Redirect = "$($url)$($path)"
+        Add-PodeRoute -Method Get -Path "/$($path)" -Authentication $Name
     }
 }
 

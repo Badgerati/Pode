@@ -52,7 +52,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
 * Middleware and Sessions on web servers, with Flash message and CSRF support
-* Authentication on requests, such as Basic and Windows Active Directory
+* Authentication on requests, such as Basic, Windows and Azure AD
 * Support for dynamically building Routes from Functions and Modules
 * Generate/bind self-signed certificates
 * (Windows) Open the hosted server as a desktop application
