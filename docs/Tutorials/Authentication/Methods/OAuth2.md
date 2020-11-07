@@ -4,9 +4,6 @@ The OAuth2 authentication lets you setup authentication with other services that
 
 To use this scheme, you'll need to supply an Authorise/Token URL, as well as setup a app registration to acquire a Client ID and Secret.
 
-!!! note
-    When using OAuth2 and a specific login route, you don't need to set the `-Login` switch. This is due to the redirecting of OAuth2.
-
 ## Setup
 
 Before using the OAuth2 authentication in Pode, you first need to register a new app within your service of choice. This registration will supply you with the required Client ID and Secret.

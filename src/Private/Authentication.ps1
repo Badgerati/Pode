@@ -106,8 +106,6 @@ function Get-PodeAuthOAuth2Type
                 $body += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($options.Urls.Redirect))"
             }
 
-            $body | Out-Default
-
             # POST the tokenUrl
             try {
                 $result = Invoke-RestMethod -Method Post -Uri $options.Urls.Token -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop

@@ -4,9 +4,6 @@ The Azure AD authentication is just a wrapper around the inbuilt [OAuth2](../OAu
 
 Both the `authorization_code` and `password` grant types are supported. The `password` type is only supported on Work/School accounts, and on accounts with MFA disabled.
 
-!!! note
-    When using Azure AD and a specific login route, you don't need to set the `-Login` switch. This is due to the redirecting of OAuth2.
-
 ## Setup
 
 Before using Azure AD authentication in Pode, you first need to register a new app within Azure:
