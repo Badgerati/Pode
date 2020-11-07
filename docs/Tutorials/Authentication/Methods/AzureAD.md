@@ -2,6 +2,8 @@
 
 The Azure AD authentication is just a wrapper around the inbuilt [OAuth2](../OAuth2) authentication.
 
+Both the `authorization_code` and `password` grant types are supported. The `password` type is only supported on Work/School accounts, and on accounts with MFA disabled.
+
 !!! note
     When using Azure AD and a specific login route, you don't need to set the `-Login` switch. This is due to the redirecting of OAuth2.
 
@@ -20,6 +22,8 @@ Before using Azure AD authentication in Pode, you first need to register a new a
     * Make a note of the generate secret
 
 With the Client and Tenant ID, plus the Client Secret, you can now setup Azure AD authentication in Pode.
+
+### Authorisation Code
 
 To setup and start using Azure AD Authentication in Pode you use `New-PodeAuthAzureADScheme`, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
@@ -40,6 +44,26 @@ Start-PodeServer {
 If you don't specify a `-RedirectUrl`, then an internal default one is created as `/oauth2/callback` on the first endpoint.
 
 When a user accesses your site unauthenticated, they will be to Azure to login, and then redirected back to your site.
+
+### Password
+
+To setup Azure AD authentcation, but using your own Form login, then you can use the `-InnerScheme` parameter on `New-PodeAuthAzureADScheme`:
+
+```powershell
+Start-PodeServer {
+    $form  = New-PodeAuthScheme -Form
+
+    $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $form
+
+    $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+        param($user, $accessToken, $refreshToken)
+
+        # check if the user is valid
+
+        return @{ User = $user }
+    }
+}
+```
 
 ## Middleware
 

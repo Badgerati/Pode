@@ -2402,3 +2402,41 @@ function Get-PodeFunctionsFromScriptBlock
     # return the found functions
     return $foundFuncs
 }
+
+function Read-PodeWebExceptionDetails
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.ErrorRecord]
+        $ErrorRecord
+    )
+
+    switch ($ErrorRecord) {
+        { $_.Exception -is [System.Net.WebException] } {
+            $stream = $_.Exception.Response.GetResponseStream()
+            $stream.Position = 0
+
+            $body = [System.IO.StreamReader]::new($stream).ReadToEnd()
+            $code = [int]$_.Exception.Response.StatusCode
+            $desc = $_.Exception.Response.StatusDescription
+        }
+
+        { $_.Exception -is [System.Net.Http.HttpRequestException] } {
+            $body = $_.ErrorDetails.Message
+            $code = [int]$_.Exception.Response.StatusCode
+            $desc = $_.Exception.Response.ReasonPhrase
+        }
+
+        default {
+            throw "Exception is of an invalid type, should be either WebException or HttpRequestException, but got: $($_.Exception.GetType().Name)"
+        }
+    }
+
+    return @{
+        Status = @{
+            Code = $code
+            Description = $desc
+        }
+        Body = $body
+    }
+}
