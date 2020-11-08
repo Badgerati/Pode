@@ -2,7 +2,7 @@
 
 Pode's inbuilt Windows AD authentication works cross-platform, using OpenLDAP to work in *nix environments.
 
-This authenticator can only be used with Basic and Form. Custom is also supported, but a username and password must be supplied.
+This authenticator can only be used with the Basic and Form schemes. Custom is also supported, but a username and password must be supplied.
 
 ## Usage
 
@@ -50,7 +50,7 @@ Start-PodeServer {
 
 ### Groups
 
-You can supply a list of group names to validate that user's are a member of them in AD. If you supply multiple group names, the user only needs to be a of one of the groups. You can supply the list of groups to the function's `-Groups` parameter as an array - the list is not case-sensitive:
+You can supply a list of group names to validate that users are a member of them in AD. If you supply multiple group names, the user only needs to be a member of one of the groups. You can supply the list of groups to the function's `-Groups` parameter as an array - the list is not case-sensitive:
 
 ```powershell
 Start-PodeServer {

@@ -820,8 +820,8 @@ function New-PodeSelfSignedCertificate
     $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback) | Out-Null
     $sanBuilder.AddDnsName('localhost') | Out-Null
 
-    if (![string]::IsNullOrWhiteSpace($env:COMPUTERNAME)) {
-        $sanBuilder.AddDnsName($env:COMPUTERNAME) | Out-Null
+    if (![string]::IsNullOrWhiteSpace($PodeContext.Server.ComputerName)) {
+        $sanBuilder.AddDnsName($PodeContext.Server.ComputerName) | Out-Null
     }
 
     $rsa = [RSA]::Create(2048)

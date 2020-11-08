@@ -513,7 +513,7 @@ function Write-PodeErrorLog
     }
 
     # add general info
-    $item['Server'] = $env:COMPUTERNAME
+    $item['Server'] = $PodeContext.Server.ComputerName
     $item['Level'] = $Level
     $item['Date'] = [datetime]::Now
     $item['ThreadId'] = [int]$ThreadId
