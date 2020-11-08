@@ -117,14 +117,17 @@ function Find-PodeEndpointName
     }
 
     # try and find endpoint
-    if ($Address -ilike 'localhost:*') {
-        $Address = ($Address -ireplace 'localhost\:', '127.0.0.1:')
+    if (($Address -ilike 'localhost:*') -or ($Address -ilike "$($PodeContext.Server.ComputerName):*")) {
+        $Address = ($Address -ireplace 'localhost\:', '(127\.0\.0\.1|0\.0\.0\.0):')
+    }
+    else {
+        $Address = [regex]::Escape($Address)
     }
 
-    $key = "$($Protocol)|$($Address)"
+    $key = "$($Protocol)\|$($Address)"
 
     $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
-        if ($key -ilike $k) {
+        if ($k -imatch $key) {
             $k
             break
         }

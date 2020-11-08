@@ -51,10 +51,34 @@ If supplied, will use the inbuilt Digest Authentication credentials retriever.
 If supplied, will use the inbuilt Bearer Authentication token retriever.
 
 .PARAMETER ClientCertificate
-If supplied, will use the inbuilt Client Certificate Authentication validation.
+If supplied, will use the inbuilt Client Certificate Authentication scheme.
+
+.PARAMETER ClientId
+The Application ID generated when registering a new app for OAuth2.
+
+.PARAMETER ClientSecret
+The Application Secret generated when registering a new app for OAuth2.
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+
+.PARAMETER AuthoriseUrl
+The OAuth2 Authorisation URL to authenticate a User. This is optional if you're using an InnerScheme like Basic/Form.
+
+.PARAMETER TokenUrl
+The OAuth2 Token URL to acquire an access token.
+
+.PARAMETER UserUrl
+An optional User profile URL to retrieve a user's details - for OAuth2
+
+.PARAMETER OAuth2
+If supplied, will use the inbuilt OAuth2 Authentication scheme.
 
 .PARAMETER Scope
-An optional array of Scopes for Bearer Authentication. (These are case-sensitive)
+An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-sensitive)
+
+.PARAMETER InnerScheme
+An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
 
 .EXAMPLE
 $basic_auth = New-PodeAuthScheme -Basic
@@ -142,9 +166,42 @@ function New-PodeAuthScheme
         [switch]
         $ClientCertificate,
 
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $ClientSecret,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [string]
+        $RedirectUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [string]
+        $AuthoriseUrl,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $TokenUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [string]
+        $UserUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [switch]
+        $OAuth2,
+
         [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName='OAuth2')]
         [string[]]
-        $Scope
+        $Scope,
+
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $InnerScheme
     )
 
     # default realm
@@ -161,6 +218,7 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 PostValidator = $null
+                InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
@@ -178,6 +236,7 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 PostValidator = $null
+                InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{}
             }
@@ -195,6 +254,7 @@ function New-PodeAuthScheme
                     Script = (Get-PodeAuthDigestPostValidator)
                     UsingVariables = $null
                 }
+                InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{}
             }
@@ -213,6 +273,7 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 Scheme = 'http'
+                InnerScheme = $InnerScheme
                 Arguments = @{
                     Scopes = $Scope
                 }
@@ -228,11 +289,47 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 PostValidator = $null
+                InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{
                     Fields = @{
                         Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
                         Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
+                    }
+                }
+            }
+        }
+
+        'oauth2' {
+            if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
+                throw "OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: $($InnerScheme.Name)"
+            }
+
+            if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
+                throw "OAuth2 requires an Authorise URL to be supplied"
+            }
+
+            return @{
+                Name = 'OAuth2'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthOAuth2Type)
+                    UsingVariables = $null
+                }
+                PostValidator = $null
+                Scheme = 'oauth2'
+                InnerScheme = $InnerScheme
+                Arguments = @{
+                    Scopes = $Scope
+                    Client = @{
+                        ID = $ClientId
+                        Secret = $ClientSecret
+                    }
+                    Urls = @{
+                        Redirect = $RedirectUrl
+                        Authorise = $AuthoriseUrl
+                        Token = $TokenUrl
+                        User = $UserUrl
                     }
                 }
             }
@@ -248,6 +345,7 @@ function New-PodeAuthScheme
             return @{
                 Name = $Name
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                InnerScheme = $InnerScheme
                 Scheme = $Type.ToLowerInvariant()
                 ScriptBlock = @{
                     Script = $ScriptBlock
@@ -261,6 +359,68 @@ function New-PodeAuthScheme
             }
         }
     }
+}
+
+<#
+.SYNOPSIS
+Create an OAuth2 auth scheme for Azure AD.
+
+.DESCRIPTION
+A wrapper for New-PodeAuthScheme and OAuth2, which builds an OAuth2 scheme for Azure AD.
+
+.PARAMETER Tenant
+The Directory/Tenant ID from registering a new app (default: common).
+
+.PARAMETER ClientId
+The Client ID from registering a new app.
+
+.PARAMETER ClientSecret
+The Client Secret from registering a new app.
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+
+.PARAMETER InnerScheme
+An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
+
+.EXAMPLE
+New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -ClientSecret 1234.abc
+#>
+function New-PodeAuthAzureADScheme
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Tenant = 'common',
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientSecret,
+
+        [Parameter()]
+        [string]
+        $RedirectUrl,
+
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $InnerScheme
+    )
+
+    return (New-PodeAuthScheme `
+        -OAuth2 `
+        -ClientId $ClientId `
+        -ClientSecret $ClientSecret `
+        -AuthoriseUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/authorize" `
+        -TokenUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/token" `
+        -UserUrl "https://graph.microsoft.com/oidc/userinfo" `
+        -RedirectUrl $RedirectUrl `
+        -InnerScheme $InnerScheme)
 }
 
 <#
@@ -372,6 +532,14 @@ function Add-PodeAuth
         Success = @{
             Url = $SuccessUrl
         }
+    }
+
+    # if the scheme is oauth2, and there's no redirect, set up a default one
+    if (($Scheme.Name -ieq 'oauth2') -and ($null -eq $Scheme.InnerScheme)  -and [string]::IsNullOrWhiteSpace($Scheme.Arguments.Urls.Redirect)) {
+        $url = Get-PodeEndpointUrl
+        $path = 'oauth2/callback'
+        $Scheme.Arguments.Urls.Redirect = "$($url)$($path)"
+        Add-PodeRoute -Method Get -Path "/$($path)" -Authentication $Name
     }
 }
 

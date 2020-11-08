@@ -164,8 +164,8 @@ function Restart-PodeInternalServer
         $PodeContext.Server.OpenAPI = Get-PodeOABaseObject
 
         # clear the sockets
-        $PodeContext.Server.Sockets.Listener = $null
         $PodeContext.Server.WebSockets.Listener = $null
+        $PodeContext.Listeners = @()
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{

@@ -1003,7 +1003,7 @@ function Move-PodeResponseUrl
             $PortStr = ":$($endpoint.Port)"
         }
 
-        $Url = "$($endpoint.Protocol)://$($endpoint.HostName)$($PortStr)$($WebEvent.Request.Url.PathAndQuery)"
+        $Url = "$($endpoint.Protocol)://$($endpoint.FriendlyName)$($PortStr)$($WebEvent.Request.Url.PathAndQuery)"
     }
 
     Set-PodeHeader -Name 'Location' -Value $Url

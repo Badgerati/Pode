@@ -39,7 +39,7 @@ The final way to expose your server externally is to allow only specific hostnam
 
 To do this, let's say you want to allow only `one.pode.com` and `two.pode.com` on a server with IP `10.10.1.5`. There are two way of doing this:
 
-1. Specify the hostname/address directly on [`Add-PodeEndpoint`]:
+1. Specify the hostname/address directly on [`Add-PodeEndpoint`](../../../Functions/Core/Add-PodeEndpoint):
 
 ```powershell
 Add-PodeEndpoint -Address 10.10.1.5 -Hostname 'one.pode.com' -Port 8080 -Protocol Http

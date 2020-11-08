@@ -11,6 +11,7 @@ namespace Pode
     {
         public IDictionary<string, PodeWebSocket> WebSockets { get; private set; }
         public bool IsListening { get; private set; }
+        public bool IsDisposed { get; private set; }
         public bool ErrorLoggingEnabled { get; set; }
         public CancellationToken CancellationToken { get; private set; }
         public PodeListenerType Type { get; private set; }
@@ -23,6 +24,7 @@ namespace Pode
         public PodeListener(CancellationToken cancellationToken, PodeListenerType type = PodeListenerType.Http)
         {
             CancellationToken = cancellationToken;
+            IsDisposed = false;
             Type = type;
 
             Sockets = new List<PodeSocket>();
@@ -154,6 +156,9 @@ namespace Pode
             {
                 _socket.Context.Dispose(true);
             }
+
+            // disposed
+            IsDisposed = true;
         }
     }
 }

@@ -83,6 +83,7 @@ function Set-PodeCookie
     $cookie.Secure = $Secure
     $cookie.Discard = $Discard
     $cookie.HttpOnly = $HttpOnly
+    $cookie.Path = '/'
 
     if (!(Test-PodeIsEmpty $ExpiryDate)) {
         $cookie.Expires = $ExpiryDate

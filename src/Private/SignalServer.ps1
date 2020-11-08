@@ -41,6 +41,7 @@ function Start-PodeSignalServer
         }
 
         $listener.Start()
+        $PodeContext.Listeners += $listener
         $PodeContext.Server.WebSockets.Listener = $listener
     }
     catch {

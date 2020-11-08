@@ -22,6 +22,7 @@ Start-PodeServer {
     $bearer_auth = New-PodeAuthScheme -Bearer
     $form_auth = New-PodeAuthScheme -Form
     $cert_auth = New-PodeAuthScheme -ClientCertificate
+    $oauth2_auth = New-PodeAuthScheme -OAuth2
 }
 ```
 

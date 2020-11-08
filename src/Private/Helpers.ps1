@@ -569,8 +569,27 @@ function Close-PodeRunspaces
 
     try {
         if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
-            # sleep for 1s before doing this, to let listeners dispose
-            Start-Sleep -Seconds 1
+            # wait until listeners are disposed
+            $count = 0
+            $continue = $false
+            while ($count -le 10) {
+                Start-Sleep -Seconds 1
+                $count++
+
+                $continue = $false
+                foreach ($listener in $PodeContext.Listeners) {
+                    if (!$listener.IsDisposed) {
+                        $continue = $true
+                        break
+                    }
+                }
+
+                if ($continue) {
+                    continue
+                }
+
+                break
+            }
 
             # now dispose runspaces
             $PodeContext.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
@@ -1979,7 +1998,10 @@ function Get-PodeEndpointUrl
 
     # get the endpoint on which we're currently listening - use first http/https if there are many
     if ($null -eq $Endpoint) {
-        $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
+        $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') -and $_.Default })[0]
+        if ($null -eq $Endpoint) {
+            $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
+        }
     }
 
     $url = $Endpoint.Url
@@ -2398,4 +2420,42 @@ function Get-PodeFunctionsFromScriptBlock
 
     # return the found functions
     return $foundFuncs
+}
+
+function Read-PodeWebExceptionDetails
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.ErrorRecord]
+        $ErrorRecord
+    )
+
+    switch ($ErrorRecord) {
+        { $_.Exception -is [System.Net.WebException] } {
+            $stream = $_.Exception.Response.GetResponseStream()
+            $stream.Position = 0
+
+            $body = [System.IO.StreamReader]::new($stream).ReadToEnd()
+            $code = [int]$_.Exception.Response.StatusCode
+            $desc = $_.Exception.Response.StatusDescription
+        }
+
+        { $_.Exception -is [System.Net.Http.HttpRequestException] } {
+            $body = $_.ErrorDetails.Message
+            $code = [int]$_.Exception.Response.StatusCode
+            $desc = $_.Exception.Response.ReasonPhrase
+        }
+
+        default {
+            throw "Exception is of an invalid type, should be either WebException or HttpRequestException, but got: $($_.Exception.GetType().Name)"
+        }
+    }
+
+    return @{
+        Status = @{
+            Code = $code
+            Description = $desc
+        }
+        Body = $body
+    }
 }

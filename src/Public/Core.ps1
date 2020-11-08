@@ -664,6 +664,9 @@ If supplied, the endpoint created will be returned.
 .PARAMETER LookupHostname
 If supplied, a supplied Hostname will have its IP Address looked up from host file or DNS.
 
+.PARAMETER Default
+If supplied, this endpoint will be the default one used for internally generating URLs.
+
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 
@@ -747,7 +750,10 @@ function Add-PodeEndpoint
         $PassThru,
 
         [switch]
-        $LookupHostname
+        $LookupHostname,
+
+        [switch]
+        $Default
     )
 
     # error if serverless
@@ -819,6 +825,7 @@ function Add-PodeEndpoint
         Url = $null
         Ssl = (@('https', 'wss') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
+        Default = $Default.IsPresent
         Certificate = @{
             Raw = $X509Certificate
             SelfSigned = $SelfSigned

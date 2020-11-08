@@ -70,7 +70,8 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru
+        Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
@@ -80,6 +81,10 @@ function New-PodeContext
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
+    $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+
+    # list of created listeners
+    $ctx.Listeners = @()
 
     # auto importing (modules, funcs, snap-ins)
     $ctx.Server.AutoImport = @{
@@ -114,7 +119,6 @@ function New-PodeContext
 
     # set socket details for pode server
     $ctx.Server.Sockets = @{
-        Listener = $null
         Ssl = @{
             Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
         }

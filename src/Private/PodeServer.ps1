@@ -59,7 +59,7 @@ function Start-PodeWebServer
         }
 
         $listener.Start()
-        $PodeContext.Server.Sockets.Listener = $listener
+        $PodeContext.Listeners += $listener
     }
     catch {
         $_ | Write-PodeErrorLog

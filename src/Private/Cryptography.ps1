@@ -42,6 +42,21 @@ function Invoke-PodeSHA1Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
+function ConvertTo-PodeBase64Auth
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Username,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Password
+    )
+
+    return [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("$($Username):$($Password)"))
+}
+
 function Invoke-PodeMD5Hash
 {
     param (
