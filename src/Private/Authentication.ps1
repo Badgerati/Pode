@@ -569,6 +569,57 @@ function Get-PodeAuthWindowsADMethod
     }
 }
 
+function Get-PodeAuthWindowsLocalMethod
+{
+    return {
+        param($username, $password, $options)
+
+        $user = @{
+            UserType = 'Local'
+            AuthenticationType = 'WinNT'
+            Username = $username
+            Name = [string]::Empty
+            Fqdn = $PodeContext.Server.ComputerName
+            Domain = 'localhost'
+            Groups = @()
+        }
+
+        Add-Type -AssemblyName System.DirectoryServices.AccountManagement -ErrorAction Stop
+        $context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Machine', $PodeContext.Server.ComputerName)
+        $valid = $context.ValidateCredentials($username, $password)
+
+        if (!$valid) {
+            return @{ Message = 'Invalid credentials supplied' }
+        }
+
+        try {
+            $tmpUsername = $username -replace '\\', '/'
+            if ($username -inotlike "$($PodeContext.Server.ComputerName)*") {
+                $tmpUsername = "$($PodeContext.Server.ComputerName)/$($username)"
+            }
+
+            $ad = [adsi]"WinNT://$($tmpUsername)"
+            $user.Name = @($ad.FullName)[0]
+
+            if (!$options.NoGroups) {
+                $cmd = "`$ad = [adsi]'WinNT://$($tmpUsername)'; @(`$ad.Groups() | Foreach-Object { `$_.GetType().InvokeMember('Name', 'GetProperty', `$null, `$_, `$null) })"
+                $user.Groups = [string[]](powershell -c $cmd)
+            }
+        }
+        finally {
+            Close-PodeDisposable -Disposable $ad -Close
+        }
+
+        # is the user valid for any users/groups?
+        if (Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups) {
+            return @{ User = $user }
+        }
+
+        # else, they shall not pass!
+        return @{ Message = 'You are not authorised to access this website' }
+    }
+}
+
 function Get-PodeAuthWindowsADIISMethod
 {
     return {
@@ -603,7 +654,7 @@ function Get-PodeAuthWindowsADIISMethod
             }
 
             # if the domain isn't local, attempt AD user
-            if (![string]::IsNullOrWhiteSpace($domain) -and (@('.', $env:COMPUTERNAME) -inotcontains $domain)) {
+            if (![string]::IsNullOrWhiteSpace($domain) -and (@('.', $PodeContext.Server.ComputerName) -inotcontains $domain)) {
                 # get the server's fdqn (and name/email)
                 try {
                     # Open ADSISearcher and change context to given domain

@@ -168,6 +168,7 @@
         'New-PodeAuthAzureADScheme',
         'Add-PodeAuth',
         'Add-PodeAuthWindowsAd',
+        'Add-PodeAuthWindowsLocal',
         'Remove-PodeAuth',
         'Add-PodeAuthMiddleware',
         'Add-PodeAuthIIS',

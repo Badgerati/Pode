@@ -1060,3 +1060,126 @@ function Add-PodeAuthUserFile
         }
     }
 }
+
+<#
+.SYNOPSIS
+Adds the inbuilt Windows Local User Authentication method for verifying users.
+
+.DESCRIPTION
+Adds the inbuilt Windows Local User Authentication method for verifying users.
+
+.PARAMETER Name
+A unique Name for the Authentication method.
+
+.PARAMETER Scheme
+The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
+
+.PARAMETER Groups
+An array of Group names to only allow access.
+
+.PARAMETER Users
+An array of Usernames to only allow access.
+
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
+
+.PARAMETER NoGroups
+If supplied, groups will not be retrieved for the user.
+
+.EXAMPLE
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'WinAuth'
+
+.EXAMPLE
+New-PodeAuthScheme -Basic | Add-PodeAuthWindowsLocal -Name 'WinAuth' -Groups @('Developers')
+
+.EXAMPLE
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'WinAuth' -NoGroups
+#>
+function Add-PodeAuthWindowsLocal
+{
+    [CmdletBinding(DefaultParameterSetName='Groups')]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable]
+        $Scheme,
+
+        [Parameter(ParameterSetName='Groups')]
+        [string[]]
+        $Groups,
+
+        [Parameter()]
+        [string[]]
+        $Users,
+
+        [Parameter()]
+        [string]
+        $FailureUrl,
+
+        [Parameter()]
+        [string]
+        $FailureMessage,
+
+        [Parameter()]
+        [string]
+        $SuccessUrl,
+
+        [switch]
+        $Sessionless,
+
+        [Parameter(ParameterSetName='NoGroups')]
+        [switch]
+        $NoGroups
+    )
+
+    # ensure we're on Windows!
+    if (!(Test-PodeIsWindows)) {
+        throw "Windows Local Authentication support is for Windows only"
+    }
+
+    # ensure the name doesn't already exist
+    if (Test-PodeAuth -Name $Name) {
+        throw "Windows Local Authentication method already defined: $($Name)"
+    }
+
+    # ensure the Scheme contains a scriptblock
+    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+        throw "The supplied Scheme for the '$($Name)' Windows Local authentication validator requires a valid ScriptBlock"
+    }
+
+    # if we're using sessions, ensure sessions have been setup
+    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+        throw 'Sessions are required to use session persistent authentication'
+    }
+
+    # add Windows Local auth method to server
+    $PodeContext.Server.Authentications[$Name] = @{
+        Scheme = $Scheme
+        ScriptBlock = (Get-PodeAuthWindowsLocalMethod)
+        Arguments = @{
+            Users = $Users
+            Groups = $Groups
+            NoGroups = $NoGroups
+        }
+        Sessionless = $Sessionless
+        Failure = @{
+            Url = $FailureUrl
+            Message = $FailureMessage
+        }
+        Success = @{
+            Url = $SuccessUrl
+        }
+    }
+}
