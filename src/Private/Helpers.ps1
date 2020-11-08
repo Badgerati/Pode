@@ -569,8 +569,27 @@ function Close-PodeRunspaces
 
     try {
         if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
-            # sleep for 1s before doing this, to let listeners dispose
-            Start-Sleep -Seconds 1
+            # wait until listeners are disposed
+            $count = 0
+            $continue = $false
+            while ($count -le 10) {
+                Start-Sleep -Seconds 1
+                $count++
+
+                $continue = $false
+                foreach ($listener in $PodeContext.Listeners) {
+                    if (!$listener.IsDisposed) {
+                        $continue = $true
+                        break
+                    }
+                }
+
+                if ($continue) {
+                    continue
+                }
+
+                break
+            }
 
             # now dispose runspaces
             $PodeContext.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {

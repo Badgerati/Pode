@@ -344,9 +344,17 @@ namespace Pode
             CloseSocket(Socket);
 
             // close receiving contexts/sockets
-            foreach (var pending in PendingSockets.Values)
+            try
             {
-                CloseSocket(pending);
+                var _sockets = PendingSockets.Values.ToArray();
+                for (var i = 0; i < _sockets.Length; i++)
+                {
+                    CloseSocket(_sockets[i]);
+                }
+            }
+            catch (Exception ex)
+            {
+                PodeHelpers.WriteException(ex);
             }
         }
 

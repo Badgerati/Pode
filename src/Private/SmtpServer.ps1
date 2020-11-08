@@ -32,6 +32,7 @@ function Start-PodeSmtpServer
         $socket.Hostnames.Add($endpoint.HostName)
         $listener.Add($socket)
         $listener.Start()
+        $PodeContext.Listeners += $listener
     }
     catch {
         $_ | Write-PodeErrorLog
