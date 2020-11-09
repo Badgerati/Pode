@@ -15,7 +15,6 @@ Start-PodeServer {
 
     # GET request for "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($session)
         Write-PodeJsonResponse -Value @{ 'result' = (Get-Greeting) }
     }
 

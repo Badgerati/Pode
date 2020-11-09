@@ -11,20 +11,21 @@ Start-PodeServer -Threads 2 {
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($session)
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
-        param($session)
         Set-PodeResponseStatus -Code 500
     }
 
     # PUT update a file to trigger monitor
     Add-PodeRoute -Method Put -Path '/file' -ScriptBlock {
-        param($session)
         'Hello, world!' | Out-File -FilePath "$($PodeContext.Server.Root)/file.txt" -Append -Force
+    }
+
+    Add-PodeRoute -Method Get -Path '/user/:userId' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ UserId = $WebEvent.Parameters['userId'] }
     }
 
 }

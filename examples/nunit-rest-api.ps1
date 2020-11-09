@@ -22,11 +22,9 @@ Start-PodeServer {
 
     # post endpoint, that accepts test to run, and path to test dll
     Add-PodeRoute -Method Post -Path '/api/nunit/run-test' -ScriptBlock {
-        param($session)
-
         # general
         $date = [DateTime]::UtcNow.ToString('yyyy-MM-dd_HH-mm-ss-fffff')
-        $data = $session.Data
+        $data = $WebEvent.Data
 
         # get data passed in
         $dll = $data.dll
