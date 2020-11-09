@@ -1,5 +1,36 @@
 # Release Notes
 
+## v2.0.0
+
+```plain
+### Features
+* #472: Adds support for client certificate authentication
+* #524: Adds support for rate limiting endpoints and routes
+* #551: Adds support for OAuth2 and Azure AD authentication
+* #585: Enables support for client-to-server web sockets
+* #612: Adds support for Kestrel as a listener - via a new Pode.Kestrel module
+* #625: Adds support for local Windows user authentication
+
+### Enhancements
+* #572: Removes `-Endpoint` and `-Protocol` parameters in favur of `-EndpointName`
+* #575: Changes and improvements to Authentication on Routes and Middleware
+* #577: Massive improvements to alleviate of scoping with Modules, Snapins, Functions, and Variables
+* #590: Enable support for Chrome in `Show-PodeGui`
+* #618: The `$WebEvent` object is no longer passed to Routes, Middleware, etc., and should be accessed directly
+* #619: Improved support for hostnames on endpoints
+* #622: Allows support for a server to run endpoints of differing protocols
+
+### Bugs
+* #600: Fixes public functions that weren't prefixed with "Pode"
+
+### Internal Code
+* #573: Drop support for HttpListener, and rewrite Pode listener using .NET Core
+* #584: Alter SMTP server to use the new Pode listener
+
+### Documentation
+* #592: Updates IIS example to allow PUT/DELETE in web.config
+```
+
 ## v1.8.4
 
 ```plain

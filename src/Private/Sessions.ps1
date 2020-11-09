@@ -233,12 +233,7 @@ function Set-PodeSessionHelpers
         $expiry = (Get-PodeSessionExpiry -Session $session)
 
         # save session data to store
-        if ($PodeContext.Server.Sessions.Store.Set -is [psscriptmethod]) {
-            $PodeContext.Server.Sessions.Store.Set($session.Id, $session.Data, $expiry)
-        }
-        else {
-            Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $session.Data, $expiry) -Splat
-        }
+        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $session.Data, $expiry) -Splat
 
         # update session's data hash
         Set-PodeSessionDataHash -Session $session
@@ -249,12 +244,7 @@ function Set-PodeSessionHelpers
         param($session)
 
         # remove data from store
-        if ($PodeContext.Server.Sessions.Store.Delete -is [psscriptmethod]) {
-            $PodeContext.Server.Sessions.Store.Delete($session.Id)
-        }
-        else {
-            Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $session.Id
-        }
+        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $session.Id
 
         # clear session
         $session.Clear()
@@ -339,12 +329,7 @@ function Get-PodeSessionData
         $SessionId
     )
 
-    if ($PodeContext.Server.Sessions.Store.Get -is [psscriptmethod]) {
-        return $PodeContext.Server.Sessions.Store.Get($WebEvent.Session.Id)
-    }
-    else {
-        return (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Get -Arguments $SessionId -Return)
-    }
+    return (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Get -Arguments $SessionId -Return)
 }
 
 function Get-PodeSessionMiddleware
