@@ -30,6 +30,12 @@ Success, saved package.json
 
 ## REST Server
 
+* Although not required, it is recommended to import the Pode module using a maximum version, to avoid any breaking changes from new major versions:
+
+```powershell
+Import-Module -Name Pode -MaximumVersion 2.99.99 -Force
+```
+
 * Within your `server.ps1` file, first you need to start the Server. This is where the main script will go that defines how the server should function:
 
 ```powershell
