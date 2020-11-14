@@ -21,13 +21,13 @@ function Show-PodeErrorPage
     $errorPage = Find-PodeErrorPage -Code $Code -ContentType $ContentType
 
     # if no page found, return
-    if (Test-IsEmpty $errorPage) {
+    if (Test-PodeIsEmpty $errorPage) {
         return
     }
 
     # if exception trace showing enabled then build the exception details object
     $ex = $null
-    if (!(Test-IsEmpty $Exception) -and $PodeContext.Server.Web.ErrorPages.ShowExceptions) {
+    if (!(Test-PodeIsEmpty $Exception) -and $PodeContext.Server.Web.ErrorPages.ShowExceptions) {
         $ex = @{
             'Message' = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message);
             'StackTrace' = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace);

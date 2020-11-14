@@ -1,20 +1,20 @@
 # Custom
 
-Custom authentication works much like the inbuilt types (Basic/Form/etc), but allows you to specify your own parsing logic, as well as any custom options that might be required.
+Custom authentication works much like the inbuilt schemes (Basic/Form/etc), but allows you to specify your own parsing logic, as well as any custom options that might be required.
 
 ## Setup and Parsing
 
-To setup and start using Custom authentication in Pode you use the `New-PodeAuthType -Custom` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function.
+To setup and start using Custom authentication in Pode you use the `New-PodeAuthScheme -Custom` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function.
 
-Let's say we wanted something similar to [`Form`](../Form) Authentication, but it requires a third piece of information: `ClientName`. To setup Custom Authentication for this method, you'll need to specify the parsing logic within the `-ScriptBlock` of the [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) function.
+Let's say we wanted something similar to [`Form`](../Form) Authentication, but it requires a third piece of information: `ClientName`. To setup Custom Authentication for this method, you'll need to specify the parsing logic within the `-ScriptBlock` of the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) function.
 
-The `-ScriptBlock` on [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) will be passed the current [web event](../../../WebEvent) (containing the `Request`/`Response` objects, and other pieces of information much like on Routes or Middleware). In this script you can parse the Request payload/headers for any credential information that needs validating. Once sourced the data returned from the script should be an `array`, which will then splatted onto the `-ScriptBlock` from your [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
+The `-ScriptBlock` on [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) will have access to the current [web event](../../../WebEvent) variable: `$WebEvent`. In this script you can parse the Request payload/headers for any credential information that needs validating. Once sourced the data returned from the script should be an `array`, which will then splatted onto the `-ScriptBlock` from your [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
 ```powershell
 Start-PodeServer {
-    # define a new custom authentication type
-    $custom_type = New-PodeAuthType -Custom -ScriptBlock {
-        param($e, $opts)
+    # define a new custom authentication scheme
+    $custom_scheme = New-PodeAuthScheme -Custom -ScriptBlock {
+        param($opts)
 
         # get client/user/password field names
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -22,16 +22,16 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/password from the request's post data
-        $client = $e.Data.$clientField
-        $username = $e.Data.$userField
-        $password = $e.Data.$passField
+        $client = $WebEvent.Data.$clientField
+        $username = $WebEvent.Data.$userField
+        $password = $WebEvent.Data.$passField
 
         # return the data in a array, which will be passed to the validator script
         return @($client, $username, $password)
     }
 
-    # now, add a new custom authentication method using the type you created above
-    $custom_type | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    # now, add a new custom authentication validator using the scheme you created above
+    $custom_scheme | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($client, $username, $password)
 
         # check if the client is valid in some database
@@ -43,31 +43,30 @@ Start-PodeServer {
 ```
 
 !!! note
-    The `$opts` parameter in the `New-PodeAuthType` ScriptBlock come from the `-ArgumentList` HashTable.
+    The `$opts` parameter in the `New-PodeAuthScheme` ScriptBlock come from the `-ArgumentList` HashTable.
 
 ## Post Validation
 
-The typical setup of authentication is that you create some type to parse the request ([`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType)), and then you pipe this into a validator/method to validate the parsed user's credentials ([`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)).
+The typical setup of authentication is that you create some scheme to parse the request ([`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme)), and then you pipe this into a validator to validate the parsed user's credentials ([`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)).
 
-There is however also an optional `-PostValidator` ScriptBlock that can be passed to your Custom Authentication type on the [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) function. This `-PostValidator` script runs after normal user validation, and is supplied the current [web event](../../../WebEvent), the original splatted array returned from the [`New-PodeAuthType`](../../../../Functions/Authentication/New-PodeAuthType) ScriptBlock, the result HashTable from the user validator from `Add-PodeAuth`, and the `-ArgumentList` HashTable from `New-PodeAuthType`. You can use this script to re-generate any hashes for further validation, but if successful you *must* return the User object again (ie: re-return the last parameter which is the original validation result).
+There is however also an optional `-PostValidator` ScriptBlock that can be passed to your Custom Authentication scheme on the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) function. This `-PostValidator` script runs after normal user validation, and also has access to the current [web event](../../../WebEvent). The original splatted array returned from the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) ScriptBlock, the result HashTable from the user validator from `Add-PodeAuth`, and the `-ArgumentList` HashTable from `New-PodeAuthScheme` are supplied as parameters. You can use this script to re-generate any hashes for further validation, but if successful you *must* return the User object again (ie: re-return the last parameter which is the original validation result).
 
 For example, if you have a post validator script for the above Client Custom Authentication, then it would be supplied the following parameters:
 
-* Web Event
 * ClientName
 * Username
 * Password
 * ClientName
 * Validation Result
-* Type ArgumentsList
+* Scheme ArgumentsList
 
 For example:
 
 ```powershell
 Start-PodeServer {
-    # define a new custom authentication type
-    $custom_type = New-PodeAuthType -Custom -ScriptBlock {
-        param($e, $opts)
+    # define a new custom authentication scheme
+    $custom_scheme = New-PodeAuthScheme -Custom -ScriptBlock {
+        param($opts)
 
         # get client/user/password field names
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -75,15 +74,15 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/password from the request's post data
-        $client = $e.Data.$clientField
-        $username = $e.Data.$userField
-        $password = $e.Data.$passField
+        $client = $WebEvent.Data.$clientField
+        $username = $WebEvent.Data.$userField
+        $password = $WebEvent.Data.$passField
 
         # return the data in a array, which will be passed to the validator script
         return @($client, $username, $password)
     } `
     -PostValidator {
-        param($e, $client, $username, $password, $result, $opts)
+        param($client, $username, $password, $result, $opts)
 
         # run any extra post-validation logic
 
@@ -91,8 +90,8 @@ Start-PodeServer {
         return $result
     }
 
-    # now, add a new custom authentication method using the type you created above
-    $custom_type | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    # now, add a new custom authentication method using the scheme you created above
+    $custom_scheme | Add-PodeAuth -Name 'Login' -ScriptBlock {
         param($client, $username, $password)
 
         # check if the client is valid in some database
@@ -111,7 +110,7 @@ The following will use Custom Authentication to validate every request on every 
 
 ```powershell
 Start-PodeServer {
-    Get-PodeAuthMiddleware -Name 'Login' | Add-PodeMiddleware -Name 'GlobalAuthValidation'
+    Add-PodeAuthMiddleware -Name 'GlobalAuthValidation' -Authentication 'Login'
 }
 ```
 
@@ -119,7 +118,7 @@ Whereas the following example will use Custom authentication to only validate re
 
 ```powershell
 Start-PodeServer {
-    Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
         # logic
     }
 }
@@ -133,9 +132,9 @@ The following full example of Custom authentication will setup and configure aut
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
-    # define a new custom authentication type
-    $custom_type = New-PodeAuthType -Custom -ScriptBlock {
-        param($e, $opts)
+    # define a new custom authentication scheme
+    $custom_scheme = New-PodeAuthScheme -Custom -ScriptBlock {
+        param($opts)
 
         # get client/user/pass field names to get from payload
         $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
@@ -143,16 +142,16 @@ Start-PodeServer {
         $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
 
         # get the client/user/pass from the post data
-        $client = $e.Data.$clientField
-        $username = $e.Data.$userField
-        $password = $e.Data.$passField
+        $client = $WebEvent.Data.$clientField
+        $username = $WebEvent.Data.$userField
+        $password = $WebEvent.Data.$passField
 
         # return the data, to be passed to the validator script
         return @($client, $username, $password)
     }
 
     # now, add a new custom authentication method
-    $custom_type | Add-PodeAuth -Name 'Login' -ScriptBlock {
+    $custom_scheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($client, $username, $password)
 
         # check if the client is valid
@@ -162,7 +161,7 @@ Start-PodeServer {
     }
 
     # check the request on this route against the authentication
-    Add-PodeRoute -Method Get -Path '/cpu' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/cpu' -Authentication 'Login' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'cpu' = 82 }
     }
 

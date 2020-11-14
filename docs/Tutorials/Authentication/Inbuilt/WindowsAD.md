@@ -2,7 +2,7 @@
 
 Pode's inbuilt Windows AD authentication works cross-platform, using OpenLDAP to work in *nix environments.
 
-This authenticator can only be used with Basic and Form. Custom is also supported, but a username and password must be supplied.
+This authenticator can only be used with the Basic and Form schemes. Custom is also supported, but a username and password must be supplied.
 
 ## Usage
 
@@ -10,13 +10,13 @@ To enable Windows AD authentication you can use the [`Add-PodeAuthWindowsAd`](..
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login'
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login'
 }
 ```
 
 ### User Object
 
-The User object returned, and accessible on Routes, and other functions via `$e.Auth.User`, will contain the following information:
+The User object returned, and accessible on Routes, and other functions via `$WebEvent.Auth.User`, will contain the following information:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -33,9 +33,8 @@ The User object returned, and accessible on Routes, and other functions via `$e.
 Such as:
 
 ```powershell
-Add-PodeRoute -Method Get -Path '/info' -Middleware (Get-PodeAuthMiddleware -Name 'Login') -ScriptBlock {
-    param($e)
-    Write-Host $e.Auth.User.Username
+Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
+    Write-Host $WebEvent.Auth.User.Username
 }
 ```
 
@@ -45,17 +44,17 @@ If you want to supply a custom DNS domain, then you can supply the `-Fqdn` param
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com'
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com'
 }
 ```
 
 ### Groups
 
-You can supply a list of group names to validate that user's are a member of them in AD. If you supply multiple group names, the user only needs to be a of one of the groups. You can supply the list of groups to the function's `-Groups` parameter as an array - the list is not case-sensitive:
+You can supply a list of group names to validate that users are a member of them in AD. If you supply multiple group names, the user only needs to be a member of one of the groups. You can supply the list of groups to the function's `-Groups` parameter as an array - the list is not case-sensitive:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @('admins', 'devops')
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @('admins', 'devops')
 }
 ```
 
@@ -67,7 +66,7 @@ You can supply a list of authorised usernames to validate a user's access, after
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
 }
 ```
 

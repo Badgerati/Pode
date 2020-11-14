@@ -77,13 +77,21 @@ function Get-PodeFileContentUsingViewEngine
         }
 
         default {
-            if ($null -ne $PodeContext.Server.ViewEngine.Script) {
-                if ($null -eq $Data -or $Data.Count -eq 0) {
-                    $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments $Path -Return)
+            if ($null -ne $PodeContext.Server.ViewEngine.ScriptBlock) {
+                $_args = @($Path)
+                if (($null -ne $Data) -and ($Data.Count -gt 0)) {
+                    $_args = @($Path, $Data)
                 }
-                else {
-                    $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.Script -Arguments @($Path, $Data) -Return -Splat)
+
+                if ($null -ne $PodeContext.Server.ViewEngine.UsingVariables) {
+                    $_vars = @()
+                    foreach ($_var in $PodeContext.Server.ViewEngine.UsingVariables) {
+                        $_vars += ,$_var.Value
+                    }
+                    $_args = $_vars + $_args
                 }
+
+                $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
             }
         }
     }
@@ -125,10 +133,10 @@ function Get-PodePSVersionTable
     return $PSVersionTable
 }
 
-function Test-IsAdminUser
+function Test-PodeIsAdminUser
 {
     # check the current platform, if it's unix then return true
-    if (Test-IsUnix) {
+    if (Test-PodeIsUnix) {
         return $true
     }
 
@@ -145,133 +153,6 @@ function Test-IsAdminUser
         Write-PodeHost $_.Exception.Message -ForegroundColor Red
         return $false
     }
-}
-
-function New-PodeSelfSignedCertificate
-{
-    # generate the cert -- has to call "powershell.exe" for ps-core on windows
-    $cert = (PowerShell.exe -NoProfile -Command {
-        $expire = (Get-Date).AddYears(1)
-
-        $c = New-SelfSignedCertificate -DnsName 'localhost' -CertStoreLocation 'Cert:\LocalMachine\My' -NotAfter $expire `
-                -KeyAlgorithm RSA -HashAlgorithm SHA256 -KeyLength 4096 -Subject 'CN=localhost';
-
-        if ($null -eq $c.Thumbprint) {
-            return $c
-        }
-
-        return $c.Thumbprint
-    })
-
-    if ($LASTEXITCODE -ne 0 -or !$?) {
-        throw "Failed to generate self-signed certificte:`n$($cert)"
-    }
-
-    return $cert
-}
-
-function Get-PodeCertificate
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Certificate
-    )
-
-    # ensure the certificate exists, and get its thumbprint
-    $cert = (Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -imatch [regex]::Escape($Certificate) })
-    if (Test-IsEmpty $cert) {
-        throw "Failed to find the $($Certificate) certificate at LocalMachine\My"
-    }
-
-    $cert = @($cert)[0].Thumbprint
-    return $cert
-}
-
-function Set-PodeCertificate
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Address,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Port,
-
-        [Parameter()]
-        [string]
-        $Certificate,
-
-        [Parameter()]
-        [string]
-        $Thumbprint,
-
-        [switch]
-        $SelfSigned
-    )
-
-    $addrport = "$($Address):$($Port)"
-
-    # only bind if windows at the moment
-    if (!(Test-IsWindows)) {
-        Write-PodeHost "Certificates are currently only supported on Windows" -ForegroundColor Yellow
-        return
-    }
-
-    # check if this addr/port is already bound
-    $sslPortInUse = (netsh http show sslcert) | Where-Object {
-        ($_ -ilike "*IP:port*" -or $_ -ilike "*Hostname:port*") -and $_ -ilike "*$($addrport)"
-    }
-
-    if ($sslPortInUse) {
-        Write-PodeHost "$($addrport) already has a certificate bound" -ForegroundColor Green
-        return
-    }
-
-    # ensure a cert, or thumbprint, has been supplied
-    if (!$SelfSigned -and (Test-IsEmpty $Certificate) -and (Test-IsEmpty $Thumbprint)) {
-        throw "A certificate name, or thumbprint, is required for ssl connections. For the name, either 'self' or '*.example.com' can be supplied to the 'listen' function"
-    }
-
-    # use the cert specified from the thumbprint
-    if (!(Test-IsEmpty $Thumbprint)) {
-        $cert = $Thumbprint
-    }
-
-    # otherwise, generate/find a certificate
-    else
-    {
-        # generate a self-signed cert
-        if ($SelfSigned) {
-            Write-PodeHost "Generating self-signed certificate for $($addrport)..." -NoNewline -ForegroundColor Cyan
-            $cert = (New-PodeSelfSignedCertificate)
-        }
-
-        # ensure a given cert exists for binding
-        else {
-            Write-PodeHost "Binding $($Certificate) to $($addrport)..." -NoNewline -ForegroundColor Cyan
-            $cert = (Get-PodeCertificate -Certificate $Certificate)
-        }
-    }
-
-    # bind the cert to the ip:port or hostname:port
-    if (Test-PodeIPAddress -IP $Address -IPOnly) {
-        $result = netsh http add sslcert ipport=$addrport certhash=$cert appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
-        if ($LASTEXITCODE -ne 0 -or !$?) {
-            throw "Failed to attach certificate against ipport:`n$($result)"
-        }
-    }
-    else {
-        $result = netsh http add sslcert hostnameport=$addrport certhash=$cert certstorename=MY appid=`{e3ea217c-fc3d-406b-95d5-4304ab06c6af`}
-        if ($LASTEXITCODE -ne 0 -or !$?) {
-            throw "Failed to attach certificate against hostnameport:`n$($result)"
-        }
-    }
-
-    Write-PodeHost " Done" -ForegroundColor Green
 }
 
 function Get-PodeHostIPRegex
@@ -312,13 +193,13 @@ function Get-PodeEndpointInfo
     param (
         [Parameter()]
         [string]
-        $Endpoint,
+        $Address,
 
         [switch]
         $AnyPortOnZero
     )
 
-    if ([string]::IsNullOrWhiteSpace($Endpoint)) {
+    if ([string]::IsNullOrWhiteSpace($Address)) {
         return $null
     }
 
@@ -327,8 +208,8 @@ function Get-PodeEndpointInfo
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip/host:port address
-    if (!(($Endpoint -imatch "^$($cmbdRgx)$") -or ($Endpoint -imatch "^$($hostRgx)[\:]{0,1}") -or ($Endpoint -imatch "[\:]{0,1}$($portRgx)$"))) {
-        throw "Failed to parse '$($Endpoint)' as a valid IP/Host:Port address"
+    if (!(($Address -imatch "^$($cmbdRgx)$") -or ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or ($Address -imatch "[\:]{0,1}$($portRgx)$"))) {
+        throw "Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
 
     # grab the ip address/hostname
@@ -404,10 +285,10 @@ function ConvertTo-PodeIPAddress
     param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
-        $Endpoint
+        $Address
     )
 
-    return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Endpoint).Address.ToString())
+    return [System.Net.IPAddress]::Parse(([System.Net.IPEndPoint]$Address).Address.ToString())
 }
 
 function Get-PodeIPAddressesForHostname
@@ -428,7 +309,12 @@ function Get-PodeIPAddressesForHostname
     }
 
     # get the ip addresses for the hostname
-    $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
+    try {
+        $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
+    }
+    catch {
+        return '127.0.0.1'
+    }
 
     # return ips based on type
     switch ($Type.ToLowerInvariant())
@@ -494,18 +380,27 @@ function Get-PodeIPAddress
         $IP
     )
 
+    # any address for IPv4
     if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
         return [System.Net.IPAddress]::Any
     }
 
+    # any address for IPv6
     if (($IP -ieq '::') -or ($IP -ieq '[::]')) {
         return [System.Net.IPAddress]::IPv6Any
     }
 
+    # localhost
+    if ($IP -ieq 'localhost') {
+        return [System.Net.IPAddress]::Loopback
+    }
+
+    # hostname
     if ($IP -imatch "^$(Get-PodeHostIPRegex -Type Hostname)$") {
         return $IP
     }
 
+    # raw ip
     return [System.Net.IPAddress]::Parse($IP)
 }
 
@@ -618,7 +513,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp')]
         [string]
         $Type,
 
@@ -641,7 +536,7 @@ function Add-PodeRunspace
         $ps.AddScript({ Add-PodePSDrives }) | Out-Null
         $ps.AddScript($ScriptBlock) | Out-Null
 
-        if (!(Test-IsEmpty $Parameters)) {
+        if (!(Test-PodeIsEmpty $Parameters)) {
             $Parameters.Keys | ForEach-Object {
                 $ps.AddParameter($_, $Parameters[$_]) | Out-Null
             }
@@ -652,10 +547,10 @@ function Add-PodeRunspace
         }
         else {
             $PodeContext.Runspaces += @{
-                Pool = $Type;
-                Runspace = $ps;
-                Status = $ps.BeginInvoke();
-                Stopped = $false;
+                Pool = $Type
+                Runspace = $ps
+                Status = $ps.BeginInvoke()
+                Stopped = $false
             }
         }
     }
@@ -677,9 +572,28 @@ function Close-PodeRunspaces
     }
 
     try {
-        if (!(Test-IsEmpty $PodeContext.Runspaces)) {
-            # sleep for 1s before doing this, to let listeners dispose
-            Start-Sleep -Seconds 1
+        if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
+            # wait until listeners are disposed
+            $count = 0
+            $continue = $false
+            while ($count -le 10) {
+                Start-Sleep -Seconds 1
+                $count++
+
+                $continue = $false
+                foreach ($listener in $PodeContext.Listeners) {
+                    if (!$listener.IsDisposed) {
+                        $continue = $true
+                        break
+                    }
+                }
+
+                if ($continue) {
+                    continue
+                }
+
+                break
+            }
 
             # now dispose runspaces
             $PodeContext.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
@@ -762,7 +676,7 @@ function Test-PodeKeyPressed
     }
 
     return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
-        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-IsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
+        (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-PodeIsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
 
 function Close-PodeServerInternal
@@ -772,7 +686,12 @@ function Close-PodeServerInternal
         $ShowDoneMessage
     )
 
-    # stpo all current runspaces
+    # ensure the token is cancelled
+    if ($null -ne $PodeContext.Tokens.Cancellation) {
+        $PodeContext.Tokens.Cancellation.Cancel()
+    }
+
+    # stop all current runspaces
     Close-PodeRunspaces -ClosePool
 
     # stop the file monitor if it's running
@@ -790,7 +709,7 @@ function Close-PodeServerInternal
     # remove all of the pode temp drives
     Remove-PodePSDrives
 
-    if ($ShowDoneMessage -and ![string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -and !$PodeContext.Server.IsServerless) {
+    if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
         Write-PodeHost " Done" -ForegroundColor Green
     }
 }
@@ -987,6 +906,7 @@ function Test-PodeValidNetworkFailure
     $msgs = @(
         '*network name is no longer available*',
         '*nonexistent network connection*',
+        '*the response has completed*',
         '*broken pipe*'
     )
 
@@ -1236,41 +1156,31 @@ function ConvertFrom-PodeRequestContent
     # if the content-type is not multipart/form-data, get the string data
     if ($MetaData.ContentType -ine 'multipart/form-data') {
         # get the content based on server type
-        switch ($PodeContext.Server.Type.ToLowerInvariant()) {
-            'awslambda' {
-                $Content = $Request.body
-            }
-
-            'azurefunctions' {
-                $Content = $Request.RawBody
-            }
-
-            'pode' {
-                # if the request is compressed, attempt to uncompress it
-                if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
-                    # create a compressed stream to decompress the req bytes
-                    $ms = New-Object -TypeName System.IO.MemoryStream
-                    $ms.Write($Request.Body.Bytes, 0, $Request.Body.Bytes.Length)
-                    $ms.Seek(0, 0) | Out-Null
-                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
-
-                    # read the decompressed bytes
-                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+        if ($PodeContext.Server.IsServerless) {
+            switch ($PodeContext.Server.ServerlessType.ToLowerInvariant()) {
+                'awslambda' {
+                    $Content = $Request.body
                 }
-                else {
-                    $Content = $Request.Body.Value
+
+                'azurefunctions' {
+                    $Content = $Request.RawBody
                 }
             }
+        }
+        else {
+            # if the request is compressed, attempt to uncompress it
+            if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
+                # create a compressed stream to decompress the req bytes
+                $ms = New-Object -TypeName System.IO.MemoryStream
+                $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
+                $ms.Seek(0, 0) | Out-Null
+                $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
 
-            default {
-                # if the request is compressed, attempt to uncompress it
-                if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
-                    $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($Request.InputStream, [System.IO.Compression.CompressionMode]::Decompress)
-                    $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
-                }
-                else {
-                    $Content = Read-PodeStreamToEnd -Stream $Request.InputStream -Encoding $Encoding
-                }
+                # read the decompressed bytes
+                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+            }
+            else {
+                $Content = $Request.Body
             }
         }
 
@@ -1281,7 +1191,18 @@ function ConvertFrom-PodeRequestContent
 
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($MetaData.ContentType)) {
-            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.BodyParsers[$MetaData.ContentType] -Arguments $Content -Return)
+            $parser = $PodeContext.Server.BodyParsers[$MetaData.ContentType]
+
+            $_args = @($Content)
+            if ($null -ne $parser.UsingVariables) {
+                $_vars = @()
+                foreach ($_var in $parser.UsingVariables) {
+                    $_vars += ,$_var.Value
+                }
+                $_args = $_vars + $_args
+            }
+
+            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
             return $Result
         }
     }
@@ -1289,7 +1210,7 @@ function ConvertFrom-PodeRequestContent
     # run action for the content type
     switch ($MetaData.ContentType) {
         { $_ -ilike '*/json' } {
-            if (Test-IsPSCore) {
+            if (Test-PodeIsPSCore) {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
             }
             else {
@@ -1311,10 +1232,8 @@ function ConvertFrom-PodeRequestContent
 
         { $_ -ieq 'multipart/form-data' } {
             # convert the stream to bytes
-            if ($PodeContext.Server.Type -ieq 'pode') {
-                $Content = $Request.Body.Bytes
-            }
-            else {
+            $Content = $Request.RawBody
+            if ($Content.Length -eq 0) {
                 $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
             }
 
@@ -1642,17 +1561,17 @@ function Convert-PodePathPatternsToRegex
 
     # remove any empty entries
     $Paths = @($Paths | Where-Object {
-        !(Test-IsEmpty $_)
+        !(Test-PodeIsEmpty $_)
     })
 
     # if no paths, return null
-    if (Test-IsEmpty $Paths) {
+    if (Test-PodeIsEmpty $Paths) {
         return $null
     }
 
     # replace certain chars
     $Paths = @($Paths | ForEach-Object {
-        if (!(Test-IsEmpty $_)) {
+        if (!(Test-PodeIsEmpty $_)) {
             Convert-PodePathPatternToRegex -Path $_ -NotStrict -NotSlashes:$NotSlashes
         }
     })
@@ -1722,7 +1641,7 @@ function Get-PodeModuleMiscPath
 
 function Get-PodeUrl
 {
-    return "$($WebEvent.Protocol)://$($WebEvent.Endpoint)$($WebEvent.Path)"
+    return "$($WebEvent.Endpoint.Protocol)://$($WebEvent.Endpoint.Address)$($WebEvent.Path)"
 }
 
 function Find-PodeErrorPage
@@ -1754,7 +1673,7 @@ function Find-PodeErrorPage
     }
 
     # if route patterns have been defined, see if an error content type matches and attempt that
-    if (!(Test-IsEmpty $PodeContext.Server.Web.ErrorPages.Routes)) {
+    if (!(Test-PodeIsEmpty $PodeContext.Server.Web.ErrorPages.Routes)) {
         # find type by pattern
         $matched = @(foreach ($key in $PodeContext.Server.Web.ErrorPages.Routes.Keys) {
             if ($WebEvent.Path -imatch $key) {
@@ -1763,7 +1682,7 @@ function Find-PodeErrorPage
         })[0]
 
         # if we have a match, see if a page exists
-        if (!(Test-IsEmpty $matched)) {
+        if (!(Test-PodeIsEmpty $matched)) {
             $type = $PodeContext.Server.Web.ErrorPages.Routes[$matched]
             $path = Get-PodeErrorPage -Code $Code -ContentType $type
             if (![string]::IsNullOrWhiteSpace($path)) {
@@ -1781,7 +1700,7 @@ function Find-PodeErrorPage
     }
 
     # if we have a default defined, attempt that
-    if (!(Test-IsEmpty $PodeContext.Server.Web.ErrorPages.Default)) {
+    if (!(Test-PodeIsEmpty $PodeContext.Server.Web.ErrorPages.Default)) {
         $path = Get-PodeErrorPage -Code $Code -ContentType $PodeContext.Server.Web.ErrorPages.Default
         if (![string]::IsNullOrWhiteSpace($path)) {
             return @{ 'Path' = $path; 'ContentType' = $PodeContext.Server.Web.ErrorPages.Default }
@@ -2037,7 +1956,11 @@ function Get-PodeWildcardFiles
 
         [Parameter()]
         [string]
-        $Wildcard = '*.*'
+        $Wildcard = '*.*',
+
+        [Parameter()]
+        [string]
+        $RootPath
     )
 
     # if the OriginalPath is a directory, add wildcard
@@ -2047,7 +1970,7 @@ function Get-PodeWildcardFiles
 
     # if path has a *, assume wildcard
     if (Test-PodePathIsWildcard -Path $Path) {
-        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+        $Path = Get-PodeRelativePath -Path $Path -RootPath $RootPath -JoinRoot
         return @((Get-ChildItem $Path -Recurse -Force).FullName)
     }
 
@@ -2081,14 +2004,17 @@ function Get-PodeEndpointUrl
         $Endpoint
     )
 
-    # get the endpoint on which we're currently listening - use first if there are many
+    # get the endpoint on which we're currently listening - use first http/https if there are many
     if ($null -eq $Endpoint) {
-        $Endpoint = $PodeContext.Server.Endpoints[0]
+        $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') -and $_.Default })[0]
+        if ($null -eq $Endpoint) {
+            $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
+        }
     }
 
     $url = $Endpoint.Url
     if ([string]::IsNullOrWhiteSpace($url)) {
-        $url = "$($Endpoint.Protocol)://$($Endpoint.HostName):$($Endpoint.Port)"
+        $url = "$($Endpoint.Protocol)://$($Endpoint.FriendlyName):$($Endpoint.Port)"
     }
 
     return $url
@@ -2210,4 +2136,334 @@ function Convert-PodeQueryStringToHashTable
 
     $tmpQuery = [System.Web.HttpUtility]::ParseQueryString($Uri)
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
+}
+
+function Invoke-PodeUsingScriptConversion
+{
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.SessionState]
+        $PSSession
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return @($ScriptBlock, $null)
+    }
+
+    # rename any __using_ vars for inner timers, etcs
+    $scriptStr = "$($ScriptBlock)"
+    $foundInnerUsing = $false
+
+    while ($scriptStr -imatch '(?<full>\$__using_(?<name>[a-z0-9_\?]+))') {
+        $foundInnerUsing = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "`$using:$($Matches['name'])")
+    }
+
+    if ($foundInnerUsing) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
+    # get any using variables
+    $usingVars = Get-PodeScriptUsingVariables -ScriptBlock $ScriptBlock
+    if (Test-PodeIsEmpty $usingVars) {
+        return @($ScriptBlock, $null)
+    }
+
+    # convert any using vars to use new names
+    $usingVars = ConvertTo-PodeUsingVariables -UsingVariables $usingVars -PSSession $PSSession
+
+    # now convert the script
+    $newScriptBlock = ConvertTo-PodeUsingScript -ScriptBlock $ScriptBlock -UsingVariables $usingVars
+
+    # return converted script
+    return @($newScriptBlock, $usingVars)
+}
+
+function Get-PodeScriptUsingVariables
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $true)
+}
+
+function ConvertTo-PodeUsingVariables
+{
+    param(
+        [Parameter()]
+        $UsingVariables,
+
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.SessionState]
+        $PSSession
+    )
+
+    if (Test-PodeIsEmpty $UsingVariables) {
+        return $null
+    }
+
+    $mapped = @{}
+
+    foreach ($usingVar in $UsingVariables) {
+        # var name
+        $varName = $usingVar.SubExpression.VariablePath.UserPath
+
+        # only retrieve value if new var
+        if (!$mapped.ContainsKey($varName)) {
+            # get value, or get __using_ value for child scripts
+            $value = $PSSession.PSVariable.Get($varName)
+            if ([string]::IsNullOrEmpty($value)) {
+                $value = $PSSession.PSVariable.Get("__using_$($varName)")
+            }
+
+            if ([string]::IsNullOrEmpty($value)) {
+                throw "Value for `$using:$($varName) could not be found"
+            }
+
+            # add to mapped
+            $mapped[$varName] = @{
+                OldName = $usingVar.SubExpression.Extent.Text
+                NewName = "__using_$($varName)"
+                NewNameWithDollar = "`$__using_$($varName)"
+                SubExpressions = @()
+                Value = $value.Value
+            }
+        }
+
+        # add the vars sub-expression for replacing later
+        $mapped[$varName].SubExpressions += $usingVar.SubExpression
+    }
+
+    return @($mapped.Values)
+}
+
+function ConvertTo-PodeUsingScript
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [hashtable[]]
+        $UsingVariables
+    )
+
+    # return original script if no using vars
+    if (Test-PodeIsEmpty $UsingVariables) {
+        return $ScriptBlock
+    }
+
+    $varsList = New-Object 'System.Collections.Generic.List`1[System.Management.Automation.Language.VariableExpressionAst]'
+    $newParams = New-Object System.Collections.ArrayList
+
+    foreach ($usingVar in $UsingVariables) {
+        foreach ($subExp in $usingVar.SubExpressions) {
+            $varsList.Add($subExp) | Out-Null
+        }
+    }
+
+    $newParams.AddRange(@($UsingVariables.NewNameWithDollar))
+    $newParams = ($newParams -join ', ')
+    $tupleParams = [tuple]::Create($varsList, $newParams)
+
+    $bindingFlags = [System.Reflection.BindingFlags]'Default, NonPublic, Instance'
+    $_varReplacerMethod = $ScriptBlock.Ast.GetType().GetMethod('GetWithInputHandlingForInvokeCommandImpl', $bindingFlags)
+    $convertedScriptBlockStr = $_varReplacerMethod.Invoke($ScriptBlock.Ast, @($tupleParams))
+
+    if (!$ScriptBlock.Ast.ParamBlock) {
+        $convertedScriptBlockStr = "param($($newParams))`n$($convertedScriptBlockStr)"
+    }
+
+    $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
+
+    if ($convertedScriptBlock.Ast.EndBlock[0].Statements.Extent.Text.StartsWith('$input |')) {
+        $convertedScriptBlockStr = ($convertedScriptBlockStr -ireplace '\$input \|')
+        $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
+    }
+
+    return $convertedScriptBlock
+}
+
+function Get-PodeDotSourcedFiles
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.Language.Ast]
+        $Ast,
+
+        [Parameter()]
+        [string]
+        $RootPath
+    )
+
+    # set default root path
+    if ([string]::IsNullOrWhiteSpace($RootPath)) {
+        $RootPath = $PodeContext.Server.Root
+    }
+
+    # get all dot-sourced files
+    $cmdTypes = @('dot', 'ampersand')
+    $files = ($Ast.FindAll({
+        ($args[0] -is [System.Management.Automation.Language.CommandAst]) -and
+        ($args[0].InvocationOperator -iin $cmdTypes) -and
+        ($args[0].CommandElements.StaticType.Name -ieq 'string')
+    }, $false)).CommandElements.Value
+
+    $fileOrder = @()
+
+    # no files found
+    if (($null -eq $files) -or ($files.Length -eq 0)) {
+        return $fileOrder
+    }
+
+    # get any sub sourced files
+    foreach ($file in $files) {
+        $file = Get-PodeRelativePath -Path $file -RootPath $RootPath -JoinRoot
+        $fileOrder += $file
+
+        $ast = Get-PodeAstFromFile -FilePath $file
+
+        $result = Get-PodeDotSourcedFiles -Ast $ast -RootPath (Split-Path -Parent -Path $file)
+        if (($null -ne $result) -and ($result.Length -gt 0)) {
+            $fileOrder += $result
+        }
+    }
+
+    # return all found files
+    return $fileOrder
+}
+
+function Get-PodeAstFromFile
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FilePath
+    )
+
+    if (!(Test-Path $FilePath)) {
+        throw "Path to script file does not exist: $($FilePath)"
+    }
+
+    return [System.Management.Automation.Language.Parser]::ParseFile($FilePath, [ref]$null, [ref]$null)
+}
+
+function Get-PodeFunctionsFromFile
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FilePath
+    )
+
+    $ast = Get-PodeAstFromFile -FilePath $FilePath
+    return @(Get-PodeFunctionsFromAst -Ast $ast)
+}
+
+function Get-PodeFunctionsFromAst
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.Language.Ast]
+        $Ast
+    )
+
+    $funcs = @(($Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)))
+
+    return @(foreach ($func in $funcs) {
+        # skip null
+        if ($null -eq $func) {
+            continue
+        }
+
+        # skip pode funcs
+        if ($func.Name -ilike '*-Pode*') {
+            continue
+        }
+
+        # the found func
+        @{
+            Name = $func.Name
+            Definition = "$($func.Body)".Trim('{}')
+        }
+    })
+}
+
+function Get-PodeFunctionsFromScriptBlock
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # functions that have been found
+    $foundFuncs = @()
+
+    # get each function in the callstack
+    $callstack = Get-PSCallStack
+    if ($callstack.Count -gt 3) {
+        $callstack = ($callstack | Select-Object -Skip 4)
+        $bindingFlags = [System.Reflection.BindingFlags]'NonPublic, Instance, Static'
+
+        foreach ($call in $callstack)
+        {
+            $_funcContext = $call.GetType().GetProperty('FunctionContext', $bindingFlags).GetValue($call, $null)
+            $_scriptBlock = $_funcContext.GetType().GetField('_scriptBlock', $bindingFlags).GetValue($_funcContext)
+            $foundFuncs += @(Get-PodeFunctionsFromAst -Ast $_scriptBlock.Ast)
+        }
+    }
+
+    # get each function from the main script
+    $foundFuncs += @(Get-PodeFunctionsFromAst -Ast $ScriptBlock.Ast)
+
+    # return the found functions
+    return $foundFuncs
+}
+
+function Read-PodeWebExceptionDetails
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Management.Automation.ErrorRecord]
+        $ErrorRecord
+    )
+
+    switch ($ErrorRecord) {
+        { $_.Exception -is [System.Net.WebException] } {
+            $stream = $_.Exception.Response.GetResponseStream()
+            $stream.Position = 0
+
+            $body = [System.IO.StreamReader]::new($stream).ReadToEnd()
+            $code = [int]$_.Exception.Response.StatusCode
+            $desc = $_.Exception.Response.StatusDescription
+        }
+
+        { $_.Exception -is [System.Net.Http.HttpRequestException] } {
+            $body = $_.ErrorDetails.Message
+            $code = [int]$_.Exception.Response.StatusCode
+            $desc = $_.Exception.Response.ReasonPhrase
+        }
+
+        default {
+            throw "Exception is of an invalid type, should be either WebException or HttpRequestException, but got: $($_.Exception.GetType().Name)"
+        }
+    }
+
+    return @{
+        Status = @{
+            Code = $code
+            Description = $desc
+        }
+        Body = $body
+    }
 }

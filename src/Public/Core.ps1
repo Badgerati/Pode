@@ -27,8 +27,8 @@ An override for the Server's root path.
 .PARAMETER Request
 Intended for Serverless environments, this is Requests details that Pode can parse and use.
 
-.PARAMETER Type
-The server type, to define how Pode should run and deal with incoming Requests.
+.PARAMETER ServerlessType
+Optional, this is the serverless type, to define how Pode should run and deal with incoming Requests.
 
 .PARAMETER StatusPageExceptions
 An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
@@ -53,7 +53,7 @@ Start-PodeServer { /* logic */ }
 Start-PodeServer -Interval 10 { /* logic */ }
 
 .EXAMPLE
-Start-PodeServer -Request $LambdaInput -Type 'AwsLambda' { /* logic */ }
+Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda { /* logic */ }
 #>
 function Start-PodeServer
 {
@@ -87,14 +87,18 @@ function Start-PodeServer
         $Request,
 
         [Parameter()]
-        [ValidateSet('', 'AzureFunctions', 'AwsLambda', 'Pode')]
+        [ValidateSet('', 'AzureFunctions', 'AwsLambda')]
         [string]
-        $Type = [string]::Empty,
+        $ServerlessType = [string]::Empty,
 
         [Parameter()]
         [ValidateSet('', 'Hide', 'Show')]
         [string]
         $StatusPageExceptions = [string]::Empty,
+
+        [Parameter()]
+        [string]
+        $ListenerType = [string]::Empty,
 
         [switch]
         $DisableTermination,
@@ -131,7 +135,7 @@ function Start-PodeServer
         }
 
         # configure the server's root path
-        if (!(Test-IsEmpty $RootPath)) {
+        if (!(Test-PodeIsEmpty $RootPath)) {
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
@@ -142,7 +146,8 @@ function Start-PodeServer
             -Threads $Threads `
             -Interval $Interval `
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-            -ServerType $Type `
+            -ServerlessType $ServerlessType `
+            -ListenerType $ListenerType `
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
             -Quiet:$Quiet
@@ -159,7 +164,7 @@ function Start-PodeServer
         Start-PodeInternalServer -Request $Request -Browse:$Browse
 
         # at this point, if it's just a one-one off script, return
-        if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type) -or $PodeContext.Server.IsServerless) {
+        if (($PodeContext.Server.Types.Length -eq 0) -or $PodeContext.Server.IsServerless) {
             return
         }
 
@@ -237,13 +242,13 @@ The Port number of the endpoint.
 .PARAMETER Https
 Start the server using HTTPS.
 
-.PARAMETER CertificateFile
+.PARAMETER Certificate
 The path to a certificate that can be use to enable HTTPS.
 
 .PARAMETER CertificatePassword
 The password for the certificate referenced in CertificateFile.
 
-.PARAMETER RawCertificate
+.PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS.
 
 .PARAMETER Path
@@ -293,7 +298,7 @@ function Start-PodeStaticServer
 
         [Parameter(ParameterSetName='Https')]
         [string]
-        $CertificateFile = $null,
+        $Certificate = $null,
 
         [Parameter(ParameterSetName='Https')]
         [string]
@@ -302,7 +307,7 @@ function Start-PodeStaticServer
         [Parameter(ParameterSetName='Https')]
         [Parameter()]
         [X509Certificate]
-        $RawCertificate = $null,
+        $X509Certificate = $null,
 
         [Parameter()]
         [string]
@@ -319,14 +324,14 @@ function Start-PodeStaticServer
         $Browse
     )
 
-    Start-PodeServer -RootPath $RootPath -Threads $Threads -Type Pode -Browse:$Browse -ScriptBlock {
+    Start-PodeServer -RootPath $RootPath -Threads $Threads -Browse:$Browse -ScriptBlock {
         # add either an http or https endpoint
         if ($Https) {
-            if ($null -eq $RawCertificate) {
-                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -CertificateFile $CertificateFile -CertificatePassword $CertificatePassword
+            if ($null -eq $X509Certificate) {
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -Certificate $Certificate -CertificatePassword $CertificatePassword
             }
             else {
-                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -RawCertificate $RawCertificate
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -X509Certificate $X509Certificate
             }
         }
         else {
@@ -557,7 +562,7 @@ function Show-PodeGui
     Test-PodeIsServerless -FunctionName 'Show-PodeGui' -ThrowError
 
     # only valid for Windows PowerShell
-    if ((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
+    if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
         throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7 on Windows'
     }
 
@@ -592,16 +597,12 @@ function Show-PodeGui
     # set the gui to use a specific listener
     $PodeContext.Server.Gui.EndpointName = $EndpointName
 
-    if (![string]::IsNullOrWhiteSpace($PodeContext.Server.Gui.EndpointName)) {
-        $found = ($PodeContext.Server.Endpoints | Where-Object {
-            $_.Name -eq $PodeContext.Server.Gui.EndpointName
-        } | Select-Object -First 1)
-
-        if ($null -eq $found) {
+    if (![string]::IsNullOrWhiteSpace($EndpointName)) {
+        if (!$PodeContext.Server.Endpoints.ContainsKey($EndpointName)) {
             throw "Endpoint with name '$($EndpointName)' does not exist"
         }
 
-        $PodeContext.Server.Gui.Endpoint = $found
+        $PodeContext.Server.Gui.Endpoint = $PodeContext.Server.Endpoints[$EndpointName]
     }
 }
 
@@ -613,31 +614,34 @@ Bind an endpoint to listen for incoming Requests.
 Bind an endpoint to listen for incoming Requests. The endpoints can be HTTP, HTTPS, TCP or SMTP, with the option to bind certificates.
 
 .PARAMETER Address
-The IP/Hostname of the endpoint.
+The IP/Hostname of the endpoint (Default: localhost).
 
 .PARAMETER Port
 The Port number of the endpoint.
+
+.PARAMETER Hostname
+An optional hostname for the endpoint, specifying a hostname restricts access to just the hostname.
 
 .PARAMETER Protocol
 The protocol of the supplied endpoint.
 
 .PARAMETER Certificate
-A certificate name to find and bind onto HTTPS endpoints (Windows only).
-
-.PARAMETER CertificateThumbprint
-A certificate thumbprint to bind onto HTTPS endpoints (Windows only).
-
-.PARAMETER CertificateFile
-The path to a certificate that can be use to enable HTTPS (Cross-platform)
+The path to a certificate that can be use to enable HTTPS
 
 .PARAMETER CertificatePassword
-The password for the certificate referenced in CertificateFile (Cross-platform)
+The password for the certificate file referenced in Certificate
 
-.PARAMETER RawCertificate
-The raw X509 certificate that can be use to enable HTTPS (Cross-platform)
+.PARAMETER CertificateThumbprint
+A certificate thumbprint to bind onto HTTPS endpoints (Windows).
+
+.PARAMETER CertificateName
+A certificate subject name to bind onto HTTPS endpoints (Windows).
+
+.PARAMETER X509Certificate
+The raw X509 certificate that can be use to enable HTTPS
 
 .PARAMETER Name
-An optional name for the endpoint, that can be used with other functions.
+An optional name for the endpoint, that can be used with other functions (Default: GUID).
 
 .PARAMETER RedirectTo
 The Name of another Endpoint to automatically generate a redirect route for all traffic.
@@ -649,7 +653,19 @@ A quick description of the Endpoint - normally used in OpenAPI.
 Ignore Adminstrator checks for non-localhost endpoints.
 
 .PARAMETER SelfSigned
-Create and bind a self-signed certifcate onto HTTPS endpoints (Windows only).
+Create and bind a self-signed certifcate for HTTPS endpoints.
+
+.PARAMETER AllowClientCertificate
+Allow for client certificates to be sent on requests.
+
+.PARAMETER PassThru
+If supplied, the endpoint created will be returned.
+
+.PARAMETER LookupHostname
+If supplied, a supplied Hostname will have its IP Address looked up from host file or DNS.
+
+.PARAMETER Default
+If supplied, this endpoint will be the default one used for internally generating URLs.
 
 .EXAMPLE
 Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
@@ -661,11 +677,14 @@ Add-PodeEndpoint -Address localhost -Protocol Smtp
 Add-PodeEndpoint -Address dev.pode.com -Port 8443 -Protocol Https -SelfSigned
 
 .EXAMPLE
+Add-PodeEndpoint -Address 127.0.0.2 -Hostname dev.pode.com -Port 8443 -Protocol Https -SelfSigned
+
+.EXAMPLE
 Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
 #>
 function Add-PodeEndpoint
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Default')]
     param (
         [Parameter()]
         [string]
@@ -676,30 +695,34 @@ function Add-PodeEndpoint
         $Port = 0,
 
         [Parameter()]
+        [string]
+        $Hostname,
+
+        [Parameter()]
         [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
         [string]
         $Protocol,
 
-        [Parameter(Mandatory=$true, ParameterSetName='CertName')]
-        [string]
-        $Certificate = $null,
-
-        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
-        [string]
-        $CertificateThumbprint = $null,
-
         [Parameter(Mandatory=$true, ParameterSetName='CertFile')]
         [string]
-        $CertificateFile = $null,
+        $Certificate = $null,
 
         [Parameter(ParameterSetName='CertFile')]
         [string]
         $CertificatePassword = $null,
 
+        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
+        [string]
+        $CertificateThumbprint,
+
+        [Parameter(Mandatory=$true, ParameterSetName='CertName')]
+        [string]
+        $CertificateName,
+
         [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
         [Parameter()]
         [X509Certificate]
-        $RawCertificate = $null,
+        $X509Certificate = $null,
 
         [Parameter()]
         [string]
@@ -718,17 +741,35 @@ function Add-PodeEndpoint
 
         [Parameter(ParameterSetName='CertSelf')]
         [switch]
-        $SelfSigned
+        $SelfSigned,
+
+        [switch]
+        $AllowClientCertificate,
+
+        [switch]
+        $PassThru,
+
+        [switch]
+        $LookupHostname,
+
+        [switch]
+        $Default
     )
 
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeEndpoint' -ThrowError
+
+    # if RedirectTo is supplied, then a Name is mandatory
+    if (![string]::IsNullOrWhiteSpace($RedirectTo) -and [string]::IsNullOrWhiteSpace($Name)) {
+        throw "A Name is required for the endpoint if the RedirectTo parameter is supplied"
+    }
 
     # are we running as IIS for HTTP/HTTPS? (if yes, force the port, address and protocol)
     $isIIS = ($PodeContext.Server.IsIIS -and (@('Http', 'Https') -icontains $Protocol))
     if ($isIIS) {
         $Port = [int]$env:ASPNETCORE_PORT
         $Address = '127.0.0.1'
+        $Hostname = [string]::Empty
         $Protocol = 'Http'
     }
 
@@ -737,18 +778,38 @@ function Add-PodeEndpoint
     if ($isHeroku) {
         $Port = [int]$env:PORT
         $Address = '0.0.0.0'
+        $Hostname = [string]::Empty
         $Protocol = 'Http'
     }
 
     # parse the endpoint for host/port info
-    $FullAddress = "$($Address):$($Port)"
-    $_endpoint = Get-PodeEndpointInfo -Endpoint $FullAddress
+    if (![string]::IsNullOrWhiteSpace($Hostname) -and !(Test-PodeHostname -Hostname $Hostname)) {
+        throw "Invalid hostname supplied: $($Hostname)"
+    }
 
-    # if a name was supplied, check it is unique
-    if (!(Test-IsEmpty $Name) -and
-        (Get-PodeCount ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $Name })) -ne 0)
-    {
+    if ((Test-PodeHostname -Hostname $Address) -and ($Address -inotin @('localhost', 'all'))) {
+        $Hostname = $Address
+        $Address = 'localhost'
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Hostname) -and $LookupHostname) {
+        $Address = (Get-PodeIPAddressesForHostname -Hostname $Hostname -Type All | Select-Object -First 1)
+    }
+
+    $_endpoint = Get-PodeEndpointInfo -Address "$($Address):$($Port)"
+
+    # if no name, set to guid, then check uniqueness
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        $Name = New-PodeGuid -Secure
+    }
+
+    if ($PodeContext.Server.Endpoints.ContainsKey($Name)) {
         throw "An endpoint with the name '$($Name)' has already been defined"
+    }
+
+    # protocol must be https for client certs
+    if (($Protocol -ine 'https') -and $AllowClientCertificate) {
+        throw "Client certificates are only supported on HTTPS endpoints"
     }
 
     # new endpoint object
@@ -756,28 +817,32 @@ function Add-PodeEndpoint
         Name = $Name
         Description = $Description
         Address = $null
-        RawAddress = $FullAddress
+        RawAddress = $null
         Port = $null
         IsIPAddress = $true
-        HostName = 'localhost'
+        HostName = $Hostname
+        FriendlyName = $Hostname
         Url = $null
         Ssl = (@('https', 'wss') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
+        Default = $Default.IsPresent
         Certificate = @{
-            Name = $Certificate
-            Thumbprint = $CertificateThumbprint
-            Raw = $RawCertificate
+            Raw = $X509Certificate
             SelfSigned = $SelfSigned
+            AllowClientCertificate = $AllowClientCertificate
         }
     }
 
     # set the ip for the context (force to localhost for IIS)
     $obj.Address = (Get-PodeIPAddress $_endpoint.Host)
-    if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
-        $obj.HostName = "$($obj.Address)"
-    }
+    $obj.IsIPAddress = [string]::IsNullOrWhiteSpace($obj.HostName)
 
-    $obj.IsIPAddress = (Test-PodeIPAddress -IP $obj.Address -IPOnly)
+    if ($obj.IsIPAddress) {
+        $obj.FriendlyName = 'localhost'
+        if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
+            $obj.FriendlyName = "$($obj.Address)"
+        }
+    }
 
     # set the port for the context, if 0 use a default port for protocol
     $obj.Port = $_endpoint.Port
@@ -785,85 +850,96 @@ function Add-PodeEndpoint
         $obj.Port = Get-PodeDefaultPort -Protocol $Protocol
     }
 
+    if ($obj.IsIPAddress) {
+        $obj.RawAddress = "$($obj.Address):$($obj.Port)"
+    }
+    else {
+        $obj.RawAddress = "$($obj.FriendlyName):$($obj.Port)"
+    }
+
     # set the url of this endpoint
-    $obj.Url = "$($obj.Protocol)://$($obj.HostName):$($obj.Port)/"
+    $obj.Url = "$($obj.Protocol)://$($obj.FriendlyName):$($obj.Port)/"
 
     # if the address is non-local, then check admin privileges
-    if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-IsAdminUser)) {
+    if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
         throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
-    $exists = ($PodeContext.Server.Endpoints | Where-Object {
-        ($_.Address -eq $obj.Address) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
+    $exists = ($PodeContext.Server.Endpoints.Values | Where-Object {
+        ($_.FriendlyName -eq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
     } | Measure-Object).Count
 
-    # if we're dealing with a certificate file, attempt to import it
-    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ieq 'certfile')) {
+    # if we're dealing with a certificate, attempt to import it
+    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
         if (@('https', 'wss') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
         }
 
-        $_path = Get-PodeRelativePath -Path $CertificateFile -JoinRoot -Resolve
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
+        {
+            'certfile' {
+                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword
+            }
 
-        if ([string]::IsNullOrWhiteSpace($CertificatePassword)) {
-            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path)
-        }
-        else {
-            $obj.Certificate.Raw = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($_path, $CertificatePassword)
+            'certthumb' {
+                $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint
+            }
+
+            'certname' {
+                $obj.Certificate.Raw = Get-PodeCertificateByName -Name $CertificateName
+            }
+
+            'certself' {
+                $obj.Certificate.Raw = New-PodeSelfSignedCertificate
+            }
         }
 
         # fail if the cert is expired
         if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            throw "The certificate '$($CertificateFile)' has expired: $($obj.Certificate.Raw.NotAfter)"
+            throw "The certificate '$($obj.Certificate.Raw.Subject)' has expired: $($obj.Certificate.Raw.NotAfter)"
         }
     }
 
     if (!$exists) {
         # has an endpoint already been defined for smtp/tcp?
-        if ((@('smtp', 'tcp') -icontains $Protocol) -and ($Protocol -ieq $PodeContext.Server.Type)) {
+        if ((@('smtp', 'tcp') -icontains $Protocol) -and ($PodeContext.Server.Types -icontains $Protocol)) {
             throw "An endpoint for $($Protocol.ToUpperInvariant()) has already been defined"
         }
 
-        # set server type, ensure we aren't trying to change the server's type
-        if (@('ws', 'wss') -icontains $Protocol) {
-            $PodeContext.Server.WebSockets.Enabled = $true
-        }
-        else {
-            $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
-            if (($_type -ieq 'http') -and ($PodeContext.Server.Type -ieq 'pode')) {
-                $_type = 'pode'
-            }
+        # set server type
+        $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
+        $_type = (Resolve-PodeValue -Check ($_type -ieq 'wss') -TrueValue 'ws' -FalseValue $_type)
 
-            if ([string]::IsNullOrWhiteSpace($PodeContext.Server.Type)) {
-                $PodeContext.Server.Type = $_type
-            }
-            elseif ($PodeContext.Server.Type -ine $_type) {
-                throw "Cannot add $($Protocol.ToUpperInvariant()) endpoint when already listening to $($PodeContext.Server.Type.ToUpperInvariant()) endpoints"
-            }
+        if ($PodeContext.Server.Types -inotcontains $_type) {
+            $PodeContext.Server.Types += $_type
         }
 
         # add the new endpoint
-        $PodeContext.Server.Endpoints += $obj
+        $PodeContext.Server.Endpoints[$Name] = $obj
+        $PodeContext.Server.EndpointsMap["$($obj.Protocol)|$($obj.RawAddress)"] = $Name
     }
 
     # if RedirectTo is set, attempt to build a redirecting route
     if (!$isIIS -and !$isHeroku -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
-        $redir_endpoint = ($PodeContext.Server.Endpoints | Where-Object { $_.Name -eq $RedirectTo } | Select-Object -First 1)
+        $redir_endpoint = $PodeContext.Server.Endpoints[$RedirectTo]
 
         # ensure the name exists
-        if (Test-IsEmpty $redir_endpoint) {
+        if (Test-PodeIsEmpty $redir_endpoint) {
             throw "An endpoint with the name '$($RedirectTo)' has not been defined for redirecting"
         }
 
         # build the redirect route
-        Add-PodeRoute -Method * -Path * -Endpoint $obj.RawAddress -Protocol $obj.Protocol -ArgumentList $redir_endpoint -ScriptBlock {
-            param($e, $endpoint)
-
-            $addr = Resolve-PodeValue -Check (Test-PodeIPAddressAny -IP $endpoint.Address) -TrueValue 'localhost' -FalseValue $endpoint.Address
-            Move-PodeResponseUrl -Address $addr -Port $endpoint.Port -Protocol $endpoint.Protocol
+        Add-PodeRoute -Method * -Path * -EndpointName $obj.Name -ArgumentList $redir_endpoint -ScriptBlock {
+            param($endpoint)
+            Move-PodeResponseUrl -EndpointName $endpoint.Name
         }
+    }
+
+    # return the endpoint?
+    if ($PassThru) {
+        return $obj
     }
 }
 
@@ -879,6 +955,9 @@ An Address to filter the endpoints.
 
 .PARAMETER Port
 A Port to filter the endpoints.
+
+.PARAMETER Hostname
+A Hostname to filter the endpoints.
 
 .PARAMETER Protocol
 A Protocol to filter the endpoints.
@@ -908,6 +987,10 @@ function Get-PodeEndpoint
         $Port = 0,
 
         [Parameter()]
+        [string]
+        $Hostname,
+
+        [Parameter()]
         [ValidateSet('', 'Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
         [string]
         $Protocol,
@@ -917,7 +1000,12 @@ function Get-PodeEndpoint
         $Name
     )
 
-    $endpoints = $PodeContext.Server.Endpoints
+    if ((Test-PodeHostname -Hostname $Address) -and ($Address -inotin @('localhost', 'all'))) {
+        $Hostname = $Address
+        $Address = 'localhost'
+    }
+
+    $endpoints = $PodeContext.Server.Endpoints.Values
 
     # if we have an address, filter
     if (![string]::IsNullOrWhiteSpace($Address)) {
@@ -925,12 +1013,23 @@ function Get-PodeEndpoint
             $Address = '0.0.0.0'
         }
 
-        if ($PodeContext.Server.IsIIS) {
+        if ($PodeContext.Server.IsIIS -or ($Address -ieq 'localhost')) {
             $Address = '127.0.0.1'
         }
 
         $endpoints = @(foreach ($endpoint in $endpoints) {
             if ($endpoint.Address.ToString() -ine $Address) {
+                continue
+            }
+
+            $endpoint
+        })
+    }
+
+    # if we have a hostname, filter
+    if (![string]::IsNullOrWhiteSpace($Hostname)) {
+        $endpoints = @(foreach ($endpoint in $endpoints) {
+            if ($endpoint.Hostname.ToString() -ine $Hostname) {
                 continue
             }
 
@@ -1096,6 +1195,9 @@ function Add-PodeTimer
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # calculate the next tick time (based on Skip)
     $NextTriggerTime = [DateTime]::Now.AddSeconds($Interval)
     if ($Skip -gt 1) {
@@ -1111,6 +1213,7 @@ function Add-PodeTimer
         Skip = $Skip
         NextTriggerTime = $NextTriggerTime
         Script = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = $ArgumentList
         OnStart = $OnStart
         Completed = $false
@@ -1239,19 +1342,23 @@ function Edit-PodeTimer
         throw "Timer '$($Name)' does not exist"
     }
 
+    $_timer = $PodeContext.Timers[$Name]
+
     # edit interval if supplied
     if ($Interval -gt 0) {
-        $PodeContext.Timers[$Name].Interval = $Interval
+        $_timer.Interval = $Interval
     }
 
     # edit scriptblock if supplied
-    if (!(Test-IsEmpty $ScriptBlock)) {
-        $PodeContext.Timers[$Name].Script = $ScriptBlock
+    if (!(Test-PodeIsEmpty $ScriptBlock)) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $_timer.Script = $ScriptBlock
+        $_timer.UsingVariables = $usingVars
     }
 
     # edit arguments if supplied
-    if (!(Test-IsEmpty $ArgumentList)) {
-        $PodeContext.Timers[$Name].Arguments = $ArgumentList
+    if (!(Test-PodeIsEmpty $ArgumentList)) {
+        $_timer.Arguments = $ArgumentList
     }
 }
 
@@ -1412,6 +1519,9 @@ function Add-PodeSchedule
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
     # add the schedule
     $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
     $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime
@@ -1426,6 +1536,7 @@ function Add-PodeSchedule
         Count = 0
         NextTriggerTime = $nextTrigger
         Script = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart = $OnStart
         Completed = ($null -eq $nextTrigger)
@@ -1604,19 +1715,21 @@ function Edit-PodeSchedule
     $_schedule = $PodeContext.Schedules[$Name]
 
     # edit cron if supplied
-    if (!(Test-IsEmpty $Cron)) {
+    if (!(Test-PodeIsEmpty $Cron)) {
         $_schedule.Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
         $_schedule.CronsRaw = $Cron
         $_schedule.NextTriggerTime = Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $_schedule.StartTime -EndTime $_schedule.EndTime
     }
 
     # edit scriptblock if supplied
-    if (!(Test-IsEmpty $ScriptBlock)) {
+    if (!(Test-PodeIsEmpty $ScriptBlock)) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $_schedule.Script = $ScriptBlock
+        $_schedule.UsingVariables = $usingVars
     }
 
     # edit arguments if supplied
-    if (!(Test-IsEmpty $ArgumentList)) {
+    if (!(Test-PodeIsEmpty $ArgumentList)) {
         $_schedule.Arguments = $ArgumentList
     }
 }
@@ -1810,7 +1923,7 @@ Add-PodeMiddleware -Name 'CheckEmailOnApi' -Route '/api/*' -ScriptBlock { /* log
 function Add-PodeMiddleware
 {
     [CmdletBinding(DefaultParameterSetName='Script')]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -1839,7 +1952,11 @@ function Add-PodeMiddleware
 
     # if it's a script - call New-PodeMiddleware
     if ($PSCmdlet.ParameterSetName -ieq 'script') {
-        $InputObject = New-PodeMiddleware -ScriptBlock $ScriptBlock -Route $Route -ArgumentList $ArgumentList
+        $InputObject = (New-PodeMiddlewareInternal `
+            -ScriptBlock $ScriptBlock `
+            -Route $Route `
+            -ArgumentList $ArgumentList `
+            -PSSession $PSCmdlet.SessionState)
     }
     else {
         if (![string]::IsNullOrWhiteSpace($Route)) {
@@ -1851,7 +1968,7 @@ function Add-PodeMiddleware
     }
 
     # ensure we have a script to run
-    if (Test-IsEmpty $InputObject.Logic) {
+    if (Test-PodeIsEmpty $InputObject.Logic) {
         throw "[Middleware]: No logic supplied in ScriptBlock"
     }
 
@@ -1885,7 +2002,7 @@ function New-PodeMiddleware
 {
     [CmdletBinding()]
     [OutputType([hashtable])]
-    param (
+    param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
         $ScriptBlock,
@@ -1899,22 +2016,11 @@ function New-PodeMiddleware
         $ArgumentList
     )
 
-    # if route is empty, set it to root
-    $Route = ConvertTo-PodeRouteRegex -Path $Route
-
-    # create the middleware hashtable from a scriptblock
-    $HashTable = @{
-        Route = $Route
-        Logic = $ScriptBlock
-        Arguments = $ArgumentList
-    }
-
-    if (Test-IsEmpty $HashTable.Logic) {
-        throw "[Middleware]: No logic supplied in ScriptBlock"
-    }
-
-    # return the middleware, so it can be cached/added at a later date
-    return $HashTable
+    return (New-PodeMiddlewareInternal `
+        -ScriptBlock $ScriptBlock `
+        -Route $Route `
+        -ArgumentList $ArgumentList `
+        -PSSession $PSCmdlet.SessionState)
 }
 
 <#
@@ -1933,7 +2039,7 @@ Remove-PodeMiddleware -Name 'Sessions'
 function Remove-PodeMiddleware
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name

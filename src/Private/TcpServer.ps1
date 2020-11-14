@@ -1,15 +1,18 @@
 function Start-PodeTcpServer
 {
     # ensure we have service handlers
-    if (Test-IsEmpty (Get-PodeHandler -Type Tcp)) {
+    if (Test-PodeIsEmpty (Get-PodeHandler -Type Tcp)) {
         throw 'No TCP handlers have been defined'
     }
 
+    # the endpoint to listen on
+    $endpoint = @(Get-PodeEndpoints -Type Tcp)[0]
+
     # grab the relavant port
-    $port = $PodeContext.Server.Endpoints[0].Port
+    $port = $endpoint.Port
 
     # get the IP address for the server
-    $ipAddress = $PodeContext.Server.Endpoints[0].Address
+    $ipAddress = $endpoint.Address
     if (Test-PodeHostname -Hostname $ipAddress) {
         $ipAddress = (Get-PodeIPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
         $ipAddress = (Get-PodeIPAddress $ipAddress)
@@ -52,7 +55,7 @@ function Start-PodeTcpServer
                 $client = (Wait-PodeTask -Task $Listener.AcceptTcpClientAsync())
 
                 # convert the ip
-                $ip = (ConvertTo-PodeIPAddress -Endpoint $client.Client.RemoteEndPoint)
+                $ip = (ConvertTo-PodeIPAddress -Address $client.Client.RemoteEndPoint)
 
                 # ensure the request ip is allowed and deal with the tcp call
                 if ((Test-PodeIPAccess -IP $ip) -and (Test-PodeIPLimit -IP $ip)) {
@@ -65,7 +68,17 @@ function Start-PodeTcpServer
                     $handlers = Get-PodeHandler -Type Tcp
                     foreach ($name in $handlers.Keys) {
                         $handler = $handlers[$name]
-                        Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments (@($TcpEvent) + @($handler.Arguments)) -Scoped -Splat
+
+                        $_args = @($handler.Arguments)
+                        if ($null -ne $handler.UsingVariables) {
+                            $_vars = @()
+                            foreach ($_var in $handler.UsingVariables) {
+                                $_vars += ,$_var.Value
+                            }
+                            $_args = $_vars + $_args
+                        }
+
+                        Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $_args -Scoped -Splat
                     }
                 }
 
@@ -81,9 +94,8 @@ function Start-PodeTcpServer
     }
 
     # start the runspace for listening on x-number of threads
-    1..$PodeContext.Threads.Web | ForEach-Object {
-        Add-PodeRunspace -Type 'Main' -ScriptBlock $listenScript `
-            -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+    1..$PodeContext.Threads.General | ForEach-Object {
+        Add-PodeRunspace -Type Tcp -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep tcp server listening until cancelled
@@ -113,8 +125,8 @@ function Start-PodeTcpServer
         }
     }
 
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Tcp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
 
     # state where we're running
-    return @("tcp://$($PodeContext.Server.Endpoints[0].HostName):$($port)")
+    return @("tcp://$($endpoint.FriendlyName):$($port)")
 }

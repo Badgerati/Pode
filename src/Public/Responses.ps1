@@ -68,11 +68,12 @@ function Set-PodeResponseAttachment
         else {
             $WebEvent.Response.ContentType = $ContentType
         }
+
         Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
         # if serverless, get the content raw and return
         if (!$WebEvent.Streamed) {
-            if (Test-IsPSCore) {
+            if (Test-PodeIsPSCore) {
                 $content = (Get-Content -Path $_path -Raw -AsByteStream)
             }
             else {
@@ -370,7 +371,7 @@ function Write-PodeFileResponse
 
     # this is a static file
     else {
-        if (Test-IsPSCore) {
+        if (Test-PodeIsPSCore) {
             $content = (Get-Content -Path $Path -Raw -AsByteStream)
         }
         else {
@@ -436,7 +437,7 @@ function Write-PodeCsvResponse
                     New-Object psobject -Property $v
                 })
 
-                if (Test-IsPSCore) {
+                if (Test-PodeIsPSCore) {
                     $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
                 }
                 else {
@@ -742,6 +743,9 @@ Any dynamic data to supply to a dynamic View.
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER Folder
+If supplied, a custom views folder will be used.
+
 .PARAMETER FlashMessages
 Automatically supply all Flash messages in the current session to the View.
 
@@ -769,6 +773,10 @@ function Write-PodeViewResponse
         [Parameter()]
         [int]
         $StatusCode = 200,
+
+        [Parameter()]
+        [string]
+        $Folder,
 
         [switch]
         $FlashMessages
@@ -802,8 +810,13 @@ function Write-PodeViewResponse
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
-    # only look in the view directory
-    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
+    # only look in the view directories
+    $viewFolder = $PodeContext.Server.InbuiltDrives['views']
+    if (![string]::IsNullOrWhiteSpace($Folder)) {
+        $viewFolder = $PodeContext.Server.Views[$Folder]
+    }
+
+    $Path = (Join-Path $viewFolder $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
@@ -907,6 +920,9 @@ Redirecting a user to a new URL, or the same URL as the Request but a different 
 .PARAMETER Url
 Redirect the user to a new URL, or a relative path.
 
+.PARAMETER EndpointName
+The Name of an Endpoint to redirect to.
+
 .PARAMETER Port
 Change the port of the current Request before redirecting.
 
@@ -934,10 +950,14 @@ Move-PodeResponseUrl -Port 9000 -Moved
 function Move-PodeResponseUrl
 {
     [CmdletBinding(DefaultParameterSetName='Url')]
-    param (
+    param(
         [Parameter(Mandatory=$true, ParameterSetName='Url')]
         [string]
         $Url,
+
+        [Parameter(ParameterSetName='Endpoint')]
+        [string]
+        $EndpointName,
 
         [Parameter(ParameterSetName='Components')]
         [int]
@@ -956,6 +976,7 @@ function Move-PodeResponseUrl
         $Moved
     )
 
+    # build the url
     if ($PSCmdlet.ParameterSetName -ieq 'components') {
         $uri = $WebEvent.Request.Url
 
@@ -982,6 +1003,19 @@ function Move-PodeResponseUrl
 
         # combine to form the url
         $Url = "$($Protocol)://$($Address)$($PortStr)$($uri.PathAndQuery)"
+    }
+
+    # build the url from an endpoint
+    elseif ($PSCmdlet.ParameterSetName -ieq 'endpoint') {
+        $endpoint = Get-PodeEndpointByName -Name $EndpointName -ThrowError
+
+        # set the port
+        $PortStr = [string]::Empty
+        if (@(80, 443) -notcontains $endpoint.Port) {
+            $PortStr = ":$($endpoint.Port)"
+        }
+
+        $Url = "$($endpoint.Protocol)://$($endpoint.FriendlyName)$($PortStr)$($WebEvent.Request.Url.PathAndQuery)"
     }
 
     Set-PodeHeader -Name 'Location' -Value $Url
@@ -1195,10 +1229,16 @@ function Set-PodeViewEngine
         $Extension = $Type.ToLowerInvariant()
     }
 
+    # check if the scriptblock has any using vars
+    if ($null -ne $ScriptBlock) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
     # setup view engine config
     $PodeContext.Server.ViewEngine.Type = $Type.ToLowerInvariant()
     $PodeContext.Server.ViewEngine.Extension = $Extension
-    $PodeContext.Server.ViewEngine.Script = $ScriptBlock
+    $PodeContext.Server.ViewEngine.ScriptBlock = $ScriptBlock
+    $PodeContext.Server.ViewEngine.UsingVariables = $usingVars
     $PodeContext.Server.ViewEngine.IsDynamic = (@('html', 'md') -inotcontains $Type)
 }
 
@@ -1215,6 +1255,9 @@ The path to a partial View, relative to the "/views" directory. (Extension is op
 .PARAMETER Data
 Any dynamic data to supply to a dynamic partial View.
 
+.PARAMETER Folder
+If supplied, a custom views folder will be used.
+
 .EXAMPLE
 Use-PodePartialView -Path 'shared/footer'
 #>
@@ -1228,7 +1271,11 @@ function Use-PodePartialView
         $Path,
 
         [Parameter()]
-        $Data = @{}
+        $Data = @{},
+
+        [Parameter()]
+        [string]
+        $Folder
     )
 
     # default data if null
@@ -1243,7 +1290,12 @@ function Use-PodePartialView
     }
 
     # only look in the view directory
-    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
+    $viewFolder = $PodeContext.Server.InbuiltDrives['views']
+    if (![string]::IsNullOrWhiteSpace($Folder)) {
+        $viewFolder = $PodeContext.Server.Views[$Folder]
+    }
+
+    $Path = (Join-Path $viewFolder $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {
@@ -1299,6 +1351,10 @@ function Send-PodeSignal
         $Depth = 10
     )
 
+    if ($null -eq $PodeContext.Server.WebSockets.Listener) {
+        throw "WebSockets have not been configured to send signal messages"
+    }
+
     if ($Value -isnot [string]) {
         if ($Depth -le 0) {
             $Value = ($Value | ConvertTo-Json -Compress)
@@ -1308,9 +1364,53 @@ function Send-PodeSignal
         }
     }
 
-    $PodeContext.Server.WebSockets.Queues.Messages.Enqueue(@{
-        Value = $Value
-        ClientId = $ClientId
-        Path = $Path
-    })
+    $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+}
+
+<#
+.SYNOPSIS
+Add a custom path that contains additional views.
+
+.DESCRIPTION
+Add a custom path that contains additional views.
+
+.PARAMETER Name
+The Name of the views folder.
+
+.PARAMETER Source
+The literal, or relative, path to the directory that contains views.
+
+.EXAMPLE
+Add-PodeViewFolder -Name 'assets' -Source './assets'
+#>
+function Add-PodeViewFolder
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Source
+    )
+
+    # ensure the folder doesn't already exist
+    if ($PodeContext.Server.Views.ContainsKey($Name)) {
+        throw "The Views folder name already exists: $($Name)"
+    }
+
+    # ensure the path exists at server root
+    $Source = Get-PodeRelativePath -Path $Source -JoinRoot
+    if (!(Test-PodePath -Path $Source -NoStatus)) {
+        throw "The Views path does not exist: $($Source)"
+    }
+
+    # setup a temp drive for the path
+    $Source = New-PodePSDrive -Path $Source
+
+    # add the route(s)
+    Write-Verbose "Adding View Folder: [$($Name)] $($Source)"
+    $PodeContext.Server.Views[$Name] = $Source
 }

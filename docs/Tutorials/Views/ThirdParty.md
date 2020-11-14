@@ -1,33 +1,34 @@
 # Third Party Engines
 
-Pode supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) or [PSHTML](https://github.com/Stephanevg/PSHTML) template engines. To do this you'll need to supply a `scriptblock` to the  [`Set-PodeViewEngine`](../../../Functions/Responses/Set-PodeViewEngine) function which tells Pode how use the third-party engine to render views.
+Pode supports the use of third-party view engines, for example you could use the [EPS](https://github.com/straightdave/eps) or [PSHTML](https://github.com/Stephanevg/PSHTML) template engines. To do this you'll need to supply a `scriptblock` to the [`Set-PodeViewEngine`](../../../Functions/Responses/Set-PodeViewEngine) function which tells Pode how use the third-party engine to render views.
 
 This custom `scriptblock` will be supplied with two arguments:
 
 1. `$path`: The path to the file that needs generating using your chosen template engine
-2. `$data`: Any data that was supplied to the  [`Write-PodeViewResponse`](../../../Functions/Responses/Write-PodeViewResponse) function
+2. `$data`: Any data that was supplied to the [`Write-PodeViewResponse`](../../../Functions/Responses/Write-PodeViewResponse) function
 
 ## EPS
 
-If you were to use `EPS` engine, and already have the module installed, then the following server example would work for views and static content:
+If you were to use the `EPS` engine, and already have the module installed, then the following server example would work for views and static content:
 
 ```powershell
+# import the EPS module
+Import-Module -Name EPS
+
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    # import the EPS module into the runspaces
-    Import-PodeModule -Name EPS
 
     # set the engine to use and render EPS files
     # (could be index.eps, or for content scripts.css.eps)
     Set-PodeViewEngine -Type EPS -ScriptBlock {
         param($path, $data)
+        $template = Get-Content -Path $path -Raw -Force
 
         if ($null -eq $data) {
-            return (Invoke-EpsTemplate -Path $path)
+            return (Invoke-EpsTemplate -Template $template)
         }
         else {
-            return (Invoke-EpsTemplate -Path $path -Binding $data)
+            return (Invoke-EpsTemplate -Template $template -Binding $data)
         }
     }
 
@@ -53,11 +54,11 @@ The following example structure could be used for the views and static content:
 If you were to use `PSHTML` engine, and already have the module installed, then the following server example would work for views and static content:
 
 ```powershell
+# import the PSHTML module
+Import-Module -Name PSHTML
+
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    # import the PSHTML module into the runspaces
-    Import-PodeModule -Name PSHTML
 
     # set the engine to use and render PSHTML (which are just ps1) files
     # (could be index.ps1, or for content scripts.css.ps1)

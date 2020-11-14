@@ -6,6 +6,7 @@ pode_modules/
 ps_modules/
 docs/[Ff]unctions/
 examples/state.json
+pkg/
 
 
 # Code Runner
@@ -31,6 +32,7 @@ bld/
 [Tt]emp/
 [Ll]ogs/
 [Ss]ite/
+[Ll]ibs/
 
 # Packing Artifacts
 *.zip

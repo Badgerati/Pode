@@ -5,9 +5,9 @@
 [![Code Coverage](https://coveralls.io/repos/github/Badgerati/Pode/badge.svg?branch=develop)](https://coveralls.io/github/Badgerati/Pode?branch=develop)
 [![Gitter](https://badges.gitter.im/Badgerati/Pode.svg)](https://gitter.im/Badgerati/Pode?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Pode is a Cross-Platform framework, *completely written in PowerShell*, to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers. It also allows you to render dynamic files using `.pode` files, which is effectively embedded PowerShell, or other Third-Party template engines. Pode also has support for middleware, sessions, authentication, and logging; as well as access and rate limiting features. There's also Azure Functions and AWS Lambda support!
+Pode is a Cross-Platform framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers. It also allows you to render dynamic files using `.pode` files, which is effectively embedded PowerShell, or other Third-Party template engines. Pode also has support for middleware, sessions, authentication, and logging; as well as access and rate limiting features. There's also Azure Functions and AWS Lambda support!
 
-[![GetStarted](https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&style=for-the-badge)](./Getting-Started/Installation)
+[![GetStarted](https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&style=for-the-badge)](./Getting-Started/FirstApp)
 [![QuickLook](https://img.shields.io/badge/-Quick%20Look!-blue.svg?longCache=true&style=for-the-badge)](#quick-look)
 
 ## Features
@@ -32,9 +32,9 @@ Pode is a Cross-Platform framework, *completely written in PowerShell*, to creat
 * Ability to allow/deny requests from certain IP addresses and subnets
 * Basic rate limiting for IP addresses and subnets
 * Middleware and Sessions on web servers, with Flash message and CSRF support
-* Authentication on requests, such as Basic and Windows Active Directory
+* Authentication on requests, such as Basic, Windows and Azure AD
 * Support for dynamically building Routes from Functions and Modules
-* (Windows) Generate/bind self-signed certificates, and signed certificates
+* Generate/bind self-signed certificates
 * (Windows) Open the hosted server as a desktop application
 
 ## Quick Look!
@@ -51,4 +51,4 @@ Start-PodeServer {
 }
 ```
 
-[![GetStarted](https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&style=for-the-badge)](./Getting-Started/Installation)
+[![GetStarted](https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&style=for-the-badge)](./Getting-Started/FirstApp)

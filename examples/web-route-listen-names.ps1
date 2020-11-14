@@ -38,8 +38,7 @@ Start-PodeServer {
 
     # GET request with parameters
     Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
-        param($event)
-        Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ 'userId' = $WebEvent.Parameters['userId'] }
     }
 
 }

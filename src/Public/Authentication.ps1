@@ -38,7 +38,7 @@ The Name of an Authentication type - such as Basic or NTLM.
 .PARAMETER Realm
 The name of scope of the protected area.
 
-.PARAMETER Scheme
+.PARAMETER Type
 The scheme type for custom Authentication types. Default is HTTP.
 
 .PARAMETER PostValidator
@@ -50,19 +50,46 @@ If supplied, will use the inbuilt Digest Authentication credentials retriever.
 .PARAMETER Bearer
 If supplied, will use the inbuilt Bearer Authentication token retriever.
 
+.PARAMETER ClientCertificate
+If supplied, will use the inbuilt Client Certificate Authentication scheme.
+
+.PARAMETER ClientId
+The Application ID generated when registering a new app for OAuth2.
+
+.PARAMETER ClientSecret
+The Application Secret generated when registering a new app for OAuth2.
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+
+.PARAMETER AuthoriseUrl
+The OAuth2 Authorisation URL to authenticate a User. This is optional if you're using an InnerScheme like Basic/Form.
+
+.PARAMETER TokenUrl
+The OAuth2 Token URL to acquire an access token.
+
+.PARAMETER UserUrl
+An optional User profile URL to retrieve a user's details - for OAuth2
+
+.PARAMETER OAuth2
+If supplied, will use the inbuilt OAuth2 Authentication scheme.
+
 .PARAMETER Scope
-An optional array of Scopes for Bearer Authentication. (These are case-sensitive)
+An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-sensitive)
+
+.PARAMETER InnerScheme
+An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
 
 .EXAMPLE
-$basic_auth = New-PodeAuthType -Basic
+$basic_auth = New-PodeAuthScheme -Basic
 
 .EXAMPLE
-$form_auth = New-PodeAuthType -Form -UsernameField 'Email'
+$form_auth = New-PodeAuthScheme -Form -UsernameField 'Email'
 
 .EXAMPLE
-$custom_auth = New-PodeAuthType -Custom -ScriptBlock { /* logic */ }
+$custom_auth = New-PodeAuthScheme -Custom -ScriptBlock { /* logic */ }
 #>
-function New-PodeAuthType
+function New-PodeAuthScheme
 {
     [CmdletBinding(DefaultParameterSetName='Basic')]
     [OutputType([hashtable])]
@@ -97,8 +124,8 @@ function New-PodeAuthType
 
         [Parameter(Mandatory=$true, ParameterSetName='Custom')]
         [ValidateScript({
-            if (Test-IsEmpty $_) {
-                throw "A non-empty ScriptBlock is required for the Custom authentication type"
+            if (Test-PodeIsEmpty $_) {
+                throw "A non-empty ScriptBlock is required for the Custom authentication scheme"
             }
 
             return $true
@@ -121,7 +148,7 @@ function New-PodeAuthType
         [Parameter(ParameterSetName='Custom')]
         [ValidateSet('ApiKey', 'Http', 'OAuth2', 'OpenIdConnect')]
         [string]
-        $Scheme = 'Http',
+        $Type = 'Http',
 
         [Parameter(ParameterSetName='Custom')]
         [scriptblock]
@@ -135,22 +162,63 @@ function New-PodeAuthType
         [switch]
         $Bearer,
 
+        [Parameter(ParameterSetName='ClientCertificate')]
+        [switch]
+        $ClientCertificate,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $ClientSecret,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [string]
+        $RedirectUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [string]
+        $AuthoriseUrl,
+
+        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [string]
+        $TokenUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [string]
+        $UserUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [switch]
+        $OAuth2,
+
         [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName='OAuth2')]
         [string[]]
-        $Scope
+        $Scope,
+
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $InnerScheme
     )
 
     # default realm
     $_realm = 'User'
 
-    # configure the auth type
+    # configure the auth scheme
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'basic' {
             return @{
                 Name = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = (Get-PodeAuthBasicType)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthBasicType)
+                    UsingVariables = $null
+                }
                 PostValidator = $null
+                InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
@@ -159,12 +227,34 @@ function New-PodeAuthType
             }
         }
 
+        'clientcertificate' {
+            return @{
+                Name = 'Mutual'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthClientCertificateType)
+                    UsingVariables = $null
+                }
+                PostValidator = $null
+                InnerScheme = $InnerScheme
+                Scheme = 'http'
+                Arguments = @{}
+            }
+        }
+
         'digest' {
             return @{
                 Name = 'Digest'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = (Get-PodeAuthDigestType)
-                PostValidator = (Get-PodeAuthDigestPostValidator)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthDigestType)
+                    UsingVariables = $null
+                }
+                PostValidator = @{
+                    Script = (Get-PodeAuthDigestPostValidator)
+                    UsingVariables = $null
+                }
+                InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{}
             }
@@ -174,9 +264,16 @@ function New-PodeAuthType
             return @{
                 Name = 'Bearer'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = (Get-PodeAuthBearerType)
-                PostValidator = (Get-PodeAuthBearerPostValidator)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthBearerType)
+                    UsingVariables = $null
+                }
+                PostValidator = @{
+                    Script = (Get-PodeAuthBearerPostValidator)
+                    UsingVariables = $null
+                }
                 Scheme = 'http'
+                InnerScheme = $InnerScheme
                 Arguments = @{
                     Scopes = $Scope
                 }
@@ -187,8 +284,12 @@ function New-PodeAuthType
             return @{
                 Name = 'Form'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = (Get-PodeAuthFormType)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthFormType)
+                    UsingVariables = $null
+                }
                 PostValidator = $null
+                InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{
                     Fields = @{
@@ -199,17 +300,127 @@ function New-PodeAuthType
             }
         }
 
+        'oauth2' {
+            if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
+                throw "OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: $($InnerScheme.Name)"
+            }
+
+            if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
+                throw "OAuth2 requires an Authorise URL to be supplied"
+            }
+
+            return @{
+                Name = 'OAuth2'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthOAuth2Type)
+                    UsingVariables = $null
+                }
+                PostValidator = $null
+                Scheme = 'oauth2'
+                InnerScheme = $InnerScheme
+                Arguments = @{
+                    Scopes = $Scope
+                    Client = @{
+                        ID = $ClientId
+                        Secret = $ClientSecret
+                    }
+                    Urls = @{
+                        Redirect = $RedirectUrl
+                        Authorise = $AuthoriseUrl
+                        Token = $TokenUrl
+                        User = $UserUrl
+                    }
+                }
+            }
+        }
+
         'custom' {
+            $ScriptBlock, $usingScriptVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+            if (!(Test-PodeIsEmpty $PostValidator)) {
+                $PostValidator, $usingPostVars = Invoke-PodeUsingScriptConversion -ScriptBlock $PostValidator -PSSession $PSCmdlet.SessionState
+            }
+
             return @{
                 Name = $Name
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                Scheme = $Scheme.ToLowerInvariant()
-                ScriptBlock = $ScriptBlock
-                PostValidator = $PostValidator
+                InnerScheme = $InnerScheme
+                Scheme = $Type.ToLowerInvariant()
+                ScriptBlock = @{
+                    Script = $ScriptBlock
+                    UsingVariables = $usingScriptVars
+                }
+                PostValidator = @{
+                    Script = $PostValidator
+                    UsingVariables = $usingPostVars
+                }
                 Arguments = $ArgumentList
             }
         }
     }
+}
+
+<#
+.SYNOPSIS
+Create an OAuth2 auth scheme for Azure AD.
+
+.DESCRIPTION
+A wrapper for New-PodeAuthScheme and OAuth2, which builds an OAuth2 scheme for Azure AD.
+
+.PARAMETER Tenant
+The Directory/Tenant ID from registering a new app (default: common).
+
+.PARAMETER ClientId
+The Client ID from registering a new app.
+
+.PARAMETER ClientSecret
+The Client Secret from registering a new app.
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+
+.PARAMETER InnerScheme
+An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
+
+.EXAMPLE
+New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -ClientSecret 1234.abc
+#>
+function New-PodeAuthAzureADScheme
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Tenant = 'common',
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientSecret,
+
+        [Parameter()]
+        [string]
+        $RedirectUrl,
+
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $InnerScheme
+    )
+
+    return (New-PodeAuthScheme `
+        -OAuth2 `
+        -ClientId $ClientId `
+        -ClientSecret $ClientSecret `
+        -AuthoriseUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/authorize" `
+        -TokenUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/token" `
+        -UserUrl "https://graph.microsoft.com/oidc/userinfo" `
+        -RedirectUrl $RedirectUrl `
+        -InnerScheme $InnerScheme)
 }
 
 <#
@@ -222,8 +433,8 @@ Adds a custom Authentication method for verifying users.
 .PARAMETER Name
 A unique Name for the Authentication method.
 
-.PARAMETER Type
-The Type to use for retrieving credentials (From New-PodeAuthType).
+.PARAMETER Scheme
+The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that retrieves and verifys a user.
@@ -231,8 +442,20 @@ The ScriptBlock defining logic that retrieves and verifys a user.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Authentication's ScriptBlock.
 
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
+
 .EXAMPLE
-New-PodeAuthType -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
+New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeAuth
 {
@@ -244,11 +467,11 @@ function Add-PodeAuth
 
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
-        $Type,
+        $Scheme,
 
         [Parameter(Mandatory=$true)]
         [ValidateScript({
-            if (Test-IsEmpty $_) {
+            if (Test-PodeIsEmpty $_) {
                 throw "A non-empty ScriptBlock is required for the authentication method"
             }
 
@@ -259,25 +482,96 @@ function Add-PodeAuth
 
         [Parameter()]
         [object[]]
-        $ArgumentList
+        $ArgumentList,
+
+        [Parameter()]
+        [string]
+        $FailureUrl,
+
+        [Parameter()]
+        [string]
+        $FailureMessage,
+
+        [Parameter()]
+        [string]
+        $SuccessUrl,
+
+        [switch]
+        $Sessionless
     )
 
     # ensure the name doesn't already exist
-    if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
+    if (Test-PodeAuth -Name $Name) {
         throw "Authentication method already defined: $($Name)"
     }
 
-    # ensure the Type contains a scriptblock
-    if (Test-IsEmpty $Type.ScriptBlock) {
-        throw "The supplied Type for the '$($Name)' authentication method requires a valid ScriptBlock"
+    # ensure the Scheme contains a scriptblock
+    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+        throw "The supplied Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
     }
+
+    # if we're using sessions, ensure sessions have been setup
+    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+        throw 'Sessions are required to use session persistent authentication'
+    }
+
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
-        Type = $Type
+        Scheme = $Scheme
         ScriptBlock = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = $ArgumentList
+        Sessionless = $Sessionless
+        Failure = @{
+            Url = $FailureUrl
+            Message = $FailureMessage
+        }
+        Success = @{
+            Url = $SuccessUrl
+        }
     }
+
+    # if the scheme is oauth2, and there's no redirect, set up a default one
+    if (($Scheme.Name -ieq 'oauth2') -and ($null -eq $Scheme.InnerScheme)  -and [string]::IsNullOrWhiteSpace($Scheme.Arguments.Urls.Redirect)) {
+        $url = Get-PodeEndpointUrl
+        $path = 'oauth2/callback'
+        $Scheme.Arguments.Urls.Redirect = "$($url)$($path)"
+        Add-PodeRoute -Method Get -Path "/$($path)" -Authentication $Name
+    }
+}
+
+<#
+.SYNOPSIS
+Gets an Authentication method.
+
+.DESCRIPTION
+Gets an Authentication method.
+
+.PARAMETER Name
+The Name of an Authentication method.
+
+.EXAMPLE
+Get-PodeAuth -Name 'Main'
+#>
+function Get-PodeAuth
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    # ensure the name exists
+    if (!(Test-PodeAuth -Name $Name)) {
+        throw "Authentication method not defined: $($Name)"
+    }
+
+    # get auth method
+    return $PodeContext.Server.Authentications[$Name]
 }
 
 <#
@@ -290,8 +584,8 @@ Adds the inbuilt Windows AD Authentication method for verifying users.
 .PARAMETER Name
 A unique Name for the Authentication method.
 
-.PARAMETER Type
-The Type to use for retrieving credentials (From New-PodeAuthType).
+.PARAMETER Scheme
+The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER Fqdn
 A custom FQDN for the DNS of the AD you wish to authenticate against. (Alias: Server)
@@ -305,6 +599,18 @@ An array of Group names to only allow access.
 .PARAMETER Users
 An array of Usernames to only allow access.
 
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
+
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
 
@@ -312,16 +618,16 @@ If supplied, groups will not be retrieved for the user in AD.
 If supplied, and on Windows, OpenLDAP will be used instead.
 
 .EXAMPLE
-New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
 
 .EXAMPLE
-New-PodeAuthType -Basic | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Developers')
+New-PodeAuthScheme -Basic | Add-PodeAuthWindowsAd -Name 'WinAuth' -Groups @('Developers')
 
 .EXAMPLE
-New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
 
 .EXAMPLE
-New-PodeAuthType -Form | Add-PodeAuthWindowsAd -Name 'UnixAuth' -Server 'testdomain.company.com' -Domain 'testdomain'
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'UnixAuth' -Server 'testdomain.company.com' -Domain 'testdomain'
 #>
 function Add-PodeAuthWindowsAd
 {
@@ -333,7 +639,7 @@ function Add-PodeAuthWindowsAd
 
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
-        $Type,
+        $Scheme,
 
         [Parameter()]
         [Alias('Server')]
@@ -352,6 +658,21 @@ function Add-PodeAuthWindowsAd
         [string[]]
         $Users,
 
+        [Parameter()]
+        [string]
+        $FailureUrl,
+
+        [Parameter()]
+        [string]
+        $FailureMessage,
+
+        [Parameter()]
+        [string]
+        $SuccessUrl,
+
+        [switch]
+        $Sessionless,
+
         [Parameter(ParameterSetName='NoGroups')]
         [switch]
         $NoGroups,
@@ -361,13 +682,18 @@ function Add-PodeAuthWindowsAd
     )
 
     # ensure the name doesn't already exist
-    if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
+    if (Test-PodeAuth -Name $Name) {
         throw "Windows AD Authentication method already defined: $($Name)"
     }
 
-    # ensure the Type contains a scriptblock
-    if (Test-IsEmpty $Type.ScriptBlock) {
-        throw "The supplied Type for the '$($Name)' Windows AD authentication method requires a valid ScriptBlock"
+    # ensure the Scheme contains a scriptblock
+    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+        throw "The supplied Scheme for the '$($Name)' Windows AD authentication validator requires a valid ScriptBlock"
+    }
+
+    # if we're using sessions, ensure sessions have been setup
+    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+        throw 'Sessions are required to use session persistent authentication'
     }
 
     # set server name if not passed
@@ -386,7 +712,7 @@ function Add-PodeAuthWindowsAd
 
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
-        Type = $Type
+        Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsADMethod)
         Arguments = @{
             Server = $Fqdn
@@ -395,6 +721,14 @@ function Add-PodeAuthWindowsAd
             Groups = $Groups
             NoGroups = $NoGroups
             OpenLDAP = $OpenLDAP
+        }
+        Sessionless = $Sessionless
+        Failure = @{
+            Url = $FailureUrl
+            Message = $FailureMessage
+        }
+        Success = @{
+            Url = $SuccessUrl
         }
     }
 }
@@ -444,106 +778,53 @@ function Clear-PodeAuth
 
 <#
 .SYNOPSIS
-Returns Authentication Middleware that can be used globally, or an Routes.
+Adds an authentication method as global middleware.
 
 .DESCRIPTION
-Returns Authentication Middleware that can be used globally, or an Routes.
+Adds an authentication method as global middleware.
 
 .PARAMETER Name
-The Name of the Authentication method.
+The Name of the Middleware.
 
-.PARAMETER FailureUrl
-The URL to redirect to when authentication fails.
+.PARAMETER Authentication
+The Name of the Authentication method to use.
 
-.PARAMETER FailureMessage
-An override Message to throw when authentication fails.
-
-.PARAMETER SuccessUrl
-The URL to redirect to when authentication succeeds.
-
-.PARAMETER EnableFlash
-If supplied, error messages will be added as Flash messages.
-
-.PARAMETER Sessionless
-If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
-
-.PARAMETER AutoLogin
-If supplied, navigating to a login page with a valid session will redirect to the SuccessUrl. Otherwise the login page will be displayed.
-
-.PARAMETER Logout
-If supplied, the current session will be purged, and the user will be redirected to the FailureUrl.
+.PARAMETER Route
+A Route path for which Routes this Middleware should only be invoked against.
 
 .EXAMPLE
-Add-PodeRoute -Method Get -Path '/' -Middleware (Get-PodeAuthMiddleware -Name 'Main') -ScriptBlock { /* logic */ }
+Add-PodeAuthMiddleware -Name 'GlobalAuth' -Authentication AuthName
 
 .EXAMPLE
-Get-PodeAuthMiddleware -Name 'BasicAuth' -Sessionless | Add-PodeMiddeware -Name 'GlobalAuth'
-
-.EXAMPLE
-Add-PodeRoute -Method Get -Path '/login' -Middleware (Get-PodeAuthMiddleware -Name 'Main' -SuccessUrl '/' -AutoLogin) -ScriptBlock { /* logic */ }
+Add-PodeAuthMiddleware -Name 'GlobalAuth' -Authentication AuthName -Route '/api/*'
 #>
-function Get-PodeAuthMiddleware
+function Add-PodeAuthMiddleware
 {
     [CmdletBinding()]
-    [OutputType([hashtable])]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+    param(
+        [Parameter(Mandatory=$true)]
         [string]
         $Name,
 
-        [Parameter()]
+        [Parameter(Mandatory=$true)]
+        [Alias('Auth')]
         [string]
-        $FailureUrl,
-
-        [Parameter()]
-        [string]
-        $FailureMessage,
+        $Authentication,
 
         [Parameter()]
         [string]
-        $SuccessUrl,
-
-        [switch]
-        $EnableFlash,
-
-        [switch]
-        $Sessionless,
-
-        [switch]
-        $AutoLogin,
-
-        [switch]
-        $Logout
+        $Route
     )
 
-    # ensure the auth method exists
-    if (!$PodeContext.Server.Authentications.ContainsKey($Name)) {
-        throw "Authentication method does not exist: $($Name)"
+    if (!(Test-PodeAuth -Name $Authentication)) {
+        throw "Authentication method does not exist: $($Authentication)"
     }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
-        throw 'Sessions are required to use session persistent authentication'
-    }
+    Get-PodeAuthMiddlewareScript |
+        New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
+        Add-PodeMiddleware -Name $Name -Route $Route
 
-    # create the options
-    $options = @{
-        Name = $Name
-        Failure = @{
-            Url = $FailureUrl
-            Message = $FailureMessage
-            FlashEnabled = $EnableFlash
-        }
-        Success = @{
-            Url = $SuccessUrl
-        }
-        Sessionless = $Sessionless
-        AutoLogin = $AutoLogin
-        Logout = $Logout
-    }
-
-    # return the middleware
-    return (Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options)
+    Set-PodeOAGlobalAuth -Name $Authentication
 }
 
 <#
@@ -561,6 +842,18 @@ An array of Group names to only allow access.
 
 .PARAMETER Users
 An array of Usernames to only allow access.
+
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
@@ -593,6 +886,21 @@ function Add-PodeAuthIIS
         [string[]]
         $Users,
 
+        [Parameter()]
+        [string]
+        $FailureUrl,
+
+        [Parameter()]
+        [string]
+        $FailureMessage,
+
+        [Parameter()]
+        [string]
+        $SuccessUrl,
+
+        [switch]
+        $Sessionless,
+
         [Parameter(ParameterSetName='NoGroups')]
         [switch]
         $NoGroups,
@@ -602,18 +910,18 @@ function Add-PodeAuthIIS
     )
 
     # ensure we're on Windows!
-    if (!(Test-IsWindows)) {
+    if (!(Test-PodeIsWindows)) {
         throw "IIS Authentication support is for Windows only"
     }
 
     # ensure the name doesn't already exist
-    if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
+    if (Test-PodeAuth -Name $Name) {
         throw "IIS Authentication method already defined: $($Name)"
     }
 
-    # create the auth tye for getting the token header
-    $type = New-PodeAuthType -Custom -ScriptBlock {
-        param($e, $options)
+    # create the auth scheme for getting the token header
+    $scheme = New-PodeAuthScheme -Custom -ScriptBlock {
+        param($options)
 
         $header = 'MS-ASPNETCORE-WINAUTHTOKEN'
 
@@ -632,12 +940,20 @@ function Add-PodeAuthIIS
 
     # add a custom auth method to validate the user
     $method = Get-PodeAuthWindowsADIISMethod
-    $type | Add-PodeAuth -Name $Name -ScriptBlock $method -ArgumentList @{
-        Users = $Users
-        Groups = $Groups
-        NoGroups = $NoGroups
-        NoLocalCheck = $NoLocalCheck
-    }
+
+    $scheme | Add-PodeAuth `
+        -Name $Name `
+        -ScriptBlock $method `
+        -FailureUrl $FailureUrl `
+        -FailureMessage $FailureMessage `
+        -SuccessUrl $SuccessUrl `
+        -Sessionless:$Sessionless `
+        -ArgumentList @{
+            Users = $Users
+            Groups = $Groups
+            NoGroups = $NoGroups
+            NoLocalCheck = $NoLocalCheck
+        }
 }
 
 <#
@@ -650,8 +966,8 @@ Adds the inbuilt User File Authentication method for verifying users.
 .PARAMETER Name
 A unique Name for the Authentication method.
 
-.PARAMETER Type
-The Type to use for retrieving credentials (From New-PodeAuthType).
+.PARAMETER Scheme
+The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER FilePath
 A path to a users JSON file (Default: ./users.json)
@@ -665,11 +981,23 @@ An array of Usernames to only allow access.
 .PARAMETER HmacSecret
 An optional secret if the passwords are HMAC SHA256 hashed.
 
-.EXAMPLE
-New-PodeAuthType -Form | Add-PodeAuthUserFile -Name 'Login'
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
 .EXAMPLE
-New-PodeAuthType -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './custom/path/users.json'
+New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login'
+
+.EXAMPLE
+New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './custom/path/users.json'
 #>
 function Add-PodeAuthUserFile
 {
@@ -681,7 +1009,7 @@ function Add-PodeAuthUserFile
 
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
-        $Type,
+        $Scheme,
 
         [Parameter()]
         [string]
@@ -697,17 +1025,37 @@ function Add-PodeAuthUserFile
 
         [Parameter(ParameterSetName='Hmac')]
         [string]
-        $HmacSecret
+        $HmacSecret,
+
+        [Parameter()]
+        [string]
+        $FailureUrl,
+
+        [Parameter()]
+        [string]
+        $FailureMessage,
+
+        [Parameter()]
+        [string]
+        $SuccessUrl,
+
+        [switch]
+        $Sessionless
     )
 
     # ensure the name doesn't already exist
-    if ($PodeContext.Server.Authentications.ContainsKey($Name)) {
+    if (Test-PodeAuth -Name $Name) {
         throw "User File Authentication method already defined: $($Name)"
     }
 
-    # ensure the Type contains a scriptblock
-    if (Test-IsEmpty $Type.ScriptBlock) {
-        throw "The supplied Type for the '$($Name)' User File authentication method requires a valid ScriptBlock"
+    # ensure the Scheme contains a scriptblock
+    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+        throw "The supplied Scheme for the '$($Name)' User File authentication validator requires a valid ScriptBlock"
+    }
+
+    # if we're using sessions, ensure sessions have been setup
+    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+        throw 'Sessions are required to use session persistent authentication'
     }
 
     # set the file path if not passed
@@ -725,13 +1073,144 @@ function Add-PodeAuthUserFile
 
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
-        Type = $Type
+        Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthUserFileMethod)
         Arguments = @{
             FilePath = $FilePath
             Users = $Users
             Groups = $Groups
             HmacSecret = $HmacSecret
+        }
+        Sessionless = $Sessionless
+        Failure = @{
+            Url = $FailureUrl
+            Message = $FailureMessage
+        }
+        Success = @{
+            Url = $SuccessUrl
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Adds the inbuilt Windows Local User Authentication method for verifying users.
+
+.DESCRIPTION
+Adds the inbuilt Windows Local User Authentication method for verifying users.
+
+.PARAMETER Name
+A unique Name for the Authentication method.
+
+.PARAMETER Scheme
+The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
+
+.PARAMETER Groups
+An array of Group names to only allow access.
+
+.PARAMETER Users
+An array of Usernames to only allow access.
+
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
+
+.PARAMETER NoGroups
+If supplied, groups will not be retrieved for the user.
+
+.EXAMPLE
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'WinAuth'
+
+.EXAMPLE
+New-PodeAuthScheme -Basic | Add-PodeAuthWindowsLocal -Name 'WinAuth' -Groups @('Developers')
+
+.EXAMPLE
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'WinAuth' -NoGroups
+#>
+function Add-PodeAuthWindowsLocal
+{
+    [CmdletBinding(DefaultParameterSetName='Groups')]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable]
+        $Scheme,
+
+        [Parameter(ParameterSetName='Groups')]
+        [string[]]
+        $Groups,
+
+        [Parameter()]
+        [string[]]
+        $Users,
+
+        [Parameter()]
+        [string]
+        $FailureUrl,
+
+        [Parameter()]
+        [string]
+        $FailureMessage,
+
+        [Parameter()]
+        [string]
+        $SuccessUrl,
+
+        [switch]
+        $Sessionless,
+
+        [Parameter(ParameterSetName='NoGroups')]
+        [switch]
+        $NoGroups
+    )
+
+    # ensure we're on Windows!
+    if (!(Test-PodeIsWindows)) {
+        throw "Windows Local Authentication support is for Windows only"
+    }
+
+    # ensure the name doesn't already exist
+    if (Test-PodeAuth -Name $Name) {
+        throw "Windows Local Authentication method already defined: $($Name)"
+    }
+
+    # ensure the Scheme contains a scriptblock
+    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+        throw "The supplied Scheme for the '$($Name)' Windows Local authentication validator requires a valid ScriptBlock"
+    }
+
+    # if we're using sessions, ensure sessions have been setup
+    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+        throw 'Sessions are required to use session persistent authentication'
+    }
+
+    # add Windows Local auth method to server
+    $PodeContext.Server.Authentications[$Name] = @{
+        Scheme = $Scheme
+        ScriptBlock = (Get-PodeAuthWindowsLocalMethod)
+        Arguments = @{
+            Users = $Users
+            Groups = $Groups
+            NoGroups = $NoGroups
+        }
+        Sessionless = $Sessionless
+        Failure = @{
+            Url = $FailureUrl
+            Message = $FailureMessage
+        }
+        Success = @{
+            Url = $SuccessUrl
         }
     }
 }

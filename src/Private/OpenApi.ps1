@@ -6,7 +6,7 @@ function ConvertTo-PodeOAContentTypeSchema
         $Schemas
     )
 
-    if (Test-IsEmpty $Schemas) {
+    if (Test-PodeIsEmpty $Schemas) {
         return $null
     }
 
@@ -29,7 +29,7 @@ function ConvertTo-PodeOAHeaderSchema
         $Schemas
     )
 
-    if (Test-IsEmpty $Schemas) {
+    if (Test-PodeIsEmpty $Schemas) {
         return $null
     }
 
@@ -199,10 +199,16 @@ function Get-PodeOpenApiDefinitionInternal
         $RouteFilter,
 
         [Parameter()]
+        [string]
         $Protocol,
 
         [Parameter()]
-        $Endpoint,
+        [string]
+        $Address,
+
+        [Parameter()]
+        [string]
+        $EndpointName,
 
         [switch]
         $RestrictRoutes
@@ -222,8 +228,8 @@ function Get-PodeOpenApiDefinitionInternal
 
     # servers
     $def['servers'] = $null
-    if (!$RestrictRoutes -and (@($PodeContext.Server.Endpoints).Length -gt 1)) {
-        $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints) {
+    if (!$RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1)) {
+        $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints.Values) {
             @{
                 url = $endpoint.Url
                 description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
@@ -237,7 +243,7 @@ function Get-PodeOpenApiDefinitionInternal
     # auth/security components
     if ($PodeContext.Server.Authentications.Count -gt 0) {
         foreach ($authName in $PodeContext.Server.Authentications.Keys) {
-            $authType = $PodeContext.Server.Authentications[$authName].Type
+            $authType = (Find-PodeAuth -Name $authName).Scheme
 
             $def.components.securitySchemas[($authName -replace '\s+', '')] = @{
                 type = $authType.Scheme.ToLowerInvariant()
@@ -262,7 +268,7 @@ function Get-PodeOpenApiDefinitionInternal
             # the current route
             $_routes = @($PodeContext.Server.Routes[$method][$path])
             if ($RestrictRoutes) {
-                $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -Protocol $Protocol -Endpoint $Endpoint)
+                $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -EndpointName $EndpointName)
             }
 
             # continue if no routes
@@ -298,7 +304,7 @@ function Get-PodeOpenApiDefinitionInternal
 
             # add any custom server endpoints for route
             foreach ($_route in $_routes) {
-                if ([string]::IsNullOrWhiteSpace($_route.Endpoint) -or ($_route.Endpoint -ieq '*:*')) {
+                if ([string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -or ($_route.Endpoint.Address -ieq '*:*')) {
                     continue
                 }
 
@@ -307,7 +313,7 @@ function Get-PodeOpenApiDefinitionInternal
                 }
 
                 $def.paths[$_route.OpenApi.Path][$method].servers += @{
-                    url = "$($_route.Protocol)://$($_route.Endpoint)"
+                    url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
                 }
             }
         }
@@ -358,4 +364,53 @@ function Get-PodeOABaseObject
         }
         security = @()
     }
+}
+
+function Set-PodeOAAuth
+{
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    foreach ($n in @($Name)) {
+        if (!(Test-PodeAuth -Name $n)) {
+            throw "Authentication method does not exist: $($n)"
+        }
+    }
+
+    foreach ($r in @($Route)) {
+        $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
+            @{
+                "$($n -replace '\s+', '')" = @()
+            }
+        })
+    }
+}
+
+function Set-PodeOAGlobalAuth
+{
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    foreach ($n in @($Name)) {
+        if (!(Test-PodeAuth -Name $n)) {
+            throw "Authentication method does not exist: $($n)"
+        }
+    }
+
+    $PodeContext.Server.OpenAPI.security = @(foreach ($n in @($Name)) {
+        @{
+            "$($n -replace '\s+', '')" = @()
+        }
+    })
 }

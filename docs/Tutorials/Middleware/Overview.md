@@ -2,15 +2,15 @@
 
 Middleware in Pode allows you to observe and edit the request/response objects for a current [web event](../../WebEvent) - you can alter the response, add custom objects to the [web event](../../WebEvent) for later use, or terminate the response without processing the main Route logic.
 
-Middleware is supported in both a global scope, using  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware), as well as at the Route level using the `-Middleware` parameter on  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware),
+Middleware is supported in both a global scope, using [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware), as well as at the Route level using the `-Middleware` parameter on [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware).
 
-Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/AccessRules) and [Rate Limiting](../Types/RateLimiting) page).
+Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/AccessRules) and [Rate Limiting](../Types/RateLimiting) page).
 
 ## Global Middleware
 
-To setup and use middleware in Pode you use the Middleware function:  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware). This will setup global middleware that will run, in the order created, on every request prior to any Route logic being invoked.
+To setup and use middleware in Pode you use the Middleware function: [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware). This will setup global middleware that will run, in the order created, on every request prior to any Route logic being invoked.
 
-The function takes a ScriptBlock, which itself accepts a single parameter for the current [web event](../../WebEvent) (similar to Routes). The event object passed contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`.
+The function takes a ScriptBlock, which has access to the current [web event](../../WebEvent) variable: `$WebEvent`. The event object contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`.
 
 If you want to keep processing and proceed to the next Middleware/Route then `return $true` from the ScriptBlock, otherwise `return $false` and the response will be closed immediately.
 
@@ -19,11 +19,8 @@ The following example is middleware that observes the user agent of the request.
 ```powershell
 Start-PodeServer {
     Add-PodeMiddleware -Name 'BlockPowershell' -ScriptBlock {
-        # event which contains the Request/Response, and other keys
-        param($event)
-
         # if the user agent is powershell, deny access
-        if ($event.Request.UserAgent -ilike '*powershell*') {
+        if ($WebEvent.Request.UserAgent -ilike '*powershell*') {
             # forbidden
             Set-PodeResponseStatus -Code 403
 
@@ -32,7 +29,7 @@ Start-PodeServer {
         }
 
         # create a new key on the event for the next middleware/route
-        $event.Agent = $event.Request.UserAgent
+        $WebEvent.Agent = $WebEvent.Request.UserAgent
 
         # continue processing other middleware
         return $true
@@ -40,17 +37,20 @@ Start-PodeServer {
 }
 ```
 
-Where as the following example is Middleware that will only be run on requests against the `/api` route. Here, it will run Basic Authentication on every API request. You'll notice that this time we're piping  [`Get-PodeAuthMiddleware`](../../../Functions/Authentication/Get-PodeAuthMiddleware), this is because it returns valid Middleware.
+Where as the following example is Middleware that will only be run on requests against the `/api` route. Here, we're just going to do something simple, which is to write a message to the console for all `/api` requests:
 
 ```powershell
 Start-PodeServer {
-    Get-PodeAuthMiddleware -Name 'Main' | Add-PodeMiddleware -Name 'GlobalApiAuthCheck' -Route '/api'
+    Add-PodeMiddleware -Name 'GlobalApiAuthCheck' -Route '/api' -ScriptBlock {
+        'Hello!' | Out-PodeHost
+        return $true
+    }
 }
 ```
 
 ## Route Middleware
 
-Custom middleware on a Route is basically the same as above however, you don't use the main Middleware functions and instead insert it straight on the Route. To do this, you can use the `-Middleware` parameter on the  [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function.
+Custom middleware on a Route is basically the same as above however, you don't use the main Middleware functions and instead insert it straight on the Route. To do this, you can use the `-Middleware` parameter on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function.
 
 The middleware on a route can either be a single `scriptblock` or an an array of `scriptblocks`. Middleware defined on routes will be run before the route itself, but after any global middleware that may have been configured.
 
@@ -60,11 +60,8 @@ The following example defines a `scriptblock` to reject calls that come from a s
 Start-PodeServer {
     # custom middleware to reject access to a specific IP address
     $reject_ip = {
-        # same event object as supplied to global middleware/routes
-        param($event)
-
         # forbid access to the stated IP address
-        if ($event.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
+        if ($WebEvent.Request.RemoteEndPoint.Address.IPAddressToString -ieq '10.10.1.8') {
             Set-PodeResponseStatus -Code 403
             return $false
         }
@@ -103,7 +100,7 @@ Although you can define your own custom middleware, Pode does have some inbuilt 
 
 ## Overriding Inbuilt
 
-Pode has inbuilt Middleware as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt Middleware have a defined name, that you can pass to the  [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) function via the `-Name` parameter:
+Pode has inbuilt Middleware as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt Middleware have a defined name, that you can pass to the [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) function via the `-Name` parameter:
 
 * Access Control    - `__pode_mw_access__`
 * Rate Limiting     - `__pode_mw_rate_limit__`

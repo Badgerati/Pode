@@ -13,6 +13,7 @@ The following is a set of guidelines for contributing to Pode on GitHub. These a
   * [Issues](#issues)
   * [Branch Names](#branch-names)
   * [Pull Requests](#pull-requests)
+  * [Building](#building)
   * [Testing](#testing)
   * [Documentation](#documentation)
 * [Styleguide](#styleguide)
@@ -38,7 +39,9 @@ If you have a question, feel free to either ask it on [GitHub Issues](https://gi
 
 ## About Pode
 
-Pode is a PowerShell framework, and the aim is to make it purely PowerShell only with *no* external dependencies. This allows Pode to be very lightweight, and just work out-of-the-box when the module is installed on any platform.
+Pode is a PowerShell framework/web server. The aim is to make it purely PowerShell, with *no* external dependencies - other than what is available in .NET Core. This allows Pode to be very lightweight, and just work out-of-the-box when the module is installed on any platform.
+
+The only current exception to the "all PowerShell" rule is the socket listener Pode uses. This listener is a part of Pode, but is written in .NET Core.
 
 ## How to Contribute
 
@@ -65,15 +68,23 @@ When you open a new Pull Request, please ensure:
 
 Once opened GitHub will automatically run CI on Windows, Linux and MacOS, as well as Code Coverage.
 
+### Building
+
+Before running any of Pode's examples, you will need to compile the Listener first. To do so you will need [`Invoke-Build`](https://github.com/nightroman/Invoke-Build). Once installed, run the following:
+
+```powershell
+Invoke-Build Build
+```
+
 ### Testing
 
-Pode has Unit Tests, there are also some Performance Tests but you do not need to worry about them. There are also currently no Integration Tests.
+Pode has Unit and Integration Tests, there are also some Performance Tests but you do not need to worry about them.
 
-Where possible, please try to create/update new Unit Tests especially for features. Don't worry too much about decreasing the Code Coverage.
+Where possible, please try to create/update new Unit/Integration Tests especially for features. Don't worry too much about decreasing the Code Coverage.
 
-The Unit Tests can be found at `/tests/unit/` from the root of the repository.
+The Unit Tests can be found at `/tests/unit/` from the root of the repository, and the Integration Tests can be found at `tests/integration`.
 
-To run the tests, you will need [`Invoke-Build`](https://github.com/nightroman/Invoke-Build). Once installed, run the following to run the tests:
+To run the tests, you will need [`Invoke-Build`](https://github.com/nightroman/Invoke-Build) (running the tests will compile Pode's listener). Once installed, run the following to run the tests:
 
 ```powershell
 Invoke-Build Test

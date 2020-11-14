@@ -29,7 +29,11 @@
     PowerShellVersion = '5.0'
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @('System.Web', 'System.Net.Http')
+    RequiredAssemblies = @(
+        'System.Web',
+        'System.Net.Http',
+        './Libs/Pode.dll'
+    )
 
     # Functions to export from this Module
     FunctionsToExport = @(
@@ -84,6 +88,7 @@
         'Set-PodeViewEngine',
         'Use-PodePartialView',
         'Send-PodeSignal',
+        'Add-PodeViewFolder',
 
         # utility helpers
         'Wait-PodeTask',
@@ -100,10 +105,10 @@
         'Protect-PodeValue',
         'Resolve-PodeValue',
         'Invoke-PodeScriptBlock',
-        'Test-IsUnix',
-        'Test-IsWindows',
-        'Test-IsPSCore',
-        'Test-IsEmpty',
+        'Test-PodeIsUnix',
+        'Test-PodeIsWindows',
+        'Test-PodeIsPSCore',
+        'Test-PodeIsEmpty',
         'Out-PodeHost',
         'Write-PodeHost',
         'Test-PodeIsIIS',
@@ -160,11 +165,15 @@
         'Get-PodeSessionId',
 
         # auth
-        'New-PodeAuthType',
+        'New-PodeAuthScheme',
+        'New-PodeAuthAzureADScheme',
         'Add-PodeAuth',
+        'Get-PodeAuth',
+        'Clear-PodeAuth',
         'Add-PodeAuthWindowsAd',
+        'Add-PodeAuthWindowsLocal',
         'Remove-PodeAuth',
-        'Get-PodeAuthMiddleware',
+        'Add-PodeAuthMiddleware',
         'Add-PodeAuthIIS',
         'Add-PodeAuthUserFile',
 
@@ -196,8 +205,6 @@
         'Add-PodeOAResponse',
         'Remove-PodeOAResponse',
         'Add-PodeOAComponentResponse',
-        'Set-PodeOAAuth',
-        'Set-PodeOAGlobalAuth',
         'Set-PodeOARequest',
         'New-PodeOARequestBody',
         'Add-PodeOAComponentSchema',
@@ -215,7 +222,12 @@
         # Metrics
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',
-        'Get-PodeServerRequestMetric'
+        'Get-PodeServerRequestMetric',
+
+        # AutoImport
+        'Export-PodeModule',
+        'Export-PodeSnapin',
+        'Export-PodeFunction'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

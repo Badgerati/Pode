@@ -83,7 +83,7 @@ function Enable-PodeOpenApi
 
     # add the OpenAPI route
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock {
-        param($e, $meta)
+        param($meta)
         $strict = $meta.RestrictRoutes
 
         # generate the openapi definition
@@ -92,8 +92,9 @@ function Enable-PodeOpenApi
             -Version $meta.Version `
             -Description $meta.Description `
             -RouteFilter $meta.RouteFilter `
-            -Protocol $e.Protocol `
-            -Endpoint $e.Endpoint `
+            -Protocol $WebEvent.Endpoint.Protocol `
+            -Address $WebEvent.Endpoint.Address `
+            -EndpointName $WebEvent.Endpoint.Name `
             -RestrictRoutes:$strict
 
         # write the openapi definition
@@ -162,8 +163,9 @@ function Get-PodeOpenApiDefinition
         -Version $Version `
         -Description $Description `
         -RouteFilter $RouteFilter `
-        -Protocol $WebEvent.Protocol `
-        -Endpoint $WebEvent.Endpoint `
+        -Protocol $WebEvent.Endpoint.Protocol `
+        -Address $WebEvent.Endpoint.Address `
+        -EndpointName $WebEvent.Endpoint.Name `
         -RestrictRoutes:$RestrictRoutes)
 }
 
@@ -425,96 +427,6 @@ function Add-PodeOAComponentResponse
         content = $content
         headers = $headers
     }
-}
-
-<#
-.SYNOPSIS
-Sets the names of defined Authentication types as the security the supplied route uses.
-
-.DESCRIPTION
-Sets the names of defined Authentication types as the security the supplied route uses.
-
-.PARAMETER Route
-The route to set a security definition, usually from -PassThru on Add-PodeRoute.
-
-.PARAMETER Name
-The Name(s) of any defined Authentication types (from Add-PodeAuth).
-
-.PARAMETER PassThru
-If supplied, the route passed in will be returned for further chaining.
-
-.EXAMPLE
-Add-PodeRoute -PassThru | Set-PodeOAAuth -Name 'Validate'
-#>
-function Set-PodeOAAuth
-{
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [ValidateNotNullOrEmpty()]
-        [hashtable[]]
-        $Route,
-
-        [Parameter()]
-        [string[]]
-        $Name,
-
-        [switch]
-        $PassThru
-    )
-
-    foreach ($n in @($Name)) {
-        if (!$PodeContext.Server.Authentications.ContainsKey($n)) {
-            throw "Authentication method does not exist: $($n)"
-        }
-    }
-
-    foreach ($r in @($Route)) {
-        $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
-            @{
-                "$($n -replace '\s+', '')" = @()
-            }
-        })
-    }
-
-    if ($PassThru) {
-        return $Route
-    }
-}
-
-<#
-.SYNOPSIS
-Sets the names of defined Authentication types as global OpenAPI Security.
-
-.DESCRIPTION
-Sets the names of defined Authentication types as global OpenAPI Security.
-
-.PARAMETER Name
-The Name(s) of any defined Authentication types (from Add-PodeAuth).
-
-.EXAMPLE
-Set-PodeOAGlobalAuth -Name 'Validate'
-#>
-function Set-PodeOAGlobalAuth
-{
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [string[]]
-        $Name
-    )
-
-    foreach ($n in @($Name)) {
-        if (!$PodeContext.Server.Authentications.ContainsKey($n)) {
-            throw "Authentication method does not exist: $($n)"
-        }
-    }
-
-    $PodeContext.Server.OpenAPI.security = @(foreach ($n in @($Name)) {
-        @{
-            "$($n -replace '\s+', '')" = @()
-        }
-    })
 }
 
 <#
@@ -1536,7 +1448,7 @@ function Enable-PodeOpenApiViewer
 
     # add the viewer route
     Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
-        param($e, $meta)
+        param($meta)
         $podeRoot = Get-PodeModuleMiscPath
         Write-PodeFileResponse -Path (Join-Path $podeRoot "default-$($meta.Type).html.pode") -Data @{
             Title = $meta.Title

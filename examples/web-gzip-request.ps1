@@ -5,7 +5,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening on port 8085
-Start-PodeServer -Threads 2 -Type Pode {
+Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
@@ -14,8 +14,7 @@ Start-PodeServer -Threads 2 -Type Pode {
 
     # GET request that recieves gzip'd json
     Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value $e.Data
+        Write-PodeJsonResponse -Value $WebEvent.Data
     }
 
 }

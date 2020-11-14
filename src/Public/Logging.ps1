@@ -104,7 +104,7 @@ function New-PodeLoggingMethod
 
         [Parameter(Mandatory=$true, ParameterSetName='Custom')]
         [ValidateScript({
-            if (Test-IsEmpty $_) {
+            if (Test-PodeIsEmpty $_) {
                 throw "A non-empty ScriptBlock is required for the Custom logging output method"
             }
 
@@ -157,8 +157,11 @@ function New-PodeLoggingMethod
         }
 
         'custom' {
+            $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
             return @{
                 ScriptBlock = $ScriptBlock
+                UsingVariables = $usingVars
                 Batch = $batchInfo
                 Arguments = $ArgumentList
             }
@@ -205,7 +208,7 @@ function Enable-PodeRequestLogging
     }
 
     # ensure the Method contains a scriptblock
-    if (Test-IsEmpty $Method.ScriptBlock) {
+    if (Test-PodeIsEmpty $Method.ScriptBlock) {
         throw "The supplied output Method for Request Logging requires a valid ScriptBlock"
     }
 
@@ -282,7 +285,7 @@ function Enable-PodeErrorLogging
     }
 
     # ensure the Method contains a scriptblock
-    if (Test-IsEmpty $Method.ScriptBlock) {
+    if (Test-PodeIsEmpty $Method.ScriptBlock) {
         throw "The supplied output Method for Error Logging requires a valid ScriptBlock"
     }
 
@@ -351,7 +354,7 @@ function Add-PodeLogger
 
         [Parameter(Mandatory=$true)]
         [ValidateScript({
-            if (Test-IsEmpty $_) {
+            if (Test-PodeIsEmpty $_) {
                 throw "A non-empty ScriptBlock is required for the logging method"
             }
 
@@ -371,14 +374,18 @@ function Add-PodeLogger
     }
 
     # ensure the Method contains a scriptblock
-    if (Test-IsEmpty $Method.ScriptBlock) {
+    if (Test-PodeIsEmpty $Method.ScriptBlock) {
         throw "The supplied output Method for the '$($Name)' Logging method requires a valid ScriptBlock"
     }
+
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add logging method to server
     $PodeContext.Server.Logging.Types[$Name] = @{
         Method = $Method
         ScriptBlock = $ScriptBlock
+        UsingVariables = $usingVars
         Arguments = $ArgumentList
     }
 }
@@ -506,7 +513,7 @@ function Write-PodeErrorLog
     }
 
     # add general info
-    $item['Server'] = $env:COMPUTERNAME
+    $item['Server'] = $PodeContext.Server.ComputerName
     $item['Level'] = $Level
     $item['Date'] = [datetime]::Now
     $item['ThreadId'] = [int]$ThreadId
@@ -588,7 +595,7 @@ function Protect-PodeLogItem
     )
 
     # do nothing if there are no masks
-    if (Test-IsEmpty $PodeContext.Server.Logging.Masking.Patterns) {
+    if (Test-PodeIsEmpty $PodeContext.Server.Logging.Masking.Patterns) {
         return $item
     }
 

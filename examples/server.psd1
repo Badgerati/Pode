@@ -39,5 +39,10 @@
                 Mask = '--MASKED--'
             }
         }
+        AutoImport = @{
+            Functions = @{
+                ExportOnly = $true
+            }
+        }
     }
 }

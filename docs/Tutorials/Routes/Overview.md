@@ -32,21 +32,19 @@ Here, anyone who calls `http://localhost:8080/ping` will receive the following r
 }
 ```
 
-The scriptblock for the route will be supplied with a single argument that contains information about the current [web event](../../WebEvent). This argument will contain the `Request` and `Response` objects, `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
+The scriptblock for the route will have access to the `$WebEvent` variable which contains information about the current [web event](../../WebEvent). This argument will contain the `Request` and `Response` objects, `Data` (from POST), and the `Query` (from the query string of the URL), as well as any `Parameters` from the route itself (eg: `/:accountId`).
 
 ## Payloads
 
-The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` hashtable on the supplied web-session to a route's logic. This example will get the `userId` and "find" user, returning the users data:
+The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` property on the `$WebEvent` variable to a route's logic. This example will get the `userId` and "find" user, returning the users data:
 
 ```powershell
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
-        param($s)
-
         # get the user
-        $user = Get-DummyUser -UserId $s.Data.userId
+        $user = Get-DummyUser -UserId $WebEvent.Data.userId
 
         # return the user
         Write-PodeJsonResponse -Value @{
@@ -67,21 +65,19 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
     The `ContentType` is required as it informs Pode on how to parse the requests payload. For example, if the content type were `application/json`, then Pode will attempt to parse the body of the request as JSON - converting it to a hashtable.
 
 !!! important
-    On PowerShell 4 and 5, referencing JSON data on `$s.Data` must be done as `$s.Data.userId`. This also works in PowerShell 6+, but you can also use `$s.Data['userId']` on PowerShell 6+.
+    On PowerShell 4 and 5, referencing JSON data on `$WebEvent.Data` must be done as `$WebEvent.Data.userId`. This also works in PowerShell 6+, but you can also use `$WebEvent.Data['userId']` on PowerShell 6+.
 
 ## Query Strings
 
-The following is an example of using data from a request's query string. To retrieve values from the query string you can use the `.Query` hashtable on the supplied web-session to a route's logic. This example will return a user based on the `userId` supplied:
+The following is an example of using data from a request's query string. To retrieve values from the query string you can use the `.Query` property from the `$WebEvent` variable. This example will return a user based on the `userId` supplied:
 
 ```powershell
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {
-        param($s)
-
         # get the user
-        $user = Get-DummyUser -UserId $s.Query['userId']
+        $user = Get-DummyUser -UserId $WebEvent.Query['userId']
 
         # return the user
         Write-PodeJsonResponse -Value @{
@@ -100,17 +96,15 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users?userId=12345' -Method Get
 
 ## Parameters
 
-The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the `.Parameters` hashtable on the supplied web-session to a route's logic. This example will get the `:userId` and "find" user, returning the users data:
+The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the `.Parameters` property from the `$WebEvent` variable. This example will get the `:userId` and "find" user, returning the users data:
 
 ```powershell
 Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/users/:userId' -ScriptBlock {
-        param($s)
-
         # get the user
-        $user = Get-DummyUser -UserId $s.Parameters['userId']
+        $user = Get-DummyUser -UserId $WebEvent.Parameters['userId']
 
         # return the user
         Write-PodeJsonResponse -Value @{
@@ -160,9 +154,6 @@ Get-PodeRoute -Method Get
 # all routes for a Path
 Get-PodeRoute -Path '/users'
 
-# all routes for an Endpoint
-Get-PodeRoute -Endpoint 127.0.0.1:8080
-
 # all routes for an Endpoint by name
 Get-PodeRoute -EndpointName Admin
 ```
@@ -178,10 +169,9 @@ The following is the structure of the Route object internally, as well as the ob
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| Arguments | object[] | Array of arguments that are splatted onto the route's scriptblock (after the web event) |
+| Arguments | object[] | Array of arguments that are splatted onto the route's scriptblock |
 | ContentType | string | The content type to use when parsing the payload in the request |
-| Endpoint | string | Endpoint the route is bound to as `<address>:<port>` |
-| EndpointName | string | Name of the endpoint the route is bound to |
+| Endpoint | hashtable | Contains the Address, Protocol, and Name of the Endpoint the route is bound to |
 | ErrorType | string | Content type of the error page to use for the route |
 | IsStatic | bool | Fixed to false for normal routes |
 | Logic | scriptblock | The main scriptblock logic of the route |
@@ -190,7 +180,6 @@ The following is the structure of the Route object internally, as well as the ob
 | Middleware | hashtable[] | Array of middleware that runs prior to the route's scriptblock |
 | OpenApi | hashtable[] | The OpenAPI definition/settings for the route |
 | Path | string | The path of the route - this path will have regex in place of route parameters |
-| Protocol | string | Protocol the route is bound to |
 | TransferEncoding | string | The transfer encoding to use when parsing the payload in the request |
 
 Static routes have a slightly different format:
@@ -200,8 +189,7 @@ Static routes have a slightly different format:
 | ContentType | string | Content type to use when parsing the payload a request to the route |
 | Defaults | string[] | Array of default file names to render if path in request is a folder |
 | Download | bool | Specifies whether files are rendered in the response, or downloaded |
-| Endpoint | string | Endpoint the route is bound to as `<address>:<port>` |
-| EndpointName | string | Name of the endpoint the route is bound to |
+| Endpoint | hashtable | Contains the Address, Protocol, and Name of the Endpoint the route is bound to |
 | ErrorType | string | Content type of the error page to use for the route |
 | IsStatic | bool | Fixed to true for static routes |
 | Method | string | HTTP method of the route |
@@ -209,6 +197,5 @@ Static routes have a slightly different format:
 | Middleware | hashtable[] | Array of middleware that runs prior to the route's scriptblock |
 | OpenApi | hashtable[] | The OpenAPI definition/settings for the route |
 | Path | string | The path of the route - this path will have regex in place of dynamic file names |
-| Protocol | string | Protocol the route is bound to |
 | Source | string | The source path within the server that is used for the route |
 | TransferEncoding | string | The transfer encoding to use when parsing the payload in the request |

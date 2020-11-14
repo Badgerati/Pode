@@ -21,8 +21,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Parameters['userId'] }
     } -PassThru |
         Set-PodeOARequest -Parameters @(
             (New-PodeOAIntProperty -Name 'userId' -Enum @(100,300,999) -Required | ConvertTo-PodeOAParameter -In Path)
@@ -30,8 +29,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Query['userId'] }
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Query['userId'] }
     } -PassThru |
         Set-PodeOARequest -Parameters @(
             (New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In Query)
@@ -39,8 +37,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Post -Path '/api/users' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = $e.Data.Name; UserId = $e.Data.UserId }
+        Write-PodeJsonResponse -Value @{ Name = $WebEvent.Data.Name; UserId = $WebEvent.Data.UserId }
     } -PassThru |
         Set-PodeOARequest -RequestBody (
             New-PodeOARequestBody -Required -ContentSchemas @{

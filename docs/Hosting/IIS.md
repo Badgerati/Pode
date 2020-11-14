@@ -1,6 +1,6 @@
 # IIS
 
-Pode's all PowerShell Web Server now enables you to host your server via IIS!
+Pode has support for you to host your server via IIS!
 
 When you host your server through IIS, Pode can detect this and internally set the server type and endpoints to automatically work with IIS. This allows IIS to deal with binding, HTTPS and Certificates, as well as external traffic, etc.
 
@@ -45,9 +45,26 @@ The first thing you'll need to do so IIS can host your server is, in the same di
   <location path="." inheritInChildApplications="false">
     <system.webServer>
       <handlers>
+        <remove name="WebDAV" />
         <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+        <remove name="ExtensionlessUrlHandler-Integrated-4.0" />
+        <add name="ExtensionlessUrlHandler-Integrated-4.0" path="*." verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
+        <remove name="ExtensionlessUrl-Integrated-4.0" />
+        <add name="ExtensionlessUrl-Integrated-4.0" path="*." verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
       </handlers>
+
+      <modules>
+        <remove name="WebDAVModule" />
+      </modules>
+
       <aspNetCore processPath="pwsh.exe" arguments=".\server.ps1" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout" hostingModel="OutOfProcess"/>
+
+      <security>
+        <authorization>
+          <remove users="*" roles="" verbs="" />
+          <add accessType="Allow" users="*" verbs="GET,HEAD,POST,PUT,DELETE,DEBUG,OPTIONS" />
+        </authorization>
+      </security>
     </system.webServer>
   </location>
 </configuration>
@@ -62,7 +79,6 @@ Once done, you can setup IIS in the normal way:
 
 Pode automatically detects that it is running via IIS, and it changes certain attributes of your Pode server so they work with IIS:
 
-* The server type is set to `Pode` (The same as doing `Start-PodeServer -Type Pode`)
 * Endpoints have their Address set to `127.0.0.1` (IIS needs Pode to be on localhost)
 * Endpoints have their Port set to `ASPNETCORE_PORT`
 * Endpoints have their Protocol set to `HTTP` (IIS deals with HTTPS for us)
@@ -86,16 +102,15 @@ If you decide to use IIS for Windows Authentication, then you can retrieve the a
 Start-PodeServer {
     Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
 
-    Add-PodeAuthIIS -Name 'IISAuth'
+    Add-PodeAuthIIS -Name 'IISAuth' -Sessionless
 
-    Add-PodeRoute -Method Get -Path '/test' -Middleware (Get-PodeAuthMiddleware -Name 'IISAuth' -Sessionless) -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ User = $e.Auth.User }
+    Add-PodeRoute -Method Get -Path '/test' -Authentication 'IISAuth' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ User = $WebEvent.Auth.User }
     }
 }
 ```
 
-If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set in the web event's `Auth.User` and contains the same information as Pode's inbuilt Windows AD authenticator:
+If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set on the [web event](../../../WebEvent)'s `$WebEvent.Auth.User` property, and contains the same information as Pode's inbuilt Windows AD authenticator:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

@@ -49,7 +49,7 @@ function Start-PodeTimerRunspace
         }
     }
 
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $script
+    Add-PodeRunspace -Type Main -ScriptBlock $script
 }
 
 function Invoke-PodeInternalTimer
@@ -60,8 +60,17 @@ function Invoke-PodeInternalTimer
     )
 
     try {
-        $_event = @{ Lockable = $PodeContext.Lockable }
-        $_args = @($_event) + @($Timer.Arguments)
+        $TimerEvent = @{ Lockable = $PodeContext.Lockable }
+
+        $_args = @($Timer.Arguments)
+        if ($null -ne $Timer.UsingVariables) {
+            $_vars = @()
+            foreach ($_var in $Timer.UsingVariables) {
+                $_vars += ,$_var.Value
+            }
+            $_args = $_vars + $_args
+        }
+
         Invoke-PodeScriptBlock -ScriptBlock $Timer.Script -Arguments $_args -Scoped -Splat
     }
     catch {

@@ -11,17 +11,7 @@ There are a number of ways you can specify the compression type, and these are d
 
 ## Request
 
-The most common way is to define the a request's compression type in the request's headers. The header to use depends on which web-server type you're using:
-
-| Server Type | Header |
-| ----------- | ------ |
-| HttpListener | X-Transfer-Encoding |
-| Pode | Transfer-Encoding |
-
-HttpListener is the default web server, unless you specify `-Type Pode` on `Start-PodeServer`. The reason for HttpListener using a slightly different header to the normal, is because HttpListener doesn't properly support compression; it will error with a 501 if you set the `Transfer-Encoding` header to either `gzip` or `deflate`.
-
-!!! note
-    The Pode server does also support `X-Transfer-Encoding`, but it will check `Transfer-Encoding` first.
+The most common way is to define the a request's compression type in the request's `Transfer-Endocing` header.
 
 An example of the header in the request is as follows:
 
@@ -110,19 +100,11 @@ $gzip.Write($bytes, 0, $bytes.Length)
 $gzip.Close()
 $ms.Position = 0
 
-# Pode Server
+# send request
 Invoke-RestMethod `
     -Method Post `
     -Uri 'http://localhost:8080/ping' `
     -Body $ms.ToArray() `
     -TransferEncoding gzip `
     -ContentType application/json
-
-# HttpListener Server
-Invoke-RestMethod `
-    -Method Post `
-    -Uri 'http://localhost:8080/ping' `
-    -Body $ms.ToArray() `
-    -ContentType application/json `
-    -Headers @{'X-Transfer-Encoding' = 'gzip'}
 ```

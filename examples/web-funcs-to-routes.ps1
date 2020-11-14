@@ -5,7 +5,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -27,7 +27,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # make routes for functions - with every route requires authentication
-    ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless) -Verbose
+    ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Authentication Validate -Verbose
 
     # make routes for every exported command in Pester
     # ConvertTo-PodeRoute -Module Pester -Verbose

@@ -11,10 +11,9 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
-
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http -Name '8090Address'
-    Add-PodeEndpoint -Address * -Port $Port -Protocol Http -RedirectTo '8090Address'
+    Add-PodeEndpoint -Address * -Port $Port -Protocol Http -Name '8085Address' -RedirectTo '8090Address'
 
     # allow the local ip and some other ips
     Add-PodeAccessRule -Access Allow -Type IP -Values @('127.0.0.1', '[::1]')
@@ -47,8 +46,7 @@ Start-PodeServer -Threads 2 {
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($e)
-        $e.Request | Write-PodeLog -Name 'custom'
+        # $WebEvent.Request | Write-PodeLog -Name 'custom'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
@@ -64,8 +62,7 @@ Start-PodeServer -Threads 2 {
 
     # GET request that redirects to same host, just different port
     Add-PodeRoute -Method Get -Path '/redirect-port' -ScriptBlock {
-        param($event)
-        if ($event.Request.Url.Port -ne 8086) {
+        if ($WebEvent.Request.Url.Port -ne 8086) {
             Move-PodeResponseUrl -Port 8086
         }
         else {
@@ -80,8 +77,7 @@ Start-PodeServer -Threads 2 {
 
     # GET request with parameters
     Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
-        param($event)
-        Write-PodeJsonResponse -Value @{ 'userId' = $event.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ 'userId' = $WebEvent.Parameters['userId'] }
     }
 
     # ALL request, that supports every method and it a default drop route
@@ -93,6 +89,7 @@ Start-PodeServer -Threads 2 {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every hello route' }
     }
 
+    $hmm = 'well well'
     Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/route_script.ps1'
 
 }

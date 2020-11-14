@@ -1,47 +1,77 @@
 # Certificates
 
-!!! warning
-    Binding existing, and generating self-signed certificates is only supported on *Windows*.
-    For cross-platform HTTPS support [see here](../PodeServer).
+Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing certificates for HTTPS.
 
-Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing - already installed - certificates for HTTPS on Windows, using the default Server type. If Pode detects that the `IP:Port` or `Hostname:Port` binding already has a certificate bound, then Pode will re-use that certificate and will not create a new self-signed certificate, or bind a new certificate.
+There are 6 ways to setup HTTPS on [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint):
 
-## Self-Signed
+1. Supplying just the `-Certificate`, such as a `.cer`.
+2. Supplying both the `-Certificate` and `-CertificatePassword`, such as for `.pfx`.
+3. Supplying a `-CertificateThumbprint` for a certificate installed at `Cert:\CurrentUser\My` on Windows.
+4. Supplying a `-CertificateName` for a certificate installed at `Cert:\CurrentUser\My` on Windows.
+5. Supplying `-X509Certificate` of type `X509Certificate`.
+6. Supplying the `-SelfSigned` switch, to generate a quick self-signed `X509Certificate`.
 
-If you are developing/testing a site on HTTPS then Pode can generate and bind quick self-signed certificates. To do this you can pass the `-SelfSigned` swicth to the  [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) functions:
+## Usage
 
-```powershell
-Start-PodeServer {
-    # for an IP:
-    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS -SelfSigned
+### File
 
-    # for a hostname:
-    Add-PodeEndpoint -Address foo.bar.com -Port 8443 -Protocol HTTPS -SelfSigned
-}
-```
-
-## Pre-Installed
-
-To bind an already installed signed certificate, the certificate *must* be installed to `Cert:/LocalMachine/My`. Then you can pass the certificate name/domain to `-Certificate` parameter; an example for `*.example.com` is as follows:
+To bind a certificate file, you use the `-Certificate` parameter, along with the `-CertificatePassword` parameter for `.pfx` certificates. The following example supplies some `.pfx` to enable HTTPS support:
 
 ```powershell
 Start-PodeServer {
-    # for an IP:
-    Add-PodeEndpoint -Address * -Port 8443 -Protocol HTTPS -Certificate '*.example.com'
-
-    # for a hostname
-    Add-PodeEndpoint -Address foo.example.com -Port 8443 -Protocol HTTPS -Certificate '*.example.com'
+    Add-PodeEndpoint -Address * -Port 8090 -Protocol Https -Certificate './cert.pfx' -CertificatePassword 'Hunter2'
 }
 ```
 
-!!! tip
-    You could also supply the certificate's thumbprint instead, to the `-CertificateThumbprint` parameter.
+### Thumbprint
 
-## Clean-Up
+On Windows only, you can use a certificate that is installed at `Cert:\CurrentUser\My` using its thumbprint:
 
-If you want to use a new certificate on a binding that already has one, then you'll have to clean-up the binding first. Calling either:
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8090 -Protocol Https -CertificateThumbprint '2A623A8DC46ED42A13B27DD045BFC91FDDAEB957'
+}
+```
 
-* `netsh http delete sslcert ipport=<ip>:<port>`
-* `netsh http delete sslcert hostnameport=<hostname>:<port>`
+### Name
 
-will remove the binding.
+On Windows only, you can use a certificate that is installed at `Cert:\CurrentUser\My` using its subject name:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8090 -Protocol Https -CertificateName '*.example.com'
+}
+```
+
+### X509
+
+The following will instead create an X509Certificate, and pass that to the endpoint instead:
+
+```powershell
+$cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new('./certs/example.cer')
+Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -X509Certificate $cert
+```
+
+### Self-Signed
+
+If you are developing/testing a site on HTTPS then Pode can generate and bind quick self-signed certificates. To do this you can pass the `-SelfSigned` switch:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
+}
+```
+
+## SSL Protocols
+
+The default allowed SSL protocols are SSL3 and TLS1.2, but you can change these to any of: SSL2, SSL3, TLS, TLS11, TLS12, TLS13. This is specified in your `server.psd1` configuration file:
+
+```powershell
+@{
+    Server = @{
+        Ssl= @{
+            Protocols = @('TLS', 'TLS11', 'TLS12')
+        }
+    }
+}
+```

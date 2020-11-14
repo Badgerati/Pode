@@ -28,11 +28,15 @@ function New-PodeContext
 
         [Parameter()]
         [string]
-        $ServerType,
+        $ServerlessType,
 
         [Parameter()]
         [string]
         $StatusPageExceptions,
+
+        [Parameter()]
+        [string]
+        $ListenerType,
 
         [switch]
         $DisableTermination,
@@ -42,12 +46,12 @@ function New-PodeContext
     )
 
     # set a random server name if one not supplied
-    if (Test-IsEmpty $Name) {
+    if (Test-PodeIsEmpty $Name) {
         $Name = Get-PodeRandomName
     }
 
     # are we running in a serverless context
-    $isServerless = (@('AzureFunctions', 'AwsLambda') -icontains $ServerType)
+    $isServerless = ![string]::IsNullOrWhiteSpace($ServerlessType)
 
     # ensure threads are always >0, for to 1 if we're serverless
     if (($Threads -le 0) -or $isServerless) {
@@ -66,7 +70,8 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Lockable -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru
+        Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
@@ -76,6 +81,29 @@ function New-PodeContext
     $ctx.Server.PodeModulePath = (Get-PodeModulePath)
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
+    $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+
+    # list of created listeners
+    $ctx.Listeners = @()
+
+    # auto importing (modules, funcs, snap-ins)
+    $ctx.Server.AutoImport = @{
+        Modules = @{
+            Enabled = $true
+            ExportList = @()
+            ExportOnly = $false
+        }
+        Snapins = @{
+            Enabled = $true
+            ExportList = @()
+            ExportOnly = $false
+        }
+        Functions = @{
+            Enabled = $true
+            ExportList = @()
+            ExportOnly = $false
+        }
+    }
 
     # basic logging setup
     $ctx.Server.Logging = @{
@@ -85,45 +113,28 @@ function New-PodeContext
 
     # set thread counts
     $ctx.Threads = @{
-        Web = $Threads
+        General = $Threads
         Schedules = 10
     }
 
     # set socket details for pode server
     $ctx.Server.Sockets = @{
-        Listeners = @()
-        MaxConnections = 0
         Ssl = @{
-            Callback = $null
             Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
         }
         ReceiveTimeout = 100
-        Queues = @{
-            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
-        }
     }
 
     $ctx.Server.WebSockets = @{
         Enabled = $false
-        Listeners = @()
-        MaxConnections = 0
-        Ssl = @{
-            Callback = $null
-            Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
-        }
-        ReceiveTimeout = 100
-        Queues = @{
-            Sockets = @{}
-            Messages = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-            Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
-        }
+        Listener = $null
     }
 
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
     # over status page exceptions
-    if (!(Test-IsEmpty $StatusPageExceptions)) {
+    if (!(Test-PodeIsEmpty $StatusPageExceptions)) {
         if ($null -eq $ctx.Server.Web) {
             $ctx.Server.Web = @{ ErrorPages = @{} }
         }
@@ -133,36 +144,37 @@ function New-PodeContext
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
-    if (!(Test-IsEmpty $ctx.Server.Configuration.Server.Root)) {
+    if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
 
-    # set the server default type
-    $ctx.Server.Type = $ServerType.ToUpperInvariant()
-    if ($Interval -gt 0) {
-        $ctx.Server.Type = 'SERVICE'
-    }
+    # set the server's listener type
+    $ctx.Server.ListenerType = $ListenerType
 
-    # if it's serverless, also disable termination
+    # set serverless info
+    $ctx.Server.ServerlessType = $ServerlessType
+    $ctx.Server.IsServerless = $isServerless
     if ($isServerless) {
-        $ctx.Server.IsServerless = $isServerless
         $ctx.Server.DisableTermination = $true
     }
 
-    # is the server running under IIS? (also, force the server type to pode, and disable termination)
-    $ctx.Server.IsIIS = (!$isServerless -and (!(Test-IsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-IsEmpty $env:ASPNETCORE_TOKEN)))
+    # set the server types
+    $ctx.Server.IsService = ($Interval -gt 0)
+    $ctx.Server.Types = @()
+
+    # is the server running under IIS? (also, disable termination)
+    $ctx.Server.IsIIS = (!$isServerless -and (!(Test-PodeIsEmpty $env:ASPNETCORE_PORT)) -and (!(Test-PodeIsEmpty $env:ASPNETCORE_TOKEN)))
     if ($ctx.Server.IsIIS) {
-        $ctx.Server.Type = 'PODE'
         $ctx.Server.DisableTermination = $true
 
         # if under IIS and Azure Web App, force quiet
-        if (!(Test-IsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
+        if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
             $ctx.Server.Quiet = $true
         }
     }
 
     # is the server running under Heroku?
-    $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-IsEmpty $env:PORT)) -and (!(Test-IsEmpty $env:DYNO)))
+    $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:DYNO)))
 
     # if we're inside a remote host, stop termination
     if ($Host.Name -ieq 'ServerRemoteHost') {
@@ -170,7 +182,8 @@ function New-PodeContext
     }
 
     # set the IP address details
-    $ctx.Server.Endpoints = @()
+    $ctx.Server.Endpoints = @{}
+    $ctx.Server.EndpointsMap = @{}
 
     # general encoding for the server
     $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
@@ -189,7 +202,8 @@ function New-PodeContext
     $ctx.Server.ViewEngine = @{
         Type = 'html'
         Extension = 'html'
-        Script = $null
+        ScriptBlock = $null
+        UsingVariables = $null
         IsDynamic = $false
     }
 
@@ -207,6 +221,9 @@ function New-PodeContext
         'static' = @{};
         '*' = @{};
     }
+
+    # custom view paths
+    $ctx.Server.Views = @{}
 
     # handlers for tcp
     $ctx.Server.Handlers = @{
@@ -279,6 +296,9 @@ function New-PodeContext
     # runspace pools
     $ctx.RunspacePools = @{
         Main = $null
+        Web = $null
+        Smtp = $null
+        Tcp = $null
         Signals = $null
         Schedules = $null
         Gui = $null
@@ -296,9 +316,11 @@ function New-PodeContext
 
 function New-PodeRunspaceState
 {
+    # create the state, and add the pode module
     $state = [initialsessionstate]::CreateDefault()
     $state.ImportPSModule($PodeContext.Server.PodeModulePath)
 
+    # load the vars into the share state
     $session = New-PodeStateContext -Context $PodeContext
 
     $variables = @(
@@ -312,6 +334,116 @@ function New-PodeRunspaceState
     }
 
     $PodeContext.RunspaceState = $state
+}
+
+function Import-PodeFunctionsIntoRunspaceState
+{
+    param(
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath
+    )
+
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImport.Functions.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList.Length -eq 0)) {
+        return
+    }
+
+    # script or file functions?
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'script' {
+            $funcs = (Get-PodeFunctionsFromScriptBlock -ScriptBlock $ScriptBlock)
+        }
+
+        'file' {
+            $funcs = (Get-PodeFunctionsFromFile -FilePath $FilePath)
+        }
+    }
+
+    # looks like we have nothing!
+    if (($null -eq $funcs) -or ($funcs.Length -eq 0)) {
+        return
+    }
+
+    # groups funcs in case there or multiple definitions
+    $funcs = ($funcs | Group-Object -Property { $_.Name })
+
+    # import them, but also check if they're exported
+    foreach ($func in $funcs) {
+        # only exported funcs? is the func exported?
+        if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList -inotcontains $func.Name)) {
+            continue
+        }
+
+        # load the function
+        $funcDef = [System.Management.Automation.Runspaces.SessionStateFunctionEntry]::new($func.Name, $func.Group[-1].Definition)
+        $PodeContext.RunspaceState.Commands.Add($funcDef)
+    }
+}
+
+function Import-PodeModulesIntoRunspaceState
+{
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImport.Modules.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList.Length -eq 0)) {
+        return
+    }
+
+    # load modules into runspaces, if allowed
+    $modules = (Get-Module | Where-Object { ($_.ModuleType -ieq 'script') -and ($_.Name -ine 'pode') }).Name | Sort-Object -Unique
+
+    foreach ($module in $modules) {
+        # only exported modules? is the module exported?
+        if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList -inotcontains $module)) {
+            continue
+        }
+
+        $path = (Get-Module -Name $module | Sort-Object -Property Version -Descending | Select-Object -First 1 -ExpandProperty Path)
+        $PodeContext.RunspaceState.ImportPSModule($path)
+    }
+}
+
+function Import-PodeSnapinsIntoRunspaceState
+{
+    # if non-windows or core, do nothing
+    if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
+        return
+    }
+
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImport.Snapins.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList.Length -eq 0)) {
+        return
+    }
+
+    # load snapins into runspaces, if allowed
+    $snapins = (Get-PSSnapin | Where-Object { !$_.IsDefault }).Name | Sort-Object -Unique
+
+    foreach ($snapin in $snapins) {
+        # only exported snapins? is the snapin exported?
+        if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList -inotcontains $snapin)) {
+            continue
+        }
+
+        $PodeContext.RunspaceState.ImportPSSnapIn($snapin, [ref]$null)
+    }
 }
 
 function New-PodeRunspacePools
@@ -329,17 +461,35 @@ function New-PodeRunspacePools
         Misc = 1
     }
 
-    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum + $PodeContext.Threads.Web
+    # main runspace - for timers, schedules, etc
+    $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
 
-    # setup signal runspace pool
-    $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.Web + 2), $PodeContext.RunspaceState, $Host)
+    # web runspace - if we have any http/s endpoints
+    if (Test-PodeEndpoints -Type Http) {
+        $PodeContext.RunspacePools.Web = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+    }
+
+    # smtp runspace - if we have any smtp endpoints
+    if (Test-PodeEndpoints -Type Smtp) {
+        $PodeContext.RunspacePools.Smtp = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+    }
+
+    # tcp runspace - if we have any tcp endpoints
+    if (Test-PodeEndpoints -Type Tcp) {
+        $PodeContext.RunspacePools.Tcp = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+    }
+
+    # web socket runspace - if we have any ws/s endpoints
+    if (Test-PodeEndpoints -Type Ws) {
+        $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, 3, $PodeContext.RunspaceState, $Host)
+    }
 
     # setup schedule runspace pool
     $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
 
     # setup gui runspace pool (only for non-ps-core)
-    if (!((Test-IsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
+    if (!$PodeContext.Server.IsServerless -and !((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
         $PodeContext.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         $PodeContext.RunspacePools.Gui.ApartmentState = 'STA'
     }
@@ -395,7 +545,7 @@ function Open-PodeConfiguration
     $configPath = (Join-PodeServerRoot -Folder '.' -FilePath 'server.psd1' -Root $ServerRoot)
 
     # check to see if an environmental config exists (if the env var is set)
-    if (!(Test-IsEmpty $env:PODE_ENVIRONMENT)) {
+    if (!(Test-PodeIsEmpty $env:PODE_ENVIRONMENT)) {
         $_path = (Join-PodeServerRoot -Folder '.' -FilePath "server.$($env:PODE_ENVIRONMENT).psd1" -Root $ServerRoot)
         if (Test-PodePath -Path $_path -NoStatus) {
             $configPath = $_path
@@ -434,7 +584,7 @@ function Set-PodeServerConfiguration
 
     # logging
     $Context.Server.Logging = @{
-        Enabled = !([bool]$Configuration.Logging.Enable)
+        Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
         Masking = @{
             Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
             Mask = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
@@ -442,13 +592,32 @@ function Set-PodeServerConfiguration
         Types = @{}
     }
 
-    # sockets (pode)
-    if (!(Test-IsEmpty $Configuration.Pode.Ssl.Protocols)) {
-        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Pode.Ssl.Protocols)
+    # sockets
+    if (!(Test-PodeIsEmpty $Configuration.Ssl.Protocols)) {
+        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Ssl.Protocols)
     }
 
-    if ([int]$Configuration.Pode.ReceiveTimeout -gt 0) {
-        $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.Pode.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
+    if ([int]$Configuration.ReceiveTimeout -gt 0) {
+        $Context.Server.Sockets.ReceiveTimeout = (Protect-PodeValue -Value $Configuration.ReceiveTimeout $Context.Server.Sockets.ReceiveTimeout)
+    }
+
+    # auto-import
+    $Context.Server.AutoImport = @{
+        Modules = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Modules.Enable) -or [bool]$Configuration.AutoImport.Modules.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Modules.ExportOnly)
+        }
+        Snapins = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Snapins.Enable) -or [bool]$Configuration.AutoImport.Snapins.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Snapins.ExportOnly)
+        }
+        Functions = @{
+            Enabled = (($null -eq $Configuration.AutoImport.Functions.Enable) -or [bool]$Configuration.AutoImport.Functions.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$Configuration.AutoImport.Functions.ExportOnly)
+        }
     }
 }
 
@@ -555,28 +724,4 @@ function New-PodeAutoRestartServer
             $PodeContext.Tokens.Restart.Cancel()
         }
     }
-}
-
-function Get-PodeEndpoints
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('Http', 'Ws')]
-        [string]
-        $Type
-    )
-
-    $endpoints = $null
-
-    switch ($Type.ToLowerInvariant()) {
-        'http' {
-            $endpoints = @($PodeContext.Server.Endpoints | Where-Object { @('http', 'https') -icontains $_.Protocol })
-        }
-
-        'ws' {
-            $endpoints = @($PodeContext.Server.Endpoints | Where-Object { @('ws', 'wss') -icontains $_.Protocol })
-        }
-    }
-
-    return $endpoints
 }

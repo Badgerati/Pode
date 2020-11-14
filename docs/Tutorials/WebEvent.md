@@ -1,13 +1,12 @@
 # Web Event
 
-When a request is made to your server, a "web event" object is created that contains a lot of useful information about the request (and the response!).
+When a request is made to your server, a "web event" object is created. This object contains a lot of useful information about the request, and the response.
 
-This web event is a normal HashTable, and is always supplied as the first parameter to your Routes, Middleware, Endware, custom Authentication type ScriptBlocks:
+This web event is a normal HashTable, and is always accessible from your Routes, Middleware, Endware, and Authentication ScriptBlocks as the `$WebEvent` variable:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-    param($e)
-    # that $e is the web event!
+    $WebEvent | Out-Default
 }
 ```
 
@@ -22,7 +21,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 | ContentType | string | The content type of the data in the Request's payload |
 | Cookies | hashtable | Contains all cookies parsed from the Request's headers |
 | Data | hashtable | Contains the parsed items from the Request's payload |
-| Endpoint | string | The current endpoint being hit - such as "pode.example.com" or "127.0.0.2" |
+| Endpoint | hashtable | Contains the Address and Protocol of the endpoint being hit - such as "pode.example.com" or "127.0.0.2", or HTTP or HTTPS for the Protocol |
 | ErrorType | string | Set by the current Route being hit, this is the content type of the Error Page that will be used if an error occurs |
 | Files | hashtable | Contains any file data from the Request's payload |
 | Lockable | hashtable | A synchronized hashtable that can be used with `Lock-PodeObject` |
@@ -31,7 +30,6 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 | Parameters | hashtable | Contains the parsed parameter values from the Route's path |
 | Path | string | The current path of the Request, after the endpoint - such as "/about" |
 | PendingCookies | hashtable | Contains cookies that will be written back on the Response |
-| Protocol | string | The current protocol of the Request - HTTP or HTTPS |
 | Query | hashtable | Contains the parsed items from the Request's query string |
 | Request | object | The raw Request object |
 | Response | object | The raw Response object |
@@ -44,3 +42,5 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 ## Customise
 
 The web event itself is just a HashTable, which means you can add your own properties to it within Middleware for further use in other Middleware down the flow, or in the Route itself.
+
+Make sure these custom properties have a unique name, so as to not clash with already existing properties.

@@ -1,7 +1,7 @@
 function Start-PodeServiceServer
 {
     # ensure we have service handlers
-    if (Test-IsEmpty (Get-PodeHandler -Type Service)) {
+    if (Test-PodeIsEmpty (Get-PodeHandler -Type Service)) {
         throw 'No Service handlers have been defined'
     }
 
@@ -23,7 +23,17 @@ function Start-PodeServiceServer
                 $handlers = Get-PodeHandler -Type Service
                 foreach ($name in $handlers.Keys) {
                     $handler = $handlers[$name]
-                    Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments (@($ServiceEvent) + @($handler.Arguments)) -Scoped -Splat
+
+                    $_args = @($handler.Arguments)
+                    if ($null -ne $handler.UsingVariables) {
+                        $_vars = @()
+                        foreach ($_var in $handler.UsingVariables) {
+                            $_vars += ,$_var.Value
+                        }
+                        $_args = $_vars + $_args
+                    }
+
+                    Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $_args -Scoped -Splat
                 }
 
                 # sleep before next run
@@ -38,5 +48,5 @@ function Start-PodeServiceServer
     }
 
     # start the runspace for the server
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $serverScript
+    Add-PodeRunspace -Type Main -ScriptBlock $serverScript
 }

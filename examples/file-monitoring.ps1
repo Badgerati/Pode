@@ -12,7 +12,6 @@ Start-PodeServer {
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        param($session)
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 

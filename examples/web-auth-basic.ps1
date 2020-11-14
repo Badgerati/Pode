@@ -26,7 +26,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthType -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -44,7 +44,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # POST request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Post -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless) -ScriptBlock {
+    Add-PodeRoute -Method Post -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{
@@ -60,7 +60,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Middleware (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless) -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{

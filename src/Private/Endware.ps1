@@ -22,7 +22,16 @@ function Invoke-PodeEndware
         }
 
         try {
-            Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments (@($WebEvent) + @($eware.Arguments)) -Scoped -Splat | Out-Null
+            $_args = @($eware.Arguments)
+            if ($null -ne $eware.UsingVariables) {
+                $_vars = @()
+                foreach ($_var in $eware.UsingVariables) {
+                    $_vars += ,$_var.Value
+                }
+                $_args = $_vars + $_args
+            }
+
+            Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments $_args -Scoped -Splat | Out-Null
         }
         catch {
             $_ | Write-PodeErrorLog

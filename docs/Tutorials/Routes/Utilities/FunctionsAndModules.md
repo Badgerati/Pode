@@ -16,15 +16,13 @@ This will generate two Routes, similar to as if you did the below:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/Get-ChildItem' -ScriptBlock {
-    param($e)
-    $parameters = $e.Data
+    $parameters = $WebEvent.Data
     $result = (Get-ChildItem @parameters)
     Write-PodeJsonResponse -Value $result -Depth 1
 }
 
 Add-PodeRoute -Method Post -Path '/Invoke-Expression' -ScriptBlock {
-    param($e)
-    $parameters = $e.Data
+    $parameters = $WebEvent.Data
     $result = (Invoke-Expression @parameters)
     Write-PodeJsonResponse -Value $result -Depth 1
 }
@@ -37,7 +35,7 @@ Add-PodeRoute -Method Post -Path '/Invoke-Expression' -ScriptBlock {
 
 If you have a Module whose exported commands you want to convert into Routes, then you can supply the Module's name to [`ConvertTo-PodeRoute`](../../../../Functions/Routes/ConvertTo-PodeRoute).
 
-Supplying a Module will cause it to be automatically imported into all runspaces, using [`Import-PodeModule`](../../../../Functions/Utilities/Import-PodeModule). This means the Module can be referenced by name, or by path; it also means [`Import-PodeModule`](../../../../Functions/Utilities/Import-PodeModule).supports modules within the `ps_modules` directory.
+Supplying a Module will cause it to be automatically imported using [`Import-PodeModule`](../../../../Functions/Utilities/Import-PodeModule). This means the Module can be referenced by name, or by path, and it supports modules within the `ps_modules` directory.
 
 For example, if you wanted to import all commands from Pester you could do the following:
 

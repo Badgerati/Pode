@@ -10,8 +10,11 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8081 -Protocol Http
 
     # runs forever, looping every 5secs
+    $message = 'Hello, world'
     Add-PodeTimer -Name 'forever' -Interval 5 -ScriptBlock {
-        'Hello, world' | Out-PodeHost
+        '- - -' | Out-PodeHost
+        $using:message | Out-PodeHost
+        '- - -' | Out-PodeHost
     } -Limit 5
 
     Add-PodeTimer -Name 'from-file' -Interval 2 -FilePath './scripts/timer.ps1'
@@ -39,8 +42,7 @@ Start-PodeServer {
 
     # create a new timer via a route
     Add-PodeRoute -Method Get -Path '/api/timer' -ScriptBlock {
-        param($event)
-        $query = $event.Query
+        $query = $WebEvent.Query
 
         Add-PodeTimer -Name $query['Name'] -Interval $query['Seconds'] -ScriptBlock {
             # logic

@@ -76,3 +76,16 @@ function New-UnboundClassInstance([Type]$type, [object[]]$arguments = $null)
 Import-Module '<path>\CreateClassInstanceHelper.psm1'
 New-UnboundClassInstance([Foo], $argsForCtor)
 ```
+
+## Certificates
+
+For HTTPS there are a few issues you may run into, and to resolve them you can use the below:
+
+* On Windows, you may need to install the certificate into your Trusted Root on the Local Machine (mostly for self-signed certificates).
+* You may be required to run the following, to force TLS1.2, before making web requests:
+
+```powershell
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+```
+
+* On *nix platforms, for self-signed certificates, you may need to use `-SkipCertificateCheck` on `Invoke-WebRequest` and `Invoke-RestMethod`.

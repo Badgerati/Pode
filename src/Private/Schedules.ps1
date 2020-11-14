@@ -56,7 +56,7 @@ function Start-PodeScheduleRunspace
         }
     }
 
-    Add-PodeRunspace -Type 'Main' -ScriptBlock $script
+    Add-PodeRunspace -Type Main -ScriptBlock $script
 }
 
 function Complete-PodeInternalSchedules
@@ -119,14 +119,23 @@ function Invoke-PodeInternalScheduleLogic
     )
 
     try {
+        # setup event param
         $parameters = @{
             Event = @{
                 Lockable = $PodeContext.Lockable
             }
         }
 
+        # add any custom args as params
         foreach ($key in $Schedule.Arguments.Keys) {
             $parameters[$key] = $Schedule.Arguments[$key]
+        }
+
+        # add any using variables as params
+        if ($null -ne $Schedule.UsingVariables) {
+            foreach ($usingVar in $Schedule.UsingVariables) {
+                $parameters[$usingVar.NewName] = $usingVar.Value
+            }
         }
 
         Add-PodeRunspace -Type Schedules -ScriptBlock (($Schedule.Script).GetNewClosure()) -Parameters $parameters -Forget

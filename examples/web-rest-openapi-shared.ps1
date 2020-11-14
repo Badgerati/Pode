@@ -12,7 +12,7 @@ Start-PodeServer {
     Enable-PodeOpenApiViewer -Type ReDoc
 
 
-    New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         return @{
             User = @{
                 ID ='M0R7Y302'
@@ -35,8 +35,7 @@ Start-PodeServer {
         Add-PodeOAComponentParameter -Name 'UserId'
 
 
-    Get-PodeAuthMiddleware -Name 'Validate' -Sessionless | Add-PodeMiddleware -Name 'AuthMiddleware' -Route '/api/*'
-    Set-PodeOAGlobalAuth -Name 'Validate'
+    Add-PodeAuthMiddleware -Name AuthMiddleware -Authentication Validate -Route '/api/*'
 
 
     Add-PodeRoute -Method Get -Path "/api/resources" -EndpointName 'user' -ScriptBlock {
@@ -54,8 +53,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Parameters['userId'] }
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Parameters['userId'] }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -Parameters @(
@@ -65,8 +63,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Query['userId'] }
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Query['userId'] }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -Parameters @(
@@ -76,8 +73,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Method Post -Path '/api/users' -ScriptBlock {
-        param($e)
-        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $e.Data.userId }
+        Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Data.userId }
     } -PassThru |
         Set-PodeOARouteInfo -Summary 'A cool summary' -Tags 'Users' -PassThru |
         Set-PodeOARequest -RequestBody (

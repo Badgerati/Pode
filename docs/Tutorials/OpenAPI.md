@@ -31,7 +31,7 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 * Every route will have a 200 and Default response
 * Although routes will be included, no request bodies, parameters or response payloads will be defined
 * If you have multiple endpoints, then the servers section will be included
-* Any authentication will be included, but won't be bound to any routes
+* Any authentication will be included
 
 ### Get Definition
 
@@ -41,8 +41,7 @@ For example:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-    param($e)
-    if ($e.Query.openapi -eq 1) {
+    if ($WebEvent.Query.openapi -eq 1) {
         Get-PodeOpenApiDefinition | Write-PodeJsonResponse
     }
 }
@@ -50,22 +49,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 
 ## Authentication
 
-If your API requires the same authentication on every route, then the quickest way to define global authentication is to use the [`Set-PodeOAGlobalAuth`](../../Functions/OpenApi/Set-PodeOAGlobalAuth) function. This takes an array of authentication names:
-
-```powershell
-# define the authentication
-New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
-    return @{ User = @{} }
-}
-
-# set the auth as global middleware for all /api routes
-Get-PodeAuthMiddleware -Name 'Validate' -Sessionless | Add-PodeMiddleware -Name 'AuthMiddleware' -Route '/api/*'
-
-# set the OpenAPI global auth
-Set-PodeOAGlobalAuth -Name 'Validate'
-```
-
-This will set the `security` section of the OpenAPI definition.
+Any authentication defined, either by [`Add-PodeAuthMiddleware`](../../Functions/Authentication/Add-PodeAuthMiddleware), or using the `-Authentication` parameter on Routes, will be automatically added to the `security` section of the OpenAPI definition.
 
 ## Routes
 
@@ -100,10 +84,9 @@ Whereas the following is a more complex definition, which also defines the respo
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Parameters['userId']
+        UserId = $WebEvent.Parameters['userId']
     }
 } -PassThru |
     Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -ContentSchemas @{
@@ -142,10 +125,9 @@ For example, to create some integer `userId` parameter that is supplied in the p
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Parameters['userId']
+        UserId = $WebEvent.Parameters['userId']
     }
 } -PassThru |
     Set-PodeOARequest -Parameters @(
@@ -157,10 +139,9 @@ Whereas you could use the next example to define 2 query parameters, both string
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Query['name']
+        UserId = $WebEvent.Query['name']
     }
 } -PassThru |
     Set-PodeOARequest -Parameters @(
@@ -177,10 +158,9 @@ For example, to define a request JSON payload of some `userId` and `name` you co
 
 ```powershell
 Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
-        Name = $e.Data.name
-        UserId = $e.Data.userId
+        Name = $WebEvent.Data.name
+        UserId = $WebEvent.Data.userId
     }
 } -PassThru |
     Set-PodeOARequest -RequestBody (
@@ -200,25 +180,6 @@ The expected payload would look as follows:
     "name": [string],
     "userId": [integer]
 }
-```
-
-### Authentication
-
-To add the authentication used on a route's definition you can pipe the route into the [`Set-PodeOAAuth`](../../Functions/OpenApi/Set-PodeOAAuth) function. This function takes the name of an authentication type being used on the route.
-
-```powershell
-# add the auth type
-New-PodeAuthType -Basic | Add-PodeAuth -Name 'Validate' -ScriptBlock {
-    return @{ User = @{} }
-}
-
-$auth = (Get-PodeAuthMiddleware -Name 'Validate' -Sessionless)
-
-# define a route that uses the auth type
-Add-PodeRoute -Method Get -Path "/api/resources" -Middleware $auth -ScriptBlock {
-    Set-PodeResponseStatus -Code 200
-} -PassThru |
-    Set-PodeOAAuth -Name 'Validate'
 ```
 
 ## Components
@@ -243,10 +204,9 @@ Add-PodeOAComponentSchema -Name 'UserSchema' -Schema (
 
 # reuse the above schema in a response
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Parameters['userId']
+        UserId = $WebEvent.Parameters['userId']
         Age = 42
     }
 } -PassThru |
@@ -273,7 +233,6 @@ Add-PodeOAComponentRequestBody -Name 'UserBody' -Required -ContentSchemas @{
 
 # use the request body in a route
 Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
-    param($e)
     Set-PodeResponseStatus -StatusCode 200
 } -PassThru |
     Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'UserBody')
@@ -301,10 +260,9 @@ New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In P
 
 # use this parameter in a route
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    param($e)
     Write-PodeJsonResponse -Value @{
         Name = 'Rick'
-        UserId = $e.Parameters['userId']
+        UserId = $WebEvent.Parameters['userId']
     }
 } -PassThru |
     Set-PodeOARequest -Parameters @(ConvertTo-PodeOAParameter -Reference 'UserId')

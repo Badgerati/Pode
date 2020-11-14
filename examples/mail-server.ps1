@@ -12,7 +12,7 @@ Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -
 # create a server, and start listening on port 25
 Start-PodeServer -Threads 2 {
 
-    Add-PodeEndpoint -Address localhost -Protocol SMTP
+    Add-PodeEndpoint -Address localhost -Protocol Smtp
 
     # enable logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -22,14 +22,15 @@ Start-PodeServer -Threads 2 {
 
     # setup an smtp handler
     Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
-        param($e)
         Write-Host '- - - - - - - - - - - - - - - - - -'
-        Write-Host $e.Email.From
-        Write-Host $e.Email.To
-        Write-Host ([string]::Empty)
-        Write-Host $e.Email.Body
-        Write-Host ([string]::Empty)
-        Write-Host $e.Email.Data
+        Write-Host $SmtpEvent.Email.From
+        Write-Host $SmtpEvent.Email.To
+        Write-Host '|'
+        Write-Host $SmtpEvent.Email.Body
+        Write-Host '|'
+        Write-Host $SmtpEvent.Email.Data
+        Write-Host '|'
+        $SmtpEvent.Email | Out-Default
         Write-Host '- - - - - - - - - - - - - - - - - -'
     }
 

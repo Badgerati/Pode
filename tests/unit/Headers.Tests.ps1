@@ -145,7 +145,7 @@ Describe 'Set-PodeHeader' {
                 'Headers' = @{}
             } }
 
-            $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AddHeader' -Value {
+            $WebEvent.Response.Headers | Add-Member -MemberType ScriptMethod -Name 'Set' -Value {
                 param($n, $v)
                 $script:WebEvent.Response.Headers[$n] = $v
             }
@@ -156,17 +156,12 @@ Describe 'Set-PodeHeader' {
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
+        $PodeContext = @{ 'Server' = @{ ServerlessType = 'azurefunctions'; IsServerless = $true } }
 
         It 'Sets a header to response' {
             $script:WebEvent = @{ 'Response' = @{
                 'Headers' = @{}
             } }
-
-            $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AddHeader' -Value {
-                param($n, $v)
-                $script:WebEvent.Response.Headers[$n] = $v
-            }
 
             Set-PodeHeader -Name 'test' -Value 'example'
             $WebEvent.Response.Headers['test'] | Should Be 'example'
@@ -180,7 +175,7 @@ Describe 'Set-PodeServerHeader' {
             'Headers' = @{}
         } }
 
-        $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AddHeader' -Value {
+        $WebEvent.Response.Headers | Add-Member -MemberType ScriptMethod -Name 'Set' -Value {
             param($n, $v)
             $script:WebEvent.Response.Headers[$n] = $v
         }

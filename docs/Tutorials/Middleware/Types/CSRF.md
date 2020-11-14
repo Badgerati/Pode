@@ -88,8 +88,7 @@ Start-PodeServer {
 
     # POST route for form which will require the csrf token from above
     Add-PodeRoute -Method Post -Path '/token' -ScriptBlock {
-        param($e)
-        Add-PodeFlashMessage -Name 'message' -Message $e.Data['message']
+        Add-PodeFlashMessage -Name 'message' -Message $WebEvent.Data['message']
         Move-PodeResponseUrl -Url '/'
     }
 }

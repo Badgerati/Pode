@@ -40,22 +40,11 @@ function Add-PodeHeader
     }
 
     # add the header to the response
-    switch ($PodeContext.Server.Type) {
-        'http' {
-            $WebEvent.Response.AppendHeader($Name, $Value) | Out-Null
-        }
-
-        'pode' {
-            if (!$WebEvent.Response.Headers.ContainsKey($Name)) {
-                $WebEvent.Response.Headers[$Name] = @()
-            }
-
-            $WebEvent.Response.Headers[$Name] += $Value
-        }
-
-        default {
-            $WebEvent.Response.Headers[$Name] = $Value
-        }
+    if ($PodeContext.Server.IsServerless) {
+        $WebEvent.Response.Headers[$Name] = $Value
+    }
+    else {
+        $WebEvent.Response.Headers.Add($Name, $Value)
     }
 }
 
@@ -117,12 +106,7 @@ function Get-PodeHeader
     )
 
     # get the value for the header from the request
-    if ($PodeContext.Server.Type -ine 'http') {
-        $header = $WebEvent.Request.Headers.$Name
-    }
-    else {
-        $header = $WebEvent.Request.Headers[$Name]
-    }
+    $header = $WebEvent.Request.Headers.$Name
 
     # if a secret was supplied, attempt to unsign the header's value
     if (![string]::IsNullOrWhiteSpace($Secret)) {
@@ -174,18 +158,11 @@ function Set-PodeHeader
     }
 
     # set the header on the response
-    switch ($PodeContext.Server.Type) {
-        'http' {
-            $WebEvent.Response.AddHeader($Name, $Value) | Out-Null
-        }
-
-        'pode' {
-            $WebEvent.Response.Headers[$Name] = @($Value)
-        }
-
-        default {
-            $WebEvent.Response.Headers[$Name] = $Value
-        }
+    if ($PodeContext.Server.IsServerless) {
+        $WebEvent.Response.Headers[$Name] = $Value
+    }
+    else {
+        $WebEvent.Response.Headers.Set($Name, $Value)
     }
 }
 

@@ -6,7 +6,7 @@ It also has support for error levels (such as Error, Warning, Verbose), with sup
 
 ## Enabling
 
-To enable and use the Error logging you use the  [`Enable-PodeErrorLogging`](../../../../Functions/Logging/Enable-PodeErrorLogging) function, supplying a logging method from  [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod). You can supply your own errors to be logged by using  [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod).
+To enable and use the Error logging you use the [`Enable-PodeErrorLogging`](../../../../Functions/Logging/Enable-PodeErrorLogging) function, supplying a logging method from [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod). You can supply your own errors to be logged by using [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod).
 
 When Pode logs an error, the information being logged is as follows:
 
