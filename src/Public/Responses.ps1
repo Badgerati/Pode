@@ -743,6 +743,9 @@ Any dynamic data to supply to a dynamic View.
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER Folder
+If supplied, a custom views folder will be used.
+
 .PARAMETER FlashMessages
 Automatically supply all Flash messages in the current session to the View.
 
@@ -770,6 +773,10 @@ function Write-PodeViewResponse
         [Parameter()]
         [int]
         $StatusCode = 200,
+
+        [Parameter()]
+        [string]
+        $Folder,
 
         [switch]
         $FlashMessages
@@ -803,8 +810,13 @@ function Write-PodeViewResponse
         $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
     }
 
-    # only look in the view directory
-    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
+    # only look in the view directories
+    $viewFolder = $PodeContext.Server.InbuiltDrives['views']
+    if (![string]::IsNullOrWhiteSpace($Folder)) {
+        $viewFolder = $PodeContext.Server.Views[$Folder]
+    }
+
+    $Path = (Join-Path $viewFolder $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
@@ -1243,6 +1255,9 @@ The path to a partial View, relative to the "/views" directory. (Extension is op
 .PARAMETER Data
 Any dynamic data to supply to a dynamic partial View.
 
+.PARAMETER Folder
+If supplied, a custom views folder will be used.
+
 .EXAMPLE
 Use-PodePartialView -Path 'shared/footer'
 #>
@@ -1256,7 +1271,11 @@ function Use-PodePartialView
         $Path,
 
         [Parameter()]
-        $Data = @{}
+        $Data = @{},
+
+        [Parameter()]
+        [string]
+        $Folder
     )
 
     # default data if null
@@ -1271,7 +1290,12 @@ function Use-PodePartialView
     }
 
     # only look in the view directory
-    $Path = (Join-Path $PodeContext.Server.InbuiltDrives['views'] $Path)
+    $viewFolder = $PodeContext.Server.InbuiltDrives['views']
+    if (![string]::IsNullOrWhiteSpace($Folder)) {
+        $viewFolder = $PodeContext.Server.Views[$Folder]
+    }
+
+    $Path = (Join-Path $viewFolder $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {
@@ -1341,4 +1365,52 @@ function Send-PodeSignal
     }
 
     $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+}
+
+<#
+.SYNOPSIS
+Add a custom path that contains additional views.
+
+.DESCRIPTION
+Add a custom path that contains additional views.
+
+.PARAMETER Path
+The Name of the views folder.
+
+.PARAMETER Source
+The literal, or relative, path to the directory that contains views.
+
+.EXAMPLE
+Add-PodeViewFolder -Name 'assets' -Source './assets'
+#>
+function Add-PodeViewFolder
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Source
+    )
+
+    # ensure the folder doesn't already exist
+    if ($PodeContext.Server.Views.ContainsKey($Name)) {
+        throw "The Views folder name already exists: $($Name)"
+    }
+
+    # ensure the path exists at server root
+    $Source = Get-PodeRelativePath -Path $Source -JoinRoot
+    if (!(Test-PodePath -Path $Source -NoStatus)) {
+        throw "The Views path does not exist: $($Source)"
+    }
+
+    # setup a temp drive for the path
+    $Source = New-PodePSDrive -Path $Source
+
+    # add the route(s)
+    Write-Verbose "Adding View Folder: [$($Name)] $($Source)"
+    $PodeContext.Server.Views[$Name] = $Source
 }

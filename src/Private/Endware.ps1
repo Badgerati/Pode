@@ -24,7 +24,11 @@ function Invoke-PodeEndware
         try {
             $_args = @($eware.Arguments)
             if ($null -ne $eware.UsingVariables) {
-                $_args = @($eware.UsingVariables.Value) + $_args
+                $_vars = @()
+                foreach ($_var in $eware.UsingVariables) {
+                    $_vars += ,$_var.Value
+                }
+                $_args = $_vars + $_args
             }
 
             Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments $_args -Scoped -Splat | Out-Null

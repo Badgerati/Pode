@@ -157,7 +157,11 @@ function Start-PodeWebServer
                                 elseif ($null -ne $WebEvent.Route.Logic) {
                                     $_args = @($WebEvent.Route.Arguments)
                                     if ($null -ne $WebEvent.Route.UsingVariables) {
-                                        $_args = @($WebEvent.Route.UsingVariables.Value) + $_args
+                                        $_vars = @()
+                                        foreach ($_var in $WebEvent.Route.UsingVariables) {
+                                            $_vars += ,$_var.Value
+                                        }
+                                        $_args = $_vars + $_args
                                     }
 
                                     Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat

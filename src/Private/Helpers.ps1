@@ -84,7 +84,11 @@ function Get-PodeFileContentUsingViewEngine
                 }
 
                 if ($null -ne $PodeContext.Server.ViewEngine.UsingVariables) {
-                    $_args = @($PodeContext.Server.ViewEngine.UsingVariables.Value) + $_args
+                    $_vars = @()
+                    foreach ($_var in $PodeContext.Server.ViewEngine.UsingVariables) {
+                        $_vars += ,$_var.Value
+                    }
+                    $_args = $_vars + $_args
                 }
 
                 $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
@@ -1191,7 +1195,11 @@ function ConvertFrom-PodeRequestContent
 
             $_args = @($Content)
             if ($null -ne $parser.UsingVariables) {
-                $_args = @($parser.UsingVariables.Value) + $_args
+                $_vars = @()
+                foreach ($_var in $parser.UsingVariables) {
+                    $_vars += ,$_var.Value
+                }
+                $_args = $_vars + $_args
             }
 
             $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)

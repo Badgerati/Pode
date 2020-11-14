@@ -222,6 +222,9 @@ function New-PodeContext
         '*' = @{};
     }
 
+    # custom view paths
+    $ctx.Server.Views = @{}
+
     # handlers for tcp
     $ctx.Server.Handlers = @{
         'tcp' = @{};

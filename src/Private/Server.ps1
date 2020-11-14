@@ -140,6 +140,7 @@ function Restart-PodeInternalServer
             $PodeContext.Server.Handlers[$_].Clear()
         }
 
+        $PodeContext.Views.Clear()
         $PodeContext.Timers.Clear()
         $PodeContext.Schedules.Clear()
         $PodeContext.Server.Logging.Types.Clear()
