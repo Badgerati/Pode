@@ -1374,7 +1374,7 @@ Add a custom path that contains additional views.
 .DESCRIPTION
 Add a custom path that contains additional views.
 
-.PARAMETER Path
+.PARAMETER Name
 The Name of the views folder.
 
 .PARAMETER Source
