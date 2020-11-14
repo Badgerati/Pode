@@ -88,6 +88,7 @@
         'Set-PodeViewEngine',
         'Use-PodePartialView',
         'Send-PodeSignal',
+        'Add-PodeViewFolder',
 
         # utility helpers
         'Wait-PodeTask',
@@ -167,6 +168,8 @@
         'New-PodeAuthScheme',
         'New-PodeAuthAzureADScheme',
         'Add-PodeAuth',
+        'Get-PodeAuth',
+        'Clear-PodeAuth',
         'Add-PodeAuthWindowsAd',
         'Add-PodeAuthWindowsLocal',
         'Remove-PodeAuth',

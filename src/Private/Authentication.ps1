@@ -830,7 +830,11 @@ function Get-PodeAuthMiddlewareScript
             # run auth scheme script to parse request for data
             $_args = @($auth.Scheme.Arguments)
             if ($null -ne $auth.Scheme.ScriptBlock.UsingVariables) {
-                $_args = @($auth.Scheme.ScriptBlock.UsingVariables.Value) + $_args
+                $_vars = @()
+                foreach ($_var in $auth.Scheme.ScriptBlock.UsingVariables) {
+                    $_vars += ,$_var.Value
+                }
+                $_args = $_vars + $_args
             }
 
             # call inner schemes first
@@ -846,7 +850,11 @@ function Get-PodeAuthMiddlewareScript
                 for ($i = $_inner.Length - 1; $i -ge 0; $i--) {
                     $_tmp_args = @($_inner[$i].Arguments)
                     if ($null -ne $_inner[$i].ScriptBlock.UsingVariables) {
-                        $_tmp_args = @($_inner[$i].ScriptBlock.UsingVariables.Value) + $_tmp_args
+                        $_vars = @()
+                        foreach ($_var in $_inner[$i].ScriptBlock.UsingVariables) {
+                            $_vars += ,$_var.Value
+                        }
+                        $_tmp_args = $_vars + $_tmp_args
                     }
 
                     $_tmp_args += ,$schemes
@@ -872,7 +880,11 @@ function Get-PodeAuthMiddlewareScript
 
                 $_args = @($result) + @($auth.Arguments)
                 if ($null -ne $auth.UsingVariables) {
-                    $_args = @($auth.UsingVariables.Value) + $_args
+                    $_vars = @()
+                    foreach ($_var in $auth.UsingVariables) {
+                        $_vars += ,$_var.Value
+                    }
+                    $_args = $_vars + $_args
                 }
 
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -Return -Splat)
@@ -881,7 +893,11 @@ function Get-PodeAuthMiddlewareScript
                 if ([string]::IsNullOrWhiteSpace($result.Code) -and !(Test-PodeIsEmpty $auth.Scheme.PostValidator.Script)) {
                     $_args = @($original) + @($result) + @($auth.Scheme.Arguments)
                     if ($null -ne $auth.Scheme.PostValidator.UsingVariables) {
-                        $_args = @($auth.Scheme.PostValidator.UsingVariables.Value) + $_args
+                        $_vars = @()
+                        foreach ($_var in $auth.Scheme.PostValidator.UsingVariables) {
+                            $_vars += ,$_var.Value
+                        }
+                        $_args = $_vars + $_args
                     }
 
                     $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -Return -Splat)

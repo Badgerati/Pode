@@ -545,6 +545,37 @@ function Add-PodeAuth
 
 <#
 .SYNOPSIS
+Gets an Authentication method.
+
+.DESCRIPTION
+Gets an Authentication method.
+
+.PARAMETER Name
+The Name of an Authentication method.
+
+.EXAMPLE
+Get-PodeAuth -Name 'Main'
+#>
+function Get-PodeAuth
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    # ensure the name exists
+    if (!(Test-PodeAuth -Name $Name)) {
+        throw "Authentication method not defined: $($Name)"
+    }
+
+    # get auth method
+    return $PodeContext.Server.Authentications[$Name]
+}
+
+<#
+.SYNOPSIS
 Adds the inbuilt Windows AD Authentication method for verifying users.
 
 .DESCRIPTION
