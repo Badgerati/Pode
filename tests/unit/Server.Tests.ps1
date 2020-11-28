@@ -144,6 +144,7 @@ Describe 'Restart-PodeInternalServer' {
                     Snapins = @{ Exported = @() }
                     Functions = @{ Exported = @() }
                 }
+                Views = @{ 'key' = 'value' };
             };
             Metrics = @{
                 Server = @{
@@ -152,7 +153,6 @@ Describe 'Restart-PodeInternalServer' {
             }
             Timers = @{ 'key' = 'value' }
             Schedules = @{ 'key' = 'value' };
-            Views = @{ 'key' = 'value' };
         }
 
         Restart-PodeInternalServer | Out-Null
