@@ -1,5 +1,13 @@
 # Release Notes
 
+## v2.0.1
+
+```plain
+### Bugs
+* #631: Parse username during Windows AD authentication
+* #632: Fixes null reference exception during server restart
+```
+
 ## v2.0.0
 
 ```plain
