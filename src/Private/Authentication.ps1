@@ -537,6 +537,9 @@ function Get-PodeAuthWindowsADMethod
     return {
         param($username, $password, $options)
 
+        # parse username to remove domains
+        $username = (($username -split '@')[0] -split '\\')[-1]
+
         # validate and retrieve the AD user
         $noGroups = $options.NoGroups
         $openLdap = $options.OpenLDAP
