@@ -1,5 +1,12 @@
 # Release Notes
 
+## v2.0.2
+
+```plain
+### Bugs
+* #636: Fixes bug with OAuth2 RedirectUrl when behind IIS
+```
+
 ## v2.0.1
 
 ```plain
