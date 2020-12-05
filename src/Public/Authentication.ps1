@@ -536,10 +536,9 @@ function Add-PodeAuth
 
     # if the scheme is oauth2, and there's no redirect, set up a default one
     if (($Scheme.Name -ieq 'oauth2') -and ($null -eq $Scheme.InnerScheme)  -and [string]::IsNullOrWhiteSpace($Scheme.Arguments.Urls.Redirect)) {
-        $url = Get-PodeEndpointUrl
-        $path = 'oauth2/callback'
-        $Scheme.Arguments.Urls.Redirect = "$($url)$($path)"
-        Add-PodeRoute -Method Get -Path "/$($path)" -Authentication $Name
+        $path = '/oauth2/callback'
+        $Scheme.Arguments.Urls.Redirect = $path
+        Add-PodeRoute -Method Get -Path $path -Authentication $Name
     }
 }
 

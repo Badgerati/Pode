@@ -102,8 +102,9 @@ function Get-PodeAuthOAuth2Type
 
             # otherwise, set query for auth_code
             else {
+                $redirectUrl = Get-PodeOAuth2RedirectHost -RedirectUrl $options.Urls.Redirect
                 $body += "&code=$($WebEvent.Query['code'])"
-                $body += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($options.Urls.Redirect))"
+                $body += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($redirectUrl))"
             }
 
             # POST the tokenUrl
@@ -149,9 +150,11 @@ function Get-PodeAuthOAuth2Type
 
         # redirect to the authUrl - only if no inner scheme supplied
         if (!$hasInnerScheme) {
+            $redirectUrl = Get-PodeOAuth2RedirectHost -RedirectUrl $options.Urls.Redirect
+
             $query = "client_id=$($options.Client.ID)"
             $query += "&response_type=code"
-            $query += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($options.Urls.Redirect))"
+            $query += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($redirectUrl))"
             $query += "&response_mode=query"
             $query += "&scope=$([System.Web.HttpUtility]::UrlEncode($scopes))"
 
@@ -162,6 +165,33 @@ function Get-PodeAuthOAuth2Type
         # hmm, this is unexpected
         return @{ Code = 500 }
     }
+}
+
+function Get-PodeOAuth2RedirectHost
+{
+    param(
+        [Parameter()]
+        [string]
+        $RedirectUrl
+    )
+
+    if ($RedirectUrl.StartsWith('/')) {
+        if ($PodeContext.Server.IsIIS -or $PodeContext.Server.IsHeroku) {
+            $protocol = Get-PodeHeader -Name 'X-Forwarded-Proto'
+            if ([string]::IsNullOrWhiteSpace($protocol)) {
+                $protocol = 'https'
+            }
+
+            $domain = "$($protocol)://$($WebEvent.Request.Host)"
+        }
+        else {
+            $domain = Get-PodeEndpointUrl
+        }
+
+        $RedirectUrl = "$($domain.TrimEnd('/'))$($RedirectUrl)"
+    }
+
+    return $RedirectUrl
 }
 
 function Get-PodeAuthClientCertificateType
