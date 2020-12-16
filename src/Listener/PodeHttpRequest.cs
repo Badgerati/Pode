@@ -57,6 +57,11 @@ namespace Pode
                 return;
             }
 
+            if (IsSsl)
+            {
+                bytes = bytes.Take(bytes.Length - 29).ToArray();
+            }
+
             // get the raw string for headers
             var content = Encoding.GetString(bytes, 0, bytes.Length);
 
@@ -78,6 +83,9 @@ namespace Pode
 
         private int ParseHeaders(string[] reqLines, string newline)
         {
+            // reset raw body
+            RawBody = default(byte[]);
+
             // first line is method/url
             var reqMeta = Regex.Split(reqLines[0].Trim(), "\\s+");
             if (reqMeta.Length != 3)
@@ -201,9 +209,6 @@ namespace Pode
                 throw new HttpRequestException($"Cannot supply a Content-Length and a chunked Transfer-Encoding");
             }
 
-            // set the body
-            Body = string.Join(newline, reqLines.Skip(bodyIndex));
-
             // get the start index for raw bytes
             var start = reqLines.Take(bodyIndex).Sum(x => x.Length) + ((bodyIndex) * newline.Length);
 
@@ -257,6 +262,9 @@ namespace Pode
             {
                 RawBody = bytes.Skip(start).ToArray();
             }
+
+            // set the body
+            Body = string.Join(newline, reqLines.Skip(bodyIndex)).Substring(0, RawBody.Length);
         }
     }
 }
