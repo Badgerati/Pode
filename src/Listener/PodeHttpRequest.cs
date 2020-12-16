@@ -264,7 +264,7 @@ namespace Pode
             }
 
             // set the body
-            Body = string.Join(newline, reqLines.Skip(bodyIndex)).Substring(0, RawBody.Length);
+            Body = Encoding.GetString(RawBody);
         }
     }
 }
