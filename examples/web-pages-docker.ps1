@@ -4,7 +4,7 @@ Import-Module /usr/local/share/powershell/Modules/Pode/Pode.psm1 -Force -ErrorAc
 Start-PodeServer -Threads 2 {
 
     # listen on *:8085
-    Add-PodeEndpoint -Address * -Port 10000 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
