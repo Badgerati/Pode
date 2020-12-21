@@ -1,5 +1,16 @@
 # Release Notes
 
+## v2.0.3
+
+```plain
+### Bugs
+* #641: Fix an issue with Invalid Request Lines being received when running via SSL and using a Proxy
+* #642: Fix certificate X509FindType enum
+
+### Documentation
+* #639: Fix the docker example ports to match documentation (thanks @ArieHein!)
+```
+
 ## v2.0.2
 
 ```plain

@@ -1,4 +1,4 @@
-# Welcome
+# Welcome!
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
 [![GitHub Actions](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fbadgerati%2Fpode%2Fbadge&style=flat&label=GitHub)](https://actions-badge.atrox.dev/badgerati/pode/goto)
@@ -36,6 +36,10 @@ Pode is a Cross-Platform framework to create web servers that host REST APIs, We
 * Support for dynamically building Routes from Functions and Modules
 * Generate/bind self-signed certificates
 * (Windows) Open the hosted server as a desktop application
+
+## Companies using Pode
+
+[![coop](/images/companies/coop-logo.png)](https://coop.dk)
 
 ## Quick Look!
 
