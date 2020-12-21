@@ -16,7 +16,7 @@ Pode is a Cross-Platform framework for creating web servers to host [REST APIs](
     <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code_2.png?raw=true" />
 </p>
 
-See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app!
+See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app! Don't know HTML, CSS, or JavaScript? No problem! [Pode.Web](https://github.com/Badgerati/Pode.Web) is currently a work in progress, and lets you build web pages using purely PowerShell!
 
 ## Documentation
 

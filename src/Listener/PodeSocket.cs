@@ -238,6 +238,16 @@ namespace Pode
                     }
                 }
 
+                // if it's http and awaiting the body
+                else if (context.IsHttp)
+                {
+                    if (context.HttpRequest.AwaitingBody)
+                    {
+                        process = false;
+                        context.Dispose();
+                    }
+                }
+
                 // add the context for processing
                 if (process)
                 {

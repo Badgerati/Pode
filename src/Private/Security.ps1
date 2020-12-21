@@ -799,7 +799,7 @@ function Get-PodeCertificateByThumbprint
         $Thumbprint
     )
 
-    return (Find-PodeCertificateInCertStore -FindType [X509FindType]::FindByThumbprint -Query $Thumbprint)
+    return (Find-PodeCertificateInCertStore -FindType ([X509Certificates.X509FindType]::FindByThumbprint) -Query $Thumbprint)
 }
 
 function Get-PodeCertificateByName
@@ -810,7 +810,7 @@ function Get-PodeCertificateByName
         $Name
     )
 
-    return (Find-PodeCertificateInCertStore -FindType [X509FindType]::FindBySubjectName -Query $Name)
+    return (Find-PodeCertificateInCertStore -FindType ([X509Certificates.X509FindType]::FindBySubjectName) -Query $Name)
 }
 
 function New-PodeSelfSignedCertificate

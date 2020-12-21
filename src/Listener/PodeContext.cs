@@ -254,7 +254,7 @@ namespace Pode
                 }
 
                 // only send a response if Http
-                if (IsHttp && State != PodeContextState.SslError)
+                if (IsHttp && State != PodeContextState.SslError && !HttpRequest.AwaitingBody)
                 {
                     Response.Send();
                 }

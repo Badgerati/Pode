@@ -2,6 +2,10 @@
 
 You can host web-pages using Pode, and to help you can also use package managers like `yarn` to install frontend libraries - like bootstrap.
 
+## Using Pode.Web
+
+Don't know HTML, CSS, or JavaScript? No problem! [Pode.Web](https://github.com/Badgerati/Pode.Web) is currently a work in progress, and lets you build web pages using purely PowerShell!
+
 ## Using Yarn
 
 The following will install Yarn onto your machine:
