@@ -39,7 +39,7 @@ Pode is a Cross-Platform framework to create web servers that host REST APIs, We
 
 ## Companies using Pode
 
-[![coop](/images/companies/coop-logo.png)](https://coop.dk)
+[![coop](./images/companies/coop-logo.png)](https://coop.dk)
 
 ## Quick Look!
 
