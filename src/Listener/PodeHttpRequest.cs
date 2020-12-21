@@ -18,7 +18,9 @@ namespace Pode
         public string Protocol { get; private set; }
         public string ProtocolVersion { get; private set; }
         public string ContentType { get; private set; }
+        public int ContentLength { get; private set; }
         public Encoding ContentEncoding { get; private set; }
+        public string TransferEncoding { get; private set; }
         public string UserAgent { get; private set; }
         public string UrlReferrer { get; private set; }
         public Uri Url { get; private set; }
@@ -26,6 +28,7 @@ namespace Pode
         public string Body { get; private set; }
         public byte[] RawBody { get; private set; }
         public string Host { get; private set; }
+        public bool AwaitingBody { get; private set; }
 
         private bool _isWebSocket = false;
         public bool IsWebSocket
@@ -54,12 +57,34 @@ namespace Pode
                 return;
             }
 
+            if (IsSsl)
+            {
+                bytes = bytes.Take(bytes.Length - 29).ToArray();
+            }
+
             // get the raw string for headers
             var content = Encoding.GetString(bytes, 0, bytes.Length);
 
-            // split the lines on newline
+            // new line char, and req lines
             var newline = (content.Contains(PodeHelpers.NEW_LINE) ? PodeHelpers.NEW_LINE : PodeHelpers.NEW_LINE_UNIX);
             var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
+
+            // parse the headers, unless we're waiting for the body
+            var bodyIndex = 0;
+            if (!AwaitingBody)
+            {
+                bodyIndex = ParseHeaders(reqLines, newline);
+            }
+
+            // parse the body
+            ParseBody(bytes, reqLines, newline, bodyIndex);
+            AwaitingBody = (ContentLength > 0 && RawBody.Length == 0);
+        }
+
+        private int ParseHeaders(string[] reqLines, string newline)
+        {
+            // reset raw body
+            RawBody = default(byte[]);
 
             // first line is method/url
             var reqMeta = Regex.Split(reqLines[0].Trim(), "\\s+");
@@ -137,20 +162,52 @@ namespace Pode
                 strContentLength = "0";
             }
 
-            var contentLength = int.Parse(strContentLength);
+            ContentLength = int.Parse(strContentLength);
 
-            // get transfer encoding, see if chunked
-            var transferEncoding = $"{Headers["Transfer-Encoding"]}";
-            var isChunked = (!string.IsNullOrWhiteSpace(transferEncoding) && transferEncoding.Contains("chunked"));
+            // set the transfer encoding
+            TransferEncoding = $"{Headers["Transfer-Encoding"]}";
+
+            // set other default headers
+            UrlReferrer = $"{Headers["Referer"]}";
+            UserAgent = $"{Headers["User-Agent"]}";
+            ContentType = $"{Headers["Content-Type"]}";
+
+            // set content encoding
+            ContentEncoding = System.Text.Encoding.UTF8;
+            if (!string.IsNullOrWhiteSpace(ContentType))
+            {
+                var atoms = ContentType.Split(';');
+                foreach (var atom in atoms)
+                {
+                    if (atom.Trim().ToLowerInvariant().StartsWith("charset"))
+                    {
+                        ContentEncoding = System.Text.Encoding.GetEncoding((atom.Split('=')[1].Trim()));
+                        break;
+                    }
+                }
+            }
+
+            // is web-socket?
+            _isWebSocket = Headers.ContainsKey("Sec-WebSocket-Key");
+
+            // keep-alive?
+            IsKeepAlive = (_isWebSocket ||
+                (Headers.ContainsKey("Connection")
+                    && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase)));
+
+            // return index where body starts in req
+            return bodyIndex;
+        }
+
+        private void ParseBody(byte[] bytes, string[] reqLines, string newline, int bodyIndex)
+        {
+            var isChunked = (!string.IsNullOrWhiteSpace(TransferEncoding) && TransferEncoding.Contains("chunked"));
 
             // if chunked, and we have a content-length, fail
-            if (isChunked && contentLength > 0)
+            if (isChunked && ContentLength > 0)
             {
                 throw new HttpRequestException($"Cannot supply a Content-Length and a chunked Transfer-Encoding");
             }
-
-            // set the body
-            Body = string.Join(newline, reqLines.Skip(bodyIndex));
 
             // get the start index for raw bytes
             var start = reqLines.Take(bodyIndex).Sum(x => x.Length) + ((bodyIndex) * newline.Length);
@@ -195,9 +252,9 @@ namespace Pode
             }
 
             // else use content length
-            else if (contentLength > 0)
+            else if (ContentLength > 0)
             {
-                RawBody = bytes.Skip(start).Take(contentLength).ToArray();
+                RawBody = bytes.Skip(start).Take(ContentLength).ToArray();
             }
 
             // else just read all
@@ -206,33 +263,8 @@ namespace Pode
                 RawBody = bytes.Skip(start).ToArray();
             }
 
-            // set values from headers
-            UrlReferrer = $"{Headers["Referer"]}";
-            UserAgent = $"{Headers["User-Agent"]}";
-            ContentType = $"{Headers["Content-Type"]}";
-
-            // is web-socket?
-            _isWebSocket = Headers.ContainsKey("Sec-WebSocket-Key");
-
-            // keep-alive?
-            IsKeepAlive = (_isWebSocket ||
-                (Headers.ContainsKey("Connection")
-                    && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase)));
-
-            // set content encoding
-            ContentEncoding = System.Text.Encoding.UTF8;
-            if (!string.IsNullOrWhiteSpace(ContentType))
-            {
-                var atoms = ContentType.Split(';');
-                foreach (var atom in atoms)
-                {
-                    if (atom.Trim().ToLowerInvariant().StartsWith("charset"))
-                    {
-                        ContentEncoding = System.Text.Encoding.GetEncoding((atom.Split('=')[1].Trim()));
-                        break;
-                    }
-                }
-            }
+            // set the body
+            Body = Encoding.GetString(RawBody);
         }
     }
 }
