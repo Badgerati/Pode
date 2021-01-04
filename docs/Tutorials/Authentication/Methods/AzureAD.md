@@ -62,6 +62,38 @@ Start-PodeServer {
 }
 ```
 
+## Requests via Non-Modern Authentication Applications (for example PowerShell Invoke-RestMethod)
+
+To authenticate against Azure Active Directory with Applications that do not support Modern Authentication, you will need to use Basic Authentication.
+This method only works if you're either using Password Hash Sync (PHS), Pass-through Authentication (PTA) or both. If you're using claim based authentication against another IdP like Active Directory Federation Services (ADFS) then this will not work as the Azure AD does not know the users' credentials.
+
+The client side may look like this:
+
+```powershell
+$res = Invoke-RestMethod -Url 'http://localhost:8080' -SessionVariable session
+$res.Form[0].username = 'username'
+$res.Form[0].password = 'password'
+Invoke-RestMethod -Url 'http://localhost:8080' -WebSession $session -Body $res.Form[0]
+```
+
+The Pode side needs to be configured to allow basic authentication as well. This can be done side by side with Form based Authentication using this example
+
+```powershell
+$form  = New-PodeAuthScheme -Form
+$schemeForm = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $form
+
+$basic = New-PodeAuthSceme -Basic
+$schemeBasic = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $basic
+
+$authLogin = {
+    param($user, $accessToken, $refreshToken)
+    # check user
+}
+
+$schemeForm | Add-PodeAuth -Name 'LoginForm' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock $authLogic
+$schemeBasic | Add-PodeAuth -Name 'LoginBasic' -ScriptBlock $authLogic
+```
+
 ## Middleware
 
 Once configured you can start using Azure AD Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
