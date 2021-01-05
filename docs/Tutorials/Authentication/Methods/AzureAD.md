@@ -62,9 +62,9 @@ Start-PodeServer {
 }
 ```
 
-## Requests via Non-Modern Authentication Applications (for example PowerShell Invoke-RestMethod)
+## Requests using Basic Authentication
 
-To authenticate against Azure Active Directory with Applications that do not support Modern Authentication, you will need to use Basic Authentication.
+To authenticate against Azure Active Directory with Applications that do not support Modern Authentication (for example PowerShell Invoke-RestMethod), you will need to use Basic Authentication.
 This method only works if you're either using Password Hash Sync (PHS), Pass-through Authentication (PTA) or both. If you're using claim based authentication against another IdP like Active Directory Federation Services (ADFS) then this will not work as the Azure AD does not know the users' credentials.
 
 The client side may look like this:
