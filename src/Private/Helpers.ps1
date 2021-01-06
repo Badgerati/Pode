@@ -2026,8 +2026,23 @@ function Get-PodeDefaultPort
         [Parameter()]
         [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
         [string]
-        $Protocol
+        $Protocol,
+
+        [switch]
+        $Real
     )
+
+    # are we after the real default ports?
+    if ($Real) {
+        return (@{
+            Http    = 80
+            Https   = 443
+            Smtp    = 25
+            Tcp     = 9001
+            Ws      = 80
+            Wss     = 443
+        })[$Protocol.ToLowerInvariant()]
+    }
 
     # if we running as iis, return the ASPNET port
     if ($PodeContext.Server.IsIIS) {
