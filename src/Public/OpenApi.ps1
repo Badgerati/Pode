@@ -131,12 +131,11 @@ function Get-PodeOpenApiDefinition
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $Title,
 
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
         [string]
         $Version,
 
@@ -154,7 +153,15 @@ function Get-PodeOpenApiDefinition
     )
 
     $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
+    if ([string]::IsNullOrWhiteSpace($Title)) {
+        throw "No Title supplied for OpenAPI definition"
+    }
+
     $Version = Protect-PodeValue -Value $Version -Default $PodeContext.Server.OpenAPI.Version
+    if ([string]::IsNullOrWhiteSpace($Version)) {
+        throw "No Version supplied for OpenAPI definition"
+    }
+
     $Description = Protect-PodeValue -Value $Description -Default $PodeContext.Server.OpenAPI.Description
 
     # generate the openapi definition
