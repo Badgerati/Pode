@@ -245,7 +245,7 @@ function Get-PodeOpenApiDefinitionInternal
         foreach ($authName in $PodeContext.Server.Authentications.Keys) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
 
-            $def.components.securitySchemas[($authName -replace '\s+', '')] = @{
+            $def.components.securitySchemes[($authName -replace '\s+', '')] = @{
                 type = $authType.Scheme.ToLowerInvariant()
                 scheme = $authType.Name.ToLowerInvariant()
             }
@@ -312,8 +312,20 @@ function Get-PodeOpenApiDefinitionInternal
                     $def.paths[$_route.OpenApi.Path][$method].servers = @()
                 }
 
-                $def.paths[$_route.OpenApi.Path][$method].servers += @{
-                    url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
+                $serverDef = $null
+                if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Name)) {
+                    $serverDef = @{
+                        url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
+                    }
+                }
+                else {
+                    $serverDef = @{
+                        url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
+                    }
+                }
+
+                if ($null -ne $serverDef) {
+                    $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
                 }
             }
         }
@@ -358,7 +370,7 @@ function Get-PodeOABaseObject
         components = @{
             schemas = @{}
             responses = @{}
-            securitySchemas = @{}
+            securitySchemes = @{}
             requestBodies = @{}
             parameters = @{}
         }
