@@ -78,7 +78,7 @@ namespace Pode
 
             // parse the body
             ParseBody(bytes, reqLines, newline, bodyIndex);
-            AwaitingBody = (ContentLength > 0 && RawBody.Length == 0);
+            AwaitingBody = (ContentLength > 0 && RawBody.Length < ContentLength);
         }
 
         private int ParseHeaders(string[] reqLines, string newline)
@@ -211,6 +211,7 @@ namespace Pode
 
             // get the start index for raw bytes
             var start = reqLines.Take(bodyIndex).Sum(x => x.Length) + ((bodyIndex) * newline.Length);
+            var hasBody = (RawBody != default(byte[]));
 
             // parse for chunked
             if (isChunked)
@@ -248,19 +249,25 @@ namespace Pode
                     start = (start + c_length - 1) + newline.Length + 1;
                 }
 
-                RawBody = c_rawBytes.ToArray();
+                RawBody = hasBody
+                    ? RawBody.Concat(c_rawBytes).ToArray()
+                    : c_rawBytes.ToArray();
             }
 
             // else use content length
             else if (ContentLength > 0)
             {
-                RawBody = bytes.Skip(start).Take(ContentLength).ToArray();
+                RawBody = hasBody
+                    ? RawBody.Concat(bytes.Skip(start).Take(ContentLength)).ToArray()
+                    : bytes.Skip(start).Take(ContentLength).ToArray();
             }
 
             // else just read all
             else
             {
-                RawBody = bytes.Skip(start).ToArray();
+                RawBody = hasBody
+                    ? RawBody.Concat(bytes.Skip(start)).ToArray()
+                    : bytes.Skip(start).ToArray();
             }
 
             // set the body

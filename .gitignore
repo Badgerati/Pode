@@ -6,6 +6,7 @@ pode_modules/
 ps_modules/
 docs/[Ff]unctions/
 examples/state.json
+examples/issue-*
 pkg/
 
 
