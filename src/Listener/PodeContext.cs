@@ -265,7 +265,8 @@ namespace Pode
                     SmtpRequest.Reset();
                 }
 
-                if (!IsKeepAlive || force)
+                // dispose of request if not KeepAlive, and not waiting for body
+                if (((IsHttp && !HttpRequest.AwaitingBody) || !IsHttp) && (!IsKeepAlive || force))
                 {
                     State = PodeContextState.Closed;
                     Request.Dispose();
@@ -275,8 +276,8 @@ namespace Pode
             }
             catch {}
 
-            // if keep-alive, setup for re-receive
-            if (IsKeepAlive && !force)
+            // if keep-alive, or awaiting body, setup for re-receive
+            if (((IsHttp && HttpRequest.AwaitingBody) || IsKeepAlive) && !force)
             {
                 StartReceive();
             }
