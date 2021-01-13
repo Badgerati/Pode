@@ -13,13 +13,20 @@ Start-PodeServer {
 
 
     New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
-        return @{
-            User = @{
-                ID ='M0R7Y302'
-                Name = 'Morty'
-                Type = 'Human'
+        param($username, $password)
+
+        # here you'd check a real user storage, this is just for example
+        if ($username -eq 'morty' -and $password -eq 'pickle') {
+            return @{
+                User = @{
+                    ID ='M0R7Y302'
+                    Name = 'Morty'
+                    Type = 'Human'
+                }
             }
         }
+
+        return @{ Message = 'Invalid details supplied' }
     }
 
 

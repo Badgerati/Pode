@@ -242,6 +242,10 @@ function Get-PodeOpenApiDefinitionInternal
 
     # auth/security components
     if ($PodeContext.Server.Authentications.Count -gt 0) {
+        if ($null -eq $def.components.securitySchemes) {
+            $def.components.securitySchemes = @{}
+        }
+
         foreach ($authName in $PodeContext.Server.Authentications.Keys) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
 
@@ -251,7 +255,9 @@ function Get-PodeOpenApiDefinitionInternal
             }
         }
 
-        $def['security'] = $PodeContext.Server.OpenAPI.security
+        if ($PodeContext.Server.OpenAPI.Security.Length -gt 0) {
+            $def['security'] = @($PodeContext.Server.OpenAPI.Security.Definition)
+        }
     }
 
     # paths
@@ -300,6 +306,15 @@ function Get-PodeOpenApiDefinitionInternal
                 requestBody = $_route.OpenApi.RequestBody
                 servers = $null
                 security = @($_route.OpenApi.Authentication)
+            }
+
+            # add global authentication for route
+            if (($null -ne $def['security']) -and ($def['security'].Length -gt 0)) {
+                foreach ($sec in $PodeContext.Server.OpenAPI.Security) {
+                    if ([string]::IsNullOrWhiteSpace($sec.Route) -or ($sec.Route -ieq '/') -or ($sec.Route -ieq $_route.OpenApi.Path) -or ($_route.OpenApi.Path -imatch "^$($sec.Route)$")) {
+                        $def.paths[$_route.OpenApi.Path][$method].security += $sec.Definition
+                    }
+                }
             }
 
             # add any custom server endpoints for route
@@ -370,11 +385,10 @@ function Get-PodeOABaseObject
         components = @{
             schemas = @{}
             responses = @{}
-            securitySchemes = @{}
             requestBodies = @{}
             parameters = @{}
         }
-        security = @()
+        Security = @()
     }
 }
 
@@ -410,19 +424,26 @@ function Set-PodeOAGlobalAuth
 {
     param(
         [Parameter()]
-        [string[]]
-        $Name
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Route
     )
 
-    foreach ($n in @($Name)) {
-        if (!(Test-PodeAuth -Name $n)) {
-            throw "Authentication method does not exist: $($n)"
-        }
+    if (!(Test-PodeAuth -Name $Name)) {
+        throw "Authentication method does not exist: $($Name)"
     }
 
-    $PodeContext.Server.OpenAPI.security = @(foreach ($n in @($Name)) {
-        @{
-            "$($n -replace '\s+', '')" = @()
+    if (Test-PodeIsEmpty $PodeContext.Server.OpenAPI.Security) {
+        $PodeContext.Server.OpenAPI.Security = @()
+    }
+
+    $PodeContext.Server.OpenAPI.Security += @{
+        Definition = @{
+            "$($Name -replace '\s+', '')" = @()
         }
-    })
+        Route = (ConvertTo-PodeRouteRegex -Path $Route)
+    }
 }

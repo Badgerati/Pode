@@ -46,7 +46,8 @@
                 }
 
                 .swagger-ui svg.arrow,
-                .swagger-ui button.unlocked
+                .swagger-ui button.unlocked,
+                .swagger-ui .authorization__btn.locked
                 {
                     fill: #CCCCCC;
                     opacity: 1 !important;
