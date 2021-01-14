@@ -97,8 +97,35 @@ You can supply a list of authorised usernames to validate a user's access, after
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
+    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -Users @('jsnow', 'rsanchez')
 }
 ```
 
 If an user being authenticated is not one of the allowed users, then a 401 is returned.
+
+### Additional Validation
+
+Similar to the normal [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth), [`Add-PodeAuthUserFile`](../../../../Functions/Authentication/Add-PodeAuthUserFile) can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.
+
+The ScriptBlock has the same return rules as [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth), as can be seen in the [Overview](../../Overview).
+
+For example, to return the user back:
+
+```powershell
+New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -ScriptBlock {
+    param($user)
+
+    # check or load extra data
+
+    return @{ User = $user }
+}
+```
+
+Or to fail authentication with an error message:
+
+```powershell
+New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -ScriptBlock {
+    param($user)
+    return @{ Message = 'Authorisation failed' }
+}
+```
