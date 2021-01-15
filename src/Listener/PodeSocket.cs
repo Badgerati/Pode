@@ -208,10 +208,77 @@ namespace Pode
             try
             {
                 // add context to be processed?
-                var process = true;
+                // var process = true;
 
                 // deal with context
                 context.Receive();
+
+                // if we need to exit now, dispose and exit
+                // if (context.CloseImmediately)
+                // {
+                //     PodeHelpers.WriteException(context.Request.Error, Listener);
+                //     context.Dispose(true);
+                //     process = false;
+                // }
+
+                // if it's a websocket, upgrade it, then add context back for re-receiving
+                // else if (context.IsWebSocket && !context.IsWebSocketUpgraded)
+                // {
+                //     context.UpgradeWebSocket();
+                //     process = false;
+                //     context.Dispose();
+                // }
+
+                // if it's an email, re-receive unless processable
+                // else if (context.IsSmtp)
+                // {
+                //     if (!context.SmtpRequest.CanProcess)
+                //     {
+                //         process = false;
+                //         context.Dispose();
+                //     }
+                // }
+
+                // if it's http and awaiting the body
+                // else if (context.IsHttp)
+                // {
+                //     if (context.HttpRequest.AwaitingBody)
+                //     {
+                //         process = false;
+                //         context.Dispose();
+                //     }
+                // }
+
+                // add the context for processing
+                // if (process)
+                // {
+                //     if (context.IsWebSocket)
+                //     {
+                //         Listener.AddClientSignal(context.WsRequest.NewClientSignal());
+                //         context.Dispose();
+                //     }
+                //     else
+                //     {
+                //         Listener.AddContext(context);
+                //     }
+                // }
+            }
+            catch (Exception ex)
+            {
+                PodeHelpers.WriteException(ex, Listener);
+            }
+
+            // add args back to connections
+            ClearSocketAsyncEvent(args);
+            ReceiveConnections.Enqueue(args);
+        }
+
+        public void HandleContext(PodeContext context)
+        {
+            try
+            {
+                // add context to be processed?
+                var process = true;
 
                 // if we need to exit now, dispose and exit
                 if (context.CloseImmediately)
@@ -267,10 +334,6 @@ namespace Pode
             {
                 PodeHelpers.WriteException(ex, Listener);
             }
-
-            // add args back to connections
-            ClearSocketAsyncEvent(args);
-            ReceiveConnections.Enqueue(args);
         }
 
         private SocketAsyncEventArgs NewAcceptConnection()
