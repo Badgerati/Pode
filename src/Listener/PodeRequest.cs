@@ -78,7 +78,7 @@ namespace Pode
 
         private byte[] _buffer;
         private MemoryStream _bufferStream;
-        private const int _bufferSize = 16384; //8192;
+        private const int _bufferSize = 16384;
         protected AsyncCallback AsyncReadCallback;
 
         private void ReadCallback(IAsyncResult ares)
@@ -86,10 +86,6 @@ namespace Pode
             var req = (PodeRequest)ares.AsyncState;
 
             var read = InputStream.EndRead(ares);
-            if (read < _bufferSize - 29) {
-                Console.WriteLine($"READ: {read} -- {_bufferStream.ToArray().Length} -- {_bufferStream.ToArray().LastOrDefault()}");
-            }
-            
             if (read == 0)
             {
                 _bufferStream.Dispose();
@@ -102,27 +98,18 @@ namespace Pode
                 _bufferStream.Write(_buffer, 0, read);
             }
 
-            // System.Threading.Thread.Sleep(10);
-            // System.Threading.Thread.Sleep(10);
-            // System.Threading.Thread.Sleep(10);
-            // System.Threading.Thread.Sleep(10);
-            // if (read == _bufferSize || Socket.Available > 0)
             if (Socket.Available > 0 || !ValidateInput(_bufferStream.ToArray()))
             {
-                // InputStream.BeginRead(_buffer, 0, _bufferSize, AsyncReadCallback, this);
-                Console.WriteLine($"BR1 -- {Socket.Available}");
                 BeginRead();
             }
             else
             {
                 var bytes = _bufferStream.ToArray();
-                Console.WriteLine($"BYTES: {bytes.Length}");
                 if (!Parse(bytes))
                 {
                     bytes = default(byte[]);
                     _bufferStream.Dispose();
                     _bufferStream = new MemoryStream();
-                    Console.WriteLine("BR2");
                     BeginRead();
                 }
                 else
@@ -150,52 +137,9 @@ namespace Pode
             {
                 Error = default(HttpRequestException);
 
-
                 _buffer = new byte[_bufferSize];
                 _bufferStream = new MemoryStream();
-                Console.WriteLine("RECEIVING!");
-                // AsyncReadCallback = new AsyncCallback(ReadCallback);
-                // InputStream.BeginRead(_buffer, 0, _bufferSize, AsyncReadCallback, this);
                 BeginRead();
-
-
-
-
-                // var allBytes = default(byte[]);
-                // var task = default(Task<int>);
-                // var bytes = default(byte[]);
-                // var count = 0;
-
-                // using (var buffer = new MemoryStream())
-                // {
-                    // while ((count = Socket.Available) > 0)
-                    // {
-                        // if (count > 8192)
-                        // {
-                        //     count = 8192;
-                        // }
-
-                        // bytes = new byte[count];
-                        // task = InputStream.ReadAsync(bytes, 0, count);
-                        // task.Wait(Context.Listener.CancellationToken);
-
-                        // Console.WriteLine($"COUNT: {count}");
-                        // Console.WriteLine($"READ: {task.Result}");
-
-                    //     buffer.WriteAsync(bytes, 0, task.Result).Wait(Context.Listener.CancellationToken);
-                    // }
-
-                    // allBytes = buffer.GetBuffer();
-
-                    // if (allBytes[allBytes.Length - 1] == (byte)0)
-                    // {
-                    //     var index = Array.IndexOf(allBytes, (byte)0);
-                    //     allBytes = allBytes.Take(index).ToArray();
-                    // }
-                // }
-
-                // Parse(allBytes);
-                // allBytes = default(byte[]);
             }
             catch (HttpRequestException httpex)
             {

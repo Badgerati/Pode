@@ -50,18 +50,13 @@ namespace Pode
 
         protected override bool ValidateInput(byte[] bytes)
         {
-            Console.WriteLine($"hmm1");
             if (bytes.Length == 0)
             {
-                Console.WriteLine("nop1");
                 return false;
             }
-            Console.WriteLine($"TMP BYTES: {bytes.Length}");
-            Console.WriteLine($"FIRST: {bytes[0]}");
 
             if (AwaitingBody)
             {
-                Console.WriteLine($"CONTENT: {ContentLength - RawBody.Length}");
                 return (bytes.Length >= (ContentLength - RawBody.Length));
             }
 
@@ -70,21 +65,17 @@ namespace Pode
             var index = Array.IndexOf(bytes, lf);
 
             // req line
-            Console.WriteLine($"hmm2 -- {index}");
             if (index == -1)
             {
-                Console.WriteLine("nop2");
                 return false;
             }
 
             // headers
-            Console.WriteLine($"hmm3");
             while (true)
             {
                 previousIndex = index;
                 index = Array.IndexOf(bytes, lf, index + 1);
 
-                // Console.WriteLine($"hmm2 -- {index} -- {bytes.Length}");
                 if (index - previousIndex <= 2)
                 {
                     if (index - previousIndex == 1)
@@ -105,12 +96,10 @@ namespace Pode
 
                 if (index == -1)
                 {
-                    Console.WriteLine("nop3");
                     return false;
                 }
             }
 
-            Console.WriteLine("yup1");
             return true;
         }
 
@@ -145,9 +134,9 @@ namespace Pode
             // cleanup
             reqLines = default(string[]);
 
-            Console.WriteLine($"ContentLength: {ContentLength}");
-            Console.WriteLine($"RawBody: {RawBody.Length}");
-            Console.WriteLine($"Awaiting: {AwaitingBody}");
+            // Console.WriteLine($"ContentLength: {ContentLength}");
+            // Console.WriteLine($"RawBody: {RawBody.Length}");
+            // Console.WriteLine($"Awaiting: {AwaitingBody}");
 
             return (!AwaitingBody);
         }
