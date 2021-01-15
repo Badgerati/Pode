@@ -57,17 +57,13 @@ namespace Pode
                 return;
             }
 
-            if (IsSsl)
-            {
-                bytes = bytes.Take(bytes.Length - 29).ToArray();
-            }
-
             // get the raw string for headers
             var content = Encoding.GetString(bytes, 0, bytes.Length);
 
             // new line char, and req lines
             var newline = (content.Contains(PodeHelpers.NEW_LINE) ? PodeHelpers.NEW_LINE : PodeHelpers.NEW_LINE_UNIX);
             var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
+            content = string.Empty;
 
             // parse the headers, unless we're waiting for the body
             var bodyIndex = 0;
@@ -79,6 +75,13 @@ namespace Pode
             // parse the body
             ParseBody(bytes, reqLines, newline, bodyIndex);
             AwaitingBody = (ContentLength > 0 && RawBody.Length < ContentLength);
+
+            // cleanup
+            reqLines = default(string[]);
+
+            // Console.WriteLine($"ContentLength: {ContentLength}");
+            // Console.WriteLine($"RawBody: {RawBody.Length}");
+            // Console.WriteLine($"Awaiting: {AwaitingBody}");
         }
 
         private int ParseHeaders(string[] reqLines, string newline)
@@ -272,6 +275,13 @@ namespace Pode
 
             // set the body
             Body = Encoding.GetString(RawBody);
+        }
+
+        public override void Dispose()
+        {
+            RawBody = default(byte[]);
+            Body = string.Empty;
+            base.Dispose();
         }
     }
 }

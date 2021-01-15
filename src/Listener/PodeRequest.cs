@@ -8,6 +8,8 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -79,16 +81,39 @@ namespace Pode
             try
             {
                 Error = default(HttpRequestException);
-                var allBytes = new List<byte>();
 
-                while (Socket.Available > 0)
+                var allBytes = default(byte[]);
+                var task = default(Task<int>);
+                var bytes = default(byte[]);
+                var count = 0;
+
+                using (var buffer = new MemoryStream())
                 {
-                    var bytes = new byte[Socket.Available];
-                    InputStream.ReadAsync(bytes, 0, Socket.Available).Wait(Context.Listener.CancellationToken);
-                    allBytes.AddRange(bytes);
+                    while ((count = Socket.Available) > 0)
+                    {
+                        if (count > 8192)
+                        {
+                            count = 8192;
+                        }
+
+                        bytes = new byte[count];
+                        task = InputStream.ReadAsync(bytes, 0, count);
+                        task.Wait(Context.Listener.CancellationToken);
+
+                        buffer.WriteAsync(bytes, 0, task.Result).Wait(Context.Listener.CancellationToken);
+                    }
+
+                    allBytes = buffer.GetBuffer();
+
+                    // if (allBytes[allBytes.Length - 1] == (byte)0)
+                    // {
+                    //     var index = Array.IndexOf(allBytes, (byte)0);
+                    //     allBytes = allBytes.Take(index).ToArray();
+                    // }
                 }
 
-                Parse(allBytes.ToArray());
+                Parse(allBytes);
+                allBytes = default(byte[]);
             }
             catch (HttpRequestException httpex)
             {
@@ -96,6 +121,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
+                PodeHelpers.WriteException(ex);
                 Error = new HttpRequestException(ex.Message, ex);
                 Error.Data.Add("PodeStatusCode", 400);
             }

@@ -55,6 +55,7 @@ namespace Pode
 
             Socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             Socket.ReceiveTimeout = 100;
+            Socket.NoDelay = true;
         }
 
         public void BindListener(PodeListener listener)
