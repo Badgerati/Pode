@@ -1959,10 +1959,7 @@ function Add-PodeMiddleware
             -PSSession $PSCmdlet.SessionState)
     }
     else {
-        if (![string]::IsNullOrWhiteSpace($Route)) {
-            $Route = ConvertTo-PodeRouteRegex -Path $Route
-        }
-
+        $Route = ConvertTo-PodeRouteRegex -Path $Route
         $InputObject.Route = Protect-PodeValue -Value $Route -Default $InputObject.Route
         $InputObject.Options = Protect-PodeValue -Value $Options -Default $InputObject.Options
     }
