@@ -116,7 +116,13 @@ function Find-PodeEndpointName
         return $null
     }
 
-    # try and find endpoint
+    # add a default port if missing
+    if (!$Address.Contains(':')) {
+        $port = Get-PodeDefaultPort -Protocol $Protocol -Real
+        $Address = "$($Address):$($port)"
+    }
+
+    # change localhost to ip address
     if (($Address -ilike 'localhost:*') -or ($Address -ilike "$($PodeContext.Server.ComputerName):*")) {
         $Address = ($Address -ireplace 'localhost\:', '(127\.0\.0\.1|0\.0\.0\.0):')
     }
@@ -124,8 +130,10 @@ function Find-PodeEndpointName
         $Address = [regex]::Escape($Address)
     }
 
+    # create the endpoint key
     $key = "$($Protocol)\|$($Address)"
 
+    # try and find endpoint
     $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
         if ($k -imatch $key) {
             $k
