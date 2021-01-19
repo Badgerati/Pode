@@ -127,6 +127,33 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
 
+### Additional Validation
+
+Similar to the normal [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.
+
+The ScriptBlock has the same return rules as [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), as can be seen in the [Overview](../../Tutorials/Authentication/Overview).
+
+For example, to return the user back:
+
+```powershell
+Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
+    param($user)
+
+    # check or load extra data
+
+    return @{ User = $user }
+}
+```
+
+Or to fail authentication with an error message:
+
+```powershell
+Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
+    param($user)
+    return @{ Message = 'Authorisation failed' }
+}
+```
+
 ## Azure Web Apps
 
 To host your Pode server under IIS using Azure Web Apps, ensure the OS type is Windows and the framework is .NET Core 2.1/3.0.
