@@ -174,6 +174,11 @@ namespace Pode
             {
                 PodeSocket.CloseSocket(Socket);
             }
+
+            if (InputStream != default(Stream))
+            {
+                InputStream.Dispose();
+            }
         }
     }
 }
