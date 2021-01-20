@@ -131,6 +131,11 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 ### Kerberos Constrained Delegation
 
 Pode can impersonate the user that requests the webpage using Kerberos Constrained Delegation (KCD).
+
+Requirements
+- The use of KCD requires additional configuration in the Active Directory (read up on PrincipalsAllowedToDelegateToAccount)
+- No Session Middleware configured
+
 This can be done using the following example:
 
 ```powershell
@@ -140,7 +145,6 @@ This can be done using the following example:
 })
 ```
 
-!!! note The use of KCD requires additional configuration the Active Directory 
 
 ### Additional Validation
 
