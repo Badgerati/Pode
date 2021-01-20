@@ -115,6 +115,7 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | UserType | string | Specifies if the user is a Domain or Local user |
+| Identity | System.Security.Principal.WindowsIdentity | Returns the WindowsIdentity which can be used for Impersonation |
 | AuthenticationType | string | Value is fixed to LDAP |
 | DistinguishedName | string | The distinguished name of the user |
 | Username | string | The user's username (without domain) |
@@ -126,6 +127,20 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
+
+### Kerberos Constrained Delegation
+
+Pode can impersonate the user that requests the webpage using Kerberos Constrained Delegation (KCD).
+This can be done using the following example:
+
+```powershell
+[System.Security.Principal.WindowsIdentity]::RunImpersonated($WebEvent.Auth.User.Identity.AccessToken,{
+    $newIdentity = [Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -ExpandProperty 'Name'    
+    Write-PodeTextResponse -Value "You are running this command as the server user $newIdentity"
+})
+```
+
+!!! note The use of KCD requires additional configuration the Active Directory 
 
 ### Additional Validation
 
