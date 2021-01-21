@@ -160,6 +160,7 @@ function Restart-PodeInternalServer
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
         $PodeContext.Server.EndpointsMap.Clear()
+        $PodeContext.Server.FindRouteEndpoint = $false
 
         # clear openapi
         $PodeContext.Server.OpenAPI = Get-PodeOABaseObject

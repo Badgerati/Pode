@@ -14,6 +14,7 @@ namespace Pode
     public class PodeRequest : IDisposable
     {
         public EndPoint RemoteEndPoint { get; private set; }
+        public EndPoint LocalEndPoint { get; private set; }
         public bool IsSsl { get; private set; }
         public bool IsKeepAlive { get; protected set; }
         public virtual bool CloseImmediately { get => false; }
@@ -31,6 +32,7 @@ namespace Pode
         {
             Socket = socket;
             RemoteEndPoint = socket.RemoteEndPoint;
+            LocalEndPoint = socket.LocalEndPoint;
         }
 
         public PodeRequest(PodeRequest request)
@@ -40,6 +42,7 @@ namespace Pode
             IsKeepAlive = request.IsKeepAlive;
             Socket = request.Socket;
             RemoteEndPoint = Socket.RemoteEndPoint;
+            LocalEndPoint = Socket.LocalEndPoint;
             Error = request.Error;
             Context = request.Context;
         }

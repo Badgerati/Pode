@@ -138,6 +138,10 @@ function Add-PodeRoute
     $Path = Update-PodeRoutePlaceholders -Path $Path
 
     # get endpoints from name
+    if (!$PodeContext.Server.FindRouteEndpoint) {
+        $PodeContext.Server.FindRouteEndpoint = !(Test-PodeIsEmpty $EndpointName)
+    }
+
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # ensure the route doesn't already exist for each endpoint
@@ -346,6 +350,10 @@ function Add-PodeStaticRoute
     $Path = Update-PodeRoutePlaceholders -Path $Path
 
     # get endpoints from name
+    if (!$PodeContext.Server.FindRouteEndpoint) {
+        $PodeContext.Server.FindRouteEndpoint = !(Test-PodeIsEmpty $EndpointName)
+    }
+
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # ensure the route doesn't already exist for each endpoint
