@@ -209,7 +209,7 @@ function Remove-PodeNewLineBytesFromArray
     )
 
     $nlBytes = Get-PodeNewLineBytes -Encoding $Encoding
-    $length = $Bytes.Length
+    $length = $Bytes.Length - 1
 
     if ($Bytes[$length] -eq $nlBytes.NewLine) {
         $length--
