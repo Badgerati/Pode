@@ -240,6 +240,7 @@ namespace Pode
         {
             if (OutputStream != default(MemoryStream))
             {
+                Console.WriteLine("Output Disposed");
                 OutputStream.Dispose();
             }
         }

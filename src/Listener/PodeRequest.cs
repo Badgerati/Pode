@@ -177,6 +177,7 @@ namespace Pode
 
             if (InputStream != default(Stream))
             {
+                Console.WriteLine("Input Disposed");
                 InputStream.Dispose();
             }
         }
