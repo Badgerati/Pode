@@ -124,7 +124,7 @@ function Find-PodeEndpointName
 
     # change localhost to ip address
     if (($Address -ilike 'localhost:*') -or ($Address -ilike "$($PodeContext.Server.ComputerName):*")) {
-        $Address = ($Address -ireplace 'localhost\:', '(127\.0\.0\.1|0\.0\.0\.0):')
+        $Address = ($Address -ireplace "(localhost|$([regex]::Escape($PodeContext.Server.ComputerName)))\:", "(127\.0\.0\.1|0\.0\.0\.0|localhost|$([regex]::Escape($PodeContext.Server.ComputerName))):")
     }
     else {
         $Address = [regex]::Escape($Address)
