@@ -167,13 +167,14 @@ namespace Pode
             }
         }
 
-        public void Receive()
+        public async void Receive()
         {
             try
             {
                 State = PodeContextState.Receiving;
-                Request.Receive();
+                var close = await Request.Receive();
                 SetContextType();
+                EndReceive(close);
             }
             catch
             {

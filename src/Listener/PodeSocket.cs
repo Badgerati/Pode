@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -207,7 +208,7 @@ namespace Pode
 
             try
             {
-                context.Receive();
+                Task.Factory.StartNew(() => context.Receive());
             }
             catch (Exception ex)
             {

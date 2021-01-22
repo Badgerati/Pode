@@ -29,6 +29,10 @@ namespace Pode
         protected PodeContext Context;
         protected static UTF8Encoding Encoding = new UTF8Encoding();
 
+        private byte[] Buffer;
+        private MemoryStream BufferStream;
+        private const int BufferSize = 16384;
+
         public PodeRequest(Socket socket)
         {
             Socket = socket;
@@ -76,70 +80,51 @@ namespace Pode
             return true;
         }
 
-        private byte[] _buffer;
-        private MemoryStream _bufferStream;
-        private const int _bufferSize = 16384;
-        protected AsyncCallback AsyncReadCallback;
-
-        private void ReadCallback(IAsyncResult ares)
+        protected async Task<int> BeginRead()
         {
-            var req = (PodeRequest)ares.AsyncState;
-
-            var read = InputStream.EndRead(ares);
-            if (read == 0)
-            {
-                _bufferStream.Dispose();
-                Context.EndReceive(true);
-                return;
-            }
-
-            if (read > 0)
-            {
-                _bufferStream.Write(_buffer, 0, read);
-            }
-
-            if (Socket.Available > 0 || !ValidateInput(_bufferStream.ToArray()))
-            {
-                BeginRead();
-            }
-            else
-            {
-                var bytes = _bufferStream.ToArray();
-                if (!Parse(bytes))
-                {
-                    bytes = default(byte[]);
-                    _bufferStream.Dispose();
-                    _bufferStream = new MemoryStream();
-                    BeginRead();
-                }
-                else
-                {
-                    _bufferStream.Dispose();
-                    bytes = default(byte[]);
-                    Context.EndReceive(false);
-                }
-            }
+            return await Task<int>.Factory.FromAsync(InputStream.BeginRead, InputStream.EndRead, Buffer, 0, BufferSize, null);
         }
 
-        protected void BeginRead()
-        {
-            if (AsyncReadCallback == null)
-            {
-                AsyncReadCallback = new AsyncCallback(ReadCallback);
-            }
-
-            InputStream.BeginRead(_buffer, 0, _bufferSize, AsyncReadCallback, this);
-        }
-
-        public void Receive()
+        public async Task<bool> Receive()
         {
             try
             {
                 Error = default(HttpRequestException);
 
-                _buffer = new byte[_bufferSize];
-                _bufferStream = new MemoryStream();
-                BeginRead();
+                Buffer = new byte[BufferSize];
+                BufferStream = new MemoryStream();
+
+                var read = 0;
+                var close = true;
+
+                while ((read = await BeginRead()) > 0)
+                {
+
+                    BufferStream.Write(Buffer, 0, read);
+
+                    if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))
+                    {
+                        continue;
+                    }
+
+                    var bytes = BufferStream.ToArray();
+                    if (!Parse(bytes))
+                    {
+                        bytes = default(byte[]);
+                        BufferStream.Dispose();
+                        BufferStream = new MemoryStream();
+                        continue;
+                    }
+
+                    bytes = default(byte[]);
+                    close = false;
+                    break;
+                }
+
+                BufferStream.Dispose();
+                Buffer = default(byte[]);
+
+                return close;
             }
             catch (HttpRequestException httpex)
             {
@@ -151,6 +136,8 @@ namespace Pode
                 Error = new HttpRequestException(ex.Message, ex);
                 Error.Data.Add("PodeStatusCode", 400);
             }
+
+            return true;
         }
 
         protected virtual bool Parse(byte[] bytes)
@@ -177,8 +164,12 @@ namespace Pode
 
             if (InputStream != default(Stream))
             {
-                Console.WriteLine("Input Disposed");
                 InputStream.Dispose();
+            }
+
+            if (BufferStream != default(MemoryStream))
+            {
+                BufferStream.Dispose();
             }
         }
     }
