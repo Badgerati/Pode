@@ -122,7 +122,7 @@ namespace Pode
             ProtocolVersion = Regex.Split(Protocol, "/")[1];
 
             // headers
-            Headers = new Hashtable();
+            Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
             var bodyIndex = 0;
             var h_index = 0;
             var h_line = string.Empty;

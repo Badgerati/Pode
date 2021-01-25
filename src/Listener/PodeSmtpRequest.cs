@@ -150,7 +150,7 @@ namespace Pode
         public void Reset()
         {
             CanProcess = false;
-            Headers = new Hashtable();
+            Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
             From = string.Empty;
             To = new List<string>();
             Body = string.Empty;
@@ -175,7 +175,7 @@ namespace Pode
 
         private void ParseHeaders(string value)
         {
-            Headers = new Hashtable();
+            Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
 
             var lines = value.Split(new string[] { PodeHelpers.NEW_LINE }, StringSplitOptions.None);
             var match = default(Match);

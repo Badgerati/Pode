@@ -78,7 +78,7 @@ namespace Pode
             PodeSocket = podeSocket;
             Listener = listener;
             Timestamp = DateTime.UtcNow;
-            Data = new Hashtable();
+            Data = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
 
             Type = PodeContextType.Unknown;
             State = PodeContextState.New;
