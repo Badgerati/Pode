@@ -99,7 +99,6 @@ namespace Pode
 
                 while ((read = await BeginRead()) > 0)
                 {
-
                     BufferStream.Write(Buffer, 0, read);
 
                     if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))

@@ -75,6 +75,9 @@ namespace Pode
                 {
                     OutputStream.WriteTo(Request.InputStream);
                 }
+
+                message = string.Empty;
+                buffer = default(byte[]);
             }
             catch (OperationCanceledException) {}
             catch (IOException) {}

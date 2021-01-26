@@ -192,6 +192,7 @@ function Start-PodeWebServer
                     Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
                 }
                 finally {
+                    $WebEvent = $null
                     Close-PodeDisposable -Disposable $context
                 }
             }
