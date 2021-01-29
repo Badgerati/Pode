@@ -184,8 +184,8 @@ namespace Pode
 
         public void EndReceive(bool close)
         {
-            PodeSocket.HandleContext(this);
             State = close ? PodeContextState.Closing : PodeContextState.Received;
+            PodeSocket.HandleContext(this);
         }
 
         public void StartReceive()
