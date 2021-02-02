@@ -1,5 +1,32 @@
 # Release Notes
 
+## v2.1.0
+
+```plain
+### Enhancements
+* #655: Update the Socket Listener to handle larger request payloads, and fix receiving SSL requests
+* #657: Adds `-ScriptBlock` parameters to inbuilt authentication methods
+* #667: Set the WinIdentity from IIS auth, and add documentation for Kerberos Constrained Delegation (thanks @RobinBeismann!)
+
+### Bugs
+* #648: Fixes for using global authentcation in OpenAPI and Swagger
+* #650: Fix for redirecting HTTP to HTTPS on default 80/443 ports
+* #652: Fix for sessions not extending from AJAX requests, or when session data wasn't updated
+* #654: Fix for `-Title` and `-Version` in `Get-PodeOpenApiDefinition` being mandatory
+* #660: Fix for removing cookies in AJAX responses
+* #663: Fix for when an endpoint's `-Hostname` is localhost, and bound to a route
+* #669: Further fixes and improvements for more `-EndpointName` validation use-cases on routes
+* #670: Remove extra NewLine from form files (thanks @ili101!)
+* #673: Fix to make headers in request/response case-insensitive
+
+### Documentation
+* #651: Update Azure AD authentication documentation to reference using Basic authentication as well (thanks @RobinBeismann)
+
+### Packaging
+* #629: Update dockerfile to use Ubuntu 18.04
+* #630: Update dockerfiles to use PowerShell 7.1.1
+```
+
 ## v2.0.3
 
 ```plain
