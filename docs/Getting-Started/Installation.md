@@ -27,7 +27,7 @@ Install-Module -Name Pode
 [![Docker](https://img.shields.io/docker/stars/badgerati/pode.svg?label=Stars)](https://hub.docker.com/r/badgerati/pode/)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Pulls)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode can run on *nix environments, therefore it only makes sense for there to be Docker images for you to use! The images use PowerShell Core on either an Ubuntu Xenial image (default), or an ARM32 image (for Raspberry Pis).
+Pode can run on *nix environments, therefore it only makes sense for there to be Docker images for you to use! The images use PowerShell v7.1.1 on either an Ubuntu Bionic image (default), or an ARM32 image (for Raspberry Pis).
 
 * To pull down the latest Pode image you can do:
 
@@ -36,7 +36,7 @@ Pode can run on *nix environments, therefore it only makes sense for there to be
 docker pull badgerati/pode:latest
 
 # or the following for a specific version:
-docker pull badgerati/pode:1.0.1
+docker pull badgerati/pode:2.1.0
 ```
 
 * To pull down the ARM32 Pode image you can do:
@@ -46,7 +46,7 @@ docker pull badgerati/pode:1.0.1
 docker pull badgerati/pode:latest-arm32
 
 # or the following for a specific version:
-docker pull badgerati/pode:1.0.1-arm32
+docker pull badgerati/pode:2.1.0-arm32
 ```
 
 Once pulled, you can [view here](../Docker) on how to use the image.
@@ -62,7 +62,7 @@ You can also get the Pode docker image from the GitHub Package Registry! The ima
 docker pull docker.pkg.github.com/badgerati/pode/pode:latest
 
 # or the following for a specific version:
-docker pull docker.pkg.github.com/badgerati/pode/pode:1.0.1
+docker pull docker.pkg.github.com/badgerati/pode/pode:2.1.0
 ```
 
 * To pull down the ARM32 Pode image you can do:
@@ -72,7 +72,7 @@ docker pull docker.pkg.github.com/badgerati/pode/pode:1.0.1
 docker pull docker.pkg.github.com/badgerati/pode/pode:latest-arm32
 
 # or the following for a specific version:
-docker pull docker.pkg.github.com/badgerati/pode/pode:1.0.1-arm32
+docker pull docker.pkg.github.com/badgerati/pode/pode:2.1.0-arm32
 ```
 
 Once pulled, you can [view here](../Docker) on how to use the image.
