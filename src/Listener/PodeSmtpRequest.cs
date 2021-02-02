@@ -55,13 +55,13 @@ namespace Pode
             Context.Response.WriteLine($"220 {Context.PodeSocket.Hostnames[0]} -- Pode Proxy Server", true);
         }
 
-        protected override void Parse(byte[] bytes)
+        protected override bool Parse(byte[] bytes)
         {
             // if there are no bytes, return (0 bytes read means we can close the socket)
             if (bytes.Length == 0)
             {
                 Command = string.Empty;
-                return;
+                return true;
             }
 
             // get the raw string for headers
@@ -72,14 +72,14 @@ namespace Pode
             {
                 Command = string.Empty;
                 Context.Response.WriteLine("501 Invalid command received", true);
-                return;
+                return true;
             }
 
             // quit
             if (IsCommand(content, "QUIT"))
             {
                 Command = "QUIT";
-                return;
+                return true;
             }
 
             // helo
@@ -87,7 +87,7 @@ namespace Pode
             {
                 Command = "EHLO";
                 Context.Response.WriteLine("250 OK", true);
-                return;
+                return true;
             }
 
             // to
@@ -96,7 +96,7 @@ namespace Pode
                 Command = "RCPT TO";
                 Context.Response.WriteLine("250 OK", true);
                 To.Add(ParseEmail(content));
-                return;
+                return true;
             }
 
             // from
@@ -105,7 +105,7 @@ namespace Pode
                 Command = "MAIL FROM";
                 Context.Response.WriteLine("250 OK", true);
                 From = ParseEmail(content);
-                return;
+                return true;
             }
 
             // data
@@ -113,7 +113,7 @@ namespace Pode
             {
                 Command = "DATA";
                 Context.Response.WriteLine("354 Start mail input; end with <CR><LF>.<CR><LF>", true);
-                return;
+                return true;
             }
 
             // check prior command
@@ -136,7 +136,7 @@ namespace Pode
                     {
                         Command = string.Empty;
                         Context.Response.WriteLine("501 Invalid DATA received", true);
-                        return;
+                        return true;
                     }
 
                     CanProcess = true;
@@ -145,6 +145,8 @@ namespace Pode
                 default:
                     throw new HttpRequestException();
             }
+
+            return true;
         }
 
         public void Reset()

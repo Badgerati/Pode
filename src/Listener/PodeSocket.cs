@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -55,6 +56,7 @@ namespace Pode
 
             Socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             Socket.ReceiveTimeout = 100;
+            Socket.NoDelay = true;
         }
 
         public void BindListener(PodeListener listener)
@@ -206,11 +208,24 @@ namespace Pode
 
             try
             {
+                Task.Factory.StartNew(() => context.Receive());
+            }
+            catch (Exception ex)
+            {
+                PodeHelpers.WriteException(ex, Listener);
+            }
+
+            // add args back to connections
+            ClearSocketAsyncEvent(args);
+            ReceiveConnections.Enqueue(args);
+        }
+
+        public void HandleContext(PodeContext context)
+        {
+            try
+            {
                 // add context to be processed?
                 var process = true;
-
-                // deal with context
-                context.Receive();
 
                 // if we need to exit now, dispose and exit
                 if (context.CloseImmediately)
@@ -266,10 +281,6 @@ namespace Pode
             {
                 PodeHelpers.WriteException(ex, Listener);
             }
-
-            // add args back to connections
-            ClearSocketAsyncEvent(args);
-            ReceiveConnections.Enqueue(args);
         }
 
         private SocketAsyncEventArgs NewAcceptConnection()

@@ -52,9 +52,9 @@ function Read-PodeByteLineFromByteArray
 
     # grab the portion of the bytes array - which is our line
     return @{
-        'Bytes' = $Bytes[$StartIndex..$fIndex];
-        'StartIndex' = $StartIndex;
-        'EndIndex' = $index;
+        Bytes       = $Bytes[$StartIndex..$fIndex];
+        StartIndex  = $StartIndex;
+        EndIndex    = $index;
     }
 }
 
@@ -144,7 +144,7 @@ function ConvertFrom-PodeBytesToString
         $RemoveNewLine
     )
 
-    if (Test-PodeIsEmpty $Bytes) {
+    if (($null -eq $Bytes) -or ($Bytes.Length -eq 0)) {
         return $Bytes
     }
 
@@ -164,8 +164,8 @@ function Get-PodeNewLineBytes
     )
 
     return @{
-        'NewLine' = @($Encoding.GetBytes("`n"))[0];
-        'Return' = @($Encoding.GetBytes("`r"))[0];
+        NewLine = @($Encoding.GetBytes("`n"))[0];
+        Return  = @($Encoding.GetBytes("`r"))[0];
     }
 }
 

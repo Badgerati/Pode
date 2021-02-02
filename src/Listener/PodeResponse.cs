@@ -75,8 +75,12 @@ namespace Pode
                 {
                     OutputStream.WriteTo(Request.InputStream);
                 }
+
+                message = string.Empty;
+                buffer = default(byte[]);
             }
-            catch (IOException) { }
+            catch (OperationCanceledException) {}
+            catch (IOException) {}
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex);
@@ -157,7 +161,8 @@ namespace Pode
                     Request.InputStream.Flush();
                 }
             }
-            catch (IOException) { }
+            catch (OperationCanceledException) {}
+            catch (IOException) {}
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex);

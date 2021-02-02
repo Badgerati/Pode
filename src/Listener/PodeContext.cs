@@ -22,7 +22,7 @@ namespace Pode
 
         public bool CloseImmediately
         {
-            get => (State == PodeContextState.Error || Request.CloseImmediately);
+            get => (State == PodeContextState.Error || State == PodeContextState.Closing || Request.CloseImmediately);
         }
 
         public bool IsWebSocket
@@ -167,19 +167,25 @@ namespace Pode
             }
         }
 
-        public void Receive()
+        public async void Receive()
         {
             try
             {
                 State = PodeContextState.Receiving;
-                Request.Receive();
-                State = PodeContextState.Received;
+                var close = await Request.Receive();
                 SetContextType();
+                EndReceive(close);
             }
             catch
             {
                 State = PodeContextState.Error;
             }
+        }
+
+        public void EndReceive(bool close)
+        {
+            State = close ? PodeContextState.Closing : PodeContextState.Received;
+            PodeSocket.HandleContext(this);
         }
 
         public void StartReceive()

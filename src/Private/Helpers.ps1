@@ -1203,6 +1203,7 @@ function ConvertFrom-PodeRequestContent
             }
 
             $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
+            $Content = $null
             return $Result
         }
     }
@@ -1298,6 +1299,7 @@ function ConvertFrom-PodeRequestContent
         }
     }
 
+    $Content = $null
     return $Result
 }
 

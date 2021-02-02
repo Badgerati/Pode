@@ -8,6 +8,8 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -27,6 +29,10 @@ namespace Pode
         private Socket Socket;
         protected PodeContext Context;
         protected static UTF8Encoding Encoding = new UTF8Encoding();
+
+        private byte[] Buffer;
+        private MemoryStream BufferStream;
+        private const int BufferSize = 16384;
 
         public PodeRequest(Socket socket)
         {
@@ -77,21 +83,50 @@ namespace Pode
             return true;
         }
 
-        public void Receive()
+        protected async Task<int> BeginRead()
+        {
+            return await Task<int>.Factory.FromAsync(InputStream.BeginRead, InputStream.EndRead, Buffer, 0, BufferSize, null);
+        }
+
+        public async Task<bool> Receive()
         {
             try
             {
                 Error = default(HttpRequestException);
-                var allBytes = new List<byte>();
 
-                while (Socket.Available > 0)
+                Buffer = new byte[BufferSize];
+                BufferStream = new MemoryStream();
+
+                var read = 0;
+                var close = true;
+
+                while ((read = await BeginRead()) > 0)
                 {
-                    var bytes = new byte[Socket.Available];
-                    InputStream.ReadAsync(bytes, 0, Socket.Available).Wait(Context.Listener.CancellationToken);
-                    allBytes.AddRange(bytes);
+                    BufferStream.Write(Buffer, 0, read);
+
+                    if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))
+                    {
+                        continue;
+                    }
+
+                    var bytes = BufferStream.ToArray();
+                    if (!Parse(bytes))
+                    {
+                        bytes = default(byte[]);
+                        BufferStream.Dispose();
+                        BufferStream = new MemoryStream();
+                        continue;
+                    }
+
+                    bytes = default(byte[]);
+                    close = false;
+                    break;
                 }
 
-                Parse(allBytes.ToArray());
+                BufferStream.Dispose();
+                Buffer = default(byte[]);
+
+                return close;
             }
             catch (HttpRequestException httpex)
             {
@@ -102,11 +137,18 @@ namespace Pode
                 Error = new HttpRequestException(ex.Message, ex);
                 Error.Data.Add("PodeStatusCode", 400);
             }
+
+            return true;
         }
 
-        protected virtual void Parse(byte[] bytes)
+        protected virtual bool Parse(byte[] bytes)
         {
             throw new NotImplementedException();
+        }
+
+        protected virtual bool ValidateInput(byte[] bytes)
+        {
+            return true;
         }
 
         public void SetContext(PodeContext context)
@@ -119,6 +161,16 @@ namespace Pode
             if (Socket != default(Socket))
             {
                 PodeSocket.CloseSocket(Socket);
+            }
+
+            if (InputStream != default(Stream))
+            {
+                InputStream.Dispose();
+            }
+
+            if (BufferStream != default(MemoryStream))
+            {
+                BufferStream.Dispose();
             }
         }
     }
