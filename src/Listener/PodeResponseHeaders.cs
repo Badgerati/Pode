@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Pode
@@ -17,7 +18,7 @@ namespace Pode
 
         public PodeResponseHeaders()
         {
-            Headers = new Dictionary<string, IList<object>>();
+            Headers = new Dictionary<string, IList<object>>(StringComparer.InvariantCultureIgnoreCase);
         }
 
         public bool ContainsKey(string name)

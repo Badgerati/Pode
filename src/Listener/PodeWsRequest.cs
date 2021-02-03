@@ -38,7 +38,7 @@ namespace Pode
             return new PodeClientSignal(WebSocket, Body);
         }
 
-        protected override void Parse(byte[] bytes)
+        protected override bool Parse(byte[] bytes)
         {
             // get the length and op-code
             var dataLength = bytes[1] - 128;
@@ -104,6 +104,8 @@ namespace Pode
             {
                 Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Pong);
             }
+
+            return true;
         }
 
         public override void Dispose()

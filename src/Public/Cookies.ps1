@@ -217,6 +217,7 @@ function Remove-PodeCookie
     if ($null -ne $cookie) {
         $cookie.Discard = $true
         $cookie.Expires = [DateTime]::UtcNow.AddDays(-2)
+        $cookie.Path = '/'
         $WebEvent.PendingCookies[$cookie.Name] = $cookie
         Add-PodeHeader -Name 'Set-Cookie' -Value (ConvertTo-PodeCookieString -Cookie $cookie)
     }
@@ -314,6 +315,8 @@ function Update-PodeCookieExpiry
     elseif ($Duration -gt 0) {
         $cookie.Expires = [datetime]::UtcNow.AddSeconds($Duration)
     }
+
+    $cookie.Path = '/'
 
     # sets the cookie on the the response
     $WebEvent.PendingCookies[$cookie.Name] = $cookie

@@ -129,7 +129,7 @@ function Start-PodeWebServer
                         $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
 
                         # endpoint name
-                        $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address)
+                        $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint)
 
                         # add logging endware for post-request
                         Add-PodeRequestLogEndware -WebEvent $WebEvent
@@ -192,6 +192,7 @@ function Start-PodeWebServer
                     Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
                 }
                 finally {
+                    $WebEvent = $null
                     Close-PodeDisposable -Disposable $context
                 }
             }

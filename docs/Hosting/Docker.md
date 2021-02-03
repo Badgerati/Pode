@@ -2,7 +2,7 @@
 
 Pode has a Docker image that you can use to host your server, for instructions on pulling these images you can [look here](../../Installation).
 
-The images use PowerShell Core on either an Ubuntu Xenial (default) or ARM32 image.
+The images use PowerShell v7.1.1 on either an Ubuntu Bionic (default) or ARM32 image.
 
 ## Images
 
@@ -11,7 +11,7 @@ The images use PowerShell Core on either an Ubuntu Xenial (default) or ARM32 ima
 
 ### Default
 
-The default Pode image is an Ubuntu Xenial image with PowerShell Core and Pode installed. An example of using this image in your Dockerfile could be as follows:
+The default Pode image is an Ubuntu Bionic image with PowerShell v7.1.1 and Pode installed. An example of using this image in your Dockerfile could be as follows:
 
 ```dockerfile
 # pull down the pode image

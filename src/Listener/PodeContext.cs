@@ -22,7 +22,7 @@ namespace Pode
 
         public bool CloseImmediately
         {
-            get => (State == PodeContextState.Error || Request.CloseImmediately);
+            get => (State == PodeContextState.Error || State == PodeContextState.Closing || Request.CloseImmediately);
         }
 
         public bool IsWebSocket
@@ -78,7 +78,7 @@ namespace Pode
             PodeSocket = podeSocket;
             Listener = listener;
             Timestamp = DateTime.UtcNow;
-            Data = new Hashtable();
+            Data = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
 
             Type = PodeContextType.Unknown;
             State = PodeContextState.New;
@@ -167,19 +167,25 @@ namespace Pode
             }
         }
 
-        public void Receive()
+        public async void Receive()
         {
             try
             {
                 State = PodeContextState.Receiving;
-                Request.Receive();
-                State = PodeContextState.Received;
+                var close = await Request.Receive();
                 SetContextType();
+                EndReceive(close);
             }
             catch
             {
                 State = PodeContextState.Error;
             }
+        }
+
+        public void EndReceive(bool close)
+        {
+            State = close ? PodeContextState.Closing : PodeContextState.Received;
+            PodeSocket.HandleContext(this);
         }
 
         public void StartReceive()
@@ -265,7 +271,8 @@ namespace Pode
                     SmtpRequest.Reset();
                 }
 
-                if (!IsKeepAlive || force)
+                // dispose of request if not KeepAlive, and not waiting for body
+                if (((IsHttp && !HttpRequest.AwaitingBody) || !IsHttp) && (!IsKeepAlive || force))
                 {
                     State = PodeContextState.Closed;
                     Request.Dispose();
@@ -275,8 +282,8 @@ namespace Pode
             }
             catch {}
 
-            // if keep-alive, setup for re-receive
-            if (IsKeepAlive && !force)
+            // if keep-alive, or awaiting body, setup for re-receive
+            if (((IsHttp && HttpRequest.AwaitingBody) || IsKeepAlive) && !force)
             {
                 StartReceive();
             }

@@ -108,24 +108,92 @@ function Find-PodeEndpointName
         [string]
         $Address,
 
+        [Parameter()]
+        [System.Net.EndPoint]
+        $LocalAddress,
+
+        [switch]
+        $Force,
+
         [switch]
         $ThrowError
     )
 
-    if ([string]::IsNullOrWhiteSpace($Protocol) -or [string]::IsNullOrWhiteSpace($Address)) {
+    if (!$PodeContext.Server.FindRouteEndpoint -and !$Force) {
         return $null
     }
 
-    # try and find endpoint
+    if ([string]::IsNullOrWhiteSpace($Protocol) -or
+        [string]::IsNullOrWhiteSpace($Address) -or
+        [string]::IsNullOrWhiteSpace($LocalAddress)) {
+        return $null
+    }
+
+    <#
+       using Host header
+    #>
+
+    # add a default port to the address if missing
+    if (!$Address.Contains(':')) {
+        $port = Get-PodeDefaultPort -Protocol $Protocol -Real
+        $Address = "$($Address):$($port)"
+    }
+
+    # change localhost/computer name to ip address
     if (($Address -ilike 'localhost:*') -or ($Address -ilike "$($PodeContext.Server.ComputerName):*")) {
-        $Address = ($Address -ireplace 'localhost\:', '(127\.0\.0\.1|0\.0\.0\.0):')
+        $Address = ($Address -ireplace "(localhost|$([regex]::Escape($PodeContext.Server.ComputerName)))\:", "(127\.0\.0\.1|0\.0\.0\.0|localhost|$([regex]::Escape($PodeContext.Server.ComputerName))):")
     }
     else {
         $Address = [regex]::Escape($Address)
     }
 
+    # create the endpoint key for address
     $key = "$($Protocol)\|$($Address)"
 
+    # try and find endpoint for address
+    $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
+        if ($k -imatch $key) {
+            $k
+            break
+        }
+    })[0]
+
+    if (![string]::IsNullOrWhiteSpace($key) -and $PodeContext.Server.EndpointsMap.ContainsKey($key)) {
+        return $PodeContext.Server.EndpointsMap[$key]
+    }
+
+    <#
+       using local endpoint from socket
+    #>
+
+    # setup the local address as a string
+    $_localAddress = "$($LocalAddress.Address.IPAddressToString):$($LocalAddress.Port)"
+    $_localAddress = [regex]::Escape($_localAddress)
+
+    # create the endpoint key for local address
+    $key = "$($Protocol)\|$($_localAddress)"
+
+    # try and find endpoint for local address
+    $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
+        if ($k -imatch $key) {
+            $k
+            break
+        }
+    })[0]
+
+    if (![string]::IsNullOrWhiteSpace($key) -and $PodeContext.Server.EndpointsMap.ContainsKey($key)) {
+        return $PodeContext.Server.EndpointsMap[$key]
+    }
+
+    <#
+       check for * address
+    #>
+
+    # set * address as string
+    $_anyAddress = "0\.0\.0\.0:$($LocalAddress.Port)"
+    $key = "$($Protocol)\|$($_anyAddress)"
+
+    # try and find endpoint for any address
     $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
         if ($k -imatch $key) {
             $k
@@ -139,7 +207,7 @@ function Find-PodeEndpointName
 
     # error?
     if ($ThrowError) {
-        throw "Endpoint with protocol '$($Protocol)' and address '$($Address)' does not exist"
+        throw "Endpoint with protocol '$($Protocol)' and address '$($Address)' or local address '$($_localAddress)' does not exist"
     }
 
     return $null

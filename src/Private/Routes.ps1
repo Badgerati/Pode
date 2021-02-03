@@ -355,6 +355,10 @@ function ConvertTo-PodeRouteRegex
         $Path
     )
 
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return [string]::Empty
+    }
+
     $Path = Protect-PodeValue -Value $Path -Default '/'
     $Path = Split-PodeRouteQuery -Path $Path
     $Path = Protect-PodeValue -Value $Path -Default '/'

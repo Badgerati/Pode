@@ -224,8 +224,8 @@ function Set-PodeSessionHelpers
             return
         }
 
-        # only save if check and hashes different
-        if ($check -and (Test-PodeSessionDataHash -Session $session)) {
+        # only save if check and hashes different, but not if extending expiry
+        if (!$session.Properties.Extend -and $check -and (Test-PodeSessionDataHash -Session $session)) {
             return
         }
 

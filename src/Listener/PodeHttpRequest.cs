@@ -30,6 +30,8 @@ namespace Pode
         public string Host { get; private set; }
         public bool AwaitingBody { get; private set; }
 
+        private bool IsRequestLineValid { get; set; }
+
         private bool _isWebSocket = false;
         public bool IsWebSocket
         {
@@ -48,18 +50,85 @@ namespace Pode
             Protocol = "HTTP/1.1";
         }
 
-        protected override void Parse(byte[] bytes)
+        protected override bool ValidateInput(byte[] bytes)
+        {
+            // we need more bytes!
+            if (bytes.Length == 0)
+            {
+                return false;
+            }
+
+            // wait until we have the rest of the payload
+            if (AwaitingBody)
+            {
+                return (bytes.Length >= (ContentLength - RawBody.Length));
+            }
+
+            var lf = (byte)10;
+            var previousIndex = -1;
+            var index = Array.IndexOf(bytes, lf);
+
+            // do we have a request line yet?
+            if (index == -1)
+            {
+                return false;
+            }
+
+            // is the request line valid?
+            if (!IsRequestLineValid)
+            {
+                var reqLine = Encoding.GetString(bytes, 0, index).Trim();
+                var reqMeta = Regex.Split(reqLine, "\\s+");
+                if (reqMeta.Length != 3)
+                {
+                    throw new HttpRequestException($"Invalid request line: {reqLine} [{reqMeta.Length}]");
+                }
+
+                IsRequestLineValid = true;
+            }
+
+            // check if we have all the headers
+            while (true)
+            {
+                previousIndex = index;
+                index = Array.IndexOf(bytes, lf, index + 1);
+
+                if (index - previousIndex <= 2)
+                {
+                    if (index - previousIndex == 1)
+                    {
+                        break;
+                    }
+
+                    if (bytes[previousIndex + 1] == (byte)13)
+                    {
+                        break;
+                    }
+                }
+
+                if (index == bytes.Length - 1)
+                {
+                    break;
+                }
+
+                if (index == -1)
+                {
+                    return false;
+                }
+            }
+
+            // we're valid!
+            IsRequestLineValid = false;
+            return true;
+        }
+
+        protected override bool Parse(byte[] bytes)
         {
             // if there are no bytes, return (0 bytes read means we can close the socket)
             if (bytes.Length == 0)
             {
                 HttpMethod = string.Empty;
-                return;
-            }
-
-            if (IsSsl)
-            {
-                bytes = bytes.Take(bytes.Length - 29).ToArray();
+                return true;
             }
 
             // get the raw string for headers
@@ -68,6 +137,7 @@ namespace Pode
             // new line char, and req lines
             var newline = (content.Contains(PodeHelpers.NEW_LINE) ? PodeHelpers.NEW_LINE : PodeHelpers.NEW_LINE_UNIX);
             var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
+            content = string.Empty;
 
             // parse the headers, unless we're waiting for the body
             var bodyIndex = 0;
@@ -78,7 +148,11 @@ namespace Pode
 
             // parse the body
             ParseBody(bytes, reqLines, newline, bodyIndex);
-            AwaitingBody = (ContentLength > 0 && RawBody.Length == 0);
+            AwaitingBody = (ContentLength > 0 && RawBody.Length < ContentLength);
+
+            // cleanup
+            reqLines = default(string[]);
+            return (!AwaitingBody);
         }
 
         private int ParseHeaders(string[] reqLines, string newline)
@@ -122,7 +196,7 @@ namespace Pode
             ProtocolVersion = Regex.Split(Protocol, "/")[1];
 
             // headers
-            Headers = new Hashtable();
+            Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
             var bodyIndex = 0;
             var h_index = 0;
             var h_line = string.Empty;
@@ -211,6 +285,7 @@ namespace Pode
 
             // get the start index for raw bytes
             var start = reqLines.Take(bodyIndex).Sum(x => x.Length) + ((bodyIndex) * newline.Length);
+            var hasBody = (RawBody != default(byte[]));
 
             // parse for chunked
             if (isChunked)
@@ -225,7 +300,7 @@ namespace Pode
                 {
                     // get index of newline char, read start>index bytes as HEX for length
                     c_index = Array.IndexOf(bytes, (byte)newline[0], start);
-                    c_hexBytes = bytes.Skip(start).Take(c_index - start);
+                    c_hexBytes = PodeHelpers.Slice(bytes, start, c_index - start);
 
                     c_hex = string.Empty;
                     foreach (var b in c_hexBytes)
@@ -242,29 +317,42 @@ namespace Pode
 
                     // read those X hex bytes from (newline index + newline length)
                     start = c_index + newline.Length;
-                    c_rawBytes.AddRange(bytes.Skip(start).Take(c_length));
+                    c_rawBytes.AddRange(PodeHelpers.Slice(bytes, start, c_length));
 
                     // skip bytes for ending newline, and set new start
                     start = (start + c_length - 1) + newline.Length + 1;
                 }
 
-                RawBody = c_rawBytes.ToArray();
+                RawBody = hasBody
+                    ? PodeHelpers.Concat(RawBody, c_rawBytes.ToArray())
+                    : c_rawBytes.ToArray();
             }
 
             // else use content length
             else if (ContentLength > 0)
             {
-                RawBody = bytes.Skip(start).Take(ContentLength).ToArray();
+                RawBody = hasBody
+                    ? PodeHelpers.Concat(RawBody, PodeHelpers.Slice(bytes, start, ContentLength))
+                    : PodeHelpers.Slice(bytes, start, ContentLength);
             }
 
             // else just read all
             else
             {
-                RawBody = bytes.Skip(start).ToArray();
+                RawBody = hasBody
+                    ? PodeHelpers.Concat(RawBody, PodeHelpers.Slice(bytes, start))
+                    : PodeHelpers.Slice(bytes, start);
             }
 
             // set the body
             Body = Encoding.GetString(RawBody);
+        }
+
+        public override void Dispose()
+        {
+            RawBody = default(byte[]);
+            Body = string.Empty;
+            base.Dispose();
         }
     }
 }

@@ -6,6 +6,7 @@ namespace Pode
         Open,
         Receiving,
         Received,
+        Closing,
         Closed,
         Error,
         SslError

@@ -9,7 +9,7 @@ Start-PodeServer {
 
     # listen on localhost:8080/8443
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http -Name Endpoint1
-    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Name Endpoint2
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Name Endpoint2 -SelfSigned
 
     # set view engine to pode
     Set-PodeViewEngine -Type Pode
@@ -30,7 +30,7 @@ Start-PodeServer {
     }
 
     # ALL requests for http only to redirect to https
-    Add-PodeRoute -Method * -Path * -EndpointName Endpoint1 {
+    Add-PodeRoute -Method * -Path * -EndpointName Endpoint1 -ScriptBlock {
         Move-PodeResponseUrl -Protocol Https -Port 8443
     }
 

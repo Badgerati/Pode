@@ -115,6 +115,7 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | UserType | string | Specifies if the user is a Domain or Local user |
+| Identity | System.Security.Principal.WindowsIdentity | Returns the WindowsIdentity which can be used for Impersonation |
 | AuthenticationType | string | Value is fixed to LDAP |
 | DistinguishedName | string | The distinguished name of the user |
 | Username | string | The user's username (without domain) |
@@ -126,6 +127,51 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
+
+### Kerberos Constrained Delegation
+
+Pode can impersonate the user that requests the webpage using Kerberos Constrained Delegation (KCD).
+
+Requirements
+- The use of KCD requires additional configuration in the Active Directory (read up on PrincipalsAllowedToDelegateToAccount)
+- No Session Middleware configured
+
+This can be done using the following example:
+
+```powershell
+[System.Security.Principal.WindowsIdentity]::RunImpersonated($WebEvent.Auth.User.Identity.AccessToken,{
+    $newIdentity = [Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -ExpandProperty 'Name'    
+    Write-PodeTextResponse -Value "You are running this command as the server user $newIdentity"
+})
+```
+
+
+### Additional Validation
+
+Similar to the normal [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.
+
+The ScriptBlock has the same return rules as [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), as can be seen in the [Overview](../../Tutorials/Authentication/Overview).
+
+For example, to return the user back:
+
+```powershell
+Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
+    param($user)
+
+    # check or load extra data
+
+    return @{ User = $user }
+}
+```
+
+Or to fail authentication with an error message:
+
+```powershell
+Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
+    param($user)
+    return @{ Message = 'Authorisation failed' }
+}
+```
 
 ## Azure Web Apps
 

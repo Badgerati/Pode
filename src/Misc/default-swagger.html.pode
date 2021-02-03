@@ -46,7 +46,8 @@
                 }
 
                 .swagger-ui svg.arrow,
-                .swagger-ui button.unlocked
+                .swagger-ui button.unlocked,
+                .swagger-ui .authorization__btn.locked
                 {
                     fill: #CCCCCC;
                     opacity: 1 !important;
@@ -69,10 +70,19 @@
                 body,
                 .swagger-ui .info .title,
                 .swagger-ui .scheme-container,
-                .swagger-ui select
+                .swagger-ui select,
+                .modal-ux
                 {
-                    background-color: #222;
+                    background-color: #222 !important;
                     color: #CCC;
+                }
+
+                .modal-ux-header h3 {
+                    color: #CCC !important;
+                }
+
+                .close-modal svg {
+                    filter: invert(1) brightness(0.5);
                 }
 
                 .swagger-ui .opblock .opblock-section-header
@@ -81,7 +91,8 @@
                 }
 
                 .swagger-ui textarea,
-                .swagger-ui input[type=text]
+                .swagger-ui input[type=text],
+                .swagger-ui input[type=password]
                 {
                     background-color: #41444e;
                     color: #CCC;

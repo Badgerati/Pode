@@ -607,6 +607,9 @@ An override Message to throw when authentication fails.
 .PARAMETER SuccessUrl
 The URL to redirect to when authentication succeeds when logging in.
 
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
+
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
@@ -669,6 +672,10 @@ function Add-PodeAuthWindowsAd
         [string]
         $SuccessUrl,
 
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
         [switch]
         $Sessionless,
 
@@ -709,6 +716,11 @@ function Add-PodeAuthWindowsAd
         $Domain = ($Fqdn -split '\.')[0]
     }
 
+    # if we have a scriptblock, deal with using vars
+    if ($null -ne $ScriptBlock) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
         Scheme = $Scheme
@@ -720,6 +732,10 @@ function Add-PodeAuthWindowsAd
             Groups = $Groups
             NoGroups = $NoGroups
             OpenLDAP = $OpenLDAP
+            ScriptBlock = @{
+                Script = $ScriptBlock
+                UsingVariables = $usingVars
+            }
         }
         Sessionless = $Sessionless
         Failure = @{
@@ -823,7 +839,7 @@ function Add-PodeAuthMiddleware
         New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
         Add-PodeMiddleware -Name $Name -Route $Route
 
-    Set-PodeOAGlobalAuth -Name $Authentication
+    Set-PodeOAGlobalAuth -Name $Authentication -Route $Route
 }
 
 <#
@@ -850,6 +866,9 @@ An override Message to throw when authentication fails.
 
 .PARAMETER SuccessUrl
 The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
 
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
@@ -897,6 +916,10 @@ function Add-PodeAuthIIS
         [string]
         $SuccessUrl,
 
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
         [switch]
         $Sessionless,
 
@@ -916,6 +939,11 @@ function Add-PodeAuthIIS
     # ensure the name doesn't already exist
     if (Test-PodeAuth -Name $Name) {
         throw "IIS Authentication method already defined: $($Name)"
+    }
+
+    # if we have a scriptblock, deal with using vars
+    if ($null -ne $ScriptBlock) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
     }
 
     # create the auth scheme for getting the token header
@@ -952,6 +980,10 @@ function Add-PodeAuthIIS
             Groups = $Groups
             NoGroups = $NoGroups
             NoLocalCheck = $NoLocalCheck
+            ScriptBlock = @{
+                Script = $ScriptBlock
+                UsingVariables = $usingVars
+            }
         }
 }
 
@@ -988,6 +1020,9 @@ An override Message to throw when authentication fails.
 
 .PARAMETER SuccessUrl
 The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
 
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
@@ -1038,6 +1073,10 @@ function Add-PodeAuthUserFile
         [string]
         $SuccessUrl,
 
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
         [switch]
         $Sessionless
     )
@@ -1070,6 +1109,11 @@ function Add-PodeAuthUserFile
         throw "The user file does not exist: $($FilePath)"
     }
 
+    # if we have a scriptblock, deal with using vars
+    if ($null -ne $ScriptBlock) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
         Scheme = $Scheme
@@ -1079,6 +1123,10 @@ function Add-PodeAuthUserFile
             Users = $Users
             Groups = $Groups
             HmacSecret = $HmacSecret
+            ScriptBlock = @{
+                Script = $ScriptBlock
+                UsingVariables = $usingVars
+            }
         }
         Sessionless = $Sessionless
         Failure = @{
@@ -1118,6 +1166,9 @@ An override Message to throw when authentication fails.
 
 .PARAMETER SuccessUrl
 The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
 
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
@@ -1166,6 +1217,10 @@ function Add-PodeAuthWindowsLocal
         [string]
         $SuccessUrl,
 
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
         [switch]
         $Sessionless,
 
@@ -1194,6 +1249,11 @@ function Add-PodeAuthWindowsLocal
         throw 'Sessions are required to use session persistent authentication'
     }
 
+    # if we have a scriptblock, deal with using vars
+    if ($null -ne $ScriptBlock) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
     # add Windows Local auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
         Scheme = $Scheme
@@ -1202,6 +1262,10 @@ function Add-PodeAuthWindowsLocal
             Users = $Users
             Groups = $Groups
             NoGroups = $NoGroups
+            ScriptBlock = @{
+                Script = $ScriptBlock
+                UsingVariables = $usingVars
+            }
         }
         Sessionless = $Sessionless
         Failure = @{

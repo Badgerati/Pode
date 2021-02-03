@@ -555,10 +555,15 @@ function Get-PodeAuthUserFileMethod
             return @{ Message = 'You are not authorised to access this website' }
         }
 
-        # return user
-        return @{
-            User = $user
+        $result = @{ User = $user }
+
+        # call additional scriptblock if supplied
+        if ($null -ne $options.ScriptBlock.Script) {
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
         }
+
+        # return final result, this could contain a user obj, or an error message from custom scriptblock
+        return $result
     }
 }
 
@@ -592,14 +597,49 @@ function Get-PodeAuthWindowsADMethod
             return @{ Message = 'An unexpected error occured' }
         }
 
-        # is the user valid for any users/groups?
-        if (Test-PodeAuthUserGroups -User $result.User -Users $options.Users -Groups $options.Groups) {
-            return $result
+        # is the user valid for any users/groups - if not, error!
+        if (!(Test-PodeAuthUserGroups -User $result.User -Users $options.Users -Groups $options.Groups)) {
+            return @{ Message = 'You are not authorised to access this website' }
         }
 
-        # else, they shall not pass!
-        return @{ Message = 'You are not authorised to access this website' }
+        # call additional scriptblock if supplied
+        if ($null -ne $options.ScriptBlock.Script) {
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
+        }
+
+        # return final result, this could contain a user obj, or an error message from custom scriptblock
+        return $result
     }
+}
+
+function Invoke-PodeAuthInbuiltScriptBlock
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $User,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        $UsingVariables
+    )
+
+    $_tmp_args = @($User)
+
+    if ($null -ne $UsingVariables) {
+        $_vars = @()
+
+        foreach ($_var in $UsingVariables) {
+            $_vars += ,$_var.Value
+        }
+
+        $_tmp_args = $_vars + $_tmp_args
+    }
+
+    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $_tmp_args -Return -Splat)
 }
 
 function Get-PodeAuthWindowsLocalMethod
@@ -643,13 +683,20 @@ function Get-PodeAuthWindowsLocalMethod
             Close-PodeDisposable -Disposable $ad -Close
         }
 
-        # is the user valid for any users/groups?
-        if (Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups) {
-            return @{ User = $user }
+        # is the user valid for any users/groups - if not, error!
+        if (!(Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups)) {
+            return @{ Message = 'You are not authorised to access this website' }
         }
 
-        # else, they shall not pass!
-        return @{ Message = 'You are not authorised to access this website' }
+        $result = @{ User = $user }
+
+        # call additional scriptblock if supplied
+        if ($null -ne $options.ScriptBlock.Script) {
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
+        }
+
+        # return final result, this could contain a user obj, or an error message from custom scriptblock
+        return $result
     }
 }
 
@@ -676,6 +723,7 @@ function Get-PodeAuthWindowsADIISMethod
             # create base user object
             $user = @{
                 UserType = 'Domain'
+                Identity = $winIdentity
                 AuthenticationType = $winIdentity.AuthenticationType
                 DistinguishedName = [string]::Empty
                 Username = $username
@@ -764,13 +812,20 @@ function Get-PodeAuthWindowsADIISMethod
             $win32Handler::CloseHandle($winAuthToken)
         }
 
-        # is the user valid for any users/groups?
-        if (Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups) {
-            return @{ User = $user }
+        # is the user valid for any users/groups - if not, error!
+        if (!(Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups)) {
+            return @{ Message = 'You are not authorised to access this website' }
         }
 
-        # else, they shall not pass!
-        return @{ Message = 'You are not authorised to access this website' }
+        $result = @{ User = $user }
+
+        # call additional scriptblock if supplied
+        if ($null -ne $options.ScriptBlock.Script) {
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
+        }
+
+        # return final result, this could contain a user obj, or an error message from custom scriptblock
+        return $result
     }
 }
 
