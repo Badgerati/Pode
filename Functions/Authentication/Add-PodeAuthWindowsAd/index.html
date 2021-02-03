@@ -592,6 +592,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-scriptblock" class="md-nav__link">
+    -ScriptBlock
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-sessionless" class="md-nav__link">
     -Sessionless
   </a>
@@ -4790,6 +4797,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-scriptblock" class="md-nav__link">
+    -ScriptBlock
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-sessionless" class="md-nav__link">
     -Sessionless
   </a>
@@ -4877,14 +4891,14 @@
 <h3 id="groups-default">Groups (Default)</h3>
 <div class="codehilite"><pre><span></span><code><span class="err">Add-PodeAuthWindowsAd -Name &lt;String&gt; -Scheme &lt;Hashtable&gt; [-Fqdn &lt;String&gt;] [-Domain &lt;String&gt;]</span>
 <span class="err"> [-Groups &lt;String[]&gt;] [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;]</span>
-<span class="err"> [-SuccessUrl &lt;String&gt;] [-Sessionless] [-OpenLDAP] [&lt;CommonParameters&gt;]</span>
+<span class="err"> [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-OpenLDAP] [&lt;CommonParameters&gt;]</span>
 </code></pre></div>
 
 
 <h3 id="nogroups">NoGroups</h3>
 <div class="codehilite"><pre><span></span><code><span class="err">Add-PodeAuthWindowsAd -Name &lt;String&gt; -Scheme &lt;Hashtable&gt; [-Fqdn &lt;String&gt;] [-Domain &lt;String&gt;]</span>
-<span class="err"> [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;] [-SuccessUrl &lt;String&gt;] [-Sessionless]</span>
-<span class="err"> [-NoGroups] [-OpenLDAP] [&lt;CommonParameters&gt;]</span>
+<span class="err"> [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;] [-SuccessUrl &lt;String&gt;]</span>
+<span class="err"> [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-NoGroups] [-OpenLDAP] [&lt;CommonParameters&gt;]</span>
 </code></pre></div>
 
 
@@ -5035,6 +5049,20 @@
 <span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">True (ByValue)</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+
+
+<h3 id="-scriptblock">-ScriptBlock</h3>
+<p>Optional ScriptBlock that is passed the found user object for further validation.</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ScriptBlock</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
 

@@ -532,6 +532,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-scriptblock" class="md-nav__link">
+    -ScriptBlock
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-sessionless" class="md-nav__link">
     -Sessionless
   </a>
@@ -4694,6 +4701,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-scriptblock" class="md-nav__link">
+    -ScriptBlock
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-sessionless" class="md-nav__link">
     -Sessionless
   </a>
@@ -4780,7 +4794,7 @@
 <h2 id="syntax">SYNTAX</h2>
 <div class="codehilite"><pre><span></span><code><span class="err">Add-PodeAuthUserFile -Name &lt;String&gt; -Scheme &lt;Hashtable&gt; [-FilePath &lt;String&gt;] [-Groups &lt;String[]&gt;]</span>
 <span class="err"> [-Users &lt;String[]&gt;] [-HmacSecret &lt;String&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;]</span>
-<span class="err"> [-SuccessUrl &lt;String&gt;] [-Sessionless] [&lt;CommonParameters&gt;]</span>
+<span class="err"> [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [&lt;CommonParameters&gt;]</span>
 </code></pre></div>
 
 
@@ -4892,6 +4906,20 @@
 <span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">True (ByValue)</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+
+
+<h3 id="-scriptblock">-ScriptBlock</h3>
+<p>Optional ScriptBlock that is passed the found user object for further validation.</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ScriptBlock</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
 

@@ -3005,6 +3005,26 @@
     IIS Authentication
   </a>
   
+    <nav class="md-nav" aria-label="IIS Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kerberos-constrained-delegation" class="md-nav__link">
+    Kerberos Constrained Delegation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#additional-validation" class="md-nav__link">
+    Additional Validation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4488,6 +4508,26 @@
     IIS Authentication
   </a>
   
+    <nav class="md-nav" aria-label="IIS Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kerberos-constrained-delegation" class="md-nav__link">
+    Kerberos Constrained Delegation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#additional-validation" class="md-nav__link">
+    Additional Validation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4639,6 +4679,11 @@
 <td>Specifies if the user is a Domain or Local user</td>
 </tr>
 <tr>
+<td>Identity</td>
+<td>System.Security.Principal.WindowsIdentity</td>
+<td>Returns the WindowsIdentity which can be used for Impersonation</td>
+</tr>
+<tr>
 <td>AuthenticationType</td>
 <td>string</td>
 <td>Value is fixed to LDAP</td>
@@ -4684,6 +4729,41 @@
 <p class="admonition-title">Note</p>
 <p>If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName</p>
 </div>
+<h3 id="kerberos-constrained-delegation">Kerberos Constrained Delegation</h3>
+<p>Pode can impersonate the user that requests the webpage using Kerberos Constrained Delegation (KCD).</p>
+<p>Requirements
+- The use of KCD requires additional configuration in the Active Directory (read up on PrincipalsAllowedToDelegateToAccount)
+- No Session Middleware configured</p>
+<p>This can be done using the following example:</p>
+<div class="codehilite"><pre><span></span><code><span class="no">[System.Security.Principal.WindowsIdentity]</span><span class="p">::</span><span class="n">RunImpersonated</span><span class="p">(</span><span class="nv">$WebEvent</span><span class="p">.</span><span class="n">Auth</span><span class="p">.</span><span class="n">User</span><span class="p">.</span><span class="n">Identity</span><span class="p">.</span><span class="n">AccessToken</span><span class="p">,{</span>
+    <span class="nv">$newIdentity</span> <span class="p">=</span> <span class="no">[Security.Principal.WindowsIdentity]</span><span class="p">::</span><span class="n">GetCurrent</span><span class="p">()</span> <span class="p">|</span> <span class="nb">Select-Object</span> <span class="n">-ExpandProperty</span> <span class="s1">&#39;Name&#39;</span>    
+    <span class="nb">Write-PodeTextResponse</span> <span class="n">-Value</span> <span class="s2">&quot;You are running this command as the server user $newIdentity&quot;</span>
+<span class="p">})</span>
+</code></pre></div>
+
+
+<h3 id="additional-validation">Additional Validation</h3>
+<p>Similar to the normal <a href="../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a>, <a href="../../Functions/Authentication/Add-PodeAuthIIS"><code>Add-PodeAuthIIS</code></a> can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.</p>
+<p>The ScriptBlock has the same return rules as <a href="../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a>, as can be seen in the <a href="../../Tutorials/Authentication/Overview">Overview</a>.</p>
+<p>For example, to return the user back:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-Sessionless</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="k">param</span><span class="p">(</span><span class="nv">$user</span><span class="p">)</span>
+
+    <span class="c"># check or load extra data</span>
+
+    <span class="k">return</span> <span class="p">@{</span> <span class="n">User</span> <span class="p">=</span> <span class="nv">$user</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+<p>Or to fail authentication with an error message:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-Sessionless</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="k">param</span><span class="p">(</span><span class="nv">$user</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">@{</span> <span class="n">Message</span> <span class="p">=</span> <span class="s1">&#39;Authorisation failed&#39;</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
 <h2 id="azure-web-apps">Azure Web Apps</h2>
 <p>To host your Pode server under IIS using Azure Web Apps, ensure the OS type is Windows and the framework is .NET Core 2.1/3.0.</p>
 <p>Your web.config's <code>processPath</code> will also need to reference <code>powershell.exe</code> not <code>pwsh.exe</code>.</p>

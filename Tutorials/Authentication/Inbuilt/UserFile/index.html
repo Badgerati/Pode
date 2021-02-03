@@ -3352,6 +3352,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#additional-validation" class="md-nav__link">
+    Additional Validation
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4515,6 +4522,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#additional-validation" class="md-nav__link">
+    Additional Validation
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4679,12 +4693,32 @@
 <h3 id="users">Users</h3>
 <p>You can supply a list of authorised usernames to validate a user's access, after credentials are validated, and instead of of checking AD groups. You can supply the list of usernames to the function's <code>-Users</code> parameter as an array - the list is not case-sensitive:</p>
 <div class="codehilite"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Users</span> <span class="p">@(</span><span class="s1">&#39;jsnow&#39;</span><span class="p">,</span> <span class="s1">&#39;rsanchez&#39;</span><span class="p">)</span>
+    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthUserFile</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Users</span> <span class="p">@(</span><span class="s1">&#39;jsnow&#39;</span><span class="p">,</span> <span class="s1">&#39;rsanchez&#39;</span><span class="p">)</span>
 <span class="p">}</span>
 </code></pre></div>
 
 
 <p>If an user being authenticated is not one of the allowed users, then a 401 is returned.</p>
+<h3 id="additional-validation">Additional Validation</h3>
+<p>Similar to the normal <a href="../../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a>, <a href="../../../../Functions/Authentication/Add-PodeAuthUserFile"><code>Add-PodeAuthUserFile</code></a> can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.</p>
+<p>The ScriptBlock has the same return rules as <a href="../../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a>, as can be seen in the <a href="../../Overview">Overview</a>.</p>
+<p>For example, to return the user back:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthUserFile</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="k">param</span><span class="p">(</span><span class="nv">$user</span><span class="p">)</span>
+
+    <span class="c"># check or load extra data</span>
+
+    <span class="k">return</span> <span class="p">@{</span> <span class="n">User</span> <span class="p">=</span> <span class="nv">$user</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+<p>Or to fail authentication with an error message:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthUserFile</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+    <span class="k">param</span><span class="p">(</span><span class="nv">$user</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">@{</span> <span class="n">Message</span> <span class="p">=</span> <span class="s1">&#39;Authorisation failed&#39;</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
                 
               
               

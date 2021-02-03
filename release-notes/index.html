@@ -323,6 +323,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v210" class="md-nav__link">
+    v2.1.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v203" class="md-nav__link">
     v2.0.3
   </a>
@@ -4788,6 +4795,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v210" class="md-nav__link">
+    v2.1.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v203" class="md-nav__link">
     v2.0.3
   </a>
@@ -5179,6 +5193,32 @@
                 
                 
                 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v210">v2.1.0</h2>
+<div class="codehilite"><pre><span></span><code><span class="err">###</span><span class="w"> </span><span class="n">Enhancements</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#655</span><span class="err">:</span><span class="w"> </span><span class="k">Update</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">Socket</span><span class="w"> </span><span class="n">Listener</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="n">larger</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="n">payloads</span><span class="p">,</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">fix</span><span class="w"> </span><span class="n">receiving</span><span class="w"> </span><span class="n">SSL</span><span class="w"> </span><span class="n">requests</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#657</span><span class="err">:</span><span class="w"> </span><span class="n">Adds</span><span class="w"> </span><span class="err">`</span><span class="o">-</span><span class="n">ScriptBlock</span><span class="err">`</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">inbuilt</span><span class="w"> </span><span class="n">authentication</span><span class="w"> </span><span class="n">methods</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#667</span><span class="err">:</span><span class="w"> </span><span class="k">Set</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">WinIdentity</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">IIS</span><span class="w"> </span><span class="n">auth</span><span class="p">,</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="k">add</span><span class="w"> </span><span class="n">documentation</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Kerberos</span><span class="w"> </span><span class="n">Constrained</span><span class="w"> </span><span class="n">Delegation</span><span class="w"> </span><span class="p">(</span><span class="n">thanks</span><span class="w"> </span><span class="nv">@RobinBeismann</span><span class="err">!</span><span class="p">)</span><span class="w"></span>
+
+<span class="err">###</span><span class="w"> </span><span class="n">Bugs</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#648</span><span class="err">:</span><span class="w"> </span><span class="n">Fixes</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="k">global</span><span class="w"> </span><span class="n">authentcation</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">OpenAPI</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">Swagger</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#650</span><span class="err">:</span><span class="w"> </span><span class="n">Fix</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">redirecting</span><span class="w"> </span><span class="n">HTTP</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">HTTPS</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="mi">80</span><span class="o">/</span><span class="mi">443</span><span class="w"> </span><span class="n">ports</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#652</span><span class="err">:</span><span class="w"> </span><span class="n">Fix</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">sessions</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">extending</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">AJAX</span><span class="w"> </span><span class="n">requests</span><span class="p">,</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="k">session</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="n">wasn</span><span class="s1">&#39;t updated</span>
+<span class="s1">* #654: Fix for `-Title` and `-Version` in `Get-PodeOpenApiDefinition` being mandatory</span>
+<span class="s1">* #660: Fix for removing cookies in AJAX responses</span>
+<span class="s1">* #663: Fix for when an endpoint&#39;</span><span class="n">s</span><span class="w"> </span><span class="err">`</span><span class="o">-</span><span class="n">Hostname</span><span class="err">`</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">localhost</span><span class="p">,</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">bound</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">route</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#669</span><span class="err">:</span><span class="w"> </span><span class="n">Further</span><span class="w"> </span><span class="n">fixes</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">improvements</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="err">`</span><span class="o">-</span><span class="n">EndpointName</span><span class="err">`</span><span class="w"> </span><span class="n">validation</span><span class="w"> </span><span class="k">use</span><span class="o">-</span><span class="n">cases</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">routes</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#670</span><span class="err">:</span><span class="w"> </span><span class="n">Remove</span><span class="w"> </span><span class="n">extra</span><span class="w"> </span><span class="n">NewLine</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">form</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="p">(</span><span class="n">thanks</span><span class="w"> </span><span class="nv">@ili101</span><span class="err">!</span><span class="p">)</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#673</span><span class="err">:</span><span class="w"> </span><span class="n">Fix</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">make</span><span class="w"> </span><span class="n">headers</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">request</span><span class="o">/</span><span class="n">response</span><span class="w"> </span><span class="k">case</span><span class="o">-</span><span class="k">insensitive</span><span class="w"></span>
+
+<span class="err">###</span><span class="w"> </span><span class="n">Documentation</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#651</span><span class="err">:</span><span class="w"> </span><span class="k">Update</span><span class="w"> </span><span class="n">Azure</span><span class="w"> </span><span class="n">AD</span><span class="w"> </span><span class="n">authentication</span><span class="w"> </span><span class="n">documentation</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">reference</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">Basic</span><span class="w"> </span><span class="n">authentication</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">well</span><span class="w"> </span><span class="p">(</span><span class="n">thanks</span><span class="w"> </span><span class="nv">@RobinBeismann</span><span class="p">)</span><span class="w"></span>
+
+<span class="err">###</span><span class="w"> </span><span class="n">Packaging</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#629</span><span class="err">:</span><span class="w"> </span><span class="k">Update</span><span class="w"> </span><span class="n">dockerfile</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">use</span><span class="w"> </span><span class="n">Ubuntu</span><span class="w"> </span><span class="mf">18.04</span><span class="w"></span>
+<span class="o">*</span><span class="w"> </span><span class="n">#630</span><span class="err">:</span><span class="w"> </span><span class="k">Update</span><span class="w"> </span><span class="n">dockerfiles</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">use</span><span class="w"> </span><span class="n">PowerShell</span><span class="w"> </span><span class="mf">7.1.1</span><span class="w"></span>
+</code></pre></div>
+
+
 <h2 id="v203">v2.0.3</h2>
 <div class="codehilite"><pre><span></span><code><span class="err">###</span><span class="w"> </span><span class="n">Bugs</span><span class="w"></span>
 <span class="o">*</span><span class="w"> </span><span class="n">#641</span><span class="err">:</span><span class="w"> </span><span class="n">Fix</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">issue</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">Invalid</span><span class="w"> </span><span class="n">Request</span><span class="w"> </span><span class="n">Lines</span><span class="w"> </span><span class="n">being</span><span class="w"> </span><span class="n">received</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">running</span><span class="w"> </span><span class="n">via</span><span class="w"> </span><span class="n">SSL</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">Proxy</span><span class="w"></span>

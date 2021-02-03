@@ -3403,6 +3403,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#requests-using-basic-authentication" class="md-nav__link">
+    Requests using Basic Authentication
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#middleware" class="md-nav__link">
     Middleware
   </a>
@@ -4493,6 +4500,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#requests-using-basic-authentication" class="md-nav__link">
+    Requests using Basic Authentication
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#middleware" class="md-nav__link">
     Middleware
   </a>
@@ -4582,6 +4596,34 @@
         <span class="k">return</span> <span class="p">@{</span> <span class="n">User</span> <span class="p">=</span> <span class="nv">$user</span> <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
+</code></pre></div>
+
+
+<h2 id="requests-using-basic-authentication">Requests using Basic Authentication</h2>
+<p>To authenticate against Azure Active Directory with Applications that do not support Modern Authentication (for example PowerShell Invoke-RestMethod), you will need to use Basic Authentication.
+This method only works if you're either using Password Hash Sync (PHS), Pass-through Authentication (PTA) or both. If you're using claim based authentication against another IdP like Active Directory Federation Services (ADFS) then this will not work as the Azure AD does not know the users' credentials.</p>
+<p>The client side may look like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">$res</span> <span class="p">=</span> <span class="nb">Invoke-RestMethod</span> <span class="n">-Url</span> <span class="s1">&#39;http://localhost:8080&#39;</span> <span class="n">-SessionVariable</span> <span class="n">session</span>
+<span class="nv">$res</span><span class="p">.</span><span class="n">Form</span><span class="p">[</span><span class="n">0</span><span class="p">].</span><span class="n">username</span> <span class="p">=</span> <span class="s1">&#39;username&#39;</span>
+<span class="nv">$res</span><span class="p">.</span><span class="n">Form</span><span class="p">[</span><span class="n">0</span><span class="p">].</span><span class="n">password</span> <span class="p">=</span> <span class="s1">&#39;password&#39;</span>
+<span class="nb">Invoke-RestMethod</span> <span class="n">-Url</span> <span class="s1">&#39;http://localhost:8080&#39;</span> <span class="n">-WebSession</span> <span class="nv">$session</span> <span class="n">-Body</span> <span class="nv">$res</span><span class="p">.</span><span class="n">Form</span><span class="p">[</span><span class="n">0</span><span class="p">]</span>
+</code></pre></div>
+
+
+<p>The Pode side needs to be configured to allow basic authentication as well. This can be done side by side with Form based Authentication using this example</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">$form</span>  <span class="p">=</span> <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span>
+<span class="nv">$schemeForm</span> <span class="p">=</span> <span class="nb">New-PodeAuthAzureADScheme</span> <span class="n">-ClientID</span> <span class="s1">&#39;&lt;clientId&gt;&#39;</span> <span class="n">-ClientSecret</span> <span class="s1">&#39;&lt;clientSecret&gt;&#39;</span> <span class="n">-Tenant</span> <span class="s1">&#39;&lt;tenant&gt;&#39;</span> <span class="n">-InnerScheme</span> <span class="nv">$form</span>
+
+<span class="nv">$basic</span> <span class="p">=</span> <span class="nb">New-PodeAuthSceme</span> <span class="n">-Basic</span>
+<span class="nv">$schemeBasic</span> <span class="p">=</span> <span class="nb">New-PodeAuthAzureADScheme</span> <span class="n">-ClientID</span> <span class="s1">&#39;&lt;clientId&gt;&#39;</span> <span class="n">-ClientSecret</span> <span class="s1">&#39;&lt;clientSecret&gt;&#39;</span> <span class="n">-Tenant</span> <span class="s1">&#39;&lt;tenant&gt;&#39;</span> <span class="n">-InnerScheme</span> <span class="nv">$basic</span>
+
+<span class="nv">$authLogin</span> <span class="p">=</span> <span class="p">{</span>
+    <span class="k">param</span><span class="p">(</span><span class="nv">$user</span><span class="p">,</span> <span class="nv">$accessToken</span><span class="p">,</span> <span class="nv">$refreshToken</span><span class="p">)</span>
+    <span class="c"># check user</span>
+<span class="p">}</span>
+
+<span class="nv">$schemeForm</span> <span class="p">|</span> <span class="nb">Add-PodeAuth</span> <span class="n">-Name</span> <span class="s1">&#39;LoginForm&#39;</span> <span class="n">-FailureUrl</span> <span class="s1">&#39;/login&#39;</span> <span class="n">-SuccessUrl</span> <span class="s1">&#39;/&#39;</span> <span class="n">-ScriptBlock</span> <span class="nv">$authLogic</span>
+<span class="nv">$schemeBasic</span> <span class="p">|</span> <span class="nb">Add-PodeAuth</span> <span class="n">-Name</span> <span class="s1">&#39;LoginBasic&#39;</span> <span class="n">-ScriptBlock</span> <span class="nv">$authLogic</span>
 </code></pre></div>
 
 
