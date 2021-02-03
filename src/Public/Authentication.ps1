@@ -607,6 +607,9 @@ An override Message to throw when authentication fails.
 .PARAMETER SuccessUrl
 The URL to redirect to when authentication succeeds when logging in.
 
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
+
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
@@ -864,6 +867,9 @@ An override Message to throw when authentication fails.
 .PARAMETER SuccessUrl
 The URL to redirect to when authentication succeeds when logging in.
 
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
+
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
@@ -1015,6 +1021,9 @@ An override Message to throw when authentication fails.
 .PARAMETER SuccessUrl
 The URL to redirect to when authentication succeeds when logging in.
 
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
+
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
@@ -1157,6 +1166,9 @@ An override Message to throw when authentication fails.
 
 .PARAMETER SuccessUrl
 The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
 
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
