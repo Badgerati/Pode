@@ -185,13 +185,16 @@ function Test-PodeRouteLimit
 function Test-PodeEndpointLimit
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
+        [Parameter()]
         [string]
         $EndpointName
     )
 
     $type = 'Endpoint'
+
+    if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+        return $true
+    }
 
     # get the limit rules and active list
     $rules = $PodeContext.Server.Limits.Rules[$type]
@@ -491,6 +494,9 @@ function Add-PodeEndpointLimit
     if ($Seconds -le 0) {
         throw "Seconds value cannot be 0 or less for $($IP)"
     }
+    
+    # we need to check endpoints on requests
+    $PodeContext.Server.FindRouteEndpoint = $true
 
     # get current rules
     $rules = $PodeContext.Server.Limits.Rules[$type]
