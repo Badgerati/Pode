@@ -1344,6 +1344,10 @@ function Set-PodeOARouteInfo
         $Description,
 
         [Parameter()]
+        [string]
+        $OperationId,
+
+        [Parameter()]
         [string[]]
         $Tags,
 
@@ -1357,6 +1361,7 @@ function Set-PodeOARouteInfo
     foreach ($r in @($Route)) {
         $r.OpenApi.Summary = $Summary
         $r.OpenApi.Description = $Description
+        $r.OpenApi.OperationId = $OperationId
         $r.OpenApi.Tags = $Tags
         $r.OpenApi.Deprecated = $Deprecated.IsPresent
     }
