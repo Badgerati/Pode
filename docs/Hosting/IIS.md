@@ -130,21 +130,21 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 
 ### Kerberos Constrained Delegation
 
-Pode can impersonate the user that requests the webpage using Kerberos Constrained Delegation (KCD).
+Pode can impersonate the user that requests the web page using Kerberos Constrained Delegation (KCD).
 
-Requirements
-- The use of KCD requires additional configuration in the Active Directory (read up on PrincipalsAllowedToDelegateToAccount)
-- No Session Middleware configured
+Requirements:
+
+* The use of KCD requires additional configuration in Active Directory (read up on PrincipalsAllowedToDelegateToAccount)
+* No Session middleware configured (`-Sessionless` switch on authentication setup)
 
 This can be done using the following example:
 
 ```powershell
-[System.Security.Principal.WindowsIdentity]::RunImpersonated($WebEvent.Auth.User.Identity.AccessToken,{
-    $newIdentity = [Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -ExpandProperty 'Name'    
+[System.Security.Principal.WindowsIdentity]::RunImpersonated($WebEvent.Auth.User.Identity.AccessToken, {
+    $newIdentity = [Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -ExpandProperty 'Name'
     Write-PodeTextResponse -Value "You are running this command as the server user $newIdentity"
 })
 ```
-
 
 ### Additional Validation
 

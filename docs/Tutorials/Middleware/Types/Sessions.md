@@ -17,9 +17,7 @@ The following is an example of how to setup session middleware using cookies:
 
 ```powershell
 Start-PodeServer {
-    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator {
-        return [System.IO.Path]::GetRandomFileName()
-    }
+    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 }
 ```
 

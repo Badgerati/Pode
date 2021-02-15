@@ -36,7 +36,11 @@ The scriptblock for the route will have access to the `$WebEvent` variable which
 
 ## Payloads
 
-The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` property on the `$WebEvent` variable to a route's logic. This example will get the `userId` and "find" user, returning the users data:
+The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` property on the `$WebEvent` variable to a route's logic.
+
+Depending the the Content-Type supplied, Pode has inbuilt body-parsing logic for JSON, XML, CSV, and Form data.
+
+This example will get the `userId` and "find" user, returning the users data:
 
 ```powershell
 Start-PodeServer {
@@ -65,7 +69,7 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
     The `ContentType` is required as it informs Pode on how to parse the requests payload. For example, if the content type were `application/json`, then Pode will attempt to parse the body of the request as JSON - converting it to a hashtable.
 
 !!! important
-    On PowerShell 4 and 5, referencing JSON data on `$WebEvent.Data` must be done as `$WebEvent.Data.userId`. This also works in PowerShell 6+, but you can also use `$WebEvent.Data['userId']` on PowerShell 6+.
+    On PowerShell 5 referencing JSON data on `$WebEvent.Data` must be done as `$WebEvent.Data.userId`. This also works in PowerShell 6+, but you can also use `$WebEvent.Data['userId']` on PowerShell 6+.
 
 ## Query Strings
 
