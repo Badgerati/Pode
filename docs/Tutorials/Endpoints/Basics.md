@@ -77,6 +77,20 @@ The below example will create a local self-signed HTTPS endpoint:
 Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
 ```
 
+## Endpoint Names
+
+You can give endpoints unique names by supplying the `-EndpointName` parameter. This name can then be passed to [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) or [`Add-PodeStaticRoute`](../../../Functions/Routes/Add-PodeStaticRoute) to bind these routes to that endpoint only.
+
+For example:
+
+```powershell
+Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -EndpointName Example
+
+Add-PodeRoute -Method Get -Path '/about' -EndpointName Example -ScriptBlock {
+    # ...
+}
+```
+
 ## Getting Endpoints
 
 The [`Get-PodeEndpoint`](../../../Functions/Core/Get-PodeEndpoint) helper function will allow you to retrieve a list of endpoints configured within Pode. You can use it to retrieve all of the endpoints, or supply filters to retrieve specific endpoints.

@@ -6,7 +6,7 @@ It also has support for error levels (such as Error, Warning, Verbose), with sup
 
 ## Enabling
 
-To enable and use the Error logging you use the [`Enable-PodeErrorLogging`](../../../../Functions/Logging/Enable-PodeErrorLogging) function, supplying a logging method from [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod). You can supply your own errors to be logged by using [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod).
+To enable and use Error logging you use [`Enable-PodeErrorLogging`](../../../../Functions/Logging/Enable-PodeErrorLogging), supplying a logging method from [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod). You can supply your own errors to be logged by using [`New-PodeLoggingMethod`](../../../../Functions/Logging/New-PodeLoggingMethod).
 
 When Pode logs an error, the information being logged is as follows:
 
@@ -27,6 +27,23 @@ The Error logging logic uses the following Error levels:
 * `Verbose`
 * `Debug`
 
+## Writing Errors
+
+You can log additional errors by using [`Write-PodeErrorLog`](../../../../Functions/Logging/Write-PodeErrorLog), which takes an Exception or an ErrorRecord (both of which can be piped). If you log an Exception you can optionally pass `-CheckInnerException`, which will also log the inner exception.
+
+For example, to log an error:
+
+```powershell
+try {
+    # ...
+}
+catch {
+    $_ | Write-PodeErrorLog
+}
+```
+
+To log an error at a different level, you can also supply a `-Level`.
+
 ## Examples
 
 ### Log to Terminal
@@ -39,10 +56,10 @@ New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
 ### Log Verbose
 
-The following example will enable Error logging, however it will log all Error levels up to Verbose, excluding Debug:
+The following example will enable Error logging, and it will log all errors levels except Debug:
 
 ```powershell
-New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels @('Error', 'Warning', 'Information', 'Verbose')
+New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error, Warning, Information, Verbose
 ```
 
 ### Using Raw Item
