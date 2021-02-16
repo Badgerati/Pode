@@ -1314,6 +1314,9 @@ A quick Summary of the route.
 .PARAMETER Description
 A longer Description of the route.
 
+.PARAMETER OperationId
+Sets the OperationId of the route.
+
 .PARAMETER Tags
 An array of Tags for the route, mostly for grouping.
 
