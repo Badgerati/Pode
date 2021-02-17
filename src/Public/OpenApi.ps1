@@ -1314,6 +1314,9 @@ A quick Summary of the route.
 .PARAMETER Description
 A longer Description of the route.
 
+.PARAMETER OperationId
+Sets the OperationId of the route.
+
 .PARAMETER Tags
 An array of Tags for the route, mostly for grouping.
 
@@ -1344,6 +1347,10 @@ function Set-PodeOARouteInfo
         $Description,
 
         [Parameter()]
+        [string]
+        $OperationId,
+
+        [Parameter()]
         [string[]]
         $Tags,
 
@@ -1357,6 +1364,7 @@ function Set-PodeOARouteInfo
     foreach ($r in @($Route)) {
         $r.OpenApi.Summary = $Summary
         $r.OpenApi.Description = $Description
+        $r.OpenApi.OperationId = $OperationId
         $r.OpenApi.Tags = $Tags
         $r.OpenApi.Deprecated = $Deprecated.IsPresent
     }
