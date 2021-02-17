@@ -719,6 +719,16 @@ function Add-PodeEndpoint
         [string]
         $CertificateName,
 
+        [Parameter(ParameterSetName='CertName')]
+        [Parameter(ParameterSetName='CertThumb')]
+        [System.Security.Cryptography.X509Certificates.StoreName]
+        $CertificateStoreName = 'My',
+
+        [Parameter(ParameterSetName='CertName')]
+        [Parameter(ParameterSetName='CertThumb')]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        $CertificateStoreLocation = 'CurrentUser',
+
         [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
         [Parameter()]
         [X509Certificate]
@@ -884,11 +894,11 @@ function Add-PodeEndpoint
             }
 
             'certthumb' {
-                $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint
+                $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
             }
 
             'certname' {
-                $obj.Certificate.Raw = Get-PodeCertificateByName -Name $CertificateName
+                $obj.Certificate.Raw = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
             }
 
             'certself' {

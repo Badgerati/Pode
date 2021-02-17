@@ -763,7 +763,15 @@ function Find-PodeCertificateInCertStore
 
         [Parameter(Mandatory=$true)]
         [string]
-        $Query
+        $Query,
+
+        [Parameter(Mandatory=$true)]
+        [X509Certificates.StoreName]
+        $StoreName,
+
+        [Parameter(Mandatory=$true)]
+        [X509Certificates.StoreLocation]
+        $StoreLocation
     )
 
     # fail if not windows
@@ -772,10 +780,7 @@ function Find-PodeCertificateInCertStore
     }
 
     # open the currentuser\my store
-    $x509store = [X509Certificates.X509Store]::new(
-        [X509Certificates.StoreName]::My,
-        [X509Certificates.StoreLocation]::CurrentUser
-    )
+    $x509store = [X509Certificates.X509Store]::new($StoreName, $StoreLocation)
 
     try {
         # attempt to find the cert
@@ -791,7 +796,7 @@ function Find-PodeCertificateInCertStore
 
     # fail if no cert found for query
     if (($null -eq $x509certs) -or ($x509certs.Count -eq 0)) {
-        throw "No certificate could be found in CurrentUser\My for '$($Thumbprint)'"
+        throw "No certificate could be found in $($StoreLocation)\$($StoreName) for '$($Query)'"
     }
 
     return ([X509Certificates.X509Certificate2]($x509certs[0]))
@@ -802,10 +807,22 @@ function Get-PodeCertificateByThumbprint
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Thumbprint
+        $Thumbprint,
+
+        [Parameter(Mandatory=$true)]
+        [X509Certificates.StoreName]
+        $StoreName,
+
+        [Parameter(Mandatory=$true)]
+        [X509Certificates.StoreLocation]
+        $StoreLocation
     )
 
-    return (Find-PodeCertificateInCertStore -FindType ([X509Certificates.X509FindType]::FindByThumbprint) -Query $Thumbprint)
+    return (Find-PodeCertificateInCertStore `
+        -FindType ([X509Certificates.X509FindType]::FindByThumbprint) `
+        -Query $Thumbprint `
+        -StoreName $StoreName `
+        -StoreLocation $StoreLocation)
 }
 
 function Get-PodeCertificateByName
@@ -813,10 +830,22 @@ function Get-PodeCertificateByName
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Name
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [X509Certificates.StoreName]
+        $StoreName,
+
+        [Parameter(Mandatory=$true)]
+        [X509Certificates.StoreLocation]
+        $StoreLocation
     )
 
-    return (Find-PodeCertificateInCertStore -FindType ([X509Certificates.X509FindType]::FindBySubjectName) -Query $Name)
+    return (Find-PodeCertificateInCertStore `
+        -FindType ([X509Certificates.X509FindType]::FindBySubjectName) `
+        -Query $Name `
+        -StoreName $StoreName `
+        -StoreLocation $StoreLocation)
 }
 
 function New-PodeSelfSignedCertificate
