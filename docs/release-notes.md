@@ -1,5 +1,21 @@
 # Release Notes
 
+## v2.1.1
+
+```plain
+### Enhancements
+* #693: Add OperationId OpenAPI support on routes (thanks @glatzert)
+* #698: Add support for Certificate Store Name and Location on `Add-PodeEndoint`
+
+### Bugs
+* #686: Add EndpointName support on `Set-PodeResponseAttachment`
+* #689: Fix bug with rate limiting preventing requests when no endpoint names
+
+### Documentation
+* #661: Multiple additions to docs - error logging, cookies, headers, etc
+* #683: Bump version of mkdocs-material theme
+```
+
 ## v2.1.0
 
 ```plain
