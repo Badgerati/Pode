@@ -637,6 +637,12 @@ A certificate thumbprint to bind onto HTTPS endpoints (Windows).
 .PARAMETER CertificateName
 A certificate subject name to bind onto HTTPS endpoints (Windows).
 
+.PARAMETER CertificateStoreName
+The name of a certifcate store where a certificate can be found (Default: My) (Windows).
+
+.PARAMETER CertificateStoreLocation
+The location of a certifcate store where a certificate can be found (Default: CurrentUser) (Windows).
+
 .PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS
 
