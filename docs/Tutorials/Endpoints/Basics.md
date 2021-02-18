@@ -53,8 +53,10 @@ If you add an HTTPS or WSS endpoint, then you'll be required to also supply cert
 | ---- | ----------- |
 | Certificate | The path to a `.pfx` or `.cer` certificate |
 | CertificatePassword | The password for the above `.pfx` certificate |
-| CertificateThumbprint | The thumbprint of a certificate in `CurrentUser\My` (Windows only) |
-| CertificateName | The subject name of a certificate in `CurrentUser\My` (Windows only) |
+| CertificateThumbprint | The thumbprint of a certificate to find (Windows only) |
+| CertificateName | The subject name of a certificate to find (Windows only) |
+| CertificateStoreName | The name of the certificate store (Default: My) (Windows only) |
+| CertificateStoreLocation | The location of the certificate store (Default: CurrentUser) (Windows only) |
 | X509Certificate | A raw X509Certificate object |
 | SelfSigned | If supplied, Pode will automatically generate a self-signed certificate as an X509Certificate object |
 
