@@ -53,8 +53,10 @@ If you add an HTTPS or WSS endpoint, then you'll be required to also supply cert
 | ---- | ----------- |
 | Certificate | The path to a `.pfx` or `.cer` certificate |
 | CertificatePassword | The password for the above `.pfx` certificate |
-| CertificateThumbprint | The thumbprint of a certificate in `CurrentUser\My` (Windows only) |
-| CertificateName | The subject name of a certificate in `CurrentUser\My` (Windows only) |
+| CertificateThumbprint | The thumbprint of a certificate to find (Windows only) |
+| CertificateName | The subject name of a certificate to find (Windows only) |
+| CertificateStoreName | The name of the certificate store (Default: My) (Windows only) |
+| CertificateStoreLocation | The location of the certificate store (Default: CurrentUser) (Windows only) |
 | X509Certificate | A raw X509Certificate object |
 | SelfSigned | If supplied, Pode will automatically generate a self-signed certificate as an X509Certificate object |
 
@@ -75,6 +77,20 @@ The below example will create a local self-signed HTTPS endpoint:
 
 ```powershell
 Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
+```
+
+## Endpoint Names
+
+You can give endpoints unique names by supplying the `-EndpointName` parameter. This name can then be passed to [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) or [`Add-PodeStaticRoute`](../../../Functions/Routes/Add-PodeStaticRoute) to bind these routes to that endpoint only.
+
+For example:
+
+```powershell
+Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -EndpointName Example
+
+Add-PodeRoute -Method Get -Path '/about' -EndpointName Example -ScriptBlock {
+    # ...
+}
 ```
 
 ## Getting Endpoints

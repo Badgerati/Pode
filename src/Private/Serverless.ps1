@@ -85,7 +85,7 @@ function Start-PodeAzFuncServer
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
                         if ($WebEvent.StaticContent.IsDownload) {
-                            Set-PodeResponseAttachment -Path $WebEvent.Path
+                            Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
@@ -204,7 +204,7 @@ function Start-PodeAwsLambdaServer
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
                         if ($WebEvent.StaticContent.IsDownload) {
-                            Set-PodeResponseAttachment -Path $WebEvent.Path
+                            Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable

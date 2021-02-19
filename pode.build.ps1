@@ -14,7 +14,7 @@ $Versions = @{
     SevenZip = '18.5.0.20180730'
     DotNetCore = '3.1.5'
     Checksum = '0.2.0'
-    MkDocsTheme = '5.2.1'
+    MkDocsTheme = '6.2.8'
     PlatyPS = '0.14.0'
 }
 

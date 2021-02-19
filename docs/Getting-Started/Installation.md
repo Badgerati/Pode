@@ -2,6 +2,20 @@
 
 Pode is a PowerShell module that can be installed from either Chocolatey, the PowerShell Gallery, or Docker. Once installed, you can use the module in your PowerShell scripts.
 
+## Minimum Requirements
+
+Before installing Pode, the minimum requirements must be met:
+
+* OS:
+    * Windows
+    * Linux
+    * MacOS
+    * Raspberry Pi
+* PowerShell:
+    * Windows PowerShell 5+
+    * PowerShell (Core) 6+
+* .NET Framework 4.7.2+ (For Windows PowerShell)
+
 ## Chocolatey
 
 [![Chocolatey](https://img.shields.io/chocolatey/dt/pode.svg?label=Downloads&colorB=a1301c)](https://chocolatey.org/packages/pode)

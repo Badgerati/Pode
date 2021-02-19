@@ -11,6 +11,8 @@ There are 6 ways to setup HTTPS on [`Add-PodeEndpoint`](../../Functions/Core/Add
 5. Supplying `-X509Certificate` of type `X509Certificate`.
 6. Supplying the `-SelfSigned` switch, to generate a quick self-signed `X509Certificate`.
 
+Note: for 3. and 4. you can change the certificate store used by supplying `-CertificateStoreName` and/or `-CertificateStoreLocation`.
+
 ## Usage
 
 ### File
@@ -33,6 +35,8 @@ Start-PodeServer {
 }
 ```
 
+Note: You can change the certificate store used by supplying `-CertificateStoreName` and/or `-CertificateStoreLocation`.
+
 ### Name
 
 On Windows only, you can use a certificate that is installed at `Cert:\CurrentUser\My` using its subject name:
@@ -42,6 +46,8 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Https -CertificateName '*.example.com'
 }
 ```
+
+Note: You can change the certificate store used by supplying `-CertificateStoreName` and/or `-CertificateStoreLocation`.
 
 ### X509
 

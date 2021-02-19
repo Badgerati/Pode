@@ -24,6 +24,9 @@ Start-PodeServer -Threads 2 {
     Add-PodeAccessRule -Access Deny -Type IP -Values '10.10.0.0/24'
     Add-PodeAccessRule -Access Deny -Type IP -Values all
 
+    # limit
+    Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
+
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

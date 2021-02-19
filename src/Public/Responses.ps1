@@ -15,6 +15,9 @@ Failing this, if the file path exists as a literal/relative file, then this file
 Manually specify the content type of the response rather than infering it from the attachment's file extension.
 The supplied value must match the valid ContentType format, e.g. application/json
 
+.PARAMETER EndpointName
+Optional EndpointName that the static route was creating under.
+
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
 
@@ -26,6 +29,9 @@ Set-PodeResponseAttachment -Path 'c:/content/accounts.xlsx'
 
 .EXAMPLE
 Set-PodeResponseAttachment -Path './data.txt' -ContentType 'application/json'
+
+.EXAMPLE
+Set-PodeResponseAttachment -Path '/assets/data.txt' -EndpointName 'Example'
 #>
 function Set-PodeResponseAttachment
 {
@@ -37,11 +43,15 @@ function Set-PodeResponseAttachment
 
         [ValidatePattern('^\w+\/[\w\.\+-]+$')]
         [string]
-        $ContentType
+        $ContentType,
+
+        [Parameter()]
+        [string]
+        $EndpointName
     )
 
     # only attach files from public/static-route directories when path is relative
-    $_path = (Find-PodeStaticRoute -Path $Path -CheckPublic).Content.Source
+    $_path = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName).Content.Source
 
     # if there's no path, check the original path (in case it's literal/relative)
     if (!(Test-PodePath $_path -NoStatus)) {

@@ -637,6 +637,12 @@ A certificate thumbprint to bind onto HTTPS endpoints (Windows).
 .PARAMETER CertificateName
 A certificate subject name to bind onto HTTPS endpoints (Windows).
 
+.PARAMETER CertificateStoreName
+The name of a certifcate store where a certificate can be found (Default: My) (Windows).
+
+.PARAMETER CertificateStoreLocation
+The location of a certifcate store where a certificate can be found (Default: CurrentUser) (Windows).
+
 .PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS
 
@@ -718,6 +724,16 @@ function Add-PodeEndpoint
         [Parameter(Mandatory=$true, ParameterSetName='CertName')]
         [string]
         $CertificateName,
+
+        [Parameter(ParameterSetName='CertName')]
+        [Parameter(ParameterSetName='CertThumb')]
+        [System.Security.Cryptography.X509Certificates.StoreName]
+        $CertificateStoreName = 'My',
+
+        [Parameter(ParameterSetName='CertName')]
+        [Parameter(ParameterSetName='CertThumb')]
+        [System.Security.Cryptography.X509Certificates.StoreLocation]
+        $CertificateStoreLocation = 'CurrentUser',
 
         [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
         [Parameter()]
@@ -884,11 +900,11 @@ function Add-PodeEndpoint
             }
 
             'certthumb' {
-                $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint
+                $obj.Certificate.Raw = Get-PodeCertificateByThumbprint -Thumbprint $CertificateThumbprint -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
             }
 
             'certname' {
-                $obj.Certificate.Raw = Get-PodeCertificateByName -Name $CertificateName
+                $obj.Certificate.Raw = Get-PodeCertificateByName -Name $CertificateName -StoreName $CertificateStoreName -StoreLocation $CertificateStoreLocation
             }
 
             'certself' {

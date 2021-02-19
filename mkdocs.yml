@@ -5,13 +5,16 @@ theme:
   logo: images/icon.png
   favicon: images/favicon.ico
   features:
-    - tabs
+    - navigation.tabs
+    - navigation.tabs.sticky
   palette:
+    scheme: preference
     primary: cyan
     accent: cyan
 
 markdown_extensions:
-  - codehilite
+  - pymdownx.highlight
+  - pymdownx.superfences
   - admonition
   - meta
 

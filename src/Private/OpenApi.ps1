@@ -299,6 +299,7 @@ function Get-PodeOpenApiDefinitionInternal
             $def.paths[$_route.OpenApi.Path][$method] = @{
                 summary = $_route.OpenApi.Summary
                 description = $_route.OpenApi.Description
+                operationId = $_route.OpenApi.OperationId
                 tags = @($_route.OpenApi.Tags)
                 deprecated = $_route.OpenApi.Deprecated
                 responses = $_route.OpenApi.Responses
