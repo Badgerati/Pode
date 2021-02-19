@@ -1,6 +1,4 @@
 
-
-
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
@@ -10,8 +8,9 @@
       
       
       
+      
       <link rel="shortcut icon" href="../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.2.1">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.8">
     
     
       
@@ -19,20 +18,22 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.71dfd922.min.css">
-      
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.616af814.min.css">
-      
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.cb6bc1d0.min.css">
       
         
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.39b8e14a.min.css">
         
-        <meta name="theme-color" content="#00bcd4">
+          
+          
+          <meta name="theme-color" content="#00bdd6">
+        
       
     
     
     
       
-        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
       
@@ -49,8 +50,14 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="cyan" data-md-color-accent="cyan">
+    
+    
+    <body dir="ltr" data-md-color-scheme="preference" data-md-color-primary="cyan" data-md-color-accent="cyan">
+      
+        <script>matchMedia("(prefers-color-scheme: dark)").matches&&document.body.setAttribute("data-md-color-scheme","slate")</script>
+      
   
+    
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
@@ -66,7 +73,9 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
+      
+
+<header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid" aria-label="Header">
     <a href="../../.." title="Pode" class="md-header-nav__button md-logo" aria-label="Pode">
       
@@ -77,18 +86,20 @@
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
     </label>
     <div class="md-header-nav__title" data-md-component="header-title">
-      
-        <div class="md-header-nav__ellipsis">
-          <span class="md-header-nav__topic md-ellipsis">
+      <div class="md-header-nav__ellipsis">
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
             Pode
           </span>
-          <span class="md-header-nav__topic md-ellipsis">
+        </div>
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
             
               Add-PodeRoute
             
           </span>
         </div>
-      
+      </div>
     </div>
     
       <label class="md-header-nav__button md-icon" for="__search">
@@ -99,7 +110,7 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
       <label class="md-search__icon md-icon" for="__search">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
@@ -140,43 +151,56 @@
     
     <div class="md-container" data-md-component="container">
       
-        
-      
       
         
           
-
-  
-
-<nav class="md-tabs md-tabs--active" aria-label="Tabs" data-md-component="tabs">
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-tabs__inner md-grid">
     <ul class="md-tabs__list">
       
         
+  
+  
+
+
   <li class="md-tabs__item">
-    
-      <a href="../../.." class="md-tabs__link">
-        Welcome!
-      </a>
-    
+    <a href="../../.." class="md-tabs__link">
+      Welcome!
+    </a>
   </li>
 
       
         
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../release-notes/" class="md-tabs__link">
+      Release Notes
+    </a>
+  </li>
+
       
         
   
   
     
+  
+
+
+  
+  
+  
     
+
+  
   
   
     <li class="md-tabs__item">
-      
-        <a href="../../Authentication/Add-PodeAuth/" class="md-tabs__link">
-          Functions
-        </a>
-      
+      <a href="../../Authentication/Add-PodeAuth/" class="md-tabs__link md-tabs__link--active">
+        Functions
+      </a>
     </li>
   
 
@@ -186,12 +210,15 @@
         
   
   
+
+
+  
+  
+  
     <li class="md-tabs__item">
-      
-        <a href="../../../Getting-Started/CLI/" class="md-tabs__link">
-          Getting Started
-        </a>
-      
+      <a href="../../../Getting-Started/CLI/" class="md-tabs__link">
+        Getting Started
+      </a>
     </li>
   
 
@@ -199,12 +226,15 @@
         
   
   
+
+
+  
+  
+  
     <li class="md-tabs__item">
-      
-        <a href="../../../Hosting/AwsLambda/" class="md-tabs__link">
-          Hosting
-        </a>
-      
+      <a href="../../../Hosting/AwsLambda/" class="md-tabs__link">
+        Hosting
+      </a>
     </li>
   
 
@@ -212,12 +242,15 @@
         
   
   
+
+
+  
+  
+  
     <li class="md-tabs__item">
-      
-        <a href="../../../Listeners/Kestrel/" class="md-tabs__link">
-          Listeners
-        </a>
-      
+      <a href="../../../Listeners/Kestrel/" class="md-tabs__link">
+        Listeners
+      </a>
     </li>
   
 
@@ -225,12 +258,15 @@
         
   
   
+
+
+  
+  
+  
     <li class="md-tabs__item">
-      
-        <a href="../../../Tutorials/Basics/" class="md-tabs__link">
-          Tutorials
-        </a>
-      
+      <a href="../../../Tutorials/Basics/" class="md-tabs__link">
+        Tutorials
+      </a>
     </li>
   
 
@@ -244,10 +280,18 @@
         <div class="md-main__inner md-grid">
           
             
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+                    
+
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../../.." title="Pode" class="md-nav__button md-logo" aria-label="Pode">
       
@@ -276,24 +320,15 @@
       
       
 
-
-  <li class="md-nav__item">
-    <a href="../../.." title="Welcome!" class="md-nav__link">
-      Welcome!
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../../../release-notes/" title="Release Notes" class="md-nav__link">
-      Release Notes
-    </a>
-  </li>
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        Welcome!
+      </a>
+    </li>
+  
 
     
       
@@ -301,1929 +336,1914 @@
       
 
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../release-notes/" class="md-nav__link">
+        Release Notes
+      </a>
+    </li>
+  
 
+    
+      
+      
+      
 
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+  
+  
     
-    <label class="md-nav__link" for="nav-3">
-      Functions
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Functions" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+      
+      <label class="md-nav__link" for="nav-3">
         Functions
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Functions" data-md-level="1">
+        <label class="md-nav__title" for="nav-3">
+          <span class="md-nav__icon md-icon"></span>
+          Functions
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1">
-    
-    <label class="md-nav__link" for="nav-3-1">
-      Authentication
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Authentication" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-1">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1" >
+      
+      <label class="md-nav__link" for="nav-3-1">
         Authentication
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Authentication" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-1">
+          <span class="md-nav__icon md-icon"></span>
+          Authentication
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Add-PodeAuth/" class="md-nav__link">
+        Add-PodeAuth
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Add-PodeAuthIIS/" class="md-nav__link">
+        Add-PodeAuthIIS
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Add-PodeAuth/" title="Add-PodeAuth" class="md-nav__link">
-      Add-PodeAuth
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Add-PodeAuthMiddleware/" class="md-nav__link">
+        Add-PodeAuthMiddleware
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Add-PodeAuthUserFile/" class="md-nav__link">
+        Add-PodeAuthUserFile
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Add-PodeAuthWindowsAd/" class="md-nav__link">
+        Add-PodeAuthWindowsAd
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Add-PodeAuthIIS/" title="Add-PodeAuthIIS" class="md-nav__link">
-      Add-PodeAuthIIS
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Add-PodeAuthWindowsLocal/" class="md-nav__link">
+        Add-PodeAuthWindowsLocal
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Clear-PodeAuth/" class="md-nav__link">
+        Clear-PodeAuth
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Get-PodeAuth/" class="md-nav__link">
+        Get-PodeAuth
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Add-PodeAuthMiddleware/" title="Add-PodeAuthMiddleware" class="md-nav__link">
-      Add-PodeAuthMiddleware
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/New-PodeAuthAzureADScheme/" class="md-nav__link">
+        New-PodeAuthAzureADScheme
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/New-PodeAuthScheme/" class="md-nav__link">
+        New-PodeAuthScheme
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Authentication/Remove-PodeAuth/" class="md-nav__link">
+        Remove-PodeAuth
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Add-PodeAuthUserFile/" title="Add-PodeAuthUserFile" class="md-nav__link">
-      Add-PodeAuthUserFile
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Add-PodeAuthWindowsAd/" title="Add-PodeAuthWindowsAd" class="md-nav__link">
-      Add-PodeAuthWindowsAd
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Add-PodeAuthWindowsLocal/" title="Add-PodeAuthWindowsLocal" class="md-nav__link">
-      Add-PodeAuthWindowsLocal
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Clear-PodeAuth/" title="Clear-PodeAuth" class="md-nav__link">
-      Clear-PodeAuth
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Get-PodeAuth/" title="Get-PodeAuth" class="md-nav__link">
-      Get-PodeAuth
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/New-PodeAuthAzureADScheme/" title="New-PodeAuthAzureADScheme" class="md-nav__link">
-      New-PodeAuthAzureADScheme
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/New-PodeAuthScheme/" title="New-PodeAuthScheme" class="md-nav__link">
-      New-PodeAuthScheme
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Authentication/Remove-PodeAuth/" title="Remove-PodeAuth" class="md-nav__link">
-      Remove-PodeAuth
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
-    
-    <label class="md-nav__link" for="nav-3-2">
-      AutoImport
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="AutoImport" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-2">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" >
+      
+      <label class="md-nav__link" for="nav-3-2">
         AutoImport
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="AutoImport" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-2">
+          <span class="md-nav__icon md-icon"></span>
+          AutoImport
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../AutoImport/Export-PodeFunction/" class="md-nav__link">
+        Export-PodeFunction
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../AutoImport/Export-PodeModule/" class="md-nav__link">
+        Export-PodeModule
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../AutoImport/Export-PodeFunction/" title="Export-PodeFunction" class="md-nav__link">
-      Export-PodeFunction
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../AutoImport/Export-PodeSnapin/" class="md-nav__link">
+        Export-PodeSnapin
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../AutoImport/Export-PodeModule/" title="Export-PodeModule" class="md-nav__link">
-      Export-PodeModule
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../AutoImport/Export-PodeSnapin/" title="Export-PodeSnapin" class="md-nav__link">
-      Export-PodeSnapin
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
-    
-    <label class="md-nav__link" for="nav-3-3">
-      Cookies
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Cookies" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-3">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" >
+      
+      <label class="md-nav__link" for="nav-3-3">
         Cookies
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Cookies" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-3">
+          <span class="md-nav__icon md-icon"></span>
+          Cookies
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cookies/Get-PodeCookie/" class="md-nav__link">
+        Get-PodeCookie
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cookies/Get-PodeCookieSecret/" class="md-nav__link">
+        Get-PodeCookieSecret
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Cookies/Get-PodeCookie/" title="Get-PodeCookie" class="md-nav__link">
-      Get-PodeCookie
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cookies/Remove-PodeCookie/" class="md-nav__link">
+        Remove-PodeCookie
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cookies/Set-PodeCookie/" class="md-nav__link">
+        Set-PodeCookie
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cookies/Set-PodeCookieSecret/" class="md-nav__link">
+        Set-PodeCookieSecret
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Cookies/Get-PodeCookieSecret/" title="Get-PodeCookieSecret" class="md-nav__link">
-      Get-PodeCookieSecret
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cookies/Test-PodeCookie/" class="md-nav__link">
+        Test-PodeCookie
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cookies/Test-PodeCookieSigned/" class="md-nav__link">
+        Test-PodeCookieSigned
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cookies/Update-PodeCookieExpiry/" class="md-nav__link">
+        Update-PodeCookieExpiry
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Cookies/Remove-PodeCookie/" title="Remove-PodeCookie" class="md-nav__link">
-      Remove-PodeCookie
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Cookies/Set-PodeCookie/" title="Set-PodeCookie" class="md-nav__link">
-      Set-PodeCookie
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Cookies/Set-PodeCookieSecret/" title="Set-PodeCookieSecret" class="md-nav__link">
-      Set-PodeCookieSecret
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Cookies/Test-PodeCookie/" title="Test-PodeCookie" class="md-nav__link">
-      Test-PodeCookie
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Cookies/Test-PodeCookieSigned/" title="Test-PodeCookieSigned" class="md-nav__link">
-      Test-PodeCookieSigned
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Cookies/Update-PodeCookieExpiry/" title="Update-PodeCookieExpiry" class="md-nav__link">
-      Update-PodeCookieExpiry
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
-    
-    <label class="md-nav__link" for="nav-3-4">
-      Core
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Core" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-4">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4" >
+      
+      <label class="md-nav__link" for="nav-3-4">
         Core
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Add-PodeEndpoint/" title="Add-PodeEndpoint" class="md-nav__link">
-      Add-PodeEndpoint
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Add-PodeMiddleware/" title="Add-PodeMiddleware" class="md-nav__link">
-      Add-PodeMiddleware
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Add-PodeSchedule/" title="Add-PodeSchedule" class="md-nav__link">
-      Add-PodeSchedule
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Add-PodeTimer/" title="Add-PodeTimer" class="md-nav__link">
-      Add-PodeTimer
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Clear-PodeMiddleware/" title="Clear-PodeMiddleware" class="md-nav__link">
-      Clear-PodeMiddleware
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Clear-PodeSchedules/" title="Clear-PodeSchedules" class="md-nav__link">
-      Clear-PodeSchedules
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Clear-PodeTimers/" title="Clear-PodeTimers" class="md-nav__link">
-      Clear-PodeTimers
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Close-PodeServer/" title="Close-PodeServer" class="md-nav__link">
-      Close-PodeServer
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Edit-PodeSchedule/" title="Edit-PodeSchedule" class="md-nav__link">
-      Edit-PodeSchedule
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Edit-PodeTimer/" title="Edit-PodeTimer" class="md-nav__link">
-      Edit-PodeTimer
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Get-PodeEndpoint/" title="Get-PodeEndpoint" class="md-nav__link">
-      Get-PodeEndpoint
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Get-PodeSchedule/" title="Get-PodeSchedule" class="md-nav__link">
-      Get-PodeSchedule
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Get-PodeScheduleNextTrigger/" title="Get-PodeScheduleNextTrigger" class="md-nav__link">
-      Get-PodeScheduleNextTrigger
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Get-PodeTimer/" title="Get-PodeTimer" class="md-nav__link">
-      Get-PodeTimer
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Invoke-PodeSchedule/" title="Invoke-PodeSchedule" class="md-nav__link">
-      Invoke-PodeSchedule
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Invoke-PodeTimer/" title="Invoke-PodeTimer" class="md-nav__link">
-      Invoke-PodeTimer
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/New-PodeMiddleware/" title="New-PodeMiddleware" class="md-nav__link">
-      New-PodeMiddleware
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Pode/" title="Pode" class="md-nav__link">
-      Pode
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Remove-PodeMiddleware/" title="Remove-PodeMiddleware" class="md-nav__link">
-      Remove-PodeMiddleware
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Remove-PodeSchedule/" title="Remove-PodeSchedule" class="md-nav__link">
-      Remove-PodeSchedule
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Remove-PodeTimer/" title="Remove-PodeTimer" class="md-nav__link">
-      Remove-PodeTimer
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Set-PodeScheduleConcurrency/" title="Set-PodeScheduleConcurrency" class="md-nav__link">
-      Set-PodeScheduleConcurrency
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Show-PodeGui/" title="Show-PodeGui" class="md-nav__link">
-      Show-PodeGui
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Start-PodeServer/" title="Start-PodeServer" class="md-nav__link">
-      Start-PodeServer
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Core/Start-PodeStaticServer/" title="Start-PodeStaticServer" class="md-nav__link">
-      Start-PodeStaticServer
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+      <nav class="md-nav" aria-label="Core" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-4">
+          <span class="md-nav__icon md-icon"></span>
+          Core
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Add-PodeEndpoint/" class="md-nav__link">
+        Add-PodeEndpoint
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Add-PodeMiddleware/" class="md-nav__link">
+        Add-PodeMiddleware
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Add-PodeSchedule/" class="md-nav__link">
+        Add-PodeSchedule
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Add-PodeTimer/" class="md-nav__link">
+        Add-PodeTimer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Clear-PodeMiddleware/" class="md-nav__link">
+        Clear-PodeMiddleware
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Clear-PodeSchedules/" class="md-nav__link">
+        Clear-PodeSchedules
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Clear-PodeTimers/" class="md-nav__link">
+        Clear-PodeTimers
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Close-PodeServer/" class="md-nav__link">
+        Close-PodeServer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Edit-PodeSchedule/" class="md-nav__link">
+        Edit-PodeSchedule
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Edit-PodeTimer/" class="md-nav__link">
+        Edit-PodeTimer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Get-PodeEndpoint/" class="md-nav__link">
+        Get-PodeEndpoint
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Get-PodeSchedule/" class="md-nav__link">
+        Get-PodeSchedule
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Get-PodeScheduleNextTrigger/" class="md-nav__link">
+        Get-PodeScheduleNextTrigger
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Get-PodeTimer/" class="md-nav__link">
+        Get-PodeTimer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Invoke-PodeSchedule/" class="md-nav__link">
+        Invoke-PodeSchedule
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Invoke-PodeTimer/" class="md-nav__link">
+        Invoke-PodeTimer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/New-PodeMiddleware/" class="md-nav__link">
+        New-PodeMiddleware
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Pode/" class="md-nav__link">
+        Pode
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Remove-PodeMiddleware/" class="md-nav__link">
+        Remove-PodeMiddleware
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Remove-PodeSchedule/" class="md-nav__link">
+        Remove-PodeSchedule
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Remove-PodeTimer/" class="md-nav__link">
+        Remove-PodeTimer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Set-PodeScheduleConcurrency/" class="md-nav__link">
+        Set-PodeScheduleConcurrency
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Show-PodeGui/" class="md-nav__link">
+        Show-PodeGui
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Start-PodeServer/" class="md-nav__link">
+        Start-PodeServer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Core/Start-PodeStaticServer/" class="md-nav__link">
+        Start-PodeStaticServer
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
-    
-    <label class="md-nav__link" for="nav-3-5">
-      Flash
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Flash" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-5">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5" >
+      
+      <label class="md-nav__link" for="nav-3-5">
         Flash
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Flash" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-5">
+          <span class="md-nav__icon md-icon"></span>
+          Flash
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Flash/Add-PodeFlashMessage/" class="md-nav__link">
+        Add-PodeFlashMessage
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Flash/Clear-PodeFlashMessages/" class="md-nav__link">
+        Clear-PodeFlashMessages
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Flash/Add-PodeFlashMessage/" title="Add-PodeFlashMessage" class="md-nav__link">
-      Add-PodeFlashMessage
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Flash/Get-PodeFlashMessage/" class="md-nav__link">
+        Get-PodeFlashMessage
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Flash/Get-PodeFlashMessageNames/" class="md-nav__link">
+        Get-PodeFlashMessageNames
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Flash/Remove-PodeFlashMessage/" class="md-nav__link">
+        Remove-PodeFlashMessage
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Flash/Clear-PodeFlashMessages/" title="Clear-PodeFlashMessages" class="md-nav__link">
-      Clear-PodeFlashMessages
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Flash/Test-PodeFlashMessage/" class="md-nav__link">
+        Test-PodeFlashMessage
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../Flash/Get-PodeFlashMessage/" title="Get-PodeFlashMessage" class="md-nav__link">
-      Get-PodeFlashMessage
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Flash/Get-PodeFlashMessageNames/" title="Get-PodeFlashMessageNames" class="md-nav__link">
-      Get-PodeFlashMessageNames
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Flash/Remove-PodeFlashMessage/" title="Remove-PodeFlashMessage" class="md-nav__link">
-      Remove-PodeFlashMessage
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Flash/Test-PodeFlashMessage/" title="Test-PodeFlashMessage" class="md-nav__link">
-      Test-PodeFlashMessage
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-6" type="checkbox" id="nav-3-6">
-    
-    <label class="md-nav__link" for="nav-3-6">
-      Handlers
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Handlers" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-6">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-6" type="checkbox" id="nav-3-6" >
+      
+      <label class="md-nav__link" for="nav-3-6">
         Handlers
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Handlers" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-6">
+          <span class="md-nav__icon md-icon"></span>
+          Handlers
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Handlers/Add-PodeHandler/" class="md-nav__link">
+        Add-PodeHandler
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Handlers/Clear-PodeHandlers/" class="md-nav__link">
+        Clear-PodeHandlers
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Handlers/Add-PodeHandler/" title="Add-PodeHandler" class="md-nav__link">
-      Add-PodeHandler
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Handlers/Remove-PodeHandler/" class="md-nav__link">
+        Remove-PodeHandler
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../Handlers/Clear-PodeHandlers/" title="Clear-PodeHandlers" class="md-nav__link">
-      Clear-PodeHandlers
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Handlers/Remove-PodeHandler/" title="Remove-PodeHandler" class="md-nav__link">
-      Remove-PodeHandler
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-7" type="checkbox" id="nav-3-7">
-    
-    <label class="md-nav__link" for="nav-3-7">
-      Headers
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Headers" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-7">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-7" type="checkbox" id="nav-3-7" >
+      
+      <label class="md-nav__link" for="nav-3-7">
         Headers
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Headers" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-7">
+          <span class="md-nav__icon md-icon"></span>
+          Headers
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Headers/Add-PodeHeader/" class="md-nav__link">
+        Add-PodeHeader
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Headers/Get-PodeHeader/" class="md-nav__link">
+        Get-PodeHeader
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Headers/Add-PodeHeader/" title="Add-PodeHeader" class="md-nav__link">
-      Add-PodeHeader
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Headers/Set-PodeHeader/" class="md-nav__link">
+        Set-PodeHeader
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Headers/Test-PodeHeader/" class="md-nav__link">
+        Test-PodeHeader
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Headers/Test-PodeHeaderSigned/" class="md-nav__link">
+        Test-PodeHeaderSigned
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Headers/Get-PodeHeader/" title="Get-PodeHeader" class="md-nav__link">
-      Get-PodeHeader
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Headers/Set-PodeHeader/" title="Set-PodeHeader" class="md-nav__link">
-      Set-PodeHeader
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Headers/Test-PodeHeader/" title="Test-PodeHeader" class="md-nav__link">
-      Test-PodeHeader
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Headers/Test-PodeHeaderSigned/" title="Test-PodeHeaderSigned" class="md-nav__link">
-      Test-PodeHeaderSigned
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-8" type="checkbox" id="nav-3-8">
-    
-    <label class="md-nav__link" for="nav-3-8">
-      Logging
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Logging" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-8">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-8" type="checkbox" id="nav-3-8" >
+      
+      <label class="md-nav__link" for="nav-3-8">
         Logging
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Logging" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-8">
+          <span class="md-nav__icon md-icon"></span>
+          Logging
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Add-PodeLogger/" class="md-nav__link">
+        Add-PodeLogger
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Clear-PodeLoggers/" class="md-nav__link">
+        Clear-PodeLoggers
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Add-PodeLogger/" title="Add-PodeLogger" class="md-nav__link">
-      Add-PodeLogger
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Disable-PodeErrorLogging/" class="md-nav__link">
+        Disable-PodeErrorLogging
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Disable-PodeRequestLogging/" class="md-nav__link">
+        Disable-PodeRequestLogging
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Enable-PodeErrorLogging/" class="md-nav__link">
+        Enable-PodeErrorLogging
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Clear-PodeLoggers/" title="Clear-PodeLoggers" class="md-nav__link">
-      Clear-PodeLoggers
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Enable-PodeRequestLogging/" class="md-nav__link">
+        Enable-PodeRequestLogging
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/New-PodeLoggingMethod/" class="md-nav__link">
+        New-PodeLoggingMethod
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Protect-PodeLogItem/" class="md-nav__link">
+        Protect-PodeLogItem
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Disable-PodeErrorLogging/" title="Disable-PodeErrorLogging" class="md-nav__link">
-      Disable-PodeErrorLogging
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Remove-PodeLogger/" class="md-nav__link">
+        Remove-PodeLogger
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Write-PodeErrorLog/" class="md-nav__link">
+        Write-PodeErrorLog
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Logging/Write-PodeLog/" class="md-nav__link">
+        Write-PodeLog
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Disable-PodeRequestLogging/" title="Disable-PodeRequestLogging" class="md-nav__link">
-      Disable-PodeRequestLogging
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Enable-PodeErrorLogging/" title="Enable-PodeErrorLogging" class="md-nav__link">
-      Enable-PodeErrorLogging
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Enable-PodeRequestLogging/" title="Enable-PodeRequestLogging" class="md-nav__link">
-      Enable-PodeRequestLogging
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Logging/New-PodeLoggingMethod/" title="New-PodeLoggingMethod" class="md-nav__link">
-      New-PodeLoggingMethod
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Protect-PodeLogItem/" title="Protect-PodeLogItem" class="md-nav__link">
-      Protect-PodeLogItem
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Remove-PodeLogger/" title="Remove-PodeLogger" class="md-nav__link">
-      Remove-PodeLogger
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Write-PodeErrorLog/" title="Write-PodeErrorLog" class="md-nav__link">
-      Write-PodeErrorLog
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Logging/Write-PodeLog/" title="Write-PodeLog" class="md-nav__link">
-      Write-PodeLog
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-9" type="checkbox" id="nav-3-9">
-    
-    <label class="md-nav__link" for="nav-3-9">
-      Metrics
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Metrics" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-9">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-9" type="checkbox" id="nav-3-9" >
+      
+      <label class="md-nav__link" for="nav-3-9">
         Metrics
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Metrics" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-9">
+          <span class="md-nav__icon md-icon"></span>
+          Metrics
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Metrics/Get-PodeServerRequestMetric/" class="md-nav__link">
+        Get-PodeServerRequestMetric
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Metrics/Get-PodeServerRestartCount/" class="md-nav__link">
+        Get-PodeServerRestartCount
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Metrics/Get-PodeServerRequestMetric/" title="Get-PodeServerRequestMetric" class="md-nav__link">
-      Get-PodeServerRequestMetric
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Metrics/Get-PodeServerUptime/" class="md-nav__link">
+        Get-PodeServerUptime
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../Metrics/Get-PodeServerRestartCount/" title="Get-PodeServerRestartCount" class="md-nav__link">
-      Get-PodeServerRestartCount
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Metrics/Get-PodeServerUptime/" title="Get-PodeServerUptime" class="md-nav__link">
-      Get-PodeServerUptime
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-10" type="checkbox" id="nav-3-10">
-    
-    <label class="md-nav__link" for="nav-3-10">
-      Middleware
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Middleware" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-10">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-10" type="checkbox" id="nav-3-10" >
+      
+      <label class="md-nav__link" for="nav-3-10">
         Middleware
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Middleware" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-10">
+          <span class="md-nav__icon md-icon"></span>
+          Middleware
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Add-PodeAccessRule/" class="md-nav__link">
+        Add-PodeAccessRule
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Add-PodeBodyParser/" class="md-nav__link">
+        Add-PodeBodyParser
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Add-PodeAccessRule/" title="Add-PodeAccessRule" class="md-nav__link">
-      Add-PodeAccessRule
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Add-PodeLimitRule/" class="md-nav__link">
+        Add-PodeLimitRule
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Enable-PodeCsrfMiddleware/" class="md-nav__link">
+        Enable-PodeCsrfMiddleware
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Enable-PodeSessionMiddleware/" class="md-nav__link">
+        Enable-PodeSessionMiddleware
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Add-PodeBodyParser/" title="Add-PodeBodyParser" class="md-nav__link">
-      Add-PodeBodyParser
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Get-PodeCsrfMiddleware/" class="md-nav__link">
+        Get-PodeCsrfMiddleware
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Get-PodeSessionId/" class="md-nav__link">
+        Get-PodeSessionId
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Initialize-PodeCsrf/" class="md-nav__link">
+        Initialize-PodeCsrf
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Add-PodeLimitRule/" title="Add-PodeLimitRule" class="md-nav__link">
-      Add-PodeLimitRule
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/New-PodeCsrfToken/" class="md-nav__link">
+        New-PodeCsrfToken
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Remove-PodeBodyParser/" class="md-nav__link">
+        Remove-PodeBodyParser
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Remove-PodeSession/" class="md-nav__link">
+        Remove-PodeSession
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Enable-PodeCsrfMiddleware/" title="Enable-PodeCsrfMiddleware" class="md-nav__link">
-      Enable-PodeCsrfMiddleware
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Middleware/Save-PodeSession/" class="md-nav__link">
+        Save-PodeSession
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Enable-PodeSessionMiddleware/" title="Enable-PodeSessionMiddleware" class="md-nav__link">
-      Enable-PodeSessionMiddleware
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Get-PodeCsrfMiddleware/" title="Get-PodeCsrfMiddleware" class="md-nav__link">
-      Get-PodeCsrfMiddleware
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Get-PodeSessionId/" title="Get-PodeSessionId" class="md-nav__link">
-      Get-PodeSessionId
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Initialize-PodeCsrf/" title="Initialize-PodeCsrf" class="md-nav__link">
-      Initialize-PodeCsrf
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/New-PodeCsrfToken/" title="New-PodeCsrfToken" class="md-nav__link">
-      New-PodeCsrfToken
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Remove-PodeBodyParser/" title="Remove-PodeBodyParser" class="md-nav__link">
-      Remove-PodeBodyParser
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Remove-PodeSession/" title="Remove-PodeSession" class="md-nav__link">
-      Remove-PodeSession
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Middleware/Save-PodeSession/" title="Save-PodeSession" class="md-nav__link">
-      Save-PodeSession
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-11" type="checkbox" id="nav-3-11">
-    
-    <label class="md-nav__link" for="nav-3-11">
-      OpenApi
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="OpenApi" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-11">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-11" type="checkbox" id="nav-3-11" >
+      
+      <label class="md-nav__link" for="nav-3-11">
         OpenApi
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="OpenApi" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-11">
+          <span class="md-nav__icon md-icon"></span>
+          OpenApi
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Add-PodeOAComponentParameter/" class="md-nav__link">
+        Add-PodeOAComponentParameter
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Add-PodeOAComponentRequestBody/" class="md-nav__link">
+        Add-PodeOAComponentRequestBody
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Add-PodeOAComponentParameter/" title="Add-PodeOAComponentParameter" class="md-nav__link">
-      Add-PodeOAComponentParameter
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Add-PodeOAComponentResponse/" class="md-nav__link">
+        Add-PodeOAComponentResponse
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Add-PodeOAComponentSchema/" class="md-nav__link">
+        Add-PodeOAComponentSchema
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Add-PodeOAResponse/" class="md-nav__link">
+        Add-PodeOAResponse
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Add-PodeOAComponentRequestBody/" title="Add-PodeOAComponentRequestBody" class="md-nav__link">
-      Add-PodeOAComponentRequestBody
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/ConvertTo-PodeOAParameter/" class="md-nav__link">
+        ConvertTo-PodeOAParameter
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Enable-PodeOpenApi/" class="md-nav__link">
+        Enable-PodeOpenApi
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Enable-PodeOpenApiViewer/" class="md-nav__link">
+        Enable-PodeOpenApiViewer
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Add-PodeOAComponentResponse/" title="Add-PodeOAComponentResponse" class="md-nav__link">
-      Add-PodeOAComponentResponse
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Get-PodeOpenApiDefinition/" class="md-nav__link">
+        Get-PodeOpenApiDefinition
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/New-PodeOABoolProperty/" class="md-nav__link">
+        New-PodeOABoolProperty
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/New-PodeOAIntProperty/" class="md-nav__link">
+        New-PodeOAIntProperty
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Add-PodeOAComponentSchema/" title="Add-PodeOAComponentSchema" class="md-nav__link">
-      Add-PodeOAComponentSchema
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/New-PodeOANumberProperty/" class="md-nav__link">
+        New-PodeOANumberProperty
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/New-PodeOAObjectProperty/" class="md-nav__link">
+        New-PodeOAObjectProperty
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/New-PodeOARequestBody/" class="md-nav__link">
+        New-PodeOARequestBody
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Add-PodeOAResponse/" title="Add-PodeOAResponse" class="md-nav__link">
-      Add-PodeOAResponse
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/New-PodeOAStringProperty/" class="md-nav__link">
+        New-PodeOAStringProperty
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Remove-PodeOAResponse/" class="md-nav__link">
+        Remove-PodeOAResponse
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Set-PodeOARequest/" class="md-nav__link">
+        Set-PodeOARequest
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/ConvertTo-PodeOAParameter/" title="ConvertTo-PodeOAParameter" class="md-nav__link">
-      ConvertTo-PodeOAParameter
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/Set-PodeOARouteInfo/" class="md-nav__link">
+        Set-PodeOARouteInfo
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Enable-PodeOpenApi/" title="Enable-PodeOpenApi" class="md-nav__link">
-      Enable-PodeOpenApi
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Enable-PodeOpenApiViewer/" title="Enable-PodeOpenApiViewer" class="md-nav__link">
-      Enable-PodeOpenApiViewer
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Get-PodeOpenApiDefinition/" title="Get-PodeOpenApiDefinition" class="md-nav__link">
-      Get-PodeOpenApiDefinition
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/New-PodeOABoolProperty/" title="New-PodeOABoolProperty" class="md-nav__link">
-      New-PodeOABoolProperty
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/New-PodeOAIntProperty/" title="New-PodeOAIntProperty" class="md-nav__link">
-      New-PodeOAIntProperty
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/New-PodeOANumberProperty/" title="New-PodeOANumberProperty" class="md-nav__link">
-      New-PodeOANumberProperty
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/New-PodeOAObjectProperty/" title="New-PodeOAObjectProperty" class="md-nav__link">
-      New-PodeOAObjectProperty
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/New-PodeOARequestBody/" title="New-PodeOARequestBody" class="md-nav__link">
-      New-PodeOARequestBody
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/New-PodeOAStringProperty/" title="New-PodeOAStringProperty" class="md-nav__link">
-      New-PodeOAStringProperty
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Remove-PodeOAResponse/" title="Remove-PodeOAResponse" class="md-nav__link">
-      Remove-PodeOAResponse
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Set-PodeOARequest/" title="Set-PodeOARequest" class="md-nav__link">
-      Set-PodeOARequest
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../OpenApi/Set-PodeOARouteInfo/" title="Set-PodeOARouteInfo" class="md-nav__link">
-      Set-PodeOARouteInfo
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
-    
-    <label class="md-nav__link" for="nav-3-12">
-      Responses
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Responses" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-12">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12" >
+      
+      <label class="md-nav__link" for="nav-3-12">
         Responses
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Responses" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-12">
+          <span class="md-nav__icon md-icon"></span>
+          Responses
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Add-PodeViewFolder/" title="Add-PodeViewFolder" class="md-nav__link">
-      Add-PodeViewFolder
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Move-PodeResponseUrl/" title="Move-PodeResponseUrl" class="md-nav__link">
-      Move-PodeResponseUrl
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Read-PodeTcpClient/" title="Read-PodeTcpClient" class="md-nav__link">
-      Read-PodeTcpClient
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Save-PodeRequestFile/" title="Save-PodeRequestFile" class="md-nav__link">
-      Save-PodeRequestFile
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Send-PodeSignal/" title="Send-PodeSignal" class="md-nav__link">
-      Send-PodeSignal
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Set-PodeResponseAttachment/" title="Set-PodeResponseAttachment" class="md-nav__link">
-      Set-PodeResponseAttachment
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Set-PodeResponseStatus/" title="Set-PodeResponseStatus" class="md-nav__link">
-      Set-PodeResponseStatus
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Set-PodeViewEngine/" title="Set-PodeViewEngine" class="md-nav__link">
-      Set-PodeViewEngine
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Use-PodePartialView/" title="Use-PodePartialView" class="md-nav__link">
-      Use-PodePartialView
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeCsvResponse/" title="Write-PodeCsvResponse" class="md-nav__link">
-      Write-PodeCsvResponse
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeFileResponse/" title="Write-PodeFileResponse" class="md-nav__link">
-      Write-PodeFileResponse
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeHtmlResponse/" title="Write-PodeHtmlResponse" class="md-nav__link">
-      Write-PodeHtmlResponse
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeJsonResponse/" title="Write-PodeJsonResponse" class="md-nav__link">
-      Write-PodeJsonResponse
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeMarkdownResponse/" title="Write-PodeMarkdownResponse" class="md-nav__link">
-      Write-PodeMarkdownResponse
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeTcpClient/" title="Write-PodeTcpClient" class="md-nav__link">
-      Write-PodeTcpClient
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeTextResponse/" title="Write-PodeTextResponse" class="md-nav__link">
-      Write-PodeTextResponse
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeViewResponse/" title="Write-PodeViewResponse" class="md-nav__link">
-      Write-PodeViewResponse
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Responses/Write-PodeXmlResponse/" title="Write-PodeXmlResponse" class="md-nav__link">
-      Write-PodeXmlResponse
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Add-PodeViewFolder/" class="md-nav__link">
+        Add-PodeViewFolder
+      </a>
+    </li>
   
 
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Move-PodeResponseUrl/" class="md-nav__link">
+        Move-PodeResponseUrl
+      </a>
+    </li>
+  
 
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Read-PodeTcpClient/" class="md-nav__link">
+        Read-PodeTcpClient
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Save-PodeRequestFile/" class="md-nav__link">
+        Save-PodeRequestFile
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Send-PodeSignal/" class="md-nav__link">
+        Send-PodeSignal
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Set-PodeResponseAttachment/" class="md-nav__link">
+        Set-PodeResponseAttachment
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Set-PodeResponseStatus/" class="md-nav__link">
+        Set-PodeResponseStatus
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Set-PodeViewEngine/" class="md-nav__link">
+        Set-PodeViewEngine
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Use-PodePartialView/" class="md-nav__link">
+        Use-PodePartialView
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeCsvResponse/" class="md-nav__link">
+        Write-PodeCsvResponse
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeFileResponse/" class="md-nav__link">
+        Write-PodeFileResponse
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeHtmlResponse/" class="md-nav__link">
+        Write-PodeHtmlResponse
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeJsonResponse/" class="md-nav__link">
+        Write-PodeJsonResponse
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeMarkdownResponse/" class="md-nav__link">
+        Write-PodeMarkdownResponse
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeTcpClient/" class="md-nav__link">
+        Write-PodeTcpClient
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeTextResponse/" class="md-nav__link">
+        Write-PodeTextResponse
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeViewResponse/" class="md-nav__link">
+        Write-PodeViewResponse
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Responses/Write-PodeXmlResponse/" class="md-nav__link">
+        Write-PodeXmlResponse
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-13" type="checkbox" id="nav-3-13" checked>
+  
+  
     
-    <label class="md-nav__link" for="nav-3-13">
-      Routes
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Routes" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-13">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-13" type="checkbox" id="nav-3-13" checked>
+      
+      <label class="md-nav__link" for="nav-3-13">
         Routes
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Routes" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-13">
+          <span class="md-nav__icon md-icon"></span>
+          Routes
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Add-PodePage/" title="Add-PodePage" class="md-nav__link">
-      Add-PodePage
-    </a>
-  </li>
-
-        
-          
-          
-          
-
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Add-PodePage/" class="md-nav__link">
+        Add-PodePage
+      </a>
+    </li>
   
 
-
-  <li class="md-nav__item md-nav__item--active">
+          
+            
+  
+  
     
-    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
       
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Add-PodeRoute
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Add-PodeRoute
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9h14V7H3v2m0 4h14v-2H3v2m0 4h14v-2H3v2m16 0h2v-2h-2v2m0-10v2h2V7h-2m0 6h2v-2h-2v2z"/></svg>
-        </span>
-      </label>
-    
-    <a href="./" title="Add-PodeRoute" class="md-nav__link md-nav__link--active">
-      Add-PodeRoute
-    </a>
-    
+      </a>
       
+        
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2231,9 +2251,7 @@
   
   
     <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-      </span>
+      <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-scrollfix>
@@ -2483,2160 +2501,2149 @@
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Add-PodeStaticRoute/" class="md-nav__link">
+        Add-PodeStaticRoute
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clear-PodeRoutes/" class="md-nav__link">
+        Clear-PodeRoutes
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clear-PodeStaticRoutes/" class="md-nav__link">
+        Clear-PodeStaticRoutes
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConvertTo-PodeRoute/" class="md-nav__link">
+        ConvertTo-PodeRoute
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Get-PodeRoute/" class="md-nav__link">
+        Get-PodeRoute
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Get-PodeStaticRoute/" class="md-nav__link">
+        Get-PodeStaticRoute
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Remove-PodeRoute/" class="md-nav__link">
+        Remove-PodeRoute
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Remove-PodeStaticRoute/" class="md-nav__link">
+        Remove-PodeStaticRoute
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
     
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Add-PodeStaticRoute/" title="Add-PodeStaticRoute" class="md-nav__link">
-      Add-PodeStaticRoute
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Clear-PodeRoutes/" title="Clear-PodeRoutes" class="md-nav__link">
-      Clear-PodeRoutes
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Clear-PodeStaticRoutes/" title="Clear-PodeStaticRoutes" class="md-nav__link">
-      Clear-PodeStaticRoutes
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../ConvertTo-PodeRoute/" title="ConvertTo-PodeRoute" class="md-nav__link">
-      ConvertTo-PodeRoute
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Get-PodeRoute/" title="Get-PodeRoute" class="md-nav__link">
-      Get-PodeRoute
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Get-PodeStaticRoute/" title="Get-PodeStaticRoute" class="md-nav__link">
-      Get-PodeStaticRoute
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Remove-PodeRoute/" title="Remove-PodeRoute" class="md-nav__link">
-      Remove-PodeRoute
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../Remove-PodeStaticRoute/" title="Remove-PodeStaticRoute" class="md-nav__link">
-      Remove-PodeStaticRoute
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-14" type="checkbox" id="nav-3-14">
-    
-    <label class="md-nav__link" for="nav-3-14">
-      State
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="State" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-14">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-14" type="checkbox" id="nav-3-14" >
+      
+      <label class="md-nav__link" for="nav-3-14">
         State
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="State" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-14">
+          <span class="md-nav__icon md-icon"></span>
+          State
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../State/Get-PodeState/" class="md-nav__link">
+        Get-PodeState
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../State/Remove-PodeState/" class="md-nav__link">
+        Remove-PodeState
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../State/Get-PodeState/" title="Get-PodeState" class="md-nav__link">
-      Get-PodeState
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../State/Restore-PodeState/" class="md-nav__link">
+        Restore-PodeState
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../State/Save-PodeState/" class="md-nav__link">
+        Save-PodeState
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../State/Set-PodeState/" class="md-nav__link">
+        Set-PodeState
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../State/Remove-PodeState/" title="Remove-PodeState" class="md-nav__link">
-      Remove-PodeState
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../State/Test-PodeState/" class="md-nav__link">
+        Test-PodeState
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../State/Restore-PodeState/" title="Restore-PodeState" class="md-nav__link">
-      Restore-PodeState
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../State/Save-PodeState/" title="Save-PodeState" class="md-nav__link">
-      Save-PodeState
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../State/Set-PodeState/" title="Set-PodeState" class="md-nav__link">
-      Set-PodeState
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../State/Test-PodeState/" title="Test-PodeState" class="md-nav__link">
-      Test-PodeState
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-15" type="checkbox" id="nav-3-15">
-    
-    <label class="md-nav__link" for="nav-3-15">
-      Utilities
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Utilities" data-md-level="2">
-      <label class="md-nav__title" for="nav-3-15">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-15" type="checkbox" id="nav-3-15" >
+      
+      <label class="md-nav__link" for="nav-3-15">
         Utilities
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Add-PodeEndware/" title="Add-PodeEndware" class="md-nav__link">
-      Add-PodeEndware
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Close-PodeDisposable/" title="Close-PodeDisposable" class="md-nav__link">
-      Close-PodeDisposable
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Get-PodeConfig/" title="Get-PodeConfig" class="md-nav__link">
-      Get-PodeConfig
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Get-PodeServerPath/" title="Get-PodeServerPath" class="md-nav__link">
-      Get-PodeServerPath
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Import-PodeModule/" title="Import-PodeModule" class="md-nav__link">
-      Import-PodeModule
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Import-PodeSnapin/" title="Import-PodeSnapin" class="md-nav__link">
-      Import-PodeSnapin
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Invoke-PodeScriptBlock/" title="Invoke-PodeScriptBlock" class="md-nav__link">
-      Invoke-PodeScriptBlock
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Lock-PodeObject/" title="Lock-PodeObject" class="md-nav__link">
-      Lock-PodeObject
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Out-PodeHost/" title="Out-PodeHost" class="md-nav__link">
-      Out-PodeHost
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Protect-PodeValue/" title="Protect-PodeValue" class="md-nav__link">
-      Protect-PodeValue
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Resolve-PodeValue/" title="Resolve-PodeValue" class="md-nav__link">
-      Resolve-PodeValue
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Start-PodeStopwatch/" title="Start-PodeStopwatch" class="md-nav__link">
-      Start-PodeStopwatch
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Test-PodeIsEmpty/" title="Test-PodeIsEmpty" class="md-nav__link">
-      Test-PodeIsEmpty
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Test-PodeIsHeroku/" title="Test-PodeIsHeroku" class="md-nav__link">
-      Test-PodeIsHeroku
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Test-PodeIsIIS/" title="Test-PodeIsIIS" class="md-nav__link">
-      Test-PodeIsIIS
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Test-PodeIsPSCore/" title="Test-PodeIsPSCore" class="md-nav__link">
-      Test-PodeIsPSCore
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Test-PodeIsUnix/" title="Test-PodeIsUnix" class="md-nav__link">
-      Test-PodeIsUnix
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Test-PodeIsWindows/" title="Test-PodeIsWindows" class="md-nav__link">
-      Test-PodeIsWindows
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Use-PodeScript/" title="Use-PodeScript" class="md-nav__link">
-      Use-PodeScript
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Use-PodeStream/" title="Use-PodeStream" class="md-nav__link">
-      Use-PodeStream
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Wait-PodeTask/" title="Wait-PodeTask" class="md-nav__link">
-      Wait-PodeTask
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../Utilities/Write-PodeHost/" title="Write-PodeHost" class="md-nav__link">
-      Write-PodeHost
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
+      <nav class="md-nav" aria-label="Utilities" data-md-level="2">
+        <label class="md-nav__title" for="nav-3-15">
+          <span class="md-nav__icon md-icon"></span>
+          Utilities
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Add-PodeEndware/" class="md-nav__link">
+        Add-PodeEndware
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Close-PodeDisposable/" class="md-nav__link">
+        Close-PodeDisposable
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Get-PodeConfig/" class="md-nav__link">
+        Get-PodeConfig
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Get-PodeServerPath/" class="md-nav__link">
+        Get-PodeServerPath
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Import-PodeModule/" class="md-nav__link">
+        Import-PodeModule
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Import-PodeSnapin/" class="md-nav__link">
+        Import-PodeSnapin
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Invoke-PodeScriptBlock/" class="md-nav__link">
+        Invoke-PodeScriptBlock
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Lock-PodeObject/" class="md-nav__link">
+        Lock-PodeObject
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Out-PodeHost/" class="md-nav__link">
+        Out-PodeHost
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Protect-PodeValue/" class="md-nav__link">
+        Protect-PodeValue
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Resolve-PodeValue/" class="md-nav__link">
+        Resolve-PodeValue
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Start-PodeStopwatch/" class="md-nav__link">
+        Start-PodeStopwatch
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsEmpty/" class="md-nav__link">
+        Test-PodeIsEmpty
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsHeroku/" class="md-nav__link">
+        Test-PodeIsHeroku
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsIIS/" class="md-nav__link">
+        Test-PodeIsIIS
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsPSCore/" class="md-nav__link">
+        Test-PodeIsPSCore
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsUnix/" class="md-nav__link">
+        Test-PodeIsUnix
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsWindows/" class="md-nav__link">
+        Test-PodeIsWindows
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Use-PodeScript/" class="md-nav__link">
+        Use-PodeScript
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Use-PodeStream/" class="md-nav__link">
+        Use-PodeStream
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Wait-PodeTask/" class="md-nav__link">
+        Wait-PodeTask
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Utilities/Write-PodeHost/" class="md-nav__link">
+        Write-PodeHost
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
 
     
       
       
       
 
-
-  <li class="md-nav__item md-nav__item--nested">
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
-    
-    <label class="md-nav__link" for="nav-4">
-      Getting Started
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Getting Started" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" >
+      
+      <label class="md-nav__link" for="nav-4">
         Getting Started
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Getting Started" data-md-level="1">
+        <label class="md-nav__title" for="nav-4">
+          <span class="md-nav__icon md-icon"></span>
+          Getting Started
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Getting-Started/CLI/" class="md-nav__link">
+        CLI
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Getting-Started/CLI/" title="CLI" class="md-nav__link">
-      CLI
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Getting-Started/FirstApp/" class="md-nav__link">
+        Building your first Pode app
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Getting-Started/FirstApp/" title="Building your first Pode app" class="md-nav__link">
-      Building your first Pode app
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Getting-Started/Frontend/" class="md-nav__link">
+        Frontend
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Getting-Started/Frontend/" title="Frontend" class="md-nav__link">
-      Frontend
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Getting-Started/Installation/" class="md-nav__link">
+        Installation
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Getting-Started/Installation/" title="Installation" class="md-nav__link">
-      Installation
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Getting-Started/KnownIssues/" class="md-nav__link">
+        Known Issues
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Getting-Started/KnownIssues/" title="Known Issues" class="md-nav__link">
-      Known Issues
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Getting-Started/LocalModules/" class="md-nav__link">
+        Local Modules
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Getting-Started/LocalModules/" title="Local Modules" class="md-nav__link">
-      Local Modules
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-7" type="checkbox" id="nav-4-7">
-    
-    <label class="md-nav__link" for="nav-4-7">
-      Migrating
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Migrating" data-md-level="2">
-      <label class="md-nav__title" for="nav-4-7">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4-7" type="checkbox" id="nav-4-7" >
+      
+      <label class="md-nav__link" for="nav-4-7">
         Migrating
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Migrating" data-md-level="2">
+        <label class="md-nav__title" for="nav-4-7">
+          <span class="md-nav__icon md-icon"></span>
+          Migrating
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Getting-Started/Migrating/0X-to-1X/" class="md-nav__link">
+        From v0.X to v1.X
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Getting-Started/Migrating/1X-to-2X/" class="md-nav__link">
+        From v1.X to v2.X
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Getting-Started/Migrating/0X-to-1X/" title="From v0.X to v1.X" class="md-nav__link">
-      From v0.X to v1.X
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Getting-Started/Migrating/1X-to-2X/" title="From v1.X to v2.X" class="md-nav__link">
-      From v1.X to v2.X
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
+        </ul>
+      </nav>
+    </li>
+  
 
     
       
       
       
 
-
-  <li class="md-nav__item md-nav__item--nested">
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
-    
-    <label class="md-nav__link" for="nav-5">
-      Hosting
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Hosting" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" >
+      
+      <label class="md-nav__link" for="nav-5">
         Hosting
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Hosting" data-md-level="1">
+        <label class="md-nav__title" for="nav-5">
+          <span class="md-nav__icon md-icon"></span>
+          Hosting
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Hosting/AwsLambda/" class="md-nav__link">
+        AWS Lambda
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Hosting/AzureFunctions/" class="md-nav__link">
+        Azure Functions
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Hosting/AwsLambda/" title="AWS Lambda" class="md-nav__link">
-      AWS Lambda
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Hosting/Docker/" class="md-nav__link">
+        Docker
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Hosting/Heroku/" class="md-nav__link">
+        Heroku
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Hosting/IIS/" class="md-nav__link">
+        IIS
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Hosting/AzureFunctions/" title="Azure Functions" class="md-nav__link">
-      Azure Functions
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Hosting/RunAsService/" class="md-nav__link">
+        Service
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Hosting/SmtpServer/" class="md-nav__link">
+        SMTP Server
+      </a>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../../Hosting/Docker/" title="Docker" class="md-nav__link">
-      Docker
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Hosting/Heroku/" title="Heroku" class="md-nav__link">
-      Heroku
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Hosting/IIS/" title="IIS" class="md-nav__link">
-      IIS
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Hosting/RunAsService/" title="Service" class="md-nav__link">
-      Service
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Hosting/SmtpServer/" title="SMTP Server" class="md-nav__link">
-      SMTP Server
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
+        </ul>
+      </nav>
+    </li>
+  
 
     
       
       
       
 
-
-  <li class="md-nav__item md-nav__item--nested">
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6">
-    
-    <label class="md-nav__link" for="nav-6">
-      Listeners
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Listeners" data-md-level="1">
-      <label class="md-nav__title" for="nav-6">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6" >
+      
+      <label class="md-nav__link" for="nav-6">
         Listeners
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Listeners" data-md-level="1">
+        <label class="md-nav__title" for="nav-6">
+          <span class="md-nav__icon md-icon"></span>
+          Listeners
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Listeners/Kestrel/" class="md-nav__link">
+        Kestrel
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Listeners/Pode/" class="md-nav__link">
+        Pode
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Listeners/Kestrel/" title="Kestrel" class="md-nav__link">
-      Kestrel
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Listeners/Pode/" title="Pode" class="md-nav__link">
-      Pode
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
+        </ul>
+      </nav>
+    </li>
+  
 
     
       
       
       
 
-
-  <li class="md-nav__item md-nav__item--nested">
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7" type="checkbox" id="nav-7">
-    
-    <label class="md-nav__link" for="nav-7">
-      Tutorials
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
-      <label class="md-nav__title" for="nav-7">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7" type="checkbox" id="nav-7" >
+      
+      <label class="md-nav__link" for="nav-7">
         Tutorials
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+        <label class="md-nav__title" for="nav-7">
+          <span class="md-nav__icon md-icon"></span>
+          Tutorials
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Basics/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Basics/" title="Basics" class="md-nav__link">
-      Basics
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Certificates/" class="md-nav__link">
+        Certificates
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Certificates/" title="Certificates" class="md-nav__link">
-      Certificates
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Configuration/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Configuration/" title="Configuration" class="md-nav__link">
-      Configuration
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Cookies/" class="md-nav__link">
+        Cookies
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/ImportingModules/" title="Importing Modules/Snapins" class="md-nav__link">
-      Importing Modules/Snapins
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Headers/" class="md-nav__link">
+        Headers
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/OpenAPI/" title="OpenAPI" class="md-nav__link">
-      OpenAPI
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/ImportingModules/" class="md-nav__link">
+        Importing Modules/Snapins
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Schedules/" title="Schedules" class="md-nav__link">
-      Schedules
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/OpenAPI/" class="md-nav__link">
+        OpenAPI
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Scoping/" title="Scoping" class="md-nav__link">
-      Scoping
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Schedules/" class="md-nav__link">
+        Schedules
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/SharedState/" title="Shared State" class="md-nav__link">
-      Shared State
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Scoping/" class="md-nav__link">
+        Scoping
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Threading/" title="Threading" class="md-nav__link">
-      Threading
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/SharedState/" class="md-nav__link">
+        Shared State
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Timers/" title="Timers" class="md-nav__link">
-      Timers
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Threading/" class="md-nav__link">
+        Threading
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/WebEvent/" title="Web Event" class="md-nav__link">
-      Web Event
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Timers/" class="md-nav__link">
+        Timers
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/WebSockets/" title="Web Sockets" class="md-nav__link">
-      Web Sockets
-    </a>
-  </li>
-
-        
           
-          
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/WebEvent/" class="md-nav__link">
+        Web Event
+      </a>
+    </li>
+  
 
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/WebSockets/" class="md-nav__link">
+        Web Sockets
+      </a>
+    </li>
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+          
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-13" type="checkbox" id="nav-7-13">
-    
-    <label class="md-nav__link" for="nav-7-13">
-      Authentication
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Authentication" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-13">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-15" type="checkbox" id="nav-7-15" >
+      
+      <label class="md-nav__link" for="nav-7-15">
         Authentication
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Authentication" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-15">
+          <span class="md-nav__icon md-icon"></span>
+          Authentication
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Overview/" title="Overview" class="md-nav__link">
-      Overview
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-13-2" type="checkbox" id="nav-7-13-2">
-    
-    <label class="md-nav__link" for="nav-7-13-2">
-      Inbuilt
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Inbuilt" data-md-level="3">
-      <label class="md-nav__title" for="nav-7-13-2">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-15-2" type="checkbox" id="nav-7-15-2" >
+      
+      <label class="md-nav__link" for="nav-7-15-2">
         Inbuilt
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Inbuilt" data-md-level="3">
+        <label class="md-nav__title" for="nav-7-15-2">
+          <span class="md-nav__icon md-icon"></span>
+          Inbuilt
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Inbuilt/UserFile/" class="md-nav__link">
+        User File
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Inbuilt/WindowsAD/" class="md-nav__link">
+        Windows AD
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Inbuilt/UserFile/" title="User File" class="md-nav__link">
-      User File
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Inbuilt/WindowsLocal/" class="md-nav__link">
+        Windows Local Users
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Inbuilt/WindowsAD/" title="Windows AD" class="md-nav__link">
-      Windows AD
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Inbuilt/WindowsLocal/" title="Windows Local Users" class="md-nav__link">
-      Windows Local Users
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-13-3" type="checkbox" id="nav-7-13-3">
-    
-    <label class="md-nav__link" for="nav-7-13-3">
-      Methods
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Methods" data-md-level="3">
-      <label class="md-nav__title" for="nav-7-13-3">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-15-3" type="checkbox" id="nav-7-15-3" >
+      
+      <label class="md-nav__link" for="nav-7-15-3">
         Methods
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Methods" data-md-level="3">
+        <label class="md-nav__title" for="nav-7-15-3">
+          <span class="md-nav__icon md-icon"></span>
+          Methods
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Methods/AzureAD/" class="md-nav__link">
+        Azure AD
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Methods/Basic/" class="md-nav__link">
+        Basic
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Methods/AzureAD/" title="Azure AD" class="md-nav__link">
-      Azure AD
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Methods/Bearer/" class="md-nav__link">
+        Bearer
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Methods/ClientCertificate/" class="md-nav__link">
+        Client Certificate
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Methods/Custom/" class="md-nav__link">
+        Custom
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Methods/Basic/" title="Basic" class="md-nav__link">
-      Basic
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Methods/Digest/" class="md-nav__link">
+        Digest
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Methods/Form/" class="md-nav__link">
+        Form
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Authentication/Methods/OAuth2/" class="md-nav__link">
+        OAuth2
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Methods/Bearer/" title="Bearer" class="md-nav__link">
-      Bearer
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Methods/ClientCertificate/" title="Client Certificate" class="md-nav__link">
-      Client Certificate
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Methods/Custom/" title="Custom" class="md-nav__link">
-      Custom
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Methods/Digest/" title="Digest" class="md-nav__link">
-      Digest
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Methods/Form/" title="Form" class="md-nav__link">
-      Form
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Authentication/Methods/OAuth2/" title="OAuth2" class="md-nav__link">
-      OAuth2
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-14" type="checkbox" id="nav-7-14">
-    
-    <label class="md-nav__link" for="nav-7-14">
-      Compression
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Compression" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-14">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-16" type="checkbox" id="nav-7-16" >
+      
+      <label class="md-nav__link" for="nav-7-16">
         Compression
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Compression" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-16">
+          <span class="md-nav__icon md-icon"></span>
+          Compression
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Compression/Requests/" class="md-nav__link">
+        Requests
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Compression/Responses/" class="md-nav__link">
+        Responses
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Compression/Requests/" title="Requests" class="md-nav__link">
-      Requests
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Compression/Responses/" title="Responses" class="md-nav__link">
-      Responses
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-15" type="checkbox" id="nav-7-15">
-    
-    <label class="md-nav__link" for="nav-7-15">
-      Endpoints
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Endpoints" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-15">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-17" type="checkbox" id="nav-7-17" >
+      
+      <label class="md-nav__link" for="nav-7-17">
         Endpoints
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Endpoints" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-17">
+          <span class="md-nav__icon md-icon"></span>
+          Endpoints
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Endpoints/Basics/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Endpoints/External/" class="md-nav__link">
+        External
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Endpoints/Basics/" title="Basics" class="md-nav__link">
-      Basics
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Endpoints/External/" title="External" class="md-nav__link">
-      External
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-16" type="checkbox" id="nav-7-16">
-    
-    <label class="md-nav__link" for="nav-7-16">
-      Logging
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Logging" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-16">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-18" type="checkbox" id="nav-7-18" >
+      
+      <label class="md-nav__link" for="nav-7-18">
         Logging
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Logging" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-18">
+          <span class="md-nav__icon md-icon"></span>
+          Logging
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Logging/Overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Logging/Overview/" title="Overview" class="md-nav__link">
-      Overview
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-16-2" type="checkbox" id="nav-7-16-2">
-    
-    <label class="md-nav__link" for="nav-7-16-2">
-      Methods
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Methods" data-md-level="3">
-      <label class="md-nav__title" for="nav-7-16-2">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-18-2" type="checkbox" id="nav-7-18-2" >
+      
+      <label class="md-nav__link" for="nav-7-18-2">
         Methods
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Methods" data-md-level="3">
+        <label class="md-nav__title" for="nav-7-18-2">
+          <span class="md-nav__icon md-icon"></span>
+          Methods
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Logging/Methods/Custom/" class="md-nav__link">
+        Custom
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Logging/Methods/File/" class="md-nav__link">
+        File
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Logging/Methods/Custom/" title="Custom" class="md-nav__link">
-      Custom
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Logging/Methods/Terminal/" class="md-nav__link">
+        Terminal
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Logging/Methods/File/" title="File" class="md-nav__link">
-      File
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Logging/Methods/Terminal/" title="Terminal" class="md-nav__link">
-      Terminal
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-16-3" type="checkbox" id="nav-7-16-3">
-    
-    <label class="md-nav__link" for="nav-7-16-3">
-      Types
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Types" data-md-level="3">
-      <label class="md-nav__title" for="nav-7-16-3">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-18-3" type="checkbox" id="nav-7-18-3" >
+      
+      <label class="md-nav__link" for="nav-7-18-3">
         Types
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Types" data-md-level="3">
+        <label class="md-nav__title" for="nav-7-18-3">
+          <span class="md-nav__icon md-icon"></span>
+          Types
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Logging/Types/Custom/" class="md-nav__link">
+        Custom
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Logging/Types/Errors/" class="md-nav__link">
+        Errors
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Logging/Types/Custom/" title="Custom" class="md-nav__link">
-      Custom
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Logging/Types/Requests/" class="md-nav__link">
+        Requests
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Logging/Types/Errors/" title="Errors" class="md-nav__link">
-      Errors
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Logging/Types/Requests/" title="Requests" class="md-nav__link">
-      Requests
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-17" type="checkbox" id="nav-7-17">
-    
-    <label class="md-nav__link" for="nav-7-17">
-      Metrics
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Metrics" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-17">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-19" type="checkbox" id="nav-7-19" >
+      
+      <label class="md-nav__link" for="nav-7-19">
         Metrics
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Metrics" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-19">
+          <span class="md-nav__icon md-icon"></span>
+          Metrics
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Metrics/Requests/" class="md-nav__link">
+        Requests
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Metrics/Uptime/" class="md-nav__link">
+        Uptime and Restarts
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Metrics/Requests/" title="Requests" class="md-nav__link">
-      Requests
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Metrics/Uptime/" title="Uptime and Restarts" class="md-nav__link">
-      Uptime and Restarts
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-18" type="checkbox" id="nav-7-18">
-    
-    <label class="md-nav__link" for="nav-7-18">
-      Middleware
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Middleware" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-18">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-20" type="checkbox" id="nav-7-20" >
+      
+      <label class="md-nav__link" for="nav-7-20">
         Middleware
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Middleware" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-20">
+          <span class="md-nav__icon md-icon"></span>
+          Middleware
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Middleware/Overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Middleware/Overview/" title="Overview" class="md-nav__link">
-      Overview
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-18-2" type="checkbox" id="nav-7-18-2">
-    
-    <label class="md-nav__link" for="nav-7-18-2">
-      Types
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Types" data-md-level="3">
-      <label class="md-nav__title" for="nav-7-18-2">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-20-2" type="checkbox" id="nav-7-20-2" >
+      
+      <label class="md-nav__link" for="nav-7-20-2">
         Types
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Types" data-md-level="3">
+        <label class="md-nav__title" for="nav-7-20-2">
+          <span class="md-nav__icon md-icon"></span>
+          Types
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Middleware/Types/AccessRules/" class="md-nav__link">
+        Access Rules
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Middleware/Types/BodyParsing/" class="md-nav__link">
+        Body Parsing
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Middleware/Types/AccessRules/" title="Access Rules" class="md-nav__link">
-      Access Rules
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Middleware/Types/CSRF/" class="md-nav__link">
+        CSRF
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Middleware/Types/RateLimiting/" class="md-nav__link">
+        Rate Limiting
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Middleware/Types/Sessions/" class="md-nav__link">
+        Sessions
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Middleware/Types/BodyParsing/" title="Body Parsing" class="md-nav__link">
-      Body Parsing
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Middleware/Types/CSRF/" title="CSRF" class="md-nav__link">
-      CSRF
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Middleware/Types/RateLimiting/" title="Rate Limiting" class="md-nav__link">
-      Rate Limiting
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Middleware/Types/Sessions/" title="Sessions" class="md-nav__link">
-      Sessions
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-19" type="checkbox" id="nav-7-19">
-    
-    <label class="md-nav__link" for="nav-7-19">
-      Misc
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Misc" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-19">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-21" type="checkbox" id="nav-7-21" >
+      
+      <label class="md-nav__link" for="nav-7-21">
         Misc
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Misc" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-21">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Misc/CronExpressions/" class="md-nav__link">
+        Cron Expressions
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Misc/DesktopApp/" class="md-nav__link">
+        Desktop Application
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Misc/CronExpressions/" title="Cron Expressions" class="md-nav__link">
-      Cron Expressions
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Misc/ServerRoot/" class="md-nav__link">
+        Server Root
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Misc/UploadFiles/" class="md-nav__link">
+        Uploading Files
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Misc/DesktopApp/" title="Desktop Application" class="md-nav__link">
-      Desktop Application
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Misc/ServerRoot/" title="Server Root" class="md-nav__link">
-      Server Root
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Misc/UploadFiles/" title="Uploading Files" class="md-nav__link">
-      Uploading Files
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-20" type="checkbox" id="nav-7-20">
-    
-    <label class="md-nav__link" for="nav-7-20">
-      Restarting
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Restarting" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-20">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-22" type="checkbox" id="nav-7-22" >
+      
+      <label class="md-nav__link" for="nav-7-22">
         Restarting
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Restarting" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-22">
+          <span class="md-nav__icon md-icon"></span>
+          Restarting
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Restarting/Overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Restarting/Overview/" title="Overview" class="md-nav__link">
-      Overview
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-20-2" type="checkbox" id="nav-7-20-2">
-    
-    <label class="md-nav__link" for="nav-7-20-2">
-      Types
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Types" data-md-level="3">
-      <label class="md-nav__title" for="nav-7-20-2">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-22-2" type="checkbox" id="nav-7-22-2" >
+      
+      <label class="md-nav__link" for="nav-7-22-2">
         Types
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Types" data-md-level="3">
+        <label class="md-nav__title" for="nav-7-22-2">
+          <span class="md-nav__icon md-icon"></span>
+          Types
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Restarting/Types/AutoRestarting/" class="md-nav__link">
+        Auto-Restarting
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Restarting/Types/FileMonitoring/" class="md-nav__link">
+        File Monitoring
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Restarting/Types/AutoRestarting/" title="Auto-Restarting" class="md-nav__link">
-      Auto-Restarting
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Restarting/Types/FileMonitoring/" title="File Monitoring" class="md-nav__link">
-      File Monitoring
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-21" type="checkbox" id="nav-7-21">
-    
-    <label class="md-nav__link" for="nav-7-21">
-      Routes
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Routes" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-21">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-23" type="checkbox" id="nav-7-23" >
+      
+      <label class="md-nav__link" for="nav-7-23">
         Routes
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Routes" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-23">
+          <span class="md-nav__icon md-icon"></span>
+          Routes
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
-          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Overview/" title="Overview" class="md-nav__link">
-      Overview
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-21-2" type="checkbox" id="nav-7-21-2">
-    
-    <label class="md-nav__link" for="nav-7-21-2">
-      Examples
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Examples" data-md-level="3">
-      <label class="md-nav__title" for="nav-7-21-2">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-23-2" type="checkbox" id="nav-7-23-2" >
+      
+      <label class="md-nav__link" for="nav-7-23-2">
         Examples
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Examples" data-md-level="3">
+        <label class="md-nav__title" for="nav-7-23-2">
+          <span class="md-nav__icon md-icon"></span>
+          Examples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Examples/LoginPage/" class="md-nav__link">
+        Creating a Login Page
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Examples/RestApiSessions/" class="md-nav__link">
+        REST APIs and Sessions
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Examples/LoginPage/" title="Creating a Login Page" class="md-nav__link">
-      Creating a Login Page
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Examples/WebPages/" class="md-nav__link">
+        Creating a Web Page
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Examples/RestApiSessions/" title="REST APIs and Sessions" class="md-nav__link">
-      REST APIs and Sessions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Examples/WebPages/" title="Creating a Web Page" class="md-nav__link">
-      Creating a Web Page
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-21-3" type="checkbox" id="nav-7-21-3">
-    
-    <label class="md-nav__link" for="nav-7-21-3">
-      Utilities
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Utilities" data-md-level="3">
-      <label class="md-nav__title" for="nav-7-21-3">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-23-3" type="checkbox" id="nav-7-23-3" >
+      
+      <label class="md-nav__link" for="nav-7-23-3">
         Utilities
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Utilities" data-md-level="3">
+        <label class="md-nav__title" for="nav-7-23-3">
+          <span class="md-nav__icon md-icon"></span>
+          Utilities
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/ContentTypes/" class="md-nav__link">
+        Content Types
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/ErrorPages/" class="md-nav__link">
+        Error Pages / Status Codes
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Utilities/ContentTypes/" title="Content Types" class="md-nav__link">
-      Content Types
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/FlashMessages/" class="md-nav__link">
+        Flash Messages
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/FunctionsAndModules/" class="md-nav__link">
+        Functions and Modules
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/Redirecting/" class="md-nav__link">
+        Redirecting
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Utilities/ErrorPages/" title="Error Pages / Status Codes" class="md-nav__link">
-      Error Pages / Status Codes
-    </a>
-  </li>
-
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/SimplePages/" class="md-nav__link">
+        Simple Pages
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/StaticContent/" class="md-nav__link">
+        Static Content
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Utilities/FlashMessages/" title="Flash Messages" class="md-nav__link">
-      Flash Messages
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Utilities/FunctionsAndModules/" title="Functions and Modules" class="md-nav__link">
-      Functions and Modules
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Utilities/Redirecting/" title="Redirecting" class="md-nav__link">
-      Redirecting
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Utilities/SimplePages/" title="Simple Pages" class="md-nav__link">
-      Simple Pages
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Routes/Utilities/StaticContent/" title="Static Content" class="md-nav__link">
-      Static Content
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
+            
+  
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-22" type="checkbox" id="nav-7-22">
-    
-    <label class="md-nav__link" for="nav-7-22">
-      Views
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
-      </span>
-    </label>
-    <nav class="md-nav" aria-label="Views" data-md-level="2">
-      <label class="md-nav__title" for="nav-7-22">
-        <span class="md-nav__icon md-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-        </span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7-24" type="checkbox" id="nav-7-24" >
+      
+      <label class="md-nav__link" for="nav-7-24">
         Views
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Views" data-md-level="2">
+        <label class="md-nav__title" for="nav-7-24">
+          <span class="md-nav__icon md-icon"></span>
+          Views
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Views/Pode/" class="md-nav__link">
+        Pode Files
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../Tutorials/Views/ThirdParty/" class="md-nav__link">
+        Third Party Engines
+      </a>
+    </li>
+  
 
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Views/Pode/" title="Pode Files" class="md-nav__link">
-      Pode Files
-    </a>
-  </li>
-
-        
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../../Tutorials/Views/ThirdParty/" title="Third Party Engines" class="md-nav__link">
-      Third Party Engines
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
+        </ul>
+      </nav>
+    </li>
+  
 
     
   </ul>
@@ -4646,7 +4653,8 @@
               </div>
             
             
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -4657,9 +4665,7 @@
   
   
     <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-      </span>
+      <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-scrollfix>
@@ -4923,64 +4929,45 @@
                   </a>
                 
                 
-                  
-                
-                
                 <h1 id="add-poderoute">Add-PodeRoute</h1>
 <h2 id="synopsis">SYNOPSIS</h2>
 <p>Adds a Route for a specific HTTP Method.</p>
 <h2 id="syntax">SYNTAX</h2>
 <h3 id="script-default">Script (Default)</h3>
-<div class="codehilite"><pre><span></span><code><span class="err">Add-PodeRoute -Method &lt;String&gt; -Path &lt;String&gt; [-Middleware &lt;Object[]&gt;] [-ScriptBlock &lt;ScriptBlock&gt;]</span>
-<span class="err"> [-EndpointName &lt;String[]&gt;] [-ContentType &lt;String&gt;] [-TransferEncoding &lt;String&gt;] [-ErrorContentType &lt;String&gt;]</span>
-<span class="err"> [-ArgumentList &lt;Object[]&gt;] [-Authentication &lt;String&gt;] [-Login] [-Logout] [-PassThru] [&lt;CommonParameters&gt;]</span>
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -Method &lt;String&gt; -Path &lt;String&gt; [-Middleware &lt;Object[]&gt;] [-ScriptBlock &lt;ScriptBlock&gt;]
+ [-EndpointName &lt;String[]&gt;] [-ContentType &lt;String&gt;] [-TransferEncoding &lt;String&gt;] [-ErrorContentType &lt;String&gt;]
+ [-ArgumentList &lt;Object[]&gt;] [-Authentication &lt;String&gt;] [-Login] [-Logout] [-PassThru] [&lt;CommonParameters&gt;]
 </code></pre></div>
-
-
 <h3 id="file">File</h3>
-<div class="codehilite"><pre><span></span><code><span class="err">Add-PodeRoute -Method &lt;String&gt; -Path &lt;String&gt; [-Middleware &lt;Object[]&gt;] [-EndpointName &lt;String[]&gt;]</span>
-<span class="err"> [-ContentType &lt;String&gt;] [-TransferEncoding &lt;String&gt;] [-ErrorContentType &lt;String&gt;] -FilePath &lt;String&gt;</span>
-<span class="err"> [-ArgumentList &lt;Object[]&gt;] [-Authentication &lt;String&gt;] [-Login] [-Logout] [-PassThru] [&lt;CommonParameters&gt;]</span>
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -Method &lt;String&gt; -Path &lt;String&gt; [-Middleware &lt;Object[]&gt;] [-EndpointName &lt;String[]&gt;]
+ [-ContentType &lt;String&gt;] [-TransferEncoding &lt;String&gt;] [-ErrorContentType &lt;String&gt;] -FilePath &lt;String&gt;
+ [-ArgumentList &lt;Object[]&gt;] [-Authentication &lt;String&gt;] [-Login] [-Logout] [-PassThru] [&lt;CommonParameters&gt;]
 </code></pre></div>
-
-
 <h2 id="description">DESCRIPTION</h2>
 <p>Adds a Route for a specific HTTP Method, with path, that when called with invoke any logic and/or Middleware.</p>
 <h2 id="examples">EXAMPLES</h2>
 <h3 id="example-1">EXAMPLE 1</h3>
-<div class="codehilite"><pre><span></span><code><span class="err">Add-PodeRoute -Method Get -Path &#39;/&#39; -ScriptBlock { /* logic */ }</span>
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -Method Get -Path &#39;/&#39; -ScriptBlock { /* logic */ }
 </code></pre></div>
-
-
 <h3 id="example-2">EXAMPLE 2</h3>
-<div class="codehilite"><pre><span></span><code><span class="err">Add-PodeRoute -Method Post -Path &#39;/users/:userId/message&#39; -Middleware (Get-PodeCsrfMiddleware) -ScriptBlock { /* logic */ }</span>
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -Method Post -Path &#39;/users/:userId/message&#39; -Middleware (Get-PodeCsrfMiddleware) -ScriptBlock { /* logic */ }
 </code></pre></div>
-
-
 <h3 id="example-3">EXAMPLE 3</h3>
-<div class="codehilite"><pre><span></span><code><span class="err">Add-PodeRoute -Method Post -Path &#39;/user&#39; -ContentType &#39;application/json&#39; -ScriptBlock { /* logic */ }</span>
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -Method Post -Path &#39;/user&#39; -ContentType &#39;application/json&#39; -ScriptBlock { /* logic */ }
 </code></pre></div>
-
-
 <h3 id="example-4">EXAMPLE 4</h3>
-<div class="codehilite"><pre><span></span><code><span class="err">Add-PodeRoute -Method Post -Path &#39;/user&#39; -ContentType &#39;application/json&#39; -TransferEncoding gzip -ScriptBlock { /* logic */ }</span>
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -Method Post -Path &#39;/user&#39; -ContentType &#39;application/json&#39; -TransferEncoding gzip -ScriptBlock { /* logic */ }
 </code></pre></div>
-
-
 <h3 id="example-5">EXAMPLE 5</h3>
-<div class="codehilite"><pre><span></span><code><span class="err">Add-PodeRoute -Method Get -Path &#39;/api/cpu&#39; -ErrorContentType &#39;application/json&#39; -ScriptBlock { /* logic */ }</span>
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -Method Get -Path &#39;/api/cpu&#39; -ErrorContentType &#39;application/json&#39; -ScriptBlock { /* logic */ }
 </code></pre></div>
-
-
 <h3 id="example-6">EXAMPLE 6</h3>
-<div class="codehilite"><pre><span></span><code><span class="err">Add-PodeRoute -Method Get -Path &#39;/&#39; -ScriptBlock { /* logic */ } -ArgumentList &#39;arg1&#39;, &#39;arg2&#39;</span>
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -Method Get -Path &#39;/&#39; -ScriptBlock { /* logic */ } -ArgumentList &#39;arg1&#39;, &#39;arg2&#39;
 </code></pre></div>
-
-
 <h2 id="parameters">PARAMETERS</h2>
 <h3 id="-argumentlist">-ArgumentList</h3>
 <p>An array of arguments to supply to the Route's ScriptBlock.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Object[]</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Object[]</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -4990,11 +4977,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-authentication">-Authentication</h3>
 <p>The name of an Authentication method which should be used as middleware on this Route.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Auth</span>
 
@@ -5004,11 +4989,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-contenttype">-ContentType</h3>
 <p>The content type the Route should use when parsing any payloads.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5018,11 +5001,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-endpointname">-EndpointName</h3>
 <p>The EndpointName of an Endpoint(s) this Route should be bound against.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String[]</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String[]</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5032,11 +5013,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-errorcontenttype">-ErrorContentType</h3>
 <p>The content type of any error pages that may get returned.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5046,11 +5025,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-filepath">-FilePath</h3>
 <p>A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">File</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5060,11 +5037,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-login">-Login</h3>
 <p>If supplied, the Route will be flagged to Authentication as being a Route that handles user logins.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5074,11 +5049,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-logout">-Logout</h3>
 <p>If supplied, the Route will be flagged to Authentication as being a Route that handles users logging out.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5088,11 +5061,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-method">-Method</h3>
 <p>The HTTP Method of this Route.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5102,11 +5073,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-middleware">-Middleware</h3>
 <p>An array of ScriptBlocks for optional Middleware.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Object[]</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Object[]</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5116,11 +5085,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-passthru">-PassThru</h3>
 <p>If supplied, the route created will be returned so it can be passed through a pipe.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5130,11 +5097,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-path">-Path</h3>
 <p>The URI path for the Route.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5144,11 +5109,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-scriptblock">-ScriptBlock</h3>
 <p>A ScriptBlock for the Route's main logic.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ScriptBlock</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ScriptBlock</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Script</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5158,11 +5121,9 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="-transferencoding">-TransferEncoding</h3>
 <p>The transfer encoding the Route should use when parsing any payloads.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
@@ -5172,8 +5133,6 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-
-
 <h3 id="commonparameters">CommonParameters</h3>
 <p>This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see <a href="http://go.microsoft.com/fwlink/?LinkID=113216">about_CommonParameters</a>.</p>
 <h2 id="inputs">INPUTS</h2>
@@ -5200,7 +5159,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../Add-PodePage/" title="Add-PodePage" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../Add-PodePage/" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -5215,7 +5174,7 @@
           </a>
         
         
-          <a href="../Add-PodeStaticRoute/" title="Add-PodeStaticRoute" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../Add-PodeStaticRoute/" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-footer-nav__title">
               <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
@@ -5270,15 +5229,15 @@
       
     </div>
     
-      <script src="../../../assets/javascripts/vendor.d710d30a.min.js"></script>
-      <script src="../../../assets/javascripts/bundle.5f27aba8.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      <script src="../../../assets/javascripts/vendor.18f0862e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.994580cf.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
       
       <script>
         app = initialize({
           base: "../../..",
-          features: ["tabs"],
+          features: ['navigation.tabs', 'navigation.tabs.sticky'],
           search: Object.assign({
-            worker: "../../../assets/javascripts/worker/search.27c6a5e6.min.js"
+            worker: "../../../assets/javascripts/worker/search.9c0e82ba.min.js"
           }, typeof search !== "undefined" && search)
         })
       </script>
