@@ -122,11 +122,13 @@ function Start-PodeWebServer
                             Timestamp = [datetime]::UtcNow
                             TransferEncoding = $null
                             AcceptEncoding = $null
+                            Ranges = $null
                         }
 
                         # accept/transfer encoding
                         $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
                         $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
+                        $WebEvent.Ranges = (Get-PodeRanges -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
                         # endpoint name
                         $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint)
