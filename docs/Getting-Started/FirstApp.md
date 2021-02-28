@@ -33,7 +33,7 @@ Success, saved package.json
 * Although not required, it is recommended to import the Pode module using a maximum version, to avoid any breaking changes from new major versions:
 
 ```powershell
-Import-Module -Name Pode -MaximumVersion 2.99.99 -Force
+Import-Module -Name Pode -MaximumVersion 2.99.99
 ```
 
 * Within your `server.ps1` file, first you need to start the Server. This is where the main script will go that defines how the server should function:
@@ -64,13 +64,16 @@ Start-PodeServer {
 }
 ```
 
-* Save the file, and run `pode start` (or `./server.ps1`) from the terminal. This will start the server listening on `localhost:8080`. When `http://localhost:8080/` is hit, the server will respond with:
+* Save the file, and run `pode start` (or just `./server.ps1`) from the terminal. This will start the server listening on `localhost:8080`. When `http://localhost:8080/` is hit, the server will respond with:
 
 ```json
 {
     "value": "Hello, world!"
 }
 ```
+
+!!! note
+    If you have issues with `pode start`, just invoke `./server.ps1` directly.
 
 ## More Tutorials
 

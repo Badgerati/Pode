@@ -89,3 +89,8 @@ For HTTPS there are a few issues you may run into, and to resolve them you can u
 ```
 
 * On *nix platforms, for self-signed certificates, you may need to use `-SkipCertificateCheck` on `Invoke-WebRequest` and `Invoke-RestMethod`.
+
+
+## Loader Errors / Pode Types
+
+If on importing the module you receive Loader Exceptions, or when starting your server you get an error similar to `[PodeListenerType] not found`, then you will need to update to .NET 4.7.2.
