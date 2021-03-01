@@ -89,3 +89,15 @@ For HTTPS there are a few issues you may run into, and to resolve them you can u
 ```
 
 * On *nix platforms, for self-signed certificates, you may need to use `-SkipCertificateCheck` on `Invoke-WebRequest` and `Invoke-RestMethod`.
+
+## ActiveDirectory Module
+
+If you're using commands from the ActiveDirectory module - such as `Get-ADUser` - and they're not working as expected, you'll need to import the module first so it's loaded into the runspaces appropriately:
+
+```powershell
+Import-Module ActiveDirectory
+
+Start-PodeServer {
+    # ...
+}
+```
