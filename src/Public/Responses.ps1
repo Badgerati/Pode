@@ -236,6 +236,43 @@ function Write-PodeTextResponse
             $Bytes = ConvertFrom-PodeValueToBytes -Value $Value
         }
 
+        # check if we only need a range of the bytes
+        if ($null -ne $WebEvent.Ranges) {
+            $lengths = @()
+            $size = $Bytes.Length
+
+            $Bytes = @(foreach ($range in $WebEvent.Ranges) {
+                # ensure range not invalid
+                if ([int]$range.End -ge $size) {
+                    Set-PodeResponseStatus -Code 416 -NoErrorPage
+                    return
+                }
+
+                # skip start bytes only
+                if ([string]::IsNullOrWhiteSpace($range.End)) {
+                    $Bytes[$range.Start..($size - 1)]
+                    $lengths += "$($range.Start)-$($size - 1)/$($size)"
+                }
+
+                # end bytes only
+                elseif ([string]::IsNullOrWhiteSpace($range.Start)) {
+                    $Bytes[$($size - 1 - $range.End)..($size - 1)]
+                    $lengths += "$($size - 1 - $range.End)-$($size - 1)/$($size)"
+                }
+
+                # normal range
+                else {
+                    $Bytes[$range.Start..$range.End]
+                    $lengths += "$($range.Start)-$($range.End)/$($size)"
+                }
+            })
+
+            Set-PodeHeader -Name 'Content-Range' -Value "bytes $($lengths -join ', ')"
+            if ($StatusCode -eq 200) {
+                Set-PodeResponseStatus -Code 206 -NoErrorPage
+            }
+        }
+
         # check if we need to compress the response
         if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
             try {

@@ -1024,9 +1024,7 @@ function Get-PodeAcceptEncoding
     # return invalid, error, or return empty for idenity?
     if ($found.Value -eq 0) {
         if ($ThrowError) {
-            $err = [System.Net.Http.HttpRequestException]::new()
-            $err.Data.Add('PodeStatusCode', 406)
-            throw $err
+            throw (New-PodeRequestException -StatusCode 406)
         }
     }
 
@@ -1040,6 +1038,61 @@ function Get-PodeAcceptEncoding
     }
 
     return $found.Name
+}
+
+function Get-PodeRanges
+{
+    param(
+        [Parameter()]
+        [string]
+        $Range,
+
+        [switch]
+        $ThrowError
+    )
+
+    # return if no ranges
+    if ([string]::IsNullOrWhiteSpace($Range)) {
+        return $null
+    }
+
+    # split on '='
+    $parts = @($Range -isplit '=').Trim()
+    if (($parts.Length -le 1) -or ([string]::IsNullOrWhiteSpace($parts[1]))) {
+        return $null
+    }
+
+    $unit = $parts[0]
+    if ($unit -ine 'bytes') {
+        if ($ThrowError) {
+            throw (New-PodeRequestException -StatusCode 416)
+        }
+
+        return $null
+    }
+
+    # split on ','
+    $parts = @($parts[1] -isplit ',').Trim()
+
+    # parse into From-To hashtable array
+    $ranges = @()
+
+    foreach ($atom in $parts) {
+        if ($atom -inotmatch '(?<start>[\d]+){0,1}\s?\-\s?(?<end>[\d]+){0,1}') {
+            if ($ThrowError) {
+                throw (New-PodeRequestException -StatusCode 416)
+            }
+
+            return $null
+        }
+
+        $ranges += @{
+            Start = $Matches['start']
+            End   = $Matches['end']
+        }
+    }
+
+    return $ranges
 }
 
 function Get-PodeTransferEncoding
@@ -1088,9 +1141,7 @@ function Get-PodeTransferEncoding
     # if we have any invalid, throw a 415 error
     if ($invalid.Length -gt 0) {
         if ($ThrowError) {
-            $err = [System.Net.Http.HttpRequestException]::new()
-            $err.Data.Add('PodeStatusCode', 415)
-            throw $err
+            throw (New-PodeRequestException -StatusCode 415)
         }
 
         return $invalid[0]
@@ -1121,6 +1172,19 @@ function Get-PodeEncodingFromContentType
     }
 
     return [System.Text.Encoding]::UTF8
+}
+
+function New-PodeRequestException
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [int]
+        $StatusCode
+    )
+
+    $err = [System.Net.Http.HttpRequestException]::new()
+    $err.Data.Add('PodeStatusCode', $StatusCode)
+    return $err
 }
 
 function ConvertFrom-PodeRequestContent
