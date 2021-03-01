@@ -404,7 +404,10 @@ function Import-PodeModulesIntoRunspaceState
     }
 
     # load modules into runspaces, if allowed
-    $modules = (Get-Module | Where-Object { ($_.ModuleType -ieq 'script') -and ($_.Name -ine 'pode') }).Name | Sort-Object -Unique
+    $modules = (Get-Module |
+        Where-Object {
+            ($_.Name -ine 'pode') -and ($_.Name -inotlike 'microsoft.powershell.*')
+        }).Name | Sort-Object -Unique
 
     foreach ($module in $modules) {
         # only exported modules? is the module exported?
