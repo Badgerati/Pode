@@ -3,7 +3,7 @@
 This is an example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using Form Authentication with Sessions.
 
 !!! info
-    The full example can be seen on GitHub in `examples/web-auth-form.ps1`.
+    The full example can be seen on GitHub in [`examples/web-auth-form.ps1`](https://github.com/Badgerati/Pode/blob/develop/examples/web-auth-form.ps1).
 
 ## File Structure
 
@@ -12,8 +12,8 @@ Firstly, the file structure of this example will look as follows:
 ```plain
 server.ps1
 /views
-    index.pode
-    login.pode
+    auth-home.pode
+    auth-login.pode
 /public
     styles/main.css
 ```
@@ -158,7 +158,7 @@ Start-PodeServer -Thread 2 {
 
 The following are the web pages used above, as well as the CSS style. The web pages have been created using [`.pode`](../../../Views/Pode) files, which allows you to embed PowerShell into the files.
 
-*index.pode*
+*auth-home.pode*
 ```html
 <html>
     <head>
@@ -178,7 +178,7 @@ The following are the web pages used above, as well as the CSS style. The web pa
 </html>
 ```
 
-*login.pode*
+*auth-login.pode*
 ```html
 <html>
     <head>
