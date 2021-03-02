@@ -454,6 +454,9 @@ The URL to redirect to when authentication succeeds when logging in.
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
+.PARAMETER SuccessUseOrigin
+If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
+
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
 #>
@@ -497,7 +500,10 @@ function Add-PodeAuth
         $SuccessUrl,
 
         [switch]
-        $Sessionless
+        $Sessionless,
+
+        [switch]
+        $SuccessUseOrigin
     )
 
     # ensure the name doesn't already exist
@@ -531,6 +537,7 @@ function Add-PodeAuth
         }
         Success = @{
             Url = $SuccessUrl
+            UseOrigin = $SuccessUseOrigin
         }
     }
 
@@ -619,6 +626,9 @@ If supplied, groups will not be retrieved for the user in AD.
 .PARAMETER OpenLDAP
 If supplied, and on Windows, OpenLDAP will be used instead.
 
+.PARAMETER SuccessUseOrigin
+If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
+
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
 
@@ -684,7 +694,10 @@ function Add-PodeAuthWindowsAd
         $NoGroups,
 
         [switch]
-        $OpenLDAP
+        $OpenLDAP,
+
+        [switch]
+        $SuccessUseOrigin
     )
 
     # ensure the name doesn't already exist
@@ -744,6 +757,7 @@ function Add-PodeAuthWindowsAd
         }
         Success = @{
             Url = $SuccessUrl
+            UseOrigin = $SuccessUseOrigin
         }
     }
 }
@@ -879,6 +893,9 @@ If supplied, groups will not be retrieved for the user in AD.
 .PARAMETER NoLocalCheck
 If supplied, Pode will not at attempt to retrieve local User/Group information for the authenticated user.
 
+.PARAMETER SuccessUseOrigin
+If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
+
 .EXAMPLE
 Add-PodeAuthIIS -Name 'IISAuth'
 
@@ -928,7 +945,10 @@ function Add-PodeAuthIIS
         $NoGroups,
 
         [switch]
-        $NoLocalCheck
+        $NoLocalCheck,
+
+        [switch]
+        $SuccessUseOrigin
     )
 
     # ensure we're on Windows!
@@ -975,6 +995,7 @@ function Add-PodeAuthIIS
         -FailureMessage $FailureMessage `
         -SuccessUrl $SuccessUrl `
         -Sessionless:$Sessionless `
+        -SuccessUseOrigin:$SuccessUseOrigin `
         -ArgumentList @{
             Users = $Users
             Groups = $Groups
@@ -1027,6 +1048,9 @@ Optional ScriptBlock that is passed the found user object for further validation
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
+.PARAMETER SuccessUseOrigin
+If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
+
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login'
 
@@ -1078,7 +1102,10 @@ function Add-PodeAuthUserFile
         $ScriptBlock,
 
         [switch]
-        $Sessionless
+        $Sessionless,
+
+        [switch]
+        $SuccessUseOrigin
     )
 
     # ensure the name doesn't already exist
@@ -1135,6 +1162,7 @@ function Add-PodeAuthUserFile
         }
         Success = @{
             Url = $SuccessUrl
+            UseOrigin = $SuccessUseOrigin
         }
     }
 }
@@ -1175,6 +1203,9 @@ If supplied, authenticated users will not be stored in sessions, and sessions wi
 
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user.
+
+.PARAMETER SuccessUseOrigin
+If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
 
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'WinAuth'
@@ -1226,7 +1257,10 @@ function Add-PodeAuthWindowsLocal
 
         [Parameter(ParameterSetName='NoGroups')]
         [switch]
-        $NoGroups
+        $NoGroups,
+
+        [switch]
+        $SuccessUseOrigin
     )
 
     # ensure we're on Windows!
@@ -1274,6 +1308,7 @@ function Add-PodeAuthWindowsLocal
         }
         Success = @{
             Url = $SuccessUrl
+            UseOrigin = $SuccessUseOrigin
         }
     }
 }

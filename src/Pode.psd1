@@ -46,6 +46,7 @@
         'Test-PodeCookie',
         'Test-PodeCookieSigned',
         'Update-PodeCookieExpiry',
+        'Get-PodeCookieValue',
 
         # flash
         'Add-PodeFlashMessage',

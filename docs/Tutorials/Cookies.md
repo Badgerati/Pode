@@ -22,13 +22,15 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 
 ## Getting Cookies
 
-To retrieve the value of a cookie on the request, you can use [`Get-PodeCookie`](../../Functions/Cookies/Get-PodeCookie):
+To retrieve a cookie on the request, you can use [`Get-PodeCookie`](../../Functions/Cookies/Get-PodeCookie):
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
     Get-PodeCookie -Name 'CookieName'
 }
 ```
+
+This will return a cookie object with value, duration, etc. To retrieve just the value of a cookie use [`Get-PodeCookieValue`](../../Functions/Cookies/Get-PodeCookieValue)
 
 ## Removing Cookies
 
