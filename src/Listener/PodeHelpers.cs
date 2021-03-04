@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 
 namespace Pode
@@ -8,9 +9,13 @@ namespace Pode
 
         public static readonly string[] HTTP_METHODS = new string[] { "DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE" };
         public const string WEB_SOCKET_MAGIC_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+        public readonly static char[] NEW_LINE_ARRAY = new char[] { '\r', '\n' };
         public const string NEW_LINE = "\r\n";
         public const string NEW_LINE_UNIX = "\n";
         public const int BYTE_SIZE = sizeof(byte);
+        public const byte NEW_LINE_BYTE = 10;
+        public const byte CARRIAGE_RETURN_BYTE = 13;
+        public const byte DASH_BYTE = 45;
 
         public static void WriteException(Exception ex, PodeListener listener = default(PodeListener))
         {
@@ -52,12 +57,12 @@ namespace Pode
 
         public static byte[] Concat(byte[] array1, byte[] array2)
         {
-            if (array1.Length == 0)
+            if (array1 == default(byte[]) || array1.Length == 0)
             {
                 return array2;
             }
 
-            if (array2.Length == 0)
+            if (array2 == default(byte[]) || array2.Length == 0)
             {
                 return array1;
             }
@@ -66,6 +71,21 @@ namespace Pode
             Buffer.BlockCopy(array1, 0, newArray, 0, array1.Length * BYTE_SIZE);
             Buffer.BlockCopy(array2, 0, newArray, array1.Length * BYTE_SIZE, array2.Length * BYTE_SIZE);
             return newArray;
+        }
+
+        public static List<byte[]> ConvertToByteLines(byte[] bytes)
+        {
+            var lines = new List<byte[]>();
+            var index = 0;
+            var nextIndex = 0;
+
+            while ((nextIndex = Array.IndexOf(bytes, NEW_LINE_BYTE, index)) > 0)
+            {
+                lines.Add(Slice(bytes, index, (nextIndex - index) + 1));
+                index = nextIndex + 1;
+            }
+
+            return lines;
         }
     }
 }

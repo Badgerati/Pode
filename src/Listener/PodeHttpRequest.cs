@@ -348,6 +348,114 @@ namespace Pode
             Body = Encoding.GetString(RawBody);
         }
 
+        public (Hashtable, Hashtable) ParseFormData()
+        {
+            var data = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
+            var files = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
+
+            if (RawBody.Length == 0)
+            {
+                return (data, files);
+            }
+
+            var lines = PodeHelpers.ConvertToByteLines(RawBody);
+
+            var parts = ContentType.Split(';');
+            var boundaryStart = $"--{parts[1].Split('=')[1].Trim()}";
+            var boundaryEnd = $"{boundaryStart}--";
+
+            var boundaryLineIndexes = new List<int>();
+            for (var i = 0; i < lines.Count; i++)
+            {
+                if (IsLineBoundary(lines[i], boundaryStart) || IsLineBoundary(lines[i], boundaryEnd))
+                {
+                    boundaryLineIndexes.Add(i);
+                }
+            }
+
+            var boundaryLineIndex = 0;
+            var disposition = string.Empty;
+            var fields = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
+
+            for (var i = 0; i < (boundaryLineIndexes.Count - 1); i++)
+            {
+                fields.Clear();
+
+                boundaryLineIndex = boundaryLineIndexes[i];
+                disposition = ContentEncoding.GetString(lines[boundaryLineIndex + 1]).Trim(PodeHelpers.NEW_LINE_ARRAY);
+
+                foreach (var line in disposition.Split(';'))
+                {
+                    var atoms = line.Split('=');
+                    if (atoms.Length == 2)
+                    {
+                        fields.Add(atoms[0].Trim(), atoms[1].Trim(' ', '"'));
+                    }
+                }
+
+                if (!fields.ContainsKey("filename"))
+                {
+                    data.Add(fields["name"], ContentEncoding.GetString(lines[boundaryLineIndex + 3]).Trim(PodeHelpers.NEW_LINE_ARRAY));
+                }
+
+                if (fields.ContainsKey("filename"))
+                {
+                    data.Add(fields["name"], fields["filename"]);
+
+                    if (!string.IsNullOrWhiteSpace($"{fields["filename"]}"))
+                    {
+                        var contentType = ContentEncoding.GetString(lines[boundaryLineIndex + 2]).Trim(PodeHelpers.NEW_LINE_ARRAY);
+
+                        var fileBytes = default(byte[]);
+                        for (var j = (boundaryLineIndex + 4); j <= (boundaryLineIndexes[i + 1] - 1); j++)
+                        {
+                            fileBytes = PodeHelpers.Concat(fileBytes, lines[j]);
+                        }
+
+                        var fileBytesLength = fileBytes.Length - 1;
+                        if (fileBytes[fileBytesLength] == PodeHelpers.NEW_LINE_BYTE)
+                        {
+                            fileBytesLength--;
+                        }
+
+                        if (fileBytes[fileBytesLength] == PodeHelpers.CARRIAGE_RETURN_BYTE)
+                        {
+                            fileBytesLength--;
+                        }
+
+                        fileBytes = PodeHelpers.Slice(fileBytes, 0, fileBytesLength + 1);
+
+                        files.Add(fields["filename"], new Hashtable(StringComparer.InvariantCultureIgnoreCase) {
+                            { "ContentType", contentType.Split(':')[1].Trim() },
+                            { "Bytes", fileBytes }
+                        });
+                    }
+                }
+            }
+
+            return (data, files);
+        }
+
+        private bool IsLineBoundary(byte[] bytes, string boundary)
+        {
+            if (bytes.Length == 0)
+            {
+                return false;
+            }
+
+            if (bytes[0] != PodeHelpers.DASH_BYTE && bytes[bytes.Length - 1] != PodeHelpers.DASH_BYTE)
+            {
+                return false;
+            }
+
+            if ((bytes.Length - boundary.Length) > 3)
+            {
+                return false;
+            }
+
+            return (ContentEncoding.GetString(bytes).StartsWith(boundary));
+        }
+
         public override void Dispose()
         {
             RawBody = default(byte[]);
