@@ -1202,10 +1202,8 @@ function ConvertFrom-PodeRequestContent
         $TransferEncoding
     )
 
-    # get the requests content type and boundary
-    #TODO: can this just get ContentType now?
-    $MetaData = Get-PodeContentTypeAndBoundary -ContentType $ContentType
-    $Encoding = $Request.ContentEncoding
+    # get the requests content type
+    $ContentType = Split-PodeContentType -ContentType $ContentType
 
     # result object for data/files
     $Result = @{
@@ -1214,12 +1212,12 @@ function ConvertFrom-PodeRequestContent
     }
 
     # if there is no content-type then do nothing
-    if ([string]::IsNullOrWhiteSpace($MetaData.ContentType)) {
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
         return $Result
     }
 
     # if the content-type is not multipart/form-data, get the string data
-    if ($MetaData.ContentType -ine 'multipart/form-data') {
+    if ($ContentType -ine 'multipart/form-data') {
         # get the content based on server type
         if ($PodeContext.Server.IsServerless) {
             switch ($PodeContext.Server.ServerlessType.ToLowerInvariant()) {
@@ -1242,7 +1240,7 @@ function ConvertFrom-PodeRequestContent
                 $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
 
                 # read the decompressed bytes
-                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Request.ContentEncoding
             }
             else {
                 $Content = $Request.Body
@@ -1255,8 +1253,8 @@ function ConvertFrom-PodeRequestContent
         }
 
         # check if there is a defined custom body parser
-        if ($PodeContext.Server.BodyParsers.ContainsKey($MetaData.ContentType)) {
-            $parser = $PodeContext.Server.BodyParsers[$MetaData.ContentType]
+        if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
+            $parser = $PodeContext.Server.BodyParsers[$ContentType]
 
             $_args = @($Content)
             if ($null -ne $parser.UsingVariables) {
@@ -1274,7 +1272,7 @@ function ConvertFrom-PodeRequestContent
     }
 
     # run action for the content type
-    switch ($MetaData.ContentType) {
+    switch ($ContentType) {
         { $_ -ilike '*/json' } {
             if (Test-PodeIsPSCore) {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
@@ -1297,9 +1295,15 @@ function ConvertFrom-PodeRequestContent
         }
 
         { $_ -ieq 'multipart/form-data' } {
-            $formData = $Request.ParseFormData()
-            $Result.Data = $formData.Item1
-            $Result.Files = $formData.Item2
+            $Request.ParseFormData()
+
+            foreach ($file in $Request.Form.Files) {
+                $Result.Files.Add($file.FileName, $file)
+            }
+
+            foreach ($item in $Request.Form.Data) {
+                $Result.Data.Add($item.Key, $item.Value)
+            }
         }
 
         default {
@@ -1311,7 +1315,7 @@ function ConvertFrom-PodeRequestContent
     return $Result
 }
 
-function Get-PodeContentTypeAndBoundary
+function Split-PodeContentType
 {
     param(
         [Parameter()]
@@ -1319,27 +1323,11 @@ function Get-PodeContentTypeAndBoundary
         $ContentType
     )
 
-    $obj = @{
-        ContentType = [string]::Empty;
-        Boundary = @{
-            Start = [string]::Empty;
-            End = [string]::Empty;
-        }
-    }
-
     if ([string]::IsNullOrWhiteSpace($ContentType)) {
-        return $obj
+        return [string]::Empty
     }
 
-    $split = @($ContentType -isplit ';')
-    $obj.ContentType = $split[0].Trim()
-
-    if ($split.Length -gt 1) {
-        $obj.Boundary.Start = "--$(($split[1] -isplit '=')[1].Trim())"
-        $obj.Boundary.End = "$($obj.Boundary.Start)--"
-    }
-
-    return $obj
+    return @($ContentType -isplit ';')[0].Trim()
 }
 
 function ConvertFrom-PodeNameValueToHashTable
@@ -1534,7 +1522,7 @@ function Convert-PodePathPatternToRegex
 
         [switch]
         $NotStrict
-    )    
+    )
 
     if (!$NotSlashes) {
         if ($Path -match '[\\/]\*$') {
@@ -1741,7 +1729,7 @@ function Get-PodeErrorPage
     )
 
     # parse the passed content type
-    $ContentType = (Get-PodeContentTypeAndBoundary -ContentType $ContentType).ContentType
+    $ContentType = Split-PodeContentType -ContentType $ContentType
 
     # object for the page path
     $path = $null

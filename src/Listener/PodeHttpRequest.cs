@@ -29,6 +29,7 @@ namespace Pode
         public byte[] RawBody { get; private set; }
         public string Host { get; private set; }
         public bool AwaitingBody { get; private set; }
+        public PodeForm Form { get; private set; }
 
         private bool IsRequestLineValid { get; set; }
 
@@ -348,14 +349,13 @@ namespace Pode
             Body = Encoding.GetString(RawBody);
         }
 
-        public (Hashtable, Hashtable) ParseFormData()
+        public void ParseFormData()
         {
-            var data = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
-            var files = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
+            Form = new PodeForm();
 
             if (RawBody.Length == 0)
             {
-                return (data, files);
+                return;
             }
 
             var lines = PodeHelpers.ConvertToByteLines(RawBody);
@@ -375,7 +375,7 @@ namespace Pode
 
             var boundaryLineIndex = 0;
             var disposition = string.Empty;
-            var fields = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
+            var fields = new Dictionary<string, string>();
 
             for (var i = 0; i < (boundaryLineIndexes.Count - 1); i++)
             {
@@ -395,14 +395,14 @@ namespace Pode
 
                 if (!fields.ContainsKey("filename"))
                 {
-                    data.Add(fields["name"], ContentEncoding.GetString(lines[boundaryLineIndex + 3]).Trim(PodeHelpers.NEW_LINE_ARRAY));
+                    Form.Data.Add(new PodeFormData(fields["name"], ContentEncoding.GetString(lines[boundaryLineIndex + 3]).Trim(PodeHelpers.NEW_LINE_ARRAY)));
                 }
 
                 if (fields.ContainsKey("filename"))
                 {
-                    data.Add(fields["name"], fields["filename"]);
+                    Form.Data.Add(new PodeFormData(fields["name"], fields["filename"]));
 
-                    if (!string.IsNullOrWhiteSpace($"{fields["filename"]}"))
+                    if (!string.IsNullOrWhiteSpace(fields["filename"]))
                     {
                         var contentType = ContentEncoding.GetString(lines[boundaryLineIndex + 2]).Trim(PodeHelpers.NEW_LINE_ARRAY);
 
@@ -425,15 +425,10 @@ namespace Pode
 
                         fileBytes = PodeHelpers.Slice(fileBytes, 0, fileBytesLength + 1);
 
-                        files.Add(fields["filename"], new Hashtable(StringComparer.InvariantCultureIgnoreCase) {
-                            { "ContentType", contentType.Split(':')[1].Trim() },
-                            { "Bytes", fileBytes }
-                        });
+                        Form.Files.Add(new PodeFormFile(fields["filename"], fileBytes, fields["name"], contentType.Split(':')[1].Trim()));
                     }
                 }
             }
-
-            return (data, files);
         }
 
         private bool IsLineBoundary(byte[] bytes, string boundary)
