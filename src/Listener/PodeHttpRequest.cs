@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Linq;
+using System.IO;
 
 namespace Pode
 {
@@ -25,18 +26,32 @@ namespace Pode
         public string UrlReferrer { get; private set; }
         public Uri Url { get; private set; }
         public Hashtable Headers { get; private set; }
-        public string Body { get; private set; }
         public byte[] RawBody { get; private set; }
         public string Host { get; private set; }
         public bool AwaitingBody { get; private set; }
         public PodeForm Form { get; private set; }
 
-        private bool IsRequestLineValid { get; set; }
+        private bool IsRequestLineValid;
+        private MemoryStream BodyStream;
 
         private bool _isWebSocket = false;
         public bool IsWebSocket
         {
             get => _isWebSocket;
+        }
+
+        private string _body = string.Empty;
+        public string Body
+        {
+            get
+            {
+                if (RawBody.Length > 0)
+                {
+                    _body = Encoding.GetString(RawBody);
+                }
+
+                return _body;
+            }
         }
 
         public override bool CloseImmediately
@@ -62,7 +77,7 @@ namespace Pode
             // wait until we have the rest of the payload
             if (AwaitingBody)
             {
-                return (bytes.Length >= (ContentLength - RawBody.Length));
+                return (bytes.Length >= (ContentLength - BodyStream.Length));
             }
 
             var lf = (byte)10;
@@ -132,27 +147,39 @@ namespace Pode
                 return true;
             }
 
-            // get the raw string for headers
-            var content = Encoding.GetString(bytes, 0, bytes.Length);
-
-            // new line char, and req lines
-            var newline = (content.Contains(PodeHelpers.NEW_LINE) ? PodeHelpers.NEW_LINE : PodeHelpers.NEW_LINE_UNIX);
-            var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
-            content = string.Empty;
+            // new line char
+            var newline = Array.IndexOf(bytes, PodeHelpers.CARRIAGE_RETURN_BYTE) == -1
+                ? PodeHelpers.NEW_LINE_UNIX
+                : PodeHelpers.NEW_LINE;
 
             // parse the headers, unless we're waiting for the body
             var bodyIndex = 0;
             if (!AwaitingBody)
             {
+                var content = Encoding.GetString(bytes, 0, bytes.Length);
+                var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
+                content = string.Empty;
+
                 bodyIndex = ParseHeaders(reqLines, newline);
+                bodyIndex = reqLines.Take(bodyIndex).Sum(x => x.Length) + (bodyIndex * newline.Length);
+                reqLines = default(string[]);
             }
 
             // parse the body
-            ParseBody(bytes, reqLines, newline, bodyIndex);
-            AwaitingBody = (ContentLength > 0 && RawBody.Length < ContentLength);
+            ParseBody(bytes, newline, bodyIndex);
+            AwaitingBody = (ContentLength > 0 && BodyStream.Length < ContentLength);
 
-            // cleanup
-            reqLines = default(string[]);
+            if (!AwaitingBody)
+            {
+                RawBody = BodyStream.ToArray();
+
+                if (BodyStream != default(MemoryStream))
+                {
+                    BodyStream.Dispose();
+                    BodyStream = default(MemoryStream);
+                }
+            }
+
             return (!AwaitingBody);
         }
 
@@ -274,8 +301,13 @@ namespace Pode
             return bodyIndex;
         }
 
-        private void ParseBody(byte[] bytes, string[] reqLines, string newline, int bodyIndex)
+        private void ParseBody(byte[] bytes, string newline, int start)
         {
+            if (BodyStream == default(MemoryStream))
+            {
+                BodyStream = new MemoryStream();
+            }
+
             var isChunked = (!string.IsNullOrWhiteSpace(TransferEncoding) && TransferEncoding.Contains("chunked"));
 
             // if chunked, and we have a content-length, fail
@@ -283,10 +315,6 @@ namespace Pode
             {
                 throw new HttpRequestException($"Cannot supply a Content-Length and a chunked Transfer-Encoding");
             }
-
-            // get the start index for raw bytes
-            var start = reqLines.Take(bodyIndex).Sum(x => x.Length) + ((bodyIndex) * newline.Length);
-            var hasBody = (RawBody != default(byte[]));
 
             // parse for chunked
             if (isChunked)
@@ -324,29 +352,20 @@ namespace Pode
                     start = (start + c_length - 1) + newline.Length + 1;
                 }
 
-                RawBody = hasBody
-                    ? PodeHelpers.Concat(RawBody, c_rawBytes.ToArray())
-                    : c_rawBytes.ToArray();
+                PodeHelpers.WriteTo(BodyStream, c_rawBytes.ToArray(), 0, c_rawBytes.Count);
             }
 
             // else use content length
             else if (ContentLength > 0)
             {
-                RawBody = hasBody
-                    ? PodeHelpers.Concat(RawBody, PodeHelpers.Slice(bytes, start, ContentLength))
-                    : PodeHelpers.Slice(bytes, start, ContentLength);
+                PodeHelpers.WriteTo(BodyStream, bytes, start, ContentLength);
             }
 
             // else just read all
             else
             {
-                RawBody = hasBody
-                    ? PodeHelpers.Concat(RawBody, PodeHelpers.Slice(bytes, start))
-                    : PodeHelpers.Slice(bytes, start);
+                PodeHelpers.WriteTo(BodyStream, bytes, start);
             }
-
-            // set the body
-            Body = Encoding.GetString(RawBody);
         }
 
         public void ParseFormData()
@@ -407,23 +426,31 @@ namespace Pode
                         var contentType = ContentEncoding.GetString(lines[boundaryLineIndex + 2]).Trim(PodeHelpers.NEW_LINE_ARRAY);
 
                         var fileBytes = default(byte[]);
-                        for (var j = (boundaryLineIndex + 4); j <= (boundaryLineIndexes[i + 1] - 1); j++)
-                        {
-                            fileBytes = PodeHelpers.Concat(fileBytes, lines[j]);
-                        }
+                        var fileBytesLength = 0;
 
-                        var fileBytesLength = fileBytes.Length - 1;
-                        if (fileBytes[fileBytesLength] == PodeHelpers.NEW_LINE_BYTE)
+                        using (var stream = new MemoryStream())
                         {
-                            fileBytesLength--;
-                        }
+                            for (var j = (boundaryLineIndex + 4); j <= (boundaryLineIndexes[i + 1] - 1); j++)
+                            {
+                                fileBytesLength = lines[j].Length;
+                                if (j == (boundaryLineIndexes[i + 1] - 1))
+                                {
+                                    if (lines[j][fileBytesLength - 1] == PodeHelpers.NEW_LINE_BYTE)
+                                    {
+                                        fileBytesLength--;
+                                    }
 
-                        if (fileBytes[fileBytesLength] == PodeHelpers.CARRIAGE_RETURN_BYTE)
-                        {
-                            fileBytesLength--;
-                        }
+                                    if (lines[j][fileBytesLength - 1] == PodeHelpers.CARRIAGE_RETURN_BYTE)
+                                    {
+                                        fileBytesLength--;
+                                    }
+                                }
 
-                        fileBytes = PodeHelpers.Slice(fileBytes, 0, fileBytesLength + 1);
+                                stream.Write(lines[j], 0, fileBytesLength);
+                            }
+
+                            fileBytes = stream.ToArray();
+                        }
 
                         Form.Files.Add(new PodeFormFile(fields["filename"], fileBytes, fields["name"], contentType.Split(':')[1].Trim()));
                     }
@@ -454,7 +481,13 @@ namespace Pode
         public override void Dispose()
         {
             RawBody = default(byte[]);
-            Body = string.Empty;
+            _body = string.Empty;
+
+            if (BodyStream != default(MemoryStream))
+            {
+                BodyStream.Dispose();
+            }
+
             base.Dispose();
         }
     }

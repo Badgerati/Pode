@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace Pode
@@ -41,6 +42,16 @@ namespace Pode
                 rnd.GetBytes(bytes);
                 return (new Guid(bytes)).ToString();
             }
+        }
+
+        public static void WriteTo(MemoryStream stream, byte[] array, int startIndex, int count = 0)
+        {
+            if (count <= 0 || startIndex + count > array.Length)
+            {
+                count = array.Length - startIndex;
+            }
+
+            stream.Write(array, startIndex, count);
         }
 
         public static byte[] Slice(byte[] array, int startIndex, int count = 0)
