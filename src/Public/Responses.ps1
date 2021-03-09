@@ -1221,7 +1221,7 @@ function Save-PodeRequestFile
     }
 
     # save the file
-    [System.IO.File]::WriteAllBytes($Path, $WebEvent.Files[$fileName].Bytes)
+    $WebEvent.Files[$fileName].Save($Path)
 }
 
 <#

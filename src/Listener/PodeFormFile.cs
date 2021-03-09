@@ -3,19 +3,34 @@ using System.IO;
 
 namespace Pode
 {
-    public class PodeFormFile
+    public class PodeFormFile : IDisposable
     {
         public string ContentType { get; private set; }
         public string FileName { get; private set; }
         public string Name { get; private set; }
-        public byte[] Bytes { get; private set; }
+        public byte[] Bytes => _stream.ToArray();
 
-        public PodeFormFile(string fileName, byte[] bytes, string name, string contentType)
+        private MemoryStream _stream;
+
+        public PodeFormFile(string fileName, MemoryStream stream, string name, string contentType)
         {
             ContentType = contentType;
             FileName = fileName;
             Name = name;
-            Bytes = bytes;
+            _stream = stream;
+        }
+
+        public void Save(string path)
+        {
+            using (var file = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                _stream.WriteTo(file);
+            }
+        }
+
+        public void Dispose()
+        {
+            _stream.Dispose();
         }
     }
 }

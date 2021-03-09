@@ -424,35 +424,29 @@ namespace Pode
                     if (!string.IsNullOrWhiteSpace(fields["filename"]))
                     {
                         var contentType = ContentEncoding.GetString(lines[boundaryLineIndex + 2]).Trim(PodeHelpers.NEW_LINE_ARRAY);
-
-                        var fileBytes = default(byte[]);
                         var fileBytesLength = 0;
+                        var stream = new MemoryStream();
 
-                        using (var stream = new MemoryStream())
+                        for (var j = (boundaryLineIndex + 4); j <= (boundaryLineIndexes[i + 1] - 1); j++)
                         {
-                            for (var j = (boundaryLineIndex + 4); j <= (boundaryLineIndexes[i + 1] - 1); j++)
+                            fileBytesLength = lines[j].Length;
+                            if (j == (boundaryLineIndexes[i + 1] - 1))
                             {
-                                fileBytesLength = lines[j].Length;
-                                if (j == (boundaryLineIndexes[i + 1] - 1))
+                                if (lines[j][fileBytesLength - 1] == PodeHelpers.NEW_LINE_BYTE)
                                 {
-                                    if (lines[j][fileBytesLength - 1] == PodeHelpers.NEW_LINE_BYTE)
-                                    {
-                                        fileBytesLength--;
-                                    }
-
-                                    if (lines[j][fileBytesLength - 1] == PodeHelpers.CARRIAGE_RETURN_BYTE)
-                                    {
-                                        fileBytesLength--;
-                                    }
+                                    fileBytesLength--;
                                 }
 
-                                stream.Write(lines[j], 0, fileBytesLength);
+                                if (lines[j][fileBytesLength - 1] == PodeHelpers.CARRIAGE_RETURN_BYTE)
+                                {
+                                    fileBytesLength--;
+                                }
                             }
 
-                            fileBytes = stream.ToArray();
+                            stream.Write(lines[j], 0, fileBytesLength);
                         }
 
-                        Form.Files.Add(new PodeFormFile(fields["filename"], fileBytes, fields["name"], contentType.Split(':')[1].Trim()));
+                        Form.Files.Add(new PodeFormFile(fields["filename"], stream, fields["name"], contentType.Split(':')[1].Trim()));
                     }
                 }
             }
@@ -486,6 +480,11 @@ namespace Pode
             if (BodyStream != default(MemoryStream))
             {
                 BodyStream.Dispose();
+            }
+
+            if (Form != default(PodeForm))
+            {
+                Form.Dispose();
             }
 
             base.Dispose();
