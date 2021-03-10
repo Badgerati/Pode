@@ -723,7 +723,9 @@ function Get-PodeAuthWindowsADIISMethod
             # create base user object
             $user = @{
                 UserType = 'Domain'
-                Identity = $winIdentity
+                Identity = @{
+                    AccessToken = $winIdentity.AccessToken
+                }
                 AuthenticationType = $winIdentity.AuthenticationType
                 DistinguishedName = [string]::Empty
                 Username = $username
