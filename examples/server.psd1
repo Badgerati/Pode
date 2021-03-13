@@ -46,7 +46,7 @@
         }
         Request = @{
             Timeout = 30
-            BodySize = 100
+            BodySize = 100MB
         }
     }
 }
