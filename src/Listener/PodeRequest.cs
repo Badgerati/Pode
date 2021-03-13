@@ -24,7 +24,7 @@ namespace Pode
         public Stream InputStream { get; private set; }
         public X509Certificate2 ClientCertificate { get; private set; }
         public SslPolicyErrors ClientCertificateErrors { get; private set; }
-        public HttpRequestException Error { get; private set; }
+        public HttpRequestException Error { get; set; }
 
         private Socket Socket;
         protected PodeContext Context;
@@ -138,7 +138,7 @@ namespace Pode
                 Error.Data.Add("PodeStatusCode", 400);
             }
 
-            return true;
+            return false;
         }
 
         protected virtual bool Parse(byte[] bytes)

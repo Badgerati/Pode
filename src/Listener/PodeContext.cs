@@ -4,6 +4,8 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -70,6 +72,15 @@ namespace Pode
             get => (State == PodeContextState.Error || State == PodeContextState.SslError);
         }
 
+        public bool IsTimeout
+        {
+            get => (State == PodeContextState.Timeout);
+        }
+
+        private Task ContextTask;
+        public CancellationTokenSource ContextCancellationToken { get; private set; }
+        private CancellationTokenSource ContextTimeoutToken;
+
 
         public PodeContext(Socket socket, PodeSocket podeSocket, PodeListener listener)
         {
@@ -85,6 +96,17 @@ namespace Pode
 
             NewResponse();
             NewRequest();
+        }
+
+        private void TimeoutCallback()
+        {
+            State = PodeContextState.Timeout;
+
+            Response.StatusCode = 408;
+            Request.Error = new HttpRequestException("Request timeout");
+            Request.Error.Data.Add("PodeStatusCode", 408);
+
+            this.Dispose();
         }
 
         private void NewResponse()
@@ -167,10 +189,48 @@ namespace Pode
             }
         }
 
+        public void RenewTimeoutToken()
+        {
+            if (ContextCancellationToken != default(CancellationTokenSource))
+            {
+                ContextCancellationToken.Dispose();
+            }
+
+            ContextCancellationToken = new CancellationTokenSource();
+        }
+
         public async void Receive()
         {
             try
             {
+                // start request timer
+                if (ContextTimeoutToken != default(CancellationTokenSource))
+                {
+                    ContextTimeoutToken.Dispose();
+                }
+
+                ContextTimeoutToken = new CancellationTokenSource();
+
+                if (ContextTask != default(Task))
+                {
+                    ContextTask.Dispose();
+                }
+
+                ContextTask = new Task(() => {
+                    try
+                    {
+                        var _task = Task.Delay(Listener.RequestTimeout * 1000, ContextTimeoutToken.Token);
+                        _task.Wait();
+                        TimeoutCallback();
+                        ContextCancellationToken.Cancel();
+                        ContextTimeoutToken.Cancel();
+                    }
+                    catch {}
+                });
+
+                ContextTask.Start();
+
+                // start receiving
                 State = PodeContextState.Receiving;
                 var close = await Request.Receive();
                 SetContextType();
@@ -185,6 +245,11 @@ namespace Pode
         public void EndReceive(bool close)
         {
             State = close ? PodeContextState.Closing : PodeContextState.Received;
+            if (close)
+            {
+                Response.StatusCode = 400;
+            }
+
             PodeSocket.HandleContext(this);
         }
 
@@ -254,6 +319,11 @@ namespace Pode
             // send the response and close, only close request if not keep alive
             try
             {
+                // stop the request timer
+                ContextTimeoutToken.Cancel();
+                ContextTimeoutToken.Dispose();
+
+                // error or timeout?
                 if (IsErrored)
                 {
                     Response.StatusCode = 500;
@@ -262,7 +332,14 @@ namespace Pode
                 // only send a response if Http
                 if (IsHttp && State != PodeContextState.SslError && !HttpRequest.AwaitingBody)
                 {
-                    Response.Send();
+                    if (IsTimeout)
+                    {
+                        Response.SendTimeout();
+                    }
+                    else
+                    {
+                        Response.Send();
+                    }
                 }
 
                 // if it was smtp, and it was processable, RESET!

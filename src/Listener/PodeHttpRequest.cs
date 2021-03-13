@@ -366,6 +366,14 @@ namespace Pode
             {
                 PodeHelpers.WriteTo(BodyStream, bytes, start);
             }
+
+            // check body size
+            if (BodyStream.Length > Context.Listener.RequestBodySize)
+            {
+                var err = new HttpRequestException("Payload too large");
+                err.Data.Add("PodeStatusCode", 413);
+                throw err;
+            }
         }
 
         public void ParseFormData()

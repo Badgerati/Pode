@@ -43,6 +43,8 @@ function Start-PodeWebServer
     # create the listener
     $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token -Type 'Http'")))
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+    $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
+    $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
     try
     {
@@ -138,7 +140,10 @@ function Start-PodeWebServer
 
                         # stop now if the request has an error
                         if ($null -ne $Request.Error) {
-                            $Request.Error | Write-PodeErrorLog -CheckInnerException
+                            if ($Response.StatusCode -ge 500) {
+                                $Request.Error | Write-PodeErrorLog -CheckInnerException
+                            }
+
                             throw $Request.Error
                         }
 

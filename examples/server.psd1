@@ -44,5 +44,9 @@
                 ExportOnly = $true
             }
         }
+        Request = @{
+            Timeout = 30
+            BodySize = 100
+        }
     }
 }
