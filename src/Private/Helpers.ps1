@@ -1,3 +1,4 @@
+using namespace Pode
 
 # read in the content from a dynamic pode file and invoke its content
 function ConvertFrom-PodeFile
@@ -1295,15 +1296,37 @@ function ConvertFrom-PodeRequestContent
         }
 
         { $_ -ieq 'multipart/form-data' } {
-            $Request.ParseFormData()
+            # parse multipart form data
+            $form = $null
 
-            foreach ($file in $Request.Form.Files) {
+            if ($PodeContext.Server.IsServerless) {
+                switch ($PodeContext.Server.ServerlessType.ToLowerInvariant()) {
+                    'awslambda' {
+                        $Content = $Request.body
+                    }
+
+                    'azurefunctions' {
+                        $Content = $Request.Body
+                    }
+                }
+
+                $form = [PodeForm]::Parse($Content, $WebEvent.ContentType, [System.Text.Encoding]::UTF8)
+            }
+            else {
+                $Request.ParseFormData()
+                $form = $Request.Form
+            }
+
+            # set the files/data
+            foreach ($file in $form.Files) {
                 $Result.Files.Add($file.FileName, $file)
             }
 
-            foreach ($item in $Request.Form.Data) {
+            foreach ($item in $form.Data) {
                 $Result.Data.Add($item.Key, $item.Value)
             }
+
+            $form = $null
         }
 
         default {
