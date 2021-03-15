@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Text;
 
 namespace Pode
@@ -11,13 +12,27 @@ namespace Pode
     {
         public PodeResponseHeaders Headers { get; private set; }
         public int StatusCode = 200;
-        public string StatusDescription = "OK";
         public bool SendChunked = false;
         public MemoryStream OutputStream { get; private set; }
         public bool Sent { get; private set; }
 
         private PodeContext Context;
         private PodeRequest Request { get => Context.Request; }
+
+        private string _statusDesc = string.Empty;
+        public string StatusDescription
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_statusDesc) && Enum.IsDefined(typeof(HttpStatusCode), StatusCode))
+                {
+                    return ((HttpStatusCode)StatusCode).ToString();
+                }
+
+                return _statusDesc;
+            }
+            set => _statusDesc = value;
+        }
 
         public long ContentLength64
         {
