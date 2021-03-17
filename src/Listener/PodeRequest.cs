@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -8,8 +7,8 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Pode
 {
@@ -88,7 +87,7 @@ namespace Pode
             return await Task<int>.Factory.FromAsync(InputStream.BeginRead, InputStream.EndRead, Buffer, 0, BufferSize, null);
         }
 
-        public async Task<bool> Receive()
+        public async Task<bool> Receive(CancellationToken cancellationToken)
         {
             try
             {
@@ -102,6 +101,7 @@ namespace Pode
 
                 while ((read = await BeginRead()) > 0)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     BufferStream.Write(Buffer, 0, read);
 
                     if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))
@@ -134,6 +134,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 Error = new HttpRequestException(ex.Message, ex);
                 Error.Data.Add("PodeStatusCode", 400);
             }

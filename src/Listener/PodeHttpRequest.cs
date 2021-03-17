@@ -167,7 +167,7 @@ namespace Pode
 
             // parse the body
             ParseBody(bytes, newline, bodyIndex);
-            AwaitingBody = (ContentLength > 0 && BodyStream.Length < ContentLength);
+            AwaitingBody = (ContentLength > 0 && BodyStream.Length < ContentLength && Error == default(HttpRequestException));
 
             if (!AwaitingBody)
             {
@@ -370,6 +370,7 @@ namespace Pode
             // check body size
             if (BodyStream.Length > Context.Listener.RequestBodySize)
             {
+                AwaitingBody = false;
                 var err = new HttpRequestException("Payload too large");
                 err.Data.Add("PodeStatusCode", 413);
                 throw err;

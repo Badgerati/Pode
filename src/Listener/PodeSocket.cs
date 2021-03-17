@@ -209,7 +209,7 @@ namespace Pode
             try
             {
                 context.RenewTimeoutToken();
-                Task.Factory.StartNew(() => context.Receive(), context.ContextCancellationToken.Token);
+                Task.Factory.StartNew(() => context.Receive(), context.ContextTimeoutToken.Token);
             }
             catch (OperationCanceledException) {}
             catch (Exception ex)
