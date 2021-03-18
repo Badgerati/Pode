@@ -139,18 +139,24 @@ function Start-PodeWebServer
                         Add-PodeRequestLogEndware -WebEvent $WebEvent
 
                         # stop now if the request has an error
-                        if ($null -ne $Request.Error) {
-                            if ($Response.StatusCode -ge 500) {
-                                $Request.Error | Write-PodeErrorLog -CheckInnerException
-                            }
-
+                        if ($Request.IsAborted) {
                             throw $Request.Error
                         }
 
                         # invoke global and route middleware
                         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
+                            # has thr request been aborted
+                            if ($Request.IsAborted) {
+                                throw $Request.Error
+                            }
+
                             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
                             {
+                                # has thr request been aborted
+                                if ($Request.IsAborted) {
+                                    throw $Request.Error
+                                }
+
                                 # invoke the route
                                 if ($null -ne $WebEvent.StaticContent) {
                                     if ($WebEvent.StaticContent.IsDownload) {
@@ -178,6 +184,10 @@ function Start-PodeWebServer
                     }
                     catch [System.OperationCanceledException] {}
                     catch [System.Net.Http.HttpRequestException] {
+                        if ($Response.StatusCode -ge 500) {
+                            $_.Exception | Write-PodeErrorLog -CheckInnerException
+                        }
+
                         $code = [int]($_.Exception.Data['PodeStatusCode'])
                         if ($code -le 0) {
                             $code = 400

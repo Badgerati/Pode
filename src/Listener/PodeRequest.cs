@@ -24,6 +24,7 @@ namespace Pode
         public X509Certificate2 ClientCertificate { get; private set; }
         public SslPolicyErrors ClientCertificateErrors { get; private set; }
         public HttpRequestException Error { get; set; }
+        public bool IsAborted => (Error != default(HttpRequestException));
 
         private Socket Socket;
         protected PodeContext Context;
@@ -82,8 +83,9 @@ namespace Pode
             return true;
         }
 
-        protected async Task<int> BeginRead()
+        protected async Task<int> BeginRead(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             return await Task<int>.Factory.FromAsync(InputStream.BeginRead, InputStream.EndRead, Buffer, 0, BufferSize, null);
         }
 
@@ -99,7 +101,7 @@ namespace Pode
                 var read = 0;
                 var close = true;
 
-                while ((read = await BeginRead()) > 0)
+                while ((read = await BeginRead(cancellationToken)) > 0)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     BufferStream.Write(Buffer, 0, read);
@@ -123,9 +125,7 @@ namespace Pode
                     break;
                 }
 
-                BufferStream.Dispose();
-                Buffer = default(byte[]);
-
+                cancellationToken.ThrowIfCancellationRequested();
                 return close;
             }
             catch (HttpRequestException httpex)
@@ -137,6 +137,11 @@ namespace Pode
                 cancellationToken.ThrowIfCancellationRequested();
                 Error = new HttpRequestException(ex.Message, ex);
                 Error.Data.Add("PodeStatusCode", 400);
+            }
+            finally
+            {
+                BufferStream.Dispose();
+                Buffer = default(byte[]);
             }
 
             return false;

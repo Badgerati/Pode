@@ -118,7 +118,6 @@ namespace Pode
         private void TimeoutCallback(object state)
         {
             ContextTimeoutToken.Cancel();
-
             State = PodeContextState.Timeout;
 
             Response.StatusCode = 408;
