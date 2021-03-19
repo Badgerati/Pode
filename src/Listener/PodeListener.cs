@@ -21,6 +21,26 @@ namespace Pode
         private BlockingCollection<PodeServerSignal> ServerSignals;
         private BlockingCollection<PodeClientSignal> ClientSignals;
 
+        private int _requestTimeout = 30;
+        public int RequestTimeout
+        {
+            get => _requestTimeout;
+            set
+            {
+                _requestTimeout = value <= 0 ? 30 : value;
+            }
+        }
+
+        private int _requestBodySize = 104857600; // 100MB
+        public int RequestBodySize
+        {
+            get => _requestBodySize;
+            set
+            {
+                _requestBodySize = value <= 0 ? 104857600 : value;
+            }
+        }
+
         public PodeListener(CancellationToken cancellationToken, PodeListenerType type = PodeListenerType.Http)
         {
             CancellationToken = cancellationToken;

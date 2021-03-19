@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Text;
 
 namespace Pode
@@ -11,12 +12,27 @@ namespace Pode
     {
         public PodeResponseHeaders Headers { get; private set; }
         public int StatusCode = 200;
-        public string StatusDescription = "OK";
         public bool SendChunked = false;
         public MemoryStream OutputStream { get; private set; }
+        public bool Sent { get; private set; }
 
         private PodeContext Context;
         private PodeRequest Request { get => Context.Request; }
+
+        private string _statusDesc = string.Empty;
+        public string StatusDescription
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_statusDesc) && Enum.IsDefined(typeof(HttpStatusCode), StatusCode))
+                {
+                    return ((HttpStatusCode)StatusCode).ToString();
+                }
+
+                return _statusDesc;
+            }
+            set => _statusDesc = value;
+        }
 
         public long ContentLength64
         {
@@ -56,6 +72,13 @@ namespace Pode
 
         public void Send()
         {
+            if (Sent)
+            {
+                return;
+            }
+
+            Sent = true;
+
             try
             {
                 // start building the response message
@@ -65,15 +88,67 @@ namespace Pode
                 SetDefaultHeaders();
 
                 // write the response headers
-                message += BuildHeaders(Headers);
+                if (!Context.IsTimeout)
+                {
+                    message += BuildHeaders(Headers);
+                }
+
+                var buffer = Encoding.GetBytes(message);
 
                 // stream response output
-                var buffer = Encoding.GetBytes(message);
-                Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
-
-                if (OutputStream.Length > 0)
+                if (Request.InputStream.CanWrite)
                 {
-                    OutputStream.WriteTo(Request.InputStream);
+                    Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
+
+                    if (!Context.IsTimeout && OutputStream.Length > 0)
+                    {
+                        OutputStream.WriteTo(Request.InputStream);
+                    }
+                }
+
+                message = string.Empty;
+                buffer = default(byte[]);
+            }
+            catch (OperationCanceledException) {}
+            catch (IOException) {}
+            catch (Exception ex)
+            {
+                PodeHelpers.WriteException(ex);
+                throw;
+            }
+            finally
+            {
+                Request.InputStream.Flush();
+            }
+        }
+
+        public void SendTimeout()
+        {
+            if (Sent)
+            {
+                return;
+            }
+
+            Sent = true;
+            StatusCode = 408;
+
+            try
+            {
+                // start building the response message
+                var message = HttpResponseLine;
+
+                // default headers
+                Headers.Clear();
+                SetDefaultHeaders();
+
+                // write the response headers
+                message += BuildHeaders(Headers);
+                var buffer = Encoding.GetBytes(message);
+
+                // stream response output
+                if (Request.InputStream.CanWrite)
+                {
+                    Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
                 }
 
                 message = string.Empty;

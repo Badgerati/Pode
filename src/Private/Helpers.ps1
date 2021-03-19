@@ -1,3 +1,4 @@
+using namespace Pode
 
 # read in the content from a dynamic pode file and invoke its content
 function ConvertFrom-PodeFile
@@ -1202,9 +1203,8 @@ function ConvertFrom-PodeRequestContent
         $TransferEncoding
     )
 
-    # get the requests content type and boundary
-    $MetaData = Get-PodeContentTypeAndBoundary -ContentType $ContentType
-    $Encoding = $Request.ContentEncoding
+    # get the requests content type
+    $ContentType = Split-PodeContentType -ContentType $ContentType
 
     # result object for data/files
     $Result = @{
@@ -1213,12 +1213,12 @@ function ConvertFrom-PodeRequestContent
     }
 
     # if there is no content-type then do nothing
-    if ([string]::IsNullOrWhiteSpace($MetaData.ContentType)) {
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
         return $Result
     }
 
     # if the content-type is not multipart/form-data, get the string data
-    if ($MetaData.ContentType -ine 'multipart/form-data') {
+    if ($ContentType -ine 'multipart/form-data') {
         # get the content based on server type
         if ($PodeContext.Server.IsServerless) {
             switch ($PodeContext.Server.ServerlessType.ToLowerInvariant()) {
@@ -1241,7 +1241,7 @@ function ConvertFrom-PodeRequestContent
                 $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
 
                 # read the decompressed bytes
-                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Encoding
+                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Request.ContentEncoding
             }
             else {
                 $Content = $Request.Body
@@ -1254,8 +1254,8 @@ function ConvertFrom-PodeRequestContent
         }
 
         # check if there is a defined custom body parser
-        if ($PodeContext.Server.BodyParsers.ContainsKey($MetaData.ContentType)) {
-            $parser = $PodeContext.Server.BodyParsers[$MetaData.ContentType]
+        if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
+            $parser = $PodeContext.Server.BodyParsers[$ContentType]
 
             $_args = @($Content)
             if ($null -ne $parser.UsingVariables) {
@@ -1273,7 +1273,7 @@ function ConvertFrom-PodeRequestContent
     }
 
     # run action for the content type
-    switch ($MetaData.ContentType) {
+    switch ($ContentType) {
         { $_ -ilike '*/json' } {
             if (Test-PodeIsPSCore) {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
@@ -1296,66 +1296,37 @@ function ConvertFrom-PodeRequestContent
         }
 
         { $_ -ieq 'multipart/form-data' } {
-            # convert the stream to bytes
-            $Content = $Request.RawBody
-            if ($Content.Length -eq 0) {
-                $Content = ConvertFrom-PodeStreamToBytes -Stream $Request.InputStream
-            }
+            # parse multipart form data
+            $form = $null
 
-            $Lines = Get-PodeByteLinesFromByteArray -Bytes $Content -Encoding $Encoding -IncludeNewLine
+            if ($PodeContext.Server.IsServerless) {
+                switch ($PodeContext.Server.ServerlessType.ToLowerInvariant()) {
+                    'awslambda' {
+                        $Content = $Request.body
+                    }
 
-            # get the indexes for boundary lines (start and end)
-            $boundaryIndexes = @()
-            for ($i = 0; $i -lt $Lines.Length; $i++) {
-                if ((Test-PodeByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.Start -Encoding $Encoding) -or
-                    (Test-PodeByteArrayIsBoundary -Bytes $Lines[$i] -Boundary $MetaData.Boundary.End -Encoding $Encoding)) {
-                    $boundaryIndexes += $i
-                }
-            }
-
-            # loop through the boundary indexes (exclude last, as it's the end boundary)
-            for ($i = 0; $i -lt ($boundaryIndexes.Length - 1); $i++)
-            {
-                $bIndex = $boundaryIndexes[$i]
-
-                # the next line contains the key-value field names (content-disposition)
-                $fields = @{}
-                $disp = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+1] -Encoding $Encoding -RemoveNewLine
-
-                foreach ($line in @($disp -isplit ';')) {
-                    $atoms = @($line -isplit '=')
-                    if ($atoms.Length -eq 2) {
-                        $fields[$atoms[0].Trim()] = $atoms[1].Trim(' "')
+                    'azurefunctions' {
+                        $Content = $Request.Body
                     }
                 }
 
-                # use the next line to work out field values
-                if (!$fields.ContainsKey('filename')) {
-                    $value = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+3] -Encoding $Encoding -RemoveNewLine
-                    $Result.Data.Add($fields.name, $value)
-                }
-
-                # if we have a file, work out file and content type
-                if ($fields.ContainsKey('filename')) {
-                    $Result.Data.Add($fields.name, $fields.filename)
-
-                    if (![string]::IsNullOrWhiteSpace($fields.filename)) {
-                        $type = ConvertFrom-PodeBytesToString -Bytes $Lines[$bIndex+2] -Encoding $Encoding -RemoveNewLine
-
-                        $Result.Files.Add($fields.filename, @{
-                            ContentType = @($type -isplit ':')[1].Trim()
-                            Bytes = $null
-                        })
-
-                        $bytes = @()
-                        foreach ($b in ($Lines[($bIndex+4)..($boundaryIndexes[$i+1]-1)])) {
-                            $bytes += $b
-                        }
-
-                        $Result.Files[$fields.filename].Bytes = (Remove-PodeNewLineBytesFromArray $bytes $Encoding)
-                    }
-                }
+                $form = [PodeForm]::Parse($Content, $WebEvent.ContentType, [System.Text.Encoding]::UTF8)
             }
+            else {
+                $Request.ParseFormData()
+                $form = $Request.Form
+            }
+
+            # set the files/data
+            foreach ($file in $form.Files) {
+                $Result.Files.Add($file.FileName, $file)
+            }
+
+            foreach ($item in $form.Data) {
+                $Result.Data.Add($item.Key, $item.Value)
+            }
+
+            $form = $null
         }
 
         default {
@@ -1367,35 +1338,19 @@ function ConvertFrom-PodeRequestContent
     return $Result
 }
 
-function Get-PodeContentTypeAndBoundary
+function Split-PodeContentType
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $ContentType
     )
 
-    $obj = @{
-        ContentType = [string]::Empty;
-        Boundary = @{
-            Start = [string]::Empty;
-            End = [string]::Empty;
-        }
-    }
-
     if ([string]::IsNullOrWhiteSpace($ContentType)) {
-        return $obj
+        return [string]::Empty
     }
 
-    $split = @($ContentType -isplit ';')
-    $obj.ContentType = $split[0].Trim()
-
-    if ($split.Length -gt 1) {
-        $obj.Boundary.Start = "--$(($split[1] -isplit '=')[1].Trim())"
-        $obj.Boundary.End = "$($obj.Boundary.Start)--"
-    }
-
-    return $obj
+    return @($ContentType -isplit ';')[0].Trim()
 }
 
 function ConvertFrom-PodeNameValueToHashTable
@@ -1590,7 +1545,7 @@ function Convert-PodePathPatternToRegex
 
         [switch]
         $NotStrict
-    )    
+    )
 
     if (!$NotSlashes) {
         if ($Path -match '[\\/]\*$') {
@@ -1797,7 +1752,7 @@ function Get-PodeErrorPage
     )
 
     # parse the passed content type
-    $ContentType = (Get-PodeContentTypeAndBoundary -ContentType $ContentType).ContentType
+    $ContentType = Split-PodeContentType -ContentType $ContentType
 
     # object for the page path
     $path = $null

@@ -130,6 +130,12 @@ function New-PodeContext
         Listener = $null
     }
 
+    # set default request config
+    $ctx.Server.Request = @{
+        Timeout = 30
+        BodySize = 100MB
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -622,6 +628,15 @@ function Set-PodeServerConfiguration
             ExportList = @()
             ExportOnly = ([bool]$Configuration.AutoImport.Functions.ExportOnly)
         }
+    }
+
+    # request
+    if ([int]$Configuration.Request.Timeout -gt 0) {
+        $Context.Server.Request.Timeout = [int]$Configuration.Request.Timeout
+    }
+
+    if ([long]$Configuration.Request.BodySize -gt 0) {
+        $Context.Server.Request.BodySize = [long]$Configuration.Request.BodySize
     }
 }
 

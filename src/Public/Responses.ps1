@@ -50,6 +50,11 @@ function Set-PodeResponseAttachment
         $EndpointName
     )
 
+    # already sent? skip
+    if ($WebEvent.Response.Sent) {
+        return
+    }
+
     # only attach files from public/static-route directories when path is relative
     $_path = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName).Content.Source
 
@@ -198,9 +203,9 @@ function Write-PodeTextResponse
         return
     }
 
-    # if the response stream isn't writable, return
+    # if the response stream isn't writable or already sent, return
     $res = $WebEvent.Response
-    if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite))) {
+    if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite -or $res.Sent))) {
         return
     }
 
@@ -939,6 +944,11 @@ function Set-PodeResponseStatus
         $NoErrorPage
     )
 
+    # already sent? skip
+    if ($WebEvent.Response.Sent) {
+        return
+    }
+
     # set the code
     $WebEvent.Response.StatusCode = $Code
 
@@ -1221,7 +1231,7 @@ function Save-PodeRequestFile
     }
 
     # save the file
-    [System.IO.File]::WriteAllBytes($Path, $WebEvent.Files[$fileName].Bytes)
+    $WebEvent.Files[$fileName].Save($Path)
 }
 
 <#
