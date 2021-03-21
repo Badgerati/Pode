@@ -723,7 +723,9 @@ function Get-PodeAuthWindowsADIISMethod
             # create base user object
             $user = @{
                 UserType = 'Domain'
-                Identity = $winIdentity
+                Identity = @{
+                    AccessToken = $winIdentity.AccessToken
+                }
                 AuthenticationType = $winIdentity.AuthenticationType
                 DistinguishedName = [string]::Empty
                 Username = $username
@@ -1137,6 +1139,10 @@ function Set-PodeAuthStatus
 
         # check if we have a failure url redirect
         if (![string]::IsNullOrWhiteSpace($Failure.Url)) {
+            if ($Success.UseOrigin) {
+                Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
+            }
+
             Move-PodeResponseUrl -Url $Failure.Url
         }
         else {
@@ -1148,7 +1154,17 @@ function Set-PodeAuthStatus
 
     # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
     if ((!$NoSuccessRedirect -or $LoginRoute) -and ![string]::IsNullOrWhiteSpace($Success.Url)) {
-        Move-PodeResponseUrl -Url $Success.Url
+        $url = $Success.Url
+        if ($Success.UseOrigin) {
+            $tmpUrl = Get-PodeCookieValue -Name 'pode.redirecturl'
+            Remove-PodeCookie -Name 'pode.redirecturl'
+
+            if (![string]::IsNullOrWhiteSpace($tmpUrl)) {
+                $url = $tmpUrl
+            }
+        }
+
+        Move-PodeResponseUrl -Url $url
         return $false
     }
 

@@ -2,13 +2,13 @@
 
 Pode has support for using WebSockets, including secure WebSockets, for either server-to-client or vice-versa.
 
-WebSockets allow you to send messages directly from your server to connected clients. This allows you to get real-time continuous updates for the frontend without having to constantly refresh the page, or by using async javascript!
+WebSockets allow you to send messages/signals directly from your server to connected clients. This allows you to get real-time continuous updates for the frontend without having to constantly refresh the page, or by using async javascript!
 
 ## Server Side
 
 ### Listening
 
-On the server side, the only real work required is to register a new endpoint to listen on. To do this you can use the normal [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint), but with a protocol of either `Ws` or `Wss`:
+On the server side, the first thing to do is register a new endpoint to listen on. To do this you can use [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint), but with a protocol of either `Ws` or `Wss`:
 
 ```powershell
 Add-PodeEndpoint -Address * -Port 8091 -Protocol Ws
@@ -21,7 +21,7 @@ Add-PodeEndpoint -Address * -Port 8091 -Certificate './path/cert.pfx' -Certifica
 
 To broadcast a message from the server to all connected clients you can use [`Send-PodeSignal`](../../Functions/Responses/Send-PodeSignal). You can either send raw JSON data, or you can pass a HashTable/PSObject and it will be converted to JSON for you.
 
-To broadcast some data to all clients from a POST route, you could use the following. This will get some message from one of the clients, and then broadcast it to every other client:
+To broadcast some data to all clients from a POST route, you could use the following. This will get some message from one of the clients, and then broadcast it back to every client:
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/broadcast' -ScriptBlock {
@@ -38,6 +38,46 @@ Send-PodeSignal -Value @{ ResponseTimes = @(123, 101, 104) } -Path '/response-ti
 ```
 
 You can also broadcast messages from Timers, or from Schedules.
+
+### Routes
+
+When a client sends a message back to the server on the connected WebSocket, Pode will auotmatically call [`Send-PodeSignal`](../../Functions/Responses/Send-PodeSignal) to re-broadcast the message back to all clients - or to a specific Path/ClientId if supplied by the sending client.
+
+However, you can add custom route logic for WebSocket paths using [`Add-PodeSignalRoute`](../../Functions/Routes/Add-PodeSignalRoute). This is much like [`Add-PodeRoute`](../../Functions/Routes/Add-PodeRoute), but allows you to run custom logic on paths for messages sent by clients. When you use a custom route, that route is responsible for calling [`Send-PodeSignal`](../../Functions/Responses/Send-PodeSignal).
+
+Also like [`Add-PodeRoute`](../../Functions/Routes/Add-PodeRoute) there is a `$SignalEvent` object that you cna use, which contains the client's message data, the raw Request/Response objects, etc.
+
+For example, the following signal route will broadcast the current date back to clients, if the main client sends the message `[date]` on the `/messages` path:
+
+```powershell
+Add-PodeSignalRoute -Path '/messages' -ScriptBlock {
+    $msg = $SignalEvent.Data.Message
+
+    if ($msg -ieq '[date]') {
+        $msg = [datetime]::Now.ToString()
+    }
+
+    Send-PodeSignal -Value $msg -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
+}
+```
+
+### Signal Event
+
+When using custom signal routes, the `$SignalEvent` is a HashTable that is available for you to use - much like the `$WebEvent` object for normal routes.
+
+This `$SignalEvent` object has the following properties:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| Data | hashtable | Contains the Message, an optional Path to broadcast back onto, and an optional ClientId to only broadcast back to |
+| Endpoint | hashtable | Contains the Address and Protocol of the endpoint being hit - such as "pode.example.com" or "127.0.0.2", or WS or WSS for the Protocol |
+| Lockable | hashtable | A synchronized hashtable that can be used with `Lock-PodeObject` |
+| Path | string | The path of the WebSocket - such as "/messages" |
+| Request | object | The raw Request object |
+| Response | object | The raw Response object |
+| Route | hashtable | The current Signal Route that is being invoked |
+| Streamed | bool | Specifies whether the current server type uses streams for the Request/Response, or raw strings |
+| Timestamp | datetime | The current date and time of the Signal |
 
 ## Client Side
 

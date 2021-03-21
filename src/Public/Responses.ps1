@@ -50,6 +50,11 @@ function Set-PodeResponseAttachment
         $EndpointName
     )
 
+    # already sent? skip
+    if ($WebEvent.Response.Sent) {
+        return
+    }
+
     # only attach files from public/static-route directories when path is relative
     $_path = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName).Content.Source
 
@@ -198,9 +203,9 @@ function Write-PodeTextResponse
         return
     }
 
-    # if the response stream isn't writable, return
+    # if the response stream isn't writable or already sent, return
     $res = $WebEvent.Response
-    if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite))) {
+    if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite -or $res.Sent))) {
         return
     }
 
@@ -234,6 +239,43 @@ function Write-PodeTextResponse
         # convert string to bytes
         if ($isStringValue) {
             $Bytes = ConvertFrom-PodeValueToBytes -Value $Value
+        }
+
+        # check if we only need a range of the bytes
+        if ($null -ne $WebEvent.Ranges) {
+            $lengths = @()
+            $size = $Bytes.Length
+
+            $Bytes = @(foreach ($range in $WebEvent.Ranges) {
+                # ensure range not invalid
+                if ([int]$range.End -ge $size) {
+                    Set-PodeResponseStatus -Code 416 -NoErrorPage
+                    return
+                }
+
+                # skip start bytes only
+                if ([string]::IsNullOrWhiteSpace($range.End)) {
+                    $Bytes[$range.Start..($size - 1)]
+                    $lengths += "$($range.Start)-$($size - 1)/$($size)"
+                }
+
+                # end bytes only
+                elseif ([string]::IsNullOrWhiteSpace($range.Start)) {
+                    $Bytes[$($size - 1 - $range.End)..($size - 1)]
+                    $lengths += "$($size - 1 - $range.End)-$($size - 1)/$($size)"
+                }
+
+                # normal range
+                else {
+                    $Bytes[$range.Start..$range.End]
+                    $lengths += "$($range.Start)-$($range.End)/$($size)"
+                }
+            })
+
+            Set-PodeHeader -Name 'Content-Range' -Value "bytes $($lengths -join ', ')"
+            if ($StatusCode -eq 200) {
+                Set-PodeResponseStatus -Code 206 -NoErrorPage
+            }
         }
 
         # check if we need to compress the response
@@ -902,6 +944,11 @@ function Set-PodeResponseStatus
         $NoErrorPage
     )
 
+    # already sent? skip
+    if ($WebEvent.Response.Sent) {
+        return
+    }
+
     # set the code
     $WebEvent.Response.StatusCode = $Code
 
@@ -1184,7 +1231,7 @@ function Save-PodeRequestFile
     }
 
     # save the file
-    [System.IO.File]::WriteAllBytes($Path, $WebEvent.Files[$fileName].Bytes)
+    $WebEvent.Files[$fileName].Save($Path)
 }
 
 <#

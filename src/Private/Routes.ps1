@@ -2,7 +2,7 @@ function Test-PodeRoute
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
         $Method,
 
@@ -27,7 +27,7 @@ function Find-PodeRoute
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', '*')]
+        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
         $Method,
 
@@ -187,6 +187,22 @@ function Find-PodeStaticRoute
         }
         Route = $found
     }
+}
+
+function Find-PodeSignalRoute
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $EndpointName
+    )
+
+    # attempt to get a signal route for the path
+    return (Find-PodeRoute -Method 'signal' -Path $Path -EndpointName $EndpointName)
 }
 
 function Test-PodeRouteValidForCaching

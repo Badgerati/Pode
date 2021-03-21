@@ -46,6 +46,7 @@
         'Test-PodeCookie',
         'Test-PodeCookieSigned',
         'Update-PodeCookieExpiry',
+        'Get-PodeCookieValue',
 
         # flash
         'Add-PodeFlashMessage',
@@ -117,14 +118,18 @@
         # routes
         'Add-PodeRoute',
         'Add-PodeStaticRoute',
+        'Add-PodeSignalRoute',
         'Remove-PodeRoute',
         'Remove-PodeStaticRoute',
+        'Remove-PodeSignalRoute',
         'Clear-PodeRoutes',
         'Clear-PodeStaticRoutes',
+        'Clear-PodeSignalRoutes',
         'ConvertTo-PodeRoute',
         'Add-PodePage',
         'Get-PodeRoute',
         'Get-PodeStaticRoute',
+        'Get-PodeSignalRoute',
 
         # handlers
         'Add-PodeHandler',
@@ -223,6 +228,7 @@
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',
         'Get-PodeServerRequestMetric',
+        'Get-PodeServerSignalMetric',
 
         # AutoImport
         'Export-PodeModule',

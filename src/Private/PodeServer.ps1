@@ -43,6 +43,8 @@ function Start-PodeWebServer
     # create the listener
     $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token -Type 'Http'")))
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+    $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
+    $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
     try
     {
@@ -122,11 +124,13 @@ function Start-PodeWebServer
                             Timestamp = [datetime]::UtcNow
                             TransferEncoding = $null
                             AcceptEncoding = $null
+                            Ranges = $null
                         }
 
                         # accept/transfer encoding
                         $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
                         $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
+                        $WebEvent.Ranges = (Get-PodeRanges -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
                         # endpoint name
                         $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint)
@@ -135,15 +139,24 @@ function Start-PodeWebServer
                         Add-PodeRequestLogEndware -WebEvent $WebEvent
 
                         # stop now if the request has an error
-                        if ($null -ne $Request.Error) {
-                            $Request.Error | Write-PodeErrorLog -CheckInnerException
+                        if ($Request.IsAborted) {
                             throw $Request.Error
                         }
 
                         # invoke global and route middleware
                         if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
+                            # has thr request been aborted
+                            if ($Request.IsAborted) {
+                                throw $Request.Error
+                            }
+
                             if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
                             {
+                                # has thr request been aborted
+                                if ($Request.IsAborted) {
+                                    throw $Request.Error
+                                }
+
                                 # invoke the route
                                 if ($null -ne $WebEvent.StaticContent) {
                                     if ($WebEvent.StaticContent.IsDownload) {
@@ -171,6 +184,10 @@ function Start-PodeWebServer
                     }
                     catch [System.OperationCanceledException] {}
                     catch [System.Net.Http.HttpRequestException] {
+                        if ($Response.StatusCode -ge 500) {
+                            $_.Exception | Write-PodeErrorLog -CheckInnerException
+                        }
+
                         $code = [int]($_.Exception.Data['PodeStatusCode'])
                         if ($code -le 0) {
                             $code = 400

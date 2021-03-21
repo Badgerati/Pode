@@ -130,6 +130,12 @@ function New-PodeContext
         Listener = $null
     }
 
+    # set default request config
+    $ctx.Server.Request = @{
+        Timeout = 30
+        BodySize = 100MB
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -210,17 +216,18 @@ function New-PodeContext
 
     # routes for pages and api
     $ctx.Server.Routes = @{
-        'delete' = @{};
-        'get' = @{};
-        'head' = @{};
-        'merge' = @{};
-        'options' = @{};
-        'patch' = @{};
-        'post' = @{};
-        'put' = @{};
-        'trace' = @{};
-        'static' = @{};
-        '*' = @{};
+        'delete'    = @{}
+        'get'       = @{}
+        'head'      = @{}
+        'merge'     = @{}
+        'options'   = @{}
+        'patch'     = @{}
+        'post'      = @{}
+        'put'       = @{}
+        'trace'     = @{}
+        'static'    = @{}
+        'signal'    = @{}
+        '*'         = @{}
     }
 
     # custom view paths
@@ -267,6 +274,9 @@ function New-PodeContext
         Requests = @{
             Total = 0
             StatusCodes = @{}
+        }
+        Signals = @{
+            Total = 0
         }
     }
 
@@ -404,7 +414,10 @@ function Import-PodeModulesIntoRunspaceState
     }
 
     # load modules into runspaces, if allowed
-    $modules = (Get-Module | Where-Object { ($_.ModuleType -ieq 'script') -and ($_.Name -ine 'pode') }).Name | Sort-Object -Unique
+    $modules = (Get-Module |
+        Where-Object {
+            ($_.Name -ine 'pode') -and ($_.Name -inotlike 'microsoft.powershell.*')
+        }).Name | Sort-Object -Unique
 
     foreach ($module in $modules) {
         # only exported modules? is the module exported?
@@ -619,6 +632,15 @@ function Set-PodeServerConfiguration
             ExportList = @()
             ExportOnly = ([bool]$Configuration.AutoImport.Functions.ExportOnly)
         }
+    }
+
+    # request
+    if ([int]$Configuration.Request.Timeout -gt 0) {
+        $Context.Server.Request.Timeout = [int]$Configuration.Request.Timeout
+    }
+
+    if ([long]$Configuration.Request.BodySize -gt 0) {
+        $Context.Server.Request.BodySize = [long]$Configuration.Request.BodySize
     }
 }
 

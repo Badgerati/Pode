@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace Pode
 {
@@ -17,17 +18,32 @@ namespace Pode
         public PodeSocket PodeSocket { get; private set;}
         public DateTime Timestamp { get; private set; }
         public Hashtable Data { get; private set; }
-        public PodeContextState State { get; private set; }
         public PodeContextType Type { get; private set; }
+
+        private PodeContextState _state;
+        public PodeContextState State
+        {
+            get => _state;
+            private set
+            {
+                if (_state != PodeContextState.Timeout || value == PodeContextState.Closed)
+                {
+                    _state = value;
+                }
+            }
+        }
 
         public bool CloseImmediately
         {
-            get => (State == PodeContextState.Error || State == PodeContextState.Closing || Request.CloseImmediately);
+            get => (State == PodeContextState.Error
+                || State == PodeContextState.Closing
+                || State == PodeContextState.Timeout
+                || Request.CloseImmediately);
         }
 
         public bool IsWebSocket
         {
-            get => (Type == PodeContextType.WebSocket);
+            get => ((Type == PodeContextType.WebSocket) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.WebSocket));
         }
 
         public bool IsWebSocketUpgraded
@@ -37,12 +53,12 @@ namespace Pode
 
         public bool IsSmtp
         {
-            get => (Type == PodeContextType.Smtp);
+            get => ((Type == PodeContextType.Smtp) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.Smtp));
         }
 
         public bool IsHttp
         {
-            get => (Type == PodeContextType.Http);
+            get => ((Type == PodeContextType.Http) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.Http));
         }
 
         public PodeSmtpRequest SmtpRequest
@@ -70,6 +86,18 @@ namespace Pode
             get => (State == PodeContextState.Error || State == PodeContextState.SslError);
         }
 
+        public bool IsTimeout
+        {
+            get => (State == PodeContextState.Timeout);
+        }
+
+        public bool IsClosed
+        {
+            get => (State == PodeContextState.Closed);
+        }
+
+        public CancellationTokenSource ContextTimeoutToken { get; private set; }
+        private Timer TimeoutTimer;
 
         public PodeContext(Socket socket, PodeSocket podeSocket, PodeListener listener)
         {
@@ -85,6 +113,18 @@ namespace Pode
 
             NewResponse();
             NewRequest();
+        }
+
+        private void TimeoutCallback(object state)
+        {
+            ContextTimeoutToken.Cancel();
+            State = PodeContextState.Timeout;
+
+            Response.StatusCode = 408;
+            Request.Error = new HttpRequestException("Request timeout");
+            Request.Error.Data.Add("PodeStatusCode", 408);
+
+            this.Dispose();
         }
 
         private void NewResponse()
@@ -167,14 +207,27 @@ namespace Pode
             }
         }
 
+        public void RenewTimeoutToken()
+        {
+            ContextTimeoutToken = new CancellationTokenSource();
+        }
+
         public async void Receive()
         {
             try
             {
+                // start timeout
+                TimeoutTimer = new Timer(TimeoutCallback, null, Listener.RequestTimeout * 1000, Timeout.Infinite);
+
+                // start receiving
                 State = PodeContextState.Receiving;
-                var close = await Request.Receive();
-                SetContextType();
-                EndReceive(close);
+                try
+                {
+                    var close = await Request.Receive(ContextTimeoutToken.Token);
+                    SetContextType();
+                    EndReceive(close);
+                }
+                catch (OperationCanceledException) {}
             }
             catch
             {
@@ -185,6 +238,11 @@ namespace Pode
         public void EndReceive(bool close)
         {
             State = close ? PodeContextState.Closing : PodeContextState.Received;
+            if (close)
+            {
+                Response.StatusCode = 400;
+            }
+
             PodeSocket.HandleContext(this);
         }
 
@@ -237,8 +295,7 @@ namespace Pode
             // add open web socket to listener
             var webSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
 
-            var wsRequest = new PodeWsRequest(HttpRequest);
-            wsRequest.WebSocket = webSocket;
+            var wsRequest = new PodeWsRequest(HttpRequest, webSocket);
             Request = wsRequest;
 
             Listener.AddWebSocket(WsRequest.WebSocket);
@@ -251,18 +308,47 @@ namespace Pode
 
         public void Dispose(bool force)
         {
+            if (IsClosed)
+            {
+                Request.Dispose();
+                Response.Dispose();
+                ContextTimeoutToken.Dispose();
+                TimeoutTimer.Dispose();
+                return;
+            }
+
+            var _awaitingBody = false;
+
             // send the response and close, only close request if not keep alive
             try
             {
+                // dispose timeout token
+                ContextTimeoutToken.Dispose();
+                TimeoutTimer.Dispose();
+
+                // error or timeout?
                 if (IsErrored)
                 {
                     Response.StatusCode = 500;
                 }
 
-                // only send a response if Http
-                if (IsHttp && State != PodeContextState.SslError && !HttpRequest.AwaitingBody)
+                // are we awaiting for more info?
+                if (IsHttp)
                 {
-                    Response.Send();
+                    _awaitingBody = (HttpRequest.AwaitingBody && !IsErrored && !IsTimeout);
+                }
+
+                // only send a response if Http
+                if (IsHttp && State != PodeContextState.SslError && !_awaitingBody)
+                {
+                    if (IsTimeout)
+                    {
+                        Response.SendTimeout();
+                    }
+                    else
+                    {
+                        Response.Send();
+                    }
                 }
 
                 // if it was smtp, and it was processable, RESET!
@@ -272,7 +358,7 @@ namespace Pode
                 }
 
                 // dispose of request if not KeepAlive, and not waiting for body
-                if (((IsHttp && !HttpRequest.AwaitingBody) || !IsHttp) && (!IsKeepAlive || force))
+                if (!_awaitingBody && (!IsKeepAlive || force))
                 {
                     State = PodeContextState.Closed;
                     Request.Dispose();
@@ -283,7 +369,7 @@ namespace Pode
             catch {}
 
             // if keep-alive, or awaiting body, setup for re-receive
-            if (((IsHttp && HttpRequest.AwaitingBody) || IsKeepAlive) && !force)
+            if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout)) && !force)
             {
                 StartReceive();
             }

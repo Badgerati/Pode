@@ -208,8 +208,10 @@ namespace Pode
 
             try
             {
-                Task.Factory.StartNew(() => context.Receive());
+                context.RenewTimeoutToken();
+                Task.Factory.StartNew(() => context.Receive(), context.ContextTimeoutToken.Token);
             }
+            catch (OperationCanceledException) {}
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex, Listener);

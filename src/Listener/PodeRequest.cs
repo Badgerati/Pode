@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -8,8 +7,8 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Pode
 {
@@ -24,7 +23,8 @@ namespace Pode
         public Stream InputStream { get; private set; }
         public X509Certificate2 ClientCertificate { get; private set; }
         public SslPolicyErrors ClientCertificateErrors { get; private set; }
-        public HttpRequestException Error { get; private set; }
+        public HttpRequestException Error { get; set; }
+        public bool IsAborted => (Error != default(HttpRequestException));
 
         private Socket Socket;
         protected PodeContext Context;
@@ -83,12 +83,13 @@ namespace Pode
             return true;
         }
 
-        protected async Task<int> BeginRead()
+        protected async Task<int> BeginRead(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             return await Task<int>.Factory.FromAsync(InputStream.BeginRead, InputStream.EndRead, Buffer, 0, BufferSize, null);
         }
 
-        public async Task<bool> Receive()
+        public async Task<bool> Receive(CancellationToken cancellationToken)
         {
             try
             {
@@ -100,8 +101,9 @@ namespace Pode
                 var read = 0;
                 var close = true;
 
-                while ((read = await BeginRead()) > 0)
+                while ((read = await BeginRead(cancellationToken)) > 0)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     BufferStream.Write(Buffer, 0, read);
 
                     if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))
@@ -123,9 +125,7 @@ namespace Pode
                     break;
                 }
 
-                BufferStream.Dispose();
-                Buffer = default(byte[]);
-
+                cancellationToken.ThrowIfCancellationRequested();
                 return close;
             }
             catch (HttpRequestException httpex)
@@ -134,11 +134,17 @@ namespace Pode
             }
             catch (Exception ex)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 Error = new HttpRequestException(ex.Message, ex);
                 Error.Data.Add("PodeStatusCode", 400);
             }
+            finally
+            {
+                BufferStream.Dispose();
+                Buffer = default(byte[]);
+            }
 
-            return true;
+            return false;
         }
 
         protected virtual bool Parse(byte[] bytes)

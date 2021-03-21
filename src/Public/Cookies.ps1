@@ -160,6 +160,46 @@ function Get-PodeCookie
 
 <#
 .SYNOPSIS
+Retrieves the value of a cookie from the Request.
+
+.DESCRIPTION
+Retrieves the value of a cookie from the Request, with the option to supply a secret to unsign the cookie's value.
+
+.PARAMETER Name
+The name of the cookie to retrieve.
+
+.PARAMETER Secret
+The secret used to unsign the cookie's value.
+
+.EXAMPLE
+Get-PodeCookieValue -Name 'Views'
+
+.EXAMPLE
+Get-PodeCookieValue -Name 'Views' -Secret 'hunter2'
+#>
+function Get-PodeCookieValue
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    $cookie = Get-PodeCookie -Name $Name -Secret $Secret
+    if ($null -eq $cookie) {
+        return $null
+    }
+
+    return $cookie.Value
+}
+
+<#
+.SYNOPSIS
 Tests if a cookie exists on the Request.
 
 .DESCRIPTION
