@@ -64,40 +64,48 @@ function Start-PodeSignalServer
             {
                 $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
-                # get the sockets for the message
-                $sockets = @()
+                try
+                {
+                    # get the sockets for the message
+                    $sockets = @()
 
-                # by clientId
-                if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
-                    $sockets = @($Listener.WebSockets[$message.ClientId])
-                }
-                else {
-                    $sockets = @($Listener.WebSockets.Values)
+                    # by clientId
+                    if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
+                        $sockets = @($Listener.WebSockets[$message.ClientId])
+                    }
+                    else {
+                        $sockets = @($Listener.WebSockets.Values)
 
-                    # by path
-                    if (![string]::IsNullOrWhiteSpace($message.Path)) {
-                        $sockets = @(foreach ($socket in $sockets) {
-                            if ($socket.Path -ieq $message.Path) {
-                                $socket
-                                break
-                            }
-                        })
+                        # by path
+                        if (![string]::IsNullOrWhiteSpace($message.Path)) {
+                            $sockets = @(foreach ($socket in $sockets) {
+                                if ($socket.Path -ieq $message.Path) {
+                                    $socket
+                                    break
+                                }
+                            })
+                        }
+                    }
+
+                    # do nothing if no socket found
+                    if (($null -eq $sockets) -or ($sockets.Length -eq 0)) {
+                        continue
+                    }
+
+                    # send the message to all found sockets
+                    foreach ($socket in $sockets) {
+                        try {
+                            $socket.Context.Response.SendSignal($message)
+                        }
+                        catch {
+                            $Listener.WebSockets.Remove($socket.ClientId) | Out-Null
+                        }
                     }
                 }
-
-                # do nothing if no socket found
-                if (($null -eq $sockets) -or ($sockets.Length -eq 0)) {
-                    continue
-                }
-
-                # send the message to all found sockets
-                foreach ($socket in $sockets) {
-                    try {
-                        $socket.Context.Response.SendSignal($message)
-                    }
-                    catch {
-                        $Listener.WebSockets.Remove($socket.ClientId) | Out-Null
-                    }
+                catch [System.OperationCanceledException] {}
+                catch {
+                    $_ | Write-PodeErrorLog
+                    $_.Exception | Write-PodeErrorLog -CheckInnerException
                 }
             }
         }
@@ -123,8 +131,63 @@ function Start-PodeSignalServer
             while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
             {
                 $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
-                $context = ($context.Message | ConvertFrom-Json)
-                Send-PodeSignal -Value $context.message -Path $context.path -ClientId $context.clientId
+
+                try
+                {
+                    $payload = ($context.Message | ConvertFrom-Json)
+                    $Request = $context.WebSocket.Context.Request
+                    $Response = $context.WebSocket.Context.Response
+
+                    $SignalEvent = @{
+                        Response = $Response
+                        Request = $Request
+                        Lockable = $PodeContext.Lockable
+                        Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
+                        Data = @{
+                            Path = [System.Web.HttpUtility]::UrlDecode($payload.path)
+                            Message = $payload.message
+                            ClientId = $payload.clientId
+                        }
+                        Endpoint = @{
+                            Protocol = $Request.Url.Scheme
+                            Address = $Request.Host
+                            Name = $null
+                        }
+                        Route = $null
+                        Timestamp = $context.Timestamp
+                        Streamed = $true
+                    }
+
+                    # endpoint name
+                    $SignalEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SignalEvent.Endpoint.Protocol -Address $SignalEvent.Endpoint.Address -LocalAddress $SignalEvent.Request.LocalEndPoint)
+
+                    # see if we have a route and invoke it, otherwise auto-send
+                    $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name
+
+                    if ($null -ne $SignalEvent.Route) {
+                        $_args = @($SignalEvent.Route.Arguments)
+                        if ($null -ne $SignalEvent.Route.UsingVariables) {
+                            $_vars = @()
+                            foreach ($_var in $SignalEvent.Route.UsingVariables) {
+                                $_vars += ,$_var.Value
+                            }
+                            $_args = $_vars + $_args
+                        }
+
+                        Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $_args -Scoped -Splat
+                    }
+                    else {
+                        Send-PodeSignal -Value $SignalEvent.Message -Path $SignalEvent.Path -ClientId $SignalEvent.ClientId
+                    }
+                }
+                catch [System.OperationCanceledException] {}
+                catch {
+                    $_ | Write-PodeErrorLog
+                    $_.Exception | Write-PodeErrorLog -CheckInnerException
+                }
+                finally {
+                    Update-PodeServerSignalMetrics -SignalEvent $SignalEvent
+                }
             }
         }
         catch [System.OperationCanceledException] {}

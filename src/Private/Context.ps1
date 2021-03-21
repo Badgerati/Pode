@@ -216,17 +216,18 @@ function New-PodeContext
 
     # routes for pages and api
     $ctx.Server.Routes = @{
-        'delete' = @{};
-        'get' = @{};
-        'head' = @{};
-        'merge' = @{};
-        'options' = @{};
-        'patch' = @{};
-        'post' = @{};
-        'put' = @{};
-        'trace' = @{};
-        'static' = @{};
-        '*' = @{};
+        'delete'    = @{}
+        'get'       = @{}
+        'head'      = @{}
+        'merge'     = @{}
+        'options'   = @{}
+        'patch'     = @{}
+        'post'      = @{}
+        'put'       = @{}
+        'trace'     = @{}
+        'static'    = @{}
+        'signal'    = @{}
+        '*'         = @{}
     }
 
     # custom view paths
@@ -273,6 +274,9 @@ function New-PodeContext
         Requests = @{
             Total = 0
             StatusCodes = @{}
+        }
+        Signals = @{
+            Total = 0
         }
     }
 

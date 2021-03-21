@@ -341,7 +341,7 @@ function Add-PodeStaticRoute
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw "[$($Method)]: No Path path supplied for Static Route"
+        throw "[$($Method)]: No Path supplied for Static Route"
     }
 
     # ensure the route has appropriate slashes
@@ -442,6 +442,115 @@ function Add-PodeStaticRoute
     if ($PassThru) {
         return $newRoutes
     }
+}
+
+<#
+.SYNOPSIS
+Adds a Signal Route for WebSockets.
+
+.DESCRIPTION
+Adds a Signal Route, with path, that when called with invoke any logic.
+
+.PARAMETER Path
+The URI path for the Signal Route.
+
+.PARAMETER ScriptBlock
+A ScriptBlock for the Signal Route's main logic.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) this Signal Route should be bound against.
+
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Signal Route's main logic.
+
+.PARAMETER ArgumentList
+An array of arguments to supply to the Signal Route's ScriptBlock.
+
+.EXAMPLE
+Add-PodeSignalRoute -Path '/message' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeSignalRoute -Path '/message' -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
+#>
+function Add-PodeSignalRoute
+{
+    [CmdletBinding(DefaultParameterSetName='Script')]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter(ParameterSetName='Script')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [string[]]
+        $EndpointName,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
+    )
+
+    $Method = 'Signal'
+
+    # ensure the route has appropriate slashes
+    $Path = Update-PodeRouteSlashes -Path $Path
+
+    # get endpoints from name
+    if (!$PodeContext.Server.FindRouteEndpoint) {
+        $PodeContext.Server.FindRouteEndpoint = !(Test-PodeIsEmpty $EndpointName)
+    }
+
+    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+
+    # ensure the route doesn't already exist for each endpoint
+    foreach ($_endpoint in $endpoints) {
+        Test-PodeRouteAndError -Method $Method -Path $Path -Protocol $_endpoint.Protocol -Address $_endpoint.Address
+    }
+
+    # if scriptblock and file path are all null/empty, error
+    if ((Test-PodeIsEmpty $ScriptBlock) -and (Test-PodeIsEmpty $FilePath)) {
+        throw "[$($Method)] $($Path): No logic passed"
+    }
+
+    # if we have a file path supplied, load that path as a scriptblock
+    if ($PSCmdlet.ParameterSetName -ieq 'file') {
+        $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
+    }
+
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+    # add the route(s)
+    Write-Verbose "Adding Route: [$($Method)] $($Path)"
+    $newRoutes = @(foreach ($_endpoint in $endpoints) {
+        @{
+            Logic = $ScriptBlock
+            UsingVariables = $usingVars
+            Endpoint = @{
+                Protocol = $_endpoint.Protocol
+                Address = $_endpoint.Address.Trim()
+                Name = $_endpoint.Name
+            }
+            Arguments = $ArgumentList
+            Method = $Method
+            Path = $Path
+            IsStatic = $false
+            Metrics = @{
+                Requests = @{
+                    Total = 0
+                }
+            }
+        }
+    })
+
+    $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
 }
 
 <#
@@ -562,6 +671,56 @@ function Remove-PodeStaticRoute
 
 <#
 .SYNOPSIS
+Remove a specific Signal Route.
+
+.DESCRIPTION
+Remove a specific Signal Route.
+
+.PARAMETER Path
+The path of the Signal Route to remove.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) bound to the Signal Route to be removed.
+
+.EXAMPLE
+Remove-PodeSignalRoute -Route '/message'
+#>
+function Remove-PodeSignalRoute
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $EndpointName
+    )
+
+    $Method = 'Signal'
+
+    # ensure the route has appropriate slashes and replace parameters
+    $Path = Update-PodeRouteSlashes -Path $Path
+
+    # ensure route does exist
+    if (!$PodeContext.Server.Routes[$Method].ContainsKey($Path)) {
+        return
+    }
+
+    # remove the route's logic
+    $PodeContext.Server.Routes[$Method][$Path] = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
+        $_.Endpoint.Name -ine $EndpointName
+    })
+
+    # if the route has no more logic, just remove it
+    if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
+        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+    }
+}
+
+<#
+.SYNOPSIS
 Removes all added Routes, or Routes for a specific Method.
 
 .DESCRIPTION
@@ -612,6 +771,24 @@ function Clear-PodeStaticRoutes
     param()
 
     $PodeContext.Server.Routes['Static'].Clear()
+}
+
+<#
+.SYNOPSIS
+Removes all added Signal Routes.
+
+.DESCRIPTION
+Removes all added Signal Routes.
+
+.EXAMPLE
+Clear-PodeSignalRoutes
+#>
+function Clear-PodeSignalRoutes
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Server.Routes['Signal'].Clear()
 }
 
 <#
@@ -979,10 +1156,10 @@ A Path to filter the routes.
 The name of an endpoint to filter routes.
 
 .EXAMPLE
-Get-PodeRoute -Method Get -Route '/about'
+Get-PodeRoute -Method Get -Path '/about'
 
 .EXAMPLE
-Get-PodeRoute -Method Post -Route '/users/:userId' -EndpointName User
+Get-PodeRoute -Method Post -Path '/users/:userId' -EndpointName User
 #>
 function Get-PodeRoute
 {
@@ -1092,6 +1269,70 @@ function Get-PodeStaticRoute
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
         $Path = Update-PodeRouteSlashes -Path $Path -Static
+        $routes = @(foreach ($route in $routes) {
+            if ($route.Path -ine $Path) {
+                continue
+            }
+
+            $route
+        })
+    }
+
+    # further filter by endpoint names
+    if (($null -ne $EndpointName) -and ($EndpointName.Length -gt 0)) {
+        $routes = @(foreach ($name in $EndpointName) {
+            foreach ($route in $routes) {
+                if ($route.Endpoint.Name -ine $name) {
+                    continue
+                }
+
+                $route
+            }
+        })
+    }
+
+    # return
+    return $routes
+}
+
+<#
+.SYNOPSIS
+Get a Signal Route(s).
+
+.DESCRIPTION
+Get a Signal Route(s).
+
+.PARAMETER Path
+A Path to filter the signal routes.
+
+.PARAMETER EndpointName
+The name of an endpoint to filter signal routes.
+
+.EXAMPLE
+Get-PodeSignalRoute -Path '/message'
+#>
+function Get-PodeSignalRoute
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string[]]
+        $EndpointName
+    )
+
+    # start off with every route
+    $routes = @()
+    foreach ($route in $PodeContext.Server.Routes['Signal'].Values) {
+        $routes += $route
+    }
+
+    # if we have a path, filter
+    if (![string]::IsNullOrWhiteSpace($Path)) {
+        $Path = Update-PodeRouteSlashes -Path $Path
         $routes = @(foreach ($route in $routes) {
             if ($route.Path -ine $Path) {
                 continue
