@@ -295,8 +295,7 @@ namespace Pode
             // add open web socket to listener
             var webSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
 
-            var wsRequest = new PodeWsRequest(HttpRequest);
-            wsRequest.WebSocket = webSocket;
+            var wsRequest = new PodeWsRequest(HttpRequest, webSocket);
             Request = wsRequest;
 
             Listener.AddWebSocket(WsRequest.WebSocket);

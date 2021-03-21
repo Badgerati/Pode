@@ -98,3 +98,21 @@ function Get-PodeServerRequestMetric
 
     return $PodeContext.Metrics.Requests.StatusCodes[$strCode]
 }
+
+<#
+.SYNOPSIS
+Returns the total number of Signal requests the Server has receieved.
+
+.DESCRIPTION
+Returns the total number of Signal requests the Server has receieved.
+
+.EXAMPLE
+$totalReqs = Get-PodeServerSignalMetric
+#>
+function Get-PodeServerSignalMetric
+{
+    [CmdletBinding()]
+    param()
+
+    return $PodeContext.Metrics.Signals.Total
+}

@@ -8,7 +8,10 @@ namespace Pode
         public PodeWsOpCode OpCode { get; private set; }
         public string Body { get; private set; }
         public byte[] RawBody { get; private set; }
-        public PodeWebSocket WebSocket { get; set; }
+        public PodeWebSocket WebSocket { get; private set; }
+        public Uri Url { get; private set; }
+        public string Host { get; private set; }
+        public int ContentLength { get; private set; }
 
         private WebSocketCloseStatus _closeStatus = WebSocketCloseStatus.Empty;
         public WebSocketCloseStatus CloseStatus
@@ -27,10 +30,15 @@ namespace Pode
             get => (OpCode == PodeWsOpCode.Close);
         }
 
-        public PodeWsRequest(PodeRequest request)
+        public PodeWsRequest(PodeHttpRequest request, PodeWebSocket webSocket)
             : base(request)
         {
+            WebSocket = webSocket;
             IsKeepAlive = true;
+
+            var _proto = (IsSsl ? "wss" : "ws");
+            Host = request.Host;
+            Url = new Uri($"{_proto}://{request.Url.Authority}{request.Url.PathAndQuery}");
         }
 
         public PodeClientSignal NewClientSignal()
@@ -74,6 +82,7 @@ namespace Pode
 
             // set the raw/body
             RawBody = bytes;
+            ContentLength = RawBody.Length;
             Body = Encoding.GetString(decoded);
 
             // get the close status and description

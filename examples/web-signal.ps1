@@ -23,4 +23,15 @@ Start-PodeServer -Threads 5 {
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'websockets'
     }
+
+    # SIGNAL route, to return current date
+    Add-PodeSignalRoute -Path '/' -ScriptBlock {
+        $msg = $SignalEvent.Data.Message
+
+        if ($msg -ieq '[date]') {
+            $msg = [datetime]::Now.ToString()
+        }
+
+        Send-PodeSignal -Value $msg -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
+    }
 }
