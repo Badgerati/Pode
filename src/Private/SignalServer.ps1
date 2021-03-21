@@ -177,7 +177,7 @@ function Start-PodeSignalServer
                         Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $_args -Scoped -Splat
                     }
                     else {
-                        Send-PodeSignal -Value $SignalEvent.Message -Path $SignalEvent.Path -ClientId $SignalEvent.ClientId
+                        Send-PodeSignal -Value $SignalEvent.Data.Message -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
                     }
                 }
                 catch [System.OperationCanceledException] {}
