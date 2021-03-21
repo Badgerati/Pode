@@ -1,5 +1,26 @@
 # Release Notes
 
+## v2.2.0
+
+```plain
+### Features
+* #682: Add support for the HTTP Range request header
+
+### Enhancements
+* #684: Add support for login pages to redirect to the originating page
+* #696: Fast processing of form data in requests
+* #696: Add support for Request Timeout and Request Body Size
+* #711: Add support for custom Signal Routes for WebSockets
+
+### Bugs
+* #690: Fix bug with high CPU/Memory on IIS authentication with sessions, from WinIdentity
+* #702: Fix bug with loading manifest modules - such as the ActiveDirectory module
+* #709: Fix bug with `multipart/form-data` requests in Azure Functions
+
+### Documentation
+* #704: Fix LoginPage docs so it matches the repository example (thanks @mark05e!)
+```
+
 ## v2.1.1
 
 ```plain
