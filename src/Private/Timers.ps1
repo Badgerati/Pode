@@ -60,7 +60,7 @@ function Invoke-PodeInternalTimer
     )
 
     try {
-        $TimerEvent = @{ Lockable = $PodeContext.Lockable }
+        $global:TimerEvent = @{ Lockable = $PodeContext.Lockable }
 
         $_args = @($Timer.Arguments)
         if ($null -ne $Timer.UsingVariables) {
