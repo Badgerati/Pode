@@ -153,7 +153,7 @@ function Start-PodeServer
             -Quiet:$Quiet
 
         # set it so ctrl-c can terminate, unless serverless/iis, or disabled
-        if (!$PodeContext.Server.DisableTermination) {
+        if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
             [Console]::TreatControlCAsInput = $true
         }
 
