@@ -1,5 +1,14 @@
 # Release Notes
 
+## v2.2.1
+
+```plain
+### Bugs
+* #716: Fix bug with `$TimerEvent` object within Timers
+* #717: Fix bug with looping services exiting immediately
+* #720: Fix bug with enabling termination in PS ISE
+```
+
 ## v2.2.0
 
 ```plain
