@@ -77,6 +77,63 @@ function Get-PodeLoggingFileMethod
     }
 }
 
+function Get-PodeLoggingEventViewerMethod
+{
+    return {
+        param($item, $options, $rawItem)
+
+        if ($item -isnot [array]) {
+            $item = @($item)
+        }
+
+        if ($rawItem -isnot [array]) {
+            $rawItem = @($rawItem)
+        }
+
+        for ($i = 0; $i -lt $item.Length; $i++) {
+            # convert log level - info if no level present
+            $entryType = ConvertTo-PodeEventViewerLevel -Level $rawItem[$i].Level
+
+            # create log instance
+            $entryInstance = [System.Diagnostics.EventInstance]::new($options.ID, 0, $entryType)
+
+            # create event log
+            $entryLog = [System.Diagnostics.EventLog]::new()
+            $entryLog.Log = $options.LogName
+            $entryLog.Source = $options.Source
+
+            try {
+                $message = ($item[$i] | Protect-PodeLogItem)
+                $entryLog.WriteEvent($entryInstance, $message)
+            }
+            catch {}
+        }
+    }
+}
+
+function ConvertTo-PodeEventViewerLevel
+{
+    param(
+        [Parameter()]
+        [string]
+        $Level
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Level)) {
+        return [System.Diagnostics.EventLogEntryType]::Information
+    }
+
+    if ($Level -ieq 'error') {
+        return [System.Diagnostics.EventLogEntryType]::Error
+    }
+
+    if ($Level -ieq 'warning') {
+        return [System.Diagnostics.EventLogEntryType]::Warning
+    }
+
+    return [System.Diagnostics.EventLogEntryType]::Information
+}
+
 function Get-PodeLoggingInbuiltType
 {
     param (
@@ -306,6 +363,7 @@ function Start-PodeLoggingRunspace
                 $_args = $_vars + $_args
             }
 
+            $rawItems = $log.Item
             $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -Return -Splat)
 
             # check batching
@@ -313,23 +371,26 @@ function Start-PodeLoggingRunspace
             if ($batch.Size -gt 1) {
                 # add current item to batch
                 $batch.Items += $result
+                $batch.RawItems += $log.Item
                 $batch.LastUpdate = $now
 
                 # if the current amount of items matches the batch, write
                 $result = $null
                 if ($batch.Items.Length -ge $batch.Size) {
                     $result = $batch.Items
+                    $rawItems = $batch.RawItems
                 }
 
                 # if we're writing, reset the items
                 if ($null -ne $result) {
                     $batch.Items = @()
+                    $batch.RawItems = @()
                 }
             }
 
             # send the writable log item off to the log writer
             if ($null -ne $result) {
-                $_args = @(,$result) + @($logger.Method.Arguments)
+                $_args = @(,$result) + @($logger.Method.Arguments) + @(,$rawItems)
                 if ($null -ne $logger.Method.UsingVariables) {
                     $_vars = @()
                     foreach ($_var in $logger.Method.UsingVariables) {
@@ -361,9 +422,12 @@ function Test-PodeLoggerBatches
             ($batch.Timeout -gt 0) -and ($null -ne $batch.LastUpdate) -and ($batch.LastUpdate.AddSeconds($batch.Timeout) -le $now))
         {
             $result = $batch.Items
-            $batch.Items = @()
+            $rawItems = $batch.RawItems
 
-            $_args = @(,$result) + @($logger.Method.Arguments)
+            $batch.Items = @()
+            $batch.RawItems = @()
+
+            $_args = @(,$result) + @($logger.Method.Arguments) + @(,$rawItems)
             if ($null -ne $logger.Method.UsingVariables) {
                 $_vars = @()
                 foreach ($_var in $logger.Method.UsingVariables) {

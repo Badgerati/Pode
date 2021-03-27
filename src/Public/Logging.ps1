@@ -17,6 +17,18 @@ The File Path of where to store the logs.
 .PARAMETER Name
 The File Name to prepend new log files using.
 
+.PARAMETER EventViewer
+If supplied, will use the inbuilt Event Viewer logging output method.
+
+.PARAMETER EventLogName
+Optional Log Name for the Event Viewer (Default: Application)
+
+.PARAMETER Source
+Optional Source for the Event Viewer (Default: Pode)
+
+.PARAMETER EventID
+Optional EventID for the Event Viewer (Default: 0)
+
 .PARAMETER Batch
 An optional batch size to write log items in bulk (Default: 1)
 
@@ -67,6 +79,22 @@ function New-PodeLoggingMethod
         [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
         $Name,
+
+        [Parameter(ParameterSetName='EventViewer')]
+        [switch]
+        $EventViewer,
+
+        [Parameter(ParameterSetName='EventViewer')]
+        [string]
+        $EventLogName = 'Application',
+
+        [Parameter(ParameterSetName='EventViewer')]
+        [string]
+        $Source = 'Pode',
+
+        [Parameter(ParameterSetName='EventViewer')]
+        [int]
+        $EventID = 0,
 
         [Parameter()]
         [int]
@@ -124,6 +152,7 @@ function New-PodeLoggingMethod
         Timeout = $BatchTimeout
         LastUpdate = $null
         Items = @()
+        RawItems = @()
     }
 
     # return info on appropriate logging type
@@ -152,6 +181,28 @@ function New-PodeLoggingMethod
                     FileId = 0
                     Date = $null
                     NextClearDown = [datetime]::Now.Date
+                }
+            }
+        }
+
+        'eventviewer' {
+            # only windows
+            if (!(Test-PodeIsWindows)) {
+                throw "Event Viewer logging only supported on Windows"
+            }
+
+            # create source
+            if (![System.Diagnostics.EventLog]::SourceExists($Source)) {
+                [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName) | Out-Null
+            }
+
+            return @{
+                ScriptBlock = (Get-PodeLoggingEventViewerMethod)
+                Batch = $batchInfo
+                Arguments = @{
+                    LogName = $EventLogName
+                    Source = $Source
+                    ID = $EventID
                 }
             }
         }
