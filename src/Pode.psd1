@@ -220,6 +220,7 @@
         'New-PodeOAStringProperty',
         'New-PodeOABoolProperty',
         'New-PodeOAObjectProperty',
+        'New-PodeOASchemaProperty',
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
         'Enable-PodeOpenApiViewer',
