@@ -124,6 +124,14 @@ function ConvertTo-PodeOASchemaProperty
         $Property
     )
 
+    # schema refs
+    if($Property['$ref']) {
+        $schema = @{ 
+            '$ref' = $Property['$ref']
+        };
+        return $schema;
+    }
+
     # base schema type
     $schema = @{
         type = $Property.type
