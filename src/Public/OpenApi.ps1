@@ -1221,7 +1221,7 @@ function New-PodeOAObjectProperty
 
 <#
 .SYNOPSIS
-Creates a OpenAPI reference property.
+Creates a OpenAPI schema reference property.
 
 .DESCRIPTION
 Creates a new OpenAPI schema reference from another OpenAPI schema.
@@ -1261,6 +1261,7 @@ function New-PodeOASchemaProperty
 
     $param = @{
         name = $Name
+        description = $Description
         '$ref' = "#/components/schemas/$ComponentSchema"
     }
 
