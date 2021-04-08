@@ -49,7 +49,7 @@ function Start-PodeGuiRunspace {
             # Check for CefSharp
             $loadCef = [bool]([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName.StartsWith("CefSharp.Wpf,") })
 
-            # setup the WPF XAML for the server          
+            # setup the WPF XAML for the server
             # Check for CefSharp and used Chromium based WPF if Modules exists
             if ($loadCef) {
                 $gui_browser = "

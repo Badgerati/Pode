@@ -131,8 +131,8 @@ function ConvertTo-PodeOASchemaProperty
     }
 
     # schema refs
-    if($Property.type -ieq 'schema') {
-        $schema = @{ 
+    if ($Property.type -ieq 'schema') {
+        $schema = @{
             '$ref' = "#components/schemas/$($Property['schema'])"
         }
     }

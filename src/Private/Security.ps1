@@ -494,7 +494,7 @@ function Add-PodeEndpointLimit
     if ($Seconds -le 0) {
         throw "Seconds value cannot be 0 or less for $($IP)"
     }
-    
+
     # we need to check endpoints on requests
     $PodeContext.Server.FindRouteEndpoint = $true
 

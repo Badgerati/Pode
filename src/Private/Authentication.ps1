@@ -747,7 +747,7 @@ function Get-PodeAuthWindowsADIISMethod
 
                     # Query the ADSISearcher for the above defined SID
                     $ad = $searcher.FindOne()
-                    
+
                     # Save it to our existing array for later usage
                     $user.DistinguishedName = @($ad.Properties.distinguishedname)[0]
                     $user.Name = @($ad.Properties.name)[0]
