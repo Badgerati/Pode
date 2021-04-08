@@ -133,7 +133,7 @@ function ConvertTo-PodeOASchemaProperty
     # schema refs
     if($Property.type -ieq 'schema') {
         $schema = @{ 
-            '$ref' = "#components/schemas/$($Property['schema'])"
+            '$ref' = "#/components/schemas/$($Property['schema'])"
         }
     }
 
