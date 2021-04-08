@@ -1221,6 +1221,63 @@ function New-PodeOAObjectProperty
 
 <#
 .SYNOPSIS
+Creates a OpenAPI schema reference property.
+
+.DESCRIPTION
+Creates a new OpenAPI schema reference from another OpenAPI schema.
+
+.PARAMETER Name
+The Name of the property.
+
+.PARAMETER Reference
+An component schema name.
+
+.PARAMETER Description
+A Description of the property.
+
+.PARAMETER Array
+If supplied, the schema reference will be treated as an array.
+
+.EXAMPLE
+New-PodeOASchemaProperty -Name 'Config' -ComponentSchema "MyConfigSchema"
+#>
+function New-PodeOASchemaProperty
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Reference,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [switch]
+        $Array
+    )
+
+    if(!(Test-PodeOAComponentSchema -Name $Reference)) {
+        throw "The OpenApi component schema doesn't exist: $($Reference)"
+    }
+
+    $param = @{
+        name = $Name
+        type = 'schema'
+        schema = $Reference
+        array = $Array.IsPresent
+        description = $Description
+    }
+
+    return $param
+}
+
+<#
+.SYNOPSIS
 Converts an OpenAPI property into a Request Parameter.
 
 .DESCRIPTION
