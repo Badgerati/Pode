@@ -2,7 +2,7 @@
 
 Pode has a Docker image that you can use to host your server, for instructions on pulling these images you can [look here](../../Installation).
 
-The images use PowerShell v7.1.1 on either an Ubuntu Bionic (default) or ARM32 image.
+The images use PowerShell v7.1.3 on either an Ubuntu Bionic (default), Alpine, or ARM32 image.
 
 ## Images
 
@@ -11,7 +11,7 @@ The images use PowerShell v7.1.1 on either an Ubuntu Bionic (default) or ARM32 i
 
 ### Default
 
-The default Pode image is an Ubuntu Bionic image with PowerShell v7.1.1 and Pode installed. An example of using this image in your Dockerfile could be as follows:
+The default Pode image is an Ubuntu Bionic image with PowerShell v7.1.3 and Pode installed. An example of using this image in your Dockerfile could be as follows:
 
 ```dockerfile
 # pull down the pode image
@@ -19,6 +19,27 @@ FROM badgerati/pode:latest
 
 # or use the following for GitHub
 # FROM docker.pkg.github.com/badgerati/pode/pode:latest
+
+# copy over the local files to the container
+COPY . /usr/src/app/
+
+# expose the port
+EXPOSE 8085
+
+# run the server
+CMD [ "pwsh", "-c", "cd /usr/src/app; ./web-pages-docker.ps1" ]
+```
+
+### Alpine
+
+Pode also has an image for Alpine, an example of using this image in your Dockerfile could be as follows:
+
+```dockerfile
+# pull down the pode image
+FROM badgerati/pode:latest-alpine
+
+# or use the following for GitHub
+# FROM docker.pkg.github.com/badgerati/pode/pode:latest-alpine
 
 # copy over the local files to the container
 COPY . /usr/src/app/
