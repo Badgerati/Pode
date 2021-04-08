@@ -1235,6 +1235,9 @@ An component schema name.
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Array
+If supplied, the schema reference will be treated as an array.
+
 .EXAMPLE
 New-PodeOASchemaProperty -Name 'Config' -ComponentSchema "MyConfigSchema"
 #>
@@ -1252,7 +1255,10 @@ function New-PodeOASchemaProperty
 
         [Parameter()]
         [string]
-        $Description
+        $Description,
+
+        [switch]
+        $Array
     )
 
     if(!(Test-PodeOAComponentSchema -Name $Reference)) {
@@ -1260,10 +1266,11 @@ function New-PodeOASchemaProperty
     }
 
     $param = @{
-        type = 'schema'
         name = $Name
-        description = $Description
+        type = 'schema'
         schema = $Reference
+        array = $Array.IsPresent
+        description = $Description
     }
 
     return $param

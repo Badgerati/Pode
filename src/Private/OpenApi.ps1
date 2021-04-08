@@ -124,18 +124,17 @@ function ConvertTo-PodeOASchemaProperty
         $Property
     )
 
-    # schema refs
-    if($Property['$ref']) {
-        $schema = @{ 
-            '$ref' = $Property['$ref']
-        };
-        return $schema;
-    }
-
     # base schema type
     $schema = @{
         type = $Property.type
         format = $Property.format
+    }
+
+    # schema refs
+    if($Property.type -ieq 'schema') {
+        $schema = @{ 
+            '$ref' = "#components/schemas/$($Property['schema'])"
+        }
     }
 
     # are we using an array?
