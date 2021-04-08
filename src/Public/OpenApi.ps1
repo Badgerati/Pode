@@ -1255,14 +1255,15 @@ function New-PodeOASchemaProperty
         $Description
     )
 
-    if(!(Test-PodeOAComponentSchema -Name $ComponentSchema)) {
+    if(!(Test-PodeOAComponentSchema -Name $Reference)) {
         throw "The OpenApi component schema doesn't exist: $($Reference)"
     }
 
     $param = @{
+        type = 'schema'
         name = $Name
         description = $Description
-        '$ref' = "#/components/schemas/$ComponentSchema"
+        schema = $Reference
     }
 
     return $param
