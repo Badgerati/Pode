@@ -1229,7 +1229,7 @@ Creates a new OpenAPI schema reference from another OpenAPI schema.
 .PARAMETER Name
 The Name of the property.
 
-.PARAMETER ComponentSchema
+.PARAMETER Reference
 An component schema name.
 
 .PARAMETER Description
@@ -1246,17 +1246,17 @@ function New-PodeOASchemaProperty
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ParameterSetName = 'ComponentSchema')]
+        [Parameter(Mandatory=$true)]
         [string]
-        $ComponentSchema,
+        $Reference,
 
         [Parameter()]
         [string]
         $Description
     )
 
-    if(-not (Test-PodeOAComponentSchema -Name $ComponentSchema)) {
-        throw "Could not find component schema $ComponentSchema";
+    if(!(Test-PodeOAComponentSchema -Name $ComponentSchema)) {
+        throw "The OpenApi component schema doesn't exist: $($Reference)"
     }
 
     $param = @{
