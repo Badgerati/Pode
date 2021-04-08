@@ -111,17 +111,51 @@ Invoke-Build Docs
 
 In general, observe the coding style used within the file/project and mimic that as best as you can. Some standards that are typical are:
 
-* Bracers (`{}`) on the function header should be on a new line.
+* Bracers (`{}`) on the function header should be on a new line, such as:
+```powershell
+function Add-Something
+{
+    # logic
+}
+```
+
 * Bracers  (`{}`) should be on the same line of other calls, such as `foreach`, `if`, etc.
-* **Never** use inline parameters on functions. Such as: `function New-Function($param1, $param2)`
+```powershell
+foreach ($item in $items) {
+    # logic
+}
+```
+
+* **Never** use inline parameters on functions, such as: `function New-Function($param1, $param2)`
   * Always use the `param` block within the function.
   * Ensure public functions always declare `[CmdletBinding()]` attribute.
   * Ensure parameter names, types, and attributes are declared on new lines - not all on one line.
+```powershell
+function Add-Something
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Item
+    )
+}
+```
+
 * **Never** use the following commandlets ([see below](#powershell-commandlets) for details):
   * `Foreach-Object`
   * `Where-Object`
   * `Select-Object`
   * `Measure-Object`
+
+* Avoid using `-not`, and use `!` instead:
+```powershell
+if (!(Test-Path $Path)) {
+    # logic
+}
+```
+
+* Don't end lines with semi-colons (`;`).
 
 ### Comments
 
@@ -147,7 +181,7 @@ For performance reasons, the following PowerShell commandlets should be avoided 
 
 #### Foreach-Object
 
-Instead of using the `Foreach-Object` commandlet, please use the `foreach` keyword. This is orders of magnitude more performant than `Foreach-Object`.
+Instead of using the `Foreach-Object` commandlet, please use the `foreach` keyword. This is orders of magnitude faster than `Foreach-Object`.
 
 ```powershell
 # instead of this
@@ -163,7 +197,7 @@ foreach ($i in @(1, 2, 3)) {
 
 #### Where-Object
 
-Instead of using the `Where-Object` commandlet, please use the `foreach` adn `if` keywords. This is orders of magnitude more performant than `Where-Object`.
+Instead of using the `Where-Object` commandlet, please use the `foreach` and `if` keywords. These are orders of magnitude faster than `Where-Object`.
 
 ```powershell
 # instead of this
@@ -179,7 +213,7 @@ $array = @(foreach ($i in @(1, 2, 3, 1, 3, 4)) {
 
 #### Select-Object
 
-Instead of using the `Select-Object` commandlet to expand a property, or to select the first/last elements, please use the following. These is orders of magnitude more performant than `Measure-Object`.
+Instead of using the `Select-Object` commandlet to expand a property, or to select the first/last elements, please use the following. These are orders of magnitude faster than `Measure-Object`.
 
 ```powershell
 # instead of these
@@ -195,7 +229,7 @@ $services | Select-Object -Last 1
 
 #### Measure-Object
 
-Instead of using the `Measure-Object` commandlet, please use either the `.Length` or `.Count` properties. These is orders of magnitude more performant than `Measure-Object`.
+Instead of using the `Measure-Object` commandlet, please use either the `.Length` or `.Count` properties. These are orders of magnitude faster than `Measure-Object`.
 
 ```powershell
 # instead of these
