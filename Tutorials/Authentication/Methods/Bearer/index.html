@@ -1914,6 +1914,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../Functions/OpenApi/New-PodeOASchemaProperty/" class="md-nav__link">
+        New-PodeOASchemaProperty
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../Functions/OpenApi/New-PodeOAStringProperty/" class="md-nav__link">
         New-PodeOAStringProperty
       </a>
@@ -4587,7 +4599,7 @@
     <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>By default, Pode will check if the Request's header contains an <code>Authorization</code> key, and whether the value of that key starts with <code>Bearer</code>.</p>
+<p>By default, Pode will check if the Request's header contains an <code>Authorization</code> key, and whether the value of that key starts with <code>Bearer</code> tag. The <code>New-PodeAuthScheme -Bearer</code> function can be supplied parameters to customise the tag using <code>-HeaderTag</code>.</p>
 <p>You can also optionally return a <code>Scope</code> property alongside the <code>User</code>. If you specify any scopes with <a href="../../../../Functions/Authentication/New-PodeAuthScheme"><code>New-PodeAuthScheme</code></a> then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">New-PodeAuthScheme</span> <span class="n">-Bearer</span> <span class="n">-Scope</span> <span class="s1">&#39;write&#39;</span> <span class="p">|</span> <span class="nb">Add-PodeAuth</span> <span class="n">-Name</span> <span class="s1">&#39;Authenticate&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>

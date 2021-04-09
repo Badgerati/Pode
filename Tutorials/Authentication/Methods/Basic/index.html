@@ -1914,6 +1914,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../Functions/OpenApi/New-PodeOASchemaProperty/" class="md-nav__link">
+        New-PodeOASchemaProperty
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../Functions/OpenApi/New-PodeOAStringProperty/" class="md-nav__link">
         New-PodeOAStringProperty
       </a>
@@ -4587,7 +4599,7 @@
     <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>By default, Pode will check if the Request's header contains an <code>Authorization</code> key, and whether the value of that key starts with <code>Basic</code>. The <code>New-PodeAuthScheme -Basic</code> function can be supplied parameters to customise this name, as well as the encoding.</p>
+<p>By default, Pode will check if the Request's header contains an <code>Authorization</code> key, and whether the value of that key starts with <code>Basic</code> tag. The <code>New-PodeAuthScheme -Basic</code> function can be supplied parameters to customise the tag using <code>-HeaderTag</code>, as well as the <code>-Encoding</code>.</p>
 <p>For example, to use <code>ASCII</code> encoding rather than the default <code>ISO-8859-1</code> you could do:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">New-PodeAuthScheme</span> <span class="n">-Basic</span> <span class="n">-Encoding</span> <span class="s1">&#39;ASCII&#39;</span> <span class="p">|</span> <span class="nb">Add-PodeAuth</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Sessionless</span> <span class="n">-ScriptBlock</span> <span class="p">{}</span>

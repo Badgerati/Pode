@@ -563,20 +563,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#form" class="md-nav__link">
-    Form
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom" class="md-nav__link">
-    Custom
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#digest" class="md-nav__link">
     Digest
   </a>
@@ -586,6 +572,20 @@
           <li class="md-nav__item">
   <a href="#bearer" class="md-nav__link">
     Bearer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#form" class="md-nav__link">
+    Form
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom" class="md-nav__link">
+    Custom
   </a>
   
 </li>
@@ -2285,6 +2285,18 @@
     <li class="md-nav__item">
       <a href="../../OpenApi/New-PodeOARequestBody/" class="md-nav__link">
         New-PodeOARequestBody
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OpenApi/New-PodeOASchemaProperty/" class="md-nav__link">
+        New-PodeOASchemaProperty
       </a>
     </li>
   
@@ -4881,20 +4893,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#form" class="md-nav__link">
-    Form
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom" class="md-nav__link">
-    Custom
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#digest" class="md-nav__link">
     Digest
   </a>
@@ -4904,6 +4902,20 @@
           <li class="md-nav__item">
   <a href="#bearer" class="md-nav__link">
     Bearer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#form" class="md-nav__link">
+    Form
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom" class="md-nav__link">
+    Custom
   </a>
   
 </li>
@@ -5229,6 +5241,14 @@
 <div class="highlight"><pre><span></span><code>New-PodeAuthScheme [-Basic] [-Encoding &lt;String&gt;] [-HeaderTag &lt;String&gt;] [-Realm &lt;String&gt;]
  [-InnerScheme &lt;Hashtable&gt;] [&lt;CommonParameters&gt;]
 </code></pre></div>
+<h3 id="digest">Digest</h3>
+<div class="highlight"><pre><span></span><code>New-PodeAuthScheme [-HeaderTag &lt;String&gt;] [-Realm &lt;String&gt;] [-Digest] [-InnerScheme &lt;Hashtable&gt;]
+ [&lt;CommonParameters&gt;]
+</code></pre></div>
+<h3 id="bearer">Bearer</h3>
+<div class="highlight"><pre><span></span><code>New-PodeAuthScheme [-HeaderTag &lt;String&gt;] [-Realm &lt;String&gt;] [-Bearer] [-Scope &lt;String[]&gt;]
+ [-InnerScheme &lt;Hashtable&gt;] [&lt;CommonParameters&gt;]
+</code></pre></div>
 <h3 id="form">Form</h3>
 <div class="highlight"><pre><span></span><code>New-PodeAuthScheme [-Form] [-UsernameField &lt;String&gt;] [-PasswordField &lt;String&gt;] [-Realm &lt;String&gt;]
  [-InnerScheme &lt;Hashtable&gt;] [&lt;CommonParameters&gt;]
@@ -5236,13 +5256,6 @@
 <h3 id="custom">Custom</h3>
 <div class="highlight"><pre><span></span><code>New-PodeAuthScheme [-Custom] -ScriptBlock &lt;ScriptBlock&gt; [-ArgumentList &lt;Hashtable&gt;] [-Name &lt;String&gt;]
  [-Realm &lt;String&gt;] [-Type &lt;String&gt;] [-PostValidator &lt;ScriptBlock&gt;] [-InnerScheme &lt;Hashtable&gt;]
- [&lt;CommonParameters&gt;]
-</code></pre></div>
-<h3 id="digest">Digest</h3>
-<div class="highlight"><pre><span></span><code>New-PodeAuthScheme [-Realm &lt;String&gt;] [-Digest] [-InnerScheme &lt;Hashtable&gt;] [&lt;CommonParameters&gt;]
-</code></pre></div>
-<h3 id="bearer">Bearer</h3>
-<div class="highlight"><pre><span></span><code>New-PodeAuthScheme [-Realm &lt;String&gt;] [-Bearer] [-Scope &lt;String[]&gt;] [-InnerScheme &lt;Hashtable&gt;]
  [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h3 id="clientcertificate">ClientCertificate</h3>
@@ -5400,14 +5413,14 @@ This is optional if you're using an InnerScheme like Basic/Form.</p>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
 <h3 id="-headertag">-HeaderTag</h3>
-<p>The name of the type of Basic Authentication.</p>
+<p>The Tag name used in the Authorization header, ie: Basic, Bearer, Digest.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Basic</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Basic, Digest, Bearer</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
-<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Basic</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>

@@ -1914,6 +1914,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Functions/OpenApi/New-PodeOASchemaProperty/" class="md-nav__link">
+        New-PodeOASchemaProperty
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Functions/OpenApi/New-PodeOAStringProperty/" class="md-nav__link">
         New-PodeOAStringProperty
       </a>
@@ -5116,12 +5128,13 @@
 <h2 id="properties">Properties</h2>
 <p>Properties are used to create all Parameters and Schemas in OpenAPI. You can use the simple types on their own, or you can combine multiple of them together to form complex objects.</p>
 <h3 id="simple-types">Simple Types</h3>
-<p>There are 4 simple property types: Integers, Numbers, Strings, and Booleans. Each of which can be created using the following functions:</p>
+<p>There are 5 simple property types: Integers, Numbers, Strings, Booleans, and Schemas. Each of which can be created using the following functions:</p>
 <ul>
 <li>[<code>New-PodeOAIntProperty</code>]</li>
 <li>[<code>New-PodeOANumberProperty</code>]</li>
 <li>[<code>New-PodeOAStringProperty</code>]</li>
 <li>[<code>New-PodeOABoolProperty</code>]</li>
+<li>[<code>New-PodeOASchemaProperty</code>]</li>
 </ul>
 <p>These properties can be created with a Name, and other flags such as Required and/or a Description:</p>
 <div class="highlight"><pre><span></span><code><span class="c"># simple integer</span>
@@ -5135,6 +5148,9 @@
 
 <span class="c"># a boolean that&#39;s required</span>
 <span class="nb">New-PodeOABoolProperty</span> <span class="n">-Name</span> <span class="s1">&#39;enabled&#39;</span> <span class="n">-Required</span>
+
+<span class="c"># a schema property that references another component schema</span>
+<span class="nb">New-PodeOASchemaProperty</span> <span class="n">-Name</span> <span class="s1">&#39;Config&#39;</span> <span class="n">-Reference</span> <span class="s1">&#39;ConfigSchema&#39;</span>
 </code></pre></div>
 <p>On their own, like above, the simple properties don't really do much. However, you can combine that together to make complex objects/arrays as defined below.</p>
 <h3 id="arrays">Arrays</h3>

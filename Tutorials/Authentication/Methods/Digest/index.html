@@ -1914,6 +1914,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../Functions/OpenApi/New-PodeOASchemaProperty/" class="md-nav__link">
+        New-PodeOASchemaProperty
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../Functions/OpenApi/New-PodeOAStringProperty/" class="md-nav__link">
         New-PodeOAStringProperty
       </a>
@@ -4588,8 +4600,8 @@
 <span class="p">}</span>
 </code></pre></div>
 <p>Unlike other forms of authentication where you only need return the User on success. Digest requires you to also return the Password of the user as a separate property. This password is what is used as the secret key to generate the client's response hash, and allows the server to re-generate the hash for validation. (Not returning the password will result in an HTTP 401 challenge response).</p>
-<p>By default, Pode will check if the Request's header contains an <code>Authorization</code> key, and whether the value of that key starts with <code>Digest</code>. Pode will also gather the rest of the parameters in the header such as the Nonce, NonceCount, etc. An HTTP 401 challenge will be sent back if the Authorization header is invalid.</p>
-<p>The HashTable of parameters sent to the <a href="../../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> functions's ScriptBlock are the following:</p>
+<p>By default, Pode will check if the Request's header contains an <code>Authorization</code> key, and whether the value of that key starts with <code>Digest</code> tag. The <code>New-PodeAuthScheme -Digest</code> function can be supplied parameters to customise the tag using <code>-HeaderTag</code>. Pode will also gather the rest of the parameters in the header such as the Nonce, NonceCount, etc. An HTTP 401 challenge will be sent back if the Authorization header is invalid.</p>
+<p>The HashTable of parameters sent to the <a href="../../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a> function's ScriptBlock are the following:</p>
 <table>
 <thead>
 <tr>

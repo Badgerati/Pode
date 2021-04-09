@@ -1914,6 +1914,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Functions/OpenApi/New-PodeOASchemaProperty/" class="md-nav__link">
+        New-PodeOASchemaProperty
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Functions/OpenApi/New-PodeOAStringProperty/" class="md-nav__link">
         New-PodeOAStringProperty
       </a>
@@ -3053,6 +3065,13 @@
           <li class="md-nav__item">
   <a href="#default" class="md-nav__link">
     Default
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alpine" class="md-nav__link">
+    Alpine
   </a>
   
 </li>
@@ -4560,6 +4579,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#alpine" class="md-nav__link">
+    Alpine
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#arm32" class="md-nav__link">
     ARM32
   </a>
@@ -4597,19 +4623,36 @@
                 
                 <h1 id="docker">Docker</h1>
 <p>Pode has a Docker image that you can use to host your server, for instructions on pulling these images you can <a href="../../Installation">look here</a>.</p>
-<p>The images use PowerShell v7.1.1 on either an Ubuntu Bionic (default) or ARM32 image.</p>
+<p>The images use PowerShell v7.1.3 on either an Ubuntu Bionic (default), Alpine, or ARM32 image.</p>
 <h2 id="images">Images</h2>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>The server script used below can be found in the <a href="https://github.com/Badgerati/Pode/blob/develop/examples/web-pages-docker.ps1"><code>examples/web-pages-docker.ps1</code></a> directory in the repo.</p>
 </div>
 <h3 id="default">Default</h3>
-<p>The default Pode image is an Ubuntu Bionic image with PowerShell v7.1.1 and Pode installed. An example of using this image in your Dockerfile could be as follows:</p>
+<p>The default Pode image is an Ubuntu Bionic image with PowerShell v7.1.3 and Pode installed. An example of using this image in your Dockerfile could be as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="c"># pull down the pode image</span>
 <span class="k">FROM</span> <span class="s">badgerati/pode:latest</span>
 
 <span class="c"># or use the following for GitHub</span>
 <span class="c"># FROM docker.pkg.github.com/badgerati/pode/pode:latest</span>
+
+<span class="c"># copy over the local files to the container</span>
+<span class="k">COPY</span> . /usr/src/app/
+
+<span class="c"># expose the port</span>
+<span class="k">EXPOSE</span><span class="s"> 8085</span>
+
+<span class="c"># run the server</span>
+<span class="k">CMD</span> <span class="p">[</span> <span class="s2">&quot;pwsh&quot;</span><span class="p">,</span> <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;cd /usr/src/app; ./web-pages-docker.ps1&quot;</span> <span class="p">]</span>
+</code></pre></div>
+<h3 id="alpine">Alpine</h3>
+<p>Pode also has an image for Alpine, an example of using this image in your Dockerfile could be as follows:</p>
+<div class="highlight"><pre><span></span><code><span class="c"># pull down the pode image</span>
+<span class="k">FROM</span> <span class="s">badgerati/pode:latest-alpine</span>
+
+<span class="c"># or use the following for GitHub</span>
+<span class="c"># FROM docker.pkg.github.com/badgerati/pode/pode:latest-alpine</span>
 
 <span class="c"># copy over the local files to the container</span>
 <span class="k">COPY</span> . /usr/src/app/
