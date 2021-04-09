@@ -310,12 +310,13 @@ Properties are used to create all Parameters and Schemas in OpenAPI. You can use
 
 ### Simple Types
 
-There are 4 simple property types: Integers, Numbers, Strings, and Booleans. Each of which can be created using the following functions:
+There are 5 simple property types: Integers, Numbers, Strings, Booleans, and Schemas. Each of which can be created using the following functions:
 
 * [`New-PodeOAIntProperty`]
 * [`New-PodeOANumberProperty`]
 * [`New-PodeOAStringProperty`]
 * [`New-PodeOABoolProperty`]
+* [`New-PodeOASchemaProperty`]
 
 These properties can be created with a Name, and other flags such as Required and/or a Description:
 
@@ -331,6 +332,9 @@ New-PodeOAStringProperty -Name 'type' -Default 'admin' -Enum @('admin', 'user')
 
 # a boolean that's required
 New-PodeOABoolProperty -Name 'enabled' -Required
+
+# a schema property that references another component schema
+New-PodeOASchemaProperty -Name 'Config' -Reference 'ConfigSchema'
 ```
 
 On their own, like above, the simple properties don't really do much. However, you can combine that together to make complex objects/arrays as defined below.
