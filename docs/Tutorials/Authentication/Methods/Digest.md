@@ -20,9 +20,9 @@ Start-PodeServer {
 
 Unlike other forms of authentication where you only need return the User on success. Digest requires you to also return the Password of the user as a separate property. This password is what is used as the secret key to generate the client's response hash, and allows the server to re-generate the hash for validation. (Not returning the password will result in an HTTP 401 challenge response).
 
-By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Digest`. Pode will also gather the rest of the parameters in the header such as the Nonce, NonceCount, etc. An HTTP 401 challenge will be sent back if the Authorization header is invalid.
+By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Digest` tag. The `New-PodeAuthScheme -Digest` function can be supplied parameters to customise the tag using `-HeaderTag`. Pode will also gather the rest of the parameters in the header such as the Nonce, NonceCount, etc. An HTTP 401 challenge will be sent back if the Authorization header is invalid.
 
-The HashTable of parameters sent to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) functions's ScriptBlock are the following:
+The HashTable of parameters sent to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock are the following:
 
 | Parameter | Description |
 | --------- | ----------- |

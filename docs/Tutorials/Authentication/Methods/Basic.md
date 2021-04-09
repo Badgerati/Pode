@@ -18,7 +18,7 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Basic`. The `New-PodeAuthScheme -Basic` function can be supplied parameters to customise this name, as well as the encoding.
+By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Basic` tag. The `New-PodeAuthScheme -Basic` function can be supplied parameters to customise the tag using `-HeaderTag`, as well as the `-Encoding`.
 
 For example, to use `ASCII` encoding rather than the default `ISO-8859-1` you could do:
 
