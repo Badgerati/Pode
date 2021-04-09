@@ -255,9 +255,9 @@ function Get-PodeAuthBearerType
             }
         }
 
-        if ($atoms[0] -ine 'Bearer') {
+        if ($atoms[0] -ine $options.HeaderTag) {
             return @{
-                Message = 'Authorization header is not Bearer'
+                Message = "Authorization header is not $($options.HeaderTag)"
                 Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_request)
                 Code = 400
             }
@@ -375,9 +375,9 @@ function Get-PodeAuthDigestType
             }
         }
 
-        if ($atoms[0] -ine 'Digest') {
+        if ($atoms[0] -ine $options.HeaderTag) {
             return @{
-                Message = 'Authorization header is not Digest'
+                Message = "Authorization header is not $($options.HeaderTag)"
                 Challenge = (New-PodeAuthDigestChallenge)
                 Code = 401
             }
