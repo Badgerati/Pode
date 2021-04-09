@@ -1,5 +1,16 @@
 # Release Notes
 
+## v2.2.2
+
+```plain
+### Enhancements
+* #727: Allow referencing an OpenAPI component schema from another component schema (thanks @glatzert!)
+* #732: Allow changing of Bearer and Digest Authorization header tags
+
+### Packaging
+* #726: Bump docker images to v7.1.3, and also add a new Alpine image
+```
+
 ## v2.2.1
 
 ```plain
