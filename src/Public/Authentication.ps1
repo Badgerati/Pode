@@ -12,7 +12,7 @@ If supplied, will use the inbuilt Basic Authentication credentials retriever.
 The Encoding to use when decoding the Basic Authorization header.
 
 .PARAMETER HeaderTag
-The name of the type of Basic Authentication.
+The Tag name used in the Authorization header, ie: Basic, Bearer, Digest.
 
 .PARAMETER Form
 If supplied, will use the inbuilt Form Authentication credentials retriever.
@@ -103,8 +103,10 @@ function New-PodeAuthScheme
         $Encoding = 'ISO-8859-1',
 
         [Parameter(ParameterSetName='Basic')]
+        [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName='Digest')]
         [string]
-        $HeaderTag = 'Basic',
+        $HeaderTag,
 
         [Parameter(ParameterSetName='Form')]
         [switch]
@@ -256,7 +258,9 @@ function New-PodeAuthScheme
                 }
                 InnerScheme = $InnerScheme
                 Scheme = 'http'
-                Arguments = @{}
+                Arguments = @{
+                    HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
+                }
             }
         }
 
@@ -275,6 +279,7 @@ function New-PodeAuthScheme
                 Scheme = 'http'
                 InnerScheme = $InnerScheme
                 Arguments = @{
+                    HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
                     Scopes = $Scope
                 }
             }

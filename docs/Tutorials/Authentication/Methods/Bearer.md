@@ -18,7 +18,7 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Bearer`.
+By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Bearer` tag. The `New-PodeAuthScheme -Bearer` function can be supplied parameters to customise the tag using `-HeaderTag`.
 
 You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
 

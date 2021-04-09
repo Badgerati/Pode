@@ -43,7 +43,7 @@ function Start-PodeFileMonitor
         # if enabled, add the file to the list of files that trigggered the restart
         if ($Event.MessageData.Settings.ShowFiles) {
             $name = "[$($Event.SourceEventArgs.ChangeType)] $($Event.SourceEventArgs.Name)"
-            
+
             if ($Event.MessageData.Settings.Files -inotcontains $name) {
                 $Event.MessageData.Settings.Files += $name
             }

@@ -250,7 +250,7 @@ function Start-PodeAwsLambdaServer
             'statusCode' = $response.StatusCode;
             'headers' = $response.Headers;
             'body' = $response.Body;
-        } | ConvertTo-Json -Depth 10 -Compress) 
+        } | ConvertTo-Json -Depth 10 -Compress)
     }
     catch {
         $_ | Write-PodeErrorLog
