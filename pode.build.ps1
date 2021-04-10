@@ -237,6 +237,7 @@ task Pack -If (Test-PodeBuildIsWindows) Build, {
     # copy general files
     Copy-Item -Path ./src/Pode.psm1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./src/Pode.psd1 -Destination $path -Force | Out-Null
+    Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
 }, 7Zip, ChocoPack
 
 
