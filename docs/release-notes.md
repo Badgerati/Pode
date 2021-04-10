@@ -1,5 +1,12 @@
 # Release Notes
 
+## v2.2.3
+
+```plain
+### Bugs
+* #736: Fix issue with v2.2.2 PowerShell Gallery packaging
+```
+
 ## v2.2.2
 
 ```plain
