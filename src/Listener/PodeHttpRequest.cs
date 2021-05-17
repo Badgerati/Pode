@@ -45,7 +45,7 @@ namespace Pode
         {
             get
             {
-                if (RawBody.Length > 0)
+                if (RawBody != default(byte[]) && RawBody.Length > 0)
                 {
                     _body = Encoding.GetString(RawBody);
                 }
@@ -187,6 +187,7 @@ namespace Pode
         {
             // reset raw body
             RawBody = default(byte[]);
+            _body = string.Empty;
 
             // first line is method/url
             var reqMeta = Regex.Split(reqLines[0].Trim(), "\\s+");
