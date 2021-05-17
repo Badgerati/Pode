@@ -47,7 +47,7 @@ Pode is a Cross-Platform framework for creating web servers to host REST APIs an
     <copyright>Copyright 2017-2021</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <iconUrl>https://cdn.rawgit.com/Badgerati/Pode/master/images/icon.png</iconUrl>
+    <iconUrl>https://raw.githubusercontent.com/Badgerati/Pode/master/images/icon.png</iconUrl>
     <releaseNotes>https://github.com/Badgerati/Pode/releases</releaseNotes>
   </metadata>
   <files>

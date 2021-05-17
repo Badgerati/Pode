@@ -255,7 +255,7 @@
             ProjectUri = 'https://github.com/Badgerati/Pode'
 
             # A URL to an icon representing this module.
-            IconUri = 'https://cdn.rawgit.com/Badgerati/Pode/master/images/icon.png'
+            IconUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/images/icon.png'
 
             # Release notes for this particular version of the module
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
