@@ -130,6 +130,7 @@
         'Get-PodeRoute',
         'Get-PodeStaticRoute',
         'Get-PodeSignalRoute',
+        'Use-PodeRoutes',
 
         # handlers
         'Add-PodeHandler',

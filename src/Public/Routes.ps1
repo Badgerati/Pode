@@ -1358,3 +1358,47 @@ function Get-PodeSignalRoute
     # return
     return $routes
 }
+
+<#
+.SYNOPSIS
+Automatically loads route ps1 files
+
+.DESCRIPTION
+Automatically loads route ps1 files from either a /routes folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeRoutes
+
+.EXAMPLE
+Use-PodeRoutes -Path './my-routes'
+#>
+function Use-PodeRoutes
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    # use default ./routes, or custom path
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        $Path = Join-PodeServerRoot -Folder 'routes'
+    }
+    else {
+        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+    }
+
+    # fail if path not found
+    if (!(Test-PodePath -Path $Path -NoStatus)) {
+        throw "Path to load routes not found: $($Path)"
+    }
+
+    # get .ps1 files and load them
+    Get-ChildItem -Path $Path -Filter *.ps1 -Force -Recurse | ForEach-Object {
+        Use-PodeScript -Path $_.FullName
+    }
+}

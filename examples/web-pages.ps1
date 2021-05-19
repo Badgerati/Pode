@@ -47,6 +47,8 @@ Start-PodeServer -Threads 2 {
         }
     }
 
+    Use-PodeRoutes -Path './routes'
+
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # $WebEvent.Request | Write-PodeLog -Name 'custom'
