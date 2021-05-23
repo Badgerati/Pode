@@ -348,3 +348,69 @@ function Get-PodeCookieMiddleware
         return $true
     })
 }
+
+function Initialize-PodeIISMiddleware
+{
+    # do nothing if not iis
+    if (!$PodeContext.Server.IsIIS) {
+        return
+    }
+
+    # fail if no iis token - because there should be!
+    if ([string]::IsNullOrWhiteSpace($PodeContext.Server.IIS.Token)) {
+        throw "IIS ASPNETCORE_TOKEN is missing"
+    }
+
+    # add middleware to check every request has the token
+    Add-PodeMiddleware -Name '__pode_iis_token_check__' -ScriptBlock {
+        $token = Get-PodeHeader -Name 'MS-ASPNETCORE-TOKEN'
+        if ($token -ne $PodeContext.Server.IIS.Token) {
+            Set-PodeResponseStatus -Code 400 -Description 'MS-ASPNETCORE-TOKEN header missing'
+            return $false
+        }
+
+        return $true
+    }
+
+    # add route to gracefully shutdown server for iis
+    Add-PodeRoute -Method Post -Path '/iisintegration' -ScriptBlock {
+        $WebEvent.Request.Headers | Out-Default
+        $eventType = Get-PodeHeader -Name 'MS-ASPNETCORE-EVENT'
+
+        # no x-forward
+        if (Test-PodeHeader -Name 'X-Forwarded-For') {
+            Set-PodeResponseStatus -Code 400
+            return
+        }
+
+        # no user-agent
+        if (Test-PodeHeader -Name 'User-Agent') {
+            Set-PodeResponseStatus -Code 400
+            return
+        }
+
+        # valid local Host
+        $hostValue = Get-PodeHeader -Name 'Host'
+        if ($hostValue -ine "127.0.0.1:$($PodeContext.Server.IIS.Port)") {
+            Set-PodeResponseStatus -Code 400
+            return
+        }
+
+        # no content-length
+        if ($WebEvent.Request.ContentLength -gt 0) {
+            Set-PodeResponseStatus -Code 400
+            return
+        }
+
+        # valid event type
+        if ($eventType -ine 'shutdown') {
+            Set-PodeResponseStatus -Code 400
+            return
+        }
+
+        # shutdown
+        $PodeContext.Server.IIS.Shutdown = $true
+        Close-PodeServer
+        Set-PodeResponseStatus -Code 202
+    }
+}

@@ -177,6 +177,13 @@ function New-PodeContext
         if (!(Test-PodeIsEmpty $env:WEBSITE_IIS_SITE_NAME)) {
             $ctx.Server.Quiet = $true
         }
+
+        # set iis token/settings
+        $ctx.Server.IIS = @{
+            Token = $env:ASPNETCORE_TOKEN
+            Port = $env:ASPNETCORE_PORT
+            Shutdown = $false
+        }
     }
 
     # is the server running under Heroku?

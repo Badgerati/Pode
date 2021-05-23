@@ -186,6 +186,10 @@ function Start-PodeServer
             }
         }
 
+        if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
+            Write-PodeHost '(IIS Shutdown) ' -NoNewline -ForegroundColor Yellow
+        }
+
         Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
         $PodeContext.Tokens.Cancellation.Cancel()
     }
