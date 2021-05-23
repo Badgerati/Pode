@@ -55,6 +55,9 @@ And to state that changes within the `public` directory should not trigger a res
 }
 ```
 
+!!! note
+    It's recommended to exclude directories like `logs`, to prevent the server constantly restarting.
+
 ## Show Files
 
 You can enable the showing of what file changes triggered the server to restart. To do this, you can set the `ShowFiles` property in your `server.psd1` file:
