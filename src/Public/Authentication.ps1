@@ -80,6 +80,9 @@ An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-se
 .PARAMETER InnerScheme
 An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
 
+.PARAMETER AsCredential
+If supplied, username/password credentials for Basic/Form authentication will instead be supplied as a pscredential object.
+
 .EXAMPLE
 $basic_auth = New-PodeAuthScheme -Basic
 
@@ -203,7 +206,12 @@ function New-PodeAuthScheme
 
         [Parameter(ValueFromPipeline=$true)]
         [hashtable]
-        $InnerScheme
+        $InnerScheme,
+
+        [Parameter(ParameterSetName='Basic')]
+        [Parameter(ParameterSetName='Form')]
+        [switch]
+        $AsCredential
     )
 
     # default realm
@@ -225,6 +233,7 @@ function New-PodeAuthScheme
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                     Encoding = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
+                    AsCredential = $AsCredential
                 }
             }
         }
@@ -301,6 +310,7 @@ function New-PodeAuthScheme
                         Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
                         Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
                     }
+                    AsCredential = $AsCredential
                 }
             }
         }
