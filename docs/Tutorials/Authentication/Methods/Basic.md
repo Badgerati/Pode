@@ -1,10 +1,14 @@
 # Basic
 
-Basic Authentication is when you pass an encoded `username:password` value on the header of your requests: `@{ 'Authorization' = 'Basic <base64 encoded username:password>' }`.
+Basic Authentication is when you pass an encoded `username:password` value in the Authorization header of your requests:
+
+```plain
+Authorization: Basic <base64 encoded username:password>
+```
 
 ## Setup
 
-To setup and start using Basic Authentication in Pode you use the `New-PodeAuthScheme -Basic` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password:
+To start using Basic Authentication in Pode you can use `New-PodeAuthScheme -Basic`, and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the Authorization header:
 
 ```powershell
 Start-PodeServer {
@@ -18,7 +22,7 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Basic` tag. The `New-PodeAuthScheme -Basic` function can be supplied parameters to customise the tag using `-HeaderTag`, as well as the `-Encoding`.
+By default, Pode will check if the request's headers contains an `Authorization` key, and whether the value of that key starts with `Basic` tag. The `New-PodeAuthScheme -Basic` function can be supplied parameters to customise the tag using `-HeaderTag`, as well as the `-Encoding`.
 
 For example, to use `ASCII` encoding rather than the default `ISO-8859-1` you could do:
 
@@ -28,9 +32,23 @@ Start-PodeServer {
 }
 ```
 
+The credentials supplied to [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)'s scriptblock are, by default, the username and password. This can be changed to a pscredential object instead by suppling `-AsCredential` on [`New-PodeAuthScheme`]:
+
+```powershell
+Start-PodeServer {
+    New-PodeAuthScheme -Basic -AsCredential | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+        param($creds)
+
+        # check if the user is valid
+
+        return @{ User = $user }
+    }
+}
+```
+
 ## Middleware
 
-Once configured you can start using Basic Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured you can start using Basic Authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
 The following will use Basic Authentication to validate every request on every Route:
 

@@ -54,8 +54,18 @@ function Get-PodeAuthBasicType
         $username = $decoded.Substring(0, $index)
         $password = $decoded.Substring($index + 1)
 
+        # build the result
+        $result = @($username, $password)
+
+        # convert to credential?
+        if ($options.AsCredential) {
+            $passSecure = ConvertTo-SecureString -String $password -AsPlainText -Force
+            $creds = [pscredential]::new($username, $passSecure)
+            $result = @($creds)
+        }
+
         # return data for calling validator
-        return @($username, $password)
+        return $result
     }
 }
 
@@ -503,8 +513,18 @@ function Get-PodeAuthFormType
             }
         }
 
+        # build the result
+        $result = @($username, $password)
+
+        # convert to credential?
+        if ($options.AsCredential) {
+            $passSecure = ConvertTo-SecureString -String $password -AsPlainText -Force
+            $creds = [pscredential]::new($username, $passSecure)
+            $result = @($creds)
+        }
+
         # return data for calling validator
-        return @($username, $password)
+        return $result
     }
 }
 
