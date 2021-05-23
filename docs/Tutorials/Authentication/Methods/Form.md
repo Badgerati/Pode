@@ -28,7 +28,7 @@ Start-PodeServer {
 }
 ```
 
-The credentials supplied to [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)'s scriptblock are, by default, the username and password. This can be changed to a pscredential object instead by suppling `-AsCredential` on [`New-PodeAuthScheme`]:
+The credentials supplied to [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)'s scriptblock are, by default, the username and password. This can be changed to a pscredential object instead by suppling `-AsCredential` on [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme):
 
 ```powershell
 Start-PodeServer {
