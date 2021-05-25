@@ -167,7 +167,7 @@ You can setup a binding in IIS for HTTPS with a Certificate, and IIS will deal w
 
 ## Recycling
 
-By default, IIS has certain setting that will recycle/shutdown your Application Pools. This will cause some requests to "spin-up" the site for the first time, and go slow.
+By default, IIS has certain settings that will recycle/shutdown your Application Pools. This will cause some requests to "spin-up" the site for the first time, and go slow.
 
 To help prevent this, below are some of the common setting that can be altered to stop IIS recycling/shutting down your site:
 
@@ -179,7 +179,7 @@ To help prevent this, below are some of the common setting that can be altered t
     1. Set the "Regular Time Interval" to 0
     2. Remove all times from "Specific Times"
 
-This isn't bulletproof, and IIS can sometimes to restart your site if it feels like it. Also make sure that there are no periodic processes anywhere that might recycle Application Pools, or run `iisreset`.
+This isn't bulletproof, and IIS can sometimes restart your site if it feels like it. Also make sure that there are no periodic processes anywhere that might recycle Application Pools, or run `iisreset`.
 
 When IIS does restart your site, the log file should show the usual Pode "Terminating" message, but preceded with "(IIS Shutdown)".
 
