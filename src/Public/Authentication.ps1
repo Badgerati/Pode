@@ -77,6 +77,15 @@ If supplied, will use the inbuilt OAuth2 Authentication scheme.
 .PARAMETER Scope
 An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-sensitive)
 
+.PARAMETER ApiKey
+If supplied, will use the inbuilt API key Authentication scheme.
+
+.PARAMETER Location
+The Location to find an API key: Header, Query, or Cookie.
+
+.PARAMETER LocationName
+The Name of the Header, Query, or Cookie to find an API key.
+
 .PARAMETER InnerScheme
 An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
 
@@ -198,6 +207,19 @@ function New-PodeAuthScheme
         [Parameter(ParameterSetName='OAuth2')]
         [switch]
         $OAuth2,
+
+        [Parameter(ParameterSetName='ApiKey')]
+        [switch]
+        $ApiKey,
+
+        [Parameter(ParameterSetName='ApiKey', Mandatory=$true)]
+        [ValidateSet('Header', 'Query', 'Cookie')]
+        [string]
+        $Location,
+
+        [Parameter(ParameterSetName='ApiKey', Mandatory=$true)]
+        [string]
+        $LocationName,
 
         [Parameter(ParameterSetName='Bearer')]
         [Parameter(ParameterSetName='OAuth2')]
@@ -346,6 +368,24 @@ function New-PodeAuthScheme
                         Token = $TokenUrl
                         User = $UserUrl
                     }
+                }
+            }
+        }
+
+        'apikey' {
+            return @{
+                Name = 'ApiKey'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthApiKeyType)
+                    UsingVariables = $null
+                }
+                PostValidator = $null
+                InnerScheme = $InnerScheme
+                Scheme = 'apikey'
+                Arguments = @{
+                    Location = $Location
+                    LocationName = $LocationName
                 }
             }
         }
