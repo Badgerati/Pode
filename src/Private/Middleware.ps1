@@ -374,7 +374,6 @@ function Initialize-PodeIISMiddleware
 
     # add route to gracefully shutdown server for iis
     Add-PodeRoute -Method Post -Path '/iisintegration' -ScriptBlock {
-        $WebEvent.Request.Headers | Out-Default
         $eventType = Get-PodeHeader -Name 'MS-ASPNETCORE-EVENT'
 
         # no x-forward
