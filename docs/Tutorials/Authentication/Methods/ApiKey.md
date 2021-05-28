@@ -16,7 +16,7 @@ To setup and start using API key authentication in Pode you can use `New-PodeAut
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($key)
 
         # check if the key is valid, and get user
@@ -32,7 +32,7 @@ For example, to look for an `appId` query value:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -ApiKey -Location Query -LocationName 'appId' | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -ApiKey -Location Query -LocationName 'appId' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($key)
 
         # check if the key is valid, and get user

@@ -8,7 +8,7 @@ To setup and start using Digest authentication in Pode you use the `New-PodeAuth
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Digest | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($username, $params)
 
         # check if the user is valid

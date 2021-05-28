@@ -24,7 +24,7 @@ You can also optionally return a `Scope` property alongside the `User`. If you s
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Bearer -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Bearer -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
