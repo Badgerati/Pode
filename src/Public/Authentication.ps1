@@ -382,7 +382,7 @@ function New-PodeAuthScheme
                 }
                 PostValidator = $null
                 InnerScheme = $InnerScheme
-                Scheme = 'apikey'
+                Scheme = 'apiKey'
                 Arguments = @{
                     Location = $Location
                     LocationName = $LocationName
