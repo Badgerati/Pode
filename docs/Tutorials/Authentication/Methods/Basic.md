@@ -1,6 +1,6 @@
 # Basic
 
-Basic Authentication is when you pass an encoded `username:password` value in the Authorization header of your requests:
+Basic authentication is when you pass an encoded `username:password` value in the Authorization header of your requests:
 
 ```plain
 Authorization: Basic <base64 encoded username:password>
@@ -8,7 +8,7 @@ Authorization: Basic <base64 encoded username:password>
 
 ## Setup
 
-To start using Basic Authentication in Pode you can use `New-PodeAuthScheme -Basic`, and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the Authorization header:
+To start using Basic authentication in Pode you can use `New-PodeAuthScheme -Basic`, and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the Authorization header:
 
 ```powershell
 Start-PodeServer {
@@ -48,9 +48,9 @@ Start-PodeServer {
 
 ## Middleware
 
-Once configured you can start using Basic Authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured you can start using Basic authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
-The following will use Basic Authentication to validate every request on every Route:
+The following will use Basic authentication to validate every request on every Route:
 
 ```powershell
 Start-PodeServer {

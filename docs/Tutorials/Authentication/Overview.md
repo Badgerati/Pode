@@ -11,43 +11,22 @@ To setup and use authentication in Pode you need to use the [`New-PodeAuthScheme
 
 ### Schemes
 
-The [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function allows you to create and configure authentication schemes, or you can create your own Custom authentication schemes. These schemes can then be used on the [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function. There job is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
+The [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function allows you to create and configure authentication schemes, or you can create your own Custom authentication schemes. These schemes can then be piped into [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). The role of a scheme is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
 
-An example of creating some authentication schemes is as follows:
+The following schemes are supported:
 
-```powershell
-Start-PodeServer {
-    $basic_auth = New-PodeAuthScheme -Basic
-    $digest_auth = New-PodeAuthScheme -Digest
-    $bearer_auth = New-PodeAuthScheme -Bearer
-    $form_auth = New-PodeAuthScheme -Form
-    $cert_auth = New-PodeAuthScheme -ClientCertificate
-    $oauth2_auth = New-PodeAuthScheme -OAuth2
-}
-```
+* [API Key](../Methods/ApiKey)
+* [Azure AD](../Methods/AzureAD)
+* [Basic](../Methods/Basic)
+* [Bearer](../Methods/Bearer)
+* [Client Certificate](../Methods/ClientCertificate)
+* [Digest](../Methods/Digest)
+* [Form](../Methods/Form)
+* [OAuth2](../Methods/OAuth2)
 
-Where as the following example defines a Custom scheme that retrieves the user's credentials from the Request's Payload:
+Or you can define a custom scheme:
 
-```powershell
-Start-PodeServer {
-    $custom_type = New-PodeAuthScheme -Custom -ScriptBlock {
-        param($opts)
-
-        # get client/user/pass field names to get from payload
-        $clientField = (Protect-PodeValue -Value $opts.ClientField -Default 'client')
-        $userField = (Protect-PodeValue -Value $opts.UsernameField -Default 'username')
-        $passField = (Protect-PodeValue -Value $opts.PasswordField -Default 'password')
-
-        # get the client/user/pass from the post data
-        $client = $WebEvent.Data.$clientField
-        $username = $WebEvent.Data.$userField
-        $password = $WebEvent.Data.$passField
-
-        # return the data as an array, to be passed to the validator script
-        return @($client, $username, $password)
-    }
-}
-```
+* [Custom](../Methods/Custom)
 
 ### Validators
 

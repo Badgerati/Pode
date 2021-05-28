@@ -255,11 +255,24 @@ function Get-PodeOpenApiDefinitionInternal
 
         foreach ($authName in $PodeContext.Server.Authentications.Keys) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
+            $_authName = ($authName -replace '\s+', '')
 
-            $def.components.securitySchemes[($authName -replace '\s+', '')] = @{
-                type = $authType.Scheme.ToLowerInvariant()
-                scheme = $authType.Name.ToLowerInvariant()
+            $_authObj = @{}
+            if ($authType.Scheme -ieq 'apikey') {
+                $_authObj = @{
+                    type = $authType.Scheme
+                    in = $authType.Arguments.Location.ToLowerInvariant()
+                    name = $authType.Arguments.LocationName
+                }
             }
+            else {
+                $_authObj = @{
+                    type = $authType.Scheme.ToLowerInvariant()
+                    scheme = $authType.Name.ToLowerInvariant()
+                }
+            }
+
+            $def.components.securitySchemes[$_authName] = $_authObj
         }
 
         if ($PodeContext.Server.OpenAPI.Security.Length -gt 0) {

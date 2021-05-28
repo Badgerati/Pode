@@ -16,6 +16,9 @@ function Start-PodeInternalServer
         # create the shared runspace state
         New-PodeRunspaceState
 
+        # if iis, setup global middleware to validate token
+        Initialize-PodeIISMiddleware
+
         # get the server's script and invoke it - to set up routes, timers, middleware, etc
         $_script = $PodeContext.Server.Logic
         if (Test-PodePath -Path $PodeContext.Server.LogicPath -NoStatus) {

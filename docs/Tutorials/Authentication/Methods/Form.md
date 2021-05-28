@@ -1,10 +1,10 @@
 # Form
 
-Form Authentication is for when you're using a `<form>` on your webpage, and it gets submitted. This Authentication method expects a `username` and `password` to be passed from the form's input fields, via POST request.
+Form authentication is for when you're using a `<form>` on your webpage, and it gets submitted. This authentication method expects a `username` and `password` to be passed from the form's input fields, via POST request.
 
 ## Setup
 
-To start using Form Authentication in Pode you can use `New-PodeAuthScheme -Form`, and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the request's payload:
+To start using Form authentication in Pode you can use `New-PodeAuthScheme -Form`, and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the request's payload:
 
 ```powershell
 Start-PodeServer {
@@ -44,9 +44,9 @@ Start-PodeServer {
 
 ## Middleware
 
-Once configured you can start using Form Authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured you can start using Form authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
-The following will use Form Authentication to validate every request on every Route:
+The following will use Form authentication to validate every request on every Route:
 
 ```powershell
 Start-PodeServer {
@@ -54,7 +54,7 @@ Start-PodeServer {
 }
 ```
 
-Whereas the following example will use Form Authentication to only validate requests on specific a Route:
+Whereas the following example will use Form authentication to only validate requests on specific a Route:
 
 ```powershell
 Start-PodeServer {

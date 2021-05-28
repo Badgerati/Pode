@@ -77,6 +77,15 @@ If supplied, will use the inbuilt OAuth2 Authentication scheme.
 .PARAMETER Scope
 An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-sensitive)
 
+.PARAMETER ApiKey
+If supplied, will use the inbuilt API key Authentication scheme.
+
+.PARAMETER Location
+The Location to find an API key: Header, Query, or Cookie. (Default: Header)
+
+.PARAMETER LocationName
+The Name of the Header, Query, or Cookie to find an API key. (Default depends on Location. Header/Cookie: X-API-KEY, Query: api_key)
+
 .PARAMETER InnerScheme
 An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
 
@@ -198,6 +207,19 @@ function New-PodeAuthScheme
         [Parameter(ParameterSetName='OAuth2')]
         [switch]
         $OAuth2,
+
+        [Parameter(ParameterSetName='ApiKey')]
+        [switch]
+        $ApiKey,
+
+        [Parameter(ParameterSetName='ApiKey')]
+        [ValidateSet('Header', 'Query', 'Cookie')]
+        [string]
+        $Location = 'Header',
+
+        [Parameter(ParameterSetName='ApiKey')]
+        [string]
+        $LocationName,
 
         [Parameter(ParameterSetName='Bearer')]
         [Parameter(ParameterSetName='OAuth2')]
@@ -346,6 +368,33 @@ function New-PodeAuthScheme
                         Token = $TokenUrl
                         User = $UserUrl
                     }
+                }
+            }
+        }
+
+        'apikey' {
+            # set default location name
+            if ([string]::IsNullOrWhiteSpace($LocationName)) {
+                $LocationName = (@{
+                    Header = 'X-API-KEY'
+                    Query  = 'api_key'
+                    Cookie = 'X-API-KEY'
+                })[$Location]
+            }
+
+            return @{
+                Name = 'ApiKey'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthApiKeyType)
+                    UsingVariables = $null
+                }
+                PostValidator = $null
+                InnerScheme = $InnerScheme
+                Scheme = 'apiKey'
+                Arguments = @{
+                    Location = $Location
+                    LocationName = $LocationName
                 }
             }
         }
