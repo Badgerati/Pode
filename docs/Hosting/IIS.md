@@ -165,6 +165,45 @@ You can setup a binding in IIS for HTTPS with a Certificate, and IIS will deal w
 8. Select the required certificate from the dropdown
 9. Select OK to create the Binding
 
+## Recycling
+
+By default, IIS has certain settings that will recycle/shutdown your Application Pools. This will cause some requests to "spin-up" the site for the first time, and go slow.
+
+To help prevent this, below are some of the common setting that can be altered to stop IIS recycling/shutting down your site:
+
+1. Open IIS, and select the Application Pools folder
+2. Right click your Application Pool, and select "Advanced Settings..."
+3. Under "Process Model", to stop IIS shutting down your site
+    1. Set the "Idle Time-out" to 0
+4. Under "Recycling", to stop IIS recycling your site
+    1. Set the "Regular Time Interval" to 0
+    2. Remove all times from "Specific Times"
+
+This isn't bulletproof, and IIS can sometimes restart your site if it feels like it. Also make sure that there are no periodic processes anywhere that might recycle Application Pools, or run `iisreset`.
+
+When IIS does restart your site, the log file should show the usual Pode "Terminating" message, but preceded with "(IIS Shutdown)".
+
+### Debug Line
+
+Whenever IIS recycles/shuts down your site, you may see a debug line in your logs if the initial HTTP shutdown request fails, such as:
+
+```plain
+Entering debug mode. Use h or ? for help.
+
+At C:\Program Files\PowerShell\Modules\Pode\2.0.3\Public\Core.ps1:176 char:13
++ $key = Get-PodeConsoleKey
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+[DBG]: PS D:\wwwroot\sitename>>
+```
+
+This is nothing to worry about, and is purely just IIS terminating the PowerShell runspace to shutdown the Application Pool.
+
+## ASP.NET Token
+
+When hosted via IIS, Pode inspects every request to make sure the mandatory `MS-ASPNETCORE-TOKEN` header is present. This is a token supplied by IIS, and if it's missing Pode will reject the request with a 400 response.
+
+There's nothing you need to do, IIS informs Pode about the token for you, and IIS will add the header to the requests automatically for you as well.
+
 ## IIS Authentication
 
 If you decide to use IIS for Windows Authentication, then you can retrieve the authenticated user in Pode. This is done using the [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) function, and it will check for the `MS-ASPNETCORE-WINAUTHTOKEN` header from IIS. The function creates a custom Authentication Type and Method, and can be used on Routes like other Authentications in Pode:
