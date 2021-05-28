@@ -1,10 +1,10 @@
 # Bearer
 
-Bearer Authentication lets you authenticate a user based on a token, with optional support for scopes.
+Bearer authentication lets you authenticate a user based on a token, with optional support for scopes.
 
 ## Setup
 
-To setup and start using Bearer Authentication in Pode you use the `New-PodeAuthScheme -Bearer` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token`:
+To setup and start using Bearer authentication in Pode you use the `New-PodeAuthScheme -Bearer` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token`:
 
 ```powershell
 Start-PodeServer {
@@ -36,9 +36,9 @@ Start-PodeServer {
 
 ## Middleware
 
-Once configured you can start using Bearer Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured you can start using Bearer authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
-The following will use Bearer Authentication to validate every request on every Route:
+The following will use Bearer authentication to validate every request on every Route:
 
 ```powershell
 Start-PodeServer {

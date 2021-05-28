@@ -22,7 +22,7 @@ With the Client and Tenant ID, plus the Client Secret, you can now setup Azure A
 
 ### Authorisation Code
 
-To setup and start using Azure AD Authentication in Pode you use `New-PodeAuthAzureADScheme`, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
+To setup and start using Azure AD authentication in Pode you use `New-PodeAuthAzureADScheme`, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
 ```powershell
 Start-PodeServer {
@@ -64,8 +64,8 @@ Start-PodeServer {
 
 ## Requests using Basic Authentication
 
-To authenticate against Azure Active Directory with Applications that do not support Modern Authentication (for example PowerShell Invoke-RestMethod), you will need to use Basic Authentication.
-This method only works if you're either using Password Hash Sync (PHS), Pass-through Authentication (PTA) or both. If you're using claim based authentication against another IdP like Active Directory Federation Services (ADFS) then this will not work as the Azure AD does not know the users' credentials.
+To authenticate against Azure Active Directory with Applications that do not support Modern authentication (for example PowerShell Invoke-RestMethod), you will need to use Basic authentication.
+This method only works if you're either using Password Hash Sync (PHS), Pass-through authentication (PTA) or both. If you're using claim based authentication against another IdP like Active Directory Federation Services (ADFS) then this will not work as the Azure AD does not know the users' credentials.
 
 The client side may look like this:
 
@@ -76,7 +76,7 @@ $res.Form[0].password = 'password'
 Invoke-RestMethod -Url 'http://localhost:8080' -WebSession $session -Body $res.Form[0]
 ```
 
-The Pode side needs to be configured to allow basic authentication as well. This can be done side by side with Form based Authentication using this example
+The Pode side needs to be configured to allow basic authentication as well. This can be done side by side with Form based authentication using this example
 
 ```powershell
 $form  = New-PodeAuthScheme -Form

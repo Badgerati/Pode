@@ -114,7 +114,7 @@ By default a newly created site will be running as ApplicationPoolIdentity. In o
 4. Select "Custom account", and change the account to the credentials of a valid domain user
 5. Select OK
 
-If you've enabled Basic Authentication in IIS for you site, you'll also need to edit the domain there as well:
+If you've enabled Basic authentication in IIS for you site, you'll also need to edit the domain there as well:
 
 1. Open IIS, and expand the Sites folder
 2. Select your Site
@@ -167,7 +167,7 @@ You can setup a binding in IIS for HTTPS with a Certificate, and IIS will deal w
 
 ## IIS Authentication
 
-If you decide to use IIS for Windows Authentication, then you can retrieve the authenticated user in Pode. This is done using the [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) function, and it will check for the `MS-ASPNETCORE-WINAUTHTOKEN` header from IIS. The function creates a custom Authentication Type and Method, and can be used on Routes like other Authentications in Pode:
+If you decide to use IIS for Windows Authentication, then you can retrieve the authenticated user in Pode. This is done using the [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) function, and it will check for the `MS-ASPNETCORE-WINAUTHTOKEN` header from IIS. The function creates a custom Authentication Type and Method, and can be used on Routes like other authentications in Pode:
 
 ```powershell
 Start-PodeServer {

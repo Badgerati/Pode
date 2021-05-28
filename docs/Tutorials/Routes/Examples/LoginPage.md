@@ -1,6 +1,6 @@
 # Creating a Login Page
 
-This is an example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using Form Authentication with Sessions.
+This is an example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using Form authentication with Sessions.
 
 !!! info
     The full example can be seen on GitHub in [`examples/web-auth-form.ps1`](https://github.com/Badgerati/Pode/blob/develop/examples/web-auth-form.ps1).
@@ -41,7 +41,7 @@ To use sessions for our authentication (so we can stay logged in), we need to se
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
 ```
 
-Once we have the Session Middleware initialised, we need to setup Form Authentication - the username/password here are hard-coded, but normally you would validate against some database. We also specify a `-FailureUrl`, which is the URL to redirect a user to if they try to access a page un-authenticated. The `-SuccessUrl` is the URL to redirect to on successful authentication.
+Once we have the Session Middleware initialised, we need to setup Form authentication - the username/password here are hard-coded, but normally you would validate against some database. We also specify a `-FailureUrl`, which is the URL to redirect a user to if they try to access a page un-authenticated. The `-SuccessUrl` is the URL to redirect to on successful authentication.
 
 ```powershell
 New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
@@ -78,7 +78,7 @@ Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -ScriptBlock {
 
 Next we have the login Route, which is actually two routes. The `GET /login` is the page itself, whereas the `POST /login` is the authentication part (the endpoint the `<form>` element's action will hit).
 
-For the `POST` Route, if Authentication passes the user is logged in and redirected to the home page, but if it failed they're taken back to the login page.
+For the `POST` Route, if authentication passes the user is logged in and redirected to the home page, but if it failed they're taken back to the login page.
 
 For the `GET` and `POST` login Route we supply the `-Login` switch, this flags that if the user navigates to the login page with an already verified session then they're automatically redirected to the home page (the `-SuccessUrl`). However, if they have no session or authentication fails then instead of a `403` being displayed, the login page is displayed instead (to prevent continuously trying to redirect to the `/login` page).
 

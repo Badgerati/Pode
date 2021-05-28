@@ -81,10 +81,10 @@ An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-se
 If supplied, will use the inbuilt API key Authentication scheme.
 
 .PARAMETER Location
-The Location to find an API key: Header, Query, or Cookie.
+The Location to find an API key: Header, Query, or Cookie. (Default: Header)
 
 .PARAMETER LocationName
-The Name of the Header, Query, or Cookie to find an API key.
+The Name of the Header, Query, or Cookie to find an API key. (Default depends on Location. Header/Cookie: X-API-KEY, Query: api_key)
 
 .PARAMETER InnerScheme
 An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
@@ -212,12 +212,12 @@ function New-PodeAuthScheme
         [switch]
         $ApiKey,
 
-        [Parameter(ParameterSetName='ApiKey', Mandatory=$true)]
+        [Parameter(ParameterSetName='ApiKey')]
         [ValidateSet('Header', 'Query', 'Cookie')]
         [string]
-        $Location,
+        $Location = 'Header',
 
-        [Parameter(ParameterSetName='ApiKey', Mandatory=$true)]
+        [Parameter(ParameterSetName='ApiKey')]
         [string]
         $LocationName,
 
@@ -373,6 +373,15 @@ function New-PodeAuthScheme
         }
 
         'apikey' {
+            # set default location name
+            if ([string]::IsNullOrWhiteSpace($LocationName)) {
+                $LocationName = (@{
+                    Header = 'X-API-KEY'
+                    Query  = 'api_key'
+                    Cookie = 'X-API-KEY'
+                })[$Location]
+            }
+
             return @{
                 Name = 'ApiKey'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
