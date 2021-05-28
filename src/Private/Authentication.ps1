@@ -240,6 +240,41 @@ function Get-PodeAuthClientCertificateType
     }
 }
 
+function Get-PodeAuthApiKeyType
+{
+    return {
+        param($options)
+
+        # get api key from appropriate location
+        $apiKey = [string]::Empty
+
+        switch ($options.Location.ToLowerInvariant()) {
+            'header' {
+                $apiKey = Get-PodeHeader -Name $options.LocationName
+            }
+
+            'query' {
+                $apiKey = $WebEvent.Query[$options.LocationName]
+            }
+
+            'cookie' {
+                $apiKey = Get-PodeCookieValue -Name $options.LocationName
+            }
+        }
+
+        # 401 if no key
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            return @{
+                Message = "No $($options.LocationName) $($options.Location) found"
+                Code = 401
+            }
+        }
+
+        # return the key
+        return @($apiKey.Trim())
+    }
+}
+
 function Get-PodeAuthBearerType
 {
     return {

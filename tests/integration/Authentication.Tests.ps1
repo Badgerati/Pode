@@ -48,6 +48,24 @@ Describe 'Authentication Requests' {
                     Write-PodeJsonResponse -Value @{ Result = 'OK' }
                 }
 
+                # API KEY
+                New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'ApiKeyAuth' -Sessionless -ScriptBlock {
+                    param($key)
+
+                    if ($key -ieq 'test-key') {
+                        return @{
+                            User = @{ ID ='M0R7Y302' }
+                            Scope = 'write'
+                        }
+                    }
+
+                    return $null
+                }
+
+                Add-PodeRoute -Method Get -Path '/auth/apikey' -Authentication 'ApiKeyAuth' -ScriptBlock {
+                    Write-PodeJsonResponse -Value @{ Result = 'OK' }
+                }
+
                 # FORM (Monocle?)
             }
         }
@@ -89,5 +107,20 @@ Describe 'Authentication Requests' {
 
     It 'bearer - returns 400 for no token' {
         { Invoke-RestMethod -Uri "$($Endpoint)/auth/bearer" -Method Get -Headers @{ Authorization = 'Bearer' } -ErrorAction Stop } | Should Throw '400'
+    }
+
+
+    # API KEY
+    It 'apikey - returns ok for valid token' {
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey" -Method Get -Headers @{ 'X-API-KEY' = 'test-key' }
+        $result.Result | Should Be 'OK'
+    }
+
+    It 'apikey - returns 401 for invalid token' {
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey" -Method Get -Headers @{ 'X-API-KEY' = 'fake-key' } -ErrorAction Stop } | Should Throw '401'
+    }
+
+    It 'apikey - returns 400 for no token' {
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey" -Method Get -ErrorAction Stop } | Should Throw '401'
     }
 }
