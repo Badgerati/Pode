@@ -8,7 +8,7 @@ Authorization: Bearer <token>
 
 ## Setup
 
-To start using Bearer authentication in Pode you can use `New-PodeAuthScheme -Bearer`, and then pipe the returned object this [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token` from the Authorization token:
+To start using Bearer authentication in Pode you can use `New-PodeAuthScheme -Bearer`, and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token` from the Authorization token:
 
 ```powershell
 Start-PodeServer {
