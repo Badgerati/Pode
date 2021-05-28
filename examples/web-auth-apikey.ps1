@@ -11,13 +11,6 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
-# location name for api key
-$locationName = (@{
-    Header = 'X-API-KEY'
-    Query  = 'apiKey'
-    Cookie = 'api.key'
-})[$Location]
-
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 
@@ -27,7 +20,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
 
     # setup bearer auth
-    New-PodeAuthScheme -ApiKey -Location $Location -LocationName $locationName | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -ApiKey -Location $Location | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($key)
 
         # here you'd check a real user storage, this is just for example
