@@ -233,7 +233,17 @@ function New-PodeAuthScheme
         [Parameter(ParameterSetName='Basic')]
         [Parameter(ParameterSetName='Form')]
         [switch]
-        $AsCredential
+        $AsCredential,
+
+        [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName='ApiKey')]
+        [switch]
+        $AsJWT,
+
+        [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName='ApiKey')]
+        [string]
+        $Secret
     )
 
     # default realm
@@ -296,6 +306,11 @@ function New-PodeAuthScheme
         }
 
         'bearer' {
+            $secretBytes = $null
+            if (![string]::IsNullOrWhiteSpace($Secret)) {
+                $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+            }
+
             return @{
                 Name = 'Bearer'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
@@ -312,6 +327,8 @@ function New-PodeAuthScheme
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
                     Scopes = $Scope
+                    AsJWT = $AsJWT
+                    Secret = $secretBytes
                 }
             }
         }
@@ -382,6 +399,11 @@ function New-PodeAuthScheme
                 })[$Location]
             }
 
+            $secretBytes = $null
+            if (![string]::IsNullOrWhiteSpace($Secret)) {
+                $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+            }
+
             return @{
                 Name = 'ApiKey'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
@@ -395,6 +417,8 @@ function New-PodeAuthScheme
                 Arguments = @{
                     Location = $Location
                     LocationName = $LocationName
+                    AsJWT = $AsJWT
+                    Secret = $secretBytes
                 }
             }
         }

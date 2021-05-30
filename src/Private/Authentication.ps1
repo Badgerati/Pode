@@ -263,6 +263,7 @@ function Get-PodeAuthApiKeyType
         }
 
         # 401 if no key
+        $apiKey = $apiKey.Trim()
         if ([string]::IsNullOrWhiteSpace($apiKey)) {
             return @{
                 Message = "No $($options.LocationName) $($options.Location) found"
@@ -270,8 +271,17 @@ function Get-PodeAuthApiKeyType
             }
         }
 
-        # return the key
-        return @($apiKey.Trim())
+        # build the result
+        $result = @($apiKey)
+
+        # convert as jwt?
+        if ($options.AsJWT) {
+            $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
+            $result = @($payload)
+        }
+
+        # return the result
+        return $result
     }
 }
 
@@ -308,8 +318,26 @@ function Get-PodeAuthBearerType
             }
         }
 
-        # return token for calling validator
-        return @($atoms[1].Trim())
+        # 401 if no token
+        $token = $atoms[1].Trim()
+        if ([string]::IsNullOrWhiteSpace($token)) {
+            return @{
+                Message = "No Bearer token found"
+                Code = 401
+            }
+        }
+
+        # build the result
+        $result = @($token)
+
+        # convert as jwt?
+        if ($options.AsJWT) {
+            $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
+            $result = @($payload)
+        }
+
+        # return the result
+        return $result
     }
 }
 
