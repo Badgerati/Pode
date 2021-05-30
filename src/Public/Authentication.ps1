@@ -1400,3 +1400,67 @@ function Add-PodeAuthWindowsLocal
         }
     }
 }
+
+<#
+.SYNOPSIS
+Convert a Header/Payload into a JWT.
+
+.DESCRIPTION
+Convert a Header/Payload hashtable into a JWT, with the option to sign it.
+
+.PARAMETER Header
+A Hashtable containing the Header information for the JWT.
+
+.PARAMETER Payload
+A Hashtable containing the Payload information for the JWT.
+
+.PARAMETER Secret
+An Optional Secret for signing the JWT. This is mandatory if the Header algorithm isn't "none".
+
+.EXAMPLE
+An example
+#>
+function ConvertTo-PodeJwt
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Header,
+
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Payload,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    # validate header
+    if ([string]::IsNullOrWhiteSpace($Header.alg)) {
+        throw "No algorithm supplied in JWT Header"
+    }
+
+    # convert the header
+    $header64 = ConvertTo-PodeJwtBase64Value -Value ($Header | ConvertTo-Json -Compress)
+
+    # convert the payload
+    $payload64 = ConvertTo-PodeJwtBase64Value -Value ($Payload | ConvertTo-Json -Compress)
+
+    # combine
+    $jwt = "$($header64).$($payload64)"
+
+    # convert secret to bytes
+    $secretBytes = $null
+    if (![string]::IsNullOrWhiteSpace($Secret)) {
+        $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+    }
+
+    # make the signature
+    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $secretBytes
+
+    # add the signature and return
+    $jwt += ".$($sig)"
+    return $jwt
+}

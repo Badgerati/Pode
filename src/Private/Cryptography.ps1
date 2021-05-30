@@ -19,6 +19,10 @@ function Invoke-PodeHMACSHA256Hash
         $SecretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
     }
 
+    if ($SecretBytes.Length -eq 0) {
+        throw "No secret supplied for HMAC256 hash"
+    }
+
     $crypto = [System.Security.Cryptography.HMACSHA256]::new($SecretBytes)
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
@@ -44,6 +48,10 @@ function Invoke-PodeHMACSHA384Hash
         $SecretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
     }
 
+    if ($SecretBytes.Length -eq 0) {
+        throw "No secret supplied for HMAC384 hash"
+    }
+
     $crypto = [System.Security.Cryptography.HMACSHA384]::new($SecretBytes)
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
@@ -67,6 +75,10 @@ function Invoke-PodeHMACSHA512Hash
 
     if (![string]::IsNullOrWhiteSpace($Secret)) {
         $SecretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+    }
+
+    if ($SecretBytes.Length -eq 0) {
+        throw "No secret supplied for HMAC512 hash"
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA512]::new($SecretBytes)
@@ -256,8 +268,8 @@ function ConvertFrom-PodeJwt
     # get the parts
     $parts = ($Token -isplit '\.')
 
-    # check number of parts (should be 2 or 3)
-    if (($parts.Length -le 1) -or ($parts.Length -gt 3)) {
+    # check number of parts (should be 3)
+    if ($parts.Length -ne 3) {
         throw "Invalid JWT supplied"
     }
 
@@ -270,15 +282,22 @@ function ConvertFrom-PodeJwt
     # convert to payload
     $payload = ConvertFrom-PodeJwtBase64Value -Value $parts[1]
 
+    # get signature
+    $signature = $parts[2]
+
     # check "none" signature, and return payload if no signature
     $isNoneAlg = ($header.alg -ieq 'none')
 
-    if (($parts.Length -eq 2) -and !$isNoneAlg) {
+    if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
         throw "No JWT signature supplied for $($header.alg)"
     }
 
-    if (($parts.Length -eq 3) -and $isNoneAlg) {
+    if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
         throw "Expected no JWT signature to be supplied"
+    }
+
+    if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
+        throw "Expected a signed JWT, 'none' algorithm is not allowed"
     }
 
     if ($isNoneAlg) {
@@ -287,31 +306,7 @@ function ConvertFrom-PodeJwt
 
     # otherwise, we have an alg for the signature, so we need to validate it
     $sig = "$($parts[0]).$($parts[1])"
-
-    if (($null -eq $Secret) -or ($Secret.Length -eq 0)) {
-        throw "No JWT secret supplied for validating signature"
-    }
-
-    switch ($header.alg.ToUpperInvariant()) {
-        'HS256' {
-            $sig = Invoke-PodeHMACSHA256Hash -Value $sig -SecretBytes $Secret
-            $sig = ConvertTo-PodeJwtBase64Value -Value $sig
-        }
-
-        'HS384' {
-            $sig = Invoke-PodeHMACSHA384Hash -Value $sig -SecretBytes $Secret
-            $sig = ConvertTo-PodeJwtBase64Value -Value $sig
-        }
-
-        'HS512' {
-            $sig = Invoke-PodeHMACSHA512Hash -Value $sig -SecretBytes $Secret
-            $sig = ConvertTo-PodeJwtBase64Value -Value $sig
-        }
-
-        default {
-            throw "The JWT algorithm is not currently supported: $($header.alg)"
-        }
-    }
+    $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
 
     if ($sig -ne $parts[2]) {
         throw "Invalid JWT signature supplied"
@@ -321,13 +316,74 @@ function ConvertFrom-PodeJwt
     return $payload
 }
 
+function New-PodeJwtSignature
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Algorithm,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Token,
+
+        [Parameter()]
+        [byte[]]
+        $SecretBytes
+    )
+
+    if (($Algorithm -ine 'none') -and (($null -eq $SecretBytes) -or ($SecretBytes.Length -eq 0))) {
+        throw "No Secret supplied for JWT signature"
+    }
+
+    if (($Algorithm -ieq 'none') -and (($null -ne $secretBytes) -and ($SecretBytes.Length -gt 0))) {
+        throw "Expected no secret to be supplied for no signature"
+    }
+
+    $sig = $null
+
+    switch ($Algorithm.ToUpperInvariant()) {
+        'HS256' {
+            $sig = Invoke-PodeHMACSHA256Hash -Value $Token -SecretBytes $SecretBytes
+            $sig = ConvertTo-PodeJwtBase64Value -Value $sig -NoConvert
+        }
+
+        'HS384' {
+            $sig = Invoke-PodeHMACSHA384Hash -Value $Token -SecretBytes $SecretBytes
+            $sig = ConvertTo-PodeJwtBase64Value -Value $sig -NoConvert
+        }
+
+        'HS512' {
+            $sig = Invoke-PodeHMACSHA512Hash -Value $Token -SecretBytes $SecretBytes
+            $sig = ConvertTo-PodeJwtBase64Value -Value $sig -NoConvert
+        }
+
+        'NONE' {
+            $sig = [string]::Empty
+        }
+
+        default {
+            throw "The JWT algorithm is not currently supported: $($Algorithm)"
+        }
+    }
+
+    return $sig
+}
+
 function ConvertTo-PodeJwtBase64Value
 {
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Value
+        $Value,
+
+        [switch]
+        $NoConvert
     )
+
+    if (!$NoConvert) {
+        $Value = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($Value))
+    }
 
     $Value = ($Value -ireplace '\+', '-')
     $Value = ($Value -ireplace '/', '_')
@@ -356,13 +412,23 @@ function ConvertFrom-PodeJwtBase64Value
     }
 
     # convert base64 to string
-    $Value = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Value))
+    try {
+        $Value = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Value))
+    }
+    catch {
+        throw "Invalid Base64 encoded value found in JWT"
+    }
 
     # return json
-    if (Test-PodeIsPSCore) {
-        return ($Value | ConvertFrom-Json -AsHashtable)
+    try {
+        if (Test-PodeIsPSCore) {
+            return ($Value | ConvertFrom-Json -AsHashtable)
+        }
+        else {
+            return ($Value | ConvertFrom-Json)
+        }
     }
-    else {
-        return ($Value | ConvertFrom-Json)
+    catch {
+        throw "Invalid JSON value found in JWT"
     }
 }

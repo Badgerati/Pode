@@ -263,7 +263,6 @@ function Get-PodeAuthApiKeyType
         }
 
         # 401 if no key
-        $apiKey = $apiKey.Trim()
         if ([string]::IsNullOrWhiteSpace($apiKey)) {
             return @{
                 Message = "No $($options.LocationName) $($options.Location) found"
@@ -272,11 +271,25 @@ function Get-PodeAuthApiKeyType
         }
 
         # build the result
+        $apiKey = $apiKey.Trim()
         $result = @($apiKey)
 
         # convert as jwt?
         if ($options.AsJWT) {
-            $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
+            try {
+                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
+            }
+            catch {
+                if ($_.Exception.Message -ilike '*jwt*') {
+                    return @{
+                        Message = $_.Exception.Message
+                        Code = 400
+                    }
+                }
+
+                throw
+            }
+
             $result = @($payload)
         }
 
@@ -319,7 +332,7 @@ function Get-PodeAuthBearerType
         }
 
         # 401 if no token
-        $token = $atoms[1].Trim()
+        $token = $atoms[1]
         if ([string]::IsNullOrWhiteSpace($token)) {
             return @{
                 Message = "No Bearer token found"
@@ -328,11 +341,25 @@ function Get-PodeAuthBearerType
         }
 
         # build the result
+        $token = $token.Trim()
         $result = @($token)
 
         # convert as jwt?
         if ($options.AsJWT) {
-            $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
+            try {
+                $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
+            }
+            catch {
+                if ($_.Exception.Message -ilike '*jwt*') {
+                    return @{
+                        Message = $_.Exception.Message
+                        Code = 400
+                    }
+                }
+
+                throw
+            }
+
             $result = @($payload)
         }
 
