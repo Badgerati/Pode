@@ -266,7 +266,7 @@ function Get-PodeAuthApiKeyType
         if ([string]::IsNullOrWhiteSpace($apiKey)) {
             return @{
                 Message = "No $($options.LocationName) $($options.Location) found"
-                Code = 401
+                Code = 400
             }
         }
 
@@ -278,6 +278,7 @@ function Get-PodeAuthApiKeyType
         if ($options.AsJWT) {
             try {
                 $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
+                Test-PodeJwt -Payload $payload
             }
             catch {
                 if ($_.Exception.Message -ilike '*jwt*') {
@@ -336,7 +337,7 @@ function Get-PodeAuthBearerType
         if ([string]::IsNullOrWhiteSpace($token)) {
             return @{
                 Message = "No Bearer token found"
-                Code = 401
+                Code = 400
             }
         }
 
@@ -348,6 +349,7 @@ function Get-PodeAuthBearerType
         if ($options.AsJWT) {
             try {
                 $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
+                Test-PodeJwt -Payload $payload
             }
             catch {
                 if ($_.Exception.Message -ilike '*jwt*') {

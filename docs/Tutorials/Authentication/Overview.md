@@ -22,6 +22,7 @@ The following schemes are supported:
 * [Client Certificate](../Methods/ClientCertificate)
 * [Digest](../Methods/Digest)
 * [Form](../Methods/Form)
+* [JWT](../Methods/JWT) (Done using [Bearer](../Methods/Bearer) or [API Key](../Methods/ApiKey))
 * [OAuth2](../Methods/OAuth2)
 
 Or you can define a custom scheme:

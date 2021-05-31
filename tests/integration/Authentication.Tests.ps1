@@ -157,8 +157,8 @@ Describe 'Authentication Requests' {
         { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey" -Method Get -Headers @{ 'X-API-KEY' = 'fake-key' } -ErrorAction Stop } | Should Throw '401'
     }
 
-    It 'apikey - returns 401 for no key' {
-        { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey" -Method Get -ErrorAction Stop } | Should Throw '401'
+    It 'apikey - returns 400 for no key' {
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey" -Method Get -ErrorAction Stop } | Should Throw '400'
     }
 
 
@@ -172,7 +172,7 @@ Describe 'Authentication Requests' {
         $result.Result | Should Be 'OK'
     }
 
-    It 'apikey -jwt not signed - returns 400 for invalid key - invalid base64' {
+    It 'apikey - jwt not signed - returns 400 for invalid key - invalid base64' {
         $header = @{ alg = 'none' }
         $payload = @{ sub = '123'; username = 'morty' }
         $jwt = ConvertTo-PodeJwt -Header $header -Payload $payload
@@ -180,7 +180,7 @@ Describe 'Authentication Requests' {
         { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey/jwt/notsigned" -Method Get -Headers @{ 'X-API-KEY' = "hh$($jwt)" } -ErrorAction Stop } | Should Throw '400'
     }
 
-    It 'apikey -jwt not signed - returns 401 for invalid key - invalid username' {
+    It 'apikey - jwt not signed - returns 401 for invalid key - invalid username' {
         $header = @{ alg = 'none' }
         $payload = @{ sub = '123'; username = 'rick' }
         $jwt = ConvertTo-PodeJwt -Header $header -Payload $payload
@@ -188,11 +188,41 @@ Describe 'Authentication Requests' {
         { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey/jwt/notsigned" -Method Get -Headers @{ 'X-API-KEY' = $jwt } -ErrorAction Stop } | Should Throw '401'
     }
 
+    It 'apikey - jwt not signed - returns 400 for invalid key - expired' {
+        $header = @{ alg = 'none' }
+        $payload = @{ sub = '123'; username = 'morty'; exp = 100 }
+        $jwt = ConvertTo-PodeJwt -Header $header -Payload $payload
+
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey/jwt/notsigned" -Method Get -Headers @{ 'X-API-KEY' = $jwt } -ErrorAction Stop } | Should Throw '400'
+    }
+
+    It 'apikey - jwt not signed - returns 400 for invalid key - not started' {
+        $header = @{ alg = 'none' }
+        $payload = @{ sub = '123'; username = 'morty'; nbf = ([System.DateTimeOffset]::Now.AddYears(1).ToUnixTimeSeconds()) }
+        $jwt = ConvertTo-PodeJwt -Header $header -Payload $payload
+
+        { Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey/jwt/notsigned" -Method Get -Headers @{ 'X-API-KEY' = $jwt } -ErrorAction Stop } | Should Throw '400'
+    }
+
 
     # API KEY - JWT (signed)
     It 'apikey - jwt signed - returns ok for valid key' {
         $header = @{ alg = 'hs256' }
         $payload = @{ sub = '123'; username = 'morty' }
+        $jwt = ConvertTo-PodeJwt -Header $header -Payload $payload -Secret 'secret'
+
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey/jwt/signed" -Method Get -Headers @{ 'X-API-KEY' = $jwt }
+        $result.Result | Should Be 'OK'
+    }
+
+    It 'apikey - jwt signed - returns ok for valid key - valid exp/nbf' {
+        $header = @{ alg = 'hs256' }
+        $payload = @{
+            sub = '123'
+            username = 'morty'
+            nbf = ([System.DateTimeOffset]::Now.AddDays(-1).ToUnixTimeSeconds())
+            exp = ([System.DateTimeOffset]::Now.AddDays(1).ToUnixTimeSeconds())
+        }
         $jwt = ConvertTo-PodeJwt -Header $header -Payload $payload -Secret 'secret'
 
         $result = Invoke-RestMethod -Uri "$($Endpoint)/auth/apikey/jwt/signed" -Method Get -Headers @{ 'X-API-KEY' = $jwt }

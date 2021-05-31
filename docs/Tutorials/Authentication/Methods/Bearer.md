@@ -60,6 +60,10 @@ Start-PodeServer {
 }
 ```
 
+## JWT
+
+You can supply a JWT using Bearer authentication, for more details [see here](../JWT).
+
 ## Full Example
 
 The following full example of Bearer authentication will setup and configure authentication, validate the token, and then validate on a specific Route:
