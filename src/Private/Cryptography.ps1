@@ -421,12 +421,7 @@ function ConvertFrom-PodeJwtBase64Value
 
     # return json
     try {
-        if (Test-PodeIsPSCore) {
-            return ($Value | ConvertFrom-Json -AsHashtable)
-        }
-        else {
-            return ($Value | ConvertFrom-Json)
-        }
+        return ($Value | ConvertFrom-Json)
     }
     catch {
         throw "Invalid JSON value found in JWT"
