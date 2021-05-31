@@ -262,7 +262,7 @@ function Get-PodeAuthApiKeyType
             }
         }
 
-        # 401 if no key
+        # 400 if no key
         if ([string]::IsNullOrWhiteSpace($apiKey)) {
             return @{
                 Message = "No $($options.LocationName) $($options.Location) found"
@@ -332,7 +332,7 @@ function Get-PodeAuthBearerType
             }
         }
 
-        # 401 if no token
+        # 400 if no token
         $token = $atoms[1]
         if ([string]::IsNullOrWhiteSpace($token)) {
             return @{

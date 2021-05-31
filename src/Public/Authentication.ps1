@@ -92,6 +92,12 @@ An optional authentication Scheme (from New-PodeAuthScheme) that will be called 
 .PARAMETER AsCredential
 If supplied, username/password credentials for Basic/Form authentication will instead be supplied as a pscredential object.
 
+.PARAMETER AsJWT
+If supplied, the token/key supplied for Bearer/API key authentication will be parsed as a JWT, and the payload supplied instead.
+
+.PARAMETER Secret
+An optional Secret, used to sign/verify JWT signatures.
+
 .EXAMPLE
 $basic_auth = New-PodeAuthScheme -Basic
 
