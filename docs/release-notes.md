@@ -1,5 +1,27 @@
 # Release Notes
 
+## v2.3.0
+
+```plain
+### Features
+* #723: Add support for logging to Windows Event Viewer
+* #749: Add support for API key authentication
+
+### Enhancements
+* #731: New `Use-PodeRoutes` to auto-load routes from a `/routes` directory
+* #741: Add support for IIS to more gracefully close the site on recycle
+* #743: Add `-AsCredential` switch for Basic/Form authentication
+* #752: Add `-AsJWT` switch for Bearer/API key authentication
+
+### Bugs
+* #738: Fix a bug where the body wasn't reset on new requests
+
+### Documentation
+* #739: Flesh out the documentation on creating sites in IIS
+* #741: Add documentation on IIS application pool recycling
+* #751: Minor update to Bearer documentation to make header more visible
+```
+
 ## v2.2.3
 
 ```plain
