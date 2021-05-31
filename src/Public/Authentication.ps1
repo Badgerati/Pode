@@ -1418,7 +1418,10 @@ A Hashtable containing the Payload information for the JWT.
 An Optional Secret for signing the JWT. This is mandatory if the Header algorithm isn't "none".
 
 .EXAMPLE
-An example
+ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
+
+.EXAMPLE
+ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
 #>
 function ConvertTo-PodeJwt
 {
