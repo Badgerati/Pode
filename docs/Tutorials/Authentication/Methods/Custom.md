@@ -56,7 +56,6 @@ For example, if you have a post validator script for the above Client Custom aut
 * ClientName
 * Username
 * Password
-* ClientName
 * Validation Result
 * Scheme ArgumentsList
 

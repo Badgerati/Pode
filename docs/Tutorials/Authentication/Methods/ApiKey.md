@@ -66,6 +66,10 @@ Start-PodeServer {
 }
 ```
 
+## JWT
+
+You can supply a JWT using API key authentication, for more details [see here](../JWT).
+
 ## Full Example
 
 The following full example of API key authentication will setup and configure authentication, validate the key from the `X-API-KEY` header, and then validate on a specific Route:

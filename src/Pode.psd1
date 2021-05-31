@@ -182,6 +182,7 @@
         'Add-PodeAuthMiddleware',
         'Add-PodeAuthIIS',
         'Add-PodeAuthUserFile',
+        'ConvertTo-PodeJwt',
 
         # logging
         'New-PodeLoggingMethod',

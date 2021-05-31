@@ -266,12 +266,36 @@ function Get-PodeAuthApiKeyType
         if ([string]::IsNullOrWhiteSpace($apiKey)) {
             return @{
                 Message = "No $($options.LocationName) $($options.Location) found"
-                Code = 401
+                Code = 400
             }
         }
 
-        # return the key
-        return @($apiKey.Trim())
+        # build the result
+        $apiKey = $apiKey.Trim()
+        $result = @($apiKey)
+
+        # convert as jwt?
+        if ($options.AsJWT) {
+            try {
+                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
+                Test-PodeJwt -Payload $payload
+            }
+            catch {
+                if ($_.Exception.Message -ilike '*jwt*') {
+                    return @{
+                        Message = $_.Exception.Message
+                        Code = 400
+                    }
+                }
+
+                throw
+            }
+
+            $result = @($payload)
+        }
+
+        # return the result
+        return $result
     }
 }
 
@@ -308,8 +332,41 @@ function Get-PodeAuthBearerType
             }
         }
 
-        # return token for calling validator
-        return @($atoms[1].Trim())
+        # 401 if no token
+        $token = $atoms[1]
+        if ([string]::IsNullOrWhiteSpace($token)) {
+            return @{
+                Message = "No Bearer token found"
+                Code = 400
+            }
+        }
+
+        # build the result
+        $token = $token.Trim()
+        $result = @($token)
+
+        # convert as jwt?
+        if ($options.AsJWT) {
+            try {
+                $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
+                Test-PodeJwt -Payload $payload
+            }
+            catch {
+                if ($_.Exception.Message -ilike '*jwt*') {
+                    return @{
+                        Message = $_.Exception.Message
+                        Code = 400
+                    }
+                }
+
+                throw
+            }
+
+            $result = @($payload)
+        }
+
+        # return the result
+        return $result
     }
 }
 

@@ -11,6 +11,18 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+# -------------
+# None Signed
+# Req: Invoke-RestMethod -Uri 'http://localhost:8085/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJub25lIn0.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.' }
+# -------------
+
+# -------------
+# Signed
+# Req: Invoke-RestMethod -Uri 'http://localhost:8085/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJoczI1NiJ9.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.WIOvdwk4mNrNC9EtTcQccmLHJc02gAuonXClHMFOjKM' }
+#
+# (add -Secret 'secret' to New-PodeAuthScheme below)
+# -------------
+
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 
@@ -21,11 +33,11 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # setup bearer auth
-    New-PodeAuthScheme -ApiKey -Location $Location | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
-        param($key)
+    New-PodeAuthScheme -ApiKey -Location $Location -AsJWT | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+        param($jwt)
 
         # here you'd check a real user storage, this is just for example
-        if ($key -ieq 'test-api-key') {
+        if ($jwt.username -ieq 'morty') {
             return @{
                 User = @{
                     ID ='M0R7Y302'
