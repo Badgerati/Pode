@@ -11,6 +11,8 @@
 [![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker)](https://hub.docker.com/r/badgerati/pode/)
 
+> 💝 A lot of my free time, evenings, and weekends goes into making Pode happen; please do consider sponsoring as it will really help! 😊
+
 Pode is a Cross-Platform framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/Examples/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Hosting/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/Views/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/Views/ThirdParty/) template engines. Plus many more features, including [Azure Functions](https://badgerati.github.io/Pode/Hosting/AzureFunctions/) and [AWS Lambda](https://badgerati.github.io/Pode/Hosting/AwsLambda/) support!
 
 <p align="center">
@@ -19,7 +21,7 @@ Pode is a Cross-Platform framework for creating web servers to host [REST APIs](
 
 See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app! Don't know HTML, CSS, or JavaScript? No problem! [Pode.Web](https://github.com/Badgerati/Pode.Web) is currently a work in progress, and lets you build web pages using purely PowerShell!
 
-## Documentation
+## 📘 Documentation
 
 All documentation and tutorials for Pode can be [found here](https://badgerati.github.io/Pode) - this documentation will be for the latest release.
 
@@ -31,7 +33,7 @@ Invoke-Build Docs
 
 Then navigate to `http://127.0.0.1:8000` in your browser.
 
-## Features
+## 🚀 Features
 
 * Cross-platform using PowerShell Core (with support for PS5)
 * Docker support, including images for ARM/Raspberry Pi
@@ -58,7 +60,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Generate/bind self-signed certificates
 * (Windows) Open the hosted server as a desktop application
 
-## Install
+## 📦 Install
 
 You can install Pode from either Chocolatey, the PowerShell Gallery, or Docker:
 
@@ -73,7 +75,7 @@ Install-Module -Name Pode
 docker pull badgerati/pode
 ```
 
-## Contributing
+## 🙌 Contributing
 
 > The full contributing guide can be [found here](https://github.com/Badgerati/Pode/blob/develop/.github/CONTRIBUTING.md)
 
