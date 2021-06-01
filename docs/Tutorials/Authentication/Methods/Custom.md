@@ -6,7 +6,7 @@ Custom authentication works much like the inbuilt schemes (Basic/Form/etc), but 
 
 To setup and start using Custom authentication in Pode you use the `New-PodeAuthScheme -Custom` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function.
 
-Let's say we wanted something similar to [`Form`](../Form) Authentication, but it requires a third piece of information: `ClientName`. To setup Custom Authentication for this method, you'll need to specify the parsing logic within the `-ScriptBlock` of the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) function.
+Let's say we wanted something similar to [`Form`](../Form) Authentication, but it requires a third piece of information: `ClientName`. To setup Custom authentication for this method, you'll need to specify the parsing logic within the `-ScriptBlock` of the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) function.
 
 The `-ScriptBlock` on [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) will have access to the current [web event](../../../WebEvent) variable: `$WebEvent`. In this script you can parse the Request payload/headers for any credential information that needs validating. Once sourced the data returned from the script should be an `array`, which will then splatted onto the `-ScriptBlock` from your [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
 
@@ -49,14 +49,13 @@ Start-PodeServer {
 
 The typical setup of authentication is that you create some scheme to parse the request ([`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme)), and then you pipe this into a validator to validate the parsed user's credentials ([`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)).
 
-There is however also an optional `-PostValidator` ScriptBlock that can be passed to your Custom Authentication scheme on the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) function. This `-PostValidator` script runs after normal user validation, and also has access to the current [web event](../../../WebEvent). The original splatted array returned from the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) ScriptBlock, the result HashTable from the user validator from `Add-PodeAuth`, and the `-ArgumentList` HashTable from `New-PodeAuthScheme` are supplied as parameters. You can use this script to re-generate any hashes for further validation, but if successful you *must* return the User object again (ie: re-return the last parameter which is the original validation result).
+There is however also an optional `-PostValidator` ScriptBlock that can be passed to your Custom authentication scheme on the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) function. This `-PostValidator` script runs after normal user validation, and also has access to the current [web event](../../../WebEvent). The original splatted array returned from the [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) ScriptBlock, the result HashTable from the user validator from `Add-PodeAuth`, and the `-ArgumentList` HashTable from `New-PodeAuthScheme` are supplied as parameters. You can use this script to re-generate any hashes for further validation, but if successful you *must* return the User object again (ie: re-return the last parameter which is the original validation result).
 
-For example, if you have a post validator script for the above Client Custom Authentication, then it would be supplied the following parameters:
+For example, if you have a post validator script for the above Client Custom authentication, then it would be supplied the following parameters:
 
 * ClientName
 * Username
 * Password
-* ClientName
 * Validation Result
 * Scheme ArgumentsList
 
@@ -104,9 +103,9 @@ Start-PodeServer {
 
 ## Middleware
 
-Once configured you can start using the Custom Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured you can start using the Custom authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
-The following will use Custom Authentication to validate every request on every Route:
+The following will use Custom authentication to validate every request on every Route:
 
 ```powershell
 Start-PodeServer {

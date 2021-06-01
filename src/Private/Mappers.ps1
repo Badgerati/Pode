@@ -238,6 +238,7 @@ function Get-PodeContentType
         '.json' { return 'application/json' }
         '.jsx' { return 'text/jscript' }
         '.jsxbin' { return 'text/plain' }
+        '.jwt' { return 'application/jwt' }
         '.latex' { return 'application/x-latex' }
         '.library-ms' { return 'application/windows-library+xml' }
         '.lit' { return 'application/x-ms-reader' }

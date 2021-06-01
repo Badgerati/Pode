@@ -1,10 +1,14 @@
 # Bearer
 
-Bearer Authentication lets you authenticate a user based on a token, with optional support for scopes.
+Bearer authentication lets you authenticate a user based on a token, with optional support for scopes:
+
+```plain
+Authorization: Bearer <token>
+```
 
 ## Setup
 
-To setup and start using Bearer Authentication in Pode you use the `New-PodeAuthScheme -Bearer` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function. The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token`:
+To start using Bearer authentication in Pode you can use `New-PodeAuthScheme -Bearer`, and then pipe the returned object into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The parameter supplied to the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is the `$token` from the Authorization token:
 
 ```powershell
 Start-PodeServer {
@@ -18,13 +22,13 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the Request's header contains an `Authorization` key, and whether the value of that key starts with `Bearer` tag. The `New-PodeAuthScheme -Bearer` function can be supplied parameters to customise the tag using `-HeaderTag`.
+By default, Pode will check if the request's header contains an `Authorization` key, and whether the value of that key starts with `Bearer` tag. The `New-PodeAuthScheme -Bearer` function can be supplied parameters to customise the tag using `-HeaderTag`.
 
 You can also optionally return a `Scope` property alongside the `User`. If you specify any scopes with [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme) then it will be validated in the Bearer's post validator - a 403 will be returned if the scope is invalid.
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Bearer -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Bearer -Scope 'write' | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user
@@ -36,9 +40,9 @@ Start-PodeServer {
 
 ## Middleware
 
-Once configured you can start using Bearer Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured you can start using Bearer authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
-The following will use Bearer Authentication to validate every request on every Route:
+The following will use Bearer authentication to validate every request on every Route:
 
 ```powershell
 Start-PodeServer {
@@ -55,6 +59,10 @@ Start-PodeServer {
     }
 }
 ```
+
+## JWT
+
+You can supply a JWT using Bearer authentication, for more details [see here](../JWT).
 
 ## Full Example
 

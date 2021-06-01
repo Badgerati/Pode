@@ -1,10 +1,10 @@
 # Form
 
-Form Authentication is for when you're using a `<form>` in HTML, and you submit the form. This Authentication method expects a `username` and `password` to be passed from the form's input fields.
+Form authentication is for when you're using a `<form>` on your webpage, and it gets submitted. This authentication method expects a `username` and `password` to be passed from the form's input fields, via POST request.
 
 ## Setup
 
-To setup and start using Form Authentication in Pode you use the `New-PodeAuthScheme -Form` function, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function:
+To start using Form authentication in Pode you can use `New-PodeAuthScheme -Form`, and then pipe the object returned into [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth). The [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function's ScriptBlock is supplied the username and password parsed from the request's payload:
 
 ```powershell
 Start-PodeServer {
@@ -18,7 +18,7 @@ Start-PodeServer {
 }
 ```
 
-By default, Pode will check if the Request's payload contains a `username` and `password` fields. The `New-PodeAuthScheme -Form` function can be supplied parameters to allow for custom names of these fields.
+By default, Pode will check if the request's payload contains a `username` and `password` fields. The `New-PodeAuthScheme -Form` function can be supplied parameters to allow for custom names of these fields.
 
 For example, to look for the field `email` rather than the default `username` you could do:
 
@@ -28,11 +28,25 @@ Start-PodeServer {
 }
 ```
 
+The credentials supplied to [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth)'s scriptblock are, by default, the username and password. This can be changed to a pscredential object instead by suppling `-AsCredential` on [`New-PodeAuthScheme`](../../../../Functions/Authentication/New-PodeAuthScheme):
+
+```powershell
+Start-PodeServer {
+    New-PodeAuthScheme -Form -AsCredential | Add-PodeAuth -Name 'Login' -ScriptBlock {
+        param($creds)
+
+        # check if the user is valid
+
+        return @{ User = $user }
+    }
+}
+```
+
 ## Middleware
 
-Once configured you can start using Form Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
+Once configured you can start using Form authentication to validate incoming requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
 
-The following will use Form Authentication to validate every request on every Route:
+The following will use Form authentication to validate every request on every Route:
 
 ```powershell
 Start-PodeServer {
@@ -40,7 +54,7 @@ Start-PodeServer {
 }
 ```
 
-Whereas the following example will use Form Authentication to only validate requests on specific a Route:
+Whereas the following example will use Form authentication to only validate requests on specific a Route:
 
 ```powershell
 Start-PodeServer {

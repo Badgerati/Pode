@@ -4,6 +4,22 @@ Static content in Pode can be used by either placing your static files within th
 
 Caching is supported on static content.
 
+## Public Directory
+
+You can place static files within the `/public` directory, at the root of your server. If a request is made for a file, then Pode will automatically check the public directory first, and if found will return the back.
+
+For example, if you have a `logic.js` at `/public/scripts/logic.js`. The the following request would return the file's content:
+
+```plain
+Invoke-WebRequest -Uri http://localhost:8080/scripts/logic.js
+```
+
+Or, you can reference the file in a view like:
+
+```html
+<script type="text/javascript" src="/scripts/logic.js"></script>
+```
+
 ## Static Routes
 
 The following is an example of using the [`Add-PodeStaticRoute`](../../../../Functions/Routes/Add-PodeStaticRoute) function to define a route to some static content directory; this tells Pode where to get static files from for certain routes. This example will define a static route for `/assets`, and will point the route at the internal directory path of `./content/assets`:

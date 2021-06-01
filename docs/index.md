@@ -6,12 +6,14 @@
 [![Gitter](https://badges.gitter.im/Badgerati/Pode.svg)](https://gitter.im/Badgerati/Pode?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/Badgerati?color=%23ff69b4&logo=github&style=flat&label=Sponsers)](https://github.com/sponsors/Badgerati)
 
+> 💝 A lot of my free time, evenings, and weekends goes into making Pode happen; please do consider sponsoring as it will really help! 😊
+
 Pode is a Cross-Platform framework to create web servers that host REST APIs, Web Sites, and TCP/SMTP Servers. It also allows you to render dynamic files using `.pode` files, which is effectively embedded PowerShell, or other Third-Party template engines. Pode also has support for middleware, sessions, authentication, and logging; as well as access and rate limiting features. There's also Azure Functions and AWS Lambda support!
 
 [![GetStarted](https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&style=for-the-badge)](./Getting-Started/FirstApp)
 [![QuickLook](https://img.shields.io/badge/-Quick%20Look!-blue.svg?longCache=true&style=for-the-badge)](#quick-look)
 
-## Features
+## 🚀 Features
 
 * Cross-platform using PowerShell Core (with support for PS5)
 * Docker support, including images for ARM/Raspberry Pi
@@ -38,11 +40,11 @@ Pode is a Cross-Platform framework to create web servers that host REST APIs, We
 * Generate/bind self-signed certificates
 * (Windows) Open the hosted server as a desktop application
 
-## Companies using Pode
+## 🏢 Companies using Pode
 
 [![coop](./images/companies/coop-logo.png)](https://coop.dk)
 
-## Quick Look!
+## 🔥 Quick Look!
 
 Below is a quick example of using Pode to create a single REST API endpoint to return a JSON response. It will listen on an endpoint, create the route, and respond with a JSON object when `http://localhost:8080/ping` is called:
 

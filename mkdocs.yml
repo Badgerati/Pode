@@ -7,10 +7,22 @@ theme:
   features:
     - navigation.tabs
     - navigation.tabs.sticky
+  font:
+    text: Fira Sans
+    code: Fira Code
   palette:
-    scheme: preference
-    primary: cyan
-    accent: cyan
+    - scheme: default
+      primary: cyan
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Light Mode
+    - scheme: slate
+      primary: cyan
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Dark Mode
 
 markdown_extensions:
   - pymdownx.highlight
@@ -19,7 +31,6 @@ markdown_extensions:
   - meta
 
 repo_name: badgerati/pode
-
 repo_url: https://github.com/Badgerati/Pode
 
 extra:

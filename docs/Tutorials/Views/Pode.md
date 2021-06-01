@@ -146,3 +146,26 @@ To load the above `.css.pode` file in a view file:
     </body>
 </html>
 ```
+
+## Escaping
+
+Because `.pode` files are interpreted as PowerShell files, there will be times - especially for JavaScript/jQuery - when you'll run into parsing errors.
+
+The bulk of the time it will likely be jQuery, where in something like the following:
+
+```js
+$(document).ready(...)
+```
+
+the `$(document)` will try to be run like PowerShell, and fail because `document` isn't a command.
+
+To fix this, you just need to use a back-tick (`) to escape the dollar ($):
+
+```powershell
+`$(document).ready(...)
+```
+
+and Pode will now parse the file correctly.
+
+!!! tip
+    If you're embedding JavaScript into a `.pode` view file, move the JavaScript into a separate `.js` public [static file](../../Routes/Utilities/StaticContent) instead. This will save constantly escaping characters for non-dynamic JavaScript.

@@ -2,7 +2,7 @@
 
 Pode has support for you to host your server via IIS!
 
-When you host your server through IIS, Pode can detect this and internally set the server type and endpoints to automatically work with IIS. This allows IIS to deal with binding, HTTPS and Certificates, as well as external traffic, etc.
+When you host your server through IIS, Pode will detect this and internally set the server type and endpoints to automatically work with IIS. This allows IIS to deal with binding, HTTPS and Certificates, as well as external traffic, etc.
 
 !!! important
     This being IIS, it is for Windows only!
@@ -34,9 +34,9 @@ pwsh -c "Install-Module Pode -Scope AllUsers"
 ```
 
 !!! note
-    Sometimes you may need to run `iisreset`, otherwise IIS will return 502 errors.
+    Sometimes you may need to run `iisreset` after installing all of the above, otherwise IIS will return 502 errors.
 
-## Server
+## Configuration
 
 The first thing you'll need to do so IIS can host your server is, in the same directory as your Pode server's `.ps1` root script, create a `web.config` file. This file should look as follows, but make sure you replace the `.\server.ps1` with the path to your actual server script:
 
@@ -70,14 +70,26 @@ The first thing you'll need to do so IIS can host your server is, in the same di
 </configuration>
 ```
 
-Once done, you can setup IIS in the normal way:
+## IIS Setup
 
-* Create an Application Pool
-* Create a website, and set the physical path to the root directory of your Pode server
-* Setup a binding (something like HTTP on *:8080 - IP Address can be anything)
-* Then, navigate to the IIS binding endpoint
+With the `web.config` file in place, it's then time to setup the site in IIS. The first thing to do is open up the IIS Manager, then once open, follow the below steps to setup your site:
 
-Pode automatically detects that it is running via IIS, and it changes certain attributes of your Pode server so they work with IIS:
+1. In the left pane, expand the Server and then the Sites folders
+2. Right click the "Application Pools" folder
+    1. Enter a name for your Application Pool, just the name of your site will do, such as "pode.example.com"
+    2. Select OK to create the Application Pool
+3. Right click the Sites folder, and select "Add Website..."
+    1. Enter the name of your website, such as "pode.example.com"
+    2. Select the Application Pool that we created above
+    3. Set the Physical Path to the root directory of your Pode server's script (just the directory, not the ps1 itself)
+    4. Select either HTTP or HTTPS for your binding
+    5. Leave IP Address as "All Unassigned", and either leave the Port as 80/443 or change to what you need
+    6. Optionally enter the host name of your site, such as "pode.example.com" (usually required for HTTPS)
+    7. If HTTPS, select "Require SNI"
+    8. If HTTPS, select the required certificate from the dropdown
+    9. Select OK to create the Site
+
+At this point, your site is now created in IIS, and you should be able to navigate to the hostname/IP and port combination you setup above for the IIS site. Pode automatically detects that it is running via IIS, and it changes certain attributes of your Pode server so they work with IIS:
 
 * Endpoints have their Address set to `127.0.0.1` (IIS needs Pode to be on localhost)
 * Endpoints have their Port set to `ASPNETCORE_PORT`
@@ -86,17 +98,115 @@ Pode automatically detects that it is running via IIS, and it changes certain at
 This allows you to write a Pode server that works locally, but will also automatically work under IIS without having to change anything!
 
 !!! note
-    This does mean that Pode will force all endpoints to `127.0.0.1:PORT`. So if you had two different IPs before, they'll be merged into one.
+    This does mean that Pode will force all endpoints to `127.0.0.1:PORT`. So if you had two different IPs before, they'll be merged into one. Something to be aware of if you assign routes to specific endpoints, as under IIS this won't work.
+
+### Advanced/Domain
+
+The above IIS site setup works, but only for simple sites. If you require the use of the Active Directory module, or your site to be running as a different user then follow the steps below.
+
+#### Active Directory
+
+By default a newly created site will be running as ApplicationPoolIdentity. In order to use the Active Directory module, your IIS site will need to be running as a domain user:
+
+1. Open IIS, and select the Application Pools folder
+2. Right click your Application Pool, and select "Advanced Settings..."
+3. Under "Process Module", click the "..." of the "Identity" setting
+4. Select "Custom account", and change the account to the credentials of a valid domain user
+5. Select OK
+
+If you've enabled Basic authentication in IIS for you site, you'll also need to edit the domain there as well:
+
+1. Open IIS, and expand the Sites folder
+2. Select your Site
+3. In the middle pane, under IIS, select "Authentication"
+4. Right click "Basic Authentication" (if it's enabled)
+5. Edit the domain to your domain
+6. Select OK
+
+Sometimes you might run into issues using the Active Directory module under IIS - such as the following error:
+
+```plain
+Creating a new session for implicit remoting of "Get-ADUser" command...
+```
+
+If this happens, you'll need to make your AD calls using `Invoke-Command`:
+
+```powershell
+Invoke-Command -ArgumentList $username -ScriptBlock {
+    param($username)
+    Import-Module -Name ActiveDirectory
+    Get-ADUser -Identity $username
+}
+```
+
+#### Change User
+
+To change the user your site is running as:
+
+1. Open IIS, and select the Application Pools folder
+2. Right click your Application Pool, and select "Advanced Settings..."
+3. Under "Process Module", click the "..." of the "Identity" setting
+4. Change the user to either an inbuilt one, or a custom local/domain user
+5. Select OK
 
 ## HTTPS
 
 Although Pode does have support for HTTPS, when running via IIS it takes control of HTTPS for us - this is why the endpoints are forced to HTTP.
 
-You can setup a binding in IIS for HTTPS with a Certificate, and IIS will deal with SSL for you.
+You can setup a binding in IIS for HTTPS with a Certificate, and IIS will deal with SSL for you:
+
+1. Open IIS, and expand the Sites folder
+2. Right click your Site, and select "Edit Bindings..."
+3. Select "Add..."
+4. Select HTTPS for your binding
+5. Leave IP Address as "All Unassigned", and either leave the Port as 443 or change to what you need
+6. Enter the host name of your site, such as "pode.example.com"
+7. Select "Require SNI"
+8. Select the required certificate from the dropdown
+9. Select OK to create the Binding
+
+## Recycling
+
+By default, IIS has certain settings that will recycle/shutdown your Application Pools. This will cause some requests to "spin-up" the site for the first time, and go slow.
+
+To help prevent this, below are some of the common setting that can be altered to stop IIS recycling/shutting down your site:
+
+1. Open IIS, and select the Application Pools folder
+2. Right click your Application Pool, and select "Advanced Settings..."
+3. Under "Process Model", to stop IIS shutting down your site
+    1. Set the "Idle Time-out" to 0
+4. Under "Recycling", to stop IIS recycling your site
+    1. Set the "Regular Time Interval" to 0
+    2. Remove all times from "Specific Times"
+
+This isn't bulletproof, and IIS can sometimes restart your site if it feels like it. Also make sure that there are no periodic processes anywhere that might recycle Application Pools, or run `iisreset`.
+
+When IIS does restart your site, the log file should show the usual Pode "Terminating" message, but preceded with "(IIS Shutdown)".
+
+### Debug Line
+
+Whenever IIS recycles/shuts down your site, you may see a debug line in your logs if the initial HTTP shutdown request fails, such as:
+
+```plain
+Entering debug mode. Use h or ? for help.
+
+At C:\Program Files\PowerShell\Modules\Pode\2.0.3\Public\Core.ps1:176 char:13
++ $key = Get-PodeConsoleKey
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+[DBG]: PS D:\wwwroot\sitename>>
+```
+
+This is nothing to worry about, and is purely just IIS terminating the PowerShell runspace to shutdown the Application Pool.
+
+## ASP.NET Token
+
+When hosted via IIS, Pode inspects every request to make sure the mandatory `MS-ASPNETCORE-TOKEN` header is present. This is a token supplied by IIS, and if it's missing Pode will reject the request with a 400 response.
+
+There's nothing you need to do, IIS informs Pode about the token for you, and IIS will add the header to the requests automatically for you as well.
 
 ## IIS Authentication
 
-If you decide to use IIS for Windows Authentication, then you can retrieve the authenticated user in Pode. This is done using the [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) function, and it will check for the `MS-ASPNETCORE-WINAUTHTOKEN` header from IIS. The function creates a custom Authentication Type and Method, and can be used on Routes like other Authentications in Pode:
+If you decide to use IIS for Windows Authentication, then you can retrieve the authenticated user in Pode. This is done using the [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) function, and it will check for the `MS-ASPNETCORE-WINAUTHTOKEN` header from IIS. The function creates a custom Authentication Type and Method, and can be used on Routes like other authentications in Pode:
 
 ```powershell
 Start-PodeServer {

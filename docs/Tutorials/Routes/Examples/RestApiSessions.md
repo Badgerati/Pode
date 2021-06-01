@@ -31,7 +31,7 @@ Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -UseHeader
 
 ## Authentication
 
-Once we have the Sessions enabled, we need to setup Basic Authentication - the username/password here are hard-coded, but normally you would validate against some database:
+Once we have the Sessions enabled, we need to setup Basic authentication - the username/password here are hard-coded, but normally you would validate against some database:
 
 ```powershell
 New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {

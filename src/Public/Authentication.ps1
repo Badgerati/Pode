@@ -77,8 +77,26 @@ If supplied, will use the inbuilt OAuth2 Authentication scheme.
 .PARAMETER Scope
 An optional array of Scopes for Bearer/OAuth2 Authentication. (These are case-sensitive)
 
+.PARAMETER ApiKey
+If supplied, will use the inbuilt API key Authentication scheme.
+
+.PARAMETER Location
+The Location to find an API key: Header, Query, or Cookie. (Default: Header)
+
+.PARAMETER LocationName
+The Name of the Header, Query, or Cookie to find an API key. (Default depends on Location. Header/Cookie: X-API-KEY, Query: api_key)
+
 .PARAMETER InnerScheme
 An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
+
+.PARAMETER AsCredential
+If supplied, username/password credentials for Basic/Form authentication will instead be supplied as a pscredential object.
+
+.PARAMETER AsJWT
+If supplied, the token/key supplied for Bearer/API key authentication will be parsed as a JWT, and the payload supplied instead.
+
+.PARAMETER Secret
+An optional Secret, used to sign/verify JWT signatures.
 
 .EXAMPLE
 $basic_auth = New-PodeAuthScheme -Basic
@@ -196,6 +214,19 @@ function New-PodeAuthScheme
         [switch]
         $OAuth2,
 
+        [Parameter(ParameterSetName='ApiKey')]
+        [switch]
+        $ApiKey,
+
+        [Parameter(ParameterSetName='ApiKey')]
+        [ValidateSet('Header', 'Query', 'Cookie')]
+        [string]
+        $Location = 'Header',
+
+        [Parameter(ParameterSetName='ApiKey')]
+        [string]
+        $LocationName,
+
         [Parameter(ParameterSetName='Bearer')]
         [Parameter(ParameterSetName='OAuth2')]
         [string[]]
@@ -203,7 +234,22 @@ function New-PodeAuthScheme
 
         [Parameter(ValueFromPipeline=$true)]
         [hashtable]
-        $InnerScheme
+        $InnerScheme,
+
+        [Parameter(ParameterSetName='Basic')]
+        [Parameter(ParameterSetName='Form')]
+        [switch]
+        $AsCredential,
+
+        [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName='ApiKey')]
+        [switch]
+        $AsJWT,
+
+        [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName='ApiKey')]
+        [string]
+        $Secret
     )
 
     # default realm
@@ -225,6 +271,7 @@ function New-PodeAuthScheme
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                     Encoding = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
+                    AsCredential = $AsCredential
                 }
             }
         }
@@ -265,6 +312,11 @@ function New-PodeAuthScheme
         }
 
         'bearer' {
+            $secretBytes = $null
+            if (![string]::IsNullOrWhiteSpace($Secret)) {
+                $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+            }
+
             return @{
                 Name = 'Bearer'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
@@ -281,6 +333,8 @@ function New-PodeAuthScheme
                 Arguments = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
                     Scopes = $Scope
+                    AsJWT = $AsJWT
+                    Secret = $secretBytes
                 }
             }
         }
@@ -301,6 +355,7 @@ function New-PodeAuthScheme
                         Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
                         Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
                     }
+                    AsCredential = $AsCredential
                 }
             }
         }
@@ -336,6 +391,40 @@ function New-PodeAuthScheme
                         Token = $TokenUrl
                         User = $UserUrl
                     }
+                }
+            }
+        }
+
+        'apikey' {
+            # set default location name
+            if ([string]::IsNullOrWhiteSpace($LocationName)) {
+                $LocationName = (@{
+                    Header = 'X-API-KEY'
+                    Query  = 'api_key'
+                    Cookie = 'X-API-KEY'
+                })[$Location]
+            }
+
+            $secretBytes = $null
+            if (![string]::IsNullOrWhiteSpace($Secret)) {
+                $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+            }
+
+            return @{
+                Name = 'ApiKey'
+                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock = @{
+                    Script = (Get-PodeAuthApiKeyType)
+                    UsingVariables = $null
+                }
+                PostValidator = $null
+                InnerScheme = $InnerScheme
+                Scheme = 'apiKey'
+                Arguments = @{
+                    Location = $Location
+                    LocationName = $LocationName
+                    AsJWT = $AsJWT
+                    Secret = $secretBytes
                 }
             }
         }
@@ -1316,4 +1405,71 @@ function Add-PodeAuthWindowsLocal
             UseOrigin = $SuccessUseOrigin
         }
     }
+}
+
+<#
+.SYNOPSIS
+Convert a Header/Payload into a JWT.
+
+.DESCRIPTION
+Convert a Header/Payload hashtable into a JWT, with the option to sign it.
+
+.PARAMETER Header
+A Hashtable containing the Header information for the JWT.
+
+.PARAMETER Payload
+A Hashtable containing the Payload information for the JWT.
+
+.PARAMETER Secret
+An Optional Secret for signing the JWT. This is mandatory if the Header algorithm isn't "none".
+
+.EXAMPLE
+ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
+
+.EXAMPLE
+ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
+#>
+function ConvertTo-PodeJwt
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Header,
+
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Payload,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    # validate header
+    if ([string]::IsNullOrWhiteSpace($Header.alg)) {
+        throw "No algorithm supplied in JWT Header"
+    }
+
+    # convert the header
+    $header64 = ConvertTo-PodeJwtBase64Value -Value ($Header | ConvertTo-Json -Compress)
+
+    # convert the payload
+    $payload64 = ConvertTo-PodeJwtBase64Value -Value ($Payload | ConvertTo-Json -Compress)
+
+    # combine
+    $jwt = "$($header64).$($payload64)"
+
+    # convert secret to bytes
+    $secretBytes = $null
+    if (![string]::IsNullOrWhiteSpace($Secret)) {
+        $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+    }
+
+    # make the signature
+    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $secretBytes
+
+    # add the signature and return
+    $jwt += ".$($sig)"
+    return $jwt
 }

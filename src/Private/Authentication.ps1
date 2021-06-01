@@ -54,8 +54,18 @@ function Get-PodeAuthBasicType
         $username = $decoded.Substring(0, $index)
         $password = $decoded.Substring($index + 1)
 
+        # build the result
+        $result = @($username, $password)
+
+        # convert to credential?
+        if ($options.AsCredential) {
+            $passSecure = ConvertTo-SecureString -String $password -AsPlainText -Force
+            $creds = [pscredential]::new($username, $passSecure)
+            $result = @($creds)
+        }
+
         # return data for calling validator
-        return @($username, $password)
+        return $result
     }
 }
 
@@ -230,6 +240,65 @@ function Get-PodeAuthClientCertificateType
     }
 }
 
+function Get-PodeAuthApiKeyType
+{
+    return {
+        param($options)
+
+        # get api key from appropriate location
+        $apiKey = [string]::Empty
+
+        switch ($options.Location.ToLowerInvariant()) {
+            'header' {
+                $apiKey = Get-PodeHeader -Name $options.LocationName
+            }
+
+            'query' {
+                $apiKey = $WebEvent.Query[$options.LocationName]
+            }
+
+            'cookie' {
+                $apiKey = Get-PodeCookieValue -Name $options.LocationName
+            }
+        }
+
+        # 400 if no key
+        if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            return @{
+                Message = "No $($options.LocationName) $($options.Location) found"
+                Code = 400
+            }
+        }
+
+        # build the result
+        $apiKey = $apiKey.Trim()
+        $result = @($apiKey)
+
+        # convert as jwt?
+        if ($options.AsJWT) {
+            try {
+                $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
+                Test-PodeJwt -Payload $payload
+            }
+            catch {
+                if ($_.Exception.Message -ilike '*jwt*') {
+                    return @{
+                        Message = $_.Exception.Message
+                        Code = 400
+                    }
+                }
+
+                throw
+            }
+
+            $result = @($payload)
+        }
+
+        # return the result
+        return $result
+    }
+}
+
 function Get-PodeAuthBearerType
 {
     return {
@@ -263,8 +332,41 @@ function Get-PodeAuthBearerType
             }
         }
 
-        # return token for calling validator
-        return @($atoms[1].Trim())
+        # 400 if no token
+        $token = $atoms[1]
+        if ([string]::IsNullOrWhiteSpace($token)) {
+            return @{
+                Message = "No Bearer token found"
+                Code = 400
+            }
+        }
+
+        # build the result
+        $token = $token.Trim()
+        $result = @($token)
+
+        # convert as jwt?
+        if ($options.AsJWT) {
+            try {
+                $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
+                Test-PodeJwt -Payload $payload
+            }
+            catch {
+                if ($_.Exception.Message -ilike '*jwt*') {
+                    return @{
+                        Message = $_.Exception.Message
+                        Code = 400
+                    }
+                }
+
+                throw
+            }
+
+            $result = @($payload)
+        }
+
+        # return the result
+        return $result
     }
 }
 
@@ -503,8 +605,18 @@ function Get-PodeAuthFormType
             }
         }
 
+        # build the result
+        $result = @($username, $password)
+
+        # convert to credential?
+        if ($options.AsCredential) {
+            $passSecure = ConvertTo-SecureString -String $password -AsPlainText -Force
+            $creds = [pscredential]::new($username, $passSecure)
+            $result = @($creds)
+        }
+
         # return data for calling validator
-        return @($username, $password)
+        return $result
     }
 }
 

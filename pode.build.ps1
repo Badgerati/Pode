@@ -14,7 +14,7 @@ $Versions = @{
     SevenZip = '18.5.0.20180730'
     DotNetCore = '3.1.5'
     Checksum = '0.2.0'
-    MkDocsTheme = '6.2.8'
+    MkDocsTheme = '7.1.6'
     PlatyPS = '0.14.0'
 }
 
@@ -316,11 +316,13 @@ task DocsHelpBuild DocsDeps, {
     $path = Join-Path $pwd 'docs'
     Get-ChildItem -Path $path -Recurse -Filter '*.md' | ForEach-Object {
         $depth = ($_.FullName.Replace($path, [string]::Empty).trim('\/') -split '[\\/]').Length
+        $updated = $false
 
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
             $line = $_
 
             while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>[^(])') {
+                $updated = $true
                 $name = $Matches['name']
                 $char = $Matches['char']
                 $line = ($line -ireplace "\[``$($name)``\][^(]", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
@@ -329,7 +331,9 @@ task DocsHelpBuild DocsDeps, {
             $line
         })
 
-        $content | Out-File -FilePath $_.FullName -Force -Encoding ascii
+        if ($updated) {
+            $content | Out-File -FilePath $_.FullName -Force -Encoding ascii
+        }
     }
 
     # remove the module
