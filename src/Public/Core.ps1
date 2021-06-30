@@ -1917,13 +1917,13 @@ function Get-PodeScheduleNextTrigger
 Adds a new Middleware to be invoked before every Route, or certain Routes.
 
 .DESCRIPTION
-Adds a new Middleware to be invoked before every Route, or certain Routes.
+Adds a new Middleware to be invoked before every Route, or certain Routes. ScriptBlock should return $true to continue execution, or $false to stop.
 
 .PARAMETER Name
 The Name of the Middleware.
 
 .PARAMETER ScriptBlock
-The Script defining the logic of the Middleware.
+The Script defining the logic of the Middleware. Should return $true to continue execution, or $false to stop.
 
 .PARAMETER InputObject
 A Middleware HashTable from New-PodeMiddleware, or from certain other functions that return Middleware as a HashTable.
@@ -1933,6 +1933,9 @@ A Route path for which Routes this Middleware should only be invoked against.
 
 .PARAMETER ArgumentList
 An array of arguments to supply to the Middleware's ScriptBlock.
+
+.OUTPUTS
+Boolean. ScriptBlock should return $true to continue to the next middleware/route, or return $false to stop execution.
 
 .EXAMPLE
 Add-PodeMiddleware -Name 'BlockAgents' -ScriptBlock { /* logic */ }
@@ -2001,16 +2004,19 @@ function Add-PodeMiddleware
 Creates a new Middleware HashTable object, that can be piped/used in Add-PodeMiddleware or in Routes.
 
 .DESCRIPTION
-Creates a new Middleware HashTable object, that can be piped/used in Add-PodeMiddleware or in Routes.
+Creates a new Middleware HashTable object, that can be piped/used in Add-PodeMiddleware or in Routes. ScriptBlock should return $true to continue execution, or $false to stop.
 
 .PARAMETER ScriptBlock
-The Script that defines the logic of the Middleware.
+The Script that defines the logic of the Middleware. Should return $true to continue execution, or $false to stop.
 
 .PARAMETER Route
 A Route path for which Routes this Middleware should only be invoked against.
 
 .PARAMETER ArgumentList
 An array of arguments to supply to the Middleware's ScriptBlock.
+
+.OUTPUTS
+Boolean. ScriptBlock should return $true to continue to the next middleware/route, or return $false to stop execution.
 
 .EXAMPLE
 New-PodeMiddleware -ScriptBlock { /* logic */ } -ArgumentList 'Email' | Add-PodeMiddleware -Name 'CheckEmail'
