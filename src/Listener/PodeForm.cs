@@ -48,6 +48,11 @@ namespace Pode
                 }
             }
 
+            return ParseHttp(form, lines, boundaryLineIndexes, contentEncoding);
+        }
+
+        private static PodeForm ParseHttp(PodeForm form, List<byte[]> lines, List<int> boundaryLineIndexes, Encoding contentEncoding)
+        {
             var boundaryLineIndex = 0;
             var disposition = string.Empty;
             var fields = new Dictionary<string, string>();
@@ -128,6 +133,16 @@ namespace Pode
             }
 
             return (contentEncoding.GetString(bytes).StartsWith(boundary));
+        }
+
+        public static bool IsLineBoundary(string line, string boundary)
+        {
+            if (string.IsNullOrEmpty(line))
+            {
+                return false;
+            }
+
+            return line.StartsWith(boundary);
         }
     }
 }
