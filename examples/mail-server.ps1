@@ -28,9 +28,15 @@ Start-PodeServer -Threads 2 {
         Write-Host '|'
         Write-Host $SmtpEvent.Email.Body
         Write-Host '|'
-        Write-Host $SmtpEvent.Email.Data
+        # Write-Host $SmtpEvent.Email.Data
+        # Write-Host '|'
+        $SmtpEvent.Email.Attachments | Out-Default
+        if ($SmtpEvent.Email.Attachments.Length -gt 0) {
+            #$SmtpEvent.Email.Attachments[0].Save('C:\temp')
+        }
         Write-Host '|'
         $SmtpEvent.Email | Out-Default
+        $SmtpEvent.Request | out-default
         Write-Host '- - - - - - - - - - - - - - - - - -'
     }
 

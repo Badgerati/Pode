@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace Pode
@@ -97,6 +98,19 @@ namespace Pode
             }
 
             return lines;
+        }
+
+        public static T[] Subset<T>(T[] array, int startIndex, int endIndex)
+        {
+            var count = endIndex - startIndex;
+            var newArray = new T[count];
+            Array.Copy(array, startIndex, newArray, 0, count);
+            return newArray;
+        }
+
+        public static List<T> Subset<T>(List<T> list, int startIndex, int endIndex)
+        {
+            return Subset(list.ToArray(), startIndex, endIndex).ToList<T>();
         }
     }
 }

@@ -1,8 +1,13 @@
 # SMTP Server
 
-Pode has an inbuilt SMTP server which automatically creates a TCP listener on port 25 (unless you specify a different port via the [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) function).
+Pode has an inbuilt SMTP server for receiving Email which automatically creates a TCP listener on port 25 - unless you specify a different port via the [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) function.
 
 Unlike with web servers that use the Route functions, SMTP servers use the Handler functions, which let you specify logic for handling responses from TCP streams.
+
+!!! tip
+    You can setup multiple different Handlers to run different logic for one Email.
+
+## Usage
 
 To create a Handler for the inbuilt SMTP server you can use the following example:
 
@@ -18,7 +23,31 @@ Start-PodeServer {
 }
 ```
 
-The SMTP Handler will be passed the a `$SmtpEvent` object, that contains te Request, Response, and Email:
+Starting this server will listen for incoming email on `localhost:25`. The Handler will have access to the `$SmtpEvent` object (see below), which contains information about the Email.
+
+An example of sending Email to the above server via `Send-MailMessage`:
+
+```powershell
+Send-MailMessage -SmtpServer localhost -To 'to@example.com' -From 'from@example.com' -Body 'Hello' -Subject 'Hi there' -Port 25
+```
+
+## Attachments
+
+The SMTP server also accepts attachments, which are available in a Handler via `$SmtpEvent.Email.Attachments`. This property contains a list of available attachments on the Email, each attachment has a `Name` and `Bytes` properties - the latter being the raw byte content of the attachment.
+
+An attachment also has a `.Save(<path>)` method. For example, if the Email has an a single attachment: an `example.png` file, and you wish to save it, then the following will save the file to `C:\temp\example.png`:
+
+```powershell
+Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
+    $SmtpEvent.Email.Attachments[0].Save('C:\temp')
+}
+```
+
+## Objects
+
+### SmtpEvent
+
+The SMTP Handler will be passed the `$SmtpEvent` object, that contains the Request, Response, and Email properties:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -27,7 +56,9 @@ The SMTP Handler will be passed the a `$SmtpEvent` object, that contains te Requ
 | Lockable | hashtable | A synchronized hashtable that can be used with `Lock-PodeObject` |
 | Email | hashtable | An object containing data from the email, as seen below |
 
-The `Email` property contains the following:
+### Email
+
+The `Email` property contains the following properties:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -40,3 +71,4 @@ The `Email` property contains the following:
 | ContentEncoding | string | The content encoding of the original email body |
 | Headers | hashtable | A list of all the headers received for the email |
 | Data | string | The full raw data of the email |
+| Attachments | PodeSmtpAttachment[] | An list of SMTP attachments, containing the Name and Bytes of the attachment |
