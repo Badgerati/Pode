@@ -37,6 +37,7 @@ namespace Pode
         {
             CanProcess = false;
             IsKeepAlive = true;
+            Command = string.Empty;
             To = new List<string>();
         }
 
@@ -183,7 +184,7 @@ namespace Pode
                     break;
 
                 default:
-                    throw new HttpRequestException();
+                    throw new HttpRequestException("Invalid SMTP command");
             }
 
             return true;
