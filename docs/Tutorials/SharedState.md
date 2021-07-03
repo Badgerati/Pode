@@ -14,6 +14,8 @@ You can also use the State in combination with the [`Lock-PodeObject`](../../Fun
 
 ## Usage
 
+Where possible use the same casing for the `-Name` of state keys. When using [`Restore-PodeState`](../../Functions/State/Restore-PodeState) the state will become case-sensitive due to the nature of how `ConvertFrom-Json` works.
+
 ### Set
 
 The [`Set-PodeState`](../../Functions/State/Set-PodeState) function will create/update a variable in the state. You need to supply a name and a value to set on the state, there's also an optional scope that can be supplied - which lets you save specific state objects with a certain scope.
