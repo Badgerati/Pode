@@ -25,7 +25,7 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type Pode
 
     # setup session details
-    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
+    Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form auth against windows local users (<form> in HTML)
     New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'Login' -Groups @() -Users @() -FailureUrl '/login' -SuccessUrl '/'
