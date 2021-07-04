@@ -35,7 +35,7 @@ namespace Pode
             Console.WriteLine(ex.StackTrace);
         }
 
-        public static void HandleAggregateException(AggregateException aex)
+        public static void HandleAggregateException(AggregateException aex, PodeListener listener = default(PodeListener))
         {
             aex.Handle((ex) =>
             {
@@ -44,7 +44,7 @@ namespace Pode
                     return true;
                 }
 
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, listener);
                 return false;
             });
         }

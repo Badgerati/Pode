@@ -216,7 +216,7 @@ namespace Pode
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex);
+                PodeHelpers.HandleAggregateException(aex, Listener);
             }
             catch (Exception ex)
             {
