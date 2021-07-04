@@ -14,7 +14,7 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # setup session details
-    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator {
+    Enable-PodeSessionMiddleware -Duration 120 -Extend -Generator {
         return [System.IO.Path]::GetRandomFileName()
     }
 
