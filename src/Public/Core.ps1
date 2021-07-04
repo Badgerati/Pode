@@ -226,6 +226,24 @@ function Close-PodeServer
 
 <#
 .SYNOPSIS
+Restarts the Pode server.
+
+.DESCRIPTION
+Restarts the Pode server.
+
+.EXAMPLE
+Restart-PodeServer
+#>
+function Restart-PodeServer
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Tokens.Restart.Cancel()
+}
+
+<#
+.SYNOPSIS
 Helper wrapper function to start a Pode web server for a static website at the current directory.
 
 .DESCRIPTION
