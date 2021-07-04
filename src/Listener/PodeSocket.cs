@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Pode
 {
@@ -212,6 +213,11 @@ namespace Pode
                 Task.Factory.StartNew(() => context.Receive(), context.ContextTimeoutToken.Token);
             }
             catch (OperationCanceledException) {}
+            catch (IOException) {}
+            catch (AggregateException aex)
+            {
+                PodeHelpers.HandleAggregateException(aex);
+            }
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex, Listener);

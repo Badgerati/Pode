@@ -31,8 +31,22 @@ namespace Pode
                 return;
             }
 
-            Console.WriteLine(ex.Message);
+            Console.WriteLine($"{ex.GetType().Name}: {ex.Message}");
             Console.WriteLine(ex.StackTrace);
+        }
+
+        public static void HandleAggregateException(AggregateException aex)
+        {
+            aex.Handle((ex) =>
+            {
+                if (ex is IOException || ex is OperationCanceledException)
+                {
+                    return true;
+                }
+
+                PodeHelpers.WriteException(ex);
+                return false;
+            });
         }
 
         public static string NewGuid(int length = 16)

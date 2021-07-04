@@ -111,6 +111,10 @@ namespace Pode
             }
             catch (OperationCanceledException) {}
             catch (IOException) {}
+            catch (AggregateException aex)
+            {
+                PodeHelpers.HandleAggregateException(aex);
+            }
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex);
@@ -156,6 +160,10 @@ namespace Pode
             }
             catch (OperationCanceledException) {}
             catch (IOException) {}
+            catch (AggregateException aex)
+            {
+                PodeHelpers.HandleAggregateException(aex);
+            }
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex);
@@ -238,6 +246,10 @@ namespace Pode
             }
             catch (OperationCanceledException) {}
             catch (IOException) {}
+            catch (AggregateException aex)
+            {
+                PodeHelpers.HandleAggregateException(aex);
+            }
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex);
