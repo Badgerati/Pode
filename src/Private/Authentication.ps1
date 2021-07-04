@@ -1251,7 +1251,7 @@ function Set-PodeAuthStatus
 
         # check if we have a failure url redirect
         if (![string]::IsNullOrWhiteSpace($Failure.Url)) {
-            if ($Success.UseOrigin) {
+            if ($Success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
                 Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
             }
 
@@ -1267,7 +1267,7 @@ function Set-PodeAuthStatus
     # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
     if ((!$NoSuccessRedirect -or $LoginRoute) -and ![string]::IsNullOrWhiteSpace($Success.Url)) {
         $url = $Success.Url
-        if ($Success.UseOrigin) {
+        if ($Success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
             $tmpUrl = Get-PodeCookieValue -Name 'pode.redirecturl'
             Remove-PodeCookie -Name 'pode.redirecturl'
 
