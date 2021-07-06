@@ -48,10 +48,10 @@ function Install-PodeLocalModules
             Write-Host "=> Downloading $($_name)@$($_version) from $($_repository)... " -NoNewline -ForegroundColor Cyan
 
             # if the current version exists, do nothing
-            if (!(Test-Path (Join-Path $psModules "$($_name)/$($_version)"))) {
+            if (!(Test-Path ([System.IO.Path]::Combine($psModules, "$($_name)/$($_version)")))) {
                 # remove other versions
-                if (Test-Path (Join-Path $psModules "$($_name)")) {
-                    Remove-Item -Path (Join-Path $psModules "$($_name)") -Force -Recurse | Out-Null
+                if (Test-Path ([System.IO.Path]::Combine($psModules, "$($_name)"))) {
+                    Remove-Item -Path ([System.IO.Path]::Combine($psModules, "$($_name)")) -Force -Recurse | Out-Null
                 }
 
                 # download the module
