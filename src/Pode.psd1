@@ -114,6 +114,10 @@
         'Write-PodeHost',
         'Test-PodeIsIIS',
         'Test-PodeIsHeroku',
+        'New-PodeLockable',
+        'Remove-PodeLockable',
+        'Get-PodeLockable',
+        'Test-PodeLockable',
 
         # routes
         'Add-PodeRoute',
