@@ -61,7 +61,7 @@ function Start-PodeTcpServer
                 if ((Test-PodeIPAccess -IP $ip) -and (Test-PodeIPLimit -IP $ip)) {
                     $TcpEvent = @{
                         Client = $client
-                        Lockable = $PodeContext.Lockable
+                        Lockable = $PodeContext.Lockables.Global
                     }
 
                     # invoke the tcp handlers

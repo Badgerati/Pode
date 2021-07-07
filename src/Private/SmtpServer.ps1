@@ -70,7 +70,7 @@ function Start-PodeSmtpServer
                         $SmtpEvent = @{
                             Response = $Response
                             Request = $Request
-                            Lockable = $PodeContext.Lockable
+                            Lockable = $PodeContext.Lockables.Global
                             Email = @{
                                 From = $Request.From
                                 To = $Request.To
