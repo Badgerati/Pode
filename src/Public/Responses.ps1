@@ -868,7 +868,7 @@ function Write-PodeViewResponse
         $viewFolder = $PodeContext.Server.Views[$Folder]
     }
 
-    $Path = (Join-Path $viewFolder $Path)
+    $Path = [System.IO.Path]::Combine($viewFolder, $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path)) {
@@ -1227,7 +1227,7 @@ function Save-PodeRequestFile
 
     # if the path is a directory, add the filename
     if (Test-PodePathIsDirectory -Path $Path) {
-        $Path = Join-Path $Path $fileName
+        $Path = [System.IO.Path]::Combine($Path, $fileName)
     }
 
     # save the file
@@ -1352,7 +1352,7 @@ function Use-PodePartialView
         $viewFolder = $PodeContext.Server.Views[$Folder]
     }
 
-    $Path = (Join-Path $viewFolder $Path)
+    $Path = [System.IO.Path]::Combine($viewFolder, $Path)
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {

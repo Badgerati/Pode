@@ -757,25 +757,6 @@ Describe 'Remove-PodeEmptyItemsFromArray' {
     }
 }
 
-Describe 'Join-PodePaths' {
-    It 'Returns valid for 0 items' {
-        Join-PodePaths @() | Should Be ([string]::Empty)
-    }
-
-    It 'Returns valid for 1 item' {
-        Join-PodePaths @('this') | Should Be 'this'
-    }
-
-    It 'Returns valid for 2 items' {
-        Join-PodePaths @('this', 'is') | Should Be (Join-Path 'this' 'is')
-    }
-
-    It 'Returns valid for 2+ items' {
-        $result = (Join-Path (Join-Path (Join-Path 'this' 'is') 'a') 'path')
-        Join-PodePaths @('this', 'is', 'a', 'path') | Should Be $result
-    }
-}
-
 Describe 'Get-PodeEndpointInfo' {
     It 'Returns null for no endpoint' {
         Get-PodeEndpointInfo -Address ([string]::Empty) | Should Be $null
@@ -1093,21 +1074,18 @@ Describe 'Get-PodeRelativePath' {
 
     It 'Returns path for a relative path joined to default root' {
         Mock Test-PodePathIsRelative { return $true }
-        Mock Join-Path { return 'c:/path' }
-        Get-PodeRelativePath -Path './path' -JoinRoot | Should Be 'c:/path'
+        Get-PodeRelativePath -Path './path' -JoinRoot | Should Be 'c:/./path'
     }
 
     It 'Returns resolved path for a relative path joined to default root when resolving' {
         Mock Test-PodePathIsRelative { return $true }
-        Mock Join-Path { return 'c:/path' }
         Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
         Get-PodeRelativePath -Path './path' -JoinRoot -Resolve | Should Be 'c:/path'
     }
 
     It 'Returns path for a relative path joined to passed root' {
         Mock Test-PodePathIsRelative { return $true }
-        Mock Join-Path { return 'e:/path' }
-        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should Be 'e:/path'
+        Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should Be 'e:/./path'
     }
 
     It 'Throws error for path ot existing' {

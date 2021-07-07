@@ -750,7 +750,7 @@ function New-PodePSDrive
         $PodeContext.Server.Drives[$drive.Name] = $Path
     }
 
-    return "$($drive.Name):"
+    return "$($drive.Name):$([System.IO.Path]::DirectorySeparatorChar)"
 }
 
 function Add-PodePSDrives
@@ -809,7 +809,7 @@ function Join-PodeServerRoot
     }
 
     # join the folder/file to the root path
-    return (Join-PodePaths @($Root, $Folder, $FilePath))
+    return [System.IO.Path]::Combine($Root, $Folder, $FilePath)
 }
 
 function Remove-PodeEmptyItemsFromArray
@@ -847,17 +847,6 @@ function Remove-PodeNullKeysFromHashtable
             $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
         }
     }
-}
-
-function Join-PodePaths
-{
-    param (
-        [Parameter()]
-        [string[]]
-        $Paths
-    )
-
-    return [System.IO.Path]::Combine($Paths)
 }
 
 function Get-PodeFileExtension
@@ -1657,7 +1646,7 @@ function Get-PodeModuleRootPath
 
 function Get-PodeModuleMiscPath
 {
-    return (Join-Path (Get-PodeModuleRootPath) 'Misc')
+    return [System.IO.Path]::Combine((Get-PodeModuleRootPath), 'Misc')
 }
 
 function Get-PodeUrl
@@ -1831,7 +1820,7 @@ function Find-PodeFileForContentType
     )
 
     # get all files at the path that start with the name
-    $files = @(Get-ChildItem -Path (Join-Path $Path "$($Name).*"))
+    $files = @(Get-ChildItem -Path ([System.IO.Path]::Combine($Path, "$($Name).*")))
 
     # if there are no files, return
     if ($null -eq $files -or $files.Length -eq 0) {
@@ -1951,7 +1940,7 @@ function Get-PodeRelativePath
             $RootPath = $PodeContext.Server.Root
         }
 
-        $Path = Join-Path $RootPath $Path
+        $Path = [System.IO.Path]::Combine($RootPath, $Path)
     }
 
     # if flagged, resolve the path
@@ -1986,7 +1975,7 @@ function Get-PodeWildcardFiles
 
     # if the OriginalPath is a directory, add wildcard
     if (Test-PodePathIsDirectory -Path $Path) {
-        $Path = (Join-Path $Path $Wildcard)
+        $Path = [System.IO.Path]::Combine($Path, $Wildcard)
     }
 
     # if path has a *, assume wildcard

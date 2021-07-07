@@ -42,7 +42,7 @@ function Get-PodeLoggingFileMethod
 
         # get the fileId
         if ($options.FileId -eq 0) {
-            $path = (Join-Path $options.Path "$($options.Name)_$($date)_*.log")
+            $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_*.log")
             $options.FileId = (@(Get-ChildItem -Path $path)).Length
             if ($options.FileId -eq 0) {
                 $options.FileId = 1
@@ -51,7 +51,7 @@ function Get-PodeLoggingFileMethod
 
         $id = "$($options.FileId)".PadLeft(3, '0')
         if ($options.MaxSize -gt 0) {
-            $path = (Join-Path $options.Path "$($options.Name)_$($date)_$($id).log")
+            $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
             if ((Get-Item -Path $path -Force).Length -ge $options.MaxSize) {
                 $options.FileId++
                 $id = "$($options.FileId)".PadLeft(3, '0')
@@ -59,7 +59,7 @@ function Get-PodeLoggingFileMethod
         }
 
         # get the file to write to
-        $path = (Join-Path $options.Path "$($options.Name)_$($date)_$($id).log")
+        $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
 
         # write the item to the file
         $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force

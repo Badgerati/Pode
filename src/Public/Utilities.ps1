@@ -444,9 +444,9 @@ function Import-PodeModule
     # get the path of a module, or import modules on mass
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'name' {
-            $modulePath = Join-PodeServerRoot -Folder (Join-PodePaths @('ps_modules', $Name)) -Root $rootPath
+            $modulePath = Join-PodeServerRoot -Folder ([System.IO.Path]::Combine('ps_modules', $Name)) -Root $rootPath
             if (Test-PodePath -Path $modulePath -NoStatus) {
-                $Path = (Get-ChildItem (Join-PodePaths @($modulePath, '*', "$($Name).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
+                $Path = (Get-ChildItem ([System.IO.Path]::Combine($modulePath, '*', "$($Name).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
             }
             else {
                 $Path = (Get-Module -Name $Name -ListAvailable | Select-Object -First 1).Path
