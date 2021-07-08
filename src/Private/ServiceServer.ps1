@@ -16,7 +16,7 @@ function Start-PodeServiceServer
             {
                 # the event object
                 $ServiceEvent = @{
-                    Lockable = $PodeContext.Lockable
+                    Lockable = $PodeContext.Lockables.Global
                 }
 
                 # invoke the service handlers

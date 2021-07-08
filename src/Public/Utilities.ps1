@@ -133,6 +133,9 @@ The ScriptBlock to invoke.
 .PARAMETER Return
 If supplied, any values from the ScriptBlock will be returned.
 
+.PARAMETER CheckGlobal
+If supplied, will check the global Lockable object and wait until it's freed-up before locking the passed object.
+
 .EXAMPLE
 Lock-PodeObject -Object $SomeArray -ScriptBlock { /* logic */ }
 
@@ -153,7 +156,10 @@ function Lock-PodeObject
         $ScriptBlock,
 
         [switch]
-        $Return
+        $Return,
+
+        [switch]
+        $CheckGlobal
     )
 
     if ($null -eq $Object) {
@@ -167,6 +173,10 @@ function Lock-PodeObject
     $locked = $false
 
     try {
+        if ($CheckGlobal) {
+            Lock-PodeObject -Object $PodeContext.Lockables.Global -ScriptBlock {}
+        }
+
         [System.Threading.Monitor]::Enter($Object.SyncRoot)
         $locked = $true
 
@@ -889,4 +899,110 @@ function Test-PodeIsHeroku
     param()
 
     return $PodeContext.Server.IsHeroku
+}
+
+<#
+.SYNOPSIS
+Creates a new custom lockable object for use with Lock-PodeObject.
+
+.DESCRIPTION
+Creates a new custom lockable object for use with Lock-PodeObject.
+
+.PARAMETER Name
+The Name of the lockable object.
+
+.EXAMPLE
+New-PodeLockable -Name 'Lock1'
+#>
+function New-PodeLockable
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    if (Test-PodeLockable -Name $Name) {
+        throw "Lockable object '$($Name)' already exists"
+    }
+
+    $PodeContext.Lockables.Custom[$Name] = [hashtable]::Synchronized(@{})
+}
+
+<#
+.SYNOPSIS
+Removes a custom lockable object.
+
+.DESCRIPTION
+Removes a custom lockable object.
+
+.PARAMETER Name
+The Name of the lockable object to remove.
+
+.EXAMPLE
+Remove-PodeLockable -Name 'Lock1'
+#>
+function Remove-PodeLockable
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    if (Test-PodeLockable -Name $Name) {
+        $PodeContext.Lockables.Custom.Remove($Name)
+    }
+}
+
+<#
+.SYNOPSIS
+Get a custom lockable object for use with Lock-PodeObject.
+
+.DESCRIPTION
+Get a custom lockable object for use with Lock-PodeObject.
+
+.PARAMETER Name
+The Name of the lockable object.
+
+.EXAMPLE
+Get-PodeLockable -Name 'Lock1' | Lock-PodeObject -ScriptBlock {}
+#>
+function Get-PodeLockable
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Lockables.Custom[$Name]
+}
+
+<#
+.SYNOPSIS
+Test if a custom lockable object exists.
+
+.DESCRIPTION
+Test if a custom lockable object exists.
+
+.PARAMETER Name
+The Name of the lockable object.
+
+.EXAMPLE
+Test-PodeLockable -Name 'Lock1'
+#>
+function Test-PodeLockable
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Lockables.Custom.ContainsKey($Name)
 }
