@@ -133,6 +133,9 @@ The ScriptBlock to invoke.
 .PARAMETER Return
 If supplied, any values from the ScriptBlock will be returned.
 
+.PARAMETER CheckGlobal
+If supplied, will check the global Lockable object and wait until it's freed-up before locking the passed object.
+
 .EXAMPLE
 Lock-PodeObject -Object $SomeArray -ScriptBlock { /* logic */ }
 
