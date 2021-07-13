@@ -241,7 +241,14 @@
         # AutoImport
         'Export-PodeModule',
         'Export-PodeSnapin',
-        'Export-PodeFunction'
+        'Export-PodeFunction',
+
+        # Events
+        'Register-PodeEvent',
+        'Unregister-PodeEvent',
+        'Test-PodeEvent',
+        'Get-PodeEvent',
+        'Clear-PodeEvents'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

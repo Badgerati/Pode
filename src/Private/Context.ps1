@@ -331,6 +331,14 @@ function New-PodeContext
     # setup runspaces
     $ctx.Runspaces = @()
 
+    # setup events
+    $ctx.Server.Events = @{
+        Start = [ordered]@{}
+        Terminate = [ordered]@{}
+        Restart = [ordered]@{}
+        Browser = [ordered]@{}
+    }
+
     # return the new context
     return $ctx
 }
