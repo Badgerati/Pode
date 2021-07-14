@@ -96,6 +96,68 @@ function Get-PodeState
 
 <#
 .SYNOPSIS
+Returns the current names of state variables.
+
+.DESCRIPTION
+Returns the current names of state variables that have been set. You can filter the result using Scope or a Pattern.
+
+.PARAMETER Pattern
+An optional regex Pattern to filter the state names.
+
+.PARAMETER Scope
+An optional Scope to filter the state names.
+
+.EXAMPLE
+$names = Get-PodeStateNames -Scope '<scope>'
+
+.EXAMPLE
+$names = Get-PodeStateNames -Pattern '^\w+[0-9]{0,2}$'
+#>
+function Get-PodeStateNames
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Pattern,
+
+        [Parameter()]
+        [string[]]
+        $Scope
+    )
+
+    if ($null -eq $PodeContext.Server.State) {
+        throw "Pode has not been initialised"
+    }
+
+    if ($null -eq $Scope) {
+        $Scope = @()
+    }
+
+    $tempState = $PodeContext.Server.State.Clone()
+    $keys = $tempState.Keys
+
+    if ($Scope.Length -gt 0) {
+        $keys = @(foreach($key in $keys) {
+            if ($tempState[$key].Scope -iin $Scope) {
+                $key
+            }
+        })
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Pattern)) {
+        $keys = @(foreach($key in $keys) {
+            if ($key -imatch $Pattern) {
+                $key
+            }
+        })
+    }
+
+    return $keys
+}
+
+<#
+.SYNOPSIS
 Removes some state object from the shared state.
 
 .DESCRIPTION
