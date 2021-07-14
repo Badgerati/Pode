@@ -70,6 +70,7 @@
         'Save-PodeState',
         'Restore-PodeState',
         'Test-PodeState',
+        'Get-PodeStateNames',
 
         # response helpers
         'Set-PodeResponseAttachment',

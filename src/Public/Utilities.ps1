@@ -924,7 +924,7 @@ function New-PodeLockable
     )
 
     if (Test-PodeLockable -Name $Name) {
-        throw "Lockable object '$($Name)' already exists"
+        return
     }
 
     $PodeContext.Lockables.Custom[$Name] = [hashtable]::Synchronized(@{})
