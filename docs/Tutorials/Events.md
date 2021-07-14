@@ -21,7 +21,11 @@ Register-PodeEvent -Type Start -Name '<name>' -ScriptBlock {
 Unregister-PodeEvent -Type Start -Name '<name>'
 ```
 
-You can also retrieve a registered script using [`Get-PodeEvent`](../../Functions/Events/Get-PodeEvent).
+The scriptblock supplied to `Register-PodeEvent` also supports `$using:` variables. You can retrieve a registered script using [`Get-PodeEvent`](../../Functions/Events/Get-PodeEvent):
+
+```powershell
+$evt = Get-PodeEvent -Type Start -Name '<name>'
+```
 
 ## Types
 
