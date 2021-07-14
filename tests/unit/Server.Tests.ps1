@@ -25,6 +25,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Import-PodeModulesIntoRunspaceState { }
     Mock Import-PodeSnapinsIntoRunspaceState { }
     Mock Import-PodeFunctionsIntoRunspaceState { }
+    Mock Invoke-PodeEvent { }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {} }
@@ -91,6 +92,7 @@ Describe 'Restart-PodeInternalServer' {
     Mock Start-PodeInternalServer { }
     Mock Write-PodeErrorLog { }
     Mock Close-PodeDisposable { }
+    Mock Invoke-PodeEvent { }
 
     It 'Resetting the server values' {
         $PodeContext = @{
@@ -99,7 +101,7 @@ Describe 'Restart-PodeInternalServer' {
                 Restart = New-Object System.Threading.CancellationTokenSource;
             };
             Server = @{
-                Routes =@{
+                Routes = @{
                     GET = @{ 'key' = 'value' };
                     POST = @{ 'key' = 'value' };
                 };
@@ -145,6 +147,9 @@ Describe 'Restart-PodeInternalServer' {
                     Functions = @{ Exported = @() }
                 }
                 Views = @{ 'key' = 'value' };
+                Events = @{
+                    Start = @{}
+                }
             };
             Metrics = @{
                 Server = @{
