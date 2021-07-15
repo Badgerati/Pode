@@ -182,6 +182,7 @@ function Start-PodeServer
 
             # check for open browser
             if (Test-PodeOpenBrowserPressed -Key $key) {
+                Invoke-PodeEvent -Type Browser
                 Start-Process (Get-PodeEndpointUrl)
             }
         }
@@ -191,6 +192,7 @@ function Start-PodeServer
         }
 
         Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
+        Invoke-PodeEvent -Type Terminate
         $PodeContext.Tokens.Cancellation.Cancel()
     }
     catch {

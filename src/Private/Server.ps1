@@ -38,6 +38,9 @@ function Start-PodeInternalServer
         New-PodeRunspacePools
         Open-PodeRunspacePools
 
+        # run start event hooks
+        Invoke-PodeEvent -Type Start
+
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
 
@@ -125,6 +128,9 @@ function Restart-PodeInternalServer
         # inform restart
         Write-PodeHost 'Restarting server...' -NoNewline -ForegroundColor Cyan
 
+        # run restart event hooks
+        Invoke-PodeEvent -Type Restart
+
         # cancel the session token
         $PodeContext.Tokens.Cancellation.Cancel()
 
@@ -141,6 +147,10 @@ function Restart-PodeInternalServer
 
         $PodeContext.Server.Handlers.Keys.Clone() | ForEach-Object {
             $PodeContext.Server.Handlers[$_].Clear()
+        }
+
+        $PodeContext.Server.Events.Keys.Clone() | ForEach-Object {
+            $PodeContext.Server.Events[$_].Clear()
         }
 
         $PodeContext.Server.Views.Clear()
