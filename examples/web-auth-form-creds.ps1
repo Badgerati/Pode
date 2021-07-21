@@ -28,7 +28,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # setup session details
-    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend
+    Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form auth (<form> in HTML)
     New-PodeAuthScheme -Form -AsCredential | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {

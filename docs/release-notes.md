@@ -1,5 +1,29 @@
 # Release Notes
 
+## v2.4.0
+
+```plain
+### Features
+* #766: Add support for server Event Hooks, to run scripts on events like terminating the server
+* #769: Add support for custom Lockable objects
+
+### Enhancements
+* #763: Add support for SMTP attachments
+* #765: Use a random secure GUID for Session `-Secret` if not supplied
+* #767: Add new `Restart-PodeServer` to manually restart the server internally
+* #779: Replace uses of `Join-Path` with `[System.IO.Path]::Combine`
+* #786: Add new `Get-PodeStateNames` to get array of current Names with shared state
+
+### Bugs
+* #768: Fix for a rare multithreading bug when serialising session data
+* #770: `-SuccessUseOrigin` should only work for GET requests
+* #776: Fix for the PodeResponse class and the handling of AggregateExceptions
+
+### Documentation
+* #757: Add information about using `netsh interface portproxy` for external access as non-admin
+* #762: Update `Add-PodeMiddleware` function summary to reference returning a boolean value
+```
+
 ## v2.3.0
 
 ```plain

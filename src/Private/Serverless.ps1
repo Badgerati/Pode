@@ -33,7 +33,7 @@ function Start-PodeAzFuncServer
                 Auth = @{}
                 Response = $response
                 Request = $request
-                Lockable = $PodeContext.Lockable
+                Lockable = $PodeContext.Lockables.Global
                 Path = [string]::Empty
                 Method = $request.Method.ToLowerInvariant()
                 Query = $request.Query
@@ -167,7 +167,7 @@ function Start-PodeAwsLambdaServer
                 Auth = @{}
                 Response = $response
                 Request = $request
-                Lockable = $PodeContext.Lockable
+                Lockable = $PodeContext.Lockables.Global
                 Path = [System.Web.HttpUtility]::UrlDecode($request.path)
                 Method = $request.httpMethod.ToLowerInvariant()
                 Query = $request.queryStringParameters

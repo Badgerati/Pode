@@ -1522,7 +1522,7 @@ function Enable-PodeOpenApiViewer
     Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
         param($meta)
         $podeRoot = Get-PodeModuleMiscPath
-        Write-PodeFileResponse -Path (Join-Path $podeRoot "default-$($meta.Type).html.pode") -Data @{
+        Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
             Title = $meta.Title
             OpenApi = $meta.OpenApi
             DarkMode = $meta.DarkMode

@@ -141,7 +141,7 @@ function Start-PodeSignalServer
                     $SignalEvent = @{
                         Response = $Response
                         Request = $Request
-                        Lockable = $PodeContext.Lockable
+                        Lockable = $PodeContext.Lockables.Global
                         Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
                         Data = @{
                             Path = [System.Web.HttpUtility]::UrlDecode($payload.path)

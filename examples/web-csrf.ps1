@@ -28,7 +28,7 @@ Start-PodeServer -Threads 2 {
         }
 
         'session' {
-            Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
+            Enable-PodeSessionMiddleware -Duration 120
             Enable-PodeCsrfMiddleware
         }
     }

@@ -135,10 +135,11 @@ function Add-PodeLimitRule
 Enables Middleware for creating, retrieving and using Sessions within Pode.
 
 .DESCRIPTION
-Enables Middleware for creating, retrieving and using Sessions within Pode. With support for defining Session duration, and custom Storage.
+Enables Middleware for creating, retrieving and using Sessions within Pode; with support for defining Session duration, and custom Storage.
+If you're storing sessions outside of Pode, you must supply a Secret value so sessions aren't corrupted.
 
 .PARAMETER Secret
-A secret to use when signing Sessions.
+An optional Secret to use when signing Sessions (Default: random GUID).
 
 .PARAMETER Name
 The name of the cookie/header used for the Session.
@@ -150,7 +151,7 @@ The duration a Session should last for, before being expired.
 A custom ScriptBlock to generate a random unique SessionId. The value returned must be a String.
 
 .PARAMETER Storage
-A custom PSObject that defines methods for Delete, Get, and Set. This allow you to store Sessions in custom Storage such as Redis.
+A custom PSObject that defines methods for Delete, Get, and Set. This allow you to store Sessions in custom Storage such as Redis. A Secret is required.
 
 .PARAMETER Extend
 If supplied, the Sessions will have their durations extended on each successful Request.
@@ -162,16 +163,16 @@ If supplied, the Session cookie will only be accessible to browsers.
 If supplied, the Session cookie will only be accessible over HTTPS Requests.
 
 .PARAMETER Strict
-If supplied, the supplie Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
 .PARAMETER UseHeaders
 If supplied, Sessions will be sent back in a header on the Response with the Name supplied.
 
 .EXAMPLE
-Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120
+Enable-PodeSessionMiddleware  -Duration 120
 
 .EXAMPLE
-Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -Generator { return [System.IO.Path]::GetRandomFileName() }
+Enable-PodeSessionMiddleware -Duration 120 -Extend -Generator { return [System.IO.Path]::GetRandomFileName() }
 
 .EXAMPLE
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -UseHeaders -Strict
@@ -180,7 +181,7 @@ function Enable-PodeSessionMiddleware
 {
     [CmdletBinding(DefaultParameterSetName='Cookies')]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $Secret,
 
@@ -240,6 +241,15 @@ function Enable-PodeSessionMiddleware
                 throw "Custom session storage does not implement the required '$($_)()' method"
             }
         }
+    }
+
+    # verify the secret, set to guid if not supplied, or error if none and we have a storage
+    if ([string]::IsNullOrEmpty($Secret)) {
+        if (!(Test-PodeIsEmpty $Storage)) {
+            throw "A Secret is required when using custom session storage"
+        }
+
+        $Secret = New-PodeGuid -Secure
     }
 
     # if no custom storage, use the inmem one

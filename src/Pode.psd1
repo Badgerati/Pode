@@ -70,6 +70,7 @@
         'Save-PodeState',
         'Restore-PodeState',
         'Test-PodeState',
+        'Get-PodeStateNames',
 
         # response helpers
         'Set-PodeResponseAttachment',
@@ -114,6 +115,10 @@
         'Write-PodeHost',
         'Test-PodeIsIIS',
         'Test-PodeIsHeroku',
+        'New-PodeLockable',
+        'Remove-PodeLockable',
+        'Get-PodeLockable',
+        'Test-PodeLockable',
 
         # routes
         'Add-PodeRoute',
@@ -200,6 +205,7 @@
         # core
         'Start-PodeServer',
         'Close-PodeServer',
+        'Restart-PodeServer',
         'Start-PodeStaticServer',
         'Show-PodeGui',
         'Add-PodeEndpoint',
@@ -236,7 +242,14 @@
         # AutoImport
         'Export-PodeModule',
         'Export-PodeSnapin',
-        'Export-PodeFunction'
+        'Export-PodeFunction',
+
+        # Events
+        'Register-PodeEvent',
+        'Unregister-PodeEvent',
+        'Test-PodeEvent',
+        'Get-PodeEvent',
+        'Clear-PodeEvent'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

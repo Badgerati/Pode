@@ -62,56 +62,70 @@ function Start-PodeSmtpServer
 
                 try
                 {
-                    $Request = $context.Request
-                    $Response = $context.Response
+                    try
+                    {
+                        $Request = $context.Request
+                        $Response = $context.Response
 
-                    $SmtpEvent = @{
-                        Response = $Response
-                        Request = $Request
-                        Lockable = $PodeContext.Lockable
-                        Email = @{
-                            From = $Request.From
-                            To = $Request.To
-                            Data = $Request.RawBody
-                            Headers = $Request.Headers
-                            Subject = $Request.Subject
-                            IsUrgent = $Request.IsUrgent
-                            ContentType = $Request.ContentType
-                            ContentEncoding = $Request.ContentEncoding
-                            Body = $Request.Body
-                        }
-                    }
-
-                    # convert the ip
-                    $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
-
-                    # ensure the request ip is allowed
-                    if (!(Test-PodeIPAccess -IP $ip)) {
-                        $Response.WriteLine('554 Your IP address was rejected', $true)
-                    }
-
-                    # has the ip hit the rate limit?
-                    elseif (!(Test-PodeIPLimit -IP $ip)) {
-                        $Response.WriteLine('554 Your IP address has hit the rate limit', $true)
-                    }
-
-                    # deal with smtp call
-                    else {
-                        $handlers = Get-PodeHandler -Type Smtp
-                        foreach ($name in $handlers.Keys) {
-                            $handler = $handlers[$name]
-
-                            $_args = @($handler.Arguments)
-                            if ($null -ne $handler.UsingVariables) {
-                                $_vars = @()
-                                foreach ($_var in $handler.UsingVariables) {
-                                    $_vars += ,$_var.Value
-                                }
-                                $_args = $_vars + $_args
+                        $SmtpEvent = @{
+                            Response = $Response
+                            Request = $Request
+                            Lockable = $PodeContext.Lockables.Global
+                            Email = @{
+                                From = $Request.From
+                                To = $Request.To
+                                Data = $Request.RawBody
+                                Headers = $Request.Headers
+                                Subject = $Request.Subject
+                                IsUrgent = $Request.IsUrgent
+                                ContentType = $Request.ContentType
+                                ContentEncoding = $Request.ContentEncoding
+                                Attachments = $Request.Attachments
+                                Body = $Request.Body
                             }
-
-                            Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $_args -Scoped -Splat
                         }
+
+                        # stop now if the request has an error
+                        if ($Request.IsAborted) {
+                            throw $Request.Error
+                        }
+
+                        # convert the ip
+                        $ip = (ConvertTo-PodeIPAddress -Address $Request.RemoteEndPoint)
+
+                        # ensure the request ip is allowed
+                        if (!(Test-PodeIPAccess -IP $ip)) {
+                            $Response.WriteLine('554 Your IP address was rejected', $true)
+                        }
+
+                        # has the ip hit the rate limit?
+                        elseif (!(Test-PodeIPLimit -IP $ip)) {
+                            $Response.WriteLine('554 Your IP address has hit the rate limit', $true)
+                        }
+
+                        # deal with smtp call
+                        else {
+                            $handlers = Get-PodeHandler -Type Smtp
+                            foreach ($name in $handlers.Keys) {
+                                $handler = $handlers[$name]
+
+                                $_args = @($handler.Arguments)
+                                if ($null -ne $handler.UsingVariables) {
+                                    $_vars = @()
+                                    foreach ($_var in $handler.UsingVariables) {
+                                        $_vars += ,$_var.Value
+                                    }
+                                    $_args = $_vars + $_args
+                                }
+
+                                Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $_args -Scoped -Splat
+                            }
+                        }
+                    }
+                    catch [System.OperationCanceledException] {}
+                    catch {
+                        $_ | Write-PodeErrorLog
+                        $_.Exception | Write-PodeErrorLog -CheckInnerException
                     }
                 }
                 finally {

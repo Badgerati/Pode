@@ -1,6 +1,6 @@
 # REST APIs and Sessions
 
-Sessions in Pode are normally done using cookies, but you can also use them via headers as well. This way you can have two endpoints for authentication login/logout, and the rest of your routes depend on a valid SessionId.
+[Sessions](../../../Middleware/Types/Sessions) in Pode are normally done using cookies, but you can also use them via headers as well. This way you can have two endpoints for authentication login/logout, and the rest of your routes depend on a valid SessionId.
 
 !!! info
     The full example can be seen on GitHub in `examples/web-auth-basic-header.ps1`.
@@ -26,7 +26,7 @@ Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 To use sessions with headers for our authentication, we need to setup Session Middleware using the [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. Here our sessions will last for 2 minutes, and will be extended on each request:
 
 ```powershell
-Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -UseHeaders
+Enable-PodeSessionMiddleware -Duration 120 -Extend -UseHeaders
 ```
 
 ## Authentication

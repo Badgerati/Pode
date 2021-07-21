@@ -122,7 +122,7 @@ function Invoke-PodeInternalScheduleLogic
         # setup event param
         $parameters = @{
             Event = @{
-                Lockable = $PodeContext.Lockable
+                Lockable = $PodeContext.Lockables.Global
             }
         }
 

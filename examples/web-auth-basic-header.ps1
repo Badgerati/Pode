@@ -28,7 +28,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # setup session details
-    Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -Extend -UseHeaders -Strict
+    Enable-PodeSessionMiddleware -Duration 120 -Extend -UseHeaders -Strict
 
     # setup basic auth (base64> username:password in header)
     New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -ScriptBlock {

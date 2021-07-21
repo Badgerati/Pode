@@ -102,7 +102,7 @@ function Start-PodeWebServer
                             Auth = @{}
                             Response = $Response
                             Request = $Request
-                            Lockable = $PodeContext.Lockable
+                            Lockable = $PodeContext.Lockables.Global
                             Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
                             Method = $Request.HttpMethod.ToLowerInvariant()
                             Query = $null

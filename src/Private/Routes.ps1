@@ -109,7 +109,7 @@ function Find-PodePublicRoute
 
     # use the public static directory (but only if path is a file, and a public dir is present)
     if (Test-PodePathIsFile $Path) {
-        $source = (Join-Path $publicPath $Path)
+        $source = [System.IO.Path]::Combine($publicPath, $Path.TrimStart('/', '\'))
         if (!(Test-PodePath -Path $source -NoStatus)) {
             $source = $null
         }
@@ -151,19 +151,19 @@ function Find-PodeStaticRoute
         if (!$found.Download -and !(Test-PodePathIsFile $file) -and (Get-PodeCount @($found.Defaults)) -gt 0)
         {
             if ((Get-PodeCount @($found.Defaults)) -eq 1) {
-                $file = Join-PodePaths @($file, @($found.Defaults)[0])
+                $file = [System.IO.Path]::Combine($file, @($found.Defaults)[0])
             }
             else {
                 foreach ($def in $found.Defaults) {
-                    if (Test-PodePath (Join-Path $found.Source $def) -NoStatus) {
-                        $file = Join-PodePaths @($file, $def)
+                    if (Test-PodePath ([System.IO.Path]::Combine($found.Source, $def)) -NoStatus) {
+                        $file = [System.IO.Path]::Combine($file, $def)
                         break
                     }
                 }
             }
         }
 
-        $source = (Join-Path $found.Source $file)
+        $source = [System.IO.Path]::Combine($found.Source, $file)
     }
 
     # check public, if flagged

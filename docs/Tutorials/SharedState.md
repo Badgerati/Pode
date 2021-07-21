@@ -14,6 +14,8 @@ You can also use the State in combination with the [`Lock-PodeObject`](../../Fun
 
 ## Usage
 
+Where possible use the same casing for the `-Name` of state keys. When using [`Restore-PodeState`](../../Functions/State/Restore-PodeState) the state will become case-sensitive due to the nature of how `ConvertFrom-Json` works.
+
 ### Set
 
 The [`Set-PodeState`](../../Functions/State/Set-PodeState) function will create/update a variable in the state. You need to supply a name and a value to set on the state, there's also an optional scope that can be supplied - which lets you save specific state objects with a certain scope.
@@ -23,7 +25,7 @@ An example of setting a hashtable variable in the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        Lock-PodeObject -Object $TimerEvent.Lockable {
+        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
             Set-PodeState -Name 'data' -Value @{ 'Name' = 'Rick Sanchez' } | Out-Null
         }
     }
@@ -41,7 +43,7 @@ Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
         $value = $null
 
-        Lock-PodeObject -Object $TimerEvent.Lockable {
+        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
             $value = (Get-PodeState -Name 'data')
         }
 
@@ -59,7 +61,7 @@ An example of removing a variable from the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        Lock-PodeObject -Object $TimerEvent.Lockable {
+        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
             Remove-PodeState -Name 'data' | Out-Null
         }
     }
@@ -75,7 +77,7 @@ An example of saving the current state every hour is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeSchedule -Name 'save-state' -Cron '@hourly' -ScriptBlock {
-        Lock-PodeObject -Object $lockable {
+        Lock-PodeObject -Object $lockable -ScriptBlock {
             Save-PodeState -Path './state.json'
         }
     }
@@ -115,7 +117,7 @@ Start-PodeServer {
     # timer to add a random number to the shared state
     Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         # ensure we're thread safe
-        Lock-PodeObject -Object $TimerEvent.Lockable {
+        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
 
             # attempt to get the hashtable from the state
             $hash = (Get-PodeState -Name 'hash')
@@ -131,7 +133,7 @@ Start-PodeServer {
     # route to return the value of the hashtable from shared state
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # again, ensure we're thread safe
-        Lock-PodeObject -Object $WebEvent.Lockable {
+        Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
 
             # get the hashtable from the state and return it
             $hash = (Get-PodeState -Name 'hash')
@@ -142,7 +144,7 @@ Start-PodeServer {
     # route to remove the hashtable from shared state
     Add-PodeRoute -Method Delete -Path '/' -ScriptBlock {
         # ensure we're thread safe
-        Lock-PodeObject -Object $WebEvent.Lockable {
+        Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
 
             # remove the hashtable from the state
             Remove-PodeState -Name 'hash' | Out-Null
