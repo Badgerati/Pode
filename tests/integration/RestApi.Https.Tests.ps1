@@ -20,7 +20,7 @@ Describe 'REST API Requests' {
     }
 
     BeforeAll {
-        $Port = 50000
+        $Port = 50010
         $Endpoint = "https://localhost:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
