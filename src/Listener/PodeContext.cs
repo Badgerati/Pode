@@ -155,8 +155,9 @@ namespace Pode
                 Request.Open(PodeSocket.Certificate, PodeSocket.Protocols, PodeSocket.AllowClientCertificate);
                 State = PodeContextState.Open;
             }
-            catch
+            catch (Exception ex)
             {
+                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = (Request.InputStream == default(Stream)
                     ? PodeContextState.Error
                     : PodeContextState.SslError);
@@ -229,8 +230,9 @@ namespace Pode
                 }
                 catch (OperationCanceledException) {}
             }
-            catch
+            catch (Exception ex)
             {
+                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = PodeContextState.Error;
             }
         }

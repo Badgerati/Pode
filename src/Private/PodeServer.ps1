@@ -43,6 +43,7 @@ function Start-PodeWebServer
     # create the listener
     $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token -Type 'Http'")))
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 

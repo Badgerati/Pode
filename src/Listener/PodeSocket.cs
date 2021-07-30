@@ -134,10 +134,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                if (Listener.ErrorLoggingEnabled)
-                {
-                    PodeHelpers.WriteException(ex, Listener);
-                }
+                PodeHelpers.WriteException(ex, Listener);
                 throw;
             }
 
@@ -383,7 +380,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, Listener);
             }
         }
 

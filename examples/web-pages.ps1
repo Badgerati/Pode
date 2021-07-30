@@ -29,7 +29,7 @@ Start-PodeServer -Threads 2 {
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error, Debug
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

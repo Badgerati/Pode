@@ -539,8 +539,8 @@ function Write-PodeErrorLog
     }
 
     # do nothing if the error level isn't present
-    $_args = (Get-PodeLogger -Name $name).Arguments
-    if (@($_args.Levels) -inotcontains $Level) {
+    $levels = @(Get-PodeErrorLoggingLevels)
+    if ($levels -inotcontains $Level) {
         return
     }
 

@@ -113,11 +113,11 @@ namespace Pode
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex);
+                PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, Context.Listener);
                 throw;
             }
             finally
@@ -162,11 +162,11 @@ namespace Pode
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex);
+                PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, Context.Listener);
                 throw;
             }
             finally
@@ -248,11 +248,11 @@ namespace Pode
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex);
+                PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, Context.Listener);
                 throw;
             }
         }
