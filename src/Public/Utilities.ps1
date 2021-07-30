@@ -788,6 +788,25 @@ function Test-PodeIsWindows
 
 <#
 .SYNOPSIS
+Tests if the current OS is MacOS.
+
+.DESCRIPTION
+Tests if the current OS is MacOS.
+
+.EXAMPLE
+if (Test-PodeIsMacOS) { /* logic */ }
+#>
+function Test-PodeIsMacOS
+{
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
+    return ([bool]$IsMacOS)
+}
+
+<#
+.SYNOPSIS
 Outputs an object to the main Host.
 
 .DESCRIPTION
