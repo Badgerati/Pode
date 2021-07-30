@@ -1599,7 +1599,7 @@ function Convert-PodePathPatternsToRegex
 function Get-PodeDefaultSslProtocols
 {
     if (Test-PodeIsMacOS) {
-        return (ConvertTo-PodeSslProtocols -Protocols Tls, Tls11, Tls12, Tls13)
+        return (ConvertTo-PodeSslProtocols -Protocols Tls12)
     }
 
     return (ConvertTo-PodeSslProtocols -Protocols Ssl3, Tls12)
