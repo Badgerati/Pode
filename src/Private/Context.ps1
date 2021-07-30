@@ -120,7 +120,7 @@ function New-PodeContext
     # set socket details for pode server
     $ctx.Server.Sockets = @{
         Ssl = @{
-            Protocols = (ConvertTo-PodeSslProtocols -Protocols @('Ssl3', 'Tls12'))
+            Protocols = Get-PodeDefaultSslProtocols
         }
         ReceiveTimeout = 100
     }
