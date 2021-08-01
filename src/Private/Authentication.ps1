@@ -1332,7 +1332,7 @@ function Get-PodeAuthADResult
         [switch]
         $OpenLDAP
     )
-    $samaccountname = ($Username -split '\\')[-1]
+
     try
     {
         # validate the user's AD creds
@@ -1430,7 +1430,7 @@ function Open-PodeAuthADConnection
     }
     else {
         $dcName = "DC=$(($Server -split '\.') -join ',DC=')"
-        $query = (Get-PodeAuthADQuery -Username $samaccountname)
+        $query = (Get-PodeAuthADQuery -Username $Username)
         $hostname = "$($Protocol)://$($Server)"
 
         $user = $Username
@@ -1483,7 +1483,7 @@ function Get-PodeAuthADUser
         $OpenLDAP
     )
 
-    $query = (Get-PodeAuthADQuery -Username $samaccountname)
+    $query = (Get-PodeAuthADQuery -Username $Username)
 
     # generate query to find user
     if ((Test-PodeIsWindows) -and !$OpenLDAP) {
