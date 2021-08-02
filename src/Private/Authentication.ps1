@@ -1438,7 +1438,7 @@ function Open-PodeAuthADConnection
             $user = "$($Domain)\$($Username)"
         }
 
-        (ldapsearch -x -LLL -H "$($hostname)" -D "$($user)" -w "$($Password)" -b "$($dcName)" "$($query)" dn) | Out-Null
+        (ldapsearch -x -LLL -H "$($hostname)" -D "$($user)" -w "$($Password)" -b "$($dcName)" -o ldif-wrap=no "$($query)" dn) | Out-Null
         if (!$? -or ($LASTEXITCODE -ne 0)) {
             $result = $false
         }
@@ -1502,7 +1502,7 @@ function Get-PodeAuthADUser
         }
     }
     else {
-        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" name mail)
+        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" -o ldif-wrap=no "$($query)" name mail)
         if (!$? -or ($LASTEXITCODE -ne 0)) {
             return $null
         }
@@ -1574,7 +1574,7 @@ function Get-PodeAuthADGroups
         $groups = @($Connection.Searcher.FindAll().Properties.samaccountname)
     }
     else {
-        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" "$($query)" samaccountname)
+        $result = (ldapsearch -x -LLL -H "$($Connection.Hostname)" -D "$($Connection.Username)" -w "$($Connection.Password)" -b "$($Connection.DCName)" -o ldif-wrap=no "$($query)" samaccountname)
         $groups = (Get-PodeOpenLdapValue -Lines $result -Property 'sAMAccountName' -All)
     }
 
