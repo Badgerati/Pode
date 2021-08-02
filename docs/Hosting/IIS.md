@@ -15,13 +15,41 @@ To start with you'll need to have IIS (or IIS Express) installed:
 Install-WindowsFeature -Name Web-Server -IncludeManagementTools -IncludeAllSubFeature
 ```
 
-Next you'll need to install ASP.NET Core Hosting:
+At a minimum for IIS you need the following installed:
 
 ```powershell
-choco install dotnetcore-windowshosting -y
+$features = @(
+    'Web-Default-Doc',
+    'Web-Dir-Browsing',
+    'Web-Http-Errors',
+    'Web-Static-Content',
+    'Web-Http-Redirect',
+    'Web-DAV-Publishing',
+    'Web-Http-Logging',
+    'Web-Stat-Compression',
+    'Web-Filtering',
+    'Web-Net-Ext',
+    'Web-Net-Ext45',
+    'Web-Asp-Net',
+    'Web-Asp-Net45',
+    'Web-CGI',
+    'Web-ISAPI-Ext',
+    'Web-ISAPI-Filter',
+    'Web-Mgmt-Console'
+)
+
+$features | ForEach-Object { Install-WindowsFeature -Name $_ }
 ```
 
-You'll also need to use PowerShell Core (*not Windows PowerShell!*):
+If you need to use Basic or Windows Authentication in IIS then you'll need either `Web-Basic-Auth` or `Web-Windows-Auth` respectively. If you're using WebSockets in Pode then you'll also need `Web-WebSockets`.
+
+Next you'll need to install [ASP.NET Core Windows hosting](https://download.visualstudio.microsoft.com/download/pr/c887d56b-4667-4e1d-9b6c-95a32dd65622/97e3eef489af8a6950744c4f9bde73c0/dotnet-hosting-5.0.8-win.exe):
+
+```powershell
+choco install dotnet-windowshosting -y
+```
+
+You'll also need to use [PowerShell Core](https://github.com/PowerShell/PowerShell/releases/latest) (*not Windows PowerShell!*):
 
 ```powershell
 choco install pwsh -y
@@ -34,7 +62,7 @@ pwsh -c "Install-Module Pode -Scope AllUsers"
 ```
 
 !!! note
-    Sometimes you may need to run `iisreset` after installing all of the above, otherwise IIS will return 502 errors.
+    Sometimes you may need to run `iisreset` (or restart the computer) after installing all of the above, otherwise IIS will return 502 errors.
 
 ## Configuration
 
