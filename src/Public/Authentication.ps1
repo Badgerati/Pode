@@ -691,7 +691,10 @@ The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 A custom FQDN for the DNS of the AD you wish to authenticate against. (Alias: Server)
 
 .PARAMETER Domain
-(Unix Only) A custom domain name that is prepended onto usernames that are missing it (<Domain>\<Username>).
+(Unix Only) A custom NetBIOS domain name that is prepended onto usernames that are missing it (<Domain>\<Username>).
+
+.PARAMETER SearchBase
+(Unix Only) An optional searchbase to refine the LDAP query. This will be appended onto the DC=Server generated internally.
 
 .PARAMETER Groups
 An array of Group names to only allow access.
@@ -755,6 +758,10 @@ function Add-PodeAuthWindowsAd
         [Parameter()]
         [string]
         $Domain,
+
+        [Parameter()]
+        [string]
+        $SearchBase,
 
         [Parameter(ParameterSetName='Groups')]
         [string[]]
@@ -835,6 +842,7 @@ function Add-PodeAuthWindowsAd
         Arguments = @{
             Server = $Fqdn
             Domain = $Domain
+            SearchBase = $SearchBase
             Users = $Users
             Groups = $Groups
             NoGroups = $NoGroups
