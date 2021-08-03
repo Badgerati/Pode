@@ -109,6 +109,7 @@
         'Invoke-PodeScriptBlock',
         'Test-PodeIsUnix',
         'Test-PodeIsWindows',
+        'Test-PodeIsMacOS',
         'Test-PodeIsPSCore',
         'Test-PodeIsEmpty',
         'Out-PodeHost',
