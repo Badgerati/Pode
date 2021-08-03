@@ -52,6 +52,23 @@ namespace Pode
             });
         }
 
+        public static void WriteErrorMessage(string message, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error)
+        {
+            // do nothing if no message
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            // return if logging disabled, or if level isn't being logged
+            if (listener != default(PodeListener) && (!listener.ErrorLoggingEnabled || !listener.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            {
+                return;
+            }
+
+            Console.WriteLine($"[{level}]: {message}");
+        }
+
         public static string NewGuid(int length = 16)
         {
             using (var rnd = RandomNumberGenerator.Create())

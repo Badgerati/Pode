@@ -157,6 +157,11 @@ namespace Pode
             // close socket if not successful, or if listener is stopped - close now!
             if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
             {
+                if (error != SocketError.Success)
+                {
+                    PodeHelpers.WriteErrorMessage($"Closing accepting socket: {error}", Listener, PodeLoggingLevel.Debug);
+                }
+
                 // close socket
                 if (accepted != default(Socket))
                 {
@@ -189,6 +194,11 @@ namespace Pode
             // close socket if not successful, or if listener is stopped - close now!
             if ((received == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
             {
+                if (error != SocketError.Success)
+                {
+                    PodeHelpers.WriteErrorMessage($"Closing receiving socket: {error}", Listener, PodeLoggingLevel.Debug);
+                }
+
                 // close socket
                 if (received != default(Socket))
                 {
