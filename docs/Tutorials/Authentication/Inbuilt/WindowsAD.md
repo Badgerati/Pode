@@ -62,13 +62,13 @@ Start-PodeServer {
 
 ### SearchBase
 
-When authentication users via OpenLDAP, the base distinguished name search from is the server root, ie: `DC=test,DC=example,DC=com`. You can further refine this by suppliying a `-SearchBase` that will be prepended onto the base internally:
+When authenticating users via OpenLDAP, the default base distinguished name searched from will be the server root, ie: `DC=test,DC=example,DC=com`. You can refine this by supplying an optional `-SearchBase`, that should be the full distinguished name:
 
 For example, the below will search in `OU=CustomUsers,DC=test,DC=example,DC=com`:
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com' -SearchBase 'OU=CustomUsers'
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -SearchBase 'OU=CustomUsers,DC=test,DC=example,DC=com'
 }
 ```
 

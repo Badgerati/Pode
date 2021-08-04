@@ -694,7 +694,7 @@ A custom FQDN for the DNS of the AD you wish to authenticate against. (Alias: Se
 (Unix Only) A custom NetBIOS domain name that is prepended onto usernames that are missing it (<Domain>\<Username>).
 
 .PARAMETER SearchBase
-(Unix Only) An optional searchbase to refine the LDAP query. This will be appended onto the DC=Server generated internally.
+(Unix Only) An optional searchbase to refine the LDAP query. This should be the full distinguished name.
 
 .PARAMETER Groups
 An array of Group names to only allow access.

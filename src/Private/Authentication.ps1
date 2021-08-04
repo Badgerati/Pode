@@ -1438,9 +1438,11 @@ function Open-PodeAuthADConnection
         }
     }
     else {
-        $baseDn = "DC=$(($Server -split '\.') -join ',DC=')"
         if (![string]::IsNullOrWhiteSpace($SearchBase)) {
-            $baseDn = "$($SearchBase),$($baseDn)"
+            $baseDn = $SearchBase
+        }
+        else {
+            $baseDn = "DC=$(($Server -split '\.') -join ',DC=')"
         }
 
         $query = (Get-PodeAuthADQuery -Username $Username)
