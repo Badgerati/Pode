@@ -1,4 +1,4 @@
-# Functions and Modules
+# Automatic Route Creation for Functions and Modules
 
 Pode has support for converting commands (functions/aliases) into Routes. This could be from an array of defined commands, or by using a Module's exported commands.
 
@@ -27,6 +27,13 @@ Add-PodeRoute -Method Post -Path '/Invoke-Expression' -ScriptBlock {
     Write-PodeJsonResponse -Value $result -Depth 1
 }
 ```
+
+Example Route Invocation:
+
+```powershell
+Invoke-Restmethod http://localhost:8080/Invoke-Expression -Body @{Command = "Get-Date"}
+```
+Function parameters become hashtable key value pairs passed in the body of the request.
 
 !!! tip
     You can stop the function verbs being used in the Route's path by supplying the `-NoVerb` switch.
