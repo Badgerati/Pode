@@ -738,20 +738,58 @@ function Get-PodeCertificateByFile
 
         [Parameter()]
         [string]
-        $Password = $null
+        $Password = $null,
+
+        [Parameter()]
+        [string]
+        $Key = $null
     )
 
     $path = Get-PodeRelativePath -Path $Certificate -JoinRoot -Resolve
     $cert = $null
 
-    if ([string]::IsNullOrWhiteSpace($Password)) {
+    # cert + key
+    if (![string]::IsNullOrWhiteSpace($Key)) {
+        $keyPath = Get-PodeRelativePath -Path $Key -JoinRoot -Resolve
+
         $cert = [X509Certificates.X509Certificate2]::new($path)
-    }
-    else {
-        $cert = [X509Certificates.X509Certificate2]::new($path, $Password)
+        $keyText = [System.IO.File]::ReadAllText($keyPath)
+        $rsa = [RSA]::Create()
+
+        # pem's kinda work in .NET5
+        if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
+            if ([string]::IsNullOrWhiteSpace($Password)) {
+                $rsa.ImportFromPem($keyText)
+            }
+            else {
+                $rsa.ImportFromEncryptedPem($keyText, $Password)
+            }
+        }
+
+        # for everything else, there's the manual way
+        else {
+            $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
+            $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+
+            if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
+                $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+            }
+            elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
+                $rsa.ImportRSAPrivateKey($keyBlocks, [ref]$null)
+            }
+        }
+
+        $cert = [X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
+        return [X509Certificates.X509Certificate2]::new($cert.Export([X509Certificates.X509ContentType]::Pkcs12))
     }
 
-    return $cert
+    # cert + password
+    if (![string]::IsNullOrWhiteSpace($Password)) {
+        return [X509Certificates.X509Certificate2]::new($path, $Password)
+    }
+
+    # plain cert
+    return [X509Certificates.X509Certificate2]::new($path)
 }
 
 function Find-PodeCertificateInCertStore

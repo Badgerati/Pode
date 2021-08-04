@@ -13,7 +13,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer {
 
     # bind to ip/port and set as https with self-signed cert
-    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
+    #Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
+    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Certificate './certs/cert.pem' -CertificateKey './certs/key.pem' -CertificatePassword 'test'
     #Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -CertificateThumbprint '2A623A8DC46ED42A13B27DD045BFC91FDDAEB957'
 
     # set view engine for web pages
