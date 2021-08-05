@@ -752,35 +752,62 @@ function Get-PodeCertificateByFile
     if (![string]::IsNullOrWhiteSpace($Key)) {
         $keyPath = Get-PodeRelativePath -Path $Key -JoinRoot -Resolve
 
-        $cert = [X509Certificates.X509Certificate2]::new($path)
-        $keyText = [System.IO.File]::ReadAllText($keyPath)
-        $rsa = [RSA]::Create()
+        # pem's kinda work in .NET3/.NET5
+        if ([version]$PSVersionTable.PSVersion -ge [version]'7.0.0') {
+            $cert = [X509Certificates.X509Certificate2]::new($path)
+            $keyText = [System.IO.File]::ReadAllText($keyPath)
+            $rsa = [RSA]::Create()
 
-        # pem's kinda work in .NET5
-        if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
-            if ([string]::IsNullOrWhiteSpace($Password)) {
-                $rsa.ImportFromPem($keyText)
+            # .NET5
+            if ([version]$PSVersionTable.PSVersion -ge [version]'7.1.0') {
+                if ([string]::IsNullOrWhiteSpace($Password)) {
+                    $rsa.ImportFromPem($keyText)
+                }
+                else {
+                    $rsa.ImportFromEncryptedPem($keyText, $Password)
+                }
             }
+
+            # .NET3
             else {
-                $rsa.ImportFromEncryptedPem($keyText, $Password)
+                $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
+                $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+
+                if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
+                    $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
+                    $rsa.ImportRSAPrivateKey($keyBlocks, [ref]$null)
+                }
+                elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
+                    $rsa.ImportEncryptedPkcs8PrivateKey($Password, $keyBlocks, [ref]$null)
+                }
             }
+
+            $cert = [X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
+            return [X509Certificates.X509Certificate2]::new($cert.Export([X509Certificates.X509ContentType]::Pkcs12))
         }
 
-        # for everything else, there's the manual way
+        # for everything else, there's the openssl way
         else {
-            $keyBlocks = $keyText.Split('-', [System.StringSplitOptions]::RemoveEmptyEntries)
-            $keyBytes = [System.Convert]::FromBase64String($keyBlocks[1])
+            $tempFile = Join-Path (Split-Path -Parent -Path $path) 'temp.pfx'
 
-            if ($keyBlocks[0] -ieq 'BEGIN PRIVATE KEY') {
-                $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
+            try {
+                if ([string]::IsNullOrWhiteSpace($Password)) {
+                    $Password = [string]::Empty
+                }
+
+                $result = openssl pkcs12 -inkey $keyPath -in $path -export -passin pass:$Password -password pass:$Password -out $tempFile
+                if (!$?) {
+                    throw "Failed to create openssl cert: $($result)"
+                }
+
+                return [X509Certificates.X509Certificate2]::new($tempFile, $Password)
             }
-            elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
-                $rsa.ImportRSAPrivateKey($keyBlocks, [ref]$null)
+            finally {
+                Remove-Item $tempFile -Force | Out-Null
             }
         }
-
-        $cert = [X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($cert, $rsa)
-        return [X509Certificates.X509Certificate2]::new($cert.Export([X509Certificates.X509ContentType]::Pkcs12))
     }
 
     # cert + password

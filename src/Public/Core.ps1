@@ -272,6 +272,9 @@ The path to a certificate that can be use to enable HTTPS.
 .PARAMETER CertificatePassword
 The password for the certificate referenced in CertificateFile.
 
+.PARAMETER CertificateKey
+A key file to be paired with a PEM certificate referenced in CertificateFile
+
 .PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS.
 
@@ -658,6 +661,9 @@ The path to a certificate that can be use to enable HTTPS
 
 .PARAMETER CertificatePassword
 The password for the certificate file referenced in Certificate
+
+.PARAMETER CertificateKey
+A key file to be paired with a PEM certificate file referenced in Certificate
 
 .PARAMETER CertificateThumbprint
 A certificate thumbprint to bind onto HTTPS endpoints (Windows).
