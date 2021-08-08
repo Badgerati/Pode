@@ -807,10 +807,10 @@ function Get-PodeCertificateByPemFile
                 $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
             }
             elseif ($keyBlocks[0] -ieq 'BEGIN RSA PRIVATE KEY') {
-                $rsa.ImportRSAPrivateKey($keyBlocks, [ref]$null)
+                $rsa.ImportRSAPrivateKey($keyBytes, [ref]$null)
             }
             elseif ($keyBlocks[0] -ieq 'BEGIN ENCRYPTED PRIVATE KEY') {
-                $rsa.ImportEncryptedPkcs8PrivateKey($Password, $keyBlocks, [ref]$null)
+                $rsa.ImportEncryptedPkcs8PrivateKey($Password, $keyBytes, [ref]$null)
             }
         }
 
