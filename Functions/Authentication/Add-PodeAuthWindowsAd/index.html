@@ -660,6 +660,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-searchbase" class="md-nav__link">
+    -SearchBase
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-sessionless" class="md-nav__link">
     -Sessionless
   </a>
@@ -3161,6 +3168,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsMacOS/" class="md-nav__link">
+        Test-PodeIsMacOS
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Utilities/Test-PodeIsPSCore/" class="md-nav__link">
         Test-PodeIsPSCore
       </a>
@@ -4793,6 +4812,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/AutomaticFunctionsAndModules/" class="md-nav__link">
+        Automatic Route Creation for Functions and Modules
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../Tutorials/Routes/Utilities/ContentTypes/" class="md-nav__link">
         Content Types
       </a>
@@ -4819,18 +4850,6 @@
     <li class="md-nav__item">
       <a href="../../../Tutorials/Routes/Utilities/FlashMessages/" class="md-nav__link">
         Flash Messages
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../Tutorials/Routes/Utilities/FunctionsAndModules/" class="md-nav__link">
-        Functions and Modules
       </a>
     </li>
   
@@ -5127,6 +5146,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-searchbase" class="md-nav__link">
+    -SearchBase
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-sessionless" class="md-nav__link">
     -Sessionless
   </a>
@@ -5217,14 +5243,15 @@
 <h2 id="syntax">SYNTAX</h2>
 <h3 id="groups-default">Groups (Default)</h3>
 <div class="highlight"><pre><span></span><code>Add-PodeAuthWindowsAd -Name &lt;String&gt; -Scheme &lt;Hashtable&gt; [-Fqdn &lt;String&gt;] [-Domain &lt;String&gt;]
- [-Groups &lt;String[]&gt;] [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;]
- [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-OpenLDAP] [-SuccessUseOrigin]
- [&lt;CommonParameters&gt;]
+ [-SearchBase &lt;String&gt;] [-Groups &lt;String[]&gt;] [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;]
+ [-FailureMessage &lt;String&gt;] [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-OpenLDAP]
+ [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h3 id="nogroups">NoGroups</h3>
 <div class="highlight"><pre><span></span><code>Add-PodeAuthWindowsAd -Name &lt;String&gt; -Scheme &lt;Hashtable&gt; [-Fqdn &lt;String&gt;] [-Domain &lt;String&gt;]
- [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;] [-SuccessUrl &lt;String&gt;]
- [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-NoGroups] [-OpenLDAP] [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
+ [-SearchBase &lt;String&gt;] [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;]
+ [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-NoGroups] [-OpenLDAP] [-SuccessUseOrigin]
+ [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h2 id="description">DESCRIPTION</h2>
 <p>Adds the inbuilt Windows AD Authentication method for verifying users.</p>
@@ -5243,7 +5270,7 @@
 </code></pre></div>
 <h2 id="parameters">PARAMETERS</h2>
 <h3 id="-domain">-Domain</h3>
-<p>(Unix Only) A custom domain name that is prepended onto usernames that are missing it (\&lt;Domain>\\&lt;Username>).</p>
+<p>(Unix Only) A custom NetBIOS domain name that is prepended onto usernames that are missing it (\&lt;Domain>\\&lt;Username>).</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
@@ -5354,6 +5381,19 @@
 <h3 id="-scriptblock">-ScriptBlock</h3>
 <p>Optional ScriptBlock that is passed the found user object for further validation.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ScriptBlock</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+<h3 id="-searchbase">-SearchBase</h3>
+<p>(Unix Only) An optional searchbase to refine the LDAP query.
+This should be the full distinguished name.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 

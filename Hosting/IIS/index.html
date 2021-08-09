@@ -2896,6 +2896,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Functions/Utilities/Test-PodeIsMacOS/" class="md-nav__link">
+        Test-PodeIsMacOS
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Functions/Utilities/Test-PodeIsPSCore/" class="md-nav__link">
         Test-PodeIsPSCore
       </a>
@@ -4692,6 +4704,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Tutorials/Routes/Utilities/AutomaticFunctionsAndModules/" class="md-nav__link">
+        Automatic Route Creation for Functions and Modules
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Tutorials/Routes/Utilities/ContentTypes/" class="md-nav__link">
         Content Types
       </a>
@@ -4718,18 +4742,6 @@
     <li class="md-nav__item">
       <a href="../../Tutorials/Routes/Utilities/FlashMessages/" class="md-nav__link">
         Flash Messages
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../Tutorials/Routes/Utilities/FunctionsAndModules/" class="md-nav__link">
-        Functions and Modules
       </a>
     </li>
   
@@ -5022,10 +5034,34 @@
 <p>To start with you'll need to have IIS (or IIS Express) installed:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Install-WindowsFeature</span> <span class="n">-Name</span> <span class="n">Web-Server</span> <span class="n">-IncludeManagementTools</span> <span class="n">-IncludeAllSubFeature</span>
 </code></pre></div>
-<p>Next you'll need to install ASP.NET Core Hosting:</p>
-<div class="highlight"><pre><span></span><code><span class="n">choco</span> <span class="n">install</span> <span class="n">dotnetcore-windowshosting</span> <span class="n">-y</span>
+<p>At a minimum for IIS you need the following installed:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">$features</span> <span class="p">=</span> <span class="p">@(</span>
+    <span class="s1">&#39;Web-Default-Doc&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Dir-Browsing&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Http-Errors&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Static-Content&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Http-Redirect&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-DAV-Publishing&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Http-Logging&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Stat-Compression&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Filtering&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Net-Ext&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Net-Ext45&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Asp-Net&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Asp-Net45&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-CGI&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-ISAPI-Ext&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-ISAPI-Filter&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Web-Mgmt-Console&#39;</span>
+<span class="p">)</span>
+
+<span class="nv">$features</span> <span class="p">|</span> <span class="k">ForEach</span><span class="n">-Object</span> <span class="p">{</span> <span class="nb">Install-WindowsFeature</span> <span class="n">-Name</span> <span class="nv">$_</span> <span class="p">}</span>
 </code></pre></div>
-<p>You'll also need to use PowerShell Core (<em>not Windows PowerShell!</em>):</p>
+<p>If you need to use Basic or Windows Authentication in IIS then you'll need either <code>Web-Basic-Auth</code> or <code>Web-Windows-Auth</code> respectively. If you're using WebSockets in Pode then you'll also need <code>Web-WebSockets</code>.</p>
+<p>Next you'll need to install <a href="https://download.visualstudio.microsoft.com/download/pr/c887d56b-4667-4e1d-9b6c-95a32dd65622/97e3eef489af8a6950744c4f9bde73c0/dotnet-hosting-5.0.8-win.exe">ASP.NET Core Windows hosting</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">choco</span> <span class="n">install</span> <span class="n">dotnet-windowshosting</span> <span class="n">-y</span>
+</code></pre></div>
+<p>You'll also need to use <a href="https://github.com/PowerShell/PowerShell/releases/latest">PowerShell Core</a> (<em>not Windows PowerShell!</em>):</p>
 <div class="highlight"><pre><span></span><code><span class="n">choco</span> <span class="n">install</span> <span class="n">pwsh</span> <span class="n">-y</span>
 </code></pre></div>
 <p>Finally, you'll need to have Pode installed under PowerShell Core:</p>
@@ -5033,7 +5069,7 @@
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Sometimes you may need to run <code>iisreset</code> after installing all of the above, otherwise IIS will return 502 errors.</p>
+<p>Sometimes you may need to run <code>iisreset</code> (or restart the computer) after installing all of the above, otherwise IIS will return 502 errors.</p>
 </div>
 <h2 id="configuration">Configuration</h2>
 <p>The first thing you'll need to do so IIS can host your server is, in the same directory as your Pode server's <code>.ps1</code> root script, create a <code>web.config</code> file. This file should look as follows, but make sure you replace the <code>.\server.ps1</code> with the path to your actual server script:</p>

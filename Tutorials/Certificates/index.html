@@ -2896,6 +2896,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Functions/Utilities/Test-PodeIsMacOS/" class="md-nav__link">
+        Test-PodeIsMacOS
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Functions/Utilities/Test-PodeIsPSCore/" class="md-nav__link">
         Test-PodeIsPSCore
       </a>
@@ -3407,6 +3419,26 @@
   <a href="#file" class="md-nav__link">
     File
   </a>
+  
+    <nav class="md-nav" aria-label="File">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfx" class="md-nav__link">
+    PFX
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pem" class="md-nav__link">
+    PEM
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -4618,6 +4650,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../Routes/Utilities/AutomaticFunctionsAndModules/" class="md-nav__link">
+        Automatic Route Creation for Functions and Modules
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../Routes/Utilities/ContentTypes/" class="md-nav__link">
         Content Types
       </a>
@@ -4644,18 +4688,6 @@
     <li class="md-nav__item">
       <a href="../Routes/Utilities/FlashMessages/" class="md-nav__link">
         Flash Messages
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Routes/Utilities/FunctionsAndModules/" class="md-nav__link">
-        Functions and Modules
       </a>
     </li>
   
@@ -4804,6 +4836,26 @@
     File
   </a>
   
+    <nav class="md-nav" aria-label="File">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfx" class="md-nav__link">
+    PFX
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pem" class="md-nav__link">
+    PEM
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -4865,23 +4917,46 @@
                 
                 <h1 id="certificates">Certificates</h1>
 <p>Pode has the ability to generate and bind self-signed certificates (for dev/testing), as well as the ability to bind existing certificates for HTTPS.</p>
-<p>There are 6 ways to setup HTTPS on <a href="../../Functions/Core/Add-PodeEndpoint"><code>Add-PodeEndpoint</code></a>:</p>
+<p>There are 8 ways to setup HTTPS on <a href="../../Functions/Core/Add-PodeEndpoint"><code>Add-PodeEndpoint</code></a>:</p>
 <ol>
-<li>Supplying just the <code>-Certificate</code>, such as a <code>.cer</code>.</li>
-<li>Supplying both the <code>-Certificate</code> and <code>-CertificatePassword</code>, such as for <code>.pfx</code>.</li>
+<li>Supplying just the <code>-Certificate</code>, which is the path to files such as a <code>.cer</code> or <code>.pem</code> file.</li>
+<li>Supplying both the <code>-Certificate</code> and <code>-CertificatePassword</code>, which is the path to a <code>.pfx</code> file and its password.</li>
+<li>Supplying both the <code>-Certificate</code> and <code>-CertificateKey</code>, which is the paths to certificate/key PEM file pairs.</li>
+<li>Supplying all of <code>-Certificate</code>, <code>-CertificateKey</code>, and <code>-CertificatePassword</code>, which is the paths to certificate/key PEM file pairs and the password for an encrypted key.</li>
 <li>Supplying a <code>-CertificateThumbprint</code> for a certificate installed at <code>Cert:\CurrentUser\My</code> on Windows.</li>
 <li>Supplying a <code>-CertificateName</code> for a certificate installed at <code>Cert:\CurrentUser\My</code> on Windows.</li>
 <li>Supplying <code>-X509Certificate</code> of type <code>X509Certificate</code>.</li>
 <li>Supplying the <code>-SelfSigned</code> switch, to generate a quick self-signed <code>X509Certificate</code>.</li>
 </ol>
-<p>Note: for 3. and 4. you can change the certificate store used by supplying <code>-CertificateStoreName</code> and/or <code>-CertificateStoreLocation</code>.</p>
+<p>Note: for 5. and 6. you can change the certificate store used by supplying <code>-CertificateStoreName</code> and/or <code>-CertificateStoreLocation</code>.</p>
 <h2 id="usage">Usage</h2>
 <h3 id="file">File</h3>
-<p>To bind a certificate file, you use the <code>-Certificate</code> parameter, along with the <code>-CertificatePassword</code> parameter for <code>.pfx</code> certificates. The following example supplies some <code>.pfx</code> to enable HTTPS support:</p>
+<h4 id="pfx">PFX</h4>
+<p>To bind a certificate PFX file, you use the <code>-Certificate</code> parameter, along with the <code>-CertificatePassword</code> parameter for the PFX certificate. The following example supplies the path to some <code>.pfx</code> to enable HTTPS support:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="p">*</span> <span class="n">-Port</span> <span class="n">8090</span> <span class="n">-Protocol</span> <span class="n">Https</span> <span class="n">-Certificate</span> <span class="s1">&#39;./cert.pfx&#39;</span> <span class="n">-CertificatePassword</span> <span class="s1">&#39;Hunter2&#39;</span>
 <span class="p">}</span>
 </code></pre></div>
+<h4 id="pem">PEM</h4>
+<p>Pode has support for binding certificate/key PEM file pairs, on PowerShell 7+ this works out-of-the-box. However, for PowerShell 5/6 you are required to have OpenSSL installed.</p>
+<p>To bind a certificate/key PEM file pairs generated via LetsEncrypt or OpenSSL, you supply their paths to the <code>-Certificate</code> and <code>-CertificateKey</code> parameters.</p>
+<p>For example, if you generate the certificate/key using the following:
+<div class="highlight"><pre><span></span><code>openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days <span class="m">365</span> -nodes
+</code></pre></div></p>
+<p>Then your endpoint would be created as:
+<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
+    <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="p">*</span> <span class="n">-Port</span> <span class="n">8090</span> <span class="n">-Protocol</span> <span class="n">Https</span> <span class="n">-Certificate</span> <span class="s1">&#39;./cert.pem&#39;</span> <span class="n">-CertificateKey</span> <span class="s1">&#39;./key.pem&#39;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p>However, if you generate the certificate/key and encrypt the key with a passphrase:
+<div class="highlight"><pre><span></span><code>openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days <span class="m">365</span>
+</code></pre></div></p>
+<p>Then the endpoint is created as follows:
+<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
+    <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="p">*</span> <span class="n">-Port</span> <span class="n">8090</span> <span class="n">-Protocol</span> <span class="n">Https</span> <span class="n">-Certificate</span> <span class="s1">&#39;./cert.pem&#39;</span> <span class="n">-CertificateKey</span> <span class="s1">&#39;./key.pem&#39;</span> <span class="n">-CertificatePassword</span> <span class="s1">&#39;&lt;passphrase&gt;&#39;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p>Depending on how you generated the certificate, especially if you used the above openssl, you might have to install the certificate to your local certificate store for it to be trusted. If you're using <code>Invoke-WebRequest</code> or <code>Invoke-RestMethod</code> on PowerShell 6+ you can supply the <code>-SkipCertificateCheck</code> switch.</p>
 <h3 id="thumbprint">Thumbprint</h3>
 <p>On Windows only, you can use a certificate that is installed at <code>Cert:\CurrentUser\My</code> using its thumbprint:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
@@ -4907,8 +4982,9 @@
     <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="p">*</span> <span class="n">-Port</span> <span class="n">8443</span> <span class="n">-Protocol</span> <span class="n">Https</span> <span class="n">-SelfSigned</span>
 <span class="p">}</span>
 </code></pre></div>
+<p>You might get a warning in the browser about the certificate, and this is fine. If you're using <code>Invoke-WebRequest</code> or <code>Invoke-RestMethod</code> on PowerShell 6+ you can supply the <code>-SkipCertificateCheck</code> switch.</p>
 <h2 id="ssl-protocols">SSL Protocols</h2>
-<p>The default allowed SSL protocols are SSL3 and TLS1.2, but you can change these to any of: SSL2, SSL3, TLS, TLS11, TLS12, TLS13. This is specified in your <code>server.psd1</code> configuration file:</p>
+<p>The default allowed SSL protocols are SSL3 and TLS1.2 (or just TLS1.2 on MacOS), but you can change these to any of: SSL2, SSL3, TLS, TLS11, TLS12, TLS13. This is specified in your <code>server.psd1</code> configuration file:</p>
 <div class="highlight"><pre><span></span><code><span class="p">@{</span>
     <span class="n">Server</span> <span class="p">=</span> <span class="p">@{</span>
         <span class="n">Ssl</span><span class="p">=</span> <span class="p">@{</span>

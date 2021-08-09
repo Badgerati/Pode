@@ -2896,6 +2896,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../Functions/Utilities/Test-PodeIsMacOS/" class="md-nav__link">
+        Test-PodeIsMacOS
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../Functions/Utilities/Test-PodeIsPSCore/" class="md-nav__link">
         Test-PodeIsPSCore
       </a>
@@ -3663,6 +3675,20 @@
           <li class="md-nav__item">
   <a href="#server" class="md-nav__link">
     Server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#domain" class="md-nav__link">
+    Domain
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#searchbase" class="md-nav__link">
+    SearchBase
   </a>
   
 </li>
@@ -4615,6 +4641,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../Routes/Utilities/AutomaticFunctionsAndModules/" class="md-nav__link">
+        Automatic Route Creation for Functions and Modules
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../Routes/Utilities/ContentTypes/" class="md-nav__link">
         Content Types
       </a>
@@ -4641,18 +4679,6 @@
     <li class="md-nav__item">
       <a href="../../../Routes/Utilities/FlashMessages/" class="md-nav__link">
         Flash Messages
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../Routes/Utilities/FunctionsAndModules/" class="md-nav__link">
-        Functions and Modules
       </a>
     </li>
   
@@ -4811,6 +4837,20 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#domain" class="md-nav__link">
+    Domain
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#searchbase" class="md-nav__link">
+    SearchBase
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#groups" class="md-nav__link">
     Groups
   </a>
@@ -4929,6 +4969,20 @@
 <p>If you want to supply a custom DNS domain, then you can supply the <code>-Fqdn</code> parameter:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Fqdn</span> <span class="s1">&#39;test.example.com&#39;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="domain">Domain</h3>
+<p>For OpenLDAP Pode will automatically retrieve the NetBIOS to be prepended on the username, ie: <code>&lt;domain&gt;\&lt;username&gt;</code>. This is automatically generate by used the first part of the DNS server's FQDN, for example if your server's FQDN was <code>test.example.com</code> then Pode would set the NetBIOS as <code>test</code>.</p>
+<p>You can use a custom domain NetBIOS by suppliying the <code>-Domain</code> parameter:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
+    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Fqdn</span> <span class="s1">&#39;test.example.com&#39;</span> <span class="n">-Domain</span> <span class="s1">&#39;testdomain&#39;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="searchbase">SearchBase</h3>
+<p>When authenticating users via OpenLDAP, the default base distinguished name searched from will be the server root, ie: <code>DC=test,DC=example,DC=com</code>. You can refine this by supplying an optional <code>-SearchBase</code>, that should be the full distinguished name:</p>
+<p>For example, the below will search in <code>OU=CustomUsers,DC=test,DC=example,DC=com</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
+    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-SearchBase</span> <span class="s1">&#39;OU=CustomUsers,DC=test,DC=example,DC=com&#39;</span>
 <span class="p">}</span>
 </code></pre></div>
 <h3 id="groups">Groups</h3>

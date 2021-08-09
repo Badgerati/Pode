@@ -967,6 +967,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-certificatekey" class="md-nav__link">
+    -CertificateKey
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-certificatename" class="md-nav__link">
     -CertificateName
   </a>
@@ -3238,6 +3245,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsMacOS/" class="md-nav__link">
+        Test-PodeIsMacOS
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Utilities/Test-PodeIsPSCore/" class="md-nav__link">
         Test-PodeIsPSCore
       </a>
@@ -4870,6 +4889,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/AutomaticFunctionsAndModules/" class="md-nav__link">
+        Automatic Route Creation for Functions and Modules
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../Tutorials/Routes/Utilities/ContentTypes/" class="md-nav__link">
         Content Types
       </a>
@@ -4896,18 +4927,6 @@
     <li class="md-nav__item">
       <a href="../../../Tutorials/Routes/Utilities/FlashMessages/" class="md-nav__link">
         Flash Messages
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../Tutorials/Routes/Utilities/FunctionsAndModules/" class="md-nav__link">
-        Functions and Modules
       </a>
     </li>
   
@@ -5190,6 +5209,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-certificatekey" class="md-nav__link">
+    -CertificateKey
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-certificatename" class="md-nav__link">
     -CertificateName
   </a>
@@ -5376,9 +5402,9 @@
 </code></pre></div>
 <h3 id="certfile">CertFile</h3>
 <div class="highlight"><pre><span></span><code>Add-PodeEndpoint [-Address &lt;String&gt;] [-Port &lt;Int32&gt;] [-Hostname &lt;String&gt;] [-Protocol &lt;String&gt;]
- -Certificate &lt;String&gt; [-CertificatePassword &lt;String&gt;] [-X509Certificate &lt;X509Certificate&gt;] [-Name &lt;String&gt;]
- [-RedirectTo &lt;String&gt;] [-Description &lt;String&gt;] [-Force] [-AllowClientCertificate] [-PassThru]
- [-LookupHostname] [-Default] [&lt;CommonParameters&gt;]
+ -Certificate &lt;String&gt; [-CertificatePassword &lt;String&gt;] [-CertificateKey &lt;String&gt;]
+ [-X509Certificate &lt;X509Certificate&gt;] [-Name &lt;String&gt;] [-RedirectTo &lt;String&gt;] [-Description &lt;String&gt;] [-Force]
+ [-AllowClientCertificate] [-PassThru] [-LookupHostname] [-Default] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h3 id="certthumb">CertThumb</h3>
 <div class="highlight"><pre><span></span><code>Add-PodeEndpoint [-Address &lt;String&gt;] [-Port &lt;Int32&gt;] [-Hostname &lt;String&gt;] [-Protocol &lt;String&gt;]
@@ -5454,6 +5480,18 @@ The endpoints can be HTTP, HTTPS, TCP or SMTP, with the option to bind certifica
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+<h3 id="-certificatekey">-CertificateKey</h3>
+<p>A key file to be paired with a PEM certificate file referenced in Certificate</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">CertFile</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
 <span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
 <span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>

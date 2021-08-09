@@ -1132,6 +1132,26 @@
     SYNTAX
   </a>
   
+    <nav class="md-nav" aria-label="SYNTAX">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#https" class="md-nav__link">
+    Https
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#certfile" class="md-nav__link">
+    CertFile
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1200,6 +1220,13 @@
           <li class="md-nav__item">
   <a href="#-certificate" class="md-nav__link">
     -Certificate
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-certificatekey" class="md-nav__link">
+    -CertificateKey
   </a>
   
 </li>
@@ -3120,6 +3147,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Utilities/Test-PodeIsMacOS/" class="md-nav__link">
+        Test-PodeIsMacOS
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Utilities/Test-PodeIsPSCore/" class="md-nav__link">
         Test-PodeIsPSCore
       </a>
@@ -4752,6 +4791,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../Tutorials/Routes/Utilities/AutomaticFunctionsAndModules/" class="md-nav__link">
+        Automatic Route Creation for Functions and Modules
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../Tutorials/Routes/Utilities/ContentTypes/" class="md-nav__link">
         Content Types
       </a>
@@ -4778,18 +4829,6 @@
     <li class="md-nav__item">
       <a href="../../../Tutorials/Routes/Utilities/FlashMessages/" class="md-nav__link">
         Flash Messages
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../Tutorials/Routes/Utilities/FunctionsAndModules/" class="md-nav__link">
-        Functions and Modules
       </a>
     </li>
   
@@ -4937,6 +4976,26 @@
     SYNTAX
   </a>
   
+    <nav class="md-nav" aria-label="SYNTAX">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#https" class="md-nav__link">
+    Https
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#certfile" class="md-nav__link">
+    CertFile
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -5005,6 +5064,13 @@
           <li class="md-nav__item">
   <a href="#-certificate" class="md-nav__link">
     -Certificate
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-certificatekey" class="md-nav__link">
+    -CertificateKey
   </a>
   
 </li>
@@ -5133,9 +5199,15 @@
 <h2 id="synopsis">SYNOPSIS</h2>
 <p>Helper wrapper function to start a Pode web server for a static website at the current directory.</p>
 <h2 id="syntax">SYNTAX</h2>
+<h3 id="https">Https</h3>
 <div class="highlight"><pre><span></span><code>Start-PodeStaticServer [-Threads &lt;Int32&gt;] [-RootPath &lt;String&gt;] [-Address &lt;String&gt;] [-Port &lt;Int32&gt;] [-Https]
  [-Certificate &lt;String&gt;] [-CertificatePassword &lt;String&gt;] [-X509Certificate &lt;X509Certificate&gt;] [-Path &lt;String&gt;]
  [-Defaults &lt;String[]&gt;] [-DownloadOnly] [-Browse] [&lt;CommonParameters&gt;]
+</code></pre></div>
+<h3 id="certfile">CertFile</h3>
+<div class="highlight"><pre><span></span><code>Start-PodeStaticServer [-Threads &lt;Int32&gt;] [-RootPath &lt;String&gt;] [-Address &lt;String&gt;] [-Port &lt;Int32&gt;]
+ [-CertificateKey &lt;String&gt;] [-X509Certificate &lt;X509Certificate&gt;] [-Path &lt;String&gt;] [-Defaults &lt;String[]&gt;]
+ [-DownloadOnly] [-Browse] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h2 id="description">DESCRIPTION</h2>
 <p>Helper wrapper function to start a Pode web server for a static website at the current directory.</p>
@@ -5177,7 +5249,19 @@
 <h3 id="-certificate">-Certificate</h3>
 <p>The path to a certificate that can be use to enable HTTPS.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Https</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+<h3 id="-certificatekey">-CertificateKey</h3>
+<p>A key file to be paired with a PEM certificate referenced in CertificateFile</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">CertFile</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -5189,7 +5273,7 @@
 <h3 id="-certificatepassword">-CertificatePassword</h3>
 <p>The password for the certificate referenced in CertificateFile.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Https</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -5225,7 +5309,7 @@
 <h3 id="-https">-Https</h3>
 <p>Start the server using HTTPS.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Https</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
