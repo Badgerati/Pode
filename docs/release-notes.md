@@ -13,6 +13,7 @@
 
 ### Documentation
 * #798: Update IIS hosting page to reference the minimum features required
+* #800: Add examples to Route creation for Functions/Modules (thanks @phatmandrake!)
 * #801: Update Windows AD authentication page to better reference Domain and OpenLDAP
 ```
 
