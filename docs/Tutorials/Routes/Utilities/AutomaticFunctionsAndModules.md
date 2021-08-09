@@ -16,7 +16,7 @@ This will generate two Routes, similar to as if you did the below:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/Get-ChildItem' -ScriptBlock {
-    $parameters = $WebEvent.Data
+    $parameters = $WebEvent.Query
     $result = (Get-ChildItem @parameters)
     Write-PodeJsonResponse -Value $result -Depth 1
 }
@@ -28,12 +28,21 @@ Add-PodeRoute -Method Post -Path '/Invoke-Expression' -ScriptBlock {
 }
 ```
 
-Example Route Invocation:
+Example Route invocation:
 
 ```powershell
-Invoke-Restmethod http://localhost:8080/Invoke-Expression -Body @{Command = "Get-Date"}
+Invoke-Restmethod http://localhost:8080/Invoke-Expression -Body @{Command = "Get-Date"} -Method POST
 ```
-Function parameters become hashtable key value pairs passed in the body of the request.
+In a POST request, function parameters become hashtable key/value pairs passed in the body. Accessible by `$WebEvent.Data`
+
+```powershell
+#Direct Query Parameters
+Invoke-RestMethod -Uri 'http://localhost:8080/Get-ChildItem?Path=/some/path'
+
+#Powershell Hashtable to Query Parameter Conversion
+Invoke-Restmethod http://localhost:8080/Get-ChildItem -Body @{Path = "/some/path"}  -Method GET
+```
+In a GET request, function parameters become URI query parameters. This can be supplied directly to the URI or by passing a hashtable in the body parameter field. Accessible by `$WebEvent.Query`
 
 !!! tip
     You can stop the function verbs being used in the Route's path by supplying the `-NoVerb` switch.
