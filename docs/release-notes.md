@@ -1,5 +1,22 @@
 # Release Notes
 
+## v2.4.1
+
+```plain
+### Enhancements
+* #801: Add new `-SearchBase` parameter to `Add-PodeAuthWindowsAD` for OpenLDAP
+* #802: Add PEM certificate/key pair support for HTTPS endpoints
+
+### Bugs
+* #796: Fix text wrapping issue when using ldapsearch (thanks @phatmandrake!)
+* #797: When on MacOS, the default SSL protocol should only be TLS1.2
+
+### Documentation
+* #798: Update IIS hosting page to reference the minimum features required
+* #800: Add examples to Route creation for Functions/Modules (thanks @phatmandrake!)
+* #801: Update Windows AD authentication page to better reference Domain and OpenLDAP
+```
+
 ## v2.4.0
 
 ```plain

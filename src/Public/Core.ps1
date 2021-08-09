@@ -272,6 +272,9 @@ The path to a certificate that can be use to enable HTTPS.
 .PARAMETER CertificatePassword
 The password for the certificate referenced in CertificateFile.
 
+.PARAMETER CertificateKey
+A key file to be paired with a PEM certificate referenced in CertificateFile
+
 .PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS.
 
@@ -328,6 +331,10 @@ function Start-PodeStaticServer
         [string]
         $CertificatePassword = $null,
 
+        [Parameter(ParameterSetName='CertFile')]
+        [string]
+        $CertificateKey = $null,
+
         [Parameter(ParameterSetName='Https')]
         [Parameter()]
         [X509Certificate]
@@ -352,7 +359,7 @@ function Start-PodeStaticServer
         # add either an http or https endpoint
         if ($Https) {
             if ($null -eq $X509Certificate) {
-                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -Certificate $Certificate -CertificatePassword $CertificatePassword
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -Certificate $Certificate -CertificatePassword $CertificatePassword -CertificateKey $CertificateKey
             }
             else {
                 Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -X509Certificate $X509Certificate
@@ -655,6 +662,9 @@ The path to a certificate that can be use to enable HTTPS
 .PARAMETER CertificatePassword
 The password for the certificate file referenced in Certificate
 
+.PARAMETER CertificateKey
+A key file to be paired with a PEM certificate file referenced in Certificate
+
 .PARAMETER CertificateThumbprint
 A certificate thumbprint to bind onto HTTPS endpoints (Windows).
 
@@ -740,6 +750,10 @@ function Add-PodeEndpoint
         [Parameter(ParameterSetName='CertFile')]
         [string]
         $CertificatePassword = $null,
+
+        [Parameter(ParameterSetName='CertFile')]
+        [string]
+        $CertificateKey = $null,
 
         [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
         [string]
@@ -920,7 +934,7 @@ function Add-PodeEndpoint
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
         {
             'certfile' {
-                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword
+                $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword -Key $CertificateKey
             }
 
             'certthumb' {

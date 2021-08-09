@@ -48,6 +48,30 @@ Start-PodeServer {
 }
 ```
 
+### Domain
+
+For OpenLDAP Pode will automatically retrieve the NetBIOS to be prepended on the username, ie: `<domain>\<username>`. This is automatically generate by used the first part of the DNS server's FQDN, for example if your server's FQDN was `test.example.com` then Pode would set the NetBIOS as `test`.
+
+You can use a custom domain NetBIOS by suppliying the `-Domain` parameter:
+
+```powershell
+Start-PodeServer {
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com' -Domain 'testdomain'
+}
+```
+
+### SearchBase
+
+When authenticating users via OpenLDAP, the default base distinguished name searched from will be the server root, ie: `DC=test,DC=example,DC=com`. You can refine this by supplying an optional `-SearchBase`, that should be the full distinguished name:
+
+For example, the below will search in `OU=CustomUsers,DC=test,DC=example,DC=com`:
+
+```powershell
+Start-PodeServer {
+    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -SearchBase 'OU=CustomUsers,DC=test,DC=example,DC=com'
+}
+```
+
 ### Groups
 
 You can supply a list of group names to validate that users are a member of them in AD. If you supply multiple group names, the user only needs to be a member of one of the groups. You can supply the list of groups to the function's `-Groups` parameter as an array - the list is not case-sensitive:

@@ -1596,6 +1596,15 @@ function Convert-PodePathPatternsToRegex
     return "^$($joined)$"
 }
 
+function Get-PodeDefaultSslProtocols
+{
+    if (Test-PodeIsMacOS) {
+        return (ConvertTo-PodeSslProtocols -Protocols Tls12)
+    }
+
+    return (ConvertTo-PodeSslProtocols -Protocols Ssl3, Tls12)
+}
+
 function ConvertTo-PodeSslProtocols
 {
     param(
