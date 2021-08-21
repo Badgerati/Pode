@@ -77,7 +77,7 @@ Start-PodeServer {
     Set-PodeViewEngine -Type Pode
 
     # setup session and csrf middleware
-    Enable-PodeSessionMiddleware -Secret 'vegeta'
+    Enable-PodeSessionMiddleware -Duration 120
     Enable-PodeCsrfMiddleware
 
     # this route will work, as GET methods are ignored by CSRF by default
