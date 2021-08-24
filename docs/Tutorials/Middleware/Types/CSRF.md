@@ -21,7 +21,7 @@ The secret used to generate a token is, by default, stored using sessions (so yo
 The below code will setup default CSRF middleware, which will store the random secret using sessions (so session middleware is required), and will ignore the default HTTP methods of GET, HEAD, OPTIONS, TRACE:
 
 ```powershell
-Enable-PodeSessionMiddleware -Secret 'toss-a-coin'
+Enable-PodeSessionMiddleware -Duration 120
 Enable-PodeCsrfMiddleware
 ```
 
@@ -55,7 +55,7 @@ To generate the token, you could use the following example:
 
 ```powershell
 Start-PodeServer {
-    Enable-PodeSessionMiddleware -Secret 'vegeta'
+    Enable-PodeSessionMiddleware -Duration 120
     Enable-PodeCsrfMiddleware
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
@@ -94,7 +94,7 @@ Start-PodeServer {
 }
 ```
 
-*index.pode*
+*views/index.pode*
 ```html
 <html>
     <head>
