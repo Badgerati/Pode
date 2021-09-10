@@ -264,7 +264,7 @@ The IP/Hostname of the endpoint.
 The Port number of the endpoint.
 
 .PARAMETER Https
-Start the server using HTTPS.
+Start the server using HTTPS, if no certificate details are supplied a self-signed certificate will be generated.
 
 .PARAMETER Certificate
 The path to a certificate that can be use to enable HTTPS.
@@ -319,23 +319,22 @@ function Start-PodeStaticServer
         [int]
         $Port = 0,
 
-        [Parameter(ParameterSetName='Https')]
+        [Parameter()]
         [switch]
         $Https,
 
-        [Parameter(ParameterSetName='Https')]
+        [Parameter()]
         [string]
         $Certificate = $null,
 
-        [Parameter(ParameterSetName='Https')]
+        [Parameter()]
         [string]
         $CertificatePassword = $null,
 
-        [Parameter(ParameterSetName='CertFile')]
+        [Parameter()]
         [string]
         $CertificateKey = $null,
 
-        [Parameter(ParameterSetName='Https')]
         [Parameter()]
         [X509Certificate]
         $X509Certificate = $null,
@@ -358,11 +357,14 @@ function Start-PodeStaticServer
     Start-PodeServer -RootPath $RootPath -Threads $Threads -Browse:$Browse -ScriptBlock {
         # add either an http or https endpoint
         if ($Https) {
-            if ($null -eq $X509Certificate) {
+            if ($null -ne $X509Certificate) {
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -X509Certificate $X509Certificate
+            }
+            elseif (![string]::IsNullOrWhiteSpace($Certificate)) {
                 Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -Certificate $Certificate -CertificatePassword $CertificatePassword -CertificateKey $CertificateKey
             }
             else {
-                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -X509Certificate $X509Certificate
+                Add-PodeEndpoint -Address $Address -Port $Port -Protocol Https -SelfSigned
             }
         }
         else {
