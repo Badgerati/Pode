@@ -128,6 +128,15 @@ function ConvertTo-PodeOASchemaProperty
     $schema = @{
         type = $Property.type
         format = $Property.format
+        description = $Property.description
+        deprecated = $Property.deprecated
+        required = $Property.required
+    }
+
+    if ($null -ne $Property.meta) {
+        foreach ($key in $Property.meta.Keys) {
+            $schema[$key] = $Property.meta[$key]
+        }
     }
 
     # schema refs

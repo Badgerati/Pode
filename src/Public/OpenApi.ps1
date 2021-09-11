@@ -1053,17 +1053,20 @@ function New-PodeOAStringProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $_format.ToLowerInvariant()
-        enum = $Enum
-        pattern = $Pattern
-        default = $Default
+
+        meta = @{
+            enum = $Enum
+            pattern = $Pattern
+            default = $Default
+        }
     }
 
     if ($MinLength -ne [int]::MinValue) {
-        $param['minLength'] = $MinLength
+        $param.meta['minLength'] = $MinLength
     }
 
     if ($MaxLength -ne [int]::MaxValue) {
-        $param['maxLength'] = $MaxLength
+        $param.meta['maxLength'] = $MaxLength
     }
 
     return $param

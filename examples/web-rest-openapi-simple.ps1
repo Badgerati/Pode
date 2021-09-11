@@ -42,7 +42,7 @@ Start-PodeServer {
         Set-PodeOARequest -RequestBody (
             New-PodeOARequestBody -Required -ContentSchemas @{
                 'application/json' = (New-PodeOAObjectProperty -Properties @(
-                    (New-PodeOAStringProperty -Name 'Name'),
+                    (New-PodeOAStringProperty -Name 'Name' -MaxLength 5),
                     (New-PodeOAIntProperty -Name 'UserId')
                 ))
             }
