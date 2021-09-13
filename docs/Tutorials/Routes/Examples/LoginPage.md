@@ -1,6 +1,6 @@
 # Creating a Login Page
 
-This is an example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using [Form authentication](../../../Authentication/Methods/Form) with [Sessions]((../../../Middleware/Types/Sessions)).
+This is an example of having a website with a login and home page - with a logout button. The pages will all be done using `.pode` files, and authentication will be done using [Form authentication](../../../Authentication/Methods/Form) with [Sessions](../../../Middleware/Types/Sessions).
 
 !!! info
     The full example can be seen on GitHub in [`examples/web-auth-form.ps1`](https://github.com/Badgerati/Pode/blob/develop/examples/web-auth-form.ps1).
