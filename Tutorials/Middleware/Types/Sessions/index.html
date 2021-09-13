@@ -4985,6 +4985,7 @@
 <h3 id="example">Example</h3>
 <p>An example of using sessions in a Route to increment a views counter could be done as follows (the counter will continue to increment on each call to the route until the session expires after 2mins):</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
+    <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="n">localhost</span> <span class="n">-Port</span> <span class="n">8080</span> <span class="n">-Protocol</span> <span class="n">Http</span>
     <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Duration</span> <span class="n">120</span>
 
     <span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Get</span> <span class="n">-Path</span> <span class="s1">&#39;/&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>

@@ -4850,7 +4850,7 @@
 <p>You can use the <code>-IgnoreMethods</code> parameter to supply a custom array of HTTP methods that validation should skip. If you supply this an empty array (<code>-IgnoreMethods @()</code>) then CSRF will run on all routes - even GET, HEAD, OPTIONS, and TRACE.</p>
 <p>The secret used to generate a token is, by default, stored using sessions (so you'll need session middleware enabled). You can use cookies by supplying the <code>-Cookie</code> switch and the <code>-Secret</code> parameter to sign the cookies (this secret is different to the internal random secret CSRF uses to make tokens).</p>
 <p>The below code will setup default CSRF middleware, which will store the random secret using sessions (so session middleware is required), and will ignore the default HTTP methods of GET, HEAD, OPTIONS, TRACE:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Secret</span> <span class="s1">&#39;toss-a-coin&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Duration</span> <span class="n">120</span>
 <span class="nb">Enable-PodeCsrfMiddleware</span>
 </code></pre></div>
 <p>Once enabled, you can then use the <a href="../../../../Functions/Middleware/New-PodeCsrfToken"><code>New-PodeCsrfToken</code></a> function to generate CSRF tokens (see <a href="#tokens">below</a>).</p>
@@ -4871,7 +4871,7 @@
 <p>The <a href="../../../../Functions/Middleware/New-PodeCsrfToken"><code>New-PodeCsrfToken</code></a> function allows you to generate tokens. It will randomly generate a token that you can use in your web-pages, such as in hidden form inputs or meta elements for AJAX requests. The token itself is formed using a secure random secret key, and a random salt.</p>
 <p>To generate the token, you could use the following example:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Secret</span> <span class="s1">&#39;vegeta&#39;</span>
+    <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Duration</span> <span class="n">120</span>
     <span class="nb">Enable-PodeCsrfMiddleware</span>
 
     <span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Get</span> <span class="n">-Path</span> <span class="s1">&#39;/&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
@@ -4888,7 +4888,7 @@
     <span class="nb">Set-PodeViewEngine</span> <span class="n">-Type</span> <span class="n">Pode</span>
 
     <span class="c"># setup session and csrf middleware</span>
-    <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Secret</span> <span class="s1">&#39;vegeta&#39;</span>
+    <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Duration</span> <span class="n">120</span>
     <span class="nb">Enable-PodeCsrfMiddleware</span>
 
     <span class="c"># this route will work, as GET methods are ignored by CSRF by default</span>
@@ -4904,7 +4904,7 @@
     <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></p>
-<p><em>index.pode</em>
+<p><em>views/index.pode</em>
 <div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
     <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
         <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>CSRF Example Page<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
