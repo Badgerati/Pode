@@ -101,6 +101,7 @@ An example of using sessions in a Route to increment a views counter could be do
 
 ```powershell
 Start-PodeServer {
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
     Enable-PodeSessionMiddleware -Duration 120
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

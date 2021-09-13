@@ -111,7 +111,11 @@ function Get-PodeSession
         # get details from cookie
         $name = $cookie.Name
         $value = $cookie.Value
+
         $timestamp = $cookie.TimeStamp
+        if ($null -ne $timestamp) {
+            $timestamp = $timestamp.ToUniversalTime()
+        }
     }
 
     # generate the session data
@@ -200,6 +204,9 @@ function Get-PodeSessionExpiry
     $expiry = [DateTime]::UtcNow
     if (!([bool]$Session.Properties.Extend)) {
         $expiry = $Session.Properties.TimeStamp
+        if ($null -ne $expiry) {
+            $expiry = $expiry.ToUniversalTime()
+        }
     }
 
     $expiry = $expiry.AddSeconds($Session.Properties.Duration)
