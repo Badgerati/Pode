@@ -1,5 +1,20 @@
 # Release Notes
 
+## v2.4.2
+
+```plain
+### Bugs
+* #810: Fixes a Local/UTC datetime issue on Cookies, expiring sessions early
+* #811: Fixes the HTTPS parameter set on `Start-PodeStaticServer`
+* #814: Fixes a route ordering issue on Swagger pages
+
+### Documentation
+* #816: Fixes a typo on LoginPage (thanks @phatmandrake!)
+
+### Packaging
+* #818: Bumps PowerShell to v7.1.4 in Docker images
+```
+
 ## v2.4.1
 
 ```plain

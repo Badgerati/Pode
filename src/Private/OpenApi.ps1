@@ -281,11 +281,11 @@ function Get-PodeOpenApiDefinitionInternal
     }
 
     # paths
-    $def['paths'] = @{}
+    $def['paths'] = [ordered]@{}
     $filter = "^$($RouteFilter)"
 
     foreach ($method in $PodeContext.Server.Routes.Keys) {
-        foreach ($path in $PodeContext.Server.Routes[$method].Keys) {
+        foreach ($path in ($PodeContext.Server.Routes[$method].Keys | Sort-Object)) {
             # does it match the route?
             if ($path -inotmatch $filter) {
                 continue
