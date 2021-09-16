@@ -32,7 +32,8 @@
     RequiredAssemblies = @(
         'System.Web',
         'System.Net.Http',
-        './Libs/Pode.dll'
+        './Libs/Pode.dll',
+        './Libs/Kerberos.NET.dll'
     )
 
     # Functions to export from this Module

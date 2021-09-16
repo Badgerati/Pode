@@ -192,6 +192,7 @@ task Build BuildDeps, {
     Push-Location ./src/Listener
 
     try {
+        dotnet restore
         dotnet build --configuration Release
         dotnet publish --configuration Release --self-contained --output ../Libs
     }

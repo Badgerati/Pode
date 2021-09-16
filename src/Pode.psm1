@@ -5,6 +5,7 @@ $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName System.Net.Http
 Add-Type -LiteralPath "$($root)/Libs/Pode.dll" -ErrorAction Stop
+Add-Type -LiteralPath "$($root)/Libs/Kerberos.NET.dll" -ErrorAction Stop
 
 # import everything if in a runspace
 if ($PODE_SCOPE_RUNSPACE) {
