@@ -196,6 +196,7 @@ function Start-PodeServer
         $PodeContext.Tokens.Cancellation.Cancel()
     }
     catch {
+        Invoke-PodeEvent -Type Crash
         $ShowDoneMessage = $false
         throw
     }
