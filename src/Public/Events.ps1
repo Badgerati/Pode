@@ -25,7 +25,7 @@ function Register-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash')]
         [string]
         $Type,
 
@@ -80,7 +80,7 @@ function Unregister-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash')]
         [string]
         $Type,
 
@@ -119,7 +119,7 @@ function Test-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash')]
         [string]
         $Type,
 
@@ -152,7 +152,7 @@ function Get-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash')]
         [string]
         $Type,
 
@@ -182,7 +182,7 @@ function Clear-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash')]
         [string]
         $Type
     )
