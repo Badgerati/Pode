@@ -93,15 +93,20 @@ function Invoke-PodeInternalSchedule
     # increment total number of triggers for the schedule
     $Schedule.Count++
 
+    # set last trigger to current next trigger
+    if ($null -ne $Schedule.NextTriggerTime) {
+        $Schedule.LastTriggerTime = $Schedule.NextTriggerTime
+    }
+    else {
+        $Schedule.LastTriggerTime = [datetime]::Now
+    }
+
     # check if we have hit the limit, and remove
     if (($Schedule.Limit -gt 0) -and ($Schedule.Count -ge $Schedule.Limit)) {
         $Schedule.Completed = $true
     }
 
-    # trigger the schedules logic
-    Invoke-PodeInternalScheduleLogic -Schedule $Schedule
-
-    # reset the cron if it's random
+    # reset the cron and next trigger
     if (!$Schedule.Completed) {
         $Schedule.Crons = Reset-PodeRandomCronExpressions -Expressions $Schedule.Crons
         $Schedule.NextTriggerTime = Get-PodeCronNextEarliestTrigger -Expressions $Schedule.Crons -EndTime $Schedule.EndTime
@@ -109,6 +114,9 @@ function Invoke-PodeInternalSchedule
     else {
         $Schedule.NextTriggerTime = $null
     }
+
+    # trigger the schedules logic
+    Invoke-PodeInternalScheduleLogic -Schedule $Schedule
 }
 
 function Invoke-PodeInternalScheduleLogic
@@ -123,6 +131,7 @@ function Invoke-PodeInternalScheduleLogic
         $parameters = @{
             Event = @{
                 Lockable = $PodeContext.Lockables.Global
+                Sender = $Schedule
             }
         }
 

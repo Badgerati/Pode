@@ -87,6 +87,7 @@ The following is the structure of the Timer object internally, as well as the ob
 | Limit | int | The number of times the Timer should run - 0 if running forever |
 | Skip | int | The number of times the Timer should skip being triggered |
 | Count | int | The number of times the Timer has run |
+| LastTriggerTime | datetime | The datetime the Timer was last triggered |
 | NextTriggerTime | datetime | The datetime the Timer will next be triggered |
 | Script | scriptblock | The scriptblock of the Timer |
 | Arguments | object[] | The arguments supplied from ArgumentList |

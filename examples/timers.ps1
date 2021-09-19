@@ -17,6 +17,8 @@ Start-PodeServer {
         Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
             "Look I'm locked!" | Out-PodeHost
         }
+        "Last: $($TimerEvent.Sender.LastTriggerTime)" | Out-Default
+        "Next: $($TimerEvent.Sender.NextTriggerTime)" | Out-Default
         '- - -' | Out-PodeHost
     } -Limit 5
 

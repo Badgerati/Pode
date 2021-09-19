@@ -28,13 +28,18 @@ function Start-PodeTimerRunspace
                 $_.OnStart = $false
                 $_.Count++
 
+                # set last trigger to current next trigger
+                if ($null -ne $_.NextTriggerTime) {
+                    $_.LastTriggerTime = $_.NextTriggerTime
+                }
+                else {
+                    $_.LastTriggerTime = [datetime]::Now
+                }
+
                 # has the timer completed?
                 if (($_.Limit -gt 0) -and ($_.Count -ge $_.Limit)) {
                     $_.Completed = $true
                 }
-
-                # run the timer
-                Invoke-PodeInternalTimer -Timer $_
 
                 # next trigger
                 if (!$_.Completed) {
@@ -43,6 +48,9 @@ function Start-PodeTimerRunspace
                 else {
                     $_.NextTriggerTime = $null
                 }
+
+                # run the timer
+                Invoke-PodeInternalTimer -Timer $_
             }
 
             Start-Sleep -Seconds 1
@@ -60,7 +68,10 @@ function Invoke-PodeInternalTimer
     )
 
     try {
-        $global:TimerEvent = @{ Lockable = $PodeContext.Lockables.Global }
+        $global:TimerEvent = @{
+            Lockable = $PodeContext.Lockables.Global
+            Sender = $Timer
+        }
 
         $_args = @($Timer.Arguments)
         if ($null -ne $Timer.UsingVariables) {
