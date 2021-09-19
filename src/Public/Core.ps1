@@ -1269,6 +1269,7 @@ function Add-PodeTimer
         Count = 0
         Skip = $Skip
         NextTriggerTime = $NextTriggerTime
+        LastTriggerTime = $null
         Script = $ScriptBlock
         UsingVariables = $usingVars
         Arguments = $ArgumentList
@@ -1592,6 +1593,7 @@ function Add-PodeSchedule
         Limit = $Limit
         Count = 0
         NextTriggerTime = $nextTrigger
+        LastTriggerTime = $null
         Script = $ScriptBlock
         UsingVariables = $usingVars
         Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})

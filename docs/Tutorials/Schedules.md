@@ -137,6 +137,7 @@ The following is the structure of the Schedule object internally, as well as the
 | CronsRaw | string[] | The raw cron expressions that were supplied |
 | Limit | int | The number of times the Schedule should run - 0 if running infinitely |
 | Count | int | The number of times the Schedule has run |
+| LastTriggerTime | datetime | The datetime the Schedule was last triggered |
 | NextTriggerTime | datetime | The datetime the Schedule will next be triggered |
 | Script | scriptblock | The scriptblock of the Schedule |
 | Arguments | hashtable | The arguments supplied from ArgumentList |
