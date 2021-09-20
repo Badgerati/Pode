@@ -88,6 +88,8 @@ When saving the state, you can also use the `-Exclude` or `-Include` parameters 
 
 You can use all the above 3 parameter in conjunction, with `-Exclude` having the highest precedence and `-Scope` having the lowest.
 
+By default the JSON will be saved expanded, but you can saved the JSON as compressed by supplying the `-Compress` switch.
+
 ### Restore
 
 The [`Restore-PodeState`](../../Functions/State/Restore-PodeState) function will restore the current state from the specified file. The file path can either be relative, or a literal path. if you're restoring the state immediately on server start, you don't need to use [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject).
