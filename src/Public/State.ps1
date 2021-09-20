@@ -308,6 +308,9 @@ Restores the shared state from some JSON file.
 .PARAMETER Path
 The path to a JSON file that contains the state information.
 
+.PARAMETER Merge
+If supplied, the state loaded from the JSON file will be merged with the current state, instead of overwriting it.
+
 .EXAMPLE
 Restore-PodeState -Path './state.json'
 #>
@@ -317,7 +320,10 @@ function Restore-PodeState
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $Merge
     )
 
     # error if attempting to use outside of the pode server
@@ -363,7 +369,14 @@ function Restore-PodeState
     }
 
     # set the scope to the main context
-    $PodeContext.Server.State = $state.Clone()
+    if ($Merge) {
+        foreach ($_key in $state.Clone().Keys) {
+            $PodeContext.Server.State[$_key] = $state[$_key]
+        }
+    }
+    else {
+        $PodeContext.Server.State = $state.Clone()
+    }
 }
 
 <#
