@@ -207,6 +207,9 @@ An optional array of state object names to exclude from being saved. (This has a
 .PARAMETER Include
 An optional array of state object names to only include when being saved.
 
+.PARAMETER Compress
+If supplied, the saved JSON will be compressed.
+
 .EXAMPLE
 Save-PodeState -Path './state.json'
 
@@ -234,7 +237,10 @@ function Save-PodeState
 
         [Parameter()]
         [string[]]
-        $Include
+        $Include,
+
+        [switch]
+        $Compress
     )
 
     # error if attempting to use outside of the pode server
@@ -295,7 +301,7 @@ function Save-PodeState
     }
 
     # save the state
-    $state | ConvertTo-Json -Depth 10 | Out-File -FilePath $Path -Force | Out-Null
+    $state | ConvertTo-Json -Depth 10 -Compress:$Compress | Out-File -FilePath $Path -Force | Out-Null
 }
 
 <#
