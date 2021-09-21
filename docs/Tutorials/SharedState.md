@@ -102,6 +102,8 @@ Start-PodeServer {
 }
 ```
 
+By default, restoring from a state file will overwrite the current state. You can change this so the restored state is merged instead by using the `-Merge` switch. (Note: if you restore a key that already exists in state, this will still overwrite that key).
+
 ## Full Example
 
 The following is a full example of using the State functions. It is a simple Timer that creates and updates a `hashtable` variable, and then a Route is used to retrieve that variable. There is also another route that will remove the variable from the state. The state is also saved on every iteration of the timer, and restored on server start:
