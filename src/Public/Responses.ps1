@@ -242,13 +242,13 @@ function Write-PodeTextResponse
         }
 
         # check if we only need a range of the bytes
-        if ($null -ne $WebEvent.Ranges) {
+        if (($null -ne $WebEvent.Ranges) -and ($WebEvent.Response.StatusCode -eq 200) -and ($StatusCode -eq 200)) {
             $lengths = @()
             $size = $Bytes.Length
 
             $Bytes = @(foreach ($range in $WebEvent.Ranges) {
                 # ensure range not invalid
-                if ([int]$range.End -ge $size) {
+                if (([int]$range.Start -lt 0) -or ([int]$range.Start -ge $size) -or ([int]$range.End -lt 0)) {
                     Set-PodeResponseStatus -Code 416 -NoErrorPage
                     return
                 }
@@ -261,12 +261,26 @@ function Write-PodeTextResponse
 
                 # end bytes only
                 elseif ([string]::IsNullOrWhiteSpace($range.Start)) {
-                    $Bytes[$($size - 1 - $range.End)..($size - 1)]
-                    $lengths += "$($size - 1 - $range.End)-$($size - 1)/$($size)"
+                    if ([int]$range.End -gt $size) {
+                        $range.End = $size
+                    }
+
+                    if ([int]$range.End -gt 0) {
+                        $Bytes[$($size - $range.End)..($size - 1)]
+                        $lengths += "$($size - $range.End)-$($size - 1)/$($size)"
+                    }
+                    else {
+                        $lengths += "0-0/$($size)"
+                    }
                 }
 
                 # normal range
                 else {
+                    if ([int]$range.End -ge $size) {
+                        Set-PodeResponseStatus -Code 416 -NoErrorPage
+                        return
+                    }
+
                     $Bytes[$range.Start..$range.End]
                     $lengths += "$($range.Start)-$($range.End)/$($size)"
                 }
