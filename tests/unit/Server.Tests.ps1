@@ -125,6 +125,9 @@ Describe 'Restart-PodeInternalServer' {
                 Sessions = @{ 'key' = 'value' };
                 Authentications = @{ 'key' = 'value' };
                 State = @{ 'key' = 'value' };
+                Outputs = @{
+                    Variables = @{ 'key' = 'value' }
+                }
                 Configuration = @{ 'key' = 'value' };
                 Sockets = @{
                     Listeners = @()
