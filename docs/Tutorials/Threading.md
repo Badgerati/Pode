@@ -20,7 +20,7 @@ In event objects, like `$WebEvent`, there is a global `Lockable` object that you
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/save' -ScriptBlock {
-    Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
+    Lock-PodeObject -ScriptBlock {
         Save-PodeState -Path './state.json'
     }
 }
@@ -54,7 +54,7 @@ Start-PodeServer -Threads 2 {
 
     # lock global, sleep for 10secs
     Add-PodeRoute -Method Get -Path '/route1' -ScriptBlock {
-        Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             Start-Sleep -Seconds 10
         }
 
