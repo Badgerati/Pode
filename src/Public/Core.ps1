@@ -201,6 +201,8 @@ function Start-PodeServer
         throw
     }
     finally {
+        Invoke-PodeEvent -Type Stop
+
         # clean the runspaces and tokens
         Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
 
