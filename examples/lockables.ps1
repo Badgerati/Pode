@@ -26,7 +26,7 @@ Start-PodeServer -Threads 2 {
     }
 
     Add-PodeRoute -Method Get -Path '/global-route1' -ScriptBlock {
-        Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             Start-Sleep -Seconds 10
         }
 

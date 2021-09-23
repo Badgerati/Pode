@@ -9,7 +9,7 @@ Start-PodeServer -Interval 3 {
 
     Add-PodeHandler -Type Service -Name 'Hello' -ScriptBlock {
         Write-Host 'hello, world!'
-        Lock-PodeObject -Object $ServiceEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             "Look I'm locked!" | Out-PodeHost
         }
     }

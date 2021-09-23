@@ -14,7 +14,7 @@ Start-PodeServer {
     Add-PodeTimer -Name 'forever' -Interval 5 -ScriptBlock {
         '- - -' | Out-PodeHost
         $using:message | Out-PodeHost
-        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             "Look I'm locked!" | Out-PodeHost
         }
         "Last: $($TimerEvent.Sender.LastTriggerTime)" | Out-Default

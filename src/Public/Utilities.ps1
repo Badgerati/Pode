@@ -125,7 +125,7 @@ Places a temporary lock on a object while a ScriptBlock is invoked.
 Places a temporary lock on a object while a ScriptBlock is invoked.
 
 .PARAMETER Object
-The object to lock.
+The object to lock, if no object is supplied then the global lockable is used by default.
 
 .PARAMETER ScriptBlock
 The ScriptBlock to invoke.
@@ -135,6 +135,9 @@ If supplied, any values from the ScriptBlock will be returned.
 
 .PARAMETER CheckGlobal
 If supplied, will check the global Lockable object and wait until it's freed-up before locking the passed object.
+
+.EXAMPLE
+Lock-PodeObject -ScriptBlock { /* logic */ }
 
 .EXAMPLE
 Lock-PodeObject -Object $SomeArray -ScriptBlock { /* logic */ }
@@ -147,7 +150,7 @@ function Lock-PodeObject
     [CmdletBinding()]
     [OutputType([object])]
     param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline=$true)]
         [object]
         $Object,
 
@@ -163,7 +166,7 @@ function Lock-PodeObject
     )
 
     if ($null -eq $Object) {
-        return
+        $Object = $PodeContext.Lockables.Global
     }
 
     if ($Object -is [valuetype]) {
