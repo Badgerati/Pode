@@ -200,6 +200,9 @@ function Restart-PodeInternalServer
         # clear up shared state
         $PodeContext.Server.State.Clear()
 
+        # clear up output
+        $PodeContext.Server.Output.Variables.Clear()
+
         # reset type if smtp/tcp
         $PodeContext.Server.Types = @()
 

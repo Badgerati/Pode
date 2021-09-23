@@ -55,6 +55,12 @@ Start-PodeServer -Threads 2 {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
+    # Set an output variable
+    Add-PodeRoute -Method Post -Path '/variable' -ScriptBlock {
+        Out-PodeVariable -Name $WebEvent.Data.Name -Value $WebEvent.Data.Value
+        Out-PodeVariable -Name Pode_Complex_Object -Value @{ Name = 'Joe'; Age = 42 }
+    }
+
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
         Set-PodeResponseStatus -Code 500

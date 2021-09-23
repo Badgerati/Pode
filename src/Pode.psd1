@@ -120,6 +120,7 @@
         'Remove-PodeLockable',
         'Get-PodeLockable',
         'Test-PodeLockable',
+        'Out-PodeVariable',
 
         # routes
         'Add-PodeRoute',

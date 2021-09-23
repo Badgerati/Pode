@@ -212,6 +212,11 @@ function New-PodeContext
     # shared state between runspaces
     $ctx.Server.State = @{}
 
+    # output details, like variables, to be set once the server stops
+    $ctx.Server.Output = @{
+        Variables = @{}
+    }
+
     # view engine for rendering pages
     $ctx.Server.ViewEngine = @{
         Type = 'html'
@@ -766,5 +771,16 @@ function New-PodeAutoRestartServer
         Add-PodeSchedule -Name '__pode_restart_crons__' -Cron @($crons) -ScriptBlock {
             $PodeContext.Tokens.Restart.Cancel()
         }
+    }
+}
+
+function Set-PodeOutputVariables
+{
+    if (Test-PodeIsEmpty $PodeContext.Server.Output.Variables) {
+        return
+    }
+
+    foreach ($key in $PodeContext.Server.Output.Variables.Keys) {
+        Set-Variable -Name $key -Value $PodeContext.Server.Output.Variables[$key] -Force -Scope Global
     }
 }
