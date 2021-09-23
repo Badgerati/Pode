@@ -201,6 +201,9 @@ function Start-PodeServer
         throw
     }
     finally {
+        # set output values
+        Set-PodeOutputVariables
+
         # clean the runspaces and tokens
         Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
 

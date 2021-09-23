@@ -1025,3 +1025,35 @@ function Test-PodeLockable
 
     return $PodeContext.Lockables.Custom.ContainsKey($Name)
 }
+
+<#
+.SYNOPSIS
+Defines variables to be created when the Pode server stops.
+
+.DESCRIPTION
+Allows you to define a variable, with a value, that should be created on the in the main scope after the Pode server is stopped.
+
+.PARAMETER Name
+The Name of the variable to be set
+
+.PARAMETER Value
+The Value of the variable to be set
+
+.EXAMPLE
+Out-PodeVariable -Name ExampleVar -Value @{ Name = 'Bob' }
+#>
+function Out-PodeVariable
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(ValueFromPipeline=$true)]
+        [object]
+        $Value
+    )
+
+    $PodeContext.Server.Output.Variables[$Name] = $Value
+}
