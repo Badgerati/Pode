@@ -343,6 +343,7 @@ function New-PodeContext
         Restart = [ordered]@{}
         Browser = [ordered]@{}
         Crash = [ordered]@{}
+        Stop = [ordered]@{}
     }
 
     # return the new context

@@ -201,6 +201,8 @@ function Start-PodeServer
         throw
     }
     finally {
+        Invoke-PodeEvent -Type Stop
+
         # set output values
         Set-PodeOutputVariables
 
