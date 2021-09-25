@@ -211,8 +211,8 @@ function Add-PodeRoute
                     '200' = @{ description = 'OK' }
                     'default' = @{ description = 'Internal server error' }
                 }
-                Parameters = @()
-                RequestBody = @{}
+                Parameters = $null
+                RequestBody = $null
                 Authentication = @()
             }
             IsStatic = $false

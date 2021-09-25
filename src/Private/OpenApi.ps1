@@ -121,7 +121,10 @@ function ConvertTo-PodeOASchemaProperty
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
-        $Property
+        $Property,
+
+        [switch]
+        $InObject
     )
 
     # base schema type
@@ -129,8 +132,15 @@ function ConvertTo-PodeOASchemaProperty
         type = $Property.type
         format = $Property.format
         description = $Property.description
-        deprecated = $Property.deprecated
-        required = $Property.required
+        default = $Property.default
+    }
+
+    if ($Property.deprecated) {
+        $schema['deprecated'] = $Property.deprecated
+    }
+
+    if ($Property.required -and !$InObject) {
+        $schema['required'] = $Property.required
     }
 
     if ($null -ne $Property.meta) {
@@ -189,7 +199,7 @@ function ConvertTo-PodeOASchemaObjectProperty
     $schema = @{}
 
     foreach ($prop in $Properties) {
-        $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty)
+        $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty -InObject)
     }
 
     return $schema
@@ -330,12 +340,15 @@ function Get-PodeOpenApiDefinitionInternal
                 description = $_route.OpenApi.Description
                 operationId = $_route.OpenApi.OperationId
                 tags = @($_route.OpenApi.Tags)
-                deprecated = $_route.OpenApi.Deprecated
                 responses = $_route.OpenApi.Responses
                 parameters = $_route.OpenApi.Parameters
                 requestBody = $_route.OpenApi.RequestBody
                 servers = $null
                 security = @($_route.OpenApi.Authentication)
+            }
+
+            if ($_route.OpenApi.Deprecated) {
+                $def.paths[$_route.OpenApi.Path][$method]['deprecated'] = $_route.OpenApi.Deprecated
             }
 
             # add global authentication for route
@@ -345,6 +358,10 @@ function Get-PodeOpenApiDefinitionInternal
                         $def.paths[$_route.OpenApi.Path][$method].security += $sec.Definition
                     }
                 }
+            }
+
+            if ($def.paths[$_route.OpenApi.Path][$method].security.Length -eq 0) {
+                $def.paths[$_route.OpenApi.Path][$method].Remove('security')
             }
 
             # add any custom server endpoints for route

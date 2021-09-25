@@ -837,14 +837,32 @@ function Remove-PodeNullKeysFromHashtable
     foreach ($key in ($Hashtable.Clone()).Keys) {
         if ($null -eq $Hashtable[$key]) {
             $Hashtable.Remove($key) | Out-Null
+            continue
         }
 
-        if (($Hashtable[$key] -is [array]) -and ($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
+        if ($Hashtable[$key] -is [string] -and [string]::IsNullOrEmpty($Hashtable[$key])) {
             $Hashtable.Remove($key) | Out-Null
+            continue
+        }
+
+        if ($Hashtable[$key] -is [array]) {
+            if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
+                $Hashtable.Remove($key) | Out-Null
+                continue
+            }
+
+            foreach ($item in $Hashtable[$key]) {
+                if ($item -is [hashtable]) {
+                    $item | Remove-PodeNullKeysFromHashtable
+                }
+            }
+
+            continue
         }
 
         if ($Hashtable[$key] -is [hashtable]) {
             $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
+            continue
         }
     }
 }

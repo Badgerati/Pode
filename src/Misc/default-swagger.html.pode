@@ -20,6 +20,10 @@
 
         $(if ($data.DarkMode) {
             "<style>
+                .swagger-ui button {
+                    outline: none !important;
+                }
+
                 .swagger-ui .info .title,
                 .swagger-ui a.nostyle,
                 .swagger-ui .parameter__name,
@@ -40,21 +44,48 @@
                 .swagger-ui .opblock-tag span,
                 .swagger-ui .response-col_links,
                 .swagger-ui .response-col_links i,
-                .swagger-ui .btn
-                {
+                .swagger-ui .btn {
                     color: #CCCCCC !important;
                 }
 
                 .swagger-ui svg.arrow,
                 .swagger-ui button.unlocked,
-                .swagger-ui .authorization__btn.locked
-                {
+                .swagger-ui .authorization__btn.locked {
                     fill: #CCCCCC;
                     opacity: 1 !important;
                 }
 
-                .swagger-ui .scheme-container
-                {
+                .swagger-ui select,
+                .swagger-ui select:hover,
+                .swagger-ui select:focus,
+                .swagger-ui select:focus-visible {
+                    color: #BBB;
+                    border: solid 1px #777;
+                }
+
+                .swagger-ui .try-out button,
+                .swagger-ui div.model-example .tab .tabitem button.tablinks {
+                    background: #CCCCCC44;
+                    border: solid 1px #777;
+                    color: #CCC;
+                    border-radius: 4px;
+                    padding: 7px;
+                }
+                .swagger-ui div.model-example .tab .tabitem.active button.tablinks {
+                    font-weight: bold;
+                }
+
+                .swagger-ui .try-out button:hover,
+                .swagger-ui div.model-example .tab .tabitem button.tablinks:hover {
+                    background: #CCCCCC88;
+                }
+
+                .swagger-ui div.model-example .highlight-code pre {
+                    border: solid 1px #777;
+                    border-radius: 6px;
+                }
+
+                .swagger-ui .scheme-container {
                     box-shadow: none;
                     border-bottom: 1px solid #CCCCCC;
                 }
@@ -62,8 +93,7 @@
                 .swagger-ui .opblock .opblock-summary-description,
                 .swagger-ui .opblock-description-wrapper p,
                 .swagger-ui h4,
-                .swagger-ui h5
-                {
+                .swagger-ui h5 {
                     color: #BBBBBB !important;
                 }
 
@@ -71,8 +101,7 @@
                 .swagger-ui .info .title,
                 .swagger-ui .scheme-container,
                 .swagger-ui select,
-                .modal-ux
-                {
+                .modal-ux {
                     background-color: #222 !important;
                     color: #CCC;
                 }
@@ -85,21 +114,18 @@
                     filter: invert(1) brightness(0.5);
                 }
 
-                .swagger-ui .opblock .opblock-section-header
-                {
+                .swagger-ui .opblock .opblock-section-header {
                     background-color: transparent;
                 }
 
                 .swagger-ui textarea,
                 .swagger-ui input[type=text],
-                .swagger-ui input[type=password]
-                {
+                .swagger-ui input[type=password] {
                     background-color: #41444e;
                     color: #CCC;
                 }
 
-                .swagger-ui .topbar
-                {
+                .swagger-ui .topbar {
                     background-color: #000;
                 }
             </style>"
