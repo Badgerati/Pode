@@ -119,8 +119,14 @@ namespace Pode
 
         public override void Dispose()
         {
-            // send close frame, remove client, and dispose
-            Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close);
+            // send close frame
+            if (!IsDisposed)
+            {
+                PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close);
+            }
+
+            // remove client, and dispose
             Context.Listener.WebSockets.Remove(WebSocket.ClientId);
             base.Dispose();
         }

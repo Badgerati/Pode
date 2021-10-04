@@ -25,6 +25,7 @@ function Start-PodeSignalServer
     # create the listener
     $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token, [PodeListenerType]::WebSocket)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
 
     try
     {

@@ -19,23 +19,25 @@ namespace Pode
         public const byte CARRIAGE_RETURN_BYTE = 13;
         public const byte DASH_BYTE = 45;
 
-        public static void WriteException(Exception ex, PodeListener listener = default(PodeListener))
+        public static void WriteException(Exception ex, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error)
         {
             if (ex == default(Exception))
             {
                 return;
             }
 
-            if (listener != default(PodeListener) && !listener.ErrorLoggingEnabled)
+            // return if logging disabled, or if level isn't being logged
+            if (listener != default(PodeListener) && (!listener.ErrorLoggingEnabled || !listener.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
 
-            Console.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+            // write the exception to terminal
+            Console.WriteLine($"[{level}] {ex.GetType().Name}: {ex.Message}");
             Console.WriteLine(ex.StackTrace);
         }
 
-        public static void HandleAggregateException(AggregateException aex, PodeListener listener = default(PodeListener))
+        public static void HandleAggregateException(AggregateException aex, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error)
         {
             aex.Handle((ex) =>
             {
@@ -44,9 +46,33 @@ namespace Pode
                     return true;
                 }
 
-                PodeHelpers.WriteException(ex, listener);
+                PodeHelpers.WriteException(ex, listener, level);
                 return false;
             });
+        }
+
+        public static void WriteErrorMessage(string message, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default(PodeContext))
+        {
+            // do nothing if no message
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            // return if logging disabled, or if level isn't being logged
+            if (listener != default(PodeListener) && (!listener.ErrorLoggingEnabled || !listener.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            {
+                return;
+            }
+
+            if (context == default(PodeContext))
+            {
+                Console.WriteLine($"[{level}]: {message}");
+            }
+            else
+            {
+                Console.WriteLine($"[{level}]: [ContextId: {context.ID}] {message}");
+            }
         }
 
         public static string NewGuid(int length = 16)

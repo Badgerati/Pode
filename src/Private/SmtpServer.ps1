@@ -23,6 +23,7 @@ function Start-PodeSmtpServer
     # create the listener
     $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token, [PodeListenerType]::Smtp)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
+    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
 
     try
     {

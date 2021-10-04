@@ -1,9 +1,10 @@
 namespace Pode
 {
-    public enum PodeListenerType
+    public enum PodeSocketType
     {
         Http,
-        // WebSocket,
+        Ws,
+        HttpAndWs,
         Smtp,
         Tcp
     }

@@ -21,6 +21,7 @@ namespace Pode
         public bool AllowClientCertificate { get; private set; }
         public SslProtocols Protocols { get; private set; }
         public Socket Socket { get; private set; }
+        public PodeSocketType Type { get; private set; }
 
         private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
         private ConcurrentQueue<SocketAsyncEventArgs> ReceiveConnections;
@@ -41,7 +42,7 @@ namespace Pode
 
         public bool HasHostnames => Hostnames.Any();
 
-        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, X509Certificate certificate = null, bool allowClientCertificate = false)
+        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeSocketType type, X509Certificate certificate = null, bool allowClientCertificate = false)
         {
             IPAddress = ipAddress;
             Port = port;
@@ -50,6 +51,7 @@ namespace Pode
             Protocols = protocols;
             Hostnames = new List<string>();
             Endpoint = new IPEndPoint(ipAddress, port);
+            Type = type;
 
             AcceptConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
             ReceiveConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
@@ -134,10 +136,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                if (Listener.ErrorLoggingEnabled)
-                {
-                    PodeHelpers.WriteException(ex, Listener);
-                }
+                PodeHelpers.WriteException(ex, Listener);
                 throw;
             }
 
@@ -160,6 +159,11 @@ namespace Pode
             // close socket if not successful, or if listener is stopped - close now!
             if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
             {
+                if (error != SocketError.Success)
+                {
+                    PodeHelpers.WriteErrorMessage($"Closing accepting socket: {error}", Listener, PodeLoggingLevel.Debug);
+                }
+
                 // close socket
                 if (accepted != default(Socket))
                 {
@@ -192,6 +196,11 @@ namespace Pode
             // close socket if not successful, or if listener is stopped - close now!
             if ((received == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
             {
+                if (error != SocketError.Success)
+                {
+                    PodeHelpers.WriteErrorMessage($"Closing receiving socket: {error}", Listener, PodeLoggingLevel.Debug);
+                }
+
                 // close socket
                 if (received != default(Socket))
                 {
@@ -276,11 +285,13 @@ namespace Pode
                 {
                     if (context.IsWebSocket)
                     {
+                        PodeHelpers.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, context);
                         Listener.AddClientSignal(context.WsRequest.NewClientSignal());
                         context.Dispose();
                     }
                     else
                     {
+                        PodeHelpers.WriteErrorMessage($"Received request", Listener, PodeLoggingLevel.Verbose, context);
                         Listener.AddContext(context);
                     }
                 }
@@ -383,8 +394,19 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, Listener);
             }
+        }
+
+        public void Merge(PodeSocket socket)
+        {
+            // check for extra hostnames
+            if (socket.HasHostnames)
+            {
+                Hostnames.AddRange(socket.Hostnames);
+            }
+
+            socket.Dispose();
         }
 
         public static void CloseSocket(Socket socket)

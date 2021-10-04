@@ -56,31 +56,49 @@ function Get-PodeEndpoints
     param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
-        [string]
+        [string[]]
         $Type
     )
 
-    $endpoints = $null
+    $endpoints = @()
 
-    switch ($Type.ToLowerInvariant()) {
-        'http' {
-            $endpoints = @($PodeContext.Server.Endpoints.Values | Where-Object { @('http', 'https') -icontains $_.Protocol })
-        }
+    foreach ($t in $Type) {
+        switch ($t.ToLowerInvariant()) {
+            'http' {
+                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('http', 'https') -icontains $_.Protocol })
+            }
 
-        'ws' {
-            $endpoints = @($PodeContext.Server.Endpoints.Values | Where-Object { @('ws', 'wss') -icontains $_.Protocol })
-        }
+            'ws' {
+                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('ws', 'wss') -icontains $_.Protocol })
+            }
 
-        'smtp' {
-            $endpoints = @($PodeContext.Server.Endpoints.Values | Where-Object { @('smtp') -icontains $_.Protocol })
-        }
+            'smtp' {
+                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('smtp') -icontains $_.Protocol })
+            }
 
-        'tcp' {
-            $endpoints = @($PodeContext.Server.Endpoints.Values | Where-Object { @('tcp') -icontains $_.Protocol })
+            'tcp' {
+                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('tcp') -icontains $_.Protocol })
+            }
         }
     }
 
     return $endpoints
+}
+
+function Get-PodeEndpointType
+{
+    param(
+        [Parameter()]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [string]
+        $Protocol
+    )
+
+    switch ($Verb) {
+        { $_ -iin @('http', 'https') } { 'Http' }
+        { $_ -iin @('ws', 'wss') } { 'Ws' }
+        default { $Protocol }
+    }
 }
 
 function Test-PodeEndpoints

@@ -20,6 +20,8 @@ namespace Pode
         public Hashtable Data { get; private set; }
         public PodeContextType Type { get; private set; }
 
+        private object _lockable = new object();
+
         private PodeContextState _state;
         public PodeContextState State
         {
@@ -43,7 +45,7 @@ namespace Pode
 
         public bool IsWebSocket
         {
-            get => ((Type == PodeContextType.WebSocket) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.WebSocket));
+            get => ((Type == PodeContextType.WebSocket)); // || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.WebSocket));
         }
 
         public bool IsWebSocketUpgraded
@@ -138,6 +140,8 @@ namespace Pode
             // create a new request
             switch (Listener.Type)
             {
+                //TODO: could we make this based on the socket type? then listener can be "anything"
+                // and it's based on the socket?
                 case PodeListenerType.Smtp:
                     Request = new PodeSmtpRequest(Socket);
                     break;
@@ -155,8 +159,9 @@ namespace Pode
                 Request.Open(PodeSocket.Certificate, PodeSocket.Protocols, PodeSocket.AllowClientCertificate);
                 State = PodeContextState.Open;
             }
-            catch
+            catch (Exception ex)
             {
+                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = (Request.InputStream == default(Stream)
                     ? PodeContextState.Error
                     : PodeContextState.SslError);
@@ -177,6 +182,7 @@ namespace Pode
             }
 
             // depending on listener type, either:
+            //TODO: like above, could we remove listener type and just using socket type?
             switch (Listener.Type)
             {
                 // - only allow smtp
@@ -186,23 +192,56 @@ namespace Pode
                     break;
 
                 // - only allow web-socket
-                case PodeListenerType.WebSocket:
-                    if (!HttpRequest.IsWebSocket)
-                    {
-                        throw new HttpRequestException("Request is not for a WebSocket");
-                    }
+                // case PodeListenerType.WebSocket:
+                //     if (!HttpRequest.IsWebSocket)
+                //     {
+                //         throw new HttpRequestException("Request is not for a WebSocket");
+                //     }
 
-                    Type = PodeContextType.WebSocket;
-                    break;
+                //     Type = PodeContextType.WebSocket;
+                //     break;
 
                 // - only allow http
                 case PodeListenerType.Http:
-                    if (HttpRequest.IsWebSocket)
+                    // if (HttpRequest.IsWebSocket)
+                    // {
+                    //     throw new HttpRequestException("Request is not Http");
+                    // }
+
+                    switch (PodeSocket.Type)
                     {
-                        throw new HttpRequestException("Request is not Http");
+                        case PodeSocketType.Http:
+                            if (HttpRequest.IsWebSocket)
+                            {
+                                throw new HttpRequestException("Request is not Http");
+                            }
+
+                            Type = PodeContextType.Http;
+                            break;
+
+                        case PodeSocketType.Ws:
+                            if (!HttpRequest.IsWebSocket)
+                            {
+                                throw new HttpRequestException("Request is not for a WebSocket");
+                            }
+
+                            Type = PodeContextType.WebSocket;
+                            break;
+
+                        case PodeSocketType.HttpAndWs:
+                            Type = HttpRequest.IsWebSocket
+                                ? PodeContextType.WebSocket
+                                : PodeContextType.Http;
+                            break;
+
+                        default:
+                            throw new HttpRequestException("Request is not for Http or a WebSocket");
                     }
 
-                    Type = PodeContextType.Http;
+                    //TODO: ensure the socket allows http, ws, or both
+                    // Type = HttpRequest.IsWebSocket
+                    //     ? PodeContextType.WebSocket
+                    //     : PodeContextType.Http;
                     break;
             }
         }
@@ -229,9 +268,11 @@ namespace Pode
                 }
                 catch (OperationCanceledException) {}
             }
-            catch
+            catch (Exception ex)
             {
+                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = PodeContextState.Error;
+                PodeSocket.HandleContext(this);
             }
         }
 
@@ -251,10 +292,13 @@ namespace Pode
             NewResponse();
             State = PodeContextState.Receiving;
             PodeSocket.StartReceive(this);
+            PodeHelpers.WriteErrorMessage($"Socket listening", Listener, PodeLoggingLevel.Verbose, this);
         }
 
         public void UpgradeWebSocket(string clientId = null)
         {
+            PodeHelpers.WriteErrorMessage($"Uprading Websocket", Listener, PodeLoggingLevel.Verbose, this);
+
             // websocket
             if (!IsWebSocket)
             {
@@ -299,6 +343,7 @@ namespace Pode
             Request = wsRequest;
 
             Listener.AddWebSocket(WsRequest.WebSocket);
+            PodeHelpers.WriteErrorMessage($"Websocket upgraded", Listener, PodeLoggingLevel.Verbose, this);
         }
 
         public void Dispose()
@@ -308,70 +353,76 @@ namespace Pode
 
         public void Dispose(bool force)
         {
-            if (IsClosed)
+            lock (_lockable)
             {
-                Request.Dispose();
-                Response.Dispose();
-                ContextTimeoutToken.Dispose();
-                TimeoutTimer.Dispose();
-                return;
-            }
-
-            var _awaitingBody = false;
-
-            // send the response and close, only close request if not keep alive
-            try
-            {
-                // dispose timeout token
-                ContextTimeoutToken.Dispose();
-                TimeoutTimer.Dispose();
-
-                // error or timeout?
-                if (IsErrored)
+                if (IsClosed)
                 {
-                    Response.StatusCode = 500;
-                }
-
-                // are we awaiting for more info?
-                if (IsHttp)
-                {
-                    _awaitingBody = (HttpRequest.AwaitingBody && !IsErrored && !IsTimeout);
-                }
-
-                // only send a response if Http
-                if (IsHttp && State != PodeContextState.SslError && !_awaitingBody)
-                {
-                    if (IsTimeout)
-                    {
-                        Response.SendTimeout();
-                    }
-                    else
-                    {
-                        Response.Send();
-                    }
-                }
-
-                // if it was smtp, and it was processable, RESET!
-                if (IsSmtp && SmtpRequest.CanProcess)
-                {
-                    SmtpRequest.Reset();
-                }
-
-                // dispose of request if not KeepAlive, and not waiting for body
-                if (!_awaitingBody && (!IsKeepAlive || force))
-                {
-                    State = PodeContextState.Closed;
                     Request.Dispose();
+                    Response.Dispose();
+                    ContextTimeoutToken.Dispose();
+                    TimeoutTimer.Dispose();
+                    return;
                 }
 
-                Response.Dispose();
-            }
-            catch {}
+                var _awaitingBody = false;
 
-            // if keep-alive, or awaiting body, setup for re-receive
-            if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout)) && !force)
-            {
-                StartReceive();
+                // send the response and close, only close request if not keep alive
+                try
+                {
+                    // dispose timeout token
+                    ContextTimeoutToken.Dispose();
+                    TimeoutTimer.Dispose();
+
+                    // error or timeout?
+                    if (IsErrored)
+                    {
+                        Response.StatusCode = 500;
+                    }
+
+                    // are we awaiting for more info?
+                    if (IsHttp)
+                    {
+                        _awaitingBody = (HttpRequest.AwaitingBody && !IsErrored && !IsTimeout);
+                    }
+
+                    // only send a response if Http
+                    if (IsHttp && State != PodeContextState.SslError && !_awaitingBody)
+                    {
+                        if (IsTimeout)
+                        {
+                            Response.SendTimeout();
+                        }
+                        else
+                        {
+                            Response.Send();
+                        }
+                    }
+
+                    // if it was smtp, and it was processable, RESET!
+                    if (IsSmtp && SmtpRequest.CanProcess)
+                    {
+                        SmtpRequest.Reset();
+                    }
+
+                    // dispose of request if not KeepAlive, and not waiting for body
+                    if (!_awaitingBody && (!IsKeepAlive || force))
+                    {
+                        State = PodeContextState.Closed;
+                        Request.Dispose();
+                    }
+
+                    if (!IsWebSocket || force)
+                    {
+                        Response.Dispose();
+                    }
+                }
+                catch {}
+
+                // if keep-alive, or awaiting body, setup for re-receive
+                if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout)) && !force)
+                {
+                    StartReceive();
+                }
             }
         }
     }

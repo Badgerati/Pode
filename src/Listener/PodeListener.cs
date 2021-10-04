@@ -13,6 +13,7 @@ namespace Pode
         public bool IsListening { get; private set; }
         public bool IsDisposed { get; private set; }
         public bool ErrorLoggingEnabled { get; set; }
+        public string[] ErrorLoggingLevels { get; set; }
         public CancellationToken CancellationToken { get; private set; }
         public PodeListenerType Type { get; private set; }
 
@@ -56,18 +57,19 @@ namespace Pode
 
         public void Add(PodeSocket socket)
         {
-            // if this socket has a hostname, try to re-use an existing socket
-            if (socket.HasHostnames)
+            var foundSocket = Sockets.FirstOrDefault(x => x.Equals(socket));
+            if (foundSocket == default(PodeSocket))
             {
-                var foundSocket = Sockets.FirstOrDefault(x => x.Equals(socket));
-                if (foundSocket != default(PodeSocket))
-                {
-                    foundSocket.Hostnames.AddRange(socket.Hostnames);
-                    socket.Dispose();
-                    return;
-                }
+                Bind(socket);
             }
+            else
+            {
+                foundSocket.Merge(socket);
+            }
+        }
 
+        private void Bind(PodeSocket socket)
+        {
             socket.BindListener(this);
             Sockets.Add(socket);
         }

@@ -192,6 +192,8 @@ namespace Pode
 
         public void Reset()
         {
+            PodeHelpers.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
+
             CanProcess = false;
             Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
             From = string.Empty;
