@@ -94,7 +94,7 @@ function Get-PodeEndpointType
         $Protocol
     )
 
-    switch ($Verb) {
+    switch ($Protocol) {
         { $_ -iin @('http', 'https') } { 'Http' }
         { $_ -iin @('ws', 'wss') } { 'Ws' }
         default { $Protocol }

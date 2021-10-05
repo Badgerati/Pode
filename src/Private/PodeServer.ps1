@@ -267,7 +267,6 @@ function Start-PodeWebServer
                     {
                         # get the sockets for the message
                         $sockets = @()
-                        'here1' | out-default
 
                         # by clientId
                         if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
@@ -287,14 +286,11 @@ function Start-PodeWebServer
                             }
                         }
 
-                        'here2' | out-default
                         # do nothing if no socket found
                         if (($null -eq $sockets) -or ($sockets.Length -eq 0)) {
-                            'here3' | out-default
                             continue
                         }
 
-                        'here4' | out-default
                         # send the message to all found sockets
                         foreach ($socket in $sockets) {
                             try {
@@ -304,7 +300,6 @@ function Start-PodeWebServer
                                 $Listener.WebSockets.Remove($socket.ClientId) | Out-Null
                             }
                         }
-                        'here5' | out-default
                     }
                     catch [System.OperationCanceledException] {}
                     catch {

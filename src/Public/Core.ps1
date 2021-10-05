@@ -830,7 +830,6 @@ function Add-PodeEndpoint
     $type = Get-PodeEndpointType -Protocol $Protocol
 
     # are we running as IIS for HTTP/HTTPS? (if yes, force the port, address and protocol)
-    #TODO: enable this for websockets
     $isIIS = ($PodeContext.Server.IsIIS -and (@('Http', 'Ws') -icontains $type))
     if ($isIIS) {
         $Port = [int]$env:ASPNETCORE_PORT
@@ -980,8 +979,6 @@ function Add-PodeEndpoint
         if ($_type -iin @('http', 'ws')) {
             $_type = 'http'
         }
-        # $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
-        # $_type = (Resolve-PodeValue -Check ($_type -ieq 'wss') -TrueValue 'ws' -FalseValue $_type)
 
         if ($PodeContext.Server.Types -inotcontains $_type) {
             $PodeContext.Server.Types += $_type

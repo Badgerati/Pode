@@ -237,11 +237,6 @@ namespace Pode
                         default:
                             throw new HttpRequestException("Request is not for Http or a WebSocket");
                     }
-
-                    //TODO: ensure the socket allows http, ws, or both
-                    // Type = HttpRequest.IsWebSocket
-                    //     ? PodeContextType.WebSocket
-                    //     : PodeContextType.Http;
                     break;
             }
         }

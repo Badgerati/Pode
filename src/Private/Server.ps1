@@ -97,10 +97,6 @@ function Start-PodeInternalServer
                     'HTTP' {
                         $endpoints += (Start-PodeWebServer -Browse:$Browse)
                     }
-
-                    # 'WS' {
-                    #     $endpoints += (Start-PodeSignalServer)
-                    # }
                 }
             }
         }
