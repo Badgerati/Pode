@@ -15,7 +15,6 @@ namespace Pode
         public bool ErrorLoggingEnabled { get; set; }
         public string[] ErrorLoggingLevels { get; set; }
         public CancellationToken CancellationToken { get; private set; }
-        public PodeListenerType Type { get; private set; }
 
         private IList<PodeSocket> Sockets;
         private BlockingCollection<PodeContext> Contexts;
@@ -42,11 +41,10 @@ namespace Pode
             }
         }
 
-        public PodeListener(CancellationToken cancellationToken, PodeListenerType type = PodeListenerType.Http)
+        public PodeListener(CancellationToken cancellationToken)
         {
             CancellationToken = cancellationToken;
             IsDisposed = false;
-            Type = type;
 
             Sockets = new List<PodeSocket>();
             WebSockets = new Dictionary<string, PodeWebSocket>();

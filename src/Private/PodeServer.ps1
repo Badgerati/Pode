@@ -59,7 +59,7 @@ function Start-PodeWebServer
     }
 
     # create the listener
-    $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token -Type 'Http'")))
+    $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token")))
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -447,14 +447,10 @@ function New-PodeListener
     param(
         [Parameter(Mandatory=$true)]
         [System.Threading.CancellationToken]
-        $CancellationToken,
-
-        [Parameter(Mandatory=$true)]
-        [PodeListenerType]
-        $Type
+        $CancellationToken
     )
 
-    return [PodeListener]::new($CancellationToken, $Type)
+    return [PodeListener]::new($CancellationToken)
 }
 
 function New-PodeListenerSocket

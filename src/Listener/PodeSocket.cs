@@ -40,6 +40,21 @@ namespace Pode
             set => Socket.ReceiveTimeout = value;
         }
 
+        public bool IsHttp
+        {
+            get => (Type == PodeSocketType.Http || Type == PodeSocketType.HttpAndWs);
+        }
+
+        public bool IsWebSocket
+        {
+            get => (Type == PodeSocketType.Ws || Type == PodeSocketType.HttpAndWs);
+        }
+
+        public bool IsSmtp
+        {
+            get => (Type == PodeSocketType.Smtp);
+        }
+
         public bool HasHostnames => Hostnames.Any();
 
         public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeSocketType type, X509Certificate certificate = null, bool allowClientCertificate = false)

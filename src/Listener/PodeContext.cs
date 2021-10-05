@@ -45,7 +45,7 @@ namespace Pode
 
         public bool IsWebSocket
         {
-            get => ((Type == PodeContextType.WebSocket)); // || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.WebSocket));
+            get => ((Type == PodeContextType.WebSocket) || (Type == PodeContextType.Unknown && PodeSocket.IsWebSocket));
         }
 
         public bool IsWebSocketUpgraded
@@ -55,12 +55,12 @@ namespace Pode
 
         public bool IsSmtp
         {
-            get => ((Type == PodeContextType.Smtp) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.Smtp));
+            get => ((Type == PodeContextType.Smtp) || (Type == PodeContextType.Unknown && PodeSocket.IsSmtp));
         }
 
         public bool IsHttp
         {
-            get => ((Type == PodeContextType.Http) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.Http));
+            get => ((Type == PodeContextType.Http) || (Type == PodeContextType.Unknown && PodeSocket.IsHttp));
         }
 
         public PodeSmtpRequest SmtpRequest
@@ -138,11 +138,9 @@ namespace Pode
         private void NewRequest()
         {
             // create a new request
-            switch (Listener.Type)
+            switch (PodeSocket.Type)
             {
-                //TODO: could we make this based on the socket type? then listener can be "anything"
-                // and it's based on the socket?
-                case PodeListenerType.Smtp:
+                case PodeSocketType.Smtp:
                     Request = new PodeSmtpRequest(Socket);
                     break;
 
@@ -168,7 +166,7 @@ namespace Pode
             }
 
             // if request is SMTP, send ACK
-            if (Listener.Type == PodeListenerType.Smtp)
+            if (PodeSocket.IsSmtp)
             {
                 SmtpRequest.SendAck();
             }
@@ -181,62 +179,40 @@ namespace Pode
                 return;
             }
 
-            // depending on listener type, either:
-            //TODO: like above, could we remove listener type and just using socket type?
-            switch (Listener.Type)
+            // depending on socket type, either:
+            switch (PodeSocket.Type)
             {
                 // - only allow smtp
-                case PodeListenerType.Smtp:
+                case PodeSocketType.Smtp:
                     var _reqSmtp = SmtpRequest;
                     Type = PodeContextType.Smtp;
                     break;
 
-                // - only allow web-socket
-                // case PodeListenerType.WebSocket:
-                //     if (!HttpRequest.IsWebSocket)
-                //     {
-                //         throw new HttpRequestException("Request is not for a WebSocket");
-                //     }
-
-                //     Type = PodeContextType.WebSocket;
-                //     break;
-
                 // - only allow http
-                case PodeListenerType.Http:
-                    // if (HttpRequest.IsWebSocket)
-                    // {
-                    //     throw new HttpRequestException("Request is not Http");
-                    // }
-
-                    switch (PodeSocket.Type)
+                case PodeSocketType.Http:
+                    if (HttpRequest.IsWebSocket)
                     {
-                        case PodeSocketType.Http:
-                            if (HttpRequest.IsWebSocket)
-                            {
-                                throw new HttpRequestException("Request is not Http");
-                            }
-
-                            Type = PodeContextType.Http;
-                            break;
-
-                        case PodeSocketType.Ws:
-                            if (!HttpRequest.IsWebSocket)
-                            {
-                                throw new HttpRequestException("Request is not for a WebSocket");
-                            }
-
-                            Type = PodeContextType.WebSocket;
-                            break;
-
-                        case PodeSocketType.HttpAndWs:
-                            Type = HttpRequest.IsWebSocket
-                                ? PodeContextType.WebSocket
-                                : PodeContextType.Http;
-                            break;
-
-                        default:
-                            throw new HttpRequestException("Request is not for Http or a WebSocket");
+                        throw new HttpRequestException("Request is not Http");
                     }
+
+                    Type = PodeContextType.Http;
+                    break;
+
+                // - only allow web-socket
+                case PodeSocketType.Ws:
+                    if (!HttpRequest.IsWebSocket)
+                    {
+                        throw new HttpRequestException("Request is not for a WebSocket");
+                    }
+
+                    Type = PodeContextType.WebSocket;
+                    break;
+
+                // - allow http and web-socket
+                case PodeSocketType.HttpAndWs:
+                    Type = HttpRequest.IsWebSocket
+                        ? PodeContextType.WebSocket
+                        : PodeContextType.Http;
                     break;
             }
         }

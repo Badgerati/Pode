@@ -21,14 +21,14 @@ function Start-PodeSmtpServer
     }
 
     # create the listener
-    $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token, [PodeListenerType]::Smtp)
+    $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
 
     try
     {
         # register endpoint on the listener
-        $socket = [PodeSocket]::new($ipAddress, $port, $PodeContext.Server.Sockets.Ssl.Protocols, $null)
+        $socket = [PodeSocket]::new($ipAddress, $port, $PodeContext.Server.Sockets.Ssl.Protocols, [PodeSocketType]::Smtp, $null)
         $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
         $socket.Hostnames.Add($endpoint.HostName)
         $listener.Add($socket)
