@@ -41,9 +41,12 @@ namespace Pode
             }
         }
 
-        public PodeListener(CancellationToken cancellationToken)
+        public PodeListener(CancellationToken cancellationToken = default(CancellationToken))
         {
-            CancellationToken = cancellationToken;
+            CancellationToken = cancellationToken == default(CancellationToken)
+                ? cancellationToken
+                : (new CancellationTokenSource()).Token;
+
             IsDisposed = false;
 
             Sockets = new List<PodeSocket>();
@@ -72,14 +75,18 @@ namespace Pode
             Sockets.Add(socket);
         }
 
-        public PodeContext GetContext(CancellationToken cancellationToken)
+        public PodeContext GetContext(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return Contexts.Take(cancellationToken);
+            return (cancellationToken == default(CancellationToken)
+                ? Contexts.Take()
+                : Contexts.Take(cancellationToken));
         }
 
-        public Task<PodeContext> GetContextAsync(CancellationToken cancellationToken)
+        public Task<PodeContext> GetContextAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return Task.Factory.StartNew(() => GetContext(cancellationToken), cancellationToken);
+            return (cancellationToken == default(CancellationToken)
+                ? Task.Factory.StartNew(() => GetContext())
+                : Task.Factory.StartNew(() => GetContext(cancellationToken), cancellationToken));
         }
 
         public void AddContext(PodeContext context)
@@ -105,14 +112,18 @@ namespace Pode
             }
         }
 
-        public PodeServerSignal GetServerSignal(CancellationToken cancellationToken)
+        public PodeServerSignal GetServerSignal(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return ServerSignals.Take(cancellationToken);
+            return (cancellationToken == default(CancellationToken)
+                ? ServerSignals.Take()
+                : ServerSignals.Take(cancellationToken));
         }
 
-        public Task<PodeServerSignal> GetServerSignalAsync(CancellationToken cancellationToken)
+        public Task<PodeServerSignal> GetServerSignalAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return Task.Factory.StartNew(() => GetServerSignal(cancellationToken), cancellationToken);
+            return (cancellationToken == default(CancellationToken)
+                ? Task.Factory.StartNew(() => GetServerSignal())
+                : Task.Factory.StartNew(() => GetServerSignal(cancellationToken), cancellationToken));
         }
 
         public void AddServerSignal(string value, string path, string clientId)
@@ -123,14 +134,18 @@ namespace Pode
             }
         }
 
-        public PodeClientSignal GetClientSignal(CancellationToken cancellationToken)
+        public PodeClientSignal GetClientSignal(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return ClientSignals.Take(cancellationToken);
+            return (cancellationToken == default(CancellationToken)
+                ? ClientSignals.Take()
+                : ClientSignals.Take(cancellationToken));
         }
 
-        public Task<PodeClientSignal> GetClientSignalAsync(CancellationToken cancellationToken)
+        public Task<PodeClientSignal> GetClientSignalAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return Task.Factory.StartNew(() => GetClientSignal(cancellationToken), cancellationToken);
+            return (cancellationToken == default(CancellationToken)
+                ? Task.Factory.StartNew(() => GetClientSignal())
+                : Task.Factory.StartNew(() => GetClientSignal(cancellationToken), cancellationToken));
         }
 
         public void AddClientSignal(PodeClientSignal signal)
