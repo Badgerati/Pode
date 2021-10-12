@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace Pode
 {
-    public class PodeContext : IDisposable
+    public class PodeContext : PodeProtocol, IDisposable
     {
         public string ID { get; private set; }
         public PodeRequest Request { get; private set; }
@@ -18,7 +18,6 @@ namespace Pode
         public PodeSocket PodeSocket { get; private set;}
         public DateTime Timestamp { get; private set; }
         public Hashtable Data { get; private set; }
-        public PodeContextType Type { get; private set; }
 
         private object _lockable = new object();
 
@@ -43,9 +42,9 @@ namespace Pode
                 || Request.CloseImmediately);
         }
 
-        public bool IsWebSocket
+        public new bool IsWebSocket
         {
-            get => ((Type == PodeContextType.WebSocket) || (Type == PodeContextType.Unknown && PodeSocket.IsWebSocket));
+            get => (base.IsWebSocket || (base.IsUnknown && PodeSocket.IsWebSocket));
         }
 
         public bool IsWebSocketUpgraded
@@ -53,14 +52,14 @@ namespace Pode
             get => (IsWebSocket && Request is PodeWsRequest);
         }
 
-        public bool IsSmtp
+        public new bool IsSmtp
         {
-            get => ((Type == PodeContextType.Smtp) || (Type == PodeContextType.Unknown && PodeSocket.IsSmtp));
+            get => (base.IsSmtp || (base.IsUnknown && PodeSocket.IsSmtp));
         }
 
-        public bool IsHttp
+        public new bool IsHttp
         {
-            get => ((Type == PodeContextType.Http) || (Type == PodeContextType.Unknown && PodeSocket.IsHttp));
+            get => (base.IsHttp || (base.IsUnknown && PodeSocket.IsHttp));
         }
 
         public PodeSmtpRequest SmtpRequest
@@ -110,7 +109,7 @@ namespace Pode
             Timestamp = DateTime.UtcNow;
             Data = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
 
-            Type = PodeContextType.Unknown;
+            Type = PodeProtocolType.Unknown;
             State = PodeContextState.New;
 
             NewResponse();
@@ -140,7 +139,7 @@ namespace Pode
             // create a new request
             switch (PodeSocket.Type)
             {
-                case PodeSocketType.Smtp:
+                case PodeProtocolType.Smtp:
                     Request = new PodeSmtpRequest(Socket);
                     break;
 
@@ -174,7 +173,8 @@ namespace Pode
 
         private void SetContextType()
         {
-            if (Type != PodeContextType.Unknown)
+            Console.WriteLine($"Current Type - {Type} - Ws: {Request.IsWebSocket} - Context: {ID}");
+            if (!IsUnknown && !(base.IsHttp && Request.IsWebSocket))
             {
                 return;
             }
@@ -183,36 +183,38 @@ namespace Pode
             switch (PodeSocket.Type)
             {
                 // - only allow smtp
-                case PodeSocketType.Smtp:
-                    var _reqSmtp = SmtpRequest;
-                    Type = PodeContextType.Smtp;
+                case PodeProtocolType.Smtp:
+                    if (!Request.IsSmtp)
+                    {
+                        throw new HttpRequestException("Request is not Smtp");
+                    }
+
+                    Type = PodeProtocolType.Smtp;
                     break;
 
                 // - only allow http
-                case PodeSocketType.Http:
-                    if (HttpRequest.IsWebSocket)
+                case PodeProtocolType.Http:
+                    if (Request.IsWebSocket)
                     {
                         throw new HttpRequestException("Request is not Http");
                     }
 
-                    Type = PodeContextType.Http;
+                    Type = PodeProtocolType.Http;
                     break;
 
                 // - only allow web-socket
-                case PodeSocketType.Ws:
-                    if (!HttpRequest.IsWebSocket)
+                case PodeProtocolType.Ws:
+                    if (!Request.IsWebSocket)
                     {
                         throw new HttpRequestException("Request is not for a WebSocket");
                     }
 
-                    Type = PodeContextType.WebSocket;
+                    Type = PodeProtocolType.Ws;
                     break;
 
                 // - allow http and web-socket
-                case PodeSocketType.HttpAndWs:
-                    Type = HttpRequest.IsWebSocket
-                        ? PodeContextType.WebSocket
-                        : PodeContextType.Http;
+                case PodeProtocolType.HttpAndWs:
+                    Type = Request.IsWebSocket ? PodeProtocolType.Ws : PodeProtocolType.Http;
                     break;
             }
         }

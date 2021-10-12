@@ -1,10 +1,11 @@
 namespace Pode
 {
-    public enum PodeContextType
+    public enum PodeProtocolType
     {
         Unknown,
         Http,
-        WebSocket,
+        Ws,
+        HttpAndWs,
         Smtp,
         Tcp
     }

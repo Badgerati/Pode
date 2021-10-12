@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Pode
 {
-    public class PodeSocket : IDisposable
+    public class PodeSocket : PodeProtocol, IDisposable
     {
         public IPAddress IPAddress { get; private set; }
         public List<string> Hostnames { get; private set; }
@@ -21,7 +21,6 @@ namespace Pode
         public bool AllowClientCertificate { get; private set; }
         public SslProtocols Protocols { get; private set; }
         public Socket Socket { get; private set; }
-        public PodeSocketType Type { get; private set; }
 
         private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
         private ConcurrentQueue<SocketAsyncEventArgs> ReceiveConnections;
@@ -40,24 +39,10 @@ namespace Pode
             set => Socket.ReceiveTimeout = value;
         }
 
-        public bool IsHttp
-        {
-            get => (Type == PodeSocketType.Http || Type == PodeSocketType.HttpAndWs);
-        }
-
-        public bool IsWebSocket
-        {
-            get => (Type == PodeSocketType.Ws || Type == PodeSocketType.HttpAndWs);
-        }
-
-        public bool IsSmtp
-        {
-            get => (Type == PodeSocketType.Smtp);
-        }
-
         public bool HasHostnames => Hostnames.Any();
 
-        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeSocketType type, X509Certificate certificate = null, bool allowClientCertificate = false)
+        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeProtocolType type, X509Certificate certificate = null, bool allowClientCertificate = false)
+            : base(type)
         {
             IPAddress = ipAddress;
             Port = port;
@@ -66,7 +51,6 @@ namespace Pode
             Protocols = protocols;
             Hostnames = new List<string>();
             Endpoint = new IPEndPoint(ipAddress, port);
-            Type = type;
 
             AcceptConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
             ReceiveConnections = new ConcurrentQueue<SocketAsyncEventArgs>();

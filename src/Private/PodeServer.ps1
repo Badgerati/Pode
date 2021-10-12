@@ -470,7 +470,7 @@ function New-PodeListenerSocket
         $SslProtocols,
 
         [Parameter(Mandatory=$true)]
-        [PodeSocketType]
+        [PodeProtocolType]
         $Type,
 
         [Parameter()]

@@ -35,6 +35,7 @@ namespace Pode
         {
             WebSocket = webSocket;
             IsKeepAlive = true;
+            Type = PodeProtocolType.Ws;
 
             var _proto = (IsSsl ? "wss" : "ws");
             Host = request.Host;

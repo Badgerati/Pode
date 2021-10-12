@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace Pode
 {
-    public class PodeRequest : IDisposable
+    public class PodeRequest : PodeProtocol, IDisposable
     {
         public EndPoint RemoteEndPoint { get; private set; }
         public EndPoint LocalEndPoint { get; private set; }

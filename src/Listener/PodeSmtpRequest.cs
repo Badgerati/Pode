@@ -39,6 +39,7 @@ namespace Pode
             IsKeepAlive = true;
             Command = string.Empty;
             To = new List<string>();
+            Type = PodeProtocolType.Smtp;
         }
 
         private bool IsCommand(string content, string command)
