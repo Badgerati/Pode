@@ -173,7 +173,6 @@ namespace Pode
 
         private void SetContextType()
         {
-            Console.WriteLine($"Current Type - {Type} - Ws: {Request.IsWebSocket} - Context: {ID}");
             if (!IsUnknown && !(base.IsHttp && Request.IsWebSocket))
             {
                 return;

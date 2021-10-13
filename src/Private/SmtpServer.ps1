@@ -28,7 +28,7 @@ function Start-PodeSmtpServer
     try
     {
         # register endpoint on the listener
-        $socket = [PodeSocket]::new($ipAddress, $port, $PodeContext.Server.Sockets.Ssl.Protocols, [PodeSocketType]::Smtp, $null)
+        $socket = [PodeSocket]::new($ipAddress, $port, $PodeContext.Server.Sockets.Ssl.Protocols, [PodeProtocolType]::Smtp, $null)
         $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
         $socket.Hostnames.Add($endpoint.HostName)
         $listener.Add($socket)
