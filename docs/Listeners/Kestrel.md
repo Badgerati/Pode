@@ -1,6 +1,6 @@
 # Kestrel
 
-Starting from Pode 2.0, there is now support for Kestrel as a custom listener for Pode. This Kestrel listener can be found in the [Pode.Kestrel](https://github.com/Badgerati/Pode.Kestrel) module. The Kestrel listener, at present, only support HTTP/HTTPS.
+Starting from Pode 2.0, there is now support for Kestrel as a custom listener for Pode. This Kestrel listener can be found in the [Pode.Kestrel](https://github.com/Badgerati/Pode.Kestrel) module. The Kestrel listener, at present, only supports HTTP/HTTPS.
 
 !!! important
     The Kestrel listener only works in PowerShell 6.0+
