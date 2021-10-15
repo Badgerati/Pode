@@ -711,10 +711,10 @@ function Write-PodeJsonResponse
         'value' {
             if ($Value -isnot [string]) {
                 if ($Depth -le 0) {
-                    $Value = ($Value | ConvertTo-Json -Compress)
+                    $Value = (ConvertTo-Json -InputObject $Value -Compress)
                 }
                 else {
-                    $Value = ($Value | ConvertTo-Json -Depth $Depth -Compress)
+                    $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
                 }
             }
         }
@@ -1428,10 +1428,10 @@ function Send-PodeSignal
 
     if ($Value -isnot [string]) {
         if ($Depth -le 0) {
-            $Value = ($Value | ConvertTo-Json -Compress)
+            $Value = (ConvertTo-Json -InputObject $Value -Compress)
         }
         else {
-            $Value = ($Value | ConvertTo-Json -Depth $Depth -Compress)
+            $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
         }
     }
 

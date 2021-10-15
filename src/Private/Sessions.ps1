@@ -164,7 +164,7 @@ function Set-PodeSessionDataHash
         $Session.Data = @{}
     }
 
-    $Session.DataHash = (Invoke-PodeSHA256Hash -Value ($Session.Data.Clone() | ConvertTo-Json -Depth 10 -Compress))
+    $Session.DataHash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $Session.Data.Clone() -Depth 10 -Compress))
 }
 
 function Test-PodeSessionDataHash
@@ -184,7 +184,7 @@ function Test-PodeSessionDataHash
         $Session.Data = @{}
     }
 
-    $hash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json -Depth 10 -Compress))
+    $hash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $Session.Data -Depth 10 -Compress))
     return ($Session.DataHash -eq $hash)
 }
 
