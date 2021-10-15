@@ -34,12 +34,6 @@ namespace Pode
         private bool IsRequestLineValid;
         private MemoryStream BodyStream;
 
-        private bool _isWebSocket = false;
-        public bool IsWebSocket
-        {
-            get => _isWebSocket;
-        }
-
         private string _body = string.Empty;
         public string Body
         {
@@ -64,6 +58,7 @@ namespace Pode
             : base(socket)
         {
             Protocol = "HTTP/1.1";
+            Type = PodeProtocolType.Http;
         }
 
         protected override bool ValidateInput(byte[] bytes)
@@ -291,10 +286,13 @@ namespace Pode
             }
 
             // is web-socket?
-            _isWebSocket = Headers.ContainsKey("Sec-WebSocket-Key");
+            if (Headers.ContainsKey("Sec-WebSocket-Key"))
+            {
+                Type = PodeProtocolType.Ws;
+            }
 
             // keep-alive?
-            IsKeepAlive = (_isWebSocket ||
+            IsKeepAlive = (IsWebSocket ||
                 (Headers.ContainsKey("Connection")
                     && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase)));
 

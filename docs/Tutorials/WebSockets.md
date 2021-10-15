@@ -41,7 +41,7 @@ You can also broadcast messages from Timers, or from Schedules.
 
 ### Routes
 
-When a client sends a message back to the server on the connected WebSocket, Pode will auotmatically call [`Send-PodeSignal`](../../Functions/Responses/Send-PodeSignal) to re-broadcast the message back to all clients - or to a specific Path/ClientId if supplied by the sending client.
+When a client sends a message back to the server on the connected WebSocket, Pode will automatically call [`Send-PodeSignal`](../../Functions/Responses/Send-PodeSignal) to re-broadcast the message back to all clients - or to a specific Path/ClientId if supplied by the sending client.
 
 However, you can add custom route logic for WebSocket paths using [`Add-PodeSignalRoute`](../../Functions/Routes/Add-PodeSignalRoute). This is much like [`Add-PodeRoute`](../../Functions/Routes/Add-PodeRoute), but allows you to run custom logic on paths for messages sent by clients. When you use a custom route, that route is responsible for calling [`Send-PodeSignal`](../../Functions/Responses/Send-PodeSignal).
 
@@ -138,7 +138,7 @@ The following is the Pode server code, that will create one route, which will be
 Start-PodeServer {
 
     # listen
-    Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8091 -Protocol Http
     Add-PodeEndpoint -Address * -Port 8091 -Protocol Ws
 
     # request for web page

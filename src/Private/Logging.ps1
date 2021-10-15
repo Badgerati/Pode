@@ -236,6 +236,11 @@ function Test-PodeLoggerEnabled
     return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
+function Get-PodeErrorLoggingLevels
+{
+    return (Get-PodeLogger -Name (Get-PodeErrorLoggingName)).Arguments.Levels
+}
+
 function Test-PodeErrorLoggingEnabled
 {
     return (Test-PodeLoggerEnabled -Name (Get-PodeErrorLoggingName))

@@ -111,6 +111,7 @@ With the `web.config` file in place, it's then time to setup the site in IIS. Th
     2. Select the Application Pool that we created above
     3. Set the Physical Path to the root directory of your Pode server's script (just the directory, not the ps1 itself)
     4. Select either HTTP or HTTPS for your binding
+        i. If you're using WS or WSS, still select either HTTP or HTTPS respectively
     5. Leave IP Address as "All Unassigned", and either leave the Port as 80/443 or change to what you need
     6. Optionally enter the host name of your site, such as "pode.example.com" (usually required for HTTPS)
     7. If HTTPS, select "Require SNI"
@@ -121,7 +122,7 @@ At this point, your site is now created in IIS, and you should be able to naviga
 
 * Endpoints have their Address set to `127.0.0.1` (IIS needs Pode to be on localhost)
 * Endpoints have their Port set to `ASPNETCORE_PORT`
-* Endpoints have their Protocol set to `HTTP` (IIS deals with HTTPS for us)
+* Endpoints have their Protocol set to `HTTP` or `WS` (IIS deals with HTTPS/WSS for us)
 
 This allows you to write a Pode server that works locally, but will also automatically work under IIS without having to change anything!
 
@@ -177,16 +178,16 @@ To change the user your site is running as:
 4. Change the user to either an inbuilt one, or a custom local/domain user
 5. Select OK
 
-## HTTPS
+## HTTPS/WSS
 
-Although Pode does have support for HTTPS, when running via IIS it takes control of HTTPS for us - this is why the endpoints are forced to HTTP.
+Although Pode does have support for HTTPS/WSS, when running via IIS it takes control of HTTPS/WSS for us - this is why the endpoints are forced to HTTP/WS.
 
-You can setup a binding in IIS for HTTPS with a Certificate, and IIS will deal with SSL for you:
+You can setup a binding in IIS for HTTPS (still HTPPS for WSS) with a Certificate, and IIS will deal with SSL for you:
 
 1. Open IIS, and expand the Sites folder
 2. Right click your Site, and select "Edit Bindings..."
 3. Select "Add..."
-4. Select HTTPS for your binding
+4. Select HTTPS for your binding (even if your endpoint in WSS)
 5. Leave IP Address as "All Unassigned", and either leave the Port as 443 or change to what you need
 6. Enter the host name of your site, such as "pode.example.com"
 7. Select "Require SNI"

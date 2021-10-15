@@ -2,7 +2,7 @@
 
 Pode has inbuilt Error logging logic, that parses Exceptions and ErrorRecords, and will return a valid log item for whatever method of logging you supply.
 
-It also has support for error levels (such as Error, Warning, Verbose), with support for only allowing certain levels to be logged. By default, Error is always logged.
+It also has support for error levels (such as Error, Warning, Verbose), with support for only allowing certain levels to be logged. By default, Error is always logged if no levels are supplied.
 
 ## Enabling
 
@@ -43,6 +43,12 @@ catch {
 ```
 
 To log an error at a different level, you can also supply a `-Level`.
+
+## Internal Logging
+
+When error logging is enabled, you'll start to also see inbuilt logging from Pode. Pode at present has internal Error logging, as well as Debug and Verbose logging from its Listener.
+
+The internal error logging will show you unhandled exceptions from routes, middleware, etc.
 
 ## Examples
 

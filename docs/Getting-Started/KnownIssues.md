@@ -104,4 +104,4 @@ Start-PodeServer {
 
 ## Loader Errors / Pode Types
 
-If on importing the module you receive Loader Exceptions, or when starting your server you get an error similar to `[PodeListenerType] not found`, then you will need to update to .NET 4.7.2.
+If on importing the module you receive Loader Exceptions, or when starting your server you get an error similar to `[PodeListener] not found`, then you will need to update to .NET 4.7.2.

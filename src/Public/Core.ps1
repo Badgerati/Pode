@@ -826,22 +826,25 @@ function Add-PodeEndpoint
         throw "A Name is required for the endpoint if the RedirectTo parameter is supplied"
     }
 
+    # get the type of endpoint
+    $type = Get-PodeEndpointType -Protocol $Protocol
+
     # are we running as IIS for HTTP/HTTPS? (if yes, force the port, address and protocol)
-    $isIIS = ($PodeContext.Server.IsIIS -and (@('Http', 'Https') -icontains $Protocol))
+    $isIIS = ($PodeContext.Server.IsIIS -and (@('Http', 'Ws') -icontains $type))
     if ($isIIS) {
         $Port = [int]$env:ASPNETCORE_PORT
         $Address = '127.0.0.1'
         $Hostname = [string]::Empty
-        $Protocol = 'Http'
+        $Protocol = $type
     }
 
     # are we running as Heroku for HTTP/HTTPS? (if yes, force the port, address and protocol)
-    $isHeroku = ($PodeContext.Server.IsHeroku -and (@('Http', 'Https') -icontains $Protocol))
+    $isHeroku = ($PodeContext.Server.IsHeroku -and (@('Http') -icontains $type))
     if ($isHeroku) {
         $Port = [int]$env:PORT
         $Address = '0.0.0.0'
         $Hostname = [string]::Empty
-        $Protocol = 'Http'
+        $Protocol = $type
     }
 
     # parse the endpoint for host/port info
@@ -887,6 +890,7 @@ function Add-PodeEndpoint
         Url = $null
         Ssl = (@('https', 'wss') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
+        Type = $type.ToLowerInvariant()
         Default = $Default.IsPresent
         Certificate = @{
             Raw = $X509Certificate
@@ -929,7 +933,7 @@ function Add-PodeEndpoint
 
     # has this endpoint been added before? (for http/https we can just not add it again)
     $exists = ($PodeContext.Server.Endpoints.Values | Where-Object {
-        ($_.FriendlyName -eq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl)
+        ($_.FriendlyName -ieq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl) -and ($_.Type -ieq $obj.Type)
     } | Measure-Object).Count
 
     # if we're dealing with a certificate, attempt to import it
@@ -966,13 +970,15 @@ function Add-PodeEndpoint
 
     if (!$exists) {
         # has an endpoint already been defined for smtp/tcp?
-        if ((@('smtp', 'tcp') -icontains $Protocol) -and ($PodeContext.Server.Types -icontains $Protocol)) {
-            throw "An endpoint for $($Protocol.ToUpperInvariant()) has already been defined"
+        if ((@('smtp', 'tcp') -icontains $type) -and ($PodeContext.Server.Types -icontains $type)) {
+            throw "An endpoint for $($type.ToUpperInvariant()) has already been defined"
         }
 
         # set server type
-        $_type = (Resolve-PodeValue -Check ($Protocol -ieq 'https') -TrueValue 'http' -FalseValue $Protocol)
-        $_type = (Resolve-PodeValue -Check ($_type -ieq 'wss') -TrueValue 'ws' -FalseValue $_type)
+        $_type = $type
+        if ($_type -iin @('http', 'ws')) {
+            $_type = 'http'
+        }
 
         if ($PodeContext.Server.Types -inotcontains $_type) {
             $PodeContext.Server.Types += $_type
