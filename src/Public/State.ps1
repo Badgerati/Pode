@@ -301,7 +301,7 @@ function Save-PodeState
     }
 
     # save the state
-    $state | ConvertTo-Json -Depth 10 -Compress:$Compress | Out-File -FilePath $Path -Force | Out-Null
+    ConvertTo-Json -InputObject $state -Depth 10 -Compress:$Compress | Out-File -FilePath $Path -Force | Out-Null
 }
 
 <#
