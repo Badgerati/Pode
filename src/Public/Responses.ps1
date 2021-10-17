@@ -1396,6 +1396,9 @@ A specific ClientId of a connected client to send a message. Not currently used.
 .PARAMETER Depth
 The Depth to generate the JSON document - the larger this value the worse performance gets.
 
+.PARAMETER UseEvent
+If supplied, the current SignalEvent will be used to get the Path, ClientId and broadcast mode.
+
 .EXAMPLE
 Send-PodeSignal -Value @{ Message = 'Hello, world!' }
 
@@ -1404,28 +1407,34 @@ Send-PodeSignal -Value @{ Data = @(123, 100, 101) } -Path '/response-charts'
 #>
 function Send-PodeSignal
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Raw')]
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         $Value,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Raw')]
         [string]
         $Path,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Raw')]
         [string]
         $ClientId,
 
         [Parameter()]
         [int]
-        $Depth = 10
+        $Depth = 10,
+
+        [Parameter(ParameterSetName='Event')]
+        [switch]
+        $UseEvent
     )
 
+    # error if not configured
     if ($null -eq $PodeContext.Server.WebSockets.Listener) {
         throw "WebSockets have not been configured to send signal messages"
     }
 
+    # jsonify the value
     if ($Value -isnot [string]) {
         if ($Depth -le 0) {
             $Value = (ConvertTo-Json -InputObject $Value -Compress)
@@ -1435,7 +1444,25 @@ function Send-PodeSignal
         }
     }
 
-    $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+    # boardcast mode
+    $broadcast = $true
+    if ($UseEvent) {
+        if ($null -eq $SignalEvent) {
+            throw "No signal event available to get broadcast details"
+        }
+
+        $Path = $SignalEvent.Data.Path
+        $ClientId = $SignalEvent.Data.ClientId
+        $broadcast = !$SignalEvent.Data.Direct
+    }
+
+    # broadcast or direct?
+    if ($broadcast) {
+        $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+    }
+    else {
+        $SignalEvent.Response.Write($Value)
+    }
 }
 
 <#

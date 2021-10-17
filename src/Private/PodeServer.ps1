@@ -348,6 +348,7 @@ function Start-PodeWebServer
                                 Path = [System.Web.HttpUtility]::UrlDecode($payload.path)
                                 Message = $payload.message
                                 ClientId = $payload.clientId
+                                Direct = [bool]$payload.direct
                             }
                             Endpoint = @{
                                 Protocol = $Request.Url.Scheme
