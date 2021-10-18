@@ -1399,6 +1399,9 @@ The Depth to generate the JSON document - the larger this value the worse perfor
 .PARAMETER Mode
 The Mode to broadcast a message: Auto, Broadcast, Direct. (Default: Auto)
 
+.PARAMETER IgnoreEvent
+If supplied, if a SignalEvent is available it's data, such as path/clientId, will be ignored.
+
 .EXAMPLE
 Send-PodeSignal -Value @{ Message = 'Hello, world!' }
 
@@ -1427,7 +1430,10 @@ function Send-PodeSignal
         [Parameter()]
         [ValidateSet('Auto', 'Broadcast', 'Direct')]
         [string]
-        $Mode = 'Auto'
+        $Mode = 'Auto',
+
+        [switch]
+        $IgnoreEvent
     )
 
     # error if not configured
@@ -1446,13 +1452,13 @@ function Send-PodeSignal
     }
 
     # check signal event
-    if ($null -ne $SignalEvent) {
+    if (!$IgnoreEvent -and ($null -ne $SignalEvent)) {
         if ([string]::IsNullOrWhiteSpace($Path)) {
             $Path = $SignalEvent.Data.Path
         }
 
         if ([string]::IsNullOrWhiteSpace($ClientId)) {
-            $Path = $SignalEvent.Data.ClientId
+            $ClientId = $SignalEvent.Data.ClientId
         }
 
         if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct -or ($SignalEvent.ClientId -ieq $SignalEvent.Data.ClientId))) {
