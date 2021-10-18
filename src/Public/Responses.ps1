@@ -1396,8 +1396,8 @@ A specific ClientId of a connected client to send a message. Not currently used.
 .PARAMETER Depth
 The Depth to generate the JSON document - the larger this value the worse performance gets.
 
-.PARAMETER UseEvent
-If supplied, the current SignalEvent will be used to get the Path, ClientId and broadcast mode.
+.PARAMETER Mode
+The Mode to broadcast a message: Auto, Broadcast, Direct. (Default: Auto)
 
 .EXAMPLE
 Send-PodeSignal -Value @{ Message = 'Hello, world!' }
@@ -1407,16 +1407,16 @@ Send-PodeSignal -Value @{ Data = @(123, 100, 101) } -Path '/response-charts'
 #>
 function Send-PodeSignal
 {
-    [CmdletBinding(DefaultParameterSetName='Raw')]
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         $Value,
 
-        [Parameter(ParameterSetName='Raw')]
+        [Parameter()]
         [string]
         $Path,
 
-        [Parameter(ParameterSetName='Raw')]
+        [Parameter()]
         [string]
         $ClientId,
 
@@ -1424,9 +1424,10 @@ function Send-PodeSignal
         [int]
         $Depth = 10,
 
-        [Parameter(ParameterSetName='Event')]
-        [switch]
-        $UseEvent
+        [Parameter()]
+        [ValidateSet('Auto', 'Broadcast', 'Direct')]
+        [string]
+        $Mode = 'Auto'
     )
 
     # error if not configured
@@ -1444,20 +1445,23 @@ function Send-PodeSignal
         }
     }
 
-    # boardcast mode
-    $broadcast = $true
-    if ($UseEvent) {
-        if ($null -eq $SignalEvent) {
-            throw "No signal event available to get broadcast details"
+    # check signal event
+    if ($null -ne $SignalEvent) {
+        if ([string]::IsNullOrWhiteSpace($Path)) {
+            $Path = $SignalEvent.Data.Path
         }
 
-        $Path = $SignalEvent.Data.Path
-        $ClientId = $SignalEvent.Data.ClientId
-        $broadcast = !$SignalEvent.Data.Direct
+        if ([string]::IsNullOrWhiteSpace($ClientId)) {
+            $Path = $SignalEvent.Data.ClientId
+        }
+
+        if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct)) {
+            $Mode = 'Direct'
+        }
     }
 
     # broadcast or direct?
-    if ($broadcast) {
+    if ($Mode -iin @('Auto', 'Broadcast')) { # $broadcast) {
         $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
     }
     else {

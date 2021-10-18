@@ -32,6 +32,6 @@ Start-PodeServer -Threads 3 {
             $msg = [datetime]::Now.ToString()
         }
 
-        Send-PodeSignal -Value $msg -UseEvent
+        Send-PodeSignal -Value $msg
     }
 }
