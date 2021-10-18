@@ -2,13 +2,13 @@
 
 Pode has support for using WebSockets, including secure WebSockets, for either server-to-client or vice-versa.
 
-WebSockets allow you to send messages/signals directly from your server to connected clients. This allows you to get real-time continuous updates for the frontend without having to constantly refresh the page, or by using async javascript!
+WebSockets allow you to broadcast messages directly from your server to connected clients. This allows you to get real-time continuous updates on the frontend without having to constantly refresh the page, or by using async javascript.
 
 ## Server Side
 
 ### Listening
 
-On the server side, the first thing to do is register a new endpoint to listen on. To do this you can use [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint), but with a protocol of either `Ws` or `Wss`:
+On the server side, the first thing to do is register a new endpoint to listen on. To do this you can use [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) with a protocol of either `Ws` or `Wss`:
 
 ```powershell
 Add-PodeEndpoint -Address * -Port 8091 -Protocol Ws
@@ -45,9 +45,9 @@ When a client sends a message back to the server on the connected WebSocket, Pod
 
 However, you can add custom route logic for WebSocket paths using [`Add-PodeSignalRoute`](../../Functions/Routes/Add-PodeSignalRoute). This is much like [`Add-PodeRoute`](../../Functions/Routes/Add-PodeRoute), but allows you to run custom logic on paths for messages sent by clients. When you use a custom route, that route is responsible for calling [`Send-PodeSignal`](../../Functions/Responses/Send-PodeSignal).
 
-Also like [`Add-PodeRoute`](../../Functions/Routes/Add-PodeRoute) there is a `$SignalEvent` object that you cna use, which contains the client's message data, the raw Request/Response objects, etc.
+Also like [`Add-PodeRoute`](../../Functions/Routes/Add-PodeRoute) there is a `$SignalEvent` object that you can use, which contains the client's message data, the raw Request/Response objects, etc.
 
-For example, the following signal route will broadcast the current date back to clients, if the main client sends the message `[date]` on the `/messages` path:
+For example, the following signal route will broadcast the current date back to all clients, if the main client sends the message `[date]` on the `/messages` path:
 
 ```powershell
 Add-PodeSignalRoute -Path '/messages' -ScriptBlock {
@@ -57,7 +57,7 @@ Add-PodeSignalRoute -Path '/messages' -ScriptBlock {
         $msg = [datetime]::Now.ToString()
     }
 
-    Send-PodeSignal -Value $msg -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
+    Send-PodeSignal -Value $msg
 }
 ```
 
@@ -114,7 +114,25 @@ $('#form').submit(function(e) {
 })
 ```
 
-This will send the message to the server, which will in-turn broadcast to all other clients.
+This will send the message to the server, which will in-turn broadcast it to all other clients. To broadcast the message to just clients connected on a specific path, such as `/recieve`:
+
+```javascript
+$('#form').submit(function(e) {
+    e.preventDefault();
+    ws.send(JSON.stringify({ message: $('#input').val(), path: '/recieve' }));
+    $('#input').val('');
+})
+```
+
+If you just want the server to on respond directlt back to the sending client, and not broadcast to all clients, then set `direct` to true:
+
+```javascript
+$('#form').submit(function(e) {
+    e.preventDefault();
+    ws.send(JSON.stringify({ message: $('#input').val(), direct: true }));
+    $('#input').val('');
+})
+```
 
 ## Full Example
 

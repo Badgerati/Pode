@@ -1396,6 +1396,12 @@ A specific ClientId of a connected client to send a message. Not currently used.
 .PARAMETER Depth
 The Depth to generate the JSON document - the larger this value the worse performance gets.
 
+.PARAMETER Mode
+The Mode to broadcast a message: Auto, Broadcast, Direct. (Default: Auto)
+
+.PARAMETER IgnoreEvent
+If supplied, if a SignalEvent is available it's data, such as path/clientId, will be ignored.
+
 .EXAMPLE
 Send-PodeSignal -Value @{ Message = 'Hello, world!' }
 
@@ -1419,13 +1425,23 @@ function Send-PodeSignal
 
         [Parameter()]
         [int]
-        $Depth = 10
+        $Depth = 10,
+
+        [Parameter()]
+        [ValidateSet('Auto', 'Broadcast', 'Direct')]
+        [string]
+        $Mode = 'Auto',
+
+        [switch]
+        $IgnoreEvent
     )
 
+    # error if not configured
     if ($null -eq $PodeContext.Server.WebSockets.Listener) {
         throw "WebSockets have not been configured to send signal messages"
     }
 
+    # jsonify the value
     if ($Value -isnot [string]) {
         if ($Depth -le 0) {
             $Value = (ConvertTo-Json -InputObject $Value -Compress)
@@ -1435,7 +1451,28 @@ function Send-PodeSignal
         }
     }
 
-    $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+    # check signal event
+    if (!$IgnoreEvent -and ($null -ne $SignalEvent)) {
+        if ([string]::IsNullOrWhiteSpace($Path)) {
+            $Path = $SignalEvent.Data.Path
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ClientId)) {
+            $ClientId = $SignalEvent.Data.ClientId
+        }
+
+        if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct -or ($SignalEvent.ClientId -ieq $SignalEvent.Data.ClientId))) {
+            $Mode = 'Direct'
+        }
+    }
+
+    # broadcast or direct?
+    if ($Mode -iin @('Auto', 'Broadcast')) {
+        $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+    }
+    else {
+        $SignalEvent.Response.Write($Value)
+    }
 }
 
 <#
