@@ -1455,13 +1455,13 @@ function Send-PodeSignal
             $Path = $SignalEvent.Data.ClientId
         }
 
-        if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct)) {
+        if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct -or ($SignalEvent.ClientId -ieq $SignalEvent.Data.ClientId))) {
             $Mode = 'Direct'
         }
     }
 
     # broadcast or direct?
-    if ($Mode -iin @('Auto', 'Broadcast')) { # $broadcast) {
+    if ($Mode -iin @('Auto', 'Broadcast')) {
         $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
     }
     else {

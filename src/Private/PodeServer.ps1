@@ -356,6 +356,7 @@ function Start-PodeWebServer
                                 Name = $null
                             }
                             Route = $null
+                            ClientId = $context.WebSocket.ClientId
                             Timestamp = $context.Timestamp
                             Streamed = $true
                         }
