@@ -280,7 +280,7 @@ gMSA allows automatic password management, if you have more than 1 IIS server ru
 
 ### Infrastructure setup
 
-Tested on Server 2022
+Tested on Windows Server 2022
 
 - IIS Server with machine name IIS1$
 - IIS Server with machine name IIS2$
@@ -324,25 +324,12 @@ Tested on Server 2022
 - Test deployment using **Server.ps1** content:
 ``` powershell
 Import-Module Pode
-Import-Module Pode.Web
 
 Start-PodeServer -StatusPageExceptions Show {
 
     # add a simple endpoint
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 
-    # set the use of the pode.web templates
-    Use-PodeWebTemplates -Title 'Example' -Theme Dark
-
-    # add the page
-    Add-PodeWebPage -Name Processes -Icon Activity -Layouts @(
-        New-PodeWebChart -Name 'Top Processes' -Type Bar -AutoRefresh -AsCard -ScriptBlock {
-            Get-Process |
-                Sort-Object -Property CPU -Descending |
-                Select-Object -First 10 |
-                ConvertTo-PodeWebChartData -LabelProperty ProcessName -DatasetProperty CPU
-        }
-    )
     # Create IIS Pode authentication method
     Add-PodeAuthIIS -Name 'IISAuth' -Sessionless
 
