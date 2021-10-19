@@ -139,6 +139,9 @@ function Start-PodeServer
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
+        # check for state vars
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+
         # create main context object
         $PodeContext = New-PodeContext `
             -ScriptBlock $ScriptBlock `
@@ -1266,6 +1269,10 @@ function Add-PodeTimer
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+
     # calculate the next tick time (based on Skip)
     $NextTriggerTime = [DateTime]::Now.AddSeconds($Interval)
     if ($Skip -gt 1) {
@@ -1421,6 +1428,8 @@ function Edit-PodeTimer
     # edit scriptblock if supplied
     if (!(Test-PodeIsEmpty $ScriptBlock)) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
         $_timer.Script = $ScriptBlock
         $_timer.UsingVariables = $usingVars
     }
@@ -1590,6 +1599,10 @@ function Add-PodeSchedule
 
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
 
     # add the schedule
     $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
@@ -1794,6 +1807,8 @@ function Edit-PodeSchedule
     # edit scriptblock if supplied
     if (!(Test-PodeIsEmpty $ScriptBlock)) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
         $_schedule.Script = $ScriptBlock
         $_schedule.UsingVariables = $usingVars
     }

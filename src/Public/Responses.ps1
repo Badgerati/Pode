@@ -1303,6 +1303,8 @@ function Set-PodeViewEngine
     # check if the scriptblock has any using vars
     if ($null -ne $ScriptBlock) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
     }
 
     # setup view engine config

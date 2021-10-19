@@ -576,6 +576,10 @@ function ConvertTo-PodeRouteMiddleware
         if ($Middleware[$i] -is [scriptblock]) {
             $_script, $_usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Middleware[$i] -PSSession $PSSession
 
+            # check for state/session vars
+            $_script = Invoke-PodeStateScriptConversion -ScriptBlock $_script
+            $_script = Invoke-PodeSessionScriptConversion -ScriptBlock $_script
+
             $Middleware[$i] = @{
                 Logic = $_script
                 UsingVariables = $_usingVars

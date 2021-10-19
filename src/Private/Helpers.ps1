@@ -2190,6 +2190,69 @@ function Convert-PodeQueryStringToHashTable
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 }
 
+function Invoke-PodeStateScriptConversion
+{
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return $ScriptBlock
+    }
+
+    # rename any $state:<name> vars
+    $scriptStr = "$($ScriptBlock)"
+    $found = $false
+
+    while ($scriptStr -imatch '(?<full>\$state\:(?<name>[a-z0-9_\?]+)\s*=)') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "Set-PodeState -Name '$($Matches['name'])' -Value ")
+    }
+
+    while ($scriptStr -imatch '(?<full>\$state\:(?<name>[a-z0-9_\?]+))') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "`$PodeContext.Server.State.'$($Matches['name'])'.Value")
+    }
+
+    if ($found) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
+    return $ScriptBlock
+}
+
+function Invoke-PodeSessionScriptConversion
+{
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return $ScriptBlock
+    }
+
+    # rename any $session:<name> vars
+    $scriptStr = "$($ScriptBlock)"
+    $found = $false
+
+    while ($scriptStr -imatch '(?<full>\$session\:(?<name>[a-z0-9_\?]+))') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "`$WebEvent.Session.Data.'$($Matches['name'])'")
+    }
+
+    if ($found) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
+    return $ScriptBlock
+}
+
 function Invoke-PodeUsingScriptConversion
 {
     param(

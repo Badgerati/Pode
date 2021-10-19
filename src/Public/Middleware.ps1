@@ -638,6 +638,10 @@ function Add-PodeBodyParser
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+
     $PodeContext.Server.BodyParsers[$ContentType] = @{
         ScriptBlock = $ScriptBlock
         UsingVariables = $usingVars

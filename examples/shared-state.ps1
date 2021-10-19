@@ -25,6 +25,10 @@ Start-PodeServer {
         $hash['values'] = @()
     }
 
+    if ($null -eq $state:hash3) {
+        $state:hash3 = @{ values = @() }
+    }
+
     # create timer to update a hashtable and make it globally accessible
     Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         $hash = $null
@@ -34,6 +38,10 @@ Start-PodeServer {
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
             Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
         }
+
+        Lock-PodeObject -ScriptBlock {
+            $state:hash3.values += (Get-Random -Minimum 0 -Maximum 10)
+        }
     }
 
     # route to retrieve and return the value of the hashtable from global state
@@ -41,6 +49,12 @@ Start-PodeServer {
         Lock-PodeObject -ScriptBlock {
             $hash = (Get-PodeState 'hash1')
             Write-PodeJsonResponse -Value $hash
+        }
+    }
+
+    Add-PodeRoute -Method Get -Path '/array3' -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
+            Write-PodeJsonResponse -Value $state:hash3
         }
     }
 
