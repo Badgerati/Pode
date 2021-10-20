@@ -431,9 +431,13 @@ function New-PodeAuthScheme
 
         'custom' {
             $ScriptBlock, $usingScriptVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+            $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
 
             if (!(Test-PodeIsEmpty $PostValidator)) {
                 $PostValidator, $usingPostVars = Invoke-PodeUsingScriptConversion -ScriptBlock $PostValidator -PSSession $PSCmdlet.SessionState
+                $PostValidator = Invoke-PodeStateScriptConversion -ScriptBlock $PostValidator
+                $PostValidator = Invoke-PodeSessionScriptConversion -ScriptBlock $PostValidator
             }
 
             return @{
@@ -617,6 +621,10 @@ function Add-PodeAuth
 
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
 
     # add auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
@@ -833,6 +841,10 @@ function Add-PodeAuthWindowsAd
     # if we have a scriptblock, deal with using vars
     if ($null -ne $ScriptBlock) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # check for state/session vars
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
     }
 
     # add Windows AD auth method to server
@@ -1066,6 +1078,10 @@ function Add-PodeAuthIIS
     # if we have a scriptblock, deal with using vars
     if ($null -ne $ScriptBlock) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # check for state/session vars
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
     }
 
     # create the auth scheme for getting the token header
@@ -1241,6 +1257,10 @@ function Add-PodeAuthUserFile
     # if we have a scriptblock, deal with using vars
     if ($null -ne $ScriptBlock) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # check for state/session vars
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
     }
 
     # add Windows AD auth method to server
@@ -1388,6 +1408,10 @@ function Add-PodeAuthWindowsLocal
     # if we have a scriptblock, deal with using vars
     if ($null -ne $ScriptBlock) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # check for state/session vars
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
     }
 
     # add Windows Local auth method to server

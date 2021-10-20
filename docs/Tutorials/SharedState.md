@@ -1,16 +1,16 @@
 # Shared State
 
-Most things in Pode run in isolated runspaces: routes, middleware, schedules - to name a few. This means you can't create a variable in a timer, or in the base server scope, and then access that variable in a route. To overcome this limitation you can use the Shared State feature within Pode, which allows you to set/get variables on a state shared between all runspaces. This lets you can create a variable in a timer and store it within the shared state; then you can retrieve the variable from the state in a route.
+Most things in Pode run in isolated runspaces: routes, middleware, schedules - to name a few. This means you can't create a variable in a timer, and then access that variable in a route. To overcome this limitation you can use the Shared State feature within Pode, which allows you to set/get variables on a state shared between all runspaces. This lets you can create a variable in a timer and store it within the shared state; then you can retrieve the variable from the state in a route.
 
 You also have the option of saving the current state to a file, and then restoring the state back on server start. This way you won't lose state between server restarts.
 
-You can also use the State in combination with the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function to ensure thread safety - if needed.
+You can also use the State in combination with [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) to ensure thread safety - if needed.
 
 !!! tip
-    It's wise to use the State in conjunction with the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function, to ensure thread safety between runspaces. The event objects available to Routes, Handlers, Timers, Schedules, Middleware, Endware and Loggers each contain a `.Lockable` resource that can be supplied to the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function.
+    It's wise to use the State in conjunction with [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), to ensure thread safety between runspaces.
 
 !!! warning
-    If you omit the use of [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), you will run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
+    If you omit the use of [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), you might run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
 
 ## Usage
 
@@ -32,6 +32,18 @@ Start-PodeServer {
 }
 ```
 
+Alternatively you could use the `$state:` variable scope to set a variable in state. This variable will be scopeless, so if you need scope then use [`Set-PodeState`]. `$state:` can be used anywhere, but keep in mind that like `$session:` Pode can only remap the this in scriptblocks it's aware of; so using it in a function of a custom module won't work. Similar to the example above:
+
+```powershell
+Start-PodeServer {
+    Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
+            $state:data = @{ 'Name' = 'Rick Sanchez' }
+        }
+    }
+}
+```
+
 ### Get
 
 The [`Get-PodeState`](../../Functions/State/Get-PodeState) function will return the value currently stored in the state for a variable. If the variable doesn't exist then `$null` is returned.
@@ -45,6 +57,22 @@ Start-PodeServer {
 
         Lock-PodeObject -ScriptBlock {
             $value = (Get-PodeState -Name 'data')
+        }
+
+        # do something with $value
+    }
+}
+```
+
+Alternatively you could use the `$state:` variable scope to get a variable in state. `$state:` can be used anywhere, but keep in mind that like `$session:` Pode can only remap the this in scriptblocks it's aware of; so using it in a function of a custom module won't work. Similar to the example above:
+
+```powershell
+Start-PodeServer {
+    Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
+        $value = $null
+
+        Lock-PodeObject -ScriptBlock {
+            $value = $state:data
         }
 
         # do something with $value
