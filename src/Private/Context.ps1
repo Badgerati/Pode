@@ -188,6 +188,8 @@ function New-PodeContext
 
     # is the server running under Heroku?
     $ctx.Server.IsHeroku = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:DYNO)))
+    # is the server running under CF?
+    $ctx.Server.IsCF = (!$isServerless -and (!(Test-PodeIsEmpty $env:PORT)) -and (!(Test-PodeIsEmpty $env:VCAP_APPLICATION)))
 
     # if we're inside a remote host, stop termination
     if ($Host.Name -ieq 'ServerRemoteHost') {
