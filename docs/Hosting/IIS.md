@@ -129,7 +129,7 @@ This allows you to write a Pode server that works locally, but will also automat
 !!! note
     This does mean that Pode will force all endpoints to `127.0.0.1:PORT`. So if you had two different IPs before, they'll be merged into one. Something to be aware of if you assign routes to specific endpoints, as under IIS this won't work.
 
-### Advanced/Domain
+### Advanced/Domain/Kerberos
 
 The above IIS site setup works, but only for simple sites. If you require the use of the Active Directory module, or your site to be running as a different user then follow the steps below.
 
@@ -267,9 +267,153 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
 
-### Kerberos Constrained Delegation
+## IIS Advanced Kerberos
 
-Pode can impersonate the user that requests the web page using Kerberos Constrained Delegation (KCD).
+Kerberos Authentication can be configured using Active Directory account and 
+Group Managed Service Account (gMSA)
+
+gMSA allows automatic password management, if you have more than 1 IIS server running Pode better to use gMSA for IIS AppPool Identity
+
+### Use case scenario
+
+ - Two Pode servers behind Load Balancer
+ - Kerberos Authentication is used to authenticate users (with optional Impersonation)
+
+### Infrastructure setup
+
+Tested on Windows Server 2022
+
+- IIS Server with machine name IIS1$
+- IIS Server with machine name IIS2$
+- Both VMs behind Load Balancer
+- Pode deployed to both IIS servers using documentation
+- Pode address https://PodeServer.Contoso.com
+- web.config file:
+``` xml
+<configuration>
+  <location path="." inheritInChildApplications="false">
+    <system.webServer>
+      <validation validateIntegratedModeConfiguration="true" />
+      <handlers>
+        <remove name="WebDAV" />
+        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+        <remove name="ExtensionlessUrlHandler-Integrated-4.0" />
+        <add name="ExtensionlessUrlHandler-Integrated-4.0" path="*." verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
+        <remove name="ExtensionlessUrl-Integrated-4.0" />
+        <add name="ExtensionlessUrl-Integrated-4.0" path="*." verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
+      </handlers>
+
+      <modules>
+        <remove name="WebDAVModule" />
+      </modules>
+
+      <aspNetCore processPath="pwsh.exe" arguments=".\Pode\server.ps1" stdoutLogEnabled="true" stdoutLogFile=".\Pode\logs\stdout" hostingModel="OutOfProcess" />
+
+      <security>
+        <authorization>
+          <remove users="*" roles="" verbs="" />
+          <add accessType="Allow" users="*" verbs="GET,HEAD,POST,PUT,DELETE,DEBUG,OPTIONS" />
+        </authorization>
+      </security>
+    </system.webServer>
+  </location>
+    <system.web>
+        <identity impersonate="false" />
+    </system.web>
+</configuration>
+```
+- Test deployment using **Server.ps1** content:
+``` powershell
+Import-Module Pode
+
+Start-PodeServer -StatusPageExceptions Show {
+
+    # add a simple endpoint
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
+
+    # Create IIS Pode authentication method
+    Add-PodeAuthIIS -Name 'IISAuth' -Sessionless
+
+    # Test Kerberos authentication
+    Add-PodeRoute -Method Get -Path '/test-kerberos' -Authentication 'IISAuth' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ User = $WebEvent.Auth.User }
+    }
+
+    # Test Kerberos Impersonation
+    Add-PodeRoute -Method Get -Path '/test-kerberos-impersonation' -Authentication 'IISAuth' -ScriptBlock {
+        [System.Security.Principal.WindowsIdentity]::RunImpersonated($WebEvent.Auth.User.Identity.AccessToken, {
+        $newIdentity = [Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -ExpandProperty 'Name'
+        Write-PodeTextResponse -Value "You are running this command as the server user $newIdentity"
+        })
+    }
+
+}
+```
+- IIS Site Authentication settings
+![IIS Site Authentication settings](../images/GXAjs98JsZ.png)
+
+### Configuration steps for _Domain Account_:
+
+1. Create Domain Users in AD for Pode AppPool - **Pode.Svc**
+1. Create SPNs: 
+    ``` cmd
+    setspn -d HTTP/PodeServer Contoso\pode.svc
+    setspn -d HTTP/PodeServer.Contoso.com Contoso\pode.svc
+    ```
+1. Configure **Pode.Svc** user Delegation - _Trust this user for delegation ..._
+1. Configure Pode Website to use **PodeServer.Contoso.com** as **Host Name**
+1. Configure Pode Website AppPool to use _Contoso\pode.svc_ as **Identity**
+1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder 
+1. _**!!! Important !!!**_ Add PTR DNS record _PodeServer.Contoso.com_ pointing to Load Balancer IP. If you have only one server and want to test, replace PTR record for _iis1.Contoso.com_ to _PodeServer.Contoso.com_
+1. Open URLs: 
+    - https://PodeServer.Contoso.com/
+    - https://PodeServer.Contoso.com/test-kerberos
+    - https://PodeServer.Contoso.com/test-kerberos-impersonation
+
+### Configuration steps for _Group Managed Service Account_
+
+1. Create the KDS Root Key (only once per forest).  This is used by the KDS service on DCs (along with other information) to generate passwords. Execute on Domain Controller
+    ``` PowerShell
+    # Once per domain, effective date -10 hours to start using keys immediately
+    Add-KdsRootKey –EffectiveTime ((get-date).addhours(-10))
+    # Force AD Replication
+    (Get-ADDomainController -Filter *).Name | Foreach-Object {repadmin /syncall $_ (Get-ADDomain).DistinguishedName /e /A | Out-Null}; Start-Sleep 10; Get-ADReplicationPartnerMetadata -Target "$env:userdnsdomain" -Scope Domain | Select-Object Server, LastReplicationSuccess
+    ```
+1. Create _Group Managed Service Account_, configure SPNs and Delegation
+    ``` PowerShell
+    # Create Authorized host group
+    New-ADGroup -Name "Pode Authorized Hosts" -SamAccountName "pode.hosts" -GroupScope Global
+    # Create gMSA Account
+    New-ADServiceAccount -Name "gmsaPodeSvc" -DnsHostName "PodeServer.Contoso.com" `
+                        -ServicePrincipalNames "host/PodeServer", "host/PodeServer.Contoso.com","http/PodeServer", "http/PodeServer.Contoso.com" `
+                        -PrincipalsAllowedToRetrieveManagedPassword "pode.hosts"
+    # Configure for Impersonation
+    Set-ADAccountControl -Identity gmsaPodeSvc$ -TrustedForDelegation $true -TrustedToAuthForDelegation $false
+    # Add IIS servers to group
+    Add-ADGroupMember -Identity "pode.hosts" -Members "iis1$","iis2$"
+    # Reboot IIS servers to update hosts group membership!
+    Restart-Computer -ComputerName "iis1","iis2" -force
+    ```
+1. _**!!! Important !!!**_ Both IIS Servers must be rebooted to update Group Membership 
+1. On both IIS Servers:
+    ``` PowerShell
+    Add-WindowsFeature RSAT-AD-PowerShell
+    Install-ADServiceAccount gmsaPodeSvc
+    # Next line should return $True
+    Test-ADServiceAccount gmsaPodeSvc
+    ```
+1. Configure Pode Website to use **PodeServer.Contoso.com** as **Host Name**
+1. Configure Pode Website AppPool to use _Contoso\gmsaPodeSvc$_ as **Identity**
+1. Give write permissions to _Contoso\gmsaPodeSvc$_ on *Pode* folder 
+1. _**!!! Important !!!**_ Add PTR DNS record _PodeServer.Contoso.com_ pointing to Load Balancer IP. If you have only one server and want to test, replace PTR record for _iis1.Contoso.com_ to _PodeServer.Contoso.com_
+1. Open URLs: 
+    - https://PodeServer.Contoso.com/
+    - https://PodeServer.Contoso.com/test-kerberos
+    - https://PodeServer.Contoso.com/test-kerberos-impersonation
+
+### Kerberos Impersonate
+
+Pode can impersonate the user that requests the web page using Kerberos Constrained Delegation (KCD). 
 
 Requirements:
 
@@ -284,7 +428,6 @@ This can be done using the following example:
     Write-PodeTextResponse -Value "You are running this command as the server user $newIdentity"
 })
 ```
-
 ### Additional Validation
 
 Similar to the normal [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.
@@ -308,7 +451,7 @@ Or to fail authentication with an error message:
 ```powershell
 Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
     param($user)
-    return @{ Message = 'Authorisation failed' }
+    return @{ Message = 'Authorization failed' }
 }
 ```
 
@@ -323,3 +466,5 @@ Pode can auto-detect if you're using an Azure Web App, but if you're having issu
 ## Useful Links
 
 * [Host ASP.NET Core on Windows with IIS \| Microsoft Docs](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.1)
+* [Group Managed Service Accounts \| Microsoft Docs](https://docs.microsoft.com/en-us/windows-server/security/group-managed-service-accounts/group-managed-service-accounts-overview)
+* [Kerberos Authentication \| Microsoft Docs](https://docs.microsoft.com/en-us/windows-server/security/kerberos/kerberos-authentication-overview)
