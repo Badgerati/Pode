@@ -678,3 +678,180 @@ function Remove-PodeBodyParser
 
     $PodeContext.Server.BodyParsers.Remove($ContentType) | Out-Null
 }
+
+<#
+.SYNOPSIS
+Adds a new Middleware to be invoked before every Route, or certain Routes.
+
+.DESCRIPTION
+Adds a new Middleware to be invoked before every Route, or certain Routes. ScriptBlock should return $true to continue execution, or $false to stop.
+
+.PARAMETER Name
+The Name of the Middleware.
+
+.PARAMETER ScriptBlock
+The Script defining the logic of the Middleware. Should return $true to continue execution, or $false to stop.
+
+.PARAMETER InputObject
+A Middleware HashTable from New-PodeMiddleware, or from certain other functions that return Middleware as a HashTable.
+
+.PARAMETER Route
+A Route path for which Routes this Middleware should only be invoked against.
+
+.PARAMETER ArgumentList
+An array of arguments to supply to the Middleware's ScriptBlock.
+
+.OUTPUTS
+Boolean. ScriptBlock should return $true to continue to the next middleware/route, or return $false to stop execution.
+
+.EXAMPLE
+Add-PodeMiddleware -Name 'BlockAgents' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+Add-PodeMiddleware -Name 'CheckEmailOnApi' -Route '/api/*' -ScriptBlock { /* logic */ }
+#>
+function Add-PodeMiddleware
+{
+    [CmdletBinding(DefaultParameterSetName='Script')]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='Input', ValueFromPipeline=$true)]
+        [hashtable]
+        $InputObject,
+
+        [Parameter()]
+        [string]
+        $Route,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
+    )
+
+    # ensure name doesn't already exist
+    if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
+        throw "[Middleware] $($Name): Middleware already defined"
+    }
+
+    # if it's a script - call New-PodeMiddleware
+    if ($PSCmdlet.ParameterSetName -ieq 'script') {
+        $InputObject = (New-PodeMiddlewareInternal `
+            -ScriptBlock $ScriptBlock `
+            -Route $Route `
+            -ArgumentList $ArgumentList `
+            -PSSession $PSCmdlet.SessionState)
+    }
+    else {
+        $Route = ConvertTo-PodeRouteRegex -Path $Route
+        $InputObject.Route = Protect-PodeValue -Value $Route -Default $InputObject.Route
+        $InputObject.Options = Protect-PodeValue -Value $Options -Default $InputObject.Options
+    }
+
+    # ensure we have a script to run
+    if (Test-PodeIsEmpty $InputObject.Logic) {
+        throw "[Middleware]: No logic supplied in ScriptBlock"
+    }
+
+    # set name, and override route/args
+    $InputObject.Name = $Name
+
+    # add the logic to array of middleware that needs to be run
+    $PodeContext.Server.Middleware += $InputObject
+}
+
+<#
+.SYNOPSIS
+Creates a new Middleware HashTable object, that can be piped/used in Add-PodeMiddleware or in Routes.
+
+.DESCRIPTION
+Creates a new Middleware HashTable object, that can be piped/used in Add-PodeMiddleware or in Routes. ScriptBlock should return $true to continue execution, or $false to stop.
+
+.PARAMETER ScriptBlock
+The Script that defines the logic of the Middleware. Should return $true to continue execution, or $false to stop.
+
+.PARAMETER Route
+A Route path for which Routes this Middleware should only be invoked against.
+
+.PARAMETER ArgumentList
+An array of arguments to supply to the Middleware's ScriptBlock.
+
+.OUTPUTS
+Boolean. ScriptBlock should return $true to continue to the next middleware/route, or return $false to stop execution.
+
+.EXAMPLE
+New-PodeMiddleware -ScriptBlock { /* logic */ } -ArgumentList 'Email' | Add-PodeMiddleware -Name 'CheckEmail'
+#>
+function New-PodeMiddleware
+{
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [string]
+        $Route,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
+    )
+
+    return (New-PodeMiddlewareInternal `
+        -ScriptBlock $ScriptBlock `
+        -Route $Route `
+        -ArgumentList $ArgumentList `
+        -PSSession $PSCmdlet.SessionState)
+}
+
+<#
+.SYNOPSIS
+Removes a specific user defined Middleware.
+
+.DESCRIPTION
+Removes a specific user defined Middleware.
+
+.PARAMETER Name
+The Name of the Middleware to be removed.
+
+.EXAMPLE
+Remove-PodeMiddleware -Name 'Sessions'
+#>
+function Remove-PodeMiddleware
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    $PodeContext.Server.Middleware = @($PodeContext.Server.Middleware | Where-Object { $_.Name -ine $Name })
+}
+
+<#
+.SYNOPSIS
+Removes all user defined Middleware.
+
+.DESCRIPTION
+Removes all user defined Middleware.
+
+.EXAMPLE
+Clear-PodeMiddleware
+#>
+function Clear-PodeMiddleware
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Server.Middleware = @()
+}
