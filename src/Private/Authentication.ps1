@@ -186,7 +186,7 @@ function Get-PodeOAuth2RedirectHost
     )
 
     if ($RedirectUrl.StartsWith('/')) {
-        if ($PodeContext.Server.IsIIS -or $PodeContext.Server.IsHeroku -or $PodeContext.Server.IsCF) {
+        if ($PodeContext.Server.IsIIS -or $PodeContext.Server.IsHeroku -or $PodeContext.Server.IsCloudFoundry) {
             $protocol = Get-PodeHeader -Name 'X-Forwarded-Proto'
             if ([string]::IsNullOrWhiteSpace($protocol)) {
                 $protocol = 'https'
