@@ -151,7 +151,7 @@ function ConvertFrom-PodeCronExpression
                 }
 
                 $_atom = $_atom -ireplace $Matches['tag'], $_alias
-                $_atom -imatch $aliasRgx | Out-Null
+                $null = $_atom -imatch $aliasRgx
             }
         }
 

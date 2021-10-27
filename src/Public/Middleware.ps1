@@ -676,7 +676,7 @@ function Remove-PodeBodyParser
         return
     }
 
-    $PodeContext.Server.BodyParsers.Remove($ContentType) | Out-Null
+    $null = $PodeContext.Server.BodyParsers.Remove($ContentType)
 }
 
 <#

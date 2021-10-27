@@ -898,7 +898,7 @@ function Remove-PodeAuth
         $Name
     )
 
-    $PodeContext.Server.Authentications.Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Authentications.Remove($Name)
 }
 
 <#

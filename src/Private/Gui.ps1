@@ -24,7 +24,7 @@ function Start-PodeGuiRunspace {
 
             while ($true) {
                 try {
-                    Invoke-WebRequest -Method Get -Uri $uri -UseBasicParsing -ErrorAction Stop | Out-Null
+                    $null = Invoke-WebRequest -Method Get -Uri $uri -UseBasicParsing -ErrorAction Stop
                     if (!$?) {
                         throw
                     }
@@ -43,8 +43,8 @@ function Start-PodeGuiRunspace {
             }
 
             # import the WPF assembly
-            [System.Reflection.Assembly]::LoadWithPartialName('PresentationFramework') | Out-Null
-            [System.Reflection.Assembly]::LoadWithPartialName('PresentationCore') | Out-Null
+            $null = [System.Reflection.Assembly]::LoadWithPartialName('PresentationFramework')
+            $null = [System.Reflection.Assembly]::LoadWithPartialName('PresentationCore')
 
             # Check for CefSharp
             $loadCef = [bool]([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName.StartsWith("CefSharp.Wpf,") })
@@ -116,7 +116,7 @@ function Start-PodeGuiRunspace {
             }
 
             # display the form
-            $form.ShowDialog() | Out-Null
+            $null = $form.ShowDialog()
             Start-Sleep -Seconds 1
         }
         catch {

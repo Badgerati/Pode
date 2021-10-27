@@ -262,7 +262,7 @@ function Test-PodeIPAddress
     }
 
     try {
-        [System.Net.IPAddress]::Parse($IP) | Out-Null
+        $null = [System.Net.IPAddress]::Parse($IP)
         return $true
     }
     catch [exception] {
@@ -534,17 +534,17 @@ function Add-PodeRunspace
     {
         $ps = [powershell]::Create()
         $ps.RunspacePool = $PodeContext.RunspacePools[$Type]
-        $ps.AddScript({ Add-PodePSDrives }) | Out-Null
-        $ps.AddScript($ScriptBlock) | Out-Null
+        $null = $ps.AddScript({ Add-PodePSDrives })
+        $null = $ps.AddScript($ScriptBlock)
 
         if (!(Test-PodeIsEmpty $Parameters)) {
             $Parameters.Keys | ForEach-Object {
-                $ps.AddParameter($_, $Parameters[$_]) | Out-Null
+                $null = $ps.AddParameter($_, $Parameters[$_])
             }
         }
 
         if ($Forget) {
-            $ps.BeginInvoke() | Out-Null
+            $null = $ps.BeginInvoke()
         }
         else {
             $PodeContext.Runspaces += @{
@@ -756,7 +756,7 @@ function New-PodePSDrive
 function Add-PodePSDrives
 {
     $PodeContext.Server.Drives.Keys | ForEach-Object {
-        New-PodePSDrive -Path $PodeContext.Server.Drives[$_] -Name $_ | Out-Null
+        $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$_] -Name $_
     }
 }
 
@@ -783,7 +783,7 @@ function Add-PodePSInbuiltDrives
 
 function Remove-PodePSDrives
 {
-    Get-PSDrive PodeDir* | Remove-PSDrive | Out-Null
+    $null = Get-PSDrive PodeDir* | Remove-PSDrive
 }
 
 function Join-PodeServerRoot
@@ -836,18 +836,18 @@ function Remove-PodeNullKeysFromHashtable
 
     foreach ($key in ($Hashtable.Clone()).Keys) {
         if ($null -eq $Hashtable[$key]) {
-            $Hashtable.Remove($key) | Out-Null
+            $null = $Hashtable.Remove($key)
             continue
         }
 
         if ($Hashtable[$key] -is [string] -and [string]::IsNullOrEmpty($Hashtable[$key])) {
-            $Hashtable.Remove($key) | Out-Null
+            $null = $Hashtable.Remove($key)
             continue
         }
 
         if ($Hashtable[$key] -is [array]) {
             if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
-                $Hashtable.Remove($key) | Out-Null
+                $null = $Hashtable.Remove($key)
                 continue
             }
 
@@ -1244,7 +1244,7 @@ function ConvertFrom-PodeRequestContent
                 # create a compressed stream to decompress the req bytes
                 $ms = New-Object -TypeName System.IO.MemoryStream
                 $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
-                $ms.Seek(0, 0) | Out-Null
+                $null = $ms.Seek(0, 0)
                 $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
 
                 # read the decompressed bytes
@@ -1418,7 +1418,7 @@ function Test-PodePathAccess
     )
 
     try {
-        Get-Item $Path | Out-Null
+        $null = Get-Item $Path
     }
     catch [System.UnauthorizedAccessException] {
         return $false
@@ -2382,7 +2382,7 @@ function ConvertTo-PodeUsingScript
 
     foreach ($usingVar in $UsingVariables) {
         foreach ($subExp in $usingVar.SubExpressions) {
-            $varsList.Add($subExp) | Out-Null
+            $null = $varsList.Add($subExp)
         }
     }
 

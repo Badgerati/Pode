@@ -129,7 +129,7 @@ function Remove-PodeHandler
     }
 
     # remove the handler
-    $PodeContext.Server.Handlers[$Type].Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Handlers[$Type].Remove($Name)
 }
 
 <#

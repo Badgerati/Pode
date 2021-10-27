@@ -189,7 +189,7 @@ function Remove-PodeTimer
         $Name
     )
 
-    $PodeContext.Timers.Remove($Name) | Out-Null
+    $null = $PodeContext.Timers.Remove($Name)
 }
 
 <#

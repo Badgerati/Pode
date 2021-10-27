@@ -99,7 +99,7 @@ function Unregister-PodeEvent
     }
 
     # remove event
-    $PodeContext.Server.Events[$Type].Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Events[$Type].Remove($Name)
 }
 
 <#
@@ -191,5 +191,5 @@ function Clear-PodeEvent
         $Type
     )
 
-    $PodeContext.Server.Events[$Type].Clear() | Out-Null
+    $null = $PodeContext.Server.Events[$Type].Clear()
 }
