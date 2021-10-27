@@ -68,9 +68,9 @@ function Get-PodeLoggingFileMethod
         if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
             $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
 
-            Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+            $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
                 Where-Object { $_.CreationTime -lt $date } |
-                $null = Remove-Item $_ -Force
+                Remove-Item $_ -Force
 
             $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
         }
