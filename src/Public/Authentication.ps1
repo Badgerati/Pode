@@ -1505,3 +1505,94 @@ function ConvertTo-PodeJwt
     $jwt += ".$($sig)"
     return $jwt
 }
+
+<#
+.SYNOPSIS
+Convert and return the payload of a JWT token.
+
+.DESCRIPTION
+Convert and return the payload of a JWT token, verifying the signature by default with support to ignore the signature.
+
+.PARAMETER Token
+The JWT token.
+
+.PARAMETER Secret
+The Secret, as a byte[], to verify the token's signature.
+
+.PARAMETER IgnoreSignature
+Skip signature verification, and return the decoded payload.
+
+.EXAMPLE
+ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY"
+#>
+function ConvertFrom-PodeJwt
+{
+    [CmdletBinding(DefaultParameterSetName='Secret')]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Token,
+
+        [Parameter(ParameterSetName='Signed')]
+        [byte[]]
+        $Secret,
+
+        [Parameter(ParameterSetName='Ignore')]
+        [switch]
+        $IgnoreSignature
+    )
+
+    # get the parts
+    $parts = ($Token -isplit '\.')
+
+    # check number of parts (should be 3)
+    if ($parts.Length -ne 3) {
+        throw "Invalid JWT supplied"
+    }
+
+    # convert to header
+    $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
+    if ([string]::IsNullOrWhiteSpace($header.alg)) {
+        throw "Invalid JWT header algorithm supplied"
+    }
+
+    # convert to payload
+    $payload = ConvertFrom-PodeJwtBase64Value -Value $parts[1]
+
+    # get signature
+    if ($IgnoreSignature) {
+        return $payload
+    }
+
+    $signature = $parts[2]
+
+    # check "none" signature, and return payload if no signature
+    $isNoneAlg = ($header.alg -ieq 'none')
+
+    if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
+        throw "No JWT signature supplied for $($header.alg)"
+    }
+
+    if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
+        throw "Expected no JWT signature to be supplied"
+    }
+
+    if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
+        throw "Expected a signed JWT, 'none' algorithm is not allowed"
+    }
+
+    if ($isNoneAlg) {
+        return $payload
+    }
+
+    # otherwise, we have an alg for the signature, so we need to validate it
+    $sig = "$($parts[0]).$($parts[1])"
+    $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
+
+    if ($sig -ne $parts[2]) {
+        throw "Invalid JWT signature supplied"
+    }
+
+    # it's valid return the payload!
+    return $payload
+}

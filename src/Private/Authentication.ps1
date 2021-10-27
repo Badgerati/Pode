@@ -150,12 +150,15 @@ function Get-PodeAuthOAuth2Type
                     }
                 }
             }
+            elseif (![string]::IsNullOrWhiteSpace($result.id_token)) {
+                $user = ConvertFrom-PodeJwt -Token $result.id_token -IgnoreSignature
+            }
             else {
                 $user = @{ Provider = 'OAuth2' }
             }
 
             # return the user for the validator
-            return @($user, $result.access_token, $result.refresh_token)
+            return @($user, $result.access_token, $result.refresh_token, $result)
         }
 
         # redirect to the authUrl - only if no inner scheme supplied
@@ -168,7 +171,12 @@ function Get-PodeAuthOAuth2Type
             $query += "&response_mode=query"
             $query += "&scope=$([System.Web.HttpUtility]::UrlEncode($scopes))"
 
-            Move-PodeResponseUrl -Url "$($options.Urls.Authorise)?$($query)"
+            $url = $options.Urls.Authorise
+            if (!$url.Contains('?')) {
+                $url += '?'
+            }
+
+            Move-PodeResponseUrl -Url "$($url)$($query)"
             return @{ IsRedirected = $true }
         }
 
