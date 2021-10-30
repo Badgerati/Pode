@@ -168,7 +168,7 @@ function New-PodeLoggingMethod
         'file' {
             $Path = (Protect-PodeValue -Value $Path -Default './logs')
             $Path = (Get-PodeRelativePath -Path $Path -JoinRoot)
-            New-Item -Path $Path -ItemType Directory -Force | Out-Null
+            $null = New-Item -Path $Path -ItemType Directory -Force
 
             return @{
                 ScriptBlock = (Get-PodeLoggingFileMethod)
@@ -193,7 +193,7 @@ function New-PodeLoggingMethod
 
             # create source
             if (![System.Diagnostics.EventLog]::SourceExists($Source)) {
-                [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName) | Out-Null
+                $null = [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName)
             }
 
             return @{
@@ -469,7 +469,7 @@ function Remove-PodeLogger
         $Name
     )
 
-    $PodeContext.Server.Logging.Types.Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Logging.Types.Remove($Name)
 }
 
 <#
@@ -576,10 +576,10 @@ function Write-PodeErrorLog
     $item['ThreadId'] = [int]$ThreadId
 
     # add the item to be processed
-    $PodeContext.LogsToProcess.Add(@{
+    $null = $PodeContext.LogsToProcess.Add(@{
         Name = $name
         Item = $item
-    }) | Out-Null
+    })
 
     # for exceptions, check the inner exception
     if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
@@ -622,10 +622,10 @@ function Write-PodeLog
     }
 
     # add the item to be processed
-    $PodeContext.LogsToProcess.Add(@{
+    $null = $PodeContext.LogsToProcess.Add(@{
         Name = $Name
         Item = $InputObject
-    }) | Out-Null
+    })
 }
 
 <#

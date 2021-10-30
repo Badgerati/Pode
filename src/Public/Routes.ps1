@@ -623,7 +623,7 @@ function Remove-PodeRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 
@@ -673,7 +673,7 @@ function Remove-PodeStaticRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 
@@ -723,7 +723,7 @@ function Remove-PodeSignalRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 

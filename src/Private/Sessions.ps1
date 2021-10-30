@@ -52,14 +52,14 @@ function Set-PodeSession
 
     # set session as cookie
     else {
-        (Set-PodeCookie `
+        $null = Set-PodeCookie `
             -Name $Session.Name `
             -Value $Session.Id `
             -Secret $secret `
             -ExpiryDate (Get-PodeSessionExpiry -Session $Session) `
             -HttpOnly:$httpOnly `
             -Discard:$discard `
-            -Secure:$secure) | Out-Null
+            -Secure:$secure
     }
 }
 
@@ -268,7 +268,7 @@ function Get-PodeSessionInMemStore
     # delete a sessionId and data
     $store | Add-Member -MemberType NoteProperty -Name Delete -Value {
         param($sessionId)
-        $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId) | Out-Null
+        $null = $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId)
     }
 
     # get a sessionId's data
@@ -279,7 +279,7 @@ function Get-PodeSessionInMemStore
 
         # if expire, remove
         if (($null -ne $s) -and ($s.Expiry -lt [DateTime]::UtcNow)) {
-            $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId) | Out-Null
+            $null = $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId)
             return $null
         }
 

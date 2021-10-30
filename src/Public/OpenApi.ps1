@@ -364,7 +364,7 @@ function Remove-PodeOAResponse
     # remove the respones from the routes
     foreach ($r in @($Route)) {
         if ($r.OpenApi.Responses.ContainsKey($code)) {
-            $r.OpenApi.Responses.Remove($code) | Out-Null
+            $null = $r.OpenApi.Responses.Remove($code)
         }
     }
 

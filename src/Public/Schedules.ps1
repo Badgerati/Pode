@@ -237,7 +237,7 @@ function Remove-PodeSchedule
         $Name
     )
 
-    $PodeContext.Schedules.Remove($Name) | Out-Null
+    $null = $PodeContext.Schedules.Remove($Name)
 }
 
 <#

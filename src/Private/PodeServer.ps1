@@ -297,7 +297,7 @@ function Start-PodeWebServer
                                 $socket.Context.Response.SendSignal($message)
                             }
                             catch {
-                                $Listener.WebSockets.Remove($socket.ClientId) | Out-Null
+                                $null = $Listener.WebSockets.Remove($socket.ClientId)
                             }
                         }
                     }

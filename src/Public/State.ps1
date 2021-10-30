@@ -184,7 +184,7 @@ function Remove-PodeState
     }
 
     $value = $PodeContext.Server.State[$Name].Value
-    $PodeContext.Server.State.Remove($Name) | Out-Null
+    $null = $PodeContext.Server.State.Remove($Name)
     return $value
 }
 
@@ -259,7 +259,7 @@ function Save-PodeState
         foreach ($_key in $state.Clone().Keys) {
             # remove if no scope
             if (($null -eq $state[$_key].Scope) -or ($state[$_key].Scope.Length -eq 0)) {
-                $state.Remove($_key) | Out-Null
+                $null = $state.Remove($_key)
                 continue
             }
 
@@ -278,7 +278,7 @@ function Save-PodeState
             }
 
             # none matched, remove
-            $state.Remove($_key) | Out-Null
+            $null = $state.Remove($_key)
         }
     }
 
@@ -286,7 +286,7 @@ function Save-PodeState
     if (($null -ne $Include) -and ($Include.Length -gt 0)) {
         foreach ($_key in $state.Clone().Keys) {
             if ($Include -inotcontains $_key) {
-                $state.Remove($_key) | Out-Null
+                $null = $state.Remove($_key)
             }
         }
     }
@@ -295,13 +295,13 @@ function Save-PodeState
     if (($null -ne $Exclude) -and ($Exclude.Length -gt 0)) {
         foreach ($_key in $state.Clone().Keys) {
             if ($Exclude -icontains $_key) {
-                $state.Remove($_key) | Out-Null
+                $null = $state.Remove($_key)
             }
         }
     }
 
     # save the state
-    ConvertTo-Json -InputObject $state -Depth 10 -Compress:$Compress | Out-File -FilePath $Path -Force | Out-Null
+    $null = ConvertTo-Json -InputObject $state -Depth 10 -Compress:$Compress | Out-File -FilePath $Path -Force
 }
 
 <#

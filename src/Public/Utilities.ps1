@@ -493,7 +493,7 @@ function Import-PodeModule
         throw "The module path does not exist: $(Protect-PodeValue -Value $Path -Default $Name)"
     }
 
-    Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
+    $null = Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop
 }
 
 <#
@@ -524,7 +524,7 @@ function Import-PodeSnapin
     }
 
     # import the snap-in
-    Add-PSSnapin -Name $Name | Out-Null
+    $null = Add-PSSnapin -Name $Name
 }
 
 <#

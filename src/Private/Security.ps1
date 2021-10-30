@@ -697,10 +697,10 @@ function Set-PodeCsrfSecret
 
     # are we setting this on a cookie, or session?
     if ($PodeContext.Server.Cookies.Csrf.UseCookies) {
-        (Set-PodeCookie `
+        $null = Set-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
             -Value $Secret `
-            -Secret $PodeContext.Server.Cookies.Csrf.Secret) | Out-Null
+            -Secret $PodeContext.Server.Cookies.Csrf.Secret
     }
 
     # on session
@@ -835,7 +835,7 @@ function Get-PodeCertificateByPemFile
             $cert = [X509Certificates.X509Certificate2]::new($tempFile, $Password)
         }
         finally {
-            Remove-Item $tempFile -Force | Out-Null
+            $null = Remove-Item $tempFile -Force
         }
     }
 
@@ -939,12 +939,12 @@ function Get-PodeCertificateByName
 function New-PodeSelfSignedCertificate
 {
     $sanBuilder = [X509Certificates.SubjectAlternativeNameBuilder]::new()
-    $sanBuilder.AddIpAddress([ipaddress]::Loopback) | Out-Null
-    $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback) | Out-Null
-    $sanBuilder.AddDnsName('localhost') | Out-Null
+    $null = $sanBuilder.AddIpAddress([ipaddress]::Loopback)
+    $null = $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback)
+    $null = $sanBuilder.AddDnsName('localhost')
 
     if (![string]::IsNullOrWhiteSpace($PodeContext.Server.ComputerName)) {
-        $sanBuilder.AddDnsName($PodeContext.Server.ComputerName) | Out-Null
+        $null = $sanBuilder.AddDnsName($PodeContext.Server.ComputerName)
     }
 
     $rsa = [RSA]::Create(2048)
@@ -963,15 +963,15 @@ function New-PodeSelfSignedCertificate
         [X509Certificates.X509KeyUsageFlags]::DigitalSignature
     )
 
-    $req.CertificateExtensions.Add(
+    $null = $req.CertificateExtensions.Add(
         [X509Certificates.X509KeyUsageExtension]::new(
             $flags,
             $false
         )
-    ) | Out-Null
+    )
 
     $oid = [OidCollection]::new()
-    $oid.Add([Oid]::new('1.3.6.1.5.5.7.3.1')) | Out-Null
+    $null = $oid.Add([Oid]::new('1.3.6.1.5.5.7.3.1'))
 
     $req.CertificateExtensions.Add(
         [X509Certificates.X509EnhancedKeyUsageExtension]::new(
@@ -980,7 +980,7 @@ function New-PodeSelfSignedCertificate
         )
     )
 
-    $req.CertificateExtensions.Add($sanBuilder.Build()) | Out-Null
+    $null = $req.CertificateExtensions.Add($sanBuilder.Build())
 
     $cert = $req.CreateSelfSigned(
         [System.DateTimeOffset]::UtcNow.AddDays(-1),
