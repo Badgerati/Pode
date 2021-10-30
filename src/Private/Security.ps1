@@ -82,11 +82,11 @@ function Test-PodeIPLimit
         # if ip not in rules, it's valid
         # (add to active list as always allowed - saves running where search everytime)
         if ($null -eq $_rule_ip) {
-            $active.Add($IP.String, @{
+            $active[$IP.String] = @{
                 Rule = @{
                     Limit = -1
                 }
-            })
+            }
 
             return $true
         }
@@ -94,11 +94,11 @@ function Test-PodeIPLimit
         # add ip to active list (ip if not grouped, else the subnet if it's grouped)
         $_ip = (Resolve-PodeValue -Check $_rule_ip.Grouped -TrueValue $_rule_ip.IP -FalseValue $IP.String)
 
-        $active.Add($_ip, @{
+        $active[$_ip] = @{
             Rule = $_rule_ip
             Rate = 1
             Expire = $now.AddSeconds($_rule_ip.Seconds)
-        })
+        }
 
         # if limit is 0, it's never allowed
         return ($_rule_ip -ne 0)
@@ -161,21 +161,21 @@ function Test-PodeRouteLimit
 
         # if route not in rules, it's valid (add to active list as always allowed)
         if ($null -eq $_rule_route) {
-            $active.Add($Path, @{
+            $active[$Path] = @{
                 Rule = @{
                     Limit = -1
                 }
-            })
+            }
 
             return $true
         }
 
         # add route to active list
-        $active.Add($Path, @{
+        $active[$Path] = @{
             Rule = $_rule_route
             Rate = 1
             Expire = $now.AddSeconds($_rule_route.Seconds)
-        })
+        }
 
         # if limit is 0, it's never allowed
         return ($_rule_route -ne 0)
@@ -241,21 +241,21 @@ function Test-PodeEndpointLimit
 
         # if endpoint not in rules, it's valid (add to active list as always allowed)
         if ($null -eq $_rule_endpoint) {
-            $active.Add($EndpointName, @{
+            $active[$EndpointName] = @{
                 Rule = @{
                     Limit = -1
                 }
-            })
+            }
 
             return $true
         }
 
         # add endpoint to active list
-        $active.Add($EndpointName, @{
+        $active[$EndpointName] = @{
             Rule = $_rule_endpoint
             Rate = 1
             Expire = $now.AddSeconds($_rule_endpoint.Seconds)
-        })
+        }
 
         # if limit is 0, it's never allowed
         return ($_rule_endpoint -ne 0)
