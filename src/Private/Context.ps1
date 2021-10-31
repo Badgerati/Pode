@@ -521,7 +521,7 @@ function New-PodeRunspacePools
 
     # web socket runspace - if we have any ws/s endpoints
     if (Test-PodeEndpoints -Type Ws) {
-        $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, 3, $PodeContext.RunspaceState, $Host)
+        $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
     }
 
     # setup schedule runspace pool
