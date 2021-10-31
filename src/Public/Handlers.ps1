@@ -164,3 +164,31 @@ function Clear-PodeHandlers
         }
     }
 }
+
+<#
+.SYNOPSIS
+Automatically loads handler ps1 files
+
+.DESCRIPTION
+Automatically loads handler ps1 files from either a /handler folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeHandlers
+
+.EXAMPLE
+Use-PodeHandlers -Path './my-handlers'
+#>
+function Use-PodeHandlers
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'handlers'
+}
