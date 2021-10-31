@@ -325,7 +325,11 @@ function Start-PodeWebServer
         $clientScript = {
             param(
                 [Parameter(Mandatory=$true)]
-                $Listener
+                $Listener,
+
+                [Parameter(Mandatory=$true)]
+                [int]
+                $ThreadId
             )
 
             try {
@@ -401,7 +405,10 @@ function Start-PodeWebServer
             }
         }
 
-        Add-PodeRunspace -Type Signals -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener }
+        # start the runspace for listening on x-number of threads
+        1..$PodeContext.Threads.General | ForEach-Object {
+            Add-PodeRunspace -Type Signals -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        }
     }
 
     # script to keep web server listening until cancelled

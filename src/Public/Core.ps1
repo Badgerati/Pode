@@ -19,7 +19,7 @@ For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
 An optional name for the Server (intended for future ideas).
 
 .PARAMETER Threads
-The numbers of threads to use for Web and TCP servers.
+The numbers of threads to use for Web, SMTP, and TCP servers.
 
 .PARAMETER RootPath
 An override for the Server's root path.
