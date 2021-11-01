@@ -43,7 +43,7 @@ The inbuilt SessionId generator used for sessions is a GUID, but you can supply 
 
 If supplied, the `-Generator` is a scriptblock that must return a valid string. The string itself should be a random unique value, that can be used as a unique session identifier.
 
-Within a route, or middleware, you can get the current authenticated sessionId using [`Get-PodeSessionId`](../../../../Functions/Middleware/Get-PodeSessionId). If there is no session, or the session is not authenticated, then `$null` is returned. This function can also returned the fully signed sessionId as well.
+Within a route, or middleware, you can get the current authenticated sessionId using [`Get-PodeSessionId`](../../../../Functions/Middleware/Get-PodeSessionId). If there is no session, or the session is not authenticated, then `$null` is returned. This function can also returned the fully signed sessionId as well. If you want the sessionId even if it's not authenticated, then you can supply `-Force` to get the sessionId back.
 
 ### Strict
 
