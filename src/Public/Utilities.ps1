@@ -422,6 +422,34 @@ function Add-PodeEndware
 
 <#
 .SYNOPSIS
+Automatically loads endware ps1 files
+
+.DESCRIPTION
+Automatically loads endware ps1 files from either a /endware folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeEndware
+
+.EXAMPLE
+Use-PodeEndware -Path './endware'
+#>
+function Use-PodeEndware
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'endware'
+}
+
+<#
+.SYNOPSIS
 Imports a Module into the current, and all runspaces that Pode uses.
 
 .DESCRIPTION

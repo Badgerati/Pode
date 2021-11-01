@@ -490,3 +490,31 @@ function Get-PodeScheduleNextTrigger
 
     return (Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $DateTime -EndTime $_schedule.EndTime)
 }
+
+<#
+.SYNOPSIS
+Automatically loads schedule ps1 files
+
+.DESCRIPTION
+Automatically loads schedule ps1 files from either a /schedules folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeSchedules
+
+.EXAMPLE
+Use-PodeSchedules -Path './my-schedules'
+#>
+function Use-PodeSchedules
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'schedules'
+}

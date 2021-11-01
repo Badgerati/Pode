@@ -855,3 +855,31 @@ function Clear-PodeMiddleware
 
     $PodeContext.Server.Middleware = @()
 }
+
+<#
+.SYNOPSIS
+Automatically loads middleware ps1 files
+
+.DESCRIPTION
+Automatically loads middleware ps1 files from either a /middleware folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeMiddleware
+
+.EXAMPLE
+Use-PodeMiddleware -Path './my-middleware'
+#>
+function Use-PodeMiddleware
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'middleware'
+}

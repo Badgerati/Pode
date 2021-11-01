@@ -683,3 +683,31 @@ function Protect-PodeLogItem
 
     return $Item
 }
+
+<#
+.SYNOPSIS
+Automatically loads logging ps1 files
+
+.DESCRIPTION
+Automatically loads logging ps1 files from either a /logging folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeLogging
+
+.EXAMPLE
+Use-PodeLogging -Path './my-logging'
+#>
+function Use-PodeLogging
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'logging'
+}
