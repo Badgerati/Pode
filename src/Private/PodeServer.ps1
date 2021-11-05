@@ -148,6 +148,14 @@ function Start-PodeWebServer
                                 Ranges = $null
                             }
 
+                            # if iis, and we have an app path, alter it
+                            if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.IsApp) {
+                                $WebEvent.Path = ($WebEvent.Path -ireplace $PodeContext.Server.IIS.Path, '')
+                                if ([string]::IsNullOrEmpty($WebEvent.Path)) {
+                                    $WebEvent.Path = '/'
+                                }
+                            }
+
                             # accept/transfer encoding
                             $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
                             $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
