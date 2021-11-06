@@ -182,14 +182,18 @@ function New-PodeContext
         $ctx.Server.IIS = @{
             Token = $env:ASPNETCORE_TOKEN
             Port = $env:ASPNETCORE_PORT
-            Path = [string]::Empty
+            Path = @{
+                Raw = '/'
+                Pattern = '^/'
+                IsNonRoot = $false
+            }
             Shutdown = $false
-            IsApp = $false
         }
 
         if (![string]::IsNullOrWhiteSpace($env:ASPNETCORE_APPL_PATH) -and ($env:ASPNETCORE_APPL_PATH -ne '/')) {
-            $ctx.Server.IIS.Path = "^$($env:ASPNETCORE_APPL_PATH)"
-            $ctx.Server.IIS.IsApp = $true
+            $ctx.Server.IIS.Path.Raw = $env:ASPNETCORE_APPL_PATH
+            $ctx.Server.IIS.Path.Pattern = "^$($env:ASPNETCORE_APPL_PATH)"
+            $ctx.Server.IIS.Path.IsNonRoot = $true
         }
     }
 

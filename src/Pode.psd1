@@ -117,6 +117,7 @@
         'Write-PodeHost',
         'Test-PodeIsIIS',
         'Test-PodeIsHeroku',
+        'Get-PodeIISApplicationPath',
         'New-PodeLockable',
         'Remove-PodeLockable',
         'Get-PodeLockable',

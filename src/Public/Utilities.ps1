@@ -939,6 +939,28 @@ function Test-PodeIsIIS
 
 <#
 .SYNOPSIS
+Returns the IIS application path.
+
+.DESCRIPTION
+Returns the IIS application path, or null if not using IIS.
+
+.EXAMPLE
+$path = Get-PodeIISApplicationPath
+#>
+function Get-PodeIISApplicationPath
+{
+    [CmdletBinding()]
+    param()
+
+    if (!$PodeContext.Server.IsIIS) {
+        return $null
+    }
+
+    return $PodeContext.Server.IIS.Path.Raw
+}
+
+<#
+.SYNOPSIS
 Returns whether or not the server is running via Heroku.
 
 .DESCRIPTION

@@ -149,8 +149,8 @@ function Start-PodeWebServer
                             }
 
                             # if iis, and we have an app path, alter it
-                            if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.IsApp) {
-                                $WebEvent.Path = ($WebEvent.Path -ireplace $PodeContext.Server.IIS.Path, '')
+                            if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Path.IsNonRoot) {
+                                $WebEvent.Path = ($WebEvent.Path -ireplace $PodeContext.Server.IIS.Path.Pattern, '')
                                 if ([string]::IsNullOrEmpty($WebEvent.Path)) {
                                     $WebEvent.Path = '/'
                                 }
