@@ -178,6 +178,22 @@ To change the user your site is running as:
 4. Change the user to either an inbuilt one, or a custom local/domain user
 5. Select OK
 
+## IIS Application
+
+You can host your Pode server as an Application under another Website in IIS by doing the following:
+
+1. In IIS, right click the Website
+2. Select "Add Application..."
+3. Enter a name for your Application under "Alias"
+4. Set the Physical Path to the root directory of your Pode server's script (just the directory, not the ps1 itself)
+5. Select OK
+
+The website will be available at the same binding(s) as the main website, but the URL will need `/<alias>` appended.
+
+For example, if the website has the binding `http://localhost:8080` and the alias of the application is `api`, then you can access the application at `http://localhost:8080/api`.
+
+The server will get a URL path of `/api/etc`, but you can keep your route paths as `/etc`, as Pode will automatically remove the `/api` from `/api/etc`. This lets you host the same server under any alias name.
+
 ## HTTPS/WSS
 
 Although Pode does have support for HTTPS/WSS, when running via IIS it takes control of HTTPS/WSS for us - this is why the endpoints are forced to HTTP/WS.
@@ -266,6 +282,33 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
+
+### Additional Validation
+
+Similar to the normal [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.
+
+The ScriptBlock has the same return rules as [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), as can be seen in the [Overview](../../Tutorials/Authentication/Overview).
+
+For example, to return the user back:
+
+```powershell
+Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
+    param($user)
+
+    # check or load extra data
+
+    return @{ User = $user }
+}
+```
+
+Or to fail authentication with an error message:
+
+```powershell
+Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
+    param($user)
+    return @{ Message = 'Authorization failed' }
+}
+```
 
 ## IIS Advanced Kerberos
 
@@ -427,32 +470,6 @@ This can be done using the following example:
     $newIdentity = [Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -ExpandProperty 'Name'
     Write-PodeTextResponse -Value "You are running this command as the server user $newIdentity"
 })
-```
-### Additional Validation
-
-Similar to the normal [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), [`Add-PodeAuthIIS`](../../Functions/Authentication/Add-PodeAuthIIS) can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.
-
-The ScriptBlock has the same return rules as [`Add-PodeAuth`](../../Functions/Authentication/Add-PodeAuth), as can be seen in the [Overview](../../Tutorials/Authentication/Overview).
-
-For example, to return the user back:
-
-```powershell
-Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
-    param($user)
-
-    # check or load extra data
-
-    return @{ User = $user }
-}
-```
-
-Or to fail authentication with an error message:
-
-```powershell
-Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
-    param($user)
-    return @{ Message = 'Authorization failed' }
-}
 ```
 
 ## Azure Web Apps
