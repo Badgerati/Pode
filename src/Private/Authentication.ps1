@@ -151,7 +151,12 @@ function Get-PodeAuthOAuth2Type
                 }
             }
             elseif (![string]::IsNullOrWhiteSpace($result.id_token)) {
-                $user = ConvertFrom-PodeJwt -Token $result.id_token -IgnoreSignature
+                try {
+                    $user = ConvertFrom-PodeJwt -Token $result.id_token -IgnoreSignature
+                }
+                catch {
+                    $user = @{ Provider = 'OAuth2' }
+                }
             }
             else {
                 $user = @{ Provider = 'OAuth2' }
@@ -174,6 +179,9 @@ function Get-PodeAuthOAuth2Type
             $url = $options.Urls.Authorise
             if (!$url.Contains('?')) {
                 $url += '?'
+            }
+            else {
+                $url += '&'
             }
 
             Move-PodeResponseUrl -Url "$($url)$($query)"
