@@ -2,7 +2,6 @@ function Invoke-PodeMiddleware
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
         $WebEvent,
 
         [Parameter()]
@@ -53,6 +52,9 @@ function Invoke-PodeMiddleware
             }
 
             $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments $_args -Return -Scoped -Splat
+            if ($null -eq $continue) {
+                $continue = $true
+            }
         }
         catch {
             Set-PodeResponseStatus -Code 500 -Exception $_

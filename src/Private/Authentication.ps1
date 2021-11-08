@@ -1046,6 +1046,13 @@ function Get-PodeAuthMiddlewareScript
         try {
             $result = $null
 
+            # run pre-auth middleware
+            if ($null -ne $auth.Scheme.Middleware) {
+                if (!(Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $auth.Scheme.Middleware)) {
+                    return $false
+                }
+            }
+
             # run auth scheme script to parse request for data
             $_args = @($auth.Scheme.Arguments)
             if ($null -ne $auth.Scheme.ScriptBlock.UsingVariables) {
