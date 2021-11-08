@@ -165,13 +165,13 @@ function Start-PodeWebServer
                             }
 
                             # invoke global and route middleware
-                            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
+                            if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
                                 # has thr request been aborted
                                 if ($Request.IsAborted) {
                                     throw $Request.Error
                                 }
 
-                                if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
+                                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware))
                                 {
                                     # has thr request been aborted
                                     if ($Request.IsAborted) {
@@ -227,7 +227,7 @@ function Start-PodeWebServer
 
                         # invoke endware specifc to the current web event
                         $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
-                        Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
+                        Invoke-PodeEndware -Endware $_endware
                     }
                     finally {
                         $WebEvent = $null

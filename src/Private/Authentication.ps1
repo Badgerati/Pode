@@ -1048,7 +1048,7 @@ function Get-PodeAuthMiddlewareScript
 
             # run pre-auth middleware
             if ($null -ne $auth.Scheme.Middleware) {
-                if (!(Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $auth.Scheme.Middleware)) {
+                if (!(Invoke-PodeMiddleware -Middleware $auth.Scheme.Middleware)) {
                     return $false
                 }
             }

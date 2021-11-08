@@ -1,9 +1,6 @@
 function Invoke-PodeMiddleware
 {
     param (
-        [Parameter(Mandatory=$true)]
-        $WebEvent,
-
         [Parameter()]
         $Middleware,
 

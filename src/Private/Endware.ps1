@@ -1,10 +1,6 @@
 function Invoke-PodeEndware
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $WebEvent,
-
         [Parameter()]
         $Endware
     )

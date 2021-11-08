@@ -4,18 +4,18 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 Describe 'Invoke-PodeEndware' {
     It 'Returns for no endware' {
-        (Invoke-PodeEndware -WebEvent @{} -Endware @()) | Out-Null
+        (Invoke-PodeEndware -Endware @()) | Out-Null
     }
 
     It 'Runs the logic for a single endware' {
         Mock Invoke-PodeScriptBlock { }
-        Invoke-PodeEndware -WebEvent @{} -Endware @(@{ Logic = { 'test' | Out-Null } })
+        Invoke-PodeEndware -Endware @(@{ Logic = { 'test' | Out-Null } })
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
 
     It 'Runs the logic for 2 endwares' {
         Mock Invoke-PodeScriptBlock { }
-        Invoke-PodeEndware -WebEvent @{} -Endware @(
+        Invoke-PodeEndware -Endware @(
             @{ Logic = { 'test' | Out-Null } },
             @{ Logic = { 'test2' | Out-Null } }
         )
@@ -26,7 +26,7 @@ Describe 'Invoke-PodeEndware' {
         Mock Invoke-PodeScriptBlock { throw 'some error' }
         Mock Write-PodeErrorLog { }
 
-        Invoke-PodeEndware -WebEvent @{} -Endware @(@{ Logic = { 'test' | Out-Null } })
+        Invoke-PodeEndware -Endware @(@{ Logic = { 'test' | Out-Null } })
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled Write-PodeErrorLog -Times 1 -Scope It
