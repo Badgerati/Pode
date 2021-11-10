@@ -1012,28 +1012,28 @@ Describe 'Find-PodeRouteContentType' {
     }
 }
 
-Describe 'ConvertTo-PodeRouteMiddleware' {
+Describe 'ConvertTo-PodeMiddleware' {
     $_PSSession = @{}
 
     It 'Returns no middleware' {
-        @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -PSSession $_PSSession) | Should Be $null
+        @(ConvertTo-PodeMiddleware -PSSession $_PSSession) | Should Be $null
     }
 
     It 'Errors for invalid middleware type' {
-        { ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware 'string' -PSSession $_PSSession } | Should Throw 'invalid type'
+        { ConvertTo-PodeMiddleware -Middleware 'string' -PSSession $_PSSession } | Should Throw 'invalid type'
     }
 
     It 'Errors for invalid middleware hashtable - no logic' {
-        { ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @{} -PSSession $_PSSession } | Should Throw 'no logic defined'
+        { ConvertTo-PodeMiddleware -Middleware @{} -PSSession $_PSSession } | Should Throw 'no logic defined'
     }
 
     It 'Errors for invalid middleware hashtable - logic not scriptblock' {
-        { ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @{ Logic = 'string' } -PSSession $_PSSession } | Should Throw 'invalid logic type'
+        { ConvertTo-PodeMiddleware -Middleware @{ Logic = 'string' } -PSSession $_PSSession } | Should Throw 'invalid logic type'
     }
 
     It 'Returns hashtable for single hashtable middleware' {
         $middleware = @{ Logic = { Write-Host 'Hello' } }
-        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware $middleware -PSSession $_PSSession)
+        $converted = @(ConvertTo-PodeMiddleware -Middleware $middleware -PSSession $_PSSession)
         $converted.Length | Should Be 1
         $converted[0].Logic.ToString() | Should Be ($middleware.Logic.ToString())
     }
@@ -1042,7 +1042,7 @@ Describe 'ConvertTo-PodeRouteMiddleware' {
         $middleware1 = @{ Logic = { Write-Host 'Hello1' } }
         $middleware2 = @{ Logic = { Write-Host 'Hello2' } }
 
-        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @($middleware1, $middleware2) -PSSession $_PSSession)
+        $converted = @(ConvertTo-PodeMiddleware -Middleware @($middleware1, $middleware2) -PSSession $_PSSession)
 
         $converted.Length | Should Be 2
         $converted[0].Logic.ToString() | Should Be ($middleware1.Logic.ToString())
@@ -1051,7 +1051,7 @@ Describe 'ConvertTo-PodeRouteMiddleware' {
 
     It 'Converts single scriptblock middleware to hashtable' {
         $middleware = { Write-Host 'Hello' }
-        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware $middleware -PSSession $_PSSession)
+        $converted = @(ConvertTo-PodeMiddleware -Middleware $middleware -PSSession $_PSSession)
         $converted.Length | Should Be 1
         $converted[0].Logic.ToString() | Should Be ($middleware.ToString())
     }
@@ -1060,7 +1060,7 @@ Describe 'ConvertTo-PodeRouteMiddleware' {
         $middleware1 = { Write-Host 'Hello1' }
         $middleware2 = { Write-Host 'Hello2' }
 
-        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @($middleware1, $middleware2) -PSSession $_PSSession)
+        $converted = @(ConvertTo-PodeMiddleware -Middleware @($middleware1, $middleware2) -PSSession $_PSSession)
 
         $converted.Length | Should Be 2
         $converted[0].Logic.ToString() | Should Be ($middleware1.ToString())
@@ -1071,7 +1071,7 @@ Describe 'ConvertTo-PodeRouteMiddleware' {
         $middleware1 = @{ Logic = { Write-Host 'Hello1' } }
         $middleware2 = { Write-Host 'Hello2' }
 
-        $converted = @(ConvertTo-PodeRouteMiddleware -Method Get -Path '/users' -Middleware @($middleware1, $middleware2) -PSSession $_PSSession)
+        $converted = @(ConvertTo-PodeMiddleware -Middleware @($middleware1, $middleware2) -PSSession $_PSSession)
 
         $converted.Length | Should Be 2
         $converted[0].Logic.ToString() | Should Be ($middleware1.Logic.ToString())

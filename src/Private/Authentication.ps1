@@ -150,12 +150,20 @@ function Get-PodeAuthOAuth2Type
                     }
                 }
             }
+            elseif (![string]::IsNullOrWhiteSpace($result.id_token)) {
+                try {
+                    $user = ConvertFrom-PodeJwt -Token $result.id_token -IgnoreSignature
+                }
+                catch {
+                    $user = @{ Provider = 'OAuth2' }
+                }
+            }
             else {
                 $user = @{ Provider = 'OAuth2' }
             }
 
             # return the user for the validator
-            return @($user, $result.access_token, $result.refresh_token)
+            return @($user, $result.access_token, $result.refresh_token, $result)
         }
 
         # redirect to the authUrl - only if no inner scheme supplied
@@ -168,7 +176,15 @@ function Get-PodeAuthOAuth2Type
             $query += "&response_mode=query"
             $query += "&scope=$([System.Web.HttpUtility]::UrlEncode($scopes))"
 
-            Move-PodeResponseUrl -Url "$($options.Urls.Authorise)?$($query)"
+            $url = $options.Urls.Authorise
+            if (!$url.Contains('?')) {
+                $url += '?'
+            }
+            else {
+                $url += '&'
+            }
+
+            Move-PodeResponseUrl -Url "$($url)$($query)"
             return @{ IsRedirected = $true }
         }
 
@@ -1029,6 +1045,13 @@ function Get-PodeAuthMiddlewareScript
 
         try {
             $result = $null
+
+            # run pre-auth middleware
+            if ($null -ne $auth.Scheme.Middleware) {
+                if (!(Invoke-PodeMiddleware -Middleware $auth.Scheme.Middleware)) {
+                    return $false
+                }
+            }
 
             # run auth scheme script to parse request for data
             $_args = @($auth.Scheme.Arguments)

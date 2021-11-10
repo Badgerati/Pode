@@ -114,6 +114,14 @@ WWW-Authenticate: Basic realm="Enter creds to access site"
 !!! note
     If no Realm was set then it would just look as follows: `WWW-Authenticate: Basic`
 
+#### Redirecting
+
+When building custom authenticators, it might be required that you have to redirect mid-auth and stop processing the current request. To achieve this you can return the following from the scriptblock of `New-PodeAuthScheme` or `Add-PodeAuth`:
+
+```powershell
+return @{ IsRedirected = $true }
+```
+
 ### Routes/Middleware
 
 To use an authentication on a specific route, you can use the `-Authentication` parameter on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function; this takes the Name supplied to the `-Name` parameter on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). This will set the authentication up to run before other route middleware.

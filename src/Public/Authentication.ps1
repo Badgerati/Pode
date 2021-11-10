@@ -41,6 +41,9 @@ The name of scope of the protected area.
 .PARAMETER Type
 The scheme type for custom Authentication types. Default is HTTP.
 
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
+
 .PARAMETER PostValidator
 The PostValidator is a scriptblock that is invoked after user validation.
 
@@ -170,6 +173,10 @@ function New-PodeAuthScheme
         [string]
         $Type = 'Http',
 
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
         [Parameter(ParameterSetName='Custom')]
         [scriptblock]
         $PostValidator,
@@ -255,6 +262,9 @@ function New-PodeAuthScheme
     # default realm
     $_realm = 'User'
 
+    # convert any middleware into valid hashtables
+    $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+
     # configure the auth scheme
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'basic' {
@@ -266,6 +276,7 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 PostValidator = $null
+                Middleware = $Middleware
                 InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{
@@ -285,6 +296,7 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 PostValidator = $null
+                Middleware = $Middleware
                 InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{}
@@ -303,6 +315,7 @@ function New-PodeAuthScheme
                     Script = (Get-PodeAuthDigestPostValidator)
                     UsingVariables = $null
                 }
+                Middleware = $Middleware
                 InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{
@@ -328,6 +341,7 @@ function New-PodeAuthScheme
                     Script = (Get-PodeAuthBearerPostValidator)
                     UsingVariables = $null
                 }
+                Middleware = $Middleware
                 Scheme = 'http'
                 InnerScheme = $InnerScheme
                 Arguments = @{
@@ -348,6 +362,7 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 PostValidator = $null
+                Middleware = $Middleware
                 InnerScheme = $InnerScheme
                 Scheme = 'http'
                 Arguments = @{
@@ -377,6 +392,7 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 PostValidator = $null
+                Middleware = $Middleware
                 Scheme = 'oauth2'
                 InnerScheme = $InnerScheme
                 Arguments = @{
@@ -418,6 +434,7 @@ function New-PodeAuthScheme
                     UsingVariables = $null
                 }
                 PostValidator = $null
+                Middleware = $Middleware
                 InnerScheme = $InnerScheme
                 Scheme = 'apiKey'
                 Arguments = @{
@@ -453,6 +470,7 @@ function New-PodeAuthScheme
                     Script = $PostValidator
                     UsingVariables = $usingPostVars
                 }
+                Middleware = $Middleware
                 Arguments = $ArgumentList
             }
         }
@@ -481,6 +499,9 @@ An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
 .PARAMETER InnerScheme
 An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
 
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
+
 .EXAMPLE
 New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -ClientSecret 1234.abc
 #>
@@ -507,7 +528,11 @@ function New-PodeAuthAzureADScheme
 
         [Parameter(ValueFromPipeline=$true)]
         [hashtable]
-        $InnerScheme
+        $InnerScheme,
+
+        [Parameter()]
+        [object[]]
+        $Middleware
     )
 
     return (New-PodeAuthScheme `
@@ -518,7 +543,8 @@ function New-PodeAuthAzureADScheme
         -TokenUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/token" `
         -UserUrl "https://graph.microsoft.com/oidc/userinfo" `
         -RedirectUrl $RedirectUrl `
-        -InnerScheme $InnerScheme)
+        -InnerScheme $InnerScheme `
+        -Middleware $Middleware)
 }
 
 <#
@@ -998,6 +1024,9 @@ The URL to redirect to when authentication succeeds when logging in.
 .PARAMETER ScriptBlock
 Optional ScriptBlock that is passed the found user object for further validation.
 
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
+
 .PARAMETER Sessionless
 If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
 
@@ -1051,6 +1080,10 @@ function Add-PodeAuthIIS
         [scriptblock]
         $ScriptBlock,
 
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
         [switch]
         $Sessionless,
 
@@ -1085,7 +1118,7 @@ function Add-PodeAuthIIS
     }
 
     # create the auth scheme for getting the token header
-    $scheme = New-PodeAuthScheme -Custom -ScriptBlock {
+    $scheme = New-PodeAuthScheme -Custom -Middleware $Middleware -ScriptBlock {
         param($options)
 
         $header = 'MS-ASPNETCORE-WINAUTHTOKEN'
@@ -1504,6 +1537,97 @@ function ConvertTo-PodeJwt
     # add the signature and return
     $jwt += ".$($sig)"
     return $jwt
+}
+
+<#
+.SYNOPSIS
+Convert and return the payload of a JWT token.
+
+.DESCRIPTION
+Convert and return the payload of a JWT token, verifying the signature by default with support to ignore the signature.
+
+.PARAMETER Token
+The JWT token.
+
+.PARAMETER Secret
+The Secret, as a byte[], to verify the token's signature.
+
+.PARAMETER IgnoreSignature
+Skip signature verification, and return the decoded payload.
+
+.EXAMPLE
+ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY"
+#>
+function ConvertFrom-PodeJwt
+{
+    [CmdletBinding(DefaultParameterSetName='Secret')]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Token,
+
+        [Parameter(ParameterSetName='Signed')]
+        [byte[]]
+        $Secret,
+
+        [Parameter(ParameterSetName='Ignore')]
+        [switch]
+        $IgnoreSignature
+    )
+
+    # get the parts
+    $parts = ($Token -isplit '\.')
+
+    # check number of parts (should be 3)
+    if ($parts.Length -ne 3) {
+        throw "Invalid JWT supplied"
+    }
+
+    # convert to header
+    $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
+    if ([string]::IsNullOrWhiteSpace($header.alg)) {
+        throw "Invalid JWT header algorithm supplied"
+    }
+
+    # convert to payload
+    $payload = ConvertFrom-PodeJwtBase64Value -Value $parts[1]
+
+    # get signature
+    if ($IgnoreSignature) {
+        return $payload
+    }
+
+    $signature = $parts[2]
+
+    # check "none" signature, and return payload if no signature
+    $isNoneAlg = ($header.alg -ieq 'none')
+
+    if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
+        throw "No JWT signature supplied for $($header.alg)"
+    }
+
+    if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
+        throw "Expected no JWT signature to be supplied"
+    }
+
+    if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
+        throw "Expected a signed JWT, 'none' algorithm is not allowed"
+    }
+
+    if ($isNoneAlg) {
+        return $payload
+    }
+
+    # otherwise, we have an alg for the signature, so we need to validate it
+    $sig = "$($parts[0]).$($parts[1])"
+    $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
+
+    if ($sig -ne $parts[2]) {
+        throw "Invalid JWT signature supplied"
+    }
+
+    # it's valid return the payload!
+    return $payload
 }
 
 <#

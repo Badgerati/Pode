@@ -196,6 +196,7 @@
         'Add-PodeAuthIIS',
         'Add-PodeAuthUserFile',
         'ConvertTo-PodeJwt',
+        'ConvertFrom-PodeJwt',
         'Use-PodeAuth',
 
         # logging
