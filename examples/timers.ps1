@@ -59,4 +59,6 @@ Start-PodeServer {
         Invoke-PodeTimer -Name 'forever'
     }
 
+    Use-PodeTimers
+
 }

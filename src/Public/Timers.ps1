@@ -189,7 +189,7 @@ function Remove-PodeTimer
         $Name
     )
 
-    $PodeContext.Timers.Remove($Name) | Out-Null
+    $null = $PodeContext.Timers.Remove($Name)
 }
 
 <#
@@ -322,4 +322,32 @@ function Get-PodeTimer
 
     # return
     return $timers
+}
+
+<#
+.SYNOPSIS
+Automatically loads timer ps1 files
+
+.DESCRIPTION
+Automatically loads timer ps1 files from either a /timers folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeTimers
+
+.EXAMPLE
+Use-PodeTimers -Path './my-timers'
+#>
+function Use-PodeTimers
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'timers'
 }

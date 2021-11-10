@@ -148,6 +148,14 @@ function Start-PodeWebServer
                                 Ranges = $null
                             }
 
+                            # if iis, and we have an app path, alter it
+                            if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Path.IsNonRoot) {
+                                $WebEvent.Path = ($WebEvent.Path -ireplace $PodeContext.Server.IIS.Path.Pattern, '')
+                                if ([string]::IsNullOrEmpty($WebEvent.Path)) {
+                                    $WebEvent.Path = '/'
+                                }
+                            }
+
                             # accept/transfer encoding
                             $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
                             $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
@@ -297,7 +305,7 @@ function Start-PodeWebServer
                                 $socket.Context.Response.SendSignal($message)
                             }
                             catch {
-                                $Listener.WebSockets.Remove($socket.ClientId) | Out-Null
+                                $null = $Listener.WebSockets.Remove($socket.ClientId)
                             }
                         }
                     }
@@ -325,7 +333,11 @@ function Start-PodeWebServer
         $clientScript = {
             param(
                 [Parameter(Mandatory=$true)]
-                $Listener
+                $Listener,
+
+                [Parameter(Mandatory=$true)]
+                [int]
+                $ThreadId
             )
 
             try {
@@ -401,7 +413,10 @@ function Start-PodeWebServer
             }
         }
 
-        Add-PodeRunspace -Type Signals -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener }
+        # start the runspace for listening on x-number of threads
+        1..$PodeContext.Threads.General | ForEach-Object {
+            Add-PodeRunspace -Type Signals -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        }
     }
 
     # script to keep web server listening until cancelled

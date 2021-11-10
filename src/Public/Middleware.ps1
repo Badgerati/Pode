@@ -359,6 +359,9 @@ You can also have the SessionId returned as signed as well.
 .PARAMETER Signed
 If supplied, the returned SessionId will also be signed.
 
+.PARAMETER Force
+If supplied, the sessionId will be returned regardless of authentication.
+
 .EXAMPLE
 $sessionId = Get-PodeSessionId
 #>
@@ -367,13 +370,16 @@ function Get-PodeSessionId
     [CmdletBinding()]
     param(
         [switch]
-        $Signed
+        $Signed,
+
+        [switch]
+        $Force
     )
 
     $sessionId = $null
 
-    # only return session if authenticated
-    if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
+    # only return session if authenticated, or force passed
+    if ($Force -or (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated)) {
         $sessionId = $WebEvent.Session.Id
 
         # do they want the session signed?
@@ -676,7 +682,7 @@ function Remove-PodeBodyParser
         return
     }
 
-    $PodeContext.Server.BodyParsers.Remove($ContentType) | Out-Null
+    $null = $PodeContext.Server.BodyParsers.Remove($ContentType)
 }
 
 <#
@@ -854,4 +860,32 @@ function Clear-PodeMiddleware
     param()
 
     $PodeContext.Server.Middleware = @()
+}
+
+<#
+.SYNOPSIS
+Automatically loads middleware ps1 files
+
+.DESCRIPTION
+Automatically loads middleware ps1 files from either a /middleware folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeMiddleware
+
+.EXAMPLE
+Use-PodeMiddleware -Path './my-middleware'
+#>
+function Use-PodeMiddleware
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'middleware'
 }

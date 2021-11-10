@@ -99,7 +99,7 @@ function Unregister-PodeEvent
     }
 
     # remove event
-    $PodeContext.Server.Events[$Type].Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Events[$Type].Remove($Name)
 }
 
 <#
@@ -191,5 +191,33 @@ function Clear-PodeEvent
         $Type
     )
 
-    $PodeContext.Server.Events[$Type].Clear() | Out-Null
+    $null = $PodeContext.Server.Events[$Type].Clear()
+}
+
+<#
+.SYNOPSIS
+Automatically loads event ps1 files
+
+.DESCRIPTION
+Automatically loads event ps1 files from either a /events folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeEvents
+
+.EXAMPLE
+Use-PodeEvents -Path './my-events'
+#>
+function Use-PodeEvents
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'events'
 }

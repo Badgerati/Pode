@@ -68,9 +68,9 @@ function Get-PodeLoggingFileMethod
         if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
             $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
 
-            Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+            $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
                 Where-Object { $_.CreationTime -lt $date } |
-                Remove-Item $_ -Force | Out-Null
+                Remove-Item $_ -Force
 
             $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
         }
@@ -296,10 +296,10 @@ function Write-PodeRequestLog
     }
 
     # add the item to be processed
-    $PodeContext.LogsToProcess.Add(@{
+    $null = $PodeContext.LogsToProcess.Add(@{
         Name = $name
         Item = $item
-    }) | Out-Null
+    })
 }
 
 function Add-PodeRequestLogEndware
@@ -344,7 +344,7 @@ function Start-PodeLoggingRunspace
             # safely pop off the first log from the array
             $log = (Lock-PodeObject -Return -Object $PodeContext.LogsToProcess -ScriptBlock {
                 $log = $PodeContext.LogsToProcess[0]
-                $PodeContext.LogsToProcess.RemoveAt(0) | Out-Null
+                $null = $PodeContext.LogsToProcess.RemoveAt(0)
                 return $log
             })
 

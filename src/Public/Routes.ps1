@@ -623,7 +623,7 @@ function Remove-PodeRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 
@@ -673,7 +673,7 @@ function Remove-PodeStaticRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 
@@ -723,7 +723,7 @@ function Remove-PodeSignalRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 
@@ -1392,21 +1392,5 @@ function Use-PodeRoutes
         $Path
     )
 
-    # use default ./routes, or custom path
-    if ([string]::IsNullOrWhiteSpace($Path)) {
-        $Path = Join-PodeServerRoot -Folder 'routes'
-    }
-    else {
-        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-    }
-
-    # fail if path not found
-    if (!(Test-PodePath -Path $Path -NoStatus)) {
-        throw "Path to load routes not found: $($Path)"
-    }
-
-    # get .ps1 files and load them
-    Get-ChildItem -Path $Path -Filter *.ps1 -Force -Recurse | ForEach-Object {
-        Use-PodeScript -Path $_.FullName
-    }
+    Use-PodeFolder -Path $Path -DefaultPath 'routes'
 }

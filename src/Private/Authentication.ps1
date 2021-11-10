@@ -565,7 +565,7 @@ function Get-PodeAuthDigestPostValidator
         }
 
         # hashes are valid, remove password and return result
-        $result.Remove('Password') | Out-Null
+        $null = $result.Remove('Password')
         return $result
     }
 }
@@ -1476,7 +1476,7 @@ function Open-PodeAuthADConnection
             $user = "$($Domain)\$($Username)"
         }
 
-        (ldapsearch -x -LLL -H "$($hostname)" -D "$($user)" -w "$($Password)" -b "$($baseDn)" -o ldif-wrap=no "$($query)" dn) | Out-Null
+        $null = (ldapsearch -x -LLL -H "$($hostname)" -D "$($user)" -w "$($Password)" -b "$($baseDn)" -o ldif-wrap=no "$($query)" dn)
         if (!$? -or ($LASTEXITCODE -ne 0)) {
             $result = $false
         }
@@ -1607,7 +1607,7 @@ function Get-PodeAuthADGroups
             $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
         }
 
-        $Connection.Searcher.PropertiesToLoad.Add('samaccountname') | Out-Null
+        $null = $Connection.Searcher.PropertiesToLoad.Add('samaccountname')
         $Connection.Searcher.filter = $query
         $groups = @($Connection.Searcher.FindAll().Properties.samaccountname)
     }

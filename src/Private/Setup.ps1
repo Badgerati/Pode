@@ -51,11 +51,11 @@ function Install-PodeLocalModules
             if (!(Test-Path ([System.IO.Path]::Combine($psModules, "$($_name)/$($_version)")))) {
                 # remove other versions
                 if (Test-Path ([System.IO.Path]::Combine($psModules, "$($_name)"))) {
-                    Remove-Item -Path ([System.IO.Path]::Combine($psModules, "$($_name)")) -Force -Recurse | Out-Null
+                    $null = Remove-Item -Path ([System.IO.Path]::Combine($psModules, "$($_name)")) -Force -Recurse
                 }
 
                 # download the module
-                Save-Module -Name $_name -RequiredVersion $_version -Repository $_repository -Path $psModules -Force -ErrorAction Stop | Out-Null
+                $null = Save-Module -Name $_name -RequiredVersion $_version -Repository $_repository -Path $psModules -Force -ErrorAction Stop
             }
 
             Write-Host 'Success' -ForegroundColor Green

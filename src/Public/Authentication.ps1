@@ -924,7 +924,7 @@ function Remove-PodeAuth
         $Name
     )
 
-    $PodeContext.Server.Authentications.Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Authentications.Remove($Name)
 }
 
 <#
@@ -1628,4 +1628,32 @@ function ConvertFrom-PodeJwt
 
     # it's valid return the payload!
     return $payload
+}
+
+<#
+.SYNOPSIS
+Automatically loads auth ps1 files
+
+.DESCRIPTION
+Automatically loads auth ps1 files from either a /auth folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeAuth
+
+.EXAMPLE
+Use-PodeAuth -Path './my-auth'
+#>
+function Use-PodeAuth
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'auth'
 }

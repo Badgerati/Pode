@@ -422,6 +422,34 @@ function Add-PodeEndware
 
 <#
 .SYNOPSIS
+Automatically loads endware ps1 files
+
+.DESCRIPTION
+Automatically loads endware ps1 files from either a /endware folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeEndware
+
+.EXAMPLE
+Use-PodeEndware -Path './endware'
+#>
+function Use-PodeEndware
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'endware'
+}
+
+<#
+.SYNOPSIS
 Imports a Module into the current, and all runspaces that Pode uses.
 
 .DESCRIPTION
@@ -493,7 +521,7 @@ function Import-PodeModule
         throw "The module path does not exist: $(Protect-PodeValue -Value $Path -Default $Name)"
     }
 
-    Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
+    $null = Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop
 }
 
 <#
@@ -524,7 +552,7 @@ function Import-PodeSnapin
     }
 
     # import the snap-in
-    Add-PSSnapin -Name $Name | Out-Null
+    $null = Add-PSSnapin -Name $Name
 }
 
 <#
@@ -907,6 +935,28 @@ function Test-PodeIsIIS
     param()
 
     return $PodeContext.Server.IsIIS
+}
+
+<#
+.SYNOPSIS
+Returns the IIS application path.
+
+.DESCRIPTION
+Returns the IIS application path, or null if not using IIS.
+
+.EXAMPLE
+$path = Get-PodeIISApplicationPath
+#>
+function Get-PodeIISApplicationPath
+{
+    [CmdletBinding()]
+    param()
+
+    if (!$PodeContext.Server.IsIIS) {
+        return $null
+    }
+
+    return $PodeContext.Server.IIS.Path.Raw
 }
 
 <#

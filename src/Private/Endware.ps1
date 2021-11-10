@@ -27,7 +27,7 @@ function Invoke-PodeEndware
                 $_args = $_vars + $_args
             }
 
-            Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments $_args -Scoped -Splat | Out-Null
+            $null = Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments $_args -Scoped -Splat
         }
         catch {
             $_ | Write-PodeErrorLog
