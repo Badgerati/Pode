@@ -17,9 +17,24 @@ namespace Pode
         public CancellationToken CancellationToken { get; private set; }
 
         private IList<PodeSocket> Sockets;
+
         private BlockingCollection<PodeContext> Contexts;
+        public int ContextsCount
+        {
+            get => Contexts.Count;
+        }
+
         private BlockingCollection<PodeServerSignal> ServerSignals;
+        public int ServerSignalsCount
+        {
+            get => ServerSignals.Count;
+        }
+
         private BlockingCollection<PodeClientSignal> ClientSignals;
+        public int ClientSignalsCount
+        {
+            get => ClientSignals.Count;
+        }
 
         private int _requestTimeout = 30;
         public int RequestTimeout

@@ -116,3 +116,36 @@ function Get-PodeServerSignalMetric
 
     return $PodeContext.Metrics.Signals.Total
 }
+
+function Get-PodeServerActiveRequestMetric
+{
+    [CmdletBinding()]
+    param()
+
+    return $PodeContext.Server.WebSockets.Listener.ContextsCount
+}
+
+function Get-PodeServerActiveSignalMetric
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [ValidateSet('Total', 'Server', 'Client')]
+        [string]
+        $Type = 'Total'
+    )
+
+    switch ($Type.ToLowerInvariant()) {
+        'total' {
+            return $PodeContext.Server.WebSockets.Listener.ServerSignalsCount + $PodeContext.Server.WebSockets.Listener.ClientSignalsCount
+        }
+
+        'server' {
+            return $PodeContext.Server.WebSockets.Listener.ServerSignalsCount
+        }
+
+        'client' {
+            return $PodeContext.Server.WebSockets.Listener.ClientSignalsCount
+        }
+    }
+}

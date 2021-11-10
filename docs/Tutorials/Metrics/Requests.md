@@ -1,8 +1,8 @@
 # Requests
 
-Pode keeps a count of the total number of Requests processed by the server. This count is kept both server-wide, and against each individual Route; the counts are also split into two: one for the total number of requests, and one for the total number of requests per status code.
+Pode keeps a count of the total number of Requests processed by the server. This count is kept both server-wide, and against each individual Route; the counts are also split into two: one for the total number of requests, and one for the total number of requests per status code. These counts are preserved through internal Pode server restarts.
 
-These counts are preserved through internal Pode server restarts.
+The current count of active requests are also available.
 
 ## Server
 
@@ -48,4 +48,12 @@ And to get the total count for a specific status code for a Route:
 
 ```powershell
 $code = (Get-PodeRoute -Method Get -Path '/about').Metrics.Requests.StatusCodes['200']
+```
+
+## Active
+
+You can retrieve the current count of active requests by using [`Get-PodeServerActiveRequestMetric`](../../../Functions/Metrics/Get-PodeServerActiveRequestMetric). Active requests are ones that are queued internally, ready to be processed:
+
+```powershell
+$activeReqs = Get-PodeServerActiveRequestMetric
 ```
