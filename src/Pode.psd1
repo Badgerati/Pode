@@ -249,6 +249,8 @@
         'Get-PodeServerRestartCount',
         'Get-PodeServerRequestMetric',
         'Get-PodeServerSignalMetric',
+        'Get-PodeServerActiveRequestMetric',
+        'Get-PodeServerActiveSignalMetric',
 
         # AutoImport
         'Export-PodeModule',
