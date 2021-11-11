@@ -1,5 +1,43 @@
 # Release Notes
 
+## v2.5.0
+
+```plain
+### Enhancements
+* #771: Adds more `Use-PodeXYZ` functions for auto-loading scripts
+* #813: Adds new `Out-PodeVariable` to set variables on the Host when the server stops
+* #817: Adds LastTriggerTime property for Schedules and Timers
+* #825: Adds new Crash server event hook
+* #826: Add support for HTTP and WebSocket endpoints to listen on the same Address/Port
+* #827: Add `-Compress` switch to `Save-PodeState`
+* #828: Add `-Merge` switch to `Restore-PodeState`, to stop overwriting of state on restore
+* #830: Make `ConvertFrom-PodeJwt` public, and use `id_token` from the TokenUrl during OAuth2 for the user object
+* #836: If `-Object` on `Lock-PodeObject` isn't supplied, use the global Lockable by default
+* #837: Adds new Stop server event hook
+* #851: Enable signals to be sent directly back to the sending client via WebSockets
+* #852: Add new `$session:` and `$state:` variable scopes
+* #862: Use `-Threads` on `Start-PodeServer` for WebSockets as well, if endpoint supplied
+* #864: Add `-Force` to `Get-PodeSessionId` to allow the retrieval of unauthorised SessionIds
+* #865: Add support for hosting Pode servers as IIS website applications
+* #869: Add new metric functions for retrieving count of current active Requests/Signals
+
+### Bugs
+* #808: Fix syntax errors in generated OpenAPI definitions
+* #829: Fix issue with Range header returning 200 instead of 404 for invalid URI
+* #845: Fix for single item arrays being converted to JSON
+* #860: Fix duplicate limits being added during IP/Route/Endpoint middleware checks
+
+### Performance
+* #856: Replace occurrences of piping to `Out-Null` with `$null =` instead (thanks @RobinBeismann!)
+
+### Documentation
+* #842: Adds additional documentation around IIS and Kerberos (thanks @ittchmh!)
+
+### Packaging
+* #843: Split up the Core.ps1 file into separate files (thanks @mark05e!)
+* #872: Bumps PowerShell to v7.1.5 in Docker images
+```
+
 ## v2.4.2
 
 ```plain
