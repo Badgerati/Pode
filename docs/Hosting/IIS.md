@@ -418,7 +418,7 @@ Start-PodeServer -StatusPageExceptions Show {
 1. Create the KDS Root Key (only once per forest).  This is used by the KDS service on DCs (along with other information) to generate passwords. Execute on Domain Controller
     ``` PowerShell
     # Once per domain, effective date -10 hours to start using keys immediately
-    Add-KdsRootKey –EffectiveTime ((get-date).addhours(-10))
+    Add-KdsRootKey ???EffectiveTime ((get-date).addhours(-10))
     # Force AD Replication
     (Get-ADDomainController -Filter *).Name | Foreach-Object {repadmin /syncall $_ (Get-ADDomain).DistinguishedName /e /A | Out-Null}; Start-Sleep 10; Get-ADReplicationPartnerMetadata -Target "$env:userdnsdomain" -Scope Domain | Select-Object Server, LastReplicationSuccess
     ```

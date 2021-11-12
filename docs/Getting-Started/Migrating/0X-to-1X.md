@@ -171,15 +171,15 @@ You can now write items from anywhere in your server to a custom logger, includi
 
 ### General
 
-Middleware has changed a fair bit, however, generally you'll just be using the [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) function with a `-ScriptBlock` which replaces the old `middleware` function. The only difference now is you're required to supply a `-Name` for the new [`Remove-PodeMiddleware`](../../../Functions/Core/Remove-PodeMiddleware) function.
+Middleware has changed a fair bit, however, generally you'll just be using the [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware) function with a `-ScriptBlock` which replaces the old `middleware` function. The only difference now is you're required to supply a `-Name` for the new [`Remove-PodeMiddleware`](../../../Functions/Middleware/Remove-PodeMiddleware) function.
 
-There is a new [`New-PodeMiddleware`](../../../Functions/Core/New-PodeMiddleware) function which wil return a valid middleware object to re-use - such as piping into [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware), or using as `-Middleware` for Routes.
+There is a new [`New-PodeMiddleware`](../../../Functions/Middleware/New-PodeMiddleware) function which wil return a valid middleware object to re-use - such as piping into [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware), or using as `-Middleware` for Routes.
 
 | Functions |
 | -------- |
-| [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) |
-| [`New-PodeMiddleware`](../../../Functions/Core/New-PodeMiddleware) |
-| [`Remove-PodeMiddleware`](../../../Functions/Core/Remove-PodeMiddleware) |
+| [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware) |
+| [`New-PodeMiddleware`](../../../Functions/Middleware/New-PodeMiddleware) |
+| [`Remove-PodeMiddleware`](../../../Functions/Middleware/Remove-PodeMiddleware) |
 | [`Clear-PodeMiddlewares`](../../../Functions//Clear-PodeMiddlewares) |
 
 ### Sessions
@@ -264,13 +264,13 @@ Static routes that used to be setup using `route static` are now setup using the
 
 ([Tutorial](../../../Tutorials/Schedules))
 
-Schedules haven't changed too much, though there are now some new functions to remove and clear schedules. The main one is that `schedule` has been changed to [`Add-PodeSchedule`](../../../Functions/Core/Add-PodeSchedule).
+Schedules haven't changed too much, though there are now some new functions to remove and clear schedules. The main one is that `schedule` has been changed to [`Add-PodeSchedule`](../../../Functions/Schedules/Add-PodeSchedule).
 
 | Functions |
 | -------- |
-| [`Add-PodeSchedule`](../../../Functions/Core/Add-PodeSchedule) |
-| [`Remove-PodeSchedule`](../../../Functions/Core/Remove-PodeSchedule) |
-| [`Clear-PodeSchedules`](../../../Functions/Core/Clear-PodeSchedules) |
+| [`Add-PodeSchedule`](../../../Functions/Schedules/Add-PodeSchedule) |
+| [`Remove-PodeSchedule`](../../../Functions/Schedules/Remove-PodeSchedule) |
+| [`Clear-PodeSchedules`](../../../Functions/Schedules/Clear-PodeSchedules) |
 
 ## Server
 
@@ -299,10 +299,10 @@ The shared state use to be done via actions following the `state` function, such
 
 ([Tutorial](../../../Tutorials/Timers))
 
-Timers haven't changed too much, though there are now some new functions to remove and clear timers. The main one is that `timer` has been changed to [`Add-PodeTimer`](../../../Functions/Core/Add-PodeTimer).
+Timers haven't changed too much, though there are now some new functions to remove and clear timers. The main one is that `timer` has been changed to [`Add-PodeTimer`](../../../Functions/Timers/Add-PodeTimer).
 
 | Functions |
 | -------- |
-| [`Add-PodeTimer`](../../../Functions/Core/Add-PodeTimer) |
-| [`Remove-PodeTimer`](../../../Functions/Core/Remove-PodeTimer) |
-| [`Clear-PodeTimers`](../../../Functions/Core/Clear-PodeTimers) |
+| [`Add-PodeTimer`](../../../Functions/Timers/Add-PodeTimer) |
+| [`Remove-PodeTimer`](../../../Functions/Timers/Remove-PodeTimer) |
+| [`Clear-PodeTimers`](../../../Functions/Timers/Clear-PodeTimers) |
