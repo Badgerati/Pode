@@ -61,7 +61,7 @@ Add-PodeTimer -Name 'from-file' -Interval 2 -FilePath './Timers/File.ps1'
 
 ## Getting Timers
 
-The [`Get-PodeTimer`](../../Functions/Core/Get-PodeTimer) helper function will allow you to retrieve a list of timers configured within Pode. You can use it to retrieve all of the timers, or supply filters to retrieve specific ones.
+The [`Get-PodeTimer`](../../Functions/Timers/Get-PodeTimer) helper function will allow you to retrieve a list of timers configured within Pode. You can use it to retrieve all of the timers, or supply filters to retrieve specific ones.
 
 To retrieve all of the timers, you can call the function will no parameters. To filter, here are some examples:
 
@@ -73,12 +73,20 @@ Get-PodeTimer -Name Name1
 Get-PodeTimer -Name Name1, Name2
 ```
 
+## Manual Trigger
+
+You can manually trigger a timer by using [`Invoke-PodeTimer`](../../Functions/Timers/Invoke-PodeTimer). This will run the timer immediately, and will not count towards a timer's run limit:
+
+```powershell
+Invoke-PodeTimer -Name 'timer-name'
+```
+
 ## Timer Object
 
 !!! warning
     Be careful if you choose to edit these objects, as they will affect the server.
 
-The following is the structure of the Timer object internally, as well as the object that is returned from [`Get-PodeTimer`](../../Functions/Core/Get-PodeTimer):
+The following is the structure of the Timer object internally, as well as the object that is returned from [`Get-PodeTimer`](../../Functions/Timers/Get-PodeTimer):
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -87,6 +95,7 @@ The following is the structure of the Timer object internally, as well as the ob
 | Limit | int | The number of times the Timer should run - 0 if running forever |
 | Skip | int | The number of times the Timer should skip being triggered |
 | Count | int | The number of times the Timer has run |
+| LastTriggerTime | datetime | The datetime the Timer was last triggered |
 | NextTriggerTime | datetime | The datetime the Timer will next be triggered |
 | Script | scriptblock | The scriptblock of the Timer |
 | Arguments | object[] | The arguments supplied from ArgumentList |

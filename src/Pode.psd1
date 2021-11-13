@@ -102,6 +102,7 @@
         'Use-PodeScript',
         'Get-PodeConfig',
         'Add-PodeEndware',
+        'Use-PodeEndware',
         'Import-PodeModule',
         'Import-PodeSnapIn',
         'Protect-PodeValue',
@@ -116,10 +117,12 @@
         'Write-PodeHost',
         'Test-PodeIsIIS',
         'Test-PodeIsHeroku',
+        'Get-PodeIISApplicationPath',
         'New-PodeLockable',
         'Remove-PodeLockable',
         'Get-PodeLockable',
         'Test-PodeLockable',
+        'Out-PodeVariable',
 
         # routes
         'Add-PodeRoute',
@@ -142,6 +145,7 @@
         'Add-PodeHandler',
         'Remove-PodeHandler',
         'Clear-PodeHandlers',
+        'Use-PodeHandlers',
 
         # schedules
         'Add-PodeSchedule',
@@ -152,6 +156,7 @@
         'Set-PodeScheduleConcurrency',
         'Get-PodeSchedule',
         'Get-PodeScheduleNextTrigger',
+        'Use-PodeSchedules',
 
         # timers
         'Add-PodeTimer',
@@ -160,6 +165,7 @@
         'Invoke-PodeTimer',
         'Edit-PodeTimer',
         'Get-PodeTimer',
+        'Use-PodeTimers',
 
         # middleware
         'Add-PodeMiddleware',
@@ -175,6 +181,7 @@
         'Remove-PodeSession',
         'Save-PodeSession',
         'Get-PodeSessionId',
+        'Use-PodeMiddleware',
 
         # auth
         'New-PodeAuthScheme',
@@ -189,6 +196,8 @@
         'Add-PodeAuthIIS',
         'Add-PodeAuthUserFile',
         'ConvertTo-PodeJwt',
+        'ConvertFrom-PodeJwt',
+        'Use-PodeAuth',
 
         # logging
         'New-PodeLoggingMethod',
@@ -202,6 +211,7 @@
         'Write-PodeErrorLog',
         'Write-PodeLog',
         'Protect-PodeLogItem',
+        'Use-PodeLogging',
 
         # core
         'Start-PodeServer',
@@ -239,6 +249,8 @@
         'Get-PodeServerRestartCount',
         'Get-PodeServerRequestMetric',
         'Get-PodeServerSignalMetric',
+        'Get-PodeServerActiveRequestMetric',
+        'Get-PodeServerActiveSignalMetric',
 
         # AutoImport
         'Export-PodeModule',
@@ -250,7 +262,8 @@
         'Unregister-PodeEvent',
         'Test-PodeEvent',
         'Get-PodeEvent',
-        'Clear-PodeEvent'
+        'Clear-PodeEvent',
+        'Use-PodeEvents'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

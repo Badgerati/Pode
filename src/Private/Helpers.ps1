@@ -262,7 +262,7 @@ function Test-PodeIPAddress
     }
 
     try {
-        [System.Net.IPAddress]::Parse($IP) | Out-Null
+        $null = [System.Net.IPAddress]::Parse($IP)
         return $true
     }
     catch [exception] {
@@ -534,17 +534,17 @@ function Add-PodeRunspace
     {
         $ps = [powershell]::Create()
         $ps.RunspacePool = $PodeContext.RunspacePools[$Type]
-        $ps.AddScript({ Add-PodePSDrives }) | Out-Null
-        $ps.AddScript($ScriptBlock) | Out-Null
+        $null = $ps.AddScript({ Add-PodePSDrives })
+        $null = $ps.AddScript($ScriptBlock)
 
         if (!(Test-PodeIsEmpty $Parameters)) {
             $Parameters.Keys | ForEach-Object {
-                $ps.AddParameter($_, $Parameters[$_]) | Out-Null
+                $null = $ps.AddParameter($_, $Parameters[$_])
             }
         }
 
         if ($Forget) {
-            $ps.BeginInvoke() | Out-Null
+            $null = $ps.BeginInvoke()
         }
         else {
             $PodeContext.Runspaces += @{
@@ -756,7 +756,7 @@ function New-PodePSDrive
 function Add-PodePSDrives
 {
     $PodeContext.Server.Drives.Keys | ForEach-Object {
-        New-PodePSDrive -Path $PodeContext.Server.Drives[$_] -Name $_ | Out-Null
+        $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$_] -Name $_
     }
 }
 
@@ -783,7 +783,7 @@ function Add-PodePSInbuiltDrives
 
 function Remove-PodePSDrives
 {
-    Get-PSDrive PodeDir* | Remove-PSDrive | Out-Null
+    $null = Get-PSDrive PodeDir* | Remove-PSDrive
 }
 
 function Join-PodeServerRoot
@@ -836,15 +836,33 @@ function Remove-PodeNullKeysFromHashtable
 
     foreach ($key in ($Hashtable.Clone()).Keys) {
         if ($null -eq $Hashtable[$key]) {
-            $Hashtable.Remove($key) | Out-Null
+            $null = $Hashtable.Remove($key)
+            continue
         }
 
-        if (($Hashtable[$key] -is [array]) -and ($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
-            $Hashtable.Remove($key) | Out-Null
+        if ($Hashtable[$key] -is [string] -and [string]::IsNullOrEmpty($Hashtable[$key])) {
+            $null = $Hashtable.Remove($key)
+            continue
+        }
+
+        if ($Hashtable[$key] -is [array]) {
+            if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
+                $null = $Hashtable.Remove($key)
+                continue
+            }
+
+            foreach ($item in $Hashtable[$key]) {
+                if ($item -is [hashtable]) {
+                    $item | Remove-PodeNullKeysFromHashtable
+                }
+            }
+
+            continue
         }
 
         if ($Hashtable[$key] -is [hashtable]) {
             $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
+            continue
         }
     }
 }
@@ -1226,7 +1244,7 @@ function ConvertFrom-PodeRequestContent
                 # create a compressed stream to decompress the req bytes
                 $ms = New-Object -TypeName System.IO.MemoryStream
                 $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
-                $ms.Seek(0, 0) | Out-Null
+                $null = $ms.Seek(0, 0)
                 $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
 
                 # read the decompressed bytes
@@ -1400,7 +1418,7 @@ function Test-PodePathAccess
     )
 
     try {
-        Get-Item $Path | Out-Null
+        $null = Get-Item $Path
     }
     catch [System.UnauthorizedAccessException] {
         return $false
@@ -2172,6 +2190,69 @@ function Convert-PodeQueryStringToHashTable
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 }
 
+function Invoke-PodeStateScriptConversion
+{
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return $ScriptBlock
+    }
+
+    # rename any $state:<name> vars
+    $scriptStr = "$($ScriptBlock)"
+    $found = $false
+
+    while ($scriptStr -imatch '(?<full>\$state\:(?<name>[a-z0-9_\?]+)\s*=)') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "Set-PodeState -Name '$($Matches['name'])' -Value ")
+    }
+
+    while ($scriptStr -imatch '(?<full>\$state\:(?<name>[a-z0-9_\?]+))') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "`$PodeContext.Server.State.'$($Matches['name'])'.Value")
+    }
+
+    if ($found) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
+    return $ScriptBlock
+}
+
+function Invoke-PodeSessionScriptConversion
+{
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return $ScriptBlock
+    }
+
+    # rename any $session:<name> vars
+    $scriptStr = "$($ScriptBlock)"
+    $found = $false
+
+    while ($scriptStr -imatch '(?<full>\$session\:(?<name>[a-z0-9_\?]+))') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "`$WebEvent.Session.Data.'$($Matches['name'])'")
+    }
+
+    if ($found) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
+    return $ScriptBlock
+}
+
 function Invoke-PodeUsingScriptConversion
 {
     param(
@@ -2301,7 +2382,7 @@ function ConvertTo-PodeUsingScript
 
     foreach ($usingVar in $UsingVariables) {
         foreach ($subExp in $usingVar.SubExpressions) {
-            $varsList.Add($subExp) | Out-Null
+            $null = $varsList.Add($subExp)
         }
     }
 
@@ -2499,5 +2580,36 @@ function Read-PodeWebExceptionDetails
             Description = $desc
         }
         Body = $body
+    }
+}
+
+function Use-PodeFolder
+{
+    param(
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $DefaultPath
+    )
+
+    # use default, or custom path
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        $Path = Join-PodeServerRoot -Folder $DefaultPath
+    }
+    else {
+        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+    }
+
+    # fail if path not found
+    if (!(Test-PodePath -Path $Path -NoStatus)) {
+        throw "Path to load $($DefaultPath) not found: $($Path)"
+    }
+
+    # get .ps1 files and load them
+    Get-ChildItem -Path $Path -Filter *.ps1 -Force -Recurse | ForEach-Object {
+        Use-PodeScript -Path $_.FullName
     }
 }

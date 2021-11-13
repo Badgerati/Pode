@@ -9,13 +9,13 @@ The duration of the session-cookie/header can be specified, as well as whether t
 
 ## Usage
 
-To initialise sessions in Pode you use the [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. This function will configure and automatically create Middleware to enable sessions. By default sessions are set using cookies, but support is also available for headers.
+To initialise sessions in Pode use [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware). This function will configure and automatically create the Middleware needed to enable sessions. By default sessions are set to use cookies, but support is also available for headers.
 
-Sessions are automatically signed using a random GUID. For Pode running on a single server using the default in-memory storage this is OK. However if you're running Pode on multiple servers, or if you're defining a custom storage then a `-Secret` is required - this is so that sessions from different servers, or after a server restart, don't become corrupt and unusable.
+Sessions are automatically signed using a random GUID. For Pode running on a single server using the default in-memory storage this is OK, however if you're running Pode on multiple servers, or if you're defining a custom storage then a `-Secret` is required - this is so that sessions from different servers, or after a server restart, don't become corrupt and unusable.
 
 ### Cookies
 
-The following is an example of how to setup session middleware using cookies:
+The following is an example of how to setup session middleware using cookies. Each session created will expire after 2mins, but the expiry time will be extended each time the session is used:
 
 ```powershell
 Start-PodeServer {
@@ -41,9 +41,9 @@ When using headers, the default name of the session header in the request/respon
 
 The inbuilt SessionId generator used for sessions is a GUID, but you can supply a custom generator using the `-Generator` parameter.
 
-If supplied, the `-Generator` is a `scriptblock` that must return a valid string. The string itself should be a random unique value, that can be used as a unique session identifier.
+If supplied, the `-Generator` is a scriptblock that must return a valid string. The string itself should be a random unique value, that can be used as a unique session identifier.
 
-Within a route, or middleware, you can get the current authenticated sessionId using [`Get-PodeSessionId`](../../../../Functions/Middleware/Get-PodeSessionId). If there is no session, or the session is not authenticated, then `$null` is returned. This function can also returned the fully signed sessionId as well.
+Within a route, or middleware, you can get the current authenticated sessionId using [`Get-PodeSessionId`](../../../../Functions/Middleware/Get-PodeSessionId). If there is no session, or the session is not authenticated, then `$null` is returned. This function can also returned the fully signed sessionId as well. If you want the sessionId even if it's not authenticated, then you can supply `-Force` to get the sessionId back.
 
 ### Strict
 
@@ -93,7 +93,23 @@ Enable-PodeSessionMiddleware -Duration 120 -Storage $store -Secret 'schwifty'
 
 ## Session Data
 
-To add data to a session you can utilise the `.Session.Data` property within the [web event](../../../WebEvent) object accessible in a Route - or other Middleware. The data will be saved at the end of the route automatically using Endware. When a request is made using the same sessionId, the data is loaded from the store.
+To add data to a session you can utilise the `.Session.Data` property within the [web event](../../../WebEvent) object accessible in a Route - or other Middleware. The data will be saved at the end of the route automatically using Endware. When a request is made using the same sessionId, the data is loaded from the store. For example, incrementing some view counter:
+
+```powershell
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+    $WebEvent.Session.Data.Views++
+}
+```
+
+You can also use the `$session:` variable scope, which will get/set data on the current session for the name supplied. You can use `$session:` anywhere a `$WebEvent` is available - such as routes, middleware, authentication and endware. The same view counter example above:
+
+```powershell
+Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+    $session:Views++
+}
+```
+
+`$session:` can only be used in the main scriptblocks of routes, etc. If you attempt to use it in a function of a custom module, it will fail; even if you're using the function in a route. Pode remaps `$session:` on server start, and can only do this to the main scriptblocks supplied to functions such as `Add-PodeRoute`.
 
 ### Example
 

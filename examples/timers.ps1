@@ -14,9 +14,11 @@ Start-PodeServer {
     Add-PodeTimer -Name 'forever' -Interval 5 -ScriptBlock {
         '- - -' | Out-PodeHost
         $using:message | Out-PodeHost
-        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             "Look I'm locked!" | Out-PodeHost
         }
+        "Last: $($TimerEvent.Sender.LastTriggerTime)" | Out-Default
+        "Next: $($TimerEvent.Sender.NextTriggerTime)" | Out-Default
         '- - -' | Out-PodeHost
     } -Limit 5
 
@@ -56,5 +58,7 @@ Start-PodeServer {
     Add-PodeRoute -Method Get -Path '/api/run' -ScriptBlock {
         Invoke-PodeTimer -Name 'forever'
     }
+
+    Use-PodeTimers
 
 }

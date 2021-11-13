@@ -52,14 +52,14 @@ function Set-PodeSession
 
     # set session as cookie
     else {
-        (Set-PodeCookie `
+        $null = Set-PodeCookie `
             -Name $Session.Name `
             -Value $Session.Id `
             -Secret $secret `
             -ExpiryDate (Get-PodeSessionExpiry -Session $Session) `
             -HttpOnly:$httpOnly `
             -Discard:$discard `
-            -Secure:$secure) | Out-Null
+            -Secure:$secure
     }
 }
 
@@ -164,7 +164,7 @@ function Set-PodeSessionDataHash
         $Session.Data = @{}
     }
 
-    $Session.DataHash = (Invoke-PodeSHA256Hash -Value ($Session.Data.Clone() | ConvertTo-Json -Depth 10 -Compress))
+    $Session.DataHash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $Session.Data.Clone() -Depth 10 -Compress))
 }
 
 function Test-PodeSessionDataHash
@@ -184,7 +184,7 @@ function Test-PodeSessionDataHash
         $Session.Data = @{}
     }
 
-    $hash = (Invoke-PodeSHA256Hash -Value ($Session.Data | ConvertTo-Json -Depth 10 -Compress))
+    $hash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $Session.Data -Depth 10 -Compress))
     return ($Session.DataHash -eq $hash)
 }
 
@@ -268,7 +268,7 @@ function Get-PodeSessionInMemStore
     # delete a sessionId and data
     $store | Add-Member -MemberType NoteProperty -Name Delete -Value {
         param($sessionId)
-        $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId) | Out-Null
+        $null = $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId)
     }
 
     # get a sessionId's data
@@ -279,7 +279,7 @@ function Get-PodeSessionInMemStore
 
         # if expire, remove
         if (($null -ne $s) -and ($s.Expiry -lt [DateTime]::UtcNow)) {
-            $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId) | Out-Null
+            $null = $PodeContext.Server.Sessions.Store.Memory.Remove($sessionId)
             return $null
         }
 

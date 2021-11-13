@@ -182,7 +182,18 @@ function New-PodeContext
         $ctx.Server.IIS = @{
             Token = $env:ASPNETCORE_TOKEN
             Port = $env:ASPNETCORE_PORT
+            Path = @{
+                Raw = '/'
+                Pattern = '^/'
+                IsNonRoot = $false
+            }
             Shutdown = $false
+        }
+
+        if (![string]::IsNullOrWhiteSpace($env:ASPNETCORE_APPL_PATH) -and ($env:ASPNETCORE_APPL_PATH -ne '/')) {
+            $ctx.Server.IIS.Path.Raw = $env:ASPNETCORE_APPL_PATH
+            $ctx.Server.IIS.Path.Pattern = "^$($env:ASPNETCORE_APPL_PATH)"
+            $ctx.Server.IIS.Path.IsNonRoot = $true
         }
     }
 
@@ -211,6 +222,11 @@ function New-PodeContext
 
     # shared state between runspaces
     $ctx.Server.State = @{}
+
+    # output details, like variables, to be set once the server stops
+    $ctx.Server.Output = @{
+        Variables = @{}
+    }
 
     # view engine for rendering pages
     $ctx.Server.ViewEngine = @{
@@ -337,6 +353,8 @@ function New-PodeContext
         Terminate = [ordered]@{}
         Restart = [ordered]@{}
         Browser = [ordered]@{}
+        Crash = [ordered]@{}
+        Stop = [ordered]@{}
     }
 
     # return the new context
@@ -514,7 +532,7 @@ function New-PodeRunspacePools
 
     # web socket runspace - if we have any ws/s endpoints
     if (Test-PodeEndpoints -Type Ws) {
-        $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, 3, $PodeContext.RunspaceState, $Host)
+        $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
     }
 
     # setup schedule runspace pool
@@ -764,5 +782,16 @@ function New-PodeAutoRestartServer
         Add-PodeSchedule -Name '__pode_restart_crons__' -Cron @($crons) -ScriptBlock {
             $PodeContext.Tokens.Restart.Cancel()
         }
+    }
+}
+
+function Set-PodeOutputVariables
+{
+    if (Test-PodeIsEmpty $PodeContext.Server.Output.Variables) {
+        return
+    }
+
+    foreach ($key in $PodeContext.Server.Output.Variables.Keys) {
+        Set-Variable -Name $key -Value $PodeContext.Server.Output.Variables[$key] -Force -Scope Global
     }
 }

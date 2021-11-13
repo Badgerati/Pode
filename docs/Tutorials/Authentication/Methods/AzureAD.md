@@ -29,7 +29,7 @@ Start-PodeServer {
     $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>'
 
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($user, $accessToken, $refreshToken)
+        param($user, $accessToken, $refreshToken, $response)
 
         # check if the user is valid
 
@@ -53,7 +53,7 @@ Start-PodeServer {
     $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $form
 
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($user, $accessToken, $refreshToken)
+        param($user, $accessToken, $refreshToken, $response)
 
         # check if the user is valid
 
@@ -86,7 +86,7 @@ $basic = New-PodeAuthSceme -Basic
 $schemeBasic = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $basic
 
 $authLogin = {
-    param($user, $accessToken, $refreshToken)
+    param($user, $accessToken, $refreshToken, $response)
     # check user
 }
 
@@ -129,7 +129,7 @@ Start-PodeServer {
     $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>'
 
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($user, $accessToken, $refreshToken)
+        param($user, $accessToken, $refreshToken, $response)
 
         # check if the user is valid
 

@@ -25,28 +25,42 @@ Start-PodeServer {
         $hash['values'] = @()
     }
 
+    if ($null -eq $state:hash3) {
+        $state:hash3 = @{ values = @() }
+    }
+
     # create timer to update a hashtable and make it globally accessible
     Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         $hash = $null
 
-        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             $hash = (Get-PodeState -Name 'hash1')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
             Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
+        }
+
+        Lock-PodeObject -ScriptBlock {
+            $state:hash3.values += (Get-Random -Minimum 0 -Maximum 10)
         }
     }
 
     # route to retrieve and return the value of the hashtable from global state
     Add-PodeRoute -Method Get -Path '/array' -ScriptBlock {
-        Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             $hash = (Get-PodeState 'hash1')
             Write-PodeJsonResponse -Value $hash
         }
     }
 
+    Add-PodeRoute -Method Get -Path '/array3' -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
+            Write-PodeJsonResponse -Value $state:hash3
+        }
+    }
+
     # route to remove the hashtable from global state
     Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
-        Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             $hash = (Set-PodeState -Name 'hash1' -Value @{})
             $hash.values = @()
         }

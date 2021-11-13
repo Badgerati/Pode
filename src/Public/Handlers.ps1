@@ -81,6 +81,10 @@ function Add-PodeHandler
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+
     # add the handler
     $PodeContext.Server.Handlers[$Type][$Name] += @(@{
         Logic = $ScriptBlock
@@ -125,7 +129,7 @@ function Remove-PodeHandler
     }
 
     # remove the handler
-    $PodeContext.Server.Handlers[$Type].Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Handlers[$Type].Remove($Name)
 }
 
 <#
@@ -159,4 +163,32 @@ function Clear-PodeHandlers
             $PodeContext.Server.Handlers[$_].Clear()
         }
     }
+}
+
+<#
+.SYNOPSIS
+Automatically loads handler ps1 files
+
+.DESCRIPTION
+Automatically loads handler ps1 files from either a /handler folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeHandlers
+
+.EXAMPLE
+Use-PodeHandlers -Path './my-handlers'
+#>
+function Use-PodeHandlers
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'handlers'
 }

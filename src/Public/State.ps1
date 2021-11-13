@@ -184,7 +184,7 @@ function Remove-PodeState
     }
 
     $value = $PodeContext.Server.State[$Name].Value
-    $PodeContext.Server.State.Remove($Name) | Out-Null
+    $null = $PodeContext.Server.State.Remove($Name)
     return $value
 }
 
@@ -206,6 +206,9 @@ An optional array of state object names to exclude from being saved. (This has a
 
 .PARAMETER Include
 An optional array of state object names to only include when being saved.
+
+.PARAMETER Compress
+If supplied, the saved JSON will be compressed.
 
 .EXAMPLE
 Save-PodeState -Path './state.json'
@@ -234,7 +237,10 @@ function Save-PodeState
 
         [Parameter()]
         [string[]]
-        $Include
+        $Include,
+
+        [switch]
+        $Compress
     )
 
     # error if attempting to use outside of the pode server
@@ -253,7 +259,7 @@ function Save-PodeState
         foreach ($_key in $state.Clone().Keys) {
             # remove if no scope
             if (($null -eq $state[$_key].Scope) -or ($state[$_key].Scope.Length -eq 0)) {
-                $state.Remove($_key) | Out-Null
+                $null = $state.Remove($_key)
                 continue
             }
 
@@ -272,7 +278,7 @@ function Save-PodeState
             }
 
             # none matched, remove
-            $state.Remove($_key) | Out-Null
+            $null = $state.Remove($_key)
         }
     }
 
@@ -280,7 +286,7 @@ function Save-PodeState
     if (($null -ne $Include) -and ($Include.Length -gt 0)) {
         foreach ($_key in $state.Clone().Keys) {
             if ($Include -inotcontains $_key) {
-                $state.Remove($_key) | Out-Null
+                $null = $state.Remove($_key)
             }
         }
     }
@@ -289,13 +295,13 @@ function Save-PodeState
     if (($null -ne $Exclude) -and ($Exclude.Length -gt 0)) {
         foreach ($_key in $state.Clone().Keys) {
             if ($Exclude -icontains $_key) {
-                $state.Remove($_key) | Out-Null
+                $null = $state.Remove($_key)
             }
         }
     }
 
     # save the state
-    $state | ConvertTo-Json -Depth 10 | Out-File -FilePath $Path -Force | Out-Null
+    $null = ConvertTo-Json -InputObject $state -Depth 10 -Compress:$Compress | Out-File -FilePath $Path -Force
 }
 
 <#
@@ -308,6 +314,9 @@ Restores the shared state from some JSON file.
 .PARAMETER Path
 The path to a JSON file that contains the state information.
 
+.PARAMETER Merge
+If supplied, the state loaded from the JSON file will be merged with the current state, instead of overwriting it.
+
 .EXAMPLE
 Restore-PodeState -Path './state.json'
 #>
@@ -317,7 +326,10 @@ function Restore-PodeState
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Path
+        $Path,
+
+        [switch]
+        $Merge
     )
 
     # error if attempting to use outside of the pode server
@@ -363,7 +375,14 @@ function Restore-PodeState
     }
 
     # set the scope to the main context
-    $PodeContext.Server.State = $state.Clone()
+    if ($Merge) {
+        foreach ($_key in $state.Clone().Keys) {
+            $PodeContext.Server.State[$_key] = $state[$_key]
+        }
+    }
+    else {
+        $PodeContext.Server.State = $state.Clone()
+    }
 }
 
 <#

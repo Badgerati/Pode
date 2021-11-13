@@ -1,10 +1,6 @@
 function Invoke-PodeMiddleware
 {
     param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        $WebEvent,
-
         [Parameter()]
         $Middleware,
 
@@ -53,6 +49,9 @@ function Invoke-PodeMiddleware
             }
 
             $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments $_args -Return -Scoped -Splat
+            if ($null -eq $continue) {
+                $continue = $true
+            }
         }
         catch {
             Set-PodeResponseStatus -Code 500 -Exception $_
@@ -98,6 +97,10 @@ function New-PodeMiddlewareInternal
 
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSSession
+
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
 
     # create the middleware hashtable from a scriptblock
     $HashTable = @{

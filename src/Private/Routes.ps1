@@ -524,18 +524,10 @@ function Find-PodeRouteContentType
     return $ContentType
 }
 
-function ConvertTo-PodeRouteMiddleware
+function ConvertTo-PodeMiddleware
 {
     [OutputType([hashtable[]])]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Method,
-
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Path,
-
         [Parameter()]
         [object[]]
         $Middleware,
@@ -554,17 +546,17 @@ function ConvertTo-PodeRouteMiddleware
     @($Middleware) | ForEach-Object {
         # check middleware is a type valid
         if (($_ -isnot [scriptblock]) -and ($_ -isnot [hashtable])) {
-            throw "One of the Route Middlewares supplied for the '[$($Method)] $($Path)' Route is an invalid type. Expected either ScriptBlock or Hashtable, but got: $($_.GetType().Name)"
+            throw "One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($_.GetType().Name)"
         }
 
         # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
         if ($_ -is [hashtable]) {
             if ($null -eq $_.Logic) {
-                throw "A Hashtable Middleware supplied for the '[$($Method)] $($Path)' Route has no Logic defined"
+                throw "A Hashtable Middleware supplied has no Logic defined"
             }
 
             if ($_.Logic -isnot [scriptblock]) {
-                throw "A Hashtable Middleware supplied for the '[$($Method)] $($Path)' Route has an invalid Logic type. Expected ScriptBlock, but got: $($_.Logic.GetType().Name)"
+                throw "A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: $($_.Logic.GetType().Name)"
             }
         }
     }
@@ -575,6 +567,10 @@ function ConvertTo-PodeRouteMiddleware
     for ($i = 0; $i -lt $Middleware.Length; $i++) {
         if ($Middleware[$i] -is [scriptblock]) {
             $_script, $_usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Middleware[$i] -PSSession $PSSession
+
+            # check for state/session vars
+            $_script = Invoke-PodeStateScriptConversion -ScriptBlock $_script
+            $_script = Invoke-PodeSessionScriptConversion -ScriptBlock $_script
 
             $Middleware[$i] = @{
                 Logic = $_script

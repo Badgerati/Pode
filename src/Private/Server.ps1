@@ -97,10 +97,6 @@ function Start-PodeInternalServer
                     'HTTP' {
                         $endpoints += (Start-PodeWebServer -Browse:$Browse)
                     }
-
-                    'WS' {
-                        $endpoints += (Start-PodeSignalServer)
-                    }
                 }
             }
         }
@@ -199,6 +195,9 @@ function Restart-PodeInternalServer
 
         # clear up shared state
         $PodeContext.Server.State.Clear()
+
+        # clear up output
+        $PodeContext.Server.Output.Variables.Clear()
 
         # reset type if smtp/tcp
         $PodeContext.Server.Types = @()

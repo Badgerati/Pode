@@ -33,9 +33,9 @@ This project and everyone participating in it is governed by the Pode's [Code of
 
 ## I just have a Question
 
-[![Gitter](https://badges.gitter.im/Badgerati/Pode.svg)](https://gitter.im/Badgerati/Pode?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Discord](https://img.shields.io/discord/887398607727255642)](https://discord.gg/fRqeGcbF6h)
 
-If you have a question, feel free to either ask it on [GitHub Issues](https://github.com/Badgerati/Pode/issues), or head over to Pode's [Gitter](https://gitter.im/Badgerati/Pode?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) channel.
+If you have a question, feel free to either ask it on [GitHub Issues](https://github.com/Badgerati/Pode/issues), or head over to Pode's [Discord](https://discord.gg/fRqeGcbF6h) channel.
 
 ## About Pode
 

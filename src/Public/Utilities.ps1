@@ -125,7 +125,7 @@ Places a temporary lock on a object while a ScriptBlock is invoked.
 Places a temporary lock on a object while a ScriptBlock is invoked.
 
 .PARAMETER Object
-The object to lock.
+The object to lock, if no object is supplied then the global lockable is used by default.
 
 .PARAMETER ScriptBlock
 The ScriptBlock to invoke.
@@ -135,6 +135,9 @@ If supplied, any values from the ScriptBlock will be returned.
 
 .PARAMETER CheckGlobal
 If supplied, will check the global Lockable object and wait until it's freed-up before locking the passed object.
+
+.EXAMPLE
+Lock-PodeObject -ScriptBlock { /* logic */ }
 
 .EXAMPLE
 Lock-PodeObject -Object $SomeArray -ScriptBlock { /* logic */ }
@@ -147,7 +150,7 @@ function Lock-PodeObject
     [CmdletBinding()]
     [OutputType([object])]
     param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline=$true)]
         [object]
         $Object,
 
@@ -163,7 +166,7 @@ function Lock-PodeObject
     )
 
     if ($null -eq $Object) {
-        return
+        $Object = $PodeContext.Lockables.Global
     }
 
     if ($Object -is [valuetype]) {
@@ -405,12 +408,44 @@ function Add-PodeEndware
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+
     # add the scriptblock to array of endware that needs to be run
     $PodeContext.Server.Endware += @{
         Logic = $ScriptBlock
         UsingVariables = $usingVars
         Arguments = $ArgumentList
     }
+}
+
+<#
+.SYNOPSIS
+Automatically loads endware ps1 files
+
+.DESCRIPTION
+Automatically loads endware ps1 files from either a /endware folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeEndware
+
+.EXAMPLE
+Use-PodeEndware -Path './endware'
+#>
+function Use-PodeEndware
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'endware'
 }
 
 <#
@@ -486,7 +521,7 @@ function Import-PodeModule
         throw "The module path does not exist: $(Protect-PodeValue -Value $Path -Default $Name)"
     }
 
-    Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop | Out-Null
+    $null = Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop
 }
 
 <#
@@ -517,7 +552,7 @@ function Import-PodeSnapin
     }
 
     # import the snap-in
-    Add-PSSnapin -Name $Name | Out-Null
+    $null = Add-PSSnapin -Name $Name
 }
 
 <#
@@ -904,6 +939,28 @@ function Test-PodeIsIIS
 
 <#
 .SYNOPSIS
+Returns the IIS application path.
+
+.DESCRIPTION
+Returns the IIS application path, or null if not using IIS.
+
+.EXAMPLE
+$path = Get-PodeIISApplicationPath
+#>
+function Get-PodeIISApplicationPath
+{
+    [CmdletBinding()]
+    param()
+
+    if (!$PodeContext.Server.IsIIS) {
+        return $null
+    }
+
+    return $PodeContext.Server.IIS.Path.Raw
+}
+
+<#
+.SYNOPSIS
 Returns whether or not the server is running via Heroku.
 
 .DESCRIPTION
@@ -1024,4 +1081,36 @@ function Test-PodeLockable
     )
 
     return $PodeContext.Lockables.Custom.ContainsKey($Name)
+}
+
+<#
+.SYNOPSIS
+Defines variables to be created when the Pode server stops.
+
+.DESCRIPTION
+Allows you to define a variable, with a value, that should be created on the in the main scope after the Pode server is stopped.
+
+.PARAMETER Name
+The Name of the variable to be set
+
+.PARAMETER Value
+The Value of the variable to be set
+
+.EXAMPLE
+Out-PodeVariable -Name ExampleVar -Value @{ Name = 'Bob' }
+#>
+function Out-PodeVariable
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(ValueFromPipeline=$true)]
+        [object]
+        $Value
+    )
+
+    $PodeContext.Server.Output.Variables[$Name] = $Value
 }

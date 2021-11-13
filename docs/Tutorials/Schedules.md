@@ -1,6 +1,6 @@
 # Schedules
 
-A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, but this can be changed by using the [`Set-PodeScheduleConcurrency`](../../Functions/Core/Set-PodeScheduleConcurrency) function.
+A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, but this can be changed by using the [`Set-PodeScheduleConcurrency`](../../Functions/Schedules/Set-PodeScheduleConcurrency) function.
 
 Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions), basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a defined end time.
 
@@ -95,7 +95,7 @@ Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './Schedules/File
 
 ## Getting Schedules
 
-The [`Get-PodeSchedule`](../../Functions/Core/Get-PodeSchedule) helper function will allow you to retrieve a list of schedules configured within Pode. You can use it to retrieve all of the schedules, or supply filters to retrieve specific ones.
+The [`Get-PodeSchedule`](../../Functions/Schedules/Get-PodeSchedule) helper function will allow you to retrieve a list of schedules configured within Pode. You can use it to retrieve all of the schedules, or supply filters to retrieve specific ones.
 
 To retrieve all of the schedules, you can call the function will no parameters. To filter, here are some examples:
 
@@ -109,7 +109,7 @@ Get-PodeSchedule -Name Name1, Name2
 
 ## Next Trigger Time
 
-When you retrieve a Schedule using [`Get-PodeSchedule`](../../Functions/Core/Get-PodeSchedule), each Schedule object will already have its next trigger time as `NextTriggerTime`. However, if you want to get a trigger time further ino the future than this, then you can use the [`Get-PodeScheduleNextTrigger`](../../Functions/Core/Get-PodeScheduleNextTrigger) function.
+When you retrieve a Schedule using [`Get-PodeSchedule`](../../Functions/Schedules/Get-PodeSchedule), each Schedule object will already have its next trigger time as `NextTriggerTime`. However, if you want to get a trigger time further ino the future than this, then you can use the [`Get-PodeScheduleNextTrigger`](../../Functions/Schedules/Get-PodeScheduleNextTrigger) function.
 
 This function takes the Name of a Schedule, as well as a custom DateTime and will return the next trigger time after that DateTime. If no DateTime is supplied, then the Schedule's StartTime is used (or the current time if no StartTime).
 
@@ -121,12 +121,20 @@ $time = Get-PodeScheduleNextTrigger -Name Schedule1
 $time = Get-PodeScheduleTriggerTime -Name Schedule1 -DateTime [datetime]::new(2020, 3, 20)
 ```
 
+## Manual Trigger
+
+You can manually trigger a schedule by using [`Invoke-PodeSchedule`](../../Functions/Schedules/Invoke-PodeSchedule). This will run the schedule immediately, and will not count towards a schedule's run limit:
+
+```powershell
+Invoke-PodeSchedule -Name 'schedule-name'
+```
+
 ## Schedule Object
 
 !!! warning
     Be careful if you choose to edit these objects, as they will affect the server.
 
-The following is the structure of the Schedule object internally, as well as the object that is returned from [`Get-PodeSchedule`](../../Functions/Core/Get-PodeSchedule):
+The following is the structure of the Schedule object internally, as well as the object that is returned from [`Get-PodeSchedule`](../../Functions/Schedules/Get-PodeSchedule):
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -137,6 +145,7 @@ The following is the structure of the Schedule object internally, as well as the
 | CronsRaw | string[] | The raw cron expressions that were supplied |
 | Limit | int | The number of times the Schedule should run - 0 if running infinitely |
 | Count | int | The number of times the Schedule has run |
+| LastTriggerTime | datetime | The datetime the Schedule was last triggered |
 | NextTriggerTime | datetime | The datetime the Schedule will next be triggered |
 | Script | scriptblock | The scriptblock of the Schedule |
 | Arguments | hashtable | The arguments supplied from ArgumentList |

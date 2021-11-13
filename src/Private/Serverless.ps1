@@ -80,8 +80,8 @@ function Start-PodeAzFuncServer
             Set-PodeServerHeader -Type 'Kestrel'
 
             # invoke global and route middleware
-            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
+            if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
+                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware))
                 {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
@@ -119,7 +119,7 @@ function Start-PodeAzFuncServer
 
         # invoke endware specifc to the current web event
         $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
-        Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
+        Invoke-PodeEndware -Endware $_endware
 
         # close and send the response
         Push-OutputBinding -Name Response -Value $response
@@ -200,8 +200,8 @@ function Start-PodeAwsLambdaServer
             Set-PodeServerHeader -Type 'Lambda'
 
             # invoke global and route middleware
-            if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                if ((Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware $WebEvent.Route.Middleware))
+            if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
+                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware))
                 {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
@@ -239,7 +239,7 @@ function Start-PodeAwsLambdaServer
 
         # invoke endware specifc to the current web event
         $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
-        Invoke-PodeEndware -WebEvent $WebEvent -Endware $_endware
+        Invoke-PodeEndware -Endware $_endware
 
         # close and send the response
         if (![string]::IsNullOrWhiteSpace($response.ContentType)) {

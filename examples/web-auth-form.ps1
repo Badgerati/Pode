@@ -51,11 +51,11 @@ Start-PodeServer -Threads 2 {
     # home page:
     # redirects to login page if not authenticated
     Add-PodeRoute -Method Get -Path '/' -Authentication Login -ScriptBlock {
-        $WebEvent.Session.Data.Views++
+        $session:Views++
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.Name
-            Views = $WebEvent.Session.Data.Views
+            Views = $session:Views
         }
     }
 

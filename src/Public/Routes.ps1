@@ -162,8 +162,12 @@ function Add-PodeRoute
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+
     # convert any middleware into valid hashtables
-    $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+    $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
@@ -211,8 +215,8 @@ function Add-PodeRoute
                     '200' = @{ description = 'OK' }
                     'default' = @{ description = 'Internal server error' }
                 }
-                Parameters = @()
-                RequestBody = @{}
+                Parameters = $null
+                RequestBody = $null
                 Authentication = @()
             }
             IsStatic = $false
@@ -376,7 +380,7 @@ function Add-PodeStaticRoute
     }
 
     # convert any middleware into valid hashtables
-    $Middleware = @(ConvertTo-PodeRouteMiddleware -Method $Method -Path $Path -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
+    $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
@@ -527,6 +531,10 @@ function Add-PodeSignalRoute
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+
     # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
@@ -615,7 +623,7 @@ function Remove-PodeRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 
@@ -665,7 +673,7 @@ function Remove-PodeStaticRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 
@@ -715,7 +723,7 @@ function Remove-PodeSignalRoute
 
     # if the route has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Routes[$Method][$Path]) -eq 0) {
-        $PodeContext.Server.Routes[$Method].Remove($Path) | Out-Null
+        $null = $PodeContext.Server.Routes[$Method].Remove($Path)
     }
 }
 
@@ -1384,21 +1392,5 @@ function Use-PodeRoutes
         $Path
     )
 
-    # use default ./routes, or custom path
-    if ([string]::IsNullOrWhiteSpace($Path)) {
-        $Path = Join-PodeServerRoot -Folder 'routes'
-    }
-    else {
-        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-    }
-
-    # fail if path not found
-    if (!(Test-PodePath -Path $Path -NoStatus)) {
-        throw "Path to load routes not found: $($Path)"
-    }
-
-    # get .ps1 files and load them
-    Get-ChildItem -Path $Path -Filter *.ps1 -Force -Recurse | ForEach-Object {
-        Use-PodeScript -Path $_.FullName
-    }
+    Use-PodeFolder -Path $Path -DefaultPath 'routes'
 }

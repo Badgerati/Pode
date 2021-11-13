@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace Pode
 {
-    public class PodeContext : IDisposable
+    public class PodeContext : PodeProtocol, IDisposable
     {
         public string ID { get; private set; }
         public PodeRequest Request { get; private set; }
@@ -18,7 +18,8 @@ namespace Pode
         public PodeSocket PodeSocket { get; private set;}
         public DateTime Timestamp { get; private set; }
         public Hashtable Data { get; private set; }
-        public PodeContextType Type { get; private set; }
+
+        private object _lockable = new object();
 
         private PodeContextState _state;
         public PodeContextState State
@@ -41,9 +42,9 @@ namespace Pode
                 || Request.CloseImmediately);
         }
 
-        public bool IsWebSocket
+        public new bool IsWebSocket
         {
-            get => ((Type == PodeContextType.WebSocket) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.WebSocket));
+            get => (base.IsWebSocket || (base.IsUnknown && PodeSocket.IsWebSocket));
         }
 
         public bool IsWebSocketUpgraded
@@ -51,14 +52,14 @@ namespace Pode
             get => (IsWebSocket && Request is PodeWsRequest);
         }
 
-        public bool IsSmtp
+        public new bool IsSmtp
         {
-            get => ((Type == PodeContextType.Smtp) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.Smtp));
+            get => (base.IsSmtp || (base.IsUnknown && PodeSocket.IsSmtp));
         }
 
-        public bool IsHttp
+        public new bool IsHttp
         {
-            get => ((Type == PodeContextType.Http) || (Type == PodeContextType.Unknown && Listener.Type == PodeListenerType.Http));
+            get => (base.IsHttp || (base.IsUnknown && PodeSocket.IsHttp));
         }
 
         public PodeSmtpRequest SmtpRequest
@@ -108,7 +109,7 @@ namespace Pode
             Timestamp = DateTime.UtcNow;
             Data = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
 
-            Type = PodeContextType.Unknown;
+            Type = PodeProtocolType.Unknown;
             State = PodeContextState.New;
 
             NewResponse();
@@ -136,9 +137,9 @@ namespace Pode
         private void NewRequest()
         {
             // create a new request
-            switch (Listener.Type)
+            switch (PodeSocket.Type)
             {
-                case PodeListenerType.Smtp:
+                case PodeProtocolType.Smtp:
                     Request = new PodeSmtpRequest(Socket);
                     break;
 
@@ -155,15 +156,16 @@ namespace Pode
                 Request.Open(PodeSocket.Certificate, PodeSocket.Protocols, PodeSocket.AllowClientCertificate);
                 State = PodeContextState.Open;
             }
-            catch
+            catch (Exception ex)
             {
+                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = (Request.InputStream == default(Stream)
                     ? PodeContextState.Error
                     : PodeContextState.SslError);
             }
 
             // if request is SMTP, send ACK
-            if (Listener.Type == PodeListenerType.Smtp)
+            if (PodeSocket.IsSmtp)
             {
                 SmtpRequest.SendAck();
             }
@@ -171,38 +173,47 @@ namespace Pode
 
         private void SetContextType()
         {
-            if (Type != PodeContextType.Unknown)
+            if (!IsUnknown && !(base.IsHttp && Request.IsWebSocket))
             {
                 return;
             }
 
-            // depending on listener type, either:
-            switch (Listener.Type)
+            // depending on socket type, either:
+            switch (PodeSocket.Type)
             {
                 // - only allow smtp
-                case PodeListenerType.Smtp:
-                    var _reqSmtp = SmtpRequest;
-                    Type = PodeContextType.Smtp;
-                    break;
-
-                // - only allow web-socket
-                case PodeListenerType.WebSocket:
-                    if (!HttpRequest.IsWebSocket)
+                case PodeProtocolType.Smtp:
+                    if (!Request.IsSmtp)
                     {
-                        throw new HttpRequestException("Request is not for a WebSocket");
+                        throw new HttpRequestException("Request is not Smtp");
                     }
 
-                    Type = PodeContextType.WebSocket;
+                    Type = PodeProtocolType.Smtp;
                     break;
 
                 // - only allow http
-                case PodeListenerType.Http:
-                    if (HttpRequest.IsWebSocket)
+                case PodeProtocolType.Http:
+                    if (Request.IsWebSocket)
                     {
                         throw new HttpRequestException("Request is not Http");
                     }
 
-                    Type = PodeContextType.Http;
+                    Type = PodeProtocolType.Http;
+                    break;
+
+                // - only allow web-socket
+                case PodeProtocolType.Ws:
+                    if (!Request.IsWebSocket)
+                    {
+                        throw new HttpRequestException("Request is not for a WebSocket");
+                    }
+
+                    Type = PodeProtocolType.Ws;
+                    break;
+
+                // - allow http and web-socket
+                case PodeProtocolType.HttpAndWs:
+                    Type = Request.IsWebSocket ? PodeProtocolType.Ws : PodeProtocolType.Http;
                     break;
             }
         }
@@ -229,9 +240,11 @@ namespace Pode
                 }
                 catch (OperationCanceledException) {}
             }
-            catch
+            catch (Exception ex)
             {
+                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = PodeContextState.Error;
+                PodeSocket.HandleContext(this);
             }
         }
 
@@ -251,10 +264,13 @@ namespace Pode
             NewResponse();
             State = PodeContextState.Receiving;
             PodeSocket.StartReceive(this);
+            PodeHelpers.WriteErrorMessage($"Socket listening", Listener, PodeLoggingLevel.Verbose, this);
         }
 
         public void UpgradeWebSocket(string clientId = null)
         {
+            PodeHelpers.WriteErrorMessage($"Uprading Websocket", Listener, PodeLoggingLevel.Verbose, this);
+
             // websocket
             if (!IsWebSocket)
             {
@@ -299,6 +315,7 @@ namespace Pode
             Request = wsRequest;
 
             Listener.AddWebSocket(WsRequest.WebSocket);
+            PodeHelpers.WriteErrorMessage($"Websocket upgraded", Listener, PodeLoggingLevel.Verbose, this);
         }
 
         public void Dispose()
@@ -308,70 +325,76 @@ namespace Pode
 
         public void Dispose(bool force)
         {
-            if (IsClosed)
+            lock (_lockable)
             {
-                Request.Dispose();
-                Response.Dispose();
-                ContextTimeoutToken.Dispose();
-                TimeoutTimer.Dispose();
-                return;
-            }
-
-            var _awaitingBody = false;
-
-            // send the response and close, only close request if not keep alive
-            try
-            {
-                // dispose timeout token
-                ContextTimeoutToken.Dispose();
-                TimeoutTimer.Dispose();
-
-                // error or timeout?
-                if (IsErrored)
+                if (IsClosed)
                 {
-                    Response.StatusCode = 500;
-                }
-
-                // are we awaiting for more info?
-                if (IsHttp)
-                {
-                    _awaitingBody = (HttpRequest.AwaitingBody && !IsErrored && !IsTimeout);
-                }
-
-                // only send a response if Http
-                if (IsHttp && State != PodeContextState.SslError && !_awaitingBody)
-                {
-                    if (IsTimeout)
-                    {
-                        Response.SendTimeout();
-                    }
-                    else
-                    {
-                        Response.Send();
-                    }
-                }
-
-                // if it was smtp, and it was processable, RESET!
-                if (IsSmtp && SmtpRequest.CanProcess)
-                {
-                    SmtpRequest.Reset();
-                }
-
-                // dispose of request if not KeepAlive, and not waiting for body
-                if (!_awaitingBody && (!IsKeepAlive || force))
-                {
-                    State = PodeContextState.Closed;
                     Request.Dispose();
+                    Response.Dispose();
+                    ContextTimeoutToken.Dispose();
+                    TimeoutTimer.Dispose();
+                    return;
                 }
 
-                Response.Dispose();
-            }
-            catch {}
+                var _awaitingBody = false;
 
-            // if keep-alive, or awaiting body, setup for re-receive
-            if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout)) && !force)
-            {
-                StartReceive();
+                // send the response and close, only close request if not keep alive
+                try
+                {
+                    // dispose timeout token
+                    ContextTimeoutToken.Dispose();
+                    TimeoutTimer.Dispose();
+
+                    // error or timeout?
+                    if (IsErrored)
+                    {
+                        Response.StatusCode = 500;
+                    }
+
+                    // are we awaiting for more info?
+                    if (IsHttp)
+                    {
+                        _awaitingBody = (HttpRequest.AwaitingBody && !IsErrored && !IsTimeout);
+                    }
+
+                    // only send a response if Http
+                    if (IsHttp && State != PodeContextState.SslError && !_awaitingBody)
+                    {
+                        if (IsTimeout)
+                        {
+                            Response.SendTimeout();
+                        }
+                        else
+                        {
+                            Response.Send();
+                        }
+                    }
+
+                    // if it was smtp, and it was processable, RESET!
+                    if (IsSmtp && SmtpRequest.CanProcess)
+                    {
+                        SmtpRequest.Reset();
+                    }
+
+                    // dispose of request if not KeepAlive, and not waiting for body
+                    if (!_awaitingBody && (!IsKeepAlive || force))
+                    {
+                        State = PodeContextState.Closed;
+                        Request.Dispose();
+                    }
+
+                    if (!IsWebSocket || force)
+                    {
+                        Response.Dispose();
+                    }
+                }
+                catch {}
+
+                // if keep-alive, or awaiting body, setup for re-receive
+                if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout)) && !force)
+                {
+                    StartReceive();
+                }
             }
         }
     }

@@ -25,7 +25,7 @@ function Register-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop')]
         [string]
         $Type,
 
@@ -49,6 +49,10 @@ function Register-PodeEvent
 
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
 
     # add event
     $PodeContext.Server.Events[$Type][$Name] = @{
@@ -80,7 +84,7 @@ function Unregister-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop')]
         [string]
         $Type,
 
@@ -95,7 +99,7 @@ function Unregister-PodeEvent
     }
 
     # remove event
-    $PodeContext.Server.Events[$Type].Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Events[$Type].Remove($Name)
 }
 
 <#
@@ -119,7 +123,7 @@ function Test-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop')]
         [string]
         $Type,
 
@@ -152,7 +156,7 @@ function Get-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop')]
         [string]
         $Type,
 
@@ -182,10 +186,38 @@ function Clear-PodeEvent
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop')]
         [string]
         $Type
     )
 
-    $PodeContext.Server.Events[$Type].Clear() | Out-Null
+    $null = $PodeContext.Server.Events[$Type].Clear()
+}
+
+<#
+.SYNOPSIS
+Automatically loads event ps1 files
+
+.DESCRIPTION
+Automatically loads event ps1 files from either a /events folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeEvents
+
+.EXAMPLE
+Use-PodeEvents -Path './my-events'
+#>
+function Use-PodeEvents
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'events'
 }

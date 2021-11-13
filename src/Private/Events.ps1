@@ -2,7 +2,7 @@ function Invoke-PodeEvent
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser')]
+        [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop')]
         [string]
         $Type
     )
@@ -28,7 +28,7 @@ function Invoke-PodeEvent
                 $_args = $_vars + $_args
             }
 
-            Invoke-PodeScriptBlock -ScriptBlock $evt.ScriptBlock -Arguments $_args -Scoped -Splat | Out-Null
+            $null = Invoke-PodeScriptBlock -ScriptBlock $evt.ScriptBlock -Arguments $_args -Scoped -Splat
         }
         catch {
             $_ | Write-PodeErrorLog

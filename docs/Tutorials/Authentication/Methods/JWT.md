@@ -90,3 +90,23 @@ This return the following JWT:
 ```plain
 eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY
 ```
+
+## Parse JWT
+
+Pode has a [`ConvertFrom-PodeJwt`](../../../../Functions/Authentication/ConvertFrom-PodeJwt) that can be used to parse a valid JWT. Only the algorithms at the top of this page are supported for verifying the signature. You can skip signature verification by passing `-IgnoreSignature`. On success, the payload of the JWT is returned.
+
+For example, if the created JWT was suplplied:
+
+```powershell
+ConvertFrom-PodeJwt -Token 'eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY' -Secret 'abc'
+```
+
+then the following would be returned:
+
+```powershell
+@{
+    sub = '123'
+    name = 'John Doe'
+    exp = 1636657408
+}
+```

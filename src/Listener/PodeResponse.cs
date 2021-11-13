@@ -15,6 +15,7 @@ namespace Pode
         public bool SendChunked = false;
         public MemoryStream OutputStream { get; private set; }
         public bool Sent { get; private set; }
+        public bool IsDisposed { get; private set; }
 
         private PodeContext Context;
         private PodeRequest Request { get => Context.Request; }
@@ -72,11 +73,12 @@ namespace Pode
 
         public void Send()
         {
-            if (Sent)
+            if (Sent || IsDisposed)
             {
                 return;
             }
 
+            PodeHelpers.WriteErrorMessage($"Sending response", Context.Listener, PodeLoggingLevel.Verbose, Context);
             Sent = true;
 
             try
@@ -108,16 +110,17 @@ namespace Pode
 
                 message = string.Empty;
                 buffer = default(byte[]);
+                PodeHelpers.WriteErrorMessage($"Response sent", Context.Listener, PodeLoggingLevel.Verbose, Context);
             }
             catch (OperationCanceledException) {}
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex);
+                PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, Context.Listener);
                 throw;
             }
             finally
@@ -128,11 +131,12 @@ namespace Pode
 
         public void SendTimeout()
         {
-            if (Sent)
+            if (Sent || IsDisposed)
             {
                 return;
             }
 
+            PodeHelpers.WriteErrorMessage($"Sending response timed-out", Context.Listener, PodeLoggingLevel.Verbose, Context);
             Sent = true;
             StatusCode = 408;
 
@@ -157,16 +161,17 @@ namespace Pode
 
                 message = string.Empty;
                 buffer = default(byte[]);
+                PodeHelpers.WriteErrorMessage($"Response timed-out sent", Context.Listener, PodeLoggingLevel.Verbose, Context);
             }
             catch (OperationCanceledException) {}
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex);
+                PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, Context.Listener);
                 throw;
             }
             finally
@@ -197,6 +202,11 @@ namespace Pode
 
         public void WriteFrame(string message, PodeWsOpCode opCode = PodeWsOpCode.Text, bool flush = false)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             var msgBytes = Encoding.GetBytes(message);
             var buffer = new List<byte>() { (byte)((byte)0x80 | (byte)opCode) };
 
@@ -235,6 +245,11 @@ namespace Pode
 
         public void Write(byte[] buffer, bool flush = false)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             try
             {
                 Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
@@ -248,11 +263,11 @@ namespace Pode
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex);
+                PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex);
+                PodeHelpers.WriteException(ex, Context.Listener);
                 throw;
             }
         }
@@ -328,10 +343,19 @@ namespace Pode
 
         public void Dispose()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            IsDisposed = true;
+
             if (OutputStream != default(MemoryStream))
             {
                 OutputStream.Dispose();
             }
+
+            PodeHelpers.WriteErrorMessage($"Response disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
         }
     }
 }

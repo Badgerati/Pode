@@ -364,7 +364,7 @@ function Remove-PodeOAResponse
     # remove the respones from the routes
     foreach ($r in @($Route)) {
         if ($r.OpenApi.Responses.ContainsKey($code)) {
-            $r.OpenApi.Responses.Remove($code) | Out-Null
+            $null = $r.OpenApi.Responses.Remove($code)
         }
     }
 
@@ -790,20 +790,23 @@ function New-PodeOAIntProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $Format.ToLowerInvariant()
-        enum = $Enum
         default = $Default
+
+        meta = @{
+            enum = $Enum
+        }
     }
 
     if ($Minimum -ne [int]::MinValue) {
-        $param['minimum'] = $Minimum
+        $param.meta['minimum'] = $Minimum
     }
 
     if ($Maximum -ne [int]::MaxValue) {
-        $param['maximum'] = $Maximum
+        $param.meta['maximum'] = $Maximum
     }
 
     if ($MultiplesOf -ne 0) {
-        $param['multipleOf'] = $MultiplesOf
+        $param.meta['multipleOf'] = $MultiplesOf
     }
 
     return $param
@@ -914,20 +917,23 @@ function New-PodeOANumberProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $Format.ToLowerInvariant()
-        enum = $Enum
         default = $Default
+
+        meta = @{
+            enum = $Enum
+        }
     }
 
     if ($Minimum -ne [double]::MinValue) {
-        $param['minimum'] = $Minimum
+        $param.meta['minimum'] = $Minimum
     }
 
     if ($Maximum -ne [double]::MaxValue) {
-        $param['maximum'] = $Maximum
+        $param.meta['maximum'] = $Maximum
     }
 
     if ($MultiplesOf -ne 0) {
-        $param['multipleOf'] = $MultiplesOf
+        $param.meta['multipleOf'] = $MultiplesOf
     }
 
     return $param
@@ -1053,17 +1059,20 @@ function New-PodeOAStringProperty
         deprecated = $Deprecated.IsPresent
         description = $Description
         format = $_format.ToLowerInvariant()
-        enum = $Enum
-        pattern = $Pattern
         default = $Default
+
+        meta = @{
+            enum = $Enum
+            pattern = $Pattern
+        }
     }
 
     if ($MinLength -ne [int]::MinValue) {
-        $param['minLength'] = $MinLength
+        $param.meta['minLength'] = $MinLength
     }
 
     if ($MaxLength -ne [int]::MaxValue) {
-        $param['maxLength'] = $MaxLength
+        $param.meta['maxLength'] = $MaxLength
     }
 
     return $param
@@ -1144,8 +1153,11 @@ function New-PodeOABoolProperty
         required = $Required.IsPresent
         deprecated = $Deprecated.IsPresent
         description = $Description
-        enum = $Enum
         default = $Default
+
+        meta = @{
+            enum = $Enum
+        }
     }
 
     return $param
@@ -1337,14 +1349,20 @@ function ConvertTo-PodeOAParameter
     $prop = @{
         in = $In.ToLowerInvariant()
         name = $Property.name
-        required = $Property.required
         description = $Property.description
-        deprecated = $Property.deprecated
         schema = @{
             type = $Property.type
             format = $Property.format
             enum = $Property.enum
         }
+    }
+
+    if ($Property.deprecated) {
+        $prop['deprecated'] = $Property.deprecated
+    }
+
+    if ($Property.required) {
+        $prop['required'] = $Property.required
     }
 
     # remove default for required parameter

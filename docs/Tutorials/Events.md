@@ -6,6 +6,8 @@ Pode lets you register scripts to be run when certain server events are triggere
 * Terminate
 * Restart
 * Browser
+* Crash
+* Stop
 
 ## Overview
 
@@ -48,3 +50,11 @@ Scripts registered to the `Restart` event will all be invoked whenever an intern
 ### Browser
 
 Scripts registered to the `Browser` event will all be invoked whenever the server is told to open a browser, ie: when `Ctrl+B` is pressed.
+
+### Crash
+
+Scripts registered to the `Crash` event will all be invoked if the server ever terminates due to an exception being thrown. If a Crash event it triggered, then Terminate will not be triggered.
+
+### Stop
+
+Scripts registered to the `Stop` event will all be invoked when the server stops and closes. This event will be fired after either the Terminate or Crash events - which ever one causes the server to ultimately stop.

@@ -34,7 +34,7 @@ Start-PodeServer {
         -TokenUrl 'https://some-service.com/oauth2/token'
 
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($user, $accessToken, $refreshToken)
+        param($user, $accessToken, $refreshToken, $response)
 
         # check if the user is valid
 
@@ -45,9 +45,9 @@ Start-PodeServer {
 
 If you don't specify a `-RedirectUrl`, then an internal default one is created as `/oauth2/callback` on the first endpoint.
 
-When a user accesses your site unauthenticated, they will be redirected to the service to login, and then redirected back to your site. Pode will supply to your `Add-PodeAuth` the user object (if available), and the access/refresh tokens.
+When a user accesses your site unauthenticated, they will be redirected to the service to login, and then redirected back to your site. Pode will supply to your `Add-PodeAuth` the user object (if available), and the access/refresh tokens, and the raw token response object.
 
-You can optional specify a `-UserUrl` endpoint, if the service supports it, and Pode will use this to acquire user details. If one is not supplied, the `$user` object supplied to `Add-PodeAuth`'s ScriptBlock will be an basic hashtable:
+You can optional specify a `-UserUrl` endpoint, if the service supports it, and Pode will use this to acquire user details. If one is not supplied then Pode will attempt to parse the id_token from the `-AuthoriseUrl` for the user details, otherwise the `$user` object supplied to `Add-PodeAuth`'s ScriptBlock will be an basic hashtable:
 
 ```powershell
 @{
@@ -82,7 +82,7 @@ Start-PodeServer {
         -InnerScheme $form
 
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($user, $accessToken, $refreshToken)
+        param($user, $accessToken, $refreshToken, $response)
 
         # check if the user is valid
 
@@ -143,7 +143,7 @@ Start-PodeServer {
         -TokenUrl 'https://some-service.com/oauth2/token'
 
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($user, $accessToken, $refreshToken)
+        param($user, $accessToken, $refreshToken, $response)
 
         # check if the user is valid
 

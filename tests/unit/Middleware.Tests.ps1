@@ -156,7 +156,7 @@ Describe 'Middleware' {
 
 Describe 'Invoke-PodeMiddleware' {
     It 'Returns true for no middleware' {
-        (Invoke-PodeMiddleware -WebEvent @{} -Middleware @()) | Should Be $true
+        (Invoke-PodeMiddleware -Middleware @()) | Should Be $true
     }
 
     It 'Runs the logic for a single middleware and returns true' {
@@ -167,7 +167,7 @@ Describe 'Invoke-PodeMiddleware' {
             'Logic' = { 'test' | Out-Null };
         }
 
-        Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware) | Should Be $true
+        Invoke-PodeMiddleware -Middleware @($midware) | Should Be $true
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
@@ -181,7 +181,7 @@ Describe 'Invoke-PodeMiddleware' {
             'Logic' = { 'test' | Out-Null };
         }
 
-        Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware) -Route '/' | Should Be $true
+        Invoke-PodeMiddleware -Middleware @($midware) -Route '/' | Should Be $true
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
@@ -200,7 +200,7 @@ Describe 'Invoke-PodeMiddleware' {
             'Logic' = { 'test2' | Out-Null };
         }
 
-        Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware1, $midware2) | Should Be $true
+        Invoke-PodeMiddleware -Middleware @($midware1, $midware2) | Should Be $true
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 2 -Scope It
     }
@@ -213,7 +213,7 @@ Describe 'Invoke-PodeMiddleware' {
             'Logic' = { 'test' | Out-Null };
         }
 
-        Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware) | Should Be $false
+        Invoke-PodeMiddleware -Middleware @($midware) | Should Be $false
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
     }
@@ -229,7 +229,7 @@ Describe 'Invoke-PodeMiddleware' {
             'Logic' = { 'test' | Out-Null };
         }
 
-        Invoke-PodeMiddleware -WebEvent $WebEvent -Middleware @($midware) | Should Be $false
+        Invoke-PodeMiddleware -Middleware @($midware) | Should Be $false
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It

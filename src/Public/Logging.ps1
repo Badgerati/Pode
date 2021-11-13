@@ -168,7 +168,7 @@ function New-PodeLoggingMethod
         'file' {
             $Path = (Protect-PodeValue -Value $Path -Default './logs')
             $Path = (Get-PodeRelativePath -Path $Path -JoinRoot)
-            New-Item -Path $Path -ItemType Directory -Force | Out-Null
+            $null = New-Item -Path $Path -ItemType Directory -Force
 
             return @{
                 ScriptBlock = (Get-PodeLoggingFileMethod)
@@ -193,7 +193,7 @@ function New-PodeLoggingMethod
 
             # create source
             if (![System.Diagnostics.EventLog]::SourceExists($Source)) {
-                [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName) | Out-Null
+                $null = [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName)
             }
 
             return @{
@@ -209,6 +209,8 @@ function New-PodeLoggingMethod
 
         'custom' {
             $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+            $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
 
             return @{
                 ScriptBlock = $ScriptBlock
@@ -432,6 +434,10 @@ function Add-PodeLogger
     # check if the scriptblock has any using vars
     $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+
     # add logging method to server
     $PodeContext.Server.Logging.Types[$Name] = @{
         Method = $Method
@@ -463,7 +469,7 @@ function Remove-PodeLogger
         $Name
     )
 
-    $PodeContext.Server.Logging.Types.Remove($Name) | Out-Null
+    $null = $PodeContext.Server.Logging.Types.Remove($Name)
 }
 
 <#
@@ -539,8 +545,8 @@ function Write-PodeErrorLog
     }
 
     # do nothing if the error level isn't present
-    $_args = (Get-PodeLogger -Name $name).Arguments
-    if (@($_args.Levels) -inotcontains $Level) {
+    $levels = @(Get-PodeErrorLoggingLevels)
+    if ($levels -inotcontains $Level) {
         return
     }
 
@@ -570,10 +576,10 @@ function Write-PodeErrorLog
     $item['ThreadId'] = [int]$ThreadId
 
     # add the item to be processed
-    $PodeContext.LogsToProcess.Add(@{
+    $null = $PodeContext.LogsToProcess.Add(@{
         Name = $name
         Item = $item
-    }) | Out-Null
+    })
 
     # for exceptions, check the inner exception
     if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
@@ -616,10 +622,10 @@ function Write-PodeLog
     }
 
     # add the item to be processed
-    $PodeContext.LogsToProcess.Add(@{
+    $null = $PodeContext.LogsToProcess.Add(@{
         Name = $Name
         Item = $InputObject
-    }) | Out-Null
+    })
 }
 
 <#
@@ -676,4 +682,32 @@ function Protect-PodeLogItem
     }
 
     return $Item
+}
+
+<#
+.SYNOPSIS
+Automatically loads logging ps1 files
+
+.DESCRIPTION
+Automatically loads logging ps1 files from either a /logging folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeLogging
+
+.EXAMPLE
+Use-PodeLogging -Path './my-logging'
+#>
+function Use-PodeLogging
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Use-PodeFolder -Path $Path -DefaultPath 'logging'
 }

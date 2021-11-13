@@ -242,13 +242,13 @@ function Write-PodeTextResponse
         }
 
         # check if we only need a range of the bytes
-        if ($null -ne $WebEvent.Ranges) {
+        if (($null -ne $WebEvent.Ranges) -and ($WebEvent.Response.StatusCode -eq 200) -and ($StatusCode -eq 200)) {
             $lengths = @()
             $size = $Bytes.Length
 
             $Bytes = @(foreach ($range in $WebEvent.Ranges) {
                 # ensure range not invalid
-                if ([int]$range.End -ge $size) {
+                if (([int]$range.Start -lt 0) -or ([int]$range.Start -ge $size) -or ([int]$range.End -lt 0)) {
                     Set-PodeResponseStatus -Code 416 -NoErrorPage
                     return
                 }
@@ -261,12 +261,26 @@ function Write-PodeTextResponse
 
                 # end bytes only
                 elseif ([string]::IsNullOrWhiteSpace($range.Start)) {
-                    $Bytes[$($size - 1 - $range.End)..($size - 1)]
-                    $lengths += "$($size - 1 - $range.End)-$($size - 1)/$($size)"
+                    if ([int]$range.End -gt $size) {
+                        $range.End = $size
+                    }
+
+                    if ([int]$range.End -gt 0) {
+                        $Bytes[$($size - $range.End)..($size - 1)]
+                        $lengths += "$($size - $range.End)-$($size - 1)/$($size)"
+                    }
+                    else {
+                        $lengths += "0-0/$($size)"
+                    }
                 }
 
                 # normal range
                 else {
+                    if ([int]$range.End -ge $size) {
+                        Set-PodeResponseStatus -Code 416 -NoErrorPage
+                        return
+                    }
+
                     $Bytes[$range.Start..$range.End]
                     $lengths += "$($range.Start)-$($range.End)/$($size)"
                 }
@@ -697,10 +711,10 @@ function Write-PodeJsonResponse
         'value' {
             if ($Value -isnot [string]) {
                 if ($Depth -le 0) {
-                    $Value = ($Value | ConvertTo-Json -Compress)
+                    $Value = (ConvertTo-Json -InputObject $Value -Compress)
                 }
                 else {
-                    $Value = ($Value | ConvertTo-Json -Depth $Depth -Compress)
+                    $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
                 }
             }
         }
@@ -1289,6 +1303,8 @@ function Set-PodeViewEngine
     # check if the scriptblock has any using vars
     if ($null -ne $ScriptBlock) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
     }
 
     # setup view engine config
@@ -1382,6 +1398,12 @@ A specific ClientId of a connected client to send a message. Not currently used.
 .PARAMETER Depth
 The Depth to generate the JSON document - the larger this value the worse performance gets.
 
+.PARAMETER Mode
+The Mode to broadcast a message: Auto, Broadcast, Direct. (Default: Auto)
+
+.PARAMETER IgnoreEvent
+If supplied, if a SignalEvent is available it's data, such as path/clientId, will be ignored.
+
 .EXAMPLE
 Send-PodeSignal -Value @{ Message = 'Hello, world!' }
 
@@ -1405,23 +1427,54 @@ function Send-PodeSignal
 
         [Parameter()]
         [int]
-        $Depth = 10
+        $Depth = 10,
+
+        [Parameter()]
+        [ValidateSet('Auto', 'Broadcast', 'Direct')]
+        [string]
+        $Mode = 'Auto',
+
+        [switch]
+        $IgnoreEvent
     )
 
+    # error if not configured
     if ($null -eq $PodeContext.Server.WebSockets.Listener) {
         throw "WebSockets have not been configured to send signal messages"
     }
 
+    # jsonify the value
     if ($Value -isnot [string]) {
         if ($Depth -le 0) {
-            $Value = ($Value | ConvertTo-Json -Compress)
+            $Value = (ConvertTo-Json -InputObject $Value -Compress)
         }
         else {
-            $Value = ($Value | ConvertTo-Json -Depth $Depth -Compress)
+            $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
         }
     }
 
-    $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+    # check signal event
+    if (!$IgnoreEvent -and ($null -ne $SignalEvent)) {
+        if ([string]::IsNullOrWhiteSpace($Path)) {
+            $Path = $SignalEvent.Data.Path
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ClientId)) {
+            $ClientId = $SignalEvent.Data.ClientId
+        }
+
+        if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct -or ($SignalEvent.ClientId -ieq $SignalEvent.Data.ClientId))) {
+            $Mode = 'Direct'
+        }
+    }
+
+    # broadcast or direct?
+    if ($Mode -iin @('Auto', 'Broadcast')) {
+        $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+    }
+    else {
+        $SignalEvent.Response.Write($Value)
+    }
 }
 
 <#

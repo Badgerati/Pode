@@ -1,16 +1,16 @@
 # Shared State
 
-Most things in Pode run in isolated runspaces: routes, middleware, schedules - to name a few. This means you can't create a variable in a timer, or in the base server scope, and then access that variable in a route. To overcome this limitation you can use the Shared State feature within Pode, which allows you to set/get variables on a state shared between all runspaces. This lets you can create a variable in a timer and store it within the shared state; then you can retrieve the variable from the state in a route.
+Most things in Pode run in isolated runspaces: routes, middleware, schedules - to name a few. This means you can't create a variable in a timer, and then access that variable in a route. To overcome this limitation you can use the Shared State feature within Pode, which allows you to set/get variables on a state shared between all runspaces. This lets you can create a variable in a timer and store it within the shared state; then you can retrieve the variable from the state in a route.
 
 You also have the option of saving the current state to a file, and then restoring the state back on server start. This way you won't lose state between server restarts.
 
-You can also use the State in combination with the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function to ensure thread safety - if needed.
+You can also use the State in combination with [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) to ensure thread safety - if needed.
 
 !!! tip
-    It's wise to use the State in conjunction with the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function, to ensure thread safety between runspaces. The event objects available to Routes, Handlers, Timers, Schedules, Middleware, Endware and Loggers each contain a `.Lockable` resource that can be supplied to the [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) function.
+    It's wise to use the State in conjunction with [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), to ensure thread safety between runspaces.
 
 !!! warning
-    If you omit the use of [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), you will run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
+    If you omit the use of [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), you might run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
 
 ## Usage
 
@@ -25,8 +25,20 @@ An example of setting a hashtable variable in the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             Set-PodeState -Name 'data' -Value @{ 'Name' = 'Rick Sanchez' } | Out-Null
+        }
+    }
+}
+```
+
+Alternatively you could use the `$state:` variable scope to set a variable in state. This variable will be scopeless, so if you need scope then use [`Set-PodeState`](../../Functions/State/Set-PodeState). `$state:` can be used anywhere, but keep in mind that like `$session:` Pode can only remap the this in scriptblocks it's aware of; so using it in a function of a custom module won't work. Similar to the example above:
+
+```powershell
+Start-PodeServer {
+    Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
+            $state:data = @{ 'Name' = 'Rick Sanchez' }
         }
     }
 }
@@ -43,8 +55,24 @@ Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
         $value = $null
 
-        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             $value = (Get-PodeState -Name 'data')
+        }
+
+        # do something with $value
+    }
+}
+```
+
+Alternatively you could use the `$state:` variable scope to get a variable in state. `$state:` can be used anywhere, but keep in mind that like `$session:` Pode can only remap the this in scriptblocks it's aware of; so using it in a function of a custom module won't work. Similar to the example above:
+
+```powershell
+Start-PodeServer {
+    Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
+        $value = $null
+
+        Lock-PodeObject -ScriptBlock {
+            $value = $state:data
         }
 
         # do something with $value
@@ -61,7 +89,7 @@ An example of removing a variable from the state is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeTimer -Name 'do-something' -Interval 5 -ScriptBlock {
-        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             Remove-PodeState -Name 'data' | Out-Null
         }
     }
@@ -77,7 +105,7 @@ An example of saving the current state every hour is as follows:
 ```powershell
 Start-PodeServer {
     Add-PodeSchedule -Name 'save-state' -Cron '@hourly' -ScriptBlock {
-        Lock-PodeObject -Object $lockable -ScriptBlock {
+        Lock-PodeObject -ScriptBlock {
             Save-PodeState -Path './state.json'
         }
     }
@@ -87,6 +115,8 @@ Start-PodeServer {
 When saving the state, you can also use the `-Exclude` or `-Include` parameters to exclude/include certain state objects from being saved. Saving also has a `-Scope` parameter, which allows you so save only state objects created with the specified scope(s).
 
 You can use all the above 3 parameter in conjunction, with `-Exclude` having the highest precedence and `-Scope` having the lowest.
+
+By default the JSON will be saved expanded, but you can saved the JSON as compressed by supplying the `-Compress` switch.
 
 ### Restore
 
@@ -99,6 +129,8 @@ Start-PodeServer {
     Restore-PodeState './state.json'
 }
 ```
+
+By default, restoring from a state file will overwrite the current state. You can change this so the restored state is merged instead by using the `-Merge` switch. (Note: if you restore a key that already exists in state, this will still overwrite that key).
 
 ## Full Example
 
@@ -117,8 +149,7 @@ Start-PodeServer {
     # timer to add a random number to the shared state
     Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
         # ensure we're thread safe
-        Lock-PodeObject -Object $TimerEvent.Lockable -ScriptBlock {
-
+        Lock-PodeObject -ScriptBlock {
             # attempt to get the hashtable from the state
             $hash = (Get-PodeState -Name 'hash')
 
@@ -133,8 +164,7 @@ Start-PodeServer {
     # route to return the value of the hashtable from shared state
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # again, ensure we're thread safe
-        Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
-
+        Lock-PodeObject -ScriptBlock {
             # get the hashtable from the state and return it
             $hash = (Get-PodeState -Name 'hash')
             Write-PodeJsonResponse -Value $hash
@@ -144,8 +174,7 @@ Start-PodeServer {
     # route to remove the hashtable from shared state
     Add-PodeRoute -Method Delete -Path '/' -ScriptBlock {
         # ensure we're thread safe
-        Lock-PodeObject -Object $WebEvent.Lockable -ScriptBlock {
-
+        Lock-PodeObject -ScriptBlock {
             # remove the hashtable from the state
             Remove-PodeState -Name 'hash' | Out-Null
         }

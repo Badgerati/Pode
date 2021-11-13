@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace Pode
 {
-    public class PodeRequest : IDisposable
+    public class PodeRequest : PodeProtocol, IDisposable
     {
         public EndPoint RemoteEndPoint { get; private set; }
         public EndPoint LocalEndPoint { get; private set; }
@@ -25,6 +25,7 @@ namespace Pode
         public SslPolicyErrors ClientCertificateErrors { get; private set; }
         public HttpRequestException Error { get; set; }
         public bool IsAborted => (Error != default(HttpRequestException));
+        public bool IsDisposed { get; private set; }
 
         private Socket Socket;
         protected PodeContext Context;
@@ -164,6 +165,13 @@ namespace Pode
 
         public virtual void Dispose()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            IsDisposed = true;
+
             if (Socket != default(Socket))
             {
                 PodeSocket.CloseSocket(Socket);
@@ -178,6 +186,8 @@ namespace Pode
             {
                 BufferStream.Dispose();
             }
+
+            PodeHelpers.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
         }
     }
 }

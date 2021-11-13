@@ -253,69 +253,6 @@ function Invoke-PodeValueUnsign
     return $raw
 }
 
-function ConvertFrom-PodeJwt
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Token,
-
-        [Parameter()]
-        [byte[]]
-        $Secret
-    )
-
-    # get the parts
-    $parts = ($Token -isplit '\.')
-
-    # check number of parts (should be 3)
-    if ($parts.Length -ne 3) {
-        throw "Invalid JWT supplied"
-    }
-
-    # convert to header
-    $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
-    if ([string]::IsNullOrWhiteSpace($header.alg)) {
-        throw "Invalid JWT header algorithm supplied"
-    }
-
-    # convert to payload
-    $payload = ConvertFrom-PodeJwtBase64Value -Value $parts[1]
-
-    # get signature
-    $signature = $parts[2]
-
-    # check "none" signature, and return payload if no signature
-    $isNoneAlg = ($header.alg -ieq 'none')
-
-    if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
-        throw "No JWT signature supplied for $($header.alg)"
-    }
-
-    if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
-        throw "Expected no JWT signature to be supplied"
-    }
-
-    if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
-        throw "Expected a signed JWT, 'none' algorithm is not allowed"
-    }
-
-    if ($isNoneAlg) {
-        return $payload
-    }
-
-    # otherwise, we have an alg for the signature, so we need to validate it
-    $sig = "$($parts[0]).$($parts[1])"
-    $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
-
-    if ($sig -ne $parts[2]) {
-        throw "Invalid JWT signature supplied"
-    }
-
-    # it's valid return the payload!
-    return $payload
-}
-
 function Test-PodeJwt
 {
     param(

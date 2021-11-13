@@ -2,13 +2,13 @@
 
 Middleware in Pode allows you to observe and edit the request/response objects for a current [web event](../../WebEvent) - you can alter the response, add custom objects to the [web event](../../WebEvent) for later use, or terminate the response without processing the main Route logic.
 
-Middleware is supported in both a global scope, using [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware), as well as at the Route level using the `-Middleware` parameter on [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware).
+Middleware is supported in both a global scope, using [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware), as well as at the Route level using the `-Middleware` parameter on [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware),
 
-Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/AccessRules) and [Rate Limiting](../Types/RateLimiting) page).
+Pode itself has some inbuilt Middleware, which is overridable, so you can use your own custom middleware. For example, Pode has inbuilt Middleware for rate limiting, but you can override this with [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware) and the Name `__pode_mw_rate_limit__` (more on the [Access Rules](../Types/AccessRules) and [Rate Limiting](../Types/RateLimiting) page).
 
 ## Global Middleware
 
-To setup and use middleware in Pode you use the Middleware function: [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware). This will setup global middleware that will run, in the order created, on every request prior to any Route logic being invoked.
+To setup and use middleware in Pode you use the Middleware function: [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware). This will setup global middleware that will run, in the order created, on every request prior to any Route logic being invoked.
 
 The function takes a ScriptBlock, which has access to the current [web event](../../WebEvent) variable: `$WebEvent`. The event object contains the current `Request` and `Response` objects - you can also add more custom objects to it, as the event is just a `hashtable`.
 
@@ -100,7 +100,7 @@ Although you can define your own custom middleware, Pode does have some inbuilt 
 
 ## Overriding Inbuilt
 
-Pode has inbuilt Middleware as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt Middleware have a defined name, that you can pass to the [`Add-PodeMiddleware`](../../../Functions/Core/Add-PodeMiddleware) function via the `-Name` parameter:
+Pode has inbuilt Middleware as defined in the order of running above. Sometimes you probably don't want to use the inbuilt rate limiting, and use a custom rate limiting library that utilises REDIS instead. Each of the inbuilt Middleware have a defined name, that you can pass to the [`Add-PodeMiddleware`](../../../Functions/Middleware/Add-PodeMiddleware) function via the `-Name` parameter:
 
 * Access Control    - `__pode_mw_access__`
 * Rate Limiting     - `__pode_mw_rate_limit__`
