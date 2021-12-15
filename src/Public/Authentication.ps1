@@ -1486,7 +1486,7 @@ A Hashtable containing the Header information for the JWT.
 A Hashtable containing the Payload information for the JWT.
 
 .PARAMETER Secret
-An Optional Secret for signing the JWT. This is mandatory if the Header algorithm isn't "none".
+An Optional Secret for signing the JWT, should be a string or byte[]. This is mandatory if the Header algorithm isn't "none".
 
 .EXAMPLE
 ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'John' }
@@ -1507,8 +1507,7 @@ function ConvertTo-PodeJwt
         $Payload,
 
         [Parameter()]
-        [string]
-        $Secret
+        $Secret = $null
     )
 
     # validate header
@@ -1526,13 +1525,12 @@ function ConvertTo-PodeJwt
     $jwt = "$($header64).$($payload64)"
 
     # convert secret to bytes
-    $secretBytes = $null
-    if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+    if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
+        $Secret = [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
     }
 
     # make the signature
-    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $secretBytes
+    $sig = New-PodeJwtSignature -Algorithm $Header.alg -Token $jwt -SecretBytes $Secret
 
     # add the signature and return
     $jwt += ".$($sig)"
@@ -1550,7 +1548,7 @@ Convert and return the payload of a JWT token, verifying the signature by defaul
 The JWT token.
 
 .PARAMETER Secret
-The Secret, as a byte[], to verify the token's signature.
+The Secret, as a string or byte[], to verify the token's signature.
 
 .PARAMETER IgnoreSignature
 Skip signature verification, and return the decoded payload.
@@ -1567,8 +1565,7 @@ function ConvertFrom-PodeJwt
         $Token,
 
         [Parameter(ParameterSetName='Signed')]
-        [byte[]]
-        $Secret,
+        $Secret = $null,
 
         [Parameter(ParameterSetName='Ignore')]
         [switch]
@@ -1619,6 +1616,10 @@ function ConvertFrom-PodeJwt
     }
 
     # otherwise, we have an alg for the signature, so we need to validate it
+    if (($null -ne $Secret) -and ($Secret -isnot [byte[]])) {
+        $Secret = [System.Text.Encoding]::UTF8.GetBytes([string]$Secret)
+    }
+
     $sig = "$($parts[0]).$($parts[1])"
     $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
 
