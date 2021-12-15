@@ -4,7 +4,13 @@ $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 # load binaries
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName System.Net.Http
-Add-Type -LiteralPath "$($root)/Libs/Pode.dll" -ErrorAction Stop
+
+if ($PSVersionTable.PSVersion -lt [version]'7.2.0') {
+    Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+}
+else {
+    Add-Type -LiteralPath "$($root)/Libs/net6.0/Pode.dll" -ErrorAction Stop
+}
 
 # import everything if in a runspace
 if ($PODE_SCOPE_RUNSPACE) {

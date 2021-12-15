@@ -29,11 +29,11 @@
     PowerShellVersion = '5.0'
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @(
-        'System.Web',
-        'System.Net.Http',
-        './Libs/Pode.dll'
-    )
+    # RequiredAssemblies = @(
+    #     'System.Web',
+    #     'System.Net.Http',
+    #     './Libs/Pode.dll'
+    # )
 
     # Functions to export from this Module
     FunctionsToExport = @(

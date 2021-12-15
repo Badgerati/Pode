@@ -192,8 +192,11 @@ task Build BuildDeps, {
     Push-Location ./src/Listener
 
     try {
-        dotnet build --configuration Release
-        dotnet publish --configuration Release --self-contained --output ../Libs
+        dotnet build --configuration Release --self-contained --framework netstandard2.0
+        dotnet publish --configuration Release --self-contained --framework netstandard2.0 --output ../Libs/netstandard2.0
+
+        dotnet build --configuration Release --self-contained --framework net6.0
+        dotnet publish --configuration Release --self-contained --framework net6.0 --output ../Libs/net6.0
     }
     finally {
         Pop-Location
