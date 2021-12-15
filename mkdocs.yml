@@ -4,9 +4,12 @@ theme:
   name: material
   logo: images/icon.png
   favicon: images/favicon.ico
+  custom_dir: mkdocs-overrides
   features:
     - navigation.tabs
     - navigation.tabs.sticky
+    - navigation.tracking
+    - navigation.top
   font:
     text: Fira Sans
     code: Fira Code
