@@ -2,7 +2,7 @@ site_name: Pode
 
 theme:
   name: material
-  logo: images/icon.png
+  logo: images/icon-transparent.png
   favicon: images/favicon.ico
   custom_dir: mkdocs-overrides
   features:
