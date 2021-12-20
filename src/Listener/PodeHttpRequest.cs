@@ -9,8 +9,6 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Linq;
 using System.IO;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
 
 namespace Pode
 {
@@ -287,12 +285,6 @@ namespace Pode
                 }
             }
 
-            // check for hosted client certs - like IIS
-            if (AllowClientCertificate && ClientCertificate == default(X509Certificate2))
-            {
-                ClientCertificate = ParseClientCertificate();
-            }
-
             // is web-socket?
             if (Headers.ContainsKey("Sec-WebSocket-Key"))
             {
@@ -382,29 +374,6 @@ namespace Pode
                 err.Data.Add("PodeStatusCode", 413);
                 throw err;
             }
-        }
-
-        public X509Certificate2 ParseClientCertificate()
-        {
-            foreach (var headerName in PodeHelpers.HTTP_CLIENTCERT_HEADERS)
-            {
-                if (!Headers.ContainsKey(headerName))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    return new X509Certificate2(Convert.FromBase64String($"{Headers[headerName]}"));
-                }
-                catch
-                {
-                    ClientCertificateErrors = SslPolicyErrors.RemoteCertificateNotAvailable;
-                    break;
-                }
-            }
-
-            return default(X509Certificate2);
         }
 
         public void ParseFormData()

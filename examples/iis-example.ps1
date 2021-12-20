@@ -14,6 +14,7 @@ Start-PodeServer {
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Message = 'Hello' }
+        $WebEvent.Request | out-default
     }
 
 }

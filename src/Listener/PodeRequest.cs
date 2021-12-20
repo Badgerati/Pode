@@ -22,8 +22,8 @@ namespace Pode
 
         public Stream InputStream { get; private set; }
         public bool AllowClientCertificate { get; private set; }
-        public X509Certificate2 ClientCertificate { get; protected set; }
-        public SslPolicyErrors ClientCertificateErrors { get; protected set; }
+        public X509Certificate2 ClientCertificate { get; set; }
+        public SslPolicyErrors ClientCertificateErrors { get; private set; }
         public HttpRequestException Error { get; set; }
         public bool IsAborted => (Error != default(HttpRequestException));
         public bool IsDisposed { get; private set; }
