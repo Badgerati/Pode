@@ -979,6 +979,24 @@ function Test-PodeIsHeroku
 
 <#
 .SYNOPSIS
+Returns whether or not the server is being hosted behind another application.
+
+.DESCRIPTION
+Returns whether or not the server is being hosted behind another application, such as Heroku or IIS.
+
+.EXAMPLE
+if (Test-PodeIsHosted) { }
+#>
+function Test-PodeIsHosted
+{
+    [CmdletBinding()]
+    param()
+
+    return ((Test-PodeIsIIS) -or (Test-PodeIsHeroku))
+}
+
+<#
+.SYNOPSIS
 Creates a new custom lockable object for use with Lock-PodeObject.
 
 .DESCRIPTION
