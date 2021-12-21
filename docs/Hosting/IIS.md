@@ -265,7 +265,7 @@ Start-PodeServer {
 }
 ```
 
-If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set on the [web event](../../../WebEvent)'s `$WebEvent.Auth.User` property, and contains the same information as Pode's inbuilt Windows AD authenticator:
+If the required header is missing, then Pode responds with a 401. The retrieved user, like other authentication, is set on the [web event](../../Tutorials/WebEvent)'s `$WebEvent.Auth.User` property, and contains the same information as Pode's inbuilt Windows AD authenticator:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -282,6 +282,12 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
+
+### Client Certificates
+
+You can enable Pode to get client certificates from IIS by passing `-AllowClientCertificate` to your [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint). Pode will check for either the `MS-ASPNETCORE-CLIENTCERT` or `X-ARR-ClientCert` headers, and if either is present they'll be used to set the certificate against `$WebEvent.Request.ClientCertificate`.
+
+This also allows for using [Client Certificate](../../Tutorials/Authentication/Methods/ClientCertificate) authentication in Pode, even when behind IIS.
 
 ### Additional Validation
 

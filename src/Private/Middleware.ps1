@@ -368,6 +368,17 @@ function Initialize-PodeIISMiddleware
 
     # add middleware to check every request has the token
     Add-PodeMiddleware -Name '__pode_iis_token_check__' -ScriptBlock {
+        $token = Get-PodeHeader -Name 'MS-ASPNETCORE-TOKEN'
+        if ($token -ne $PodeContext.Server.IIS.Token) {
+            Set-PodeResponseStatus -Code 400 -Description 'MS-ASPNETCORE-TOKEN header missing'
+            return $false
+        }
+
+        return $true
+    }
+
+    # add middleware to check if there's a client cert
+    Add-PodeMiddleware -Name '__pode_iis_clientcert_check__' -ScriptBlock {
         if (!$WebEvent.Request.AllowClientCertificate -or ($null -ne $WebEvent.Request.ClientCertificate)) {
             return $true
         }
@@ -385,17 +396,6 @@ function Initialize-PodeIISMiddleware
             catch {
                 $WebEvent.Request.ClientCertificateErrors = [System.Net.Security.SslPolicyErrors]::RemoteCertificateNotAvailable
             }
-        }
-
-        return $true
-    }
-
-    # add middleware to check if there's a client cert
-    Add-PodeMiddleware -Name '__pode_iis_clientcert_check__' -ScriptBlock {
-        $token = Get-PodeHeader -Name 'MS-ASPNETCORE-TOKEN'
-        if ($token -ne $PodeContext.Server.IIS.Token) {
-            Set-PodeResponseStatus -Code 400 -Description 'MS-ASPNETCORE-TOKEN header missing'
-            return $false
         }
 
         return $true
