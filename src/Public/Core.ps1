@@ -833,7 +833,7 @@ function Add-PodeEndpoint
     $type = Get-PodeEndpointType -Protocol $Protocol
 
     # are we running as IIS for HTTP/HTTPS? (if yes, force the port, address and protocol)
-    $isIIS = ($PodeContext.Server.IsIIS -and (@('Http', 'Ws') -icontains $type))
+    $isIIS = ((Test-PodeIsIIS) -and (@('Http', 'Ws') -icontains $type))
     if ($isIIS) {
         $Port = [int]$env:ASPNETCORE_PORT
         $Address = '127.0.0.1'
@@ -842,7 +842,7 @@ function Add-PodeEndpoint
     }
 
     # are we running as Heroku for HTTP/HTTPS? (if yes, force the port, address and protocol)
-    $isHeroku = ($PodeContext.Server.IsHeroku -and (@('Http') -icontains $type))
+    $isHeroku = ((Test-PodeIsHeroku) -and (@('Http') -icontains $type))
     if ($isHeroku) {
         $Port = [int]$env:PORT
         $Address = '0.0.0.0'
@@ -875,8 +875,8 @@ function Add-PodeEndpoint
         throw "An endpoint with the name '$($Name)' has already been defined"
     }
 
-    # protocol must be https for client certs
-    if (($Protocol -ine 'https') -and $AllowClientCertificate) {
+    # protocol must be https for client certs, or hosted behind a proxy like iis
+    if (($Protocol -ine 'https') -and !(Test-PodeIsHosted) -and $AllowClientCertificate) {
         throw "Client certificates are only supported on HTTPS endpoints"
     }
 
@@ -940,7 +940,7 @@ function Add-PodeEndpoint
     } | Measure-Object).Count
 
     # if we're dealing with a certificate, attempt to import it
-    if (!$isIIS -and !$isHeroku -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
+    if (!(Test-PodeIsHosted) -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
         if (@('https', 'wss') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
@@ -993,7 +993,7 @@ function Add-PodeEndpoint
     }
 
     # if RedirectTo is set, attempt to build a redirecting route
-    if (!$isIIS -and !$isHeroku -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
+    if (!(Test-PodeIsHosted) -and ![string]::IsNullOrWhiteSpace($RedirectTo)) {
         $redir_endpoint = $PodeContext.Server.Endpoints[$RedirectTo]
 
         # ensure the name exists

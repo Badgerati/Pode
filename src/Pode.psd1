@@ -123,6 +123,7 @@
         'Get-PodeLockable',
         'Test-PodeLockable',
         'Out-PodeVariable',
+        'Test-PodeIsHosted',
 
         # routes
         'Add-PodeRoute',
