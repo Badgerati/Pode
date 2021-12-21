@@ -21,8 +21,9 @@ namespace Pode
         public virtual bool CloseImmediately { get => false; }
 
         public Stream InputStream { get; private set; }
-        public X509Certificate2 ClientCertificate { get; private set; }
-        public SslPolicyErrors ClientCertificateErrors { get; private set; }
+        public bool AllowClientCertificate { get; private set; }
+        public X509Certificate2 ClientCertificate { get; set; }
+        public SslPolicyErrors ClientCertificateErrors { get; set; }
         public HttpRequestException Error { get; set; }
         public bool IsAborted => (Error != default(HttpRequestException));
         public bool IsDisposed { get; private set; }
@@ -58,6 +59,7 @@ namespace Pode
         {
             // ssl or not?
             IsSsl = (certificate != default(X509Certificate));
+            AllowClientCertificate = allowClientCertificate;
 
             // open the socket's stream
             InputStream = new NetworkStream(Socket, true);

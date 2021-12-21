@@ -1,5 +1,21 @@
 # Release Notes
 
+## v2.5.1
+
+```plain
+### Bugs
+* #877: Fix for `ConvertFrom-PodeJwt` expecting string not byte[]
+* #879: Fix for retrieving Client Certificates from IIS
+* #883: Fix for view engine extensions not being ToLower'd
+
+### Documentation
+* #805: Add announcement bar to docs, referencing official docs on GitHub
+
+### Packaging
+* #873: Bump PowerShell to v7.2.1 in Docker images
+* #881: Bump mkdocs to v1.2.3, and Material theme to v8.1.2
+```
+
 ## v2.5.0
 
 ```plain

@@ -1297,7 +1297,7 @@ function Set-PodeViewEngine
 
     # override extension with type
     if ([string]::IsNullOrWhiteSpace($Extension)) {
-        $Extension = $Type.ToLowerInvariant()
+        $Extension = $Type
     }
 
     # check if the scriptblock has any using vars
@@ -1309,7 +1309,7 @@ function Set-PodeViewEngine
 
     # setup view engine config
     $PodeContext.Server.ViewEngine.Type = $Type.ToLowerInvariant()
-    $PodeContext.Server.ViewEngine.Extension = $Extension
+    $PodeContext.Server.ViewEngine.Extension = $Extension.ToLowerInvariant()
     $PodeContext.Server.ViewEngine.ScriptBlock = $ScriptBlock
     $PodeContext.Server.ViewEngine.UsingVariables = $usingVars
     $PodeContext.Server.ViewEngine.IsDynamic = (@('html', 'md') -inotcontains $Type)
