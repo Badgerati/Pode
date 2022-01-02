@@ -6,22 +6,38 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     $scheme = New-PodeAuthScheme -Name 'Negotiate' -Custom -ScriptBlock {
-        $k = [Kerberos.NET.Crypto.KerberosKey]::new('<password>')
-        $v = [Kerberos.NET.KerberosValidator]::new($k)
+        $kf = [Kerberos.NET.Crypto.KeyTable]::new([System.IO.File]::ReadAllBytes("C:\temp\podekerb.keytab"))
+        # $k = [Kerberos.NET.Crypto.KerberosKey]::new('<password>')
+        # $v = [Kerberos.NET.KerberosValidator]::new($k)
 
         $header = Get-PodeHeader -Name 'Authorization'
         if ($null -eq $header) {
             return @{
                 Message = 'No Authorization header found'
                 Code = 401
+                Headers = @{
+                    'WWW-Authenticate' = 'Negotiate'
+                }
             }
         }
 
-        $a = [Kerberos.NET.KerberosAuthenticator]::new($v)
-        $i = $a.Authenticate($header)
-        $i | out-default
+        $ticketBytes = [System.Convert]::FromBase64String($header.Split(" ")[1])
 
-        return @([System.Security.Claims.ClaimsPrincipal]::new($i.Wait()))
+        $a = [Kerberos.NET.KerberosAuthenticator]::new($kf)
+        $v = [Kerberos.NET.KerberosValidator]::new($kf)
+
+        $v.ValidateAfterDecrypt = 64
+        $decrypted = $v.Validate($ticketBytes)
+
+        # $a = [Kerberos.NET.KerberosAuthenticator]::new($v)
+        $i = $a.Authenticate($header)
+        # $i | out-default
+        $i.Wait() | Out-Null
+
+        $principal = [System.Security.Claims.ClaimsPrincipal]::new($i.Result)
+        return @($principal)
+
+        # return @([System.Security.Claims.ClaimsPrincipal]::new($i.Wait()))
     }
 
     $scheme | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {

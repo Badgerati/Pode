@@ -3,6 +3,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Kerberos.NET" Version="4.5.115" />
+    <PackageReference Include="Kerberos.NET" Version="4.5.135" />
   </ItemGroup>
 </Project>
