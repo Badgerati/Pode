@@ -461,7 +461,8 @@ function Import-PodeModulesIntoRunspaceState
             continue
         }
 
-        $path = (Get-Module -Name $module | Sort-Object -Property Version -Descending | Select-Object -First 1 -ExpandProperty Path)
+        # import the module
+        $path = Find-PodeModuleFile -Name $module
         $PodeContext.RunspaceState.ImportPSModule($path)
     }
 }

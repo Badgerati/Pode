@@ -2613,3 +2613,26 @@ function Use-PodeFolder
         Use-PodeScript -Path $_.FullName
     }
 }
+
+function Find-PodeModuleFile
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [switch]
+        $ListAvailable
+    )
+
+    # get module and check psd1, then psm1
+    $mod = (Get-Module -Name $Name -ListAvailable:$ListAvailable | Sort-Object -Property Version -Descending | Select-Object -First 1)
+
+    # if the path isn't already a psd1 do this
+    $path = Join-Path $mod.ModuleBase "$($mod.Name).psd1"
+    if (!(Test-Path $path)) {
+        $path = $mod.Path
+    }
+
+    return $path
+}
