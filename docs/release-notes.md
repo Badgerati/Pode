@@ -1,5 +1,12 @@
 # Release Notes
 
+## v2.5.2
+
+```plain
+### Bugs
+* #892: Fixes a bug with importing modules, where the wrong file was being used
+```
+
 ## v2.5.1
 
 ```plain
