@@ -494,7 +494,7 @@ function Import-PodeModule
                 $Path = (Get-ChildItem ([System.IO.Path]::Combine($modulePath, '*', "$($Name).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
             }
             else {
-                $Path = (Get-Module -Name $Name -ListAvailable | Select-Object -First 1).Path
+                $Path = Find-PodeModuleFile -Name $Name -ListAvailable
             }
         }
 
