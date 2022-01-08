@@ -42,6 +42,7 @@ function Start-PodeWebServer
             Url = $_.Url
             Protocol = $_.Protocol
             Type = $_.Type
+            Pool = $_.Runspace.PoolName
         }
 
         # add endpoint to list
@@ -455,7 +456,12 @@ function Start-PodeWebServer
         Start-Process $endpoints[0].Url
     }
 
-    return @($endpoints.Url)
+    return @(foreach ($endpoint in $endpoints) {
+        @{
+            Url  = $endpoint.Url
+            Pool = $endpoint.Pool
+        }
+    })
 }
 
 function New-PodeListener

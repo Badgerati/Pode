@@ -532,19 +532,27 @@ function Add-PodeRunspace
 
     try
     {
+        # create powershell pipelines
         $ps = [powershell]::Create()
-        $ps.RunspacePool = $PodeContext.RunspacePools[$Type]
+        $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
+
+        # load scripts
+        #TODO: need to report if a runspace errored on open - so we dont "wait for ready" forever and ever
+        $null = $ps.AddScript({ Import-PodeModules })
         $null = $ps.AddScript({ Add-PodePSDrives })
+        $null = $ps.AddScript("`$PodeContext.RunspacePools['$($Type)'].Ready = `$true")
         $null = $ps.AddScript($ScriptBlock)
 
+        # load parameters
         if (!(Test-PodeIsEmpty $Parameters)) {
             $Parameters.Keys | ForEach-Object {
                 $null = $ps.AddParameter($_, $Parameters[$_])
             }
         }
 
+        # do we need to remember this pipeline? sorry, what did you say?
         if ($Forget) {
-            $null = $ps.BeginInvoke()
+            $null =  $ps.BeginInvoke()
         }
         else {
             $PodeContext.Runspaces += @{
@@ -574,7 +582,8 @@ function Close-PodeRunspaces
 
     try {
         if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
-            # wait until listeners are disposed
+            Write-Verbose "Waiting until all Listeners are disposed"
+
             $count = 0
             $continue = $false
             while ($count -le 10) {
@@ -596,20 +605,22 @@ function Close-PodeRunspaces
                 break
             }
 
+            Write-Verbose "All Listeners disposed"
+
             # now dispose runspaces
+            Write-Verbose "Disposing Runspaces"
             $PodeContext.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
                 Close-PodeDisposable -Disposable $_.Runspace
                 $_.Stopped = $true
             }
 
             $PodeContext.Runspaces = @()
+            Write-Verbose "Runspaces disposed"
         }
 
-        # dispose the runspace pools
-        if ($ClosePool -and $null -ne $PodeContext.RunspacePools) {
-            $PodeContext.RunspacePools.Values | Where-Object { $null -ne $_ -and !$_.IsDisposed } | ForEach-Object {
-                Close-PodeDisposable -Disposable $_ -Close
-            }
+        # close/dispose the runspace pools
+        if ($ClosePool) {
+            Close-PodeRunspacePools
         }
     }
     catch {
@@ -755,8 +766,15 @@ function New-PodePSDrive
 
 function Add-PodePSDrives
 {
-    $PodeContext.Server.Drives.Keys | ForEach-Object {
-        $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$_] -Name $_
+    foreach ($key in $PodeContext.Server.Drives.Keys) {
+        $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$key] -Name $key
+    }
+}
+
+function Import-PodeModules
+{
+    foreach ($path in $PodeContext.Server.Modules.Values) {
+        $null = Import-Module $path -DisableNameChecking
     }
 }
 

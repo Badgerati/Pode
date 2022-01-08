@@ -83,6 +83,7 @@ function Start-PodeInternalServer
 
         # - normal
         else {
+            # start each server type
             foreach ($_type in $PodeContext.Server.Types) {
                 switch ($_type.ToUpperInvariant())
                 {
@@ -99,6 +100,18 @@ function Start-PodeInternalServer
                     }
                 }
             }
+
+            # now go back through, and wait for each server type's runspace pool to be ready
+            foreach ($pool in ($endpoints.Pool | Sort-Object -Unique)) {
+                $start = [datetime]::Now
+                Write-Verbose "Waiting for the $($pool) RunspacePool to be Ready"
+
+                while (!$PodeContext.RunspacePools[$pool].Ready) {
+                    Start-Sleep -Milliseconds 100
+                }
+
+                Write-Verbose "$($pool) RunspacePool Ready [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+            }
         }
 
         # set the start time of the server (start and after restart)
@@ -108,7 +121,7 @@ function Start-PodeInternalServer
         if ($endpoints.Length -gt 0) {
             Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
-                Write-PodeHost "`t- $($_)" -ForegroundColor Yellow
+                Write-PodeHost "`t- $($_.Url)" -ForegroundColor Yellow
             }
         }
     }
@@ -135,6 +148,9 @@ function Restart-PodeInternalServer
 
         # remove all of the pode temp drives
         Remove-PodePSDrives
+
+        # clear-up modules
+        $PodeContext.Server.Modules.Clear()
 
         # clear up timers, schedules and loggers
         $PodeContext.Server.Routes.Keys.Clone() | ForEach-Object {
