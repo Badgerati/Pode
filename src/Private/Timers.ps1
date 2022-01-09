@@ -17,7 +17,7 @@ function Start-PodeTimerRunspace
     }
 
     $script = {
-        while ($true)
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
         {
             $_now = [DateTime]::Now
 

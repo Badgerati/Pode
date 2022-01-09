@@ -106,11 +106,17 @@ function Start-PodeInternalServer
                 $start = [datetime]::Now
                 Write-Verbose "Waiting for the $($pool) RunspacePool to be Ready"
 
-                while (!$PodeContext.RunspacePools[$pool].Ready) {
+                # wait
+                while ($PodeContext.RunspacePools[$pool].State -ieq 'Waiting') {
                     Start-Sleep -Milliseconds 100
                 }
 
-                Write-Verbose "$($pool) RunspacePool Ready [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+                Write-Verbose "$($pool) RunspacePool $($PodeContext.RunspacePools[$pool].State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+
+                # errored?
+                if ($PodeContext.RunspacePools[$pool].State -ieq 'error') {
+                    throw "$($pool) RunspacePool failed to load"
+                }
             }
         }
 

@@ -449,7 +449,7 @@ function Start-PodeWebServer
         $waitType = 'Signals'
     }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # browse to the first endpoint, if flagged
     if ($Browse) {

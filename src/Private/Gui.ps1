@@ -22,7 +22,7 @@ function Start-PodeGuiRunspace {
             # poll the server for a response
             $count = 0
 
-            while ($true) {
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 try {
                     $null = Invoke-WebRequest -Method Get -Uri $uri -UseBasicParsing -ErrorAction Stop
                     if (!$?) {

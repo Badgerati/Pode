@@ -519,14 +519,14 @@ function New-PodeRunspacePools
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
         Pool = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
-        Ready = $false
+        State = 'Waiting'
     }
 
     # web runspace - if we have any http/s endpoints
     if (Test-PodeEndpoints -Type Http) {
         $PodeContext.RunspacePools.Web = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            Ready = $false
+            State = 'Waiting'
         }
     }
 
@@ -534,7 +534,7 @@ function New-PodeRunspacePools
     if (Test-PodeEndpoints -Type Smtp) {
         $PodeContext.RunspacePools.Smtp = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            Ready = $false
+            State = 'Waiting'
         }
     }
 
@@ -542,7 +542,7 @@ function New-PodeRunspacePools
     if (Test-PodeEndpoints -Type Tcp) {
         $PodeContext.RunspacePools.Tcp = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
-            Ready = $false
+            State = 'Waiting'
         }
     }
 
@@ -550,21 +550,21 @@ function New-PodeRunspacePools
     if (Test-PodeEndpoints -Type Ws) {
         $PodeContext.RunspacePools.Signals = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
-            Ready = $false
+            State = 'Waiting'
         }
     }
 
     # setup schedule runspace pool
     $PodeContext.RunspacePools.Schedules = @{
         Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
-        Ready = $false
+        State = 'Waiting'
     }
 
     # setup gui runspace pool (only for non-ps-core)
     if (!$PodeContext.Server.IsServerless -and !((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
         $PodeContext.RunspacePools.Gui = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
-            Ready = $false
+            State = 'Waiting'
         }
 
         $PodeContext.RunspacePools.Gui.Pool.ApartmentState = 'STA'
