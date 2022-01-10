@@ -17,6 +17,18 @@ Add-PodeTimer -Name 'date' -Interval 5 -ScriptBlock {
 }
 ```
 
+## Arguments
+
+You can supply custom arguments to be passed to your timers by using the `-ArgumentList` parameter. This parameter takes an array of objects, which will be splatted onto the timer's scriptblock:
+
+```powershell
+Add-PodeTimer -Name 'example' -Interval 5 -ArgumentList 'Item1', 'Item2' -ScriptBlock {
+    param($i1, $i2)
+
+    # $i1 will be 'Item1'
+}
+```
+
 ## Delayed Start
 
 The `-Skip <int>` parameter will cause the Timer to skip its first initial triggers. For example, if you have a Timer run every 10 seconds, and you pass `-Skip 5`, then the timer will first run after 50 seconds (10secs * skip 5).
@@ -79,6 +91,30 @@ You can manually trigger a timer by using [`Invoke-PodeTimer`](../../Functions/T
 
 ```powershell
 Invoke-PodeTimer -Name 'timer-name'
+```
+
+You can also pass further optional arguments that will be supplied to the timer's scriptblock by using `-ArgumentList`, which is an array of objects that will be splatted:
+
+```powershell
+Add-PodeTimer -Name 'date' -Interval 5 -ScriptBlock {
+    param($date)
+    Write-Host $date
+}
+
+Invoke-PodeTimer -Name 'date' -ArgumentList ([DateTime]::Now)
+```
+
+If you supply an `-ArgumentList` on `Add-PodeTimer` and on `Invoke-PodeTimer`, then the main timer arguments are splatted first:
+
+```powershell
+Add-PodeTimer -Name 'example' -Interval 5 -ArgumentList 'Item1', 'Item2' -ScriptBlock {
+    param($i1, $i2, $a1, $a2)
+
+    # $i1 will be 'Item1'
+    # $a1 will be 'Arg1'
+}
+
+Invoke-PodeTimer -Name 'date' -ArgumentList 'Arg1', 'Arg2'
 ```
 
 ## Timer Object
