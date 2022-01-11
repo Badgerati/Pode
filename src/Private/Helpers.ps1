@@ -556,7 +556,7 @@ function Add-PodeRunspace
 
         # do we need to remember this pipeline? sorry, what did you say?
         if ($Forget) {
-            $null =  $ps.BeginInvoke()
+            $null = $ps.BeginInvoke()
         }
         else {
             $PodeContext.Runspaces += @{
