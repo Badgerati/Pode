@@ -74,6 +74,9 @@ The OAuth2 Token URL to acquire an access token.
 .PARAMETER UserUrl
 An optional User profile URL to retrieve a user's details - for OAuth2
 
+.PARAMETER UsePKCE
+If supplied, OAuth2 authentication will use PKCE code verifiers - for OAuth2
+
 .PARAMETER OAuth2
 If supplied, will use the inbuilt OAuth2 Authentication scheme.
 
@@ -197,7 +200,7 @@ function New-PodeAuthScheme
         [string]
         $ClientId,
 
-        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [Parameter(ParameterSetName='OAuth2')]
         [string]
         $ClientSecret,
 
@@ -216,6 +219,10 @@ function New-PodeAuthScheme
         [Parameter(ParameterSetName='OAuth2')]
         [string]
         $UserUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [switch]
+        $UsePKCE,
 
         [Parameter(ParameterSetName='OAuth2')]
         [switch]
@@ -384,6 +391,10 @@ function New-PodeAuthScheme
                 throw "OAuth2 requires an Authorise URL to be supplied"
             }
 
+            if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
+                throw "OAuth2 requires a Client Secret when not using PKCE"
+            }
+
             return @{
                 Name = 'OAuth2'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
@@ -397,6 +408,7 @@ function New-PodeAuthScheme
                 InnerScheme = $InnerScheme
                 Arguments = @{
                     Scopes = $Scope
+                    UsePKCE = $UsePKCE
                     Client = @{
                         ID = $ClientId
                         Secret = $ClientSecret
@@ -1516,10 +1528,10 @@ function ConvertTo-PodeJwt
     }
 
     # convert the header
-    $header64 = ConvertTo-PodeJwtBase64Value -Value ($Header | ConvertTo-Json -Compress)
+    $header64 = ConvertTo-PodeBase64UrlValue -Value ($Header | ConvertTo-Json -Compress)
 
     # convert the payload
-    $payload64 = ConvertTo-PodeJwtBase64Value -Value ($Payload | ConvertTo-Json -Compress)
+    $payload64 = ConvertTo-PodeBase64UrlValue -Value ($Payload | ConvertTo-Json -Compress)
 
     # combine
     $jwt = "$($header64).$($payload64)"

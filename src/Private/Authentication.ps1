@@ -98,10 +98,18 @@ function Get-PodeAuthOAuth2Type
 
         # if there's a code query param, or inner scheme, get access token
         if ($hasInnerScheme -or ![string]::IsNullOrWhiteSpace($WebEvent.Query['code'])) {
-            # set default query
+            # build tokenUrl query with client info
             $body = "client_id=$($options.Client.ID)"
             $body += "&grant_type=$($grantType)"
-            $body += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
+
+            if (![string]::IsNullOrEmpty($options.Client.Secret)) {
+                $body += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
+            }
+
+            # add PKCE code verifier
+            if ($options.UsePKCE) {
+                $body += "&code_verifier=$($WebEvent.Session.Data['__pode_oauth_code_verifier__'])"
+            }
 
             # if there's an inner scheme, get the username/password, and set query
             if ($hasInnerScheme) {
@@ -124,6 +132,12 @@ function Get-PodeAuthOAuth2Type
             catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
                 $response = Read-PodeWebExceptionDetails -ErrorRecord $_
                 $result = ($response.Body | ConvertFrom-Json)
+            }
+            finally {
+                # clear PKCE
+                if ($options.UsePKCE) {
+                    $null = $WebEvent.Session.Data.Remove('__pode_oauth_code_verifier__')
+                }
             }
 
             if (![string]::IsNullOrWhiteSpace($result.error)) {
@@ -168,14 +182,27 @@ function Get-PodeAuthOAuth2Type
 
         # redirect to the authUrl - only if no inner scheme supplied
         if (!$hasInnerScheme) {
+            # get the redirectUrl
             $redirectUrl = Get-PodeOAuth2RedirectHost -RedirectUrl $options.Urls.Redirect
 
+            # add authUrl query params
             $query = "client_id=$($options.Client.ID)"
             $query += "&response_type=code"
             $query += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($redirectUrl))"
             $query += "&response_mode=query"
             $query += "&scope=$([System.Web.HttpUtility]::UrlEncode($scopes))"
 
+            # build a code verifier for PKCE, and add to query
+            if ($options.UsePKCE) {
+                $codeVerifier = New-PodeGuid -Secure
+                $WebEvent.Session.Data['__pode_oauth_code_verifier__'] = $codeVerifier
+
+                $codeChallenge = ConvertTo-PodeBase64UrlValue -Value (Invoke-PodeSHA256Hash -Value $codeVerifier) -NoConvert
+                $query += "&code_challenge=$($codeChallenge)"
+                $query += "&code_challenge_method=S256"
+            }
+
+            # are custom parameters already on the URL?
             $url = $options.Urls.Authorise
             if (!$url.Contains('?')) {
                 $url += '?'
@@ -184,6 +211,7 @@ function Get-PodeAuthOAuth2Type
                 $url += '&'
             }
 
+            # redirect to OAuth2 endpoint
             Move-PodeResponseUrl -Url "$($url)$($query)"
             return @{ IsRedirected = $true }
         }
