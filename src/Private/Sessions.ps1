@@ -328,6 +328,11 @@ function Test-PodeSessionsConfigured
     return (($null -ne $PodeContext.Server.Sessions) -and ($PodeContext.Server.Sessions.Count -gt 0))
 }
 
+function Test-PodeSessionsInUse
+{
+    return (($null -ne $WebEvent.Session) -and ($WebEvent.Session.Count -gt 0))
+}
+
 function Get-PodeSessionData
 {
     param(

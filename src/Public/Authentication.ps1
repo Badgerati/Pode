@@ -60,7 +60,7 @@ If supplied, will use the inbuilt Client Certificate Authentication scheme.
 The Application ID generated when registering a new app for OAuth2.
 
 .PARAMETER ClientSecret
-The Application Secret generated when registering a new app for OAuth2.
+The Application Secret generated when registering a new app for OAuth2 (this is optional when using PKCE).
 
 .PARAMETER RedirectUrl
 An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
@@ -73,6 +73,9 @@ The OAuth2 Token URL to acquire an access token.
 
 .PARAMETER UserUrl
 An optional User profile URL to retrieve a user's details - for OAuth2
+
+.PARAMETER UserUrlMethod
+An optional HTTP method to use when calling the User profile URL - for OAuth2
 
 .PARAMETER UsePKCE
 If supplied, OAuth2 authentication will use PKCE code verifiers - for OAuth2
@@ -219,6 +222,11 @@ function New-PodeAuthScheme
         [Parameter(ParameterSetName='OAuth2')]
         [string]
         $UserUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [ValidateSet('Get', 'Post')]
+        [string]
+        $UserUrlMethod = 'Post',
 
         [Parameter(ParameterSetName='OAuth2')]
         [switch]
@@ -391,6 +399,10 @@ function New-PodeAuthScheme
                 throw "OAuth2 requires an Authorise URL to be supplied"
             }
 
+            if ($UsePKCE -and !(Test-PodeSessionsConfigured)) {
+                throw 'Sessions are required to use OAuth2 with PKCE'
+            }
+
             if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
                 throw "OAuth2 requires a Client Secret when not using PKCE"
             }
@@ -417,7 +429,10 @@ function New-PodeAuthScheme
                         Redirect = $RedirectUrl
                         Authorise = $AuthoriseUrl
                         Token = $TokenUrl
-                        User = $UserUrl
+                        User = @{
+                            Url = $UserUrl
+                            Method = (Protect-PodeValue -Value $UserUrlMethod -Default 'Post')
+                        }
                     }
                 }
             }
@@ -503,7 +518,7 @@ The Directory/Tenant ID from registering a new app (default: common).
 The Client ID from registering a new app.
 
 .PARAMETER ClientSecret
-The Client Secret from registering a new app.
+The Client Secret from registering a new app (this is optional when using PKCE).
 
 .PARAMETER RedirectUrl
 An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
@@ -516,6 +531,9 @@ An array of ScriptBlocks for optional Middleware to run before the Scheme's scri
 
 .EXAMPLE
 New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -ClientSecret 1234.abc
+
+.EXAMPLE
+New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -UsePKCE
 #>
 function New-PodeAuthAzureADScheme
 {
@@ -530,7 +548,7 @@ function New-PodeAuthAzureADScheme
         [string]
         $ClientId,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $ClientSecret,
 
@@ -544,7 +562,10 @@ function New-PodeAuthAzureADScheme
 
         [Parameter()]
         [object[]]
-        $Middleware
+        $Middleware,
+
+        [switch]
+        $UsePKCE
     )
 
     return (New-PodeAuthScheme `
@@ -556,7 +577,79 @@ function New-PodeAuthAzureADScheme
         -UserUrl "https://graph.microsoft.com/oidc/userinfo" `
         -RedirectUrl $RedirectUrl `
         -InnerScheme $InnerScheme `
-        -Middleware $Middleware)
+        -Middleware $Middleware `
+        -UsePKCE:$UsePKCE)
+}
+
+<#
+.SYNOPSIS
+Create an OAuth2 auth scheme for Twitter.
+
+.DESCRIPTION
+A wrapper for New-PodeAuthScheme and OAuth2, which builds an OAuth2 scheme for Twitter apps.
+
+.PARAMETER ClientId
+The Client ID from registering a new app.
+
+.PARAMETER ClientSecret
+The Client Secret from registering a new app (this is optional when using PKCE).
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+
+.PARAMETER InnerScheme
+An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
+
+.EXAMPLE
+New-PodeAuthTwitterScheme -ClientId abcdef -ClientSecret 1234.abc
+
+.EXAMPLE
+New-PodeAuthTwitterScheme -ClientId abcdef -UsePKCE
+#>
+function New-PodeAuthTwitterScheme
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter()]
+        [string]
+        $ClientSecret,
+
+        [Parameter()]
+        [string]
+        $RedirectUrl,
+
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $InnerScheme,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [switch]
+        $UsePKCE
+    )
+
+    return (New-PodeAuthScheme `
+        -OAuth2 `
+        -ClientId $ClientId `
+        -ClientSecret $ClientSecret `
+        -AuthoriseUrl "https://twitter.com/i/oauth2/authorize" `
+        -TokenUrl "https://api.twitter.com/2/oauth2/token" `
+        -UserUrl "https://api.twitter.com/2/users/me" `
+        -UserUrlMethod 'Get' `
+        -RedirectUrl $RedirectUrl `
+        -InnerScheme $InnerScheme `
+        -Middleware $Middleware `
+        -Scope 'tweet.read', 'users.read' `
+        -UsePKCE:$UsePKCE)
 }
 
 <#
