@@ -597,9 +597,6 @@ The Client Secret from registering a new app (this is optional when using PKCE).
 .PARAMETER RedirectUrl
 An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
 
-.PARAMETER InnerScheme
-An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
-
 .PARAMETER Middleware
 An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
 
@@ -625,10 +622,6 @@ function New-PodeAuthTwitterScheme
         [string]
         $RedirectUrl,
 
-        [Parameter(ValueFromPipeline=$true)]
-        [hashtable]
-        $InnerScheme,
-
         [Parameter()]
         [object[]]
         $Middleware,
@@ -646,7 +639,6 @@ function New-PodeAuthTwitterScheme
         -UserUrl "https://api.twitter.com/2/users/me" `
         -UserUrlMethod 'Get' `
         -RedirectUrl $RedirectUrl `
-        -InnerScheme $InnerScheme `
         -Middleware $Middleware `
         -Scope 'tweet.read', 'users.read' `
         -UsePKCE:$UsePKCE)
