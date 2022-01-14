@@ -75,7 +75,10 @@ The OAuth2 Token URL to acquire an access token.
 An optional User profile URL to retrieve a user's details - for OAuth2
 
 .PARAMETER UserUrlMethod
-An optional HTTP method to use when calling the User profile URL - for OAuth2
+An optional HTTP method to use when calling the User profile URL - for OAuth2 (Default: Post)
+
+.PARAMETER CodeChallengeMethod
+An optional method for sending a PKCE code challenge when calling the Authorise URL - for OAuth2 (Default: S256)
 
 .PARAMETER UsePKCE
 If supplied, OAuth2 authentication will use PKCE code verifiers - for OAuth2
@@ -227,6 +230,11 @@ function New-PodeAuthScheme
         [ValidateSet('Get', 'Post')]
         [string]
         $UserUrlMethod = 'Post',
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [ValidateSet('plain', 'S256')]
+        [string]
+        $CodeChallengeMethod = 'S256',
 
         [Parameter(ParameterSetName='OAuth2')]
         [switch]
@@ -420,7 +428,12 @@ function New-PodeAuthScheme
                 InnerScheme = $InnerScheme
                 Arguments = @{
                     Scopes = $Scope
-                    UsePKCE = $UsePKCE
+                    PKCE = @{
+                        Enabled = $UsePKCE
+                        CodeChallenge = @{
+                            Method = $CodeChallengeMethod
+                        }
+                    }
                     Client = @{
                         ID = $ClientId
                         Secret = $ClientSecret
@@ -529,11 +542,14 @@ An optional authentication Scheme (from New-PodeAuthScheme) that will be called 
 .PARAMETER Middleware
 An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
 
-.EXAMPLE
-New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -ClientSecret 1234.abc
+.PARAMETER UsePKCE
+If supplied, OAuth2 authentication will use PKCE code verifiers.
 
 .EXAMPLE
-New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -UsePKCE
+New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId some_id -ClientSecret 1234.abc
+
+.EXAMPLE
+New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId some_id -UsePKCE
 #>
 function New-PodeAuthAzureADScheme
 {
@@ -600,11 +616,14 @@ An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
 .PARAMETER Middleware
 An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
 
-.EXAMPLE
-New-PodeAuthTwitterScheme -ClientId abcdef -ClientSecret 1234.abc
+.PARAMETER UsePKCE
+If supplied, OAuth2 authentication will use PKCE code verifiers.
 
 .EXAMPLE
-New-PodeAuthTwitterScheme -ClientId abcdef -UsePKCE
+New-PodeAuthTwitterScheme -ClientId some_id -ClientSecret 1234.abc
+
+.EXAMPLE
+New-PodeAuthTwitterScheme -ClientId some_id -UsePKCE
 #>
 function New-PodeAuthTwitterScheme
 {
@@ -1754,4 +1773,123 @@ function Use-PodeAuth
     )
 
     Use-PodeFolder -Path $Path -DefaultPath 'auth'
+}
+
+<#
+.SYNOPSIS
+Builds an OAuth2 scheme using an OpenID Connect Discovery URL.
+
+.DESCRIPTION
+Builds an OAuth2 scheme using an OpenID Connect Discovery URL.
+
+.PARAMETER Url
+The OpenID Connect Discovery URL, this must end with '/.well-known/openid-configuration' (if missing, it will be automatically appended).
+
+.PARAMETER Scope
+A list of optional Scopes to use during the OAuth2 request. (Default: the supported list returned)
+
+.PARAMETER ClientId
+The Client ID from registering a new app.
+
+.PARAMETER ClientSecret
+The Client Secret from registering a new app (this is optional when using PKCE).
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (Default: <host>/oauth2/callback)
+
+.PARAMETER InnerScheme
+An optional authentication Scheme (from New-PodeAuthScheme) that will be called prior to this Scheme.
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
+
+.PARAMETER UsePKCE
+If supplied, OAuth2 authentication will use PKCE code verifiers.
+
+.EXAMPLE
+ConvertFrom-PodeOIDCDiscovery -Url 'https://accounts.google.com/.well-known/openid-configuration' -ClientId some_id -UsePKCE
+#>
+function ConvertFrom-PodeOIDCDiscovery
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Url,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientSecret,
+
+        [Parameter()]
+        [string]
+        $RedirectUrl,
+
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $InnerScheme,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [switch]
+        $UsePKCE
+    )
+
+    # get the discovery doc
+    if (!$Url.EndsWith('/.well-known/openid-configuration')) {
+        $Url += '/.well-known/openid-configuration'
+    }
+
+    $config = Invoke-RestMethod -Method Get -Uri $Url
+
+    # check it supports the code response_type
+    if ($config.response_types_supported -inotcontains 'code') {
+        throw "The OAuth2 provider does not support the 'code' response_type"
+    }
+
+    # can we have an InnerScheme?
+    if (($null -ne $InnerScheme) -and ($config.grant_types_supported -inotcontains 'password')) {
+        throw "The OAuth2 provider does not support the 'password' grant_type required by using an InnerScheme"
+    }
+
+    # scopes
+    $scopes = $config.scopes_supported
+
+    if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
+        $scopes = @(foreach ($s in $Scope) {
+            if ($s -iin $config.scopes_supported) {
+                $s
+            }
+        })
+    }
+
+    # pkce code challenge method
+    $codeMethod = 'S256'
+    if ($config.code_challenge_methods_supported -inotcontains $codeMethod) {
+        $codeMethod = 'plain'
+    }
+
+    return (New-PodeAuthScheme `
+        -OAuth2 `
+        -ClientId $ClientId `
+        -ClientSecret $ClientSecret `
+        -AuthoriseUrl $config.authorization_endpoint `
+        -TokenUrl $config.token_endpoint `
+        -UserUrl $config.userinfo_endpoint `
+        -RedirectUrl $RedirectUrl `
+        -Scope $scopes `
+        -InnerScheme $InnerScheme `
+        -Middleware $Middleware `
+        -CodeChallengeMethod $codeMethod `
+        -UsePKCE:$UsePKCE)
 }

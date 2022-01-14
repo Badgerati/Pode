@@ -1,8 +1,8 @@
-# OAuth2
+# OAuth 2.0 & OIDC
 
-The OAuth2 authentication lets you setup authentication with other services that support OAuth2.
+The OAuth2 authentication lets you setup authentication with services that support OAuth 2.0.
 
-To use this scheme, you'll need to supply an Authorise/Token URL, as well as setup a app registration to acquire a Client ID and Secret.
+To use this scheme, you'll need to supply an Authorise/Token URL, as well as setup a app registration to acquire a Client ID and Secret. There is also support for converting an OpenID Connect Discovery URL to a Pode OAuth2 scheme.
 
 ## Setup
 
@@ -152,6 +152,26 @@ Start-PodeServer {
     }
 }
 ```
+
+## OIDC Discovery
+
+If the provider you're wanting to use OAuth2 for supports OpenID Connect Discovery, and has an appropriate `/.well-known/openid-configuration` endpoint, then you can use this with [`ConvertFrom-PodeOIDCDiscovery`](../../../../Functions/Authentication/ConvertFrom-PodeOIDCDiscovery) to automatically build a Pode OAuth2 scheme.
+
+For example, if you were using Google OAuth2 with PKCE, then the following example would build an OAuth2 scheme:
+
+```powershell
+$scheme = ConvertFrom-PodeOIDCDiscovery -Url 'https://accounts.google.com' -ClientId '<client_id>' -UsePKCE
+
+$scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+        param($user, $accessToken, $refreshToken, $response)
+
+        # check if the user is valid
+
+        return @{ User = $user }
+    }
+```
+
+If the `-Url` supplied doesn't end with `/.well-known/openid-configuration`, then Pode will append it to the URL automatically.
 
 ## Full Example
 

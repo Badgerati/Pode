@@ -116,7 +116,7 @@ function Get-PodeAuthOAuth2Type
                 }
 
                 # add PKCE code verifier
-                if ($options.UsePKCE) {
+                if ($options.PKCE.Enabled) {
                     $body += "&code_verifier=$($WebEvent.Session.Data['__pode_oauth_code_verifier__'])"
                 }
 
@@ -189,7 +189,7 @@ function Get-PodeAuthOAuth2Type
                     $WebEvent.Session.Data.Remove('__pode_oauth_state__')
 
                     # clear PKCE
-                    if ($options.UsePKCE) {
+                    if ($options.PKCE.Enabled) {
                         $WebEvent.Session.Data.Remove('__pode_oauth_code_verifier__')
                     }
                 }
@@ -216,14 +216,18 @@ function Get-PodeAuthOAuth2Type
             }
 
             # build a code verifier for PKCE, and add to query
-            if ($options.UsePKCE) {
+            if ($options.PKCE.Enabled) {
                 $guid = New-PodeGuid
                 $codeVerifier = "$($guid)-$($guid)"
                 $WebEvent.Session.Data['__pode_oauth_code_verifier__'] = $codeVerifier
 
-                $codeChallenge = ConvertTo-PodeBase64UrlValue -Value (Invoke-PodeSHA256Hash -Value $codeVerifier) -NoConvert
+                $codeChallenge = $codeVerifier
+                if ($options.PKCE.CodeChallenge.Method -ieq 'S256') {
+                    $codeChallenge = ConvertTo-PodeBase64UrlValue -Value (Invoke-PodeSHA256Hash -Value $codeChallenge) -NoConvert
+                }
+
                 $query += "&code_challenge=$($codeChallenge)"
-                $query += "&code_challenge_method=S256"
+                $query += "&code_challenge_method=$($options.PKCE.CodeChallenge.Method)"
             }
 
             # are custom parameters already on the URL?
