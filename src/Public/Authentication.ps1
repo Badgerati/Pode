@@ -1808,6 +1808,9 @@ If supplied, OAuth2 authentication will use PKCE code verifiers.
 
 .EXAMPLE
 ConvertFrom-PodeOIDCDiscovery -Url 'https://accounts.google.com/.well-known/openid-configuration' -ClientId some_id -UsePKCE
+
+.EXAMPLE
+ConvertFrom-PodeOIDCDiscovery -Url 'https://accounts.google.com' -ClientId some_id -UsePKCE
 #>
 function ConvertFrom-PodeOIDCDiscovery
 {

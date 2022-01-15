@@ -163,12 +163,12 @@ For example, if you were using Google OAuth2 with PKCE, then the following examp
 $scheme = ConvertFrom-PodeOIDCDiscovery -Url 'https://accounts.google.com' -ClientId '<client_id>' -UsePKCE
 
 $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
-        param($user, $accessToken, $refreshToken, $response)
+    param($user, $accessToken, $refreshToken, $response)
 
-        # check if the user is valid
+    # check if the user is valid
 
-        return @{ User = $user }
-    }
+    return @{ User = $user }
+}
 ```
 
 If the `-Url` supplied doesn't end with `/.well-known/openid-configuration`, then Pode will append it to the URL automatically.
