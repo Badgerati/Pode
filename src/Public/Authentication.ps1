@@ -60,7 +60,7 @@ If supplied, will use the inbuilt Client Certificate Authentication scheme.
 The Application ID generated when registering a new app for OAuth2.
 
 .PARAMETER ClientSecret
-The Application Secret generated when registering a new app for OAuth2.
+The Application Secret generated when registering a new app for OAuth2 (this is optional when using PKCE).
 
 .PARAMETER RedirectUrl
 An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
@@ -73,6 +73,12 @@ The OAuth2 Token URL to acquire an access token.
 
 .PARAMETER UserUrl
 An optional User profile URL to retrieve a user's details - for OAuth2
+
+.PARAMETER UserUrlMethod
+An optional HTTP method to use when calling the User profile URL - for OAuth2
+
+.PARAMETER UsePKCE
+If supplied, OAuth2 authentication will use PKCE code verifiers - for OAuth2
 
 .PARAMETER OAuth2
 If supplied, will use the inbuilt OAuth2 Authentication scheme.
@@ -197,7 +203,7 @@ function New-PodeAuthScheme
         [string]
         $ClientId,
 
-        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [Parameter(ParameterSetName='OAuth2')]
         [string]
         $ClientSecret,
 
@@ -216,6 +222,15 @@ function New-PodeAuthScheme
         [Parameter(ParameterSetName='OAuth2')]
         [string]
         $UserUrl,
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [ValidateSet('Get', 'Post')]
+        [string]
+        $UserUrlMethod = 'Post',
+
+        [Parameter(ParameterSetName='OAuth2')]
+        [switch]
+        $UsePKCE,
 
         [Parameter(ParameterSetName='OAuth2')]
         [switch]
@@ -384,6 +399,14 @@ function New-PodeAuthScheme
                 throw "OAuth2 requires an Authorise URL to be supplied"
             }
 
+            if ($UsePKCE -and !(Test-PodeSessionsConfigured)) {
+                throw 'Sessions are required to use OAuth2 with PKCE'
+            }
+
+            if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
+                throw "OAuth2 requires a Client Secret when not using PKCE"
+            }
+
             return @{
                 Name = 'OAuth2'
                 Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
@@ -397,6 +420,7 @@ function New-PodeAuthScheme
                 InnerScheme = $InnerScheme
                 Arguments = @{
                     Scopes = $Scope
+                    UsePKCE = $UsePKCE
                     Client = @{
                         ID = $ClientId
                         Secret = $ClientSecret
@@ -405,7 +429,10 @@ function New-PodeAuthScheme
                         Redirect = $RedirectUrl
                         Authorise = $AuthoriseUrl
                         Token = $TokenUrl
-                        User = $UserUrl
+                        User = @{
+                            Url = $UserUrl
+                            Method = (Protect-PodeValue -Value $UserUrlMethod -Default 'Post')
+                        }
                     }
                 }
             }
@@ -491,7 +518,7 @@ The Directory/Tenant ID from registering a new app (default: common).
 The Client ID from registering a new app.
 
 .PARAMETER ClientSecret
-The Client Secret from registering a new app.
+The Client Secret from registering a new app (this is optional when using PKCE).
 
 .PARAMETER RedirectUrl
 An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
@@ -504,6 +531,9 @@ An array of ScriptBlocks for optional Middleware to run before the Scheme's scri
 
 .EXAMPLE
 New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -ClientSecret 1234.abc
+
+.EXAMPLE
+New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId abcdef -UsePKCE
 #>
 function New-PodeAuthAzureADScheme
 {
@@ -518,7 +548,7 @@ function New-PodeAuthAzureADScheme
         [string]
         $ClientId,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $ClientSecret,
 
@@ -532,7 +562,10 @@ function New-PodeAuthAzureADScheme
 
         [Parameter()]
         [object[]]
-        $Middleware
+        $Middleware,
+
+        [switch]
+        $UsePKCE
     )
 
     return (New-PodeAuthScheme `
@@ -544,7 +577,71 @@ function New-PodeAuthAzureADScheme
         -UserUrl "https://graph.microsoft.com/oidc/userinfo" `
         -RedirectUrl $RedirectUrl `
         -InnerScheme $InnerScheme `
-        -Middleware $Middleware)
+        -Middleware $Middleware `
+        -UsePKCE:$UsePKCE)
+}
+
+<#
+.SYNOPSIS
+Create an OAuth2 auth scheme for Twitter.
+
+.DESCRIPTION
+A wrapper for New-PodeAuthScheme and OAuth2, which builds an OAuth2 scheme for Twitter apps.
+
+.PARAMETER ClientId
+The Client ID from registering a new app.
+
+.PARAMETER ClientSecret
+The Client Secret from registering a new app (this is optional when using PKCE).
+
+.PARAMETER RedirectUrl
+An optional OAuth2 Redirect URL (default: <host>/oauth2/callback)
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
+
+.EXAMPLE
+New-PodeAuthTwitterScheme -ClientId abcdef -ClientSecret 1234.abc
+
+.EXAMPLE
+New-PodeAuthTwitterScheme -ClientId abcdef -UsePKCE
+#>
+function New-PodeAuthTwitterScheme
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ClientId,
+
+        [Parameter()]
+        [string]
+        $ClientSecret,
+
+        [Parameter()]
+        [string]
+        $RedirectUrl,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [switch]
+        $UsePKCE
+    )
+
+    return (New-PodeAuthScheme `
+        -OAuth2 `
+        -ClientId $ClientId `
+        -ClientSecret $ClientSecret `
+        -AuthoriseUrl "https://twitter.com/i/oauth2/authorize" `
+        -TokenUrl "https://api.twitter.com/2/oauth2/token" `
+        -UserUrl "https://api.twitter.com/2/users/me" `
+        -UserUrlMethod 'Get' `
+        -RedirectUrl $RedirectUrl `
+        -Middleware $Middleware `
+        -Scope 'tweet.read', 'users.read' `
+        -UsePKCE:$UsePKCE)
 }
 
 <#
@@ -1516,10 +1613,10 @@ function ConvertTo-PodeJwt
     }
 
     # convert the header
-    $header64 = ConvertTo-PodeJwtBase64Value -Value ($Header | ConvertTo-Json -Compress)
+    $header64 = ConvertTo-PodeBase64UrlValue -Value ($Header | ConvertTo-Json -Compress)
 
     # convert the payload
-    $payload64 = ConvertTo-PodeJwtBase64Value -Value ($Payload | ConvertTo-Json -Compress)
+    $payload64 = ConvertTo-PodeBase64UrlValue -Value ($Payload | ConvertTo-Json -Compress)
 
     # combine
     $jwt = "$($header64).$($payload64)"

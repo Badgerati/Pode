@@ -187,6 +187,7 @@
         # auth
         'New-PodeAuthScheme',
         'New-PodeAuthAzureADScheme',
+        'New-PodeAuthTwitterScheme',
         'Add-PodeAuth',
         'Get-PodeAuth',
         'Clear-PodeAuth',

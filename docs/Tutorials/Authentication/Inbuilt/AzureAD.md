@@ -2,7 +2,7 @@
 
 The Azure AD authentication is just a wrapper around the inbuilt [OAuth2](../OAuth2) authentication.
 
-Both the `authorization_code` and `password` grant types are supported. The `password` type is only supported on Work/School accounts, and on accounts with MFA disabled.
+Both the `authorization_code` and `password` grant types are supported. The `password` type is only supported on Work/School accounts, and on accounts with MFA disabled. There is also support for PKCE, via `-UsePKCE` if sessions are enabled.
 
 ## Setup
 
@@ -11,7 +11,8 @@ Before using Azure AD authentication in Pode, you first need to register a new a
 * In the Azure Portal, open up the Azure Active Directory
 * Then select "App Registrations" in the menu, followed by "New Registration" at the top
 * Enter a name for the app, followed by the redirect URL
-    * the default is redirect is `<host>/oauth2/callback` (such as `http://localhost:8080/oauth2/callback`)
+    * Platform should be "Web"
+    * The default redirect is `<host>/oauth2/callback` (such as `http://localhost:8080/oauth2/callback`)
 * Click create
     * Make a note of the "Client ID" and "Tenant"
 * Then select "Certificates & Secrets"
@@ -19,6 +20,20 @@ Before using Azure AD authentication in Pode, you first need to register a new a
     * Make a note of the generate secret
 
 With the Client and Tenant ID, plus the Client Secret, you can now setup Azure AD authentication in Pode.
+
+### PKCE
+
+If you're using PKCE, then the flow changes a little bit:
+
+* In the Azure Portal, open up the Azure Active Directory
+* Then select "App Registrations" in the menu, followed by "New Registration" at the top
+* Enter a name for the app, followed by the redirect URL
+    * Platform should be "Single-page application"
+    * The default redirect is `<host>/oauth2/callback` (such as `http://localhost:8080/oauth2/callback`)
+* Click create
+    * Make a note of the "Client ID" and "Tenant"
+
+With just the Client and Tenant ID you're good to go; PKCE doesn't require a Client Secret to work.
 
 ### Authorisation Code
 

@@ -98,84 +98,135 @@ function Get-PodeAuthOAuth2Type
 
         # if there's a code query param, or inner scheme, get access token
         if ($hasInnerScheme -or ![string]::IsNullOrWhiteSpace($WebEvent.Query['code'])) {
-            # set default query
-            $body = "client_id=$($options.Client.ID)"
-            $body += "&grant_type=$($grantType)"
-            $body += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
-
-            # if there's an inner scheme, get the username/password, and set query
-            if ($hasInnerScheme) {
-                $body += "&username=$($schemes[-1][0])"
-                $body += "&password=$($schemes[-1][1])"
-                $body += "&scope=$([System.Web.HttpUtility]::UrlEncode($scopes))"
-            }
-
-            # otherwise, set query for auth_code
-            else {
-                $redirectUrl = Get-PodeOAuth2RedirectHost -RedirectUrl $options.Urls.Redirect
-                $body += "&code=$($WebEvent.Query['code'])"
-                $body += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($redirectUrl))"
-            }
-
-            # POST the tokenUrl
             try {
-                $result = Invoke-RestMethod -Method Post -Uri $options.Urls.Token -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
-            }
-            catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
-                $response = Read-PodeWebExceptionDetails -ErrorRecord $_
-                $result = ($response.Body | ConvertFrom-Json)
-            }
-
-            if (![string]::IsNullOrWhiteSpace($result.error)) {
-                return @{
-                    Message = "$($result.error): $($result.error_description)"
-                    Code = 401
-                }
-            }
-
-            # get user details - if url supplied
-            if (![string]::IsNullOrWhiteSpace($options.Urls.User)) {
-                try {
-                    $user = Invoke-RestMethod -Method Post -Uri $options.Urls.User -Headers @{ Authorization = "Bearer $($result.access_token)" }
-                }
-                catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
-                    $response = Read-PodeWebExceptionDetails -ErrorRecord $_
-                    $user = ($response.Body | ConvertFrom-Json)
-                }
-
-                if (![string]::IsNullOrWhiteSpace($user.error)) {
+                # ensure the state is valid
+                if ((Test-PodeSessionsInUse) -and ($WebEvent.Query['state'] -ne $WebEvent.Session.Data['__pode_oauth_state__'])) {
                     return @{
-                        Message = "$($user.error): $($user.error_description)"
+                        Message = "OAuth2 state returned is invalid"
                         Code = 401
                     }
                 }
-            }
-            elseif (![string]::IsNullOrWhiteSpace($result.id_token)) {
-                try {
-                    $user = ConvertFrom-PodeJwt -Token $result.id_token -IgnoreSignature
+
+                # build tokenUrl query with client info
+                $body = "client_id=$($options.Client.ID)"
+                $body += "&grant_type=$($grantType)"
+
+                if (![string]::IsNullOrEmpty($options.Client.Secret)) {
+                    $body += "&client_secret=$([System.Web.HttpUtility]::UrlEncode($options.Client.Secret))"
                 }
-                catch {
+
+                # add PKCE code verifier
+                if ($options.UsePKCE) {
+                    $body += "&code_verifier=$($WebEvent.Session.Data['__pode_oauth_code_verifier__'])"
+                }
+
+                # if there's an inner scheme, get the username/password, and set query
+                if ($hasInnerScheme) {
+                    $body += "&username=$($schemes[-1][0])"
+                    $body += "&password=$($schemes[-1][1])"
+                    $body += "&scope=$([System.Web.HttpUtility]::UrlEncode($scopes))"
+                }
+
+                # otherwise, set query for auth_code
+                else {
+                    $redirectUrl = Get-PodeOAuth2RedirectHost -RedirectUrl $options.Urls.Redirect
+                    $body += "&code=$($WebEvent.Query['code'])"
+                    $body += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($redirectUrl))"
+                }
+
+                # POST the tokenUrl
+                try {
+                    $result = Invoke-RestMethod -Method Post -Uri $options.Urls.Token -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
+                }
+                catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
+                    $response = Read-PodeWebExceptionDetails -ErrorRecord $_
+                    $result = ($response.Body | ConvertFrom-Json)
+                }
+
+                # was there an error?
+                if (![string]::IsNullOrWhiteSpace($result.error)) {
+                    return @{
+                        Message = "$($result.error): $($result.error_description)"
+                        Code = 401
+                    }
+                }
+
+                # get user details - if url supplied
+                if (![string]::IsNullOrWhiteSpace($options.Urls.User.Url)) {
+                    try {
+                        $user = Invoke-RestMethod -Method $options.Urls.User.Method -Uri $options.Urls.User.Url -Headers @{ Authorization = "Bearer $($result.access_token)" }
+                    }
+                    catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
+                        $response = Read-PodeWebExceptionDetails -ErrorRecord $_
+                        $user = ($response.Body | ConvertFrom-Json)
+                    }
+
+                    if (![string]::IsNullOrWhiteSpace($user.error)) {
+                        return @{
+                            Message = "$($user.error): $($user.error_description)"
+                            Code = 401
+                        }
+                    }
+                }
+                elseif (![string]::IsNullOrWhiteSpace($result.id_token)) {
+                    try {
+                        $user = ConvertFrom-PodeJwt -Token $result.id_token -IgnoreSignature
+                    }
+                    catch {
+                        $user = @{ Provider = 'OAuth2' }
+                    }
+                }
+                else {
                     $user = @{ Provider = 'OAuth2' }
                 }
-            }
-            else {
-                $user = @{ Provider = 'OAuth2' }
-            }
 
-            # return the user for the validator
-            return @($user, $result.access_token, $result.refresh_token, $result)
+                # return the user for the validator
+                return @($user, $result.access_token, $result.refresh_token, $result)
+            }
+            finally {
+                if ($null -ne $WebEvent.Session.Data) {
+                    # clear state
+                    $WebEvent.Session.Data.Remove('__pode_oauth_state__')
+
+                    # clear PKCE
+                    if ($options.UsePKCE) {
+                        $WebEvent.Session.Data.Remove('__pode_oauth_code_verifier__')
+                    }
+                }
+            }
         }
 
         # redirect to the authUrl - only if no inner scheme supplied
         if (!$hasInnerScheme) {
+            # get the redirectUrl
             $redirectUrl = Get-PodeOAuth2RedirectHost -RedirectUrl $options.Urls.Redirect
 
+            # add authUrl query params
             $query = "client_id=$($options.Client.ID)"
             $query += "&response_type=code"
             $query += "&redirect_uri=$([System.Web.HttpUtility]::UrlEncode($redirectUrl))"
             $query += "&response_mode=query"
             $query += "&scope=$([System.Web.HttpUtility]::UrlEncode($scopes))"
 
+            # add csrf state
+            if (Test-PodeSessionsInUse) {
+                $guid = New-PodeGuid
+                $WebEvent.Session.Data['__pode_oauth_state__'] = $guid
+                $query += "&state=$($guid)"
+            }
+
+            # build a code verifier for PKCE, and add to query
+            if ($options.UsePKCE) {
+                $guid = New-PodeGuid
+                $codeVerifier = "$($guid)-$($guid)"
+                $WebEvent.Session.Data['__pode_oauth_code_verifier__'] = $codeVerifier
+
+                $codeChallenge = ConvertTo-PodeBase64UrlValue -Value (Invoke-PodeSHA256Hash -Value $codeVerifier) -NoConvert
+                $query += "&code_challenge=$($codeChallenge)"
+                $query += "&code_challenge_method=S256"
+            }
+
+            # are custom parameters already on the URL?
             $url = $options.Urls.Authorise
             if (!$url.Contains('?')) {
                 $url += '?'
@@ -184,6 +235,7 @@ function Get-PodeAuthOAuth2Type
                 $url += '&'
             }
 
+            # redirect to OAuth2 endpoint
             Move-PodeResponseUrl -Url "$($url)$($query)"
             return @{ IsRedirected = $true }
         }
@@ -1011,7 +1063,7 @@ function Get-PodeAuthMiddlewareScript
 
         # route options for using sessions
         $sessionless = $auth.Sessionless
-        $usingSessions = (!(Test-PodeIsEmpty $WebEvent.Session))
+        $usingSessions = (Test-PodeSessionsInUse)
         $useHeaders = [bool]($WebEvent.Session.Properties.UseHeaders)
         $loginRoute = $opts.Login
 
