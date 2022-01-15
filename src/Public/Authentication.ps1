@@ -1825,7 +1825,7 @@ function ConvertFrom-PodeOIDCDiscovery
         [string]
         $ClientId,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $ClientSecret,
 

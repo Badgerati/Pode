@@ -86,6 +86,7 @@ function Get-PodeAuthOAuth2Type
             return @{
                 Message = $WebEvent.Query['error']
                 Code = 401
+                IsErrored = $true
             }
         }
 
@@ -104,6 +105,7 @@ function Get-PodeAuthOAuth2Type
                     return @{
                         Message = "OAuth2 state returned is invalid"
                         Code = 401
+                        IsErrored = $true
                     }
                 }
 
@@ -148,6 +150,7 @@ function Get-PodeAuthOAuth2Type
                     return @{
                         Message = "$($result.error): $($result.error_description)"
                         Code = 401
+                        IsErrored = $true
                     }
                 }
 
@@ -165,6 +168,7 @@ function Get-PodeAuthOAuth2Type
                         return @{
                             Message = "$($user.error): $($user.error_description)"
                             Code = 401
+                            IsErrored = $true
                         }
                     }
                 }
@@ -245,7 +249,11 @@ function Get-PodeAuthOAuth2Type
         }
 
         # hmm, this is unexpected
-        return @{ Code = 500 }
+        return @{
+            Message = 'Well, this is awkward...'
+            Code = 500
+            IsErrored = $true
+        }
     }
 }
 
@@ -1211,6 +1219,7 @@ function Get-PodeAuthMiddlewareScript
                 }
             }
 
+            $isErrored = [bool]$result.IsErrored
             return (Set-PodeAuthStatus `
                 -StatusCode $_code `
                 -Description $result.Message `
@@ -1218,7 +1227,8 @@ function Get-PodeAuthMiddlewareScript
                 -Failure $auth.Failure `
                 -Success $auth.Success `
                 -LoginRoute:$loginRoute `
-                -Sessionless:$sessionless)
+                -Sessionless:$sessionless `
+                -NoFailureRedirect:$isErrored)
         }
 
         # assign the user to the session, and wire up a quick method
@@ -1308,7 +1318,10 @@ function Set-PodeAuthStatus
         $Sessionless,
 
         [switch]
-        $NoSuccessRedirect
+        $NoSuccessRedirect,
+
+        [switch]
+        $NoFailureRedirect
     )
 
     # if we have any headers, set them
@@ -1330,7 +1343,7 @@ function Set-PodeAuthStatus
         }
 
         # check if we have a failure url redirect
-        if (![string]::IsNullOrWhiteSpace($Failure.Url)) {
+        if (!$NoFailureRedirect -and ![string]::IsNullOrWhiteSpace($Failure.Url)) {
             if ($Success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
                 Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
             }
