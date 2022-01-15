@@ -15,7 +15,8 @@ function Start-PodeWebServer
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
         (Get-PodeQueryMiddleware),
-        (Get-PodeCookieMiddleware)
+        (Get-PodeCookieMiddleware),
+        (Get-PodeSecurityMiddleware)
     )
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)

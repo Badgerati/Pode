@@ -357,6 +357,11 @@ function New-PodeContext
         Stop = [ordered]@{}
     }
 
+    # setup security
+    $ctx.Security = @{
+        Headers = @{}
+    }
+
     # return the new context
     return $ctx
 }

@@ -10,7 +10,8 @@ function Start-PodeAzFuncServer
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
-        (Get-PodeCookieMiddleware)
+        (Get-PodeCookieMiddleware),
+        (Get-PodeSecurityMiddleware)
     )
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
@@ -142,7 +143,8 @@ function Start-PodeAwsLambdaServer
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
-        (Get-PodeCookieMiddleware)
+        (Get-PodeCookieMiddleware),
+        (Get-PodeSecurityMiddleware)
     )
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
