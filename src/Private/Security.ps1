@@ -998,3 +998,90 @@ function New-PodeSelfSignedCertificate
 
     return $cert
 }
+
+function Protect-PodeContentSecurityKeyword
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Value
+    )
+
+    if (($null -eq $Value) -or ($Value.Length -eq 0)) {
+        return $null
+    }
+
+    $Name = $Name.ToLowerInvariant()
+
+    $keywords = @{
+        none = "'none'"
+        self = "'self'"
+    }
+
+    $schemes = @{
+        http = 'http:'
+        https = 'https:'
+        ws = 'ws:'
+        wss = 'wss:'
+        data = 'data:'
+        file = 'file:'
+    }
+
+    $values = @(foreach ($v in $Value) {
+        if ($keywords.ContainsKey($v)) {
+            $keywords[$v]
+            continue
+        }
+
+        if ($schemes.ContainsKey($v)) {
+            $schemes[$v]
+            continue
+        }
+
+        $v
+    })
+
+    return "$($Name) $($values -join ' ')"
+}
+
+function Protect-PodePermissionPolicyKeyword
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Value
+    )
+
+    if (($null -eq $Value) -or ($Value.Length -eq 0)) {
+        return $null
+    }
+
+    $Name = $Name.ToLowerInvariant()
+
+    if ($Value -icontains 'none') {
+        return "$($Name)=()"
+    }
+
+    $keywords = @{
+        self = $true
+    }
+
+    $values = @(foreach ($v in $Value) {
+        if ($keywords.ContainsKey($v)) {
+            $v
+            continue
+        }
+
+        "`"$($v)`""
+    })
+
+    return "$($Name)=($($values -join ' '))"
+}

@@ -358,7 +358,7 @@ function New-PodeContext
     }
 
     # setup security
-    $ctx.Security = @{
+    $ctx.Server.Security = @{
         Headers = @{}
     }
 
