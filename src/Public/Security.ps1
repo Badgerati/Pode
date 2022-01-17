@@ -394,7 +394,7 @@ function Set-PodeSecurityReferrerPolicy
         $Type
     )
 
-    Add-PodeSecurityHeader -Name 'Referred-Policy' -Value $Type.ToLowerInvariant()
+    Add-PodeSecurityHeader -Name 'Referrer-Policy' -Value $Type.ToLowerInvariant()
 }
 
 function Remove-PodeSecurityReferrerPolicy
@@ -402,7 +402,7 @@ function Remove-PodeSecurityReferrerPolicy
     [CmdletBinding()]
     param()
 
-    Remove-PodeSecurityHeader -Name 'Referred-Policy'
+    Remove-PodeSecurityHeader -Name 'Referrer-Policy'
 }
 
 function Set-PodeSecurityContentTypeOptions
