@@ -518,22 +518,22 @@ function Set-PodeSecurityAccessControl
     Add-PodeSecurityHeader -Name 'Access-Control-Allow-Origin' -Value $Origin
 
     # methods
-    if (![string]::IsNullOrWhiteSpace($Method)) {
-        if ($Method -icontains '*') {
+    if (![string]::IsNullOrWhiteSpace($Methods)) {
+        if ($Methods -icontains '*') {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value '*'
         }
         else {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value ($Method -join ', ').ToUpperInvariant()
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value ($Methods -join ', ').ToUpperInvariant()
         }
     }
 
     # headers
-    if (![string]::IsNullOrWhiteSpace($Header)) {
-        if ($Header -icontains '*') {
+    if (![string]::IsNullOrWhiteSpace($Headers)) {
+        if ($Headers -icontains '*') {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value '*'
         }
         else {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value ($Header -join ', ').ToUpperInvariant()
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value ($Headers -join ', ').ToUpperInvariant()
         }
     }
 
