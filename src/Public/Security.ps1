@@ -10,7 +10,6 @@ function Set-PodeSecurity
 
     # general headers
     Set-PodeSecurityContentTypeOptions
-    Set-PodeSecurityContentSecurityPolicy -Default 'self'
 
     Set-PodeSecurityPermissionPolicy `
         -LayoutAnimations 'none' `
@@ -27,12 +26,14 @@ function Set-PodeSecurity
         'simple' {
             Set-PodeSecurityFrameOptions -Type SameOrigin
             Set-PodeSecurityReferrerPolicy -Type Strict-Origin
+            Set-PodeSecurityContentSecurityPolicy -Default 'self' -Style 'self', 'unsafe-inline' -Scripts 'self', 'unsafe-inline' -Image 'self', 'data'
         }
 
         'strict' {
             Set-PodeSecurityFrameOptions -Type Deny
             Set-PodeSecurityReferrerPolicy -Type No-Referrer
             Set-PodeSecurityStrictTransportSecurity -Duration 31536000 -IncludeSubDomains
+            Set-PodeSecurityContentSecurityPolicy -Default 'self' -Image 'self', 'data'
         }
     }
 }
@@ -487,8 +488,6 @@ function Remove-PodeSecurityCrossOrigin
     Remove-PodeSecurityHeader -Name 'Cross-Origin-Opener-Policy'
     Remove-PodeSecurityHeader -Name 'Cross-Origin-Resource-Policy'
 }
-
-
 
 function Set-PodeSecurityAccessControl
 {

@@ -1017,28 +1017,30 @@ function Protect-PodeContentSecurityKeyword
 
     $Name = $Name.ToLowerInvariant()
 
-    $keywords = @{
-        none = "'none'"
-        self = "'self'"
-    }
+    $keywords = @(
+        'none',
+        'self',
+        'unsafe-inline',
+        'unsafe-eval'
+    )
 
-    $schemes = @{
-        http = 'http:'
-        https = 'https:'
-        ws = 'ws:'
-        wss = 'wss:'
-        data = 'data:'
-        file = 'file:'
-    }
+    $schemes = @(
+        'http',
+        'https',
+        'ws',
+        'wss',
+        'data',
+        'file'
+    )
 
     $values = @(foreach ($v in $Value) {
-        if ($keywords.ContainsKey($v)) {
-            $keywords[$v]
+        if ($keywords -icontains $v) {
+            "'$($v.ToLowerInvariant())'"
             continue
         }
 
-        if ($schemes.ContainsKey($v)) {
-            $schemes[$v]
+        if ($schemes -icontains $v) {
+            "$($v.ToLowerInvariant()):"
             continue
         }
 
@@ -1070,12 +1072,12 @@ function Protect-PodePermissionPolicyKeyword
         return "$($Name)=()"
     }
 
-    $keywords = @{
-        self = $true
-    }
+    $keywords = @(
+        'self'
+    )
 
     $values = @(foreach ($v in $Value) {
-        if ($keywords.ContainsKey($v)) {
+        if ($keywords -icontains $v) {
             $v
             continue
         }
