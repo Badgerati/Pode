@@ -21,6 +21,11 @@ function Set-PodeSecurity
     Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same-Origin
     Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
 
+    # we only need hsts if there's an https endpoint
+    if (Test-PodeEndpointProtocol -Protocol Https) {
+        Set-PodeSecurityStrictTransportSecurity -Duration 31536000 -IncludeSubDomains
+    }
+
     # type specific headers
     switch ($Type.ToLowerInvariant()) {
         'simple' {
@@ -32,7 +37,6 @@ function Set-PodeSecurity
         'strict' {
             Set-PodeSecurityFrameOptions -Type Deny
             Set-PodeSecurityReferrerPolicy -Type No-Referrer
-            Set-PodeSecurityStrictTransportSecurity -Duration 31536000 -IncludeSubDomains
             Set-PodeSecurityContentSecurityPolicy -Default 'self' -Image 'self', 'data'
         }
     }

@@ -20,7 +20,7 @@ Add-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 function Add-PodeHeader
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -45,6 +45,37 @@ function Add-PodeHeader
     }
     else {
         $WebEvent.Response.Headers.Add($Name, $Value)
+    }
+}
+
+function Add-PodeHeaderByHashtable
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Hashtable,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    foreach ($key in $Hashtable.Keys) {
+        $value = $Hashtable[$key]
+
+        # sign the value if we have a secret
+        if (![string]::IsNullOrWhiteSpace($Secret)) {
+            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret)
+        }
+
+        # add the header to the response
+        if ($PodeContext.Server.IsServerless) {
+            $WebEvent.Response.Headers[$Name] = $value
+        }
+        else {
+            $WebEvent.Response.Headers.Add($Name, $value)
+        }
     }
 }
 
@@ -138,7 +169,7 @@ Set-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 function Set-PodeHeader
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -163,6 +194,37 @@ function Set-PodeHeader
     }
     else {
         $WebEvent.Response.Headers.Set($Name, $Value)
+    }
+}
+
+function Set-PodeHeaderByHashtable
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Hashtable,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    foreach ($key in $Hashtable.Keys) {
+        $value = $Hashtable[$key]
+
+        # sign the value if we have a secret
+        if (![string]::IsNullOrWhiteSpace($Secret)) {
+            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret)
+        }
+
+        # set the header on the response
+        if ($PodeContext.Server.IsServerless) {
+            $WebEvent.Response.Headers[$Name] = $value
+        }
+        else {
+            $WebEvent.Response.Headers.Set($Name, $value)
+        }
     }
 }
 

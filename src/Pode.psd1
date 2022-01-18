@@ -58,9 +58,11 @@
 
         # headers
         'Add-PodeHeader',
+        'Add-PodeHeaderByHashtable',
         'Test-PodeHeader',
         'Get-PodeHeader',
         'Set-PodeHeader',
+        'Set-PodeHeaderByHashtable',
         'Test-PodeHeaderSigned',
 
         # state
