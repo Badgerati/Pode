@@ -363,7 +363,7 @@ function Get-PodeSecurityMiddleware
         }
 
         # add security headers
-        Set-PodeHeaderByHashtable -Hashtable $PodeContext.Server.Security.Headers
+        Set-PodeHeaderBulk -Value $PodeContext.Server.Security.Headers
 
         # continue to next middleware/route
         return $true

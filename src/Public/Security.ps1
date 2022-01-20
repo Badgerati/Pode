@@ -5,7 +5,13 @@ function Set-PodeSecurity
         [Parameter(Mandatory=$true)]
         [ValidateSet('Simple', 'Strict')]
         [string]
-        $Type
+        $Type,
+
+        [switch]
+        $UseHsts,
+
+        [switch]
+        $XssBlock
     )
 
     # general headers
@@ -20,9 +26,10 @@ function Set-PodeSecurity
 
     Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same-Origin
     Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
+    Set-PodeSecurityContentSecurityPolicy -Default 'self' -XssBlock:$XssBlock
 
-    # we only need hsts if there's an https endpoint
-    if (Test-PodeEndpointProtocol -Protocol Https) {
+    # only add hsts if specifiec
+    if ($UseHsts) {
         Set-PodeSecurityStrictTransportSecurity -Duration 31536000 -IncludeSubDomains
     }
 
@@ -31,13 +38,11 @@ function Set-PodeSecurity
         'simple' {
             Set-PodeSecurityFrameOptions -Type SameOrigin
             Set-PodeSecurityReferrerPolicy -Type Strict-Origin
-            Set-PodeSecurityContentSecurityPolicy -Default 'self' -Style 'self', 'unsafe-inline' -Scripts 'self', 'unsafe-inline' -Image 'self', 'data'
         }
 
         'strict' {
             Set-PodeSecurityFrameOptions -Type Deny
             Set-PodeSecurityReferrerPolicy -Type No-Referrer
-            Set-PodeSecurityContentSecurityPolicy -Default 'self' -Image 'self', 'data'
         }
     }
 }
@@ -169,7 +174,10 @@ function Set-PodeSecurityContentSecurityPolicy
         $Sandbox = 'None',
 
         [switch]
-        $UpgradeInsecureRequests
+        $UpgradeInsecureRequests,
+
+        [switch]
+        $XssBlock
     )
 
     # build the header's value
@@ -204,9 +212,118 @@ function Set-PodeSecurityContentSecurityPolicy
     # add the header
     Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value
 
-    # this is done to explicitly disable XSS auditors in browsers
+    # this is done to explicitly disable XSS auditors in modern browsers
     # as having it enabled has now been found to cause more vulnerabilities
-    Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value "0"
+    if ($XssBlock) {
+        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value "1; mode=block"
+    }
+    else {
+        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value "0"
+    }
+}
+
+function Add-PodeSecurityContentSecurityPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Default,
+
+        [Parameter()]
+        [string[]]
+        $Child,
+
+        [Parameter()]
+        [string[]]
+        $Connect,
+
+        [Parameter()]
+        [string[]]
+        $Font,
+
+        [Parameter()]
+        [string[]]
+        $Frame,
+
+        [Parameter()]
+        [string[]]
+        $Image,
+
+        [Parameter()]
+        [string[]]
+        $Manifest,
+
+        [Parameter()]
+        [string[]]
+        $Media,
+
+        [Parameter()]
+        [string[]]
+        $Object,
+
+        [Parameter()]
+        [string[]]
+        $Scripts,
+
+        [Parameter()]
+        [string[]]
+        $Style,
+
+        [Parameter()]
+        [string[]]
+        $BaseUri,
+
+        [Parameter()]
+        [string[]]
+        $FormAction,
+
+        [Parameter()]
+        [string[]]
+        $FrameAncestor,
+
+        [Parameter()]
+        [ValidateSet('', 'Allow-Downloads', 'Allow-Downloads-Without-User-Activation', 'Allow-Forms', 'Allow-Modals', 'Allow-Orientation-Lock',
+            'Allow-Pointer-Lock', 'Allow-Popups', 'Allow-Popups-To-Escape-Sandbox', 'Allow-Presentation', 'Allow-Same-Origin', 'Allow-Scripts',
+            'Allow-Storage-Access-By-User-Activation', 'Allow-Top-Navigation', 'Allow-Top-Navigation-By-User-Activation', 'None')]
+        [string]
+        $Sandbox = 'None',
+
+        [switch]
+        $UpgradeInsecureRequests
+    )
+
+    # build the header's value
+    $values = @(
+        Protect-PodeContentSecurityKeyword -Name 'default-src' -Value $Default -Append
+        Protect-PodeContentSecurityKeyword -Name 'child-src' -Value $Child -Append
+        Protect-PodeContentSecurityKeyword -Name 'connect-src' -Value $Connect -Append
+        Protect-PodeContentSecurityKeyword -Name 'font-src' -Value $Font -Append
+        Protect-PodeContentSecurityKeyword -Name 'frame-src' -Value $Frame -Append
+        Protect-PodeContentSecurityKeyword -Name 'img-src' -Value $Image -Append
+        Protect-PodeContentSecurityKeyword -Name 'manifest-src' -Value $Manifest -Append
+        Protect-PodeContentSecurityKeyword -Name 'media-src' -Value $Media -Append
+        Protect-PodeContentSecurityKeyword -Name 'object-src' -Value $Object -Append
+        Protect-PodeContentSecurityKeyword -Name 'script-src' -Value $Scripts -Append
+        Protect-PodeContentSecurityKeyword -Name 'style-src' -Value $Style -Append
+        Protect-PodeContentSecurityKeyword -Name 'base-uri' -Value $BaseUri -Append
+        Protect-PodeContentSecurityKeyword -Name 'form-action' -Value $FormAction -Append
+        Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $FrameAncestor -Append
+    )
+
+    if ($Sandbox -ine 'None') {
+        $values += "sandbox $($Sandbox.ToLowerInvariant())".Trim()
+    }
+
+    if ($UpgradeInsecureRequests) {
+        $values += 'upgrade-insecure-requests'
+    }
+
+    $values = ($values -ne $null)
+    $value = ($values -join '; ')
+
+    # add the header
+    Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value
 }
 
 function Remove-PodeSecurityContentSecurityPolicy
@@ -370,6 +487,167 @@ function Set-PodeSecurityPermissionPolicy
         Protect-PodePermissionPolicyKeyword -Name 'screen-wake-lock' -Value $ScreenWakeLake
         Protect-PodePermissionPolicyKeyword -Name 'web-share' -Value $WebShare
         Protect-PodePermissionPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking
+    )
+
+    $values = ($values -ne $null)
+    $value = ($values -join ', ')
+
+    # add the header
+    Add-PodeSecurityHeader -Name 'Permission-Policy' -Value $value
+}
+
+function Add-PodeSecurityPermissionPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Accelerometer,
+
+        [Parameter()]
+        [string[]]
+        $AmbientLightSensor,
+
+        [Parameter()]
+        [string[]]
+        $Autoplay,
+
+        [Parameter()]
+        [string[]]
+        $Battery,
+
+        [Parameter()]
+        [string[]]
+        $Camera,
+
+        [Parameter()]
+        [string[]]
+        $DisplayCapture,
+
+        [Parameter()]
+        [string[]]
+        $DocumentDomain,
+
+        [Parameter()]
+        [string[]]
+        $EncryptedMedia,
+
+        [Parameter()]
+        [string[]]
+        $Fullscreen,
+
+        [Parameter()]
+        [string[]]
+        $Gamepad,
+
+        [Parameter()]
+        [string[]]
+        $Geolocation,
+
+        [Parameter()]
+        [string[]]
+        $Gyroscope,
+
+        [Parameter()]
+        [string[]]
+        $LayoutAnimations,
+
+        [Parameter()]
+        [string[]]
+        $LegacyImageFormats,
+
+        [Parameter()]
+        [string[]]
+        $Magnetometer,
+
+        [Parameter()]
+        [string[]]
+        $Microphone,
+
+        [Parameter()]
+        [string[]]
+        $Midi,
+
+        [Parameter()]
+        [string[]]
+        $OversizedImages,
+
+        [Parameter()]
+        [string[]]
+        $Payment,
+
+        [Parameter()]
+        [string[]]
+        $PictureInPicture,
+
+        [Parameter()]
+        [string[]]
+        $PublicKeyCredentials,
+
+        [Parameter()]
+        [string[]]
+        $Speakers,
+
+        [Parameter()]
+        [string[]]
+        $SyncXhr,
+
+        [Parameter()]
+        [string[]]
+        $UnoptimisedImages,
+
+        [Parameter()]
+        [string[]]
+        $UnsizedMedia,
+
+        [Parameter()]
+        [string[]]
+        $Usb,
+
+        [Parameter()]
+        [string[]]
+        $ScreenWakeLake,
+
+        [Parameter()]
+        [string[]]
+        $WebShare,
+
+        [Parameter()]
+        [string[]]
+        $XrSpatialTracking
+    )
+
+    # build the header's value
+    $values = @(
+        Protect-PodePermissionPolicyKeyword -Name 'accelerometer' -Value $Accelerometer -Append
+        Protect-PodePermissionPolicyKeyword -Name 'ambient-light-sensor' -Value $AmbientLightSensor -Append
+        Protect-PodePermissionPolicyKeyword -Name 'autoplay' -Value $Autoplay -Append
+        Protect-PodePermissionPolicyKeyword -Name 'battery' -Value $Battery -Append
+        Protect-PodePermissionPolicyKeyword -Name 'camera' -Value $Camera -Append
+        Protect-PodePermissionPolicyKeyword -Name 'display-capture' -Value $DisplayCapture -Append
+        Protect-PodePermissionPolicyKeyword -Name 'document-domain' -Value $DocumentDomain -Append
+        Protect-PodePermissionPolicyKeyword -Name 'encrypted-media' -Value $EncryptedMedia -Append
+        Protect-PodePermissionPolicyKeyword -Name 'fullscreen' -Value $Fullscreen -Append
+        Protect-PodePermissionPolicyKeyword -Name 'gamepad' -Value $Gamepad -Append
+        Protect-PodePermissionPolicyKeyword -Name 'geolocation' -Value $Geolocation -Append
+        Protect-PodePermissionPolicyKeyword -Name 'gyroscope' -Value $Gyroscope -Append
+        Protect-PodePermissionPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations -Append
+        Protect-PodePermissionPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats -Append
+        Protect-PodePermissionPolicyKeyword -Name 'magnetometer' -Value $Magnetometer -Append
+        Protect-PodePermissionPolicyKeyword -Name 'microphone' -Value $Microphone -Append
+        Protect-PodePermissionPolicyKeyword -Name 'midi' -Value $Midi -Append
+        Protect-PodePermissionPolicyKeyword -Name 'oversized-images' -Value $OversizedImages -Append
+        Protect-PodePermissionPolicyKeyword -Name 'payment' -Value $Payment -Append
+        Protect-PodePermissionPolicyKeyword -Name 'picture-in-picture' -Value $PictureInPicture -Append
+        Protect-PodePermissionPolicyKeyword -Name 'publickey-credentials-get' -Value $PublicKeyCredentials -Append
+        Protect-PodePermissionPolicyKeyword -Name 'speaker-selection' -Value $Speakers -Append
+        Protect-PodePermissionPolicyKeyword -Name 'sync-xhr' -Value $SyncXhr -Append
+        Protect-PodePermissionPolicyKeyword -Name 'unoptimized-images' -Value $UnoptimisedImages -Append
+        Protect-PodePermissionPolicyKeyword -Name 'unsized-media' -Value $UnsizedMedia -Append
+        Protect-PodePermissionPolicyKeyword -Name 'usb' -Value $Usb -Append
+        Protect-PodePermissionPolicyKeyword -Name 'screen-wake-lock' -Value $ScreenWakeLake -Append
+        Protect-PodePermissionPolicyKeyword -Name 'web-share' -Value $WebShare -Append
+        Protect-PodePermissionPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking -Append
     )
 
     $values = ($values -ne $null)

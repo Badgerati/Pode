@@ -58,11 +58,11 @@
 
         # headers
         'Add-PodeHeader',
-        'Add-PodeHeaderByHashtable',
+        'Add-PodeHeaderBulk',
         'Test-PodeHeader',
         'Get-PodeHeader',
         'Set-PodeHeader',
-        'Set-PodeHeaderByHashtable',
+        'Set-PodeHeaderBulk',
         'Test-PodeHeaderSigned',
 
         # state
@@ -272,6 +272,8 @@
 
         # Security
         'Add-PodeSecurityHeader',
+        'Add-PodeSecurityContentSecurityPolicy',
+        'Add-PodeSecurityPermissionPolicy',
         'Remove-PodeSecurity',
         'Remove-PodeSecurityAccessControl',
         'Remove-PodeSecurityContentSecurityPolicy',

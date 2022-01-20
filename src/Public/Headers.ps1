@@ -48,21 +48,37 @@ function Add-PodeHeader
     }
 }
 
-function Add-PodeHeaderByHashtable
+<#
+.SYNOPSIS
+Appends multiple headers against the Response.
+
+.DESCRIPTION
+Appends multiple headers against the Response. If the current context is serverless, then this function acts like Set-PodeHeaderBulk.
+
+.PARAMETER Value
+A hashtable of headers to be appended.
+
+.PARAMETER Secret
+If supplied, the secret with which to sign the header values.
+
+.EXAMPLE
+Add-PodeHeaderBulk -Value @{ Name1 = 'Value1'; Name2 = 'Value2' }
+#>
+function Add-PodeHeaderBulk
 {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
         [hashtable]
-        $Hashtable,
+        $Value,
 
         [Parameter()]
         [string]
         $Secret
     )
 
-    foreach ($key in $Hashtable.Keys) {
-        $value = $Hashtable[$key]
+    foreach ($key in $Value.Keys) {
+        $value = $Value[$key]
 
         # sign the value if we have a secret
         if (![string]::IsNullOrWhiteSpace($Secret)) {
@@ -71,10 +87,10 @@ function Add-PodeHeaderByHashtable
 
         # add the header to the response
         if ($PodeContext.Server.IsServerless) {
-            $WebEvent.Response.Headers[$Name] = $value
+            $WebEvent.Response.Headers[$key] = $value
         }
         else {
-            $WebEvent.Response.Headers.Add($Name, $value)
+            $WebEvent.Response.Headers.Add($key, $value)
         }
     }
 }
@@ -197,21 +213,37 @@ function Set-PodeHeader
     }
 }
 
-function Set-PodeHeaderByHashtable
+<#
+.SYNOPSIS
+Sets multiple headers on the Response, clearing all current values for the header.
+
+.DESCRIPTION
+Sets multiple headers on the Response, clearing all current values for the header.
+
+.PARAMETER Value
+A hashtable of headers to be set.
+
+.PARAMETER Secret
+If supplied, the secret with which to sign the header values.
+
+.EXAMPLE
+Set-PodeHeaderBulk -Value @{ Name1 = 'Value1'; Name2 = 'Value2' }
+#>
+function Set-PodeHeaderBulk
 {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
         [hashtable]
-        $Hashtable,
+        $Value,
 
         [Parameter()]
         [string]
         $Secret
     )
 
-    foreach ($key in $Hashtable.Keys) {
-        $value = $Hashtable[$key]
+    foreach ($key in $Value.Keys) {
+        $value = $Value[$key]
 
         # sign the value if we have a secret
         if (![string]::IsNullOrWhiteSpace($Secret)) {
@@ -220,10 +252,10 @@ function Set-PodeHeaderByHashtable
 
         # set the header on the response
         if ($PodeContext.Server.IsServerless) {
-            $WebEvent.Response.Headers[$Name] = $value
+            $WebEvent.Response.Headers[$key] = $value
         }
         else {
-            $WebEvent.Response.Headers.Set($Name, $value)
+            $WebEvent.Response.Headers.Set($key, $value)
         }
     }
 }

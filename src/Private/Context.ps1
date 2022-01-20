@@ -360,6 +360,10 @@ function New-PodeContext
     # setup security
     $ctx.Server.Security = @{
         Headers = @{}
+        Cache = @{
+            ContentSecurity  = @{}
+            PermissionPolicy = @{}
+        }
     }
 
     # return the new context

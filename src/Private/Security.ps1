@@ -1008,13 +1008,25 @@ function Protect-PodeContentSecurityKeyword
 
         [Parameter()]
         [string[]]
-        $Value
+        $Value,
+
+        [switch]
+        $Append
     )
 
+    # cache it
+    if ($Append -and !(Test-PodeIsEmpty $PodeContext.Server.Security.Cache.ContentSecurity[$Name])) {
+        $Value += @($PodeContext.Server.Security.Cache.ContentSecurity[$Name])
+    }
+
+    $PodeContext.Server.Security.Cache.ContentSecurity[$Name] = $Value
+
+    # do nothing if no value
     if (($null -eq $Value) -or ($Value.Length -eq 0)) {
         return $null
     }
 
+    # keywords
     $Name = $Name.ToLowerInvariant()
 
     $keywords = @(
@@ -1033,6 +1045,7 @@ function Protect-PodeContentSecurityKeyword
         'file'
     )
 
+    # build the value
     $values = @(foreach ($v in $Value) {
         if ($keywords -icontains $v) {
             "'$($v.ToLowerInvariant())'"
@@ -1059,13 +1072,25 @@ function Protect-PodePermissionPolicyKeyword
 
         [Parameter()]
         [string[]]
-        $Value
+        $Value,
+
+        [switch]
+        $Append
     )
 
+    # cache it
+    if ($Append -and !(Test-PodeIsEmpty $PodeContext.Server.Security.Cache.PermissionPolicy[$Name])) {
+        $Value += @($PodeContext.Server.Security.Cache.PermissionPolicy[$Name])
+    }
+
+    $PodeContext.Server.Security.Cache.PermissionPolicy[$Name] = $Value
+
+    # do nothing if no value
     if (($null -eq $Value) -or ($Value.Length -eq 0)) {
         return $null
     }
 
+    # build value
     $Name = $Name.ToLowerInvariant()
 
     if ($Value -icontains 'none') {

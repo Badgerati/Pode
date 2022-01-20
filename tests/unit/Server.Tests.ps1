@@ -155,6 +155,10 @@ Describe 'Restart-PodeInternalServer' {
                 }
                 Security = @{
                     Headers = @{}
+                    Cache = @{
+                        ContentSecurity  = @{}
+                        PermissionPolicy = @{}
+                    }
                 }
             };
             Metrics = @{

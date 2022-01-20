@@ -169,6 +169,10 @@ function Restart-PodeInternalServer
         # clear security headers
         $PodeContext.Server.Security.Headers.Clear()
 
+        $PodeContext.Server.Security.Cache.Keys.Clone() | ForEach-Object {
+            $PodeContext.Server.Security.Cache[$_].Clear()
+        }
+
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
         $PodeContext.Server.EndpointsMap.Clear()
