@@ -1,3 +1,25 @@
+<#
+.SYNOPSIS
+Sets inbuilt definitions for security headers.
+
+.DESCRIPTION
+Sets inbuilt definitions for security headers, in either Simple or Strict types.
+
+.PARAMETER Type
+The Type of security to use.
+
+.PARAMETER UseHsts
+If supplied, the Strict-Transport-Security header will be set.
+
+.PARAMETER XssBlock
+If supplied, the X-XSS-Protection header will be set to blocking mode. (Default: Off)
+
+.EXAMPLE
+Set-PodeSecurity -Type Simple
+
+.EXAMPLE
+Set-PodeSecurity -Type Strict -UseHsts
+#>
 function Set-PodeSecurity
 {
     [CmdletBinding()]
@@ -47,6 +69,16 @@ function Set-PodeSecurity
     }
 }
 
+<#
+.SYNOPSIS
+Removes definitions for all security headers.
+
+.DESCRIPTION
+Removes definitions for all security headers.
+
+.EXAMPLE
+Remove-PodeSecurity
+#>
 function Remove-PodeSecurity
 {
     [CmdletBinding()]
@@ -55,6 +87,22 @@ function Remove-PodeSecurity
     $PodeContext.Server.Security.Headers.Clear()
 }
 
+<#
+.SYNOPSIS
+Add definition for specified security header.
+
+.DESCRIPTION
+Add definition for specified security header.
+
+.PARAMETER Name
+The Name of the security header.
+
+.PARAMETER Value
+The Value of the security header.
+
+.EXAMPLE
+Add-PodeSecurityHeader -Name 'X-Header-Name' -Value 'SomeValue'
+#>
 function Add-PodeSecurityHeader
 {
     [CmdletBinding()]
@@ -73,6 +121,19 @@ function Add-PodeSecurityHeader
     }
 }
 
+<#
+.SYNOPSIS
+Removes definition for specified security header.
+
+.DESCRIPTION
+Removes definition for specified security header.
+
+.PARAMETER Name
+The Name of the security header.
+
+.EXAMPLE
+Remove-PodeSecurityHeader -Name 'X-Header-Name'
+#>
 function Remove-PodeSecurityHeader
 {
     [CmdletBinding()]
@@ -85,6 +146,19 @@ function Remove-PodeSecurityHeader
     $PodeContext.Server.Security.Headers.Remove($Name)
 }
 
+<#
+.SYNOPSIS
+Set a value for the X-Frame-Options header.
+
+.DESCRIPTION
+Set a value for the X-Frame-Options header.
+
+.PARAMETER Type
+The Type to use.
+
+.EXAMPLE
+Set-PodeSecurityFrameOptions -Type SameOrigin
+#>
 function Set-PodeSecurityFrameOptions
 {
     [CmdletBinding()]
@@ -98,6 +172,16 @@ function Set-PodeSecurityFrameOptions
     Add-PodeSecurityHeader -Name 'X-Frame-Options' -Value $Type.ToUpperInvariant()
 }
 
+<#
+.SYNOPSIS
+Removes definition for the X-Frame-Options header.
+
+.DESCRIPTION
+Removes definition for the X-Frame-Options header.
+
+.EXAMPLE
+Remove-PodeSecurityFrameOptions
+#>
 function Remove-PodeSecurityFrameOptions
 {
     [CmdletBinding()]
@@ -106,6 +190,67 @@ function Remove-PodeSecurityFrameOptions
     Remove-PodeSecurityHeader -Name 'X-Frame-Options'
 }
 
+<#
+.SYNOPSIS
+Set the value to use for the Content-Security-Policy and X-XSS-Protection headers.
+
+.DESCRIPTION
+Set the value to use for the Content-Security-Policy and X-XSS-Protection headers.
+
+.PARAMETER Default
+The values to use for the Default portion of the header.
+
+.PARAMETER Child
+The values to use for the Child portion of the header.
+
+.PARAMETER Connect
+The values to use for the Connect portion of the header.
+
+.PARAMETER Font
+The values to use for the Font portion of the header.
+
+.PARAMETER Frame
+The values to use for the Frame portion of the header.
+
+.PARAMETER Image
+The values to use for the Image portion of the header.
+
+.PARAMETER Manifest
+The values to use for the Manifest portion of the header.
+
+.PARAMETER Media
+The values to use for the Media portion of the header.
+
+.PARAMETER Object
+The values to use for the Object portion of the header.
+
+.PARAMETER Scripts
+The values to use for the Scripts portion of the header.
+
+.PARAMETER Style
+The values to use for the Style portion of the header.
+
+.PARAMETER BaseUri
+The values to use for the BaseUri portion of the header.
+
+.PARAMETER FormAction
+The values to use for the FormAction portion of the header.
+
+.PARAMETER FrameAncestor
+The values to use for the FrameAncestor portion of the header.
+
+.PARAMETER Sandbox
+The value to use for the Sandbox portion of the header.
+
+.PARAMETER UpgradeInsecureRequests
+If supplied, the header will have the upgrade-insecure-requests value added.
+
+.PARAMETER XssBlock
+If supplied, the X-XSS-Protection header will be set to blocking mode. (Default: Off)
+
+.EXAMPLE
+Set-PodeSecurityContentSecurityPolicy -Default 'self'
+#>
 function Set-PodeSecurityContentSecurityPolicy
 {
     [CmdletBinding()]
@@ -222,6 +367,64 @@ function Set-PodeSecurityContentSecurityPolicy
     }
 }
 
+<#
+.SYNOPSIS
+Adds additional values to already defined values for the Content-Security-Policy header.
+
+.DESCRIPTION
+Adds additional values to already defined values for the Content-Security-Policy header, instead of overriding them.
+
+.PARAMETER Default
+The values to add for the Default portion of the header.
+
+.PARAMETER Child
+The values to add for the Child portion of the header.
+
+.PARAMETER Connect
+The values to add for the Connect portion of the header.
+
+.PARAMETER Font
+The values to add for the Font portion of the header.
+
+.PARAMETER Frame
+The values to add for the Frame portion of the header.
+
+.PARAMETER Image
+The values to add for the Image portion of the header.
+
+.PARAMETER Manifest
+The values to add for the Manifest portion of the header.
+
+.PARAMETER Media
+The values to add for the Media portion of the header.
+
+.PARAMETER Object
+The values to add for the Object portion of the header.
+
+.PARAMETER Scripts
+The values to add for the Scripts portion of the header.
+
+.PARAMETER Style
+The values to add for the Style portion of the header.
+
+.PARAMETER BaseUri
+The values to add for the BaseUri portion of the header.
+
+.PARAMETER FormAction
+The values to add for the FormAction portion of the header.
+
+.PARAMETER FrameAncestor
+The values to add for the FrameAncestor portion of the header.
+
+.PARAMETER Sandbox
+The value to use for the Sandbox portion of the header.
+
+.PARAMETER UpgradeInsecureRequests
+If supplied, the header will have the upgrade-insecure-requests value added.
+
+.EXAMPLE
+Add-PodeSecurityContentSecurityPolicy -Default '*.twitter.com' -Image 'data'
+#>
 function Add-PodeSecurityContentSecurityPolicy
 {
     [CmdletBinding()]
@@ -326,6 +529,16 @@ function Add-PodeSecurityContentSecurityPolicy
     Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value
 }
 
+<#
+.SYNOPSIS
+Removes definition for the Content-Security-Policy and X-XSS-Protection headers.
+
+.DESCRIPTION
+Removes definition for the Content-Security-Policy and X-XSS-Protection headers.
+
+.EXAMPLE
+Remove-PodeSecurityContentSecurityPolicy
+#>
 function Remove-PodeSecurityContentSecurityPolicy
 {
     [CmdletBinding()]
@@ -335,6 +548,103 @@ function Remove-PodeSecurityContentSecurityPolicy
     Remove-PodeSecurityHeader -Name 'X-XSS-Protection'
 }
 
+<#
+.SYNOPSIS
+Set the value to use for the Permission-Policy header.
+
+.DESCRIPTION
+Set the value to use for the Permission-Policy header.
+
+.PARAMETER Accelerometer
+The values to use for the Accelerometer portion of the header.
+
+.PARAMETER AmbientLightSensor
+The values to use for the AmbientLightSensor portion of the header.
+
+.PARAMETER Autoplay
+The values to use for the Autoplay portion of the header.
+
+.PARAMETER Battery
+The values to use for the Battery portion of the header.
+
+.PARAMETER Camera
+The values to use for the Camera portion of the header.
+
+.PARAMETER DisplayCapture
+The values to use for the DisplayCapture portion of the header.
+
+.PARAMETER DocumentDomain
+The values to use for the DocumentDomain portion of the header.
+
+.PARAMETER EncryptedMedia
+The values to use for the EncryptedMedia portion of the header.
+
+.PARAMETER Fullscreen
+The values to use for the Fullscreen portion of the header.
+
+.PARAMETER Gamepad
+The values to use for the Gamepad portion of the header.
+
+.PARAMETER Geolocation
+The values to use for the Geolocation portion of the header.
+
+.PARAMETER Gyroscope
+The values to use for the Gyroscope portion of the header.
+
+.PARAMETER LayoutAnimations
+The values to use for the LayoutAnimations portion of the header.
+
+.PARAMETER LegacyImageFormats
+The values to use for the LegacyImageFormats portion of the header.
+
+.PARAMETER Magnetometer
+The values to use for the Magnetometer portion of the header.
+
+.PARAMETER Microphone
+The values to use for the Microphone portion of the header.
+
+.PARAMETER Midi
+The values to use for the Midi portion of the header.
+
+.PARAMETER OversizedImages
+The values to use for the OversizedImages portion of the header.
+
+.PARAMETER Payment
+The values to use for the Payment portion of the header.
+
+.PARAMETER PictureInPicture
+The values to use for the PictureInPicture portion of the header.
+
+.PARAMETER PublicKeyCredentials
+The values to use for the PublicKeyCredentials portion of the header.
+
+.PARAMETER Speakers
+The values to use for the Speakers portion of the header.
+
+.PARAMETER SyncXhr
+The values to use for the SyncXhr portion of the header.
+
+.PARAMETER UnoptimisedImages
+The values to use for the UnoptimisedImages portion of the header.
+
+.PARAMETER UnsizedMedia
+The values to use for the UnsizedMedia portion of the header.
+
+.PARAMETER Usb
+The values to use for the Usb portion of the header.
+
+.PARAMETER ScreenWakeLake
+The values to use for the ScreenWakeLake portion of the header.
+
+.PARAMETER WebShare
+The values to use for the WebShare portion of the header.
+
+.PARAMETER XrSpatialTracking
+The values to use for the XrSpatialTracking portion of the header.
+
+.EXAMPLE
+Set-PodeSecurityPermissionPolicy -LayoutAnimations 'none' -UnoptimisedImages 'none' -OversizedImages 'none' -SyncXhr 'none' -UnsizedMedia 'none'
+#>
 function Set-PodeSecurityPermissionPolicy
 {
     [CmdletBinding()]
@@ -496,6 +806,103 @@ function Set-PodeSecurityPermissionPolicy
     Add-PodeSecurityHeader -Name 'Permission-Policy' -Value $value
 }
 
+<#
+.SYNOPSIS
+Adds additional values to already defined values for the Permission-Policy header.
+
+.DESCRIPTION
+Adds additional values to already defined values for the Permission-Policy header, instead of overriding them.
+
+.PARAMETER Accelerometer
+The values to add for the Accelerometer portion of the header.
+
+.PARAMETER AmbientLightSensor
+The values to add for the AmbientLightSensor portion of the header.
+
+.PARAMETER Autoplay
+The values to add for the Autoplay portion of the header.
+
+.PARAMETER Battery
+The values to add for the Battery portion of the header.
+
+.PARAMETER Camera
+The values to add for the Camera portion of the header.
+
+.PARAMETER DisplayCapture
+The values to add for the DisplayCapture portion of the header.
+
+.PARAMETER DocumentDomain
+The values to add for the DocumentDomain portion of the header.
+
+.PARAMETER EncryptedMedia
+The values to add for the EncryptedMedia portion of the header.
+
+.PARAMETER Fullscreen
+The values to add for the Fullscreen portion of the header.
+
+.PARAMETER Gamepad
+The values to add for the Gamepad portion of the header.
+
+.PARAMETER Geolocation
+The values to add for the Geolocation portion of the header.
+
+.PARAMETER Gyroscope
+The values to add for the Gyroscope portion of the header.
+
+.PARAMETER LayoutAnimations
+The values to add for the LayoutAnimations portion of the header.
+
+.PARAMETER LegacyImageFormats
+The values to add for the LegacyImageFormats portion of the header.
+
+.PARAMETER Magnetometer
+The values to add for the Magnetometer portion of the header.
+
+.PARAMETER Microphone
+The values to add for the Microphone portion of the header.
+
+.PARAMETER Midi
+The values to add for the Midi portion of the header.
+
+.PARAMETER OversizedImages
+The values to add for the OversizedImages portion of the header.
+
+.PARAMETER Payment
+The values to add for the Payment portion of the header.
+
+.PARAMETER PictureInPicture
+The values to add for the PictureInPicture portion of the header.
+
+.PARAMETER PublicKeyCredentials
+The values to add for the PublicKeyCredentials portion of the header.
+
+.PARAMETER Speakers
+The values to add for the Speakers portion of the header.
+
+.PARAMETER SyncXhr
+The values to add for the SyncXhr portion of the header.
+
+.PARAMETER UnoptimisedImages
+The values to add for the UnoptimisedImages portion of the header.
+
+.PARAMETER UnsizedMedia
+The values to add for the UnsizedMedia portion of the header.
+
+.PARAMETER Usb
+The values to add for the Usb portion of the header.
+
+.PARAMETER ScreenWakeLake
+The values to add for the ScreenWakeLake portion of the header.
+
+.PARAMETER WebShare
+The values to add for the WebShare portion of the header.
+
+.PARAMETER XrSpatialTracking
+The values to add for the XrSpatialTracking portion of the header.
+
+.EXAMPLE
+Add-PodeSecurityPermissionPolicy -AmbientLightSensor 'none'
+#>
 function Add-PodeSecurityPermissionPolicy
 {
     [CmdletBinding()]
@@ -657,6 +1064,16 @@ function Add-PodeSecurityPermissionPolicy
     Add-PodeSecurityHeader -Name 'Permission-Policy' -Value $value
 }
 
+<#
+.SYNOPSIS
+Removes definition for the Permission-Policy header.
+
+.DESCRIPTION
+Removes definitions for the Permission-Policy header.
+
+.EXAMPLE
+Remove-PodeSecurityPermissionPolicy
+#>
 function Remove-PodeSecurityPermissionPolicy
 {
     [CmdletBinding()]
@@ -665,6 +1082,19 @@ function Remove-PodeSecurityPermissionPolicy
     Remove-PodeSecurityHeader -Name 'Permission-Policy'
 }
 
+<#
+.SYNOPSIS
+Set a value for the Referrer-Policy header.
+
+.DESCRIPTION
+Set a value for the Referrer-Policy header.
+
+.PARAMETER Type
+The Type to use.
+
+.EXAMPLE
+Set-PodeSecurityReferrerPolicy -Type No-Referrer
+#>
 function Set-PodeSecurityReferrerPolicy
 {
     [CmdletBinding()]
@@ -679,6 +1109,16 @@ function Set-PodeSecurityReferrerPolicy
     Add-PodeSecurityHeader -Name 'Referrer-Policy' -Value $Type.ToLowerInvariant()
 }
 
+<#
+.SYNOPSIS
+Removes definition for the Referrer-Policy header.
+
+.DESCRIPTION
+Removes definitions for the Referrer-Policy header.
+
+.EXAMPLE
+Remove-PodeSecurityReferrerPolicy
+#>
 function Remove-PodeSecurityReferrerPolicy
 {
     [CmdletBinding()]
@@ -687,6 +1127,16 @@ function Remove-PodeSecurityReferrerPolicy
     Remove-PodeSecurityHeader -Name 'Referrer-Policy'
 }
 
+<#
+.SYNOPSIS
+Set a value for the X-Content-Type-Options header.
+
+.DESCRIPTION
+Set a value for the X-Content-Type-Options header to "nosniff".
+
+.EXAMPLE
+Set-PodeSecurityContentTypeOptions
+#>
 function Set-PodeSecurityContentTypeOptions
 {
     [CmdletBinding()]
@@ -695,6 +1145,16 @@ function Set-PodeSecurityContentTypeOptions
     Add-PodeSecurityHeader -Name 'X-Content-Type-Options' -Value 'nosniff'
 }
 
+<#
+.SYNOPSIS
+Removes definition for the X-Content-Type-Options header.
+
+.DESCRIPTION
+Removes definitions for the X-Content-Type-Options header.
+
+.EXAMPLE
+Remove-PodeSecurityContentTypeOptions
+#>
 function Remove-PodeSecurityContentTypeOptions
 {
     [CmdletBinding()]
@@ -703,6 +1163,22 @@ function Remove-PodeSecurityContentTypeOptions
     Remove-PodeSecurityHeader -Name 'X-Content-Type-Options'
 }
 
+<#
+.SYNOPSIS
+Set a value for the Strict-Transport-Security header.
+
+.DESCRIPTION
+Set a value for the Strict-Transport-Security header.
+
+.PARAMETER Duration
+The Duration the browser to respect the header in seconds. (Default: 1 year)
+
+.PARAMETER IncludeSubDomains
+If supplied, the header will have includeSubDomains.
+
+.EXAMPLE
+Set-PodeSecurityStrictTransportSecurity -Duration 86400 -IncludeSubDomains
+#>
 function Set-PodeSecurityStrictTransportSecurity
 {
     [CmdletBinding()]
@@ -728,6 +1204,16 @@ function Set-PodeSecurityStrictTransportSecurity
     Add-PodeSecurityHeader -Name 'Strict-Transport-Security' -Value $value
 }
 
+<#
+.SYNOPSIS
+Removes definition for the Strict-Transport-Security header.
+
+.DESCRIPTION
+Removes definitions for the Strict-Transport-Security header.
+
+.EXAMPLE
+Remove-PodeSecurityStrictTransportSecurity
+#>
 function Remove-PodeSecurityStrictTransportSecurity
 {
     [CmdletBinding()]
@@ -736,6 +1222,25 @@ function Remove-PodeSecurityStrictTransportSecurity
     Remove-PodeSecurityHeader -Name 'Strict-Transport-Security'
 }
 
+<#
+.SYNOPSIS
+Removes definitions for the Cross-Origin headers.
+
+.DESCRIPTION
+Removes definitions for the Cross-Origin headers: Cross-Origin-Embedder-Policy, Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy
+
+.PARAMETER Embed
+Specifies a value for Cross-Origin-Embedder-Policy.
+
+.PARAMETER Open
+Specifies a value for Cross-Origin-Opener-Policy.
+
+.PARAMETER Resource
+Specifies a value for Cross-Origin-Resource-Policy.
+
+.EXAMPLE
+Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same-Origin
+#>
 function Set-PodeSecurityCrossOrigin
 {
     [CmdletBinding()]
@@ -761,6 +1266,16 @@ function Set-PodeSecurityCrossOrigin
     Add-PodeSecurityHeader -Name 'Cross-Origin-Resource-Policy' -Value $Resource.ToLowerInvariant()
 }
 
+<#
+.SYNOPSIS
+Removes definitions for the Cross-Origin headers.
+
+.DESCRIPTION
+Removes definitions for the Cross-Origin headers: Cross-Origin-Embedder-Policy, Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy
+
+.EXAMPLE
+Remove-PodeSecurityCrossOrigin
+#>
 function Remove-PodeSecurityCrossOrigin
 {
     [CmdletBinding()]
@@ -771,6 +1286,31 @@ function Remove-PodeSecurityCrossOrigin
     Remove-PodeSecurityHeader -Name 'Cross-Origin-Resource-Policy'
 }
 
+<#
+.SYNOPSIS
+Set definitions for Access-Control headers.
+
+.DESCRIPTION
+Removes definitions for the Access-Control headers: Access-Control-Allow-Origin, Access-Control-Allow-Methods, Access-Control-Allow-Headers, Access-Control-Max-Age, Access-Control-Allow-Credentials
+
+.PARAMETER Origin
+Specifies a value for Access-Control-Allow-Origin.
+
+.PARAMETER Methods
+Specifies a value for Access-Control-Allow-Methods.
+
+.PARAMETER Headers
+Specifies a value for Access-Control-Allow-Headers.
+
+.PARAMETER Duration
+Specifies a value for Access-Control-Max-Age in seconds. (Default: 7200)
+
+.PARAMETER Credentials
+Specifies a value for Access-Control-Allow-Credentials
+
+.EXAMPLE
+Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
+#>
 function Set-PodeSecurityAccessControl
 {
     [CmdletBinding()]
@@ -832,6 +1372,16 @@ function Set-PodeSecurityAccessControl
     }
 }
 
+<#
+.SYNOPSIS
+Removes definitions for the Access-Control headers.
+
+.DESCRIPTION
+Removes definitions for the Access-Control headers: Access-Control-Allow-Origin, Access-Control-Allow-Methods, Access-Control-Allow-Headers, Access-Control-Max-Age, Access-Control-Allow-Credentials
+
+.EXAMPLE
+Remove-PodeSecurityAccessControl
+#>
 function Remove-PodeSecurityAccessControl
 {
     [CmdletBinding()]
