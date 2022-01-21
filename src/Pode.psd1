@@ -11,7 +11,7 @@
     RootModule = 'Pode.psm1'
 
     # Version number of this module.
-    ModuleVersion = '$version$'
+    ModuleVersion = '2.6.0' #$version$'
 
     # ID used to uniquely identify this module
     GUID = 'e3ea217c-fc3d-406b-95d5-4304ab06c6af'
@@ -273,7 +273,7 @@
         # Security
         'Add-PodeSecurityHeader',
         'Add-PodeSecurityContentSecurityPolicy',
-        'Add-PodeSecurityPermissionPolicy',
+        'Add-PodeSecurityPermissionsPolicy',
         'Remove-PodeSecurity',
         'Remove-PodeSecurityAccessControl',
         'Remove-PodeSecurityContentSecurityPolicy',
@@ -281,7 +281,7 @@
         'Remove-PodeSecurityCrossOrigin',
         'Remove-PodeSecurityFrameOptions',
         'Remove-PodeSecurityHeader',
-        'Remove-PodeSecurityPermissionPolicy',
+        'Remove-PodeSecurityPermissionsPolicy',
         'Remove-PodeSecurityReferrerPolicy',
         'Remove-PodeSecurityStrictTransportSecurity',
         'Set-PodeSecurity',
@@ -290,7 +290,7 @@
         'Set-PodeSecurityContentTypeOptions',
         'Set-PodeSecurityCrossOrigin',
         'Set-PodeSecurityFrameOptions',
-        'Set-PodeSecurityPermissionPolicy',
+        'Set-PodeSecurityPermissionsPolicy',
         'Set-PodeSecurityReferrerPolicy',
         'Set-PodeSecurityStrictTransportSecurity'
     )

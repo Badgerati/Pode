@@ -362,7 +362,7 @@ function New-PodeContext
         Headers = @{}
         Cache = @{
             ContentSecurity  = @{}
-            PermissionPolicy = @{}
+            PermissionsPolicy = @{}
         }
     }
 

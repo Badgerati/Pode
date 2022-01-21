@@ -39,7 +39,7 @@ function Set-PodeSecurity
     # general headers
     Set-PodeSecurityContentTypeOptions
 
-    Set-PodeSecurityPermissionPolicy `
+    Set-PodeSecurityPermissionsPolicy `
         -LayoutAnimations 'none' `
         -UnoptimisedImages 'none' `
         -OversizedImages 'none' `
@@ -550,10 +550,10 @@ function Remove-PodeSecurityContentSecurityPolicy
 
 <#
 .SYNOPSIS
-Set the value to use for the Permission-Policy header.
+Set the value to use for the Permissions-Policy header.
 
 .DESCRIPTION
-Set the value to use for the Permission-Policy header.
+Set the value to use for the Permissions-Policy header.
 
 .PARAMETER Accelerometer
 The values to use for the Accelerometer portion of the header.
@@ -643,9 +643,9 @@ The values to use for the WebShare portion of the header.
 The values to use for the XrSpatialTracking portion of the header.
 
 .EXAMPLE
-Set-PodeSecurityPermissionPolicy -LayoutAnimations 'none' -UnoptimisedImages 'none' -OversizedImages 'none' -SyncXhr 'none' -UnsizedMedia 'none'
+Set-PodeSecurityPermissionsPolicy -LayoutAnimations 'none' -UnoptimisedImages 'none' -OversizedImages 'none' -SyncXhr 'none' -UnsizedMedia 'none'
 #>
-function Set-PodeSecurityPermissionPolicy
+function Set-PodeSecurityPermissionsPolicy
 {
     [CmdletBinding()]
     param(
@@ -768,50 +768,50 @@ function Set-PodeSecurityPermissionPolicy
 
     # build the header's value
     $values = @(
-        Protect-PodePermissionPolicyKeyword -Name 'accelerometer' -Value $Accelerometer
-        Protect-PodePermissionPolicyKeyword -Name 'ambient-light-sensor' -Value $AmbientLightSensor
-        Protect-PodePermissionPolicyKeyword -Name 'autoplay' -Value $Autoplay
-        Protect-PodePermissionPolicyKeyword -Name 'battery' -Value $Battery
-        Protect-PodePermissionPolicyKeyword -Name 'camera' -Value $Camera
-        Protect-PodePermissionPolicyKeyword -Name 'display-capture' -Value $DisplayCapture
-        Protect-PodePermissionPolicyKeyword -Name 'document-domain' -Value $DocumentDomain
-        Protect-PodePermissionPolicyKeyword -Name 'encrypted-media' -Value $EncryptedMedia
-        Protect-PodePermissionPolicyKeyword -Name 'fullscreen' -Value $Fullscreen
-        Protect-PodePermissionPolicyKeyword -Name 'gamepad' -Value $Gamepad
-        Protect-PodePermissionPolicyKeyword -Name 'geolocation' -Value $Geolocation
-        Protect-PodePermissionPolicyKeyword -Name 'gyroscope' -Value $Gyroscope
-        Protect-PodePermissionPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations
-        Protect-PodePermissionPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats
-        Protect-PodePermissionPolicyKeyword -Name 'magnetometer' -Value $Magnetometer
-        Protect-PodePermissionPolicyKeyword -Name 'microphone' -Value $Microphone
-        Protect-PodePermissionPolicyKeyword -Name 'midi' -Value $Midi
-        Protect-PodePermissionPolicyKeyword -Name 'oversized-images' -Value $OversizedImages
-        Protect-PodePermissionPolicyKeyword -Name 'payment' -Value $Payment
-        Protect-PodePermissionPolicyKeyword -Name 'picture-in-picture' -Value $PictureInPicture
-        Protect-PodePermissionPolicyKeyword -Name 'publickey-credentials-get' -Value $PublicKeyCredentials
-        Protect-PodePermissionPolicyKeyword -Name 'speaker-selection' -Value $Speakers
-        Protect-PodePermissionPolicyKeyword -Name 'sync-xhr' -Value $SyncXhr
-        Protect-PodePermissionPolicyKeyword -Name 'unoptimized-images' -Value $UnoptimisedImages
-        Protect-PodePermissionPolicyKeyword -Name 'unsized-media' -Value $UnsizedMedia
-        Protect-PodePermissionPolicyKeyword -Name 'usb' -Value $Usb
-        Protect-PodePermissionPolicyKeyword -Name 'screen-wake-lock' -Value $ScreenWakeLake
-        Protect-PodePermissionPolicyKeyword -Name 'web-share' -Value $WebShare
-        Protect-PodePermissionPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking
+        Protect-PodePermissionsPolicyKeyword -Name 'accelerometer' -Value $Accelerometer
+        Protect-PodePermissionsPolicyKeyword -Name 'ambient-light-sensor' -Value $AmbientLightSensor
+        Protect-PodePermissionsPolicyKeyword -Name 'autoplay' -Value $Autoplay
+        Protect-PodePermissionsPolicyKeyword -Name 'battery' -Value $Battery
+        Protect-PodePermissionsPolicyKeyword -Name 'camera' -Value $Camera
+        Protect-PodePermissionsPolicyKeyword -Name 'display-capture' -Value $DisplayCapture
+        Protect-PodePermissionsPolicyKeyword -Name 'document-domain' -Value $DocumentDomain
+        Protect-PodePermissionsPolicyKeyword -Name 'encrypted-media' -Value $EncryptedMedia
+        Protect-PodePermissionsPolicyKeyword -Name 'fullscreen' -Value $Fullscreen
+        Protect-PodePermissionsPolicyKeyword -Name 'gamepad' -Value $Gamepad
+        Protect-PodePermissionsPolicyKeyword -Name 'geolocation' -Value $Geolocation
+        Protect-PodePermissionsPolicyKeyword -Name 'gyroscope' -Value $Gyroscope
+        Protect-PodePermissionsPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations
+        Protect-PodePermissionsPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats
+        Protect-PodePermissionsPolicyKeyword -Name 'magnetometer' -Value $Magnetometer
+        Protect-PodePermissionsPolicyKeyword -Name 'microphone' -Value $Microphone
+        Protect-PodePermissionsPolicyKeyword -Name 'midi' -Value $Midi
+        Protect-PodePermissionsPolicyKeyword -Name 'oversized-images' -Value $OversizedImages
+        Protect-PodePermissionsPolicyKeyword -Name 'payment' -Value $Payment
+        Protect-PodePermissionsPolicyKeyword -Name 'picture-in-picture' -Value $PictureInPicture
+        Protect-PodePermissionsPolicyKeyword -Name 'publickey-credentials-get' -Value $PublicKeyCredentials
+        Protect-PodePermissionsPolicyKeyword -Name 'speaker-selection' -Value $Speakers
+        Protect-PodePermissionsPolicyKeyword -Name 'sync-xhr' -Value $SyncXhr
+        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $UnoptimisedImages
+        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $UnsizedMedia
+        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Usb
+        Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $ScreenWakeLake
+        Protect-PodePermissionsPolicyKeyword -Name 'web-share' -Value $WebShare
+        Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking
     )
 
     $values = ($values -ne $null)
     $value = ($values -join ', ')
 
     # add the header
-    Add-PodeSecurityHeader -Name 'Permission-Policy' -Value $value
+    Add-PodeSecurityHeader -Name 'Permissions-Policy' -Value $value
 }
 
 <#
 .SYNOPSIS
-Adds additional values to already defined values for the Permission-Policy header.
+Adds additional values to already defined values for the Permissions-Policy header.
 
 .DESCRIPTION
-Adds additional values to already defined values for the Permission-Policy header, instead of overriding them.
+Adds additional values to already defined values for the Permissions-Policy header, instead of overriding them.
 
 .PARAMETER Accelerometer
 The values to add for the Accelerometer portion of the header.
@@ -901,9 +901,9 @@ The values to add for the WebShare portion of the header.
 The values to add for the XrSpatialTracking portion of the header.
 
 .EXAMPLE
-Add-PodeSecurityPermissionPolicy -AmbientLightSensor 'none'
+Add-PodeSecurityPermissionsPolicy -AmbientLightSensor 'none'
 #>
-function Add-PodeSecurityPermissionPolicy
+function Add-PodeSecurityPermissionsPolicy
 {
     [CmdletBinding()]
     param(
@@ -1026,60 +1026,60 @@ function Add-PodeSecurityPermissionPolicy
 
     # build the header's value
     $values = @(
-        Protect-PodePermissionPolicyKeyword -Name 'accelerometer' -Value $Accelerometer -Append
-        Protect-PodePermissionPolicyKeyword -Name 'ambient-light-sensor' -Value $AmbientLightSensor -Append
-        Protect-PodePermissionPolicyKeyword -Name 'autoplay' -Value $Autoplay -Append
-        Protect-PodePermissionPolicyKeyword -Name 'battery' -Value $Battery -Append
-        Protect-PodePermissionPolicyKeyword -Name 'camera' -Value $Camera -Append
-        Protect-PodePermissionPolicyKeyword -Name 'display-capture' -Value $DisplayCapture -Append
-        Protect-PodePermissionPolicyKeyword -Name 'document-domain' -Value $DocumentDomain -Append
-        Protect-PodePermissionPolicyKeyword -Name 'encrypted-media' -Value $EncryptedMedia -Append
-        Protect-PodePermissionPolicyKeyword -Name 'fullscreen' -Value $Fullscreen -Append
-        Protect-PodePermissionPolicyKeyword -Name 'gamepad' -Value $Gamepad -Append
-        Protect-PodePermissionPolicyKeyword -Name 'geolocation' -Value $Geolocation -Append
-        Protect-PodePermissionPolicyKeyword -Name 'gyroscope' -Value $Gyroscope -Append
-        Protect-PodePermissionPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations -Append
-        Protect-PodePermissionPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats -Append
-        Protect-PodePermissionPolicyKeyword -Name 'magnetometer' -Value $Magnetometer -Append
-        Protect-PodePermissionPolicyKeyword -Name 'microphone' -Value $Microphone -Append
-        Protect-PodePermissionPolicyKeyword -Name 'midi' -Value $Midi -Append
-        Protect-PodePermissionPolicyKeyword -Name 'oversized-images' -Value $OversizedImages -Append
-        Protect-PodePermissionPolicyKeyword -Name 'payment' -Value $Payment -Append
-        Protect-PodePermissionPolicyKeyword -Name 'picture-in-picture' -Value $PictureInPicture -Append
-        Protect-PodePermissionPolicyKeyword -Name 'publickey-credentials-get' -Value $PublicKeyCredentials -Append
-        Protect-PodePermissionPolicyKeyword -Name 'speaker-selection' -Value $Speakers -Append
-        Protect-PodePermissionPolicyKeyword -Name 'sync-xhr' -Value $SyncXhr -Append
-        Protect-PodePermissionPolicyKeyword -Name 'unoptimized-images' -Value $UnoptimisedImages -Append
-        Protect-PodePermissionPolicyKeyword -Name 'unsized-media' -Value $UnsizedMedia -Append
-        Protect-PodePermissionPolicyKeyword -Name 'usb' -Value $Usb -Append
-        Protect-PodePermissionPolicyKeyword -Name 'screen-wake-lock' -Value $ScreenWakeLake -Append
-        Protect-PodePermissionPolicyKeyword -Name 'web-share' -Value $WebShare -Append
-        Protect-PodePermissionPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'accelerometer' -Value $Accelerometer -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'ambient-light-sensor' -Value $AmbientLightSensor -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'autoplay' -Value $Autoplay -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'battery' -Value $Battery -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'camera' -Value $Camera -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'display-capture' -Value $DisplayCapture -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'document-domain' -Value $DocumentDomain -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'encrypted-media' -Value $EncryptedMedia -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'fullscreen' -Value $Fullscreen -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'gamepad' -Value $Gamepad -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'geolocation' -Value $Geolocation -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'gyroscope' -Value $Gyroscope -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'magnetometer' -Value $Magnetometer -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'microphone' -Value $Microphone -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'midi' -Value $Midi -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'oversized-images' -Value $OversizedImages -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'payment' -Value $Payment -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'picture-in-picture' -Value $PictureInPicture -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'publickey-credentials-get' -Value $PublicKeyCredentials -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'speaker-selection' -Value $Speakers -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'sync-xhr' -Value $SyncXhr -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $UnoptimisedImages -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $UnsizedMedia -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Usb -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $ScreenWakeLake -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'web-share' -Value $WebShare -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking -Append
     )
 
     $values = ($values -ne $null)
     $value = ($values -join ', ')
 
     # add the header
-    Add-PodeSecurityHeader -Name 'Permission-Policy' -Value $value
+    Add-PodeSecurityHeader -Name 'Permissions-Policy' -Value $value
 }
 
 <#
 .SYNOPSIS
-Removes definition for the Permission-Policy header.
+Removes definition for the Permissions-Policy header.
 
 .DESCRIPTION
-Removes definitions for the Permission-Policy header.
+Removes definitions for the Permissions-Policy header.
 
 .EXAMPLE
-Remove-PodeSecurityPermissionPolicy
+Remove-PodeSecurityPermissionsPolicy
 #>
-function Remove-PodeSecurityPermissionPolicy
+function Remove-PodeSecurityPermissionsPolicy
 {
     [CmdletBinding()]
     param()
 
-    Remove-PodeSecurityHeader -Name 'Permission-Policy'
+    Remove-PodeSecurityHeader -Name 'Permissions-Policy'
 }
 
 <#

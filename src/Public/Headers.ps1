@@ -55,14 +55,14 @@ Appends multiple headers against the Response.
 .DESCRIPTION
 Appends multiple headers against the Response. If the current context is serverless, then this function acts like Set-PodeHeaderBulk.
 
-.PARAMETER Value
+.PARAMETER Values
 A hashtable of headers to be appended.
 
 .PARAMETER Secret
 If supplied, the secret with which to sign the header values.
 
 .EXAMPLE
-Add-PodeHeaderBulk -Value @{ Name1 = 'Value1'; Name2 = 'Value2' }
+Add-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
 #>
 function Add-PodeHeaderBulk
 {
@@ -77,8 +77,8 @@ function Add-PodeHeaderBulk
         $Secret
     )
 
-    foreach ($key in $Value.Keys) {
-        $value = $Value[$key]
+    foreach ($key in $Values.Keys) {
+        $value = $Values[$key]
 
         # sign the value if we have a secret
         if (![string]::IsNullOrWhiteSpace($Secret)) {
@@ -220,14 +220,14 @@ Sets multiple headers on the Response, clearing all current values for the heade
 .DESCRIPTION
 Sets multiple headers on the Response, clearing all current values for the header.
 
-.PARAMETER Value
+.PARAMETER Values
 A hashtable of headers to be set.
 
 .PARAMETER Secret
 If supplied, the secret with which to sign the header values.
 
 .EXAMPLE
-Set-PodeHeaderBulk -Value @{ Name1 = 'Value1'; Name2 = 'Value2' }
+Set-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
 #>
 function Set-PodeHeaderBulk
 {
@@ -235,15 +235,15 @@ function Set-PodeHeaderBulk
     param(
         [Parameter(Mandatory=$true)]
         [hashtable]
-        $Value,
+        $Values,
 
         [Parameter()]
         [string]
         $Secret
     )
 
-    foreach ($key in $Value.Keys) {
-        $value = $Value[$key]
+    foreach ($key in $Values.Keys) {
+        $value = $Values[$key]
 
         # sign the value if we have a secret
         if (![string]::IsNullOrWhiteSpace($Secret)) {

@@ -1063,7 +1063,7 @@ function Protect-PodeContentSecurityKeyword
     return "$($Name) $($values -join ' ')"
 }
 
-function Protect-PodePermissionPolicyKeyword
+function Protect-PodePermissionsPolicyKeyword
 {
     param(
         [Parameter(Mandatory=$true)]
@@ -1079,11 +1079,11 @@ function Protect-PodePermissionPolicyKeyword
     )
 
     # cache it
-    if ($Append -and !(Test-PodeIsEmpty $PodeContext.Server.Security.Cache.PermissionPolicy[$Name])) {
-        $Value += @($PodeContext.Server.Security.Cache.PermissionPolicy[$Name])
+    if ($Append -and !(Test-PodeIsEmpty $PodeContext.Server.Security.Cache.PermissionsPolicy[$Name])) {
+        $Value += @($PodeContext.Server.Security.Cache.PermissionsPolicy[$Name])
     }
 
-    $PodeContext.Server.Security.Cache.PermissionPolicy[$Name] = $Value
+    $PodeContext.Server.Security.Cache.PermissionsPolicy[$Name] = $Value
 
     # do nothing if no value
     if (($null -eq $Value) -or ($Value.Length -eq 0)) {
