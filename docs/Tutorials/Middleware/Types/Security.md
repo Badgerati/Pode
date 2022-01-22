@@ -46,7 +46,7 @@ The following values are used for each header when the `Simple` type is supplied
 | Cross-Origin-Opener-Policy | same-origin |
 | Content-Security-Policy | default-src 'self' |
 | X-XSS-Protection | 0 |
-| Permissions-Policy | layout-animations=(), oversized-images=(), sync-xhr=(), unoptimized-images=(), unsized-media=() |
+| Permissions-Policy | accelerometer=(), autoplay=(self), camera=(), display-capture=(self), fullscreen=(self), geolocation=(self), gyroscope=(self), magnetometer=(self), microphone=(), payment=(), picture-in-picture=(self), sync-xhr=(), usb=() |
 | X-Frame-Options | SAMEORIGIN |
 | X-Content-Type-Options | nosniff |
 | Referred-Policy | strict-origin |
@@ -67,7 +67,7 @@ The following values are used for each header when the `Strict` type is supplied
 | Strict-Transport-Security | max-age=31536000; includeSubDomains |
 | Content-Security-Policy | default-src 'self' |
 | X-XSS-Protection | 0 |
-| Permissions-Policy | layout-animations=(), oversized-images=(), sync-xhr=(), unoptimized-images=(), unsized-media=() |
+| Permissions-Policy | accelerometer=(), autoplay=(self), camera=(), display-capture=(self), fullscreen=(self), geolocation=(self), gyroscope=(self), magnetometer=(self), microphone=(), payment=(), picture-in-picture=(self), sync-xhr=(), usb=() |
 | X-Frame-Options | DENY |
 | X-Content-Type-Options | nosniff |
 | Referred-Policy | no-referrer |
@@ -163,7 +163,7 @@ The following functions exist:
 The `Permissions-Policy` header controls which features/APIs a site can use in the browser. For example:
 
 ```powershell
-Set-PodeSecurityPermissionsPolicy -LayoutAnimations 'none' -UnoptimisedImages 'none' -OversizedImages 'none' -SyncXhr 'none' -UnsizedMedia 'none'
+Set-PodeSecurityPermissionsPolicy -SyncXhr 'none' -Camera 'none' -Geolocation 'self'
 ```
 
 ### Frame Options
