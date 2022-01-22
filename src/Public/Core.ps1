@@ -894,6 +894,9 @@ function Add-PodeEndpoint
         Ssl = (@('https', 'wss') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
         Type = $type.ToLowerInvariant()
+        Runspace = @{
+            PoolName = (Get-PodeEndpointRunspacePoolName -Protocol $Protocol)
+        }
         Default = $Default.IsPresent
         Certificate = @{
             Raw = $X509Certificate

@@ -332,7 +332,7 @@ function Start-PodeLoggingRunspace
     }
 
     $script = {
-        while ($true)
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
         {
             # if there are no logs to process, just sleep for a few seconds - but after checking the batch
             if ($PodeContext.LogsToProcess.Count -eq 0) {

@@ -527,22 +527,34 @@ function Add-PodeRunspace
         $Parameters,
 
         [switch]
-        $Forget
+        $Forget,
+
+        [switch]
+        $NoProfile
     )
 
     try
     {
+        # create powershell pipelines
         $ps = [powershell]::Create()
-        $ps.RunspacePool = $PodeContext.RunspacePools[$Type]
-        $null = $ps.AddScript({ Add-PodePSDrives })
+        $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
+
+        # load modules/drives
+        if (!$NoProfile) {
+            $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
+        }
+
+        # load main script
         $null = $ps.AddScript($ScriptBlock)
 
+        # load parameters
         if (!(Test-PodeIsEmpty $Parameters)) {
             $Parameters.Keys | ForEach-Object {
                 $null = $ps.AddParameter($_, $Parameters[$_])
             }
         }
 
+        # do we need to remember this pipeline? sorry, what did you say?
         if ($Forget) {
             $null = $ps.BeginInvoke()
         }
@@ -561,6 +573,30 @@ function Add-PodeRunspace
     }
 }
 
+function Open-PodeRunspace
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Type
+    )
+
+    try {
+        Import-PodeModules
+        Add-PodePSDrives
+        $PodeContext.RunspacePools[$Type].State = 'Ready'
+    }
+    catch {
+        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
+            $PodeContext.RunspacePools[$Type].State = 'Error'
+        }
+
+        $_ | Out-Default
+        $_.ScriptStackTrace | Out-Default
+        throw
+    }
+}
+
 function Close-PodeRunspaces
 {
     param (
@@ -574,7 +610,8 @@ function Close-PodeRunspaces
 
     try {
         if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
-            # wait until listeners are disposed
+            Write-Verbose "Waiting until all Listeners are disposed"
+
             $count = 0
             $continue = $false
             while ($count -le 10) {
@@ -596,19 +633,46 @@ function Close-PodeRunspaces
                 break
             }
 
+            Write-Verbose "All Listeners disposed"
+
             # now dispose runspaces
-            $PodeContext.Runspaces | Where-Object { !$_.Stopped } | ForEach-Object {
-                Close-PodeDisposable -Disposable $_.Runspace
-                $_.Stopped = $true
-            }
+            Write-Verbose "Disposing Runspaces"
+            $runspaceErrors = @(foreach ($item in $PodeContext.Runspaces) {
+                if ($item.Stopped) {
+                    continue
+                }
+
+                try {
+                    # only do this, if the pool is in error
+                    if ($PodeContext.RunspacePools[$item.Pool].State -ieq 'error') {
+                        $item.Runspace.EndInvoke($item.Status)
+                    }
+                }
+                catch {
+                    "$($item.Pool) runspace failed to load: $($_.Exception.InnerException.Message)"
+                }
+
+                Close-PodeDisposable -Disposable $item.Runspace
+                $item.Stopped = $true
+            })
 
             $PodeContext.Runspaces = @()
+            Write-Verbose "Runspaces disposed"
         }
 
-        # dispose the runspace pools
-        if ($ClosePool -and $null -ne $PodeContext.RunspacePools) {
-            $PodeContext.RunspacePools.Values | Where-Object { $null -ne $_ -and !$_.IsDisposed } | ForEach-Object {
-                Close-PodeDisposable -Disposable $_ -Close
+        # close/dispose the runspace pools
+        if ($ClosePool) {
+            Close-PodeRunspacePools
+        }
+
+        # check for runspace errors
+        if (($null -ne $runspaceErrors) -and ($runspaceErrors.Length -gt 0)) {
+            foreach ($err in $runspaceErrors) {
+                if ($null -eq $err) {
+                    continue
+                }
+
+                throw $err
             }
         }
     }
@@ -743,7 +807,12 @@ function New-PodePSDrive
     }
 
     # create the temp drive
-    $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global)
+    if (!(Test-PodePSDrive -Name $Name -Path $Path)) {
+        $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global -ErrorAction Stop)
+    }
+    else {
+        $drive = Get-PodePSDrive -Name $Name
+    }
 
     # store internally, and return the drive's name
     if (!$PodeContext.Server.Drives.ContainsKey($drive.Name)) {
@@ -753,10 +822,52 @@ function New-PodePSDrive
     return "$($drive.Name):$([System.IO.Path]::DirectorySeparatorChar)"
 }
 
+function Get-PodePSDrive
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return (Get-PSDrive -Name $Name -PSProvider FileSystem -Scope Global -ErrorAction Ignore)
+}
+
+function Test-PodePSDrive
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    $drive = Get-PodePSDrive -Name $Name
+    if ($null -eq $drive) {
+        return $false
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Path)) {
+        return ($drive.Root -ieq $Path)
+    }
+
+    return $true
+}
+
 function Add-PodePSDrives
 {
-    $PodeContext.Server.Drives.Keys | ForEach-Object {
-        $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$_] -Name $_
+    foreach ($key in $PodeContext.Server.Drives.Keys) {
+        $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$key] -Name $key
+    }
+}
+
+function Import-PodeModules
+{
+    foreach ($path in $PodeContext.Server.Modules.Values) {
+        $null = Import-Module $path -DisableNameChecking -Scope Global -ErrorAction Stop
     }
 }
 

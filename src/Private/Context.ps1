@@ -357,6 +357,9 @@ function New-PodeContext
         Stop = [ordered]@{}
     }
 
+    # modules
+    $ctx.Server.Modules = @{}
+
     # setup security
     $ctx.Server.Security = @{
         Headers = @{}
@@ -472,7 +475,7 @@ function Import-PodeModulesIntoRunspaceState
 
         # import the module
         $path = Find-PodeModuleFile -Name $module
-        $PodeContext.RunspaceState.ImportPSModule($path)
+        $PodeContext.Server.Modules[$module] = $path
     }
 }
 
@@ -523,35 +526,57 @@ function New-PodeRunspacePools
 
     # main runspace - for timers, schedules, etc
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
-    $PodeContext.RunspacePools.Main = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+    $PodeContext.RunspacePools.Main = @{
+        Pool = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+        State = 'Waiting'
+    }
 
     # web runspace - if we have any http/s endpoints
     if (Test-PodeEndpoints -Type Http) {
-        $PodeContext.RunspacePools.Web = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+        $PodeContext.RunspacePools.Web = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
     }
 
     # smtp runspace - if we have any smtp endpoints
     if (Test-PodeEndpoints -Type Smtp) {
-        $PodeContext.RunspacePools.Smtp = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+        $PodeContext.RunspacePools.Smtp = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
     }
 
     # tcp runspace - if we have any tcp endpoints
     if (Test-PodeEndpoints -Type Tcp) {
-        $PodeContext.RunspacePools.Tcp = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+        $PodeContext.RunspacePools.Tcp = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
     }
 
     # web socket runspace - if we have any ws/s endpoints
     if (Test-PodeEndpoints -Type Ws) {
-        $PodeContext.RunspacePools.Signals = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
+        $PodeContext.RunspacePools.Signals = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
     }
 
     # setup schedule runspace pool
-    $PodeContext.RunspacePools.Schedules = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
+    $PodeContext.RunspacePools.Schedules = @{
+        Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
+        State = 'Waiting'
+    }
 
     # setup gui runspace pool (only for non-ps-core)
     if (!$PodeContext.Server.IsServerless -and !((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
-        $PodeContext.RunspacePools.Gui = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
-        $PodeContext.RunspacePools.Gui.ApartmentState = 'STA'
+        $PodeContext.RunspacePools.Gui = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
+
+        $PodeContext.RunspacePools.Gui.Pool.ApartmentState = 'STA'
     }
 }
 
@@ -561,11 +586,122 @@ function Open-PodeRunspacePools
         return
     }
 
+    $start = [datetime]::Now
+    Write-Verbose "Opening RunspacePools"
+
+    # open pools async
     foreach ($key in $PodeContext.RunspacePools.Keys) {
-        if ($null -ne $PodeContext.RunspacePools[$key]) {
-            $PodeContext.RunspacePools[$key].Open()
+        $item = $PodeContext.RunspacePools[$key]
+        if ($null -eq $item) {
+            continue
+        }
+
+        $item.Result = $item.Pool.BeginOpen($null, $null)
+    }
+
+    # wait for them all to open
+    $queue = @($PodeContext.RunspacePools.Keys)
+
+    while ($queue.Length -gt 0) {
+        foreach ($key in $queue) {
+            $item = $PodeContext.RunspacePools[$key]
+            if ($null -eq $item) {
+                $queue = ($queue | Where-Object { $_ -ine $key })
+                continue
+            }
+
+            if ($item.Pool.RunspacePoolStateInfo.State -iin @('Opened', 'Broken')) {
+                $queue = ($queue | Where-Object { $_ -ine $key })
+                Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+            }
+        }
+
+        if ($queue.Length -gt 0) {
+            Start-Sleep -Milliseconds 100
         }
     }
+
+    # report errors for failed pools
+    foreach ($key in $PodeContext.RunspacePools.Keys) {
+        $item = $PodeContext.RunspacePools[$key]
+        if ($null -eq $item) {
+            continue
+        }
+
+        if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
+            $item.Pool.EndOpen($item.Result) | Out-Default
+            throw "Failed to open RunspacePool: $($key)"
+        }
+    }
+
+    Write-Verbose "RunspacePools opened [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+}
+
+function Close-PodeRunspacePools
+{
+    if ($PodeContext.Server.IsServerless -or ($null -eq $PodeContext.RunspacePools)) {
+        return
+    }
+
+    $start = [datetime]::Now
+    Write-Verbose "Closing RunspacePools"
+
+    # close pools async
+    foreach ($key in $PodeContext.RunspacePools.Keys) {
+        $item = $PodeContext.RunspacePools[$key]
+        if (($null -eq $item) -or ($item.Pool.IsDisposed)) {
+            continue
+        }
+
+        $item.Result = $item.Pool.BeginClose($null, $null)
+    }
+
+    # wait for them all to close
+    $queue = @($PodeContext.RunspacePools.Keys)
+
+    while ($queue.Length -gt 0) {
+        foreach ($key in $queue) {
+            $item = $PodeContext.RunspacePools[$key]
+            if ($null -eq $item) {
+                $queue = ($queue | Where-Object { $_ -ine $key })
+                continue
+            }
+
+            if ($item.Pool.RunspacePoolStateInfo.State -iin @('Closed', 'Broken')) {
+                $queue = ($queue | Where-Object { $_ -ine $key })
+                Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+            }
+        }
+
+        if ($queue.Length -gt 0) {
+            Start-Sleep -Milliseconds 100
+        }
+    }
+
+    # report errors for failed pools
+    foreach ($key in $PodeContext.RunspacePools.Keys) {
+        $item = $PodeContext.RunspacePools[$key]
+        if ($null -eq $item) {
+            continue
+        }
+
+        if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
+            $item.Pool.EndClose($item.Result) | Out-Default
+            throw "Failed to close RunspacePool: $($key)"
+        }
+    }
+
+    # dispose pools
+    foreach ($key in $PodeContext.RunspacePools.Keys) {
+        $item = $PodeContext.RunspacePools[$key]
+        if (($null -eq $item) -or ($item.Pool.IsDisposed)) {
+            continue
+        }
+
+        Close-PodeDisposable -Disposable $item.Pool
+    }
+
+    Write-Verbose "RunspacePools closed [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
 }
 
 function New-PodeStateContext

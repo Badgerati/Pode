@@ -43,6 +43,7 @@ function Start-PodeWebServer
             Url = $_.Url
             Protocol = $_.Protocol
             Type = $_.Type
+            Pool = $_.Runspace.PoolName
         }
 
         # add endpoint to list
@@ -449,14 +450,19 @@ function Start-PodeWebServer
         $waitType = 'Signals'
     }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # browse to the first endpoint, if flagged
     if ($Browse) {
         Start-Process $endpoints[0].Url
     }
 
-    return @($endpoints.Url)
+    return @(foreach ($endpoint in $endpoints) {
+        @{
+            Url  = $endpoint.Url
+            Pool = $endpoint.Pool
+        }
+    })
 }
 
 function New-PodeListener

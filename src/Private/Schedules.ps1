@@ -33,7 +33,7 @@ function Start-PodeScheduleRunspace
         # first, sleep for a period of time to get to 00 seconds (start of minute)
         Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
 
-        while ($true)
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
         {
             $_now = [DateTime]::Now
 
@@ -56,7 +56,7 @@ function Start-PodeScheduleRunspace
         }
     }
 
-    Add-PodeRunspace -Type Main -ScriptBlock $script
+    Add-PodeRunspace -Type Main -ScriptBlock $script -NoProfile
 }
 
 function Complete-PodeInternalSchedules

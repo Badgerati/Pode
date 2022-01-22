@@ -125,8 +125,11 @@ function Start-PodeTcpServer
         }
     }
 
-    Add-PodeRunspace -Type Tcp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Tcp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running
-    return @("tcp://$($endpoint.FriendlyName):$($port)")
+    return @(@{
+        Url  = "tcp://$($endpoint.FriendlyName):$($port)"
+        Pool = $endpoint.Runspace.PoolName
+    })
 }

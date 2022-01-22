@@ -114,6 +114,22 @@ function Get-PodeEndpointType
     }
 }
 
+function Get-PodeEndpointRunspacePoolName
+{
+    param(
+        [Parameter()]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [string]
+        $Protocol
+    )
+
+    switch ($Protocol) {
+        { $_ -iin @('http', 'https') } { 'Web' }
+        { $_ -iin @('ws', 'wss') } { 'Signals' }
+        default { $Protocol }
+    }
+}
+
 function Test-PodeEndpoints
 {
     param(
