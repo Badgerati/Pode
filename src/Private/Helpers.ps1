@@ -590,6 +590,9 @@ function Open-PodeRunspace
         if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
             $PodeContext.RunspacePools[$Type].State = 'Error'
         }
+
+        $_ | Out-Default
+        $_.ScriptStackTrace | Out-Default
         throw
     }
 }
