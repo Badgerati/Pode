@@ -5,6 +5,7 @@ Start-PodeServer -Threads 2 {
 
     # listen on *:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    Set-PodeSecurity -Type Simple
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode

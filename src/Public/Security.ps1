@@ -40,11 +40,19 @@ function Set-PodeSecurity
     Set-PodeSecurityContentTypeOptions
 
     Set-PodeSecurityPermissionsPolicy `
-        -LayoutAnimations 'none' `
-        -UnoptimisedImages 'none' `
-        -OversizedImages 'none' `
         -SyncXhr 'none' `
-        -UnsizedMedia 'none'
+        -Fullscreen 'self' `
+        -Camera 'none' `
+        -Geolocation 'self' `
+        -PictureInPicture 'self' `
+        -Accelerometer 'none' `
+        -Microphone 'none' `
+        -Usb 'none' `
+        -Autoplay 'self' `
+        -Payment 'none' `
+        -Magnetometer 'self' `
+        -Gyroscope 'self' `
+        -DisplayCapture 'self'
 
     Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same-Origin
     Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
@@ -591,6 +599,9 @@ The values to use for the Geolocation portion of the header.
 .PARAMETER Gyroscope
 The values to use for the Gyroscope portion of the header.
 
+.PARAMETER InterestCohort
+The values to use for the InterestCohort portal of the header.
+
 .PARAMETER LayoutAnimations
 The values to use for the LayoutAnimations portion of the header.
 
@@ -699,6 +710,10 @@ function Set-PodeSecurityPermissionsPolicy
 
         [Parameter()]
         [string[]]
+        $InterestCohort,
+
+        [Parameter()]
+        [string[]]
         $LayoutAnimations,
 
         [Parameter()]
@@ -780,6 +795,7 @@ function Set-PodeSecurityPermissionsPolicy
         Protect-PodePermissionsPolicyKeyword -Name 'gamepad' -Value $Gamepad
         Protect-PodePermissionsPolicyKeyword -Name 'geolocation' -Value $Geolocation
         Protect-PodePermissionsPolicyKeyword -Name 'gyroscope' -Value $Gyroscope
+        Protect-PodePermissionsPolicyKeyword -Name 'interest-cohort' -Value $InterestCohort
         Protect-PodePermissionsPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations
         Protect-PodePermissionsPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats
         Protect-PodePermissionsPolicyKeyword -Name 'magnetometer' -Value $Magnetometer
@@ -848,6 +864,9 @@ The values to add for the Geolocation portion of the header.
 
 .PARAMETER Gyroscope
 The values to add for the Gyroscope portion of the header.
+
+.PARAMETER InterestCohort
+The values to use for the InterestCohort portal of the header.
 
 .PARAMETER LayoutAnimations
 The values to add for the LayoutAnimations portion of the header.
@@ -957,6 +976,10 @@ function Add-PodeSecurityPermissionsPolicy
 
         [Parameter()]
         [string[]]
+        $InterestCohort,
+
+        [Parameter()]
+        [string[]]
         $LayoutAnimations,
 
         [Parameter()]
@@ -1038,6 +1061,7 @@ function Add-PodeSecurityPermissionsPolicy
         Protect-PodePermissionsPolicyKeyword -Name 'gamepad' -Value $Gamepad -Append
         Protect-PodePermissionsPolicyKeyword -Name 'geolocation' -Value $Geolocation -Append
         Protect-PodePermissionsPolicyKeyword -Name 'gyroscope' -Value $Gyroscope -Append
+        Protect-PodePermissionsPolicyKeyword -Name 'interest-cohort' -Value $InterestCohort -Append
         Protect-PodePermissionsPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations -Append
         Protect-PodePermissionsPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats -Append
         Protect-PodePermissionsPolicyKeyword -Name 'magnetometer' -Value $Magnetometer -Append

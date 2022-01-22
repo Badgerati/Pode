@@ -1080,7 +1080,9 @@ function Protect-PodePermissionsPolicyKeyword
 
     # cache it
     if ($Append -and !(Test-PodeIsEmpty $PodeContext.Server.Security.Cache.PermissionsPolicy[$Name])) {
-        $Value += @($PodeContext.Server.Security.Cache.PermissionsPolicy[$Name])
+        if (($Value.Length -eq 0) -or (@($PodeContext.Server.Security.Cache.PermissionsPolicy[$Name])[0] -ine 'none')) {
+            $Value += @($PodeContext.Server.Security.Cache.PermissionsPolicy[$Name])
+        }
     }
 
     $PodeContext.Server.Security.Cache.PermissionsPolicy[$Name] = $Value
