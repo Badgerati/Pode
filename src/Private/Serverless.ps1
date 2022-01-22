@@ -7,11 +7,11 @@ function Start-PodeAzFuncServer
 
     # setup any inbuilt middleware that works for azure functions
     $inbuilt_middleware = @(
+        (Get-PodeSecurityMiddleware),
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
-        (Get-PodeCookieMiddleware),
-        (Get-PodeSecurityMiddleware)
+        (Get-PodeCookieMiddleware)
     )
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
@@ -140,11 +140,11 @@ function Start-PodeAwsLambdaServer
 
     # setup any inbuilt middleware that works for aws lambda
     $inbuilt_middleware = @(
+        (Get-PodeSecurityMiddleware),
         (Get-PodePublicMiddleware),
         (Get-PodeRouteValidateMiddleware),
         (Get-PodeBodyMiddleware),
-        (Get-PodeCookieMiddleware),
-        (Get-PodeSecurityMiddleware)
+        (Get-PodeCookieMiddleware)
     )
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
