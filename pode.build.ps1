@@ -321,11 +321,11 @@ task DocsHelpBuild DocsDeps, {
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
             $line = $_
 
-            while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>[^(])') {
+            while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
                 $updated = $true
                 $name = $Matches['name']
                 $char = $Matches['char']
-                $line = ($line -ireplace "\[``$($name)``\][^(]", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
+                $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
             }
 
             $line

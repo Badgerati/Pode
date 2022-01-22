@@ -91,8 +91,8 @@ Conversely, you could remove the header completely using [`Remove-PodeSecurityCo
 
 The following functions exist:
 
-* [`Set-PodeSecurityAccessControl`]
-* [`Remove-PodeSecurityAccessControl`]
+* [`Set-PodeSecurityAccessControl`](../../../../Functions/Security/Set-PodeSecurityAccessControl)
+* [`Remove-PodeSecurityAccessControl`](../../../../Functions/Security/Remove-PodeSecurityAccessControl)
 
 Specifies the values for the following headers:
 
@@ -111,8 +111,8 @@ Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 72
 
 The following functions exist:
 
-* [`Set-PodeSecurityCrossOrigin`]
-* [`Remove-PodeSecurityCrossOrigin`]
+* [`Set-PodeSecurityCrossOrigin`](../../../../Functions/Security/Set-PodeSecurityCrossOrigin)
+* [`Remove-PodeSecurityCrossOrigin`](../../../../Functions/Security/Remove-PodeSecurityCrossOrigin)
 
 Specifies the values for the following headers:
 
@@ -130,8 +130,8 @@ Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same
 
 The following functions exist:
 
-* [`Set-PodeSecurityStrictTransportSecurity`]
-* [`Remove-PodeSecurityStrictTransportSecurity`]
+* [`Set-PodeSecurityStrictTransportSecurity`](../../../../Functions/Security/Set-PodeSecurityStrictTransportSecurity)
+* [`Remove-PodeSecurityStrictTransportSecurity`](../../../../Functions/Security/Remove-PodeSecurityStrictTransportSecurity)
 
 The `Strict-Transport-Security` header enforces the use of HTTPS from the browser. For example:
 
@@ -143,9 +143,9 @@ Set-PodeSecurityStrictTransportSecurity -Duration 31536000 -IncludeSubDomains
 
 The following functions exist:
 
-* [`Add-PodeSecurityContentSecurityPolicy`]
-* [`Set-PodeSecurityContentSecurityPolicy`]
-* [`Remove-PodeSecurityContentSecurityPolicy`]
+* [`Add-PodeSecurityContentSecurityPolicy`](../../../../Functions/Security/Add-PodeSecurityContentSecurityPolicy)
+* [`Set-PodeSecurityContentSecurityPolicy`](../../../../Functions/Security/Set-PodeSecurityContentSecurityPolicy)
+* [`Remove-PodeSecurityContentSecurityPolicy`](../../../../Functions/Security/Remove-PodeSecurityContentSecurityPolicy)
 
 The `Content-Security-Policy` header controls a whitelist of approved sourced from which the browser can load resoures. For example:
 
@@ -157,8 +157,8 @@ Set-PodeSecurityContentSecurityPolicy -Default 'self' -Image 'self', 'data'
 
 The following functions exist:
 
-* [`Set-PodeSecurityPermissionsPolicy`]
-* [`Remove-PodeSecurityPermissionsPolicy`]
+* [`Set-PodeSecurityPermissionsPolicy`](../../../../Functions/Security/Set-PodeSecurityPermissionsPolicy)
+* [`Remove-PodeSecurityPermissionsPolicy`](../../../../Functions/Security/Remove-PodeSecurityPermissionsPolicy)
 
 The `Permissions-Policy` header controls which features/APIs a site can use in the browser. For example:
 
@@ -170,8 +170,8 @@ Set-PodeSecurityPermissionsPolicy -LayoutAnimations 'none' -UnoptimisedImages 'n
 
 The following functions exist:
 
-* [`Set-PodeSecurityFrameOptions`]
-* [`Remove-PodeSecurityFrameOptions`]
+* [`Set-PodeSecurityFrameOptions`](../../../../Functions/Security/Set-PodeSecurityFrameOptions)
+* [`Remove-PodeSecurityFrameOptions`](../../../../Functions/Security/Remove-PodeSecurityFrameOptions)
 
 The `X-Frame-Options` header tells the browser whether your site support framing or not. For example:
 
@@ -183,8 +183,8 @@ Set-PodeSecurityFrameOptions -Type SameOrigin
 
 The following functions exist:
 
-* [`Set-PodeSecurityContentTypeOptions`]
-* [`Remove-PodeSecurityContentTypeOptions`]
+* [`Set-PodeSecurityContentTypeOptions`](../../../../Functions/Security/Set-PodeSecurityContentTypeOptions)
+* [`Remove-PodeSecurityContentTypeOptions`](../../../../Functions/Security/Remove-PodeSecurityContentTypeOptions)
 
 The `Content-Type-Options` header only has one value: `nosniff`. So you enable, you just need to call the Set function, for example:
 
@@ -196,8 +196,8 @@ Set-PodeSecurityContentTypeOptions
 
 The following functions exist:
 
-* [`Set-PodeSecurityReferrerPolicy`]
-* [`Remove-PodeSecurityReferrerPolicy`]
+* [`Set-PodeSecurityReferrerPolicy`](../../../../Functions/Security/Set-PodeSecurityReferrerPolicy)
+* [`Remove-PodeSecurityReferrerPolicy`](../../../../Functions/Security/Remove-PodeSecurityReferrerPolicy)
 
 The `Referrer-Policy` header tells the browser how much information to include in the `Referer` header. For example:
 
