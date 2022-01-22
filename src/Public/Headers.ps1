@@ -70,7 +70,7 @@ function Add-PodeHeaderBulk
     param(
         [Parameter(Mandatory=$true)]
         [hashtable]
-        $Value,
+        $Values,
 
         [Parameter()]
         [string]

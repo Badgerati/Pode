@@ -11,7 +11,7 @@
     RootModule = 'Pode.psm1'
 
     # Version number of this module.
-    ModuleVersion = '2.6.0' #$version$'
+    ModuleVersion = '$version$'
 
     # ID used to uniquely identify this module
     GUID = 'e3ea217c-fc3d-406b-95d5-4304ab06c6af'
