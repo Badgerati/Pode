@@ -9,6 +9,7 @@ function Start-PodeWebServer
 
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
+        (Get-PodeSecurityMiddleware),
         (Get-PodeAccessMiddleware),
         (Get-PodeLimitMiddleware),
         (Get-PodePublicMiddleware),

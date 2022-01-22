@@ -998,3 +998,117 @@ function New-PodeSelfSignedCertificate
 
     return $cert
 }
+
+function Protect-PodeContentSecurityKeyword
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Value,
+
+        [switch]
+        $Append
+    )
+
+    # cache it
+    if ($Append -and !(Test-PodeIsEmpty $PodeContext.Server.Security.Cache.ContentSecurity[$Name])) {
+        $Value += @($PodeContext.Server.Security.Cache.ContentSecurity[$Name])
+    }
+
+    $PodeContext.Server.Security.Cache.ContentSecurity[$Name] = $Value
+
+    # do nothing if no value
+    if (($null -eq $Value) -or ($Value.Length -eq 0)) {
+        return $null
+    }
+
+    # keywords
+    $Name = $Name.ToLowerInvariant()
+
+    $keywords = @(
+        'none',
+        'self',
+        'unsafe-inline',
+        'unsafe-eval'
+    )
+
+    $schemes = @(
+        'http',
+        'https',
+        'ws',
+        'wss',
+        'data',
+        'file'
+    )
+
+    # build the value
+    $values = @(foreach ($v in $Value) {
+        if ($keywords -icontains $v) {
+            "'$($v.ToLowerInvariant())'"
+            continue
+        }
+
+        if ($schemes -icontains $v) {
+            "$($v.ToLowerInvariant()):"
+            continue
+        }
+
+        $v
+    })
+
+    return "$($Name) $($values -join ' ')"
+}
+
+function Protect-PodePermissionsPolicyKeyword
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Value,
+
+        [switch]
+        $Append
+    )
+
+    # cache it
+    if ($Append -and !(Test-PodeIsEmpty $PodeContext.Server.Security.Cache.PermissionsPolicy[$Name])) {
+        $Value += @($PodeContext.Server.Security.Cache.PermissionsPolicy[$Name])
+    }
+
+    $PodeContext.Server.Security.Cache.PermissionsPolicy[$Name] = $Value
+
+    # do nothing if no value
+    if (($null -eq $Value) -or ($Value.Length -eq 0)) {
+        return $null
+    }
+
+    # build value
+    $Name = $Name.ToLowerInvariant()
+
+    if ($Value -icontains 'none') {
+        return "$($Name)=()"
+    }
+
+    $keywords = @(
+        'self'
+    )
+
+    $values = @(foreach ($v in $Value) {
+        if ($keywords -icontains $v) {
+            $v
+            continue
+        }
+
+        "`"$($v)`""
+    })
+
+    return "$($Name)=($($values -join ' '))"
+}

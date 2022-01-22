@@ -64,7 +64,11 @@ function Invoke-PodeInternalTimer
 {
     param(
         [Parameter(Mandatory=$true)]
-        $Timer
+        $Timer,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList = $null
     )
 
     try {
@@ -73,7 +77,18 @@ function Invoke-PodeInternalTimer
             Sender = $Timer
         }
 
-        $_args = @($Timer.Arguments)
+        # add main timer args
+        $_args = @()
+        if (($null -ne $Timer.Arguments) -and ($Timer.Arguments.Length -gt 0)) {
+            $_args += $Timer.Arguments
+        }
+
+        # add adhoc timer invoke args
+        if (($null -ne $ArgumentList) -and ($ArgumentList.Length -gt 0)) {
+            $_args += $ArgumentList
+        }
+
+        # add timer $using args
         if ($null -ne $Timer.UsingVariables) {
             $_vars = @()
             foreach ($_var in $Timer.UsingVariables) {
@@ -82,6 +97,7 @@ function Invoke-PodeInternalTimer
             $_args = $_vars + $_args
         }
 
+        # invoke timer
         Invoke-PodeScriptBlock -ScriptBlock $Timer.Script -Arguments $_args -Scoped -Splat
     }
     catch {

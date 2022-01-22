@@ -312,11 +312,11 @@ Properties are used to create all Parameters and Schemas in OpenAPI. You can use
 
 There are 5 simple property types: Integers, Numbers, Strings, Booleans, and Schemas. Each of which can be created using the following functions:
 
-* [`New-PodeOAIntProperty`]
-* [`New-PodeOANumberProperty`]
-* [`New-PodeOAStringProperty`]
-* [`New-PodeOABoolProperty`]
-* [`New-PodeOASchemaProperty`]
+* [`New-PodeOAIntProperty`](../../Functions/OpenApi/New-PodeOAIntProperty)
+* [`New-PodeOANumberProperty`](../../Functions/OpenApi/New-PodeOANumberProperty)
+* [`New-PodeOAStringProperty`](../../Functions/OpenApi/New-PodeOAStringProperty)
+* [`New-PodeOABoolProperty`](../../Functions/OpenApi/New-PodeOABoolProperty)
+* [`New-PodeOASchemaProperty`](../../Functions/OpenApi/New-PodeOASchemaProperty)
 
 These properties can be created with a Name, and other flags such as Required and/or a Description:
 

@@ -85,6 +85,19 @@ function Get-PodeEndpoints
     return $endpoints
 }
 
+function Test-PodeEndpointProtocol
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Http', 'Https', 'Ws', 'Wss', 'Smtp', 'Tcp')]
+        [string]
+        $Protocol
+    )
+
+    $endpoint = $PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -ieq $Protocol }
+    return ($null -ne $endpoint)
+}
+
 function Get-PodeEndpointType
 {
     param(

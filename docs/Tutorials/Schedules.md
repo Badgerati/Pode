@@ -129,6 +129,20 @@ You can manually trigger a schedule by using [`Invoke-PodeSchedule`](../../Funct
 Invoke-PodeSchedule -Name 'schedule-name'
 ```
 
+You can also pass further optional arguments that will be supplied to the schedules's scriptblock by using `-ArgumentList`, which is a hashtable of parameters that will be supplied:
+
+```powershell
+Add-PodeSchedule -Name 'date' -Cron '@minutely' -ScriptBlock {
+    param($Date)
+    Write-Host $Date
+}
+
+Invoke-PodeSchedule -Name 'date' -ArgumentList @{ Date = [DateTime]::Now }
+```
+
+!!! note
+    Remember that names of items in the hashtable, and the name of the parameter in the scriptblock must be identical.
+
 ## Schedule Object
 
 !!! warning

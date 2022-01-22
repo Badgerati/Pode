@@ -308,17 +308,17 @@ function New-PodeJwtSignature
     switch ($Algorithm.ToUpperInvariant()) {
         'HS256' {
             $sig = Invoke-PodeHMACSHA256Hash -Value $Token -SecretBytes $SecretBytes
-            $sig = ConvertTo-PodeJwtBase64Value -Value $sig -NoConvert
+            $sig = ConvertTo-PodeBase64UrlValue -Value $sig -NoConvert
         }
 
         'HS384' {
             $sig = Invoke-PodeHMACSHA384Hash -Value $Token -SecretBytes $SecretBytes
-            $sig = ConvertTo-PodeJwtBase64Value -Value $sig -NoConvert
+            $sig = ConvertTo-PodeBase64UrlValue -Value $sig -NoConvert
         }
 
         'HS512' {
             $sig = Invoke-PodeHMACSHA512Hash -Value $Token -SecretBytes $SecretBytes
-            $sig = ConvertTo-PodeJwtBase64Value -Value $sig -NoConvert
+            $sig = ConvertTo-PodeBase64UrlValue -Value $sig -NoConvert
         }
 
         'NONE' {
@@ -333,7 +333,7 @@ function New-PodeJwtSignature
     return $sig
 }
 
-function ConvertTo-PodeJwtBase64Value
+function ConvertTo-PodeBase64UrlValue
 {
     param(
         [Parameter(Mandatory=$true)]

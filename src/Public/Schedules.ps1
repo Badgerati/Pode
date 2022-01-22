@@ -194,6 +194,9 @@ Adhoc invoke a Schedule's logic outside of its defined cron-expression. This inv
 .PARAMETER Name
 The Name of the Schedule.
 
+.PARAMETER ArgumentList
+A hashtable of arguments to supply to the Schedule's ScriptBlock.
+
 .EXAMPLE
 Invoke-PodeSchedule -Name 'schedule-name'
 #>
@@ -203,7 +206,11 @@ function Invoke-PodeSchedule
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
-        $Name
+        $Name,
+
+        [Parameter()]
+        [hashtable]
+        $ArgumentList = $null
     )
 
     # ensure the schedule exists
@@ -212,7 +219,7 @@ function Invoke-PodeSchedule
     }
 
     # run schedule logic
-    Invoke-PodeInternalScheduleLogic -Schedule ($PodeContext.Schedules[$Name])
+    Invoke-PodeInternalScheduleLogic -Schedule $PodeContext.Schedules[$Name] -ArgumentList $ArgumentList
 }
 
 <#

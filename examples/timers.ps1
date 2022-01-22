@@ -12,6 +12,7 @@ Start-PodeServer {
     # runs forever, looping every 5secs
     $message = 'Hello, world'
     Add-PodeTimer -Name 'forever' -Interval 5 -ScriptBlock {
+        param($msg1, $msg2)
         '- - -' | Out-PodeHost
         $using:message | Out-PodeHost
         Lock-PodeObject -ScriptBlock {
@@ -19,6 +20,8 @@ Start-PodeServer {
         }
         "Last: $($TimerEvent.Sender.LastTriggerTime)" | Out-Default
         "Next: $($TimerEvent.Sender.NextTriggerTime)" | Out-Default
+        "Message1: $($msg1)" | Out-Default
+        "Message2: $($msg2)" | Out-Default
         '- - -' | Out-PodeHost
     } -Limit 5
 
@@ -56,7 +59,7 @@ Start-PodeServer {
 
     # adhoc invoke a timer's logic
     Add-PodeRoute -Method Get -Path '/api/run' -ScriptBlock {
-        Invoke-PodeTimer -Name 'forever'
+        Invoke-PodeTimer -Name 'forever' -ArgumentList 'Hello!', 'Bye!'
     }
 
     Use-PodeTimers

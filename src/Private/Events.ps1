@@ -8,7 +8,7 @@ function Invoke-PodeEvent
     )
 
     # do nothing if no events
-    if ($PodeContext.Server.Events[$Type].Count -eq 0) {
+    if (($null -eq $PodeContext.Server.Events) -or ($PodeContext.Server.Events[$Type].Count -eq 0)) {
         return
     }
 

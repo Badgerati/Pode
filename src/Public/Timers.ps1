@@ -146,6 +146,9 @@ Adhoc invoke a Timer's logic outside of its defined interval. This invocation do
 .PARAMETER Name
 The Name of the Timer.
 
+.PARAMETER ArgumentList
+An array of arguments to supply to the Timer's ScriptBlock.
+
 .EXAMPLE
 Invoke-PodeTimer -Name 'timer-name'
 #>
@@ -155,7 +158,11 @@ function Invoke-PodeTimer
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
-        $Name
+        $Name,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList = $null
     )
 
     # ensure the timer exists
@@ -164,7 +171,7 @@ function Invoke-PodeTimer
     }
 
     # run timer logic
-    Invoke-PodeInternalTimer -Timer ($PodeContext.Timers[$Name])
+    Invoke-PodeInternalTimer -Timer $PodeContext.Timers[$Name] -ArgumentList $ArgumentList
 }
 
 <#

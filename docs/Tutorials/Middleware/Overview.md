@@ -88,15 +88,17 @@ Although you can define your own custom middleware, Pode does have some inbuilt 
 
 | Order | Middleware | Description |
 | ----- | ---------- | ----------- |
-| 1 | **Access Rules** | Allowing/Denying IP addresses (if access rules have been defined) |
-| 2 | **Rate Limiting** | Limiting access to IP addresses (if rate limiting rules have been defined) |
-| 3 | **Static Content** | Static Content, such as images/css/js/html, in the `/public` directory |
-| 4 | **Body Parsing** | Parsing request payload as JSON, XML, or other types |
-| 5 | **Query String** | Getting any query string parameters currently on the request URL |
-| 6 | **Cookie Parsing** | Parse the cookies from the request's header (this only applies to serverless) |
-| 7 | **Custom Middleware** | Runs any defined user defined global Middleware in the order it was created |
-| 8 | **Route Middleware** | Runs any Route level Middleware for the current Route being processed |
-| 9 | **Route** | Finally, the route itself is processed |
+| 1 | **Security Headers** | Add any defined security headers onto the response |
+| 2 | **Access Rules** | Allowing/Denying IP addresses (if access rules have been defined) |
+| 3 | **Rate Limiting** | Limiting access to IP addresses (if rate limiting rules have been defined) |
+| 4 | **Static Content** | Static Content, such as images/css/js/html, in the `/public` directory |
+| 5 | **Body Parsing** | Parsing request payload as JSON, XML, or other types |
+| 6 | **Query String** | Getting any query string parameters currently on the request URL |
+| 7 | **Cookie Parsing** | Parse the cookies from the request's header (this only applies to serverless) |
+| 8 | **Custom Middleware** | Runs any defined user defined global Middleware in the order it was created |
+| 9 | **Route Middleware** | Runs any Route level Middleware for the current Route being processed |
+| 10 | **Route** | Then, the route itself is processed |
+| 11 | **Endware** | Finally, any Endware configured is run |
 
 ## Overriding Inbuilt
 
@@ -108,6 +110,7 @@ Pode has inbuilt Middleware as defined in the order of running above. Sometimes 
 * Body Parsing      - `__pode_mw_body_parsing__`
 * Query String      - `__pode_mw_query_parsing__`
 * Cookie Parsing    - `__pode_mw_cookie_parsing__`
+* Security Headers  - `__pode_mw_security__`
 
 The following example uses rate limiting, and defines Middleware that will override the inbuilt rate limiting logic:
 

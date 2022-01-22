@@ -123,7 +123,11 @@ function Invoke-PodeInternalScheduleLogic
 {
     param(
         [Parameter(Mandatory=$true)]
-        $Schedule
+        $Schedule,
+
+        [Parameter()]
+        [hashtable]
+        $ArgumentList = $null
     )
 
     try {
@@ -135,12 +139,19 @@ function Invoke-PodeInternalScheduleLogic
             }
         }
 
-        # add any custom args as params
+        # add any schedule args
         foreach ($key in $Schedule.Arguments.Keys) {
             $parameters[$key] = $Schedule.Arguments[$key]
         }
 
-        # add any using variables as params
+        # add adhoc schedule invoke args
+        if (($null -ne $ArgumentList) -and ($ArgumentList.Count -gt 0)) {
+            foreach ($key in $ArgumentList.Keys) {
+                $parameters[$key] = $ArgumentList[$key]
+            }
+        }
+
+        # add any using variables
         if ($null -ne $Schedule.UsingVariables) {
             foreach ($usingVar in $Schedule.UsingVariables) {
                 $parameters[$usingVar.NewName] = $usingVar.Value
