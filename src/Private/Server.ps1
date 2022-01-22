@@ -163,8 +163,15 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Middleware = @()
         $PodeContext.Server.Endware = @()
 
-        # clear misc
+        # clear body parsers
         $PodeContext.Server.BodyParsers.Clear()
+
+        # clear security headers
+        $PodeContext.Server.Security.Headers.Clear()
+
+        $PodeContext.Server.Security.Cache.Keys.Clone() | ForEach-Object {
+            $PodeContext.Server.Security.Cache[$_].Clear()
+        }
 
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()

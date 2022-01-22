@@ -58,9 +58,11 @@
 
         # headers
         'Add-PodeHeader',
+        'Add-PodeHeaderBulk',
         'Test-PodeHeader',
         'Get-PodeHeader',
         'Set-PodeHeader',
+        'Set-PodeHeaderBulk',
         'Test-PodeHeaderSigned',
 
         # state
@@ -266,7 +268,31 @@
         'Test-PodeEvent',
         'Get-PodeEvent',
         'Clear-PodeEvent',
-        'Use-PodeEvents'
+        'Use-PodeEvents',
+
+        # Security
+        'Add-PodeSecurityHeader',
+        'Add-PodeSecurityContentSecurityPolicy',
+        'Add-PodeSecurityPermissionsPolicy',
+        'Remove-PodeSecurity',
+        'Remove-PodeSecurityAccessControl',
+        'Remove-PodeSecurityContentSecurityPolicy',
+        'Remove-PodeSecurityContentTypeOptions',
+        'Remove-PodeSecurityCrossOrigin',
+        'Remove-PodeSecurityFrameOptions',
+        'Remove-PodeSecurityHeader',
+        'Remove-PodeSecurityPermissionsPolicy',
+        'Remove-PodeSecurityReferrerPolicy',
+        'Remove-PodeSecurityStrictTransportSecurity',
+        'Set-PodeSecurity',
+        'Set-PodeSecurityAccessControl',
+        'Set-PodeSecurityContentSecurityPolicy',
+        'Set-PodeSecurityContentTypeOptions',
+        'Set-PodeSecurityCrossOrigin',
+        'Set-PodeSecurityFrameOptions',
+        'Set-PodeSecurityPermissionsPolicy',
+        'Set-PodeSecurityReferrerPolicy',
+        'Set-PodeSecurityStrictTransportSecurity'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

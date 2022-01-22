@@ -20,7 +20,7 @@ Add-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 function Add-PodeHeader
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -45,6 +45,53 @@ function Add-PodeHeader
     }
     else {
         $WebEvent.Response.Headers.Add($Name, $Value)
+    }
+}
+
+<#
+.SYNOPSIS
+Appends multiple headers against the Response.
+
+.DESCRIPTION
+Appends multiple headers against the Response. If the current context is serverless, then this function acts like Set-PodeHeaderBulk.
+
+.PARAMETER Values
+A hashtable of headers to be appended.
+
+.PARAMETER Secret
+If supplied, the secret with which to sign the header values.
+
+.EXAMPLE
+Add-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
+#>
+function Add-PodeHeaderBulk
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Values,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    foreach ($key in $Values.Keys) {
+        $value = $Values[$key]
+
+        # sign the value if we have a secret
+        if (![string]::IsNullOrWhiteSpace($Secret)) {
+            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret)
+        }
+
+        # add the header to the response
+        if ($PodeContext.Server.IsServerless) {
+            $WebEvent.Response.Headers[$key] = $value
+        }
+        else {
+            $WebEvent.Response.Headers.Add($key, $value)
+        }
     }
 }
 
@@ -138,7 +185,7 @@ Set-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 function Set-PodeHeader
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -163,6 +210,53 @@ function Set-PodeHeader
     }
     else {
         $WebEvent.Response.Headers.Set($Name, $Value)
+    }
+}
+
+<#
+.SYNOPSIS
+Sets multiple headers on the Response, clearing all current values for the header.
+
+.DESCRIPTION
+Sets multiple headers on the Response, clearing all current values for the header.
+
+.PARAMETER Values
+A hashtable of headers to be set.
+
+.PARAMETER Secret
+If supplied, the secret with which to sign the header values.
+
+.EXAMPLE
+Set-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
+#>
+function Set-PodeHeaderBulk
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Values,
+
+        [Parameter()]
+        [string]
+        $Secret
+    )
+
+    foreach ($key in $Values.Keys) {
+        $value = $Values[$key]
+
+        # sign the value if we have a secret
+        if (![string]::IsNullOrWhiteSpace($Secret)) {
+            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret)
+        }
+
+        # set the header on the response
+        if ($PodeContext.Server.IsServerless) {
+            $WebEvent.Response.Headers[$key] = $value
+        }
+        else {
+            $WebEvent.Response.Headers.Set($key, $value)
+        }
     }
 }
 
