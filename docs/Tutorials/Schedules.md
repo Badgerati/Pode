@@ -6,9 +6,7 @@ Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions
 
 ## Create a Schedule
 
-To create a new Schedule in your server you use the Schedule functions.
-
-To create a basic Schedule, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:
+You can create a new schedule using [`Add-PodeSchedule`](../../Functions/Schedules/Add-PodeSchedule). To create a basic Schedule, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:
 
 ```powershell
 Add-PodeSchedule -Name 'date' -Cron '5 0 * * TUE' -ScriptBlock {
@@ -29,6 +27,20 @@ You can also supply multiple cron expressions for the same Schedule. For example
 ```powershell
 Add-PodeSchedule -Name 'date' -Cron @('@minutely', '@hourly') -ScriptBlock {
     Write-Host "$([DateTime]::Now)"
+}
+```
+
+Usually all schedules are created within the main `Start-PodeServer` scope, however it is possible to create adhoc schedules with routes/etc. If you create adhoc schedules in this manor, you might notice that they don't run; this is because the Runspace that schedules use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
+
+```powershell
+Start-PodeServer -EnablePool Schedules {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/create-schedule' -ScriptBlock {
+        Add-PodeSchedule -Name 'example' -Cron '@minutely' -ScriptBlock {
+            # logic
+        }
+    }
 }
 ```
 
