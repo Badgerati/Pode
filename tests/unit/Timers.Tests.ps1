@@ -15,12 +15,12 @@ Describe 'Find-PodeTimer' {
 
     Context 'Valid values supplied' {
         It 'Returns null as the timer does not exist' {
-            $PodeContext = @{ 'Timers' = @{}; }
+            $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
             Find-PodeTimer -Name 'test' | Should Be $null
         }
 
         It 'Returns timer for name' {
-            $PodeContext = @{ 'Timers' = @{ 'test' = @{ 'Name' = 'test'; }; }; }
+            $PodeContext = @{ 'Timers' = @{ Items = @{ 'test' = @{ 'Name' = 'test'; }; } }; }
             $result = (Find-PodeTimer -Name 'test')
 
             $result | Should BeOfType System.Collections.Hashtable
@@ -31,35 +31,35 @@ Describe 'Find-PodeTimer' {
 
 Describe 'Add-PodeTimer' {
     It 'Throws error because timer already exists' {
-        $PodeContext = @{ 'Timers' = @{ 'test' = $null }; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{ 'test' = $null }; } }
         { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} } | Should Throw 'already defined'
     }
 
     It 'Throws error because interval is 0' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         { Add-PodeTimer -Name 'test' -Interval 0 -ScriptBlock {} } | Should Throw 'interval must be greater than 0'
     }
 
     It 'Throws error because interval is less than 0' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         { Add-PodeTimer -Name 'test' -Interval -1 -ScriptBlock {} } | Should Throw 'interval must be greater than 0'
     }
 
     It 'Throws error because limit is negative' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Limit -1 } | Should Throw 'negative limit'
     }
 
     It 'Throws error because skip is negative' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Skip -1 } | Should Throw 'negative skip'
     }
 
     It 'Adds new timer to session with no limit' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
 
-        $timer = $PodeContext.Timers['test']
+        $timer = $PodeContext.Timers.Items['test']
         $timer | Should Not Be $null
         $timer.Name | Should Be 'test'
         $timer.Interval | Should Be 1
@@ -72,10 +72,10 @@ Describe 'Add-PodeTimer' {
     }
 
     It 'Adds new timer to session with limit' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         Add-PodeTimer -Name 'test' -Interval 3 -ScriptBlock { Write-Host 'hello' } -Limit 2 -Skip 1
 
-        $timer = $PodeContext.Timers['test']
+        $timer = $PodeContext.Timers.Items['test']
         $timer | Should Not Be $null
         $timer.Name | Should Be 'test'
         $timer.Interval | Should Be 3
@@ -90,13 +90,13 @@ Describe 'Add-PodeTimer' {
 
 Describe 'Get-PodeTimer' {
     It 'Returns no timers' {
-        $PodeContext = @{ Timers = @{} }
+        $PodeContext = @{ Timers = @{ Items = @{} } }
         $timers = Get-PodeTimer
         $timers.Length | Should Be 0
     }
 
     It 'Returns 1 timer by name' {
-        $PodeContext = @{ Timers = @{} }
+        $PodeContext = @{ Timers = @{ Items = @{} } }
 
         Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
         $timers = Get-PodeTimer
@@ -109,7 +109,7 @@ Describe 'Get-PodeTimer' {
     }
 
     It 'Returns 2 timers by name' {
-        $PodeContext = @{ Timers = @{} }
+        $PodeContext = @{ Timers = @{ Items = @{} } }
 
         Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
         Add-PodeTimer -Name 'test2' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
@@ -120,7 +120,7 @@ Describe 'Get-PodeTimer' {
     }
 
     It 'Returns all timers' {
-        $PodeContext = @{ Timers = @{} }
+        $PodeContext = @{ Timers = @{ Items = @{} } }
 
         Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
         Add-PodeTimer -Name 'test2' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
@@ -133,54 +133,54 @@ Describe 'Get-PodeTimer' {
 
 Describe 'Remove-PodeTimer' {
     It 'Adds new timer and then removes it' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' }
 
-        $timer = $PodeContext.Timers['test']
+        $timer = $PodeContext.Timers.Items['test']
         $timer.Name | Should Be 'test'
         $timer.Script.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
 
         Remove-PodeTimer -Name 'test'
 
-        $timer = $PodeContext.Timers['test']
+        $timer = $PodeContext.Timers.Items['test']
         $timer | Should Be $null
     }
 }
 
 Describe 'Clear-PodeTimers' {
     It 'Adds new timers and then removes them' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' }
         Add-PodeTimer -Name 'test2' -Interval 1 -ScriptBlock { Write-Host 'hello2' }
 
-        $PodeContext.Timers.Count | Should Be 2
+        $PodeContext.Timers.Items.Count | Should Be 2
 
         Clear-PodeTimers
 
-        $PodeContext.Timers.Count | Should Be 0
+        $PodeContext.Timers.Items.Count | Should Be 0
     }
 }
 
 Describe 'Edit-PodeTimer' {
     It 'Adds a new timer, then edits the interval' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' }
-        $PodeContext.Timers['test1'].Interval | Should Be 1
-        $PodeContext.Timers['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+        $PodeContext.Timers.Items['test1'].Interval | Should Be 1
+        $PodeContext.Timers.Items['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
 
         Edit-PodeTimer -Name 'test1' -Interval 3
-        $PodeContext.Timers['test1'].Interval | Should Be 3
-        $PodeContext.Timers['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+        $PodeContext.Timers.Items['test1'].Interval | Should Be 3
+        $PodeContext.Timers.Items['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
     }
 
     It 'Adds a new timer, then edits the script' {
-        $PodeContext = @{ 'Timers' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
         Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' }
-        $PodeContext.Timers['test1'].Interval | Should Be 1
-        $PodeContext.Timers['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
+        $PodeContext.Timers.Items['test1'].Interval | Should Be 1
+        $PodeContext.Timers.Items['test1'].Script.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
 
         Edit-PodeTimer -Name 'test1' -ScriptBlock { Write-Host 'hello2' }
-        $PodeContext.Timers['test1'].Interval | Should Be 1
-        $PodeContext.Timers['test1'].Script.ToString() | Should Be ({ Write-Host 'hello2' }).ToString()
+        $PodeContext.Timers.Items['test1'].Interval | Should Be 1
+        $PodeContext.Timers.Items['test1'].Script.ToString() | Should Be ({ Write-Host 'hello2' }).ToString()
     }
 }

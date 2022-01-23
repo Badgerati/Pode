@@ -100,6 +100,11 @@ function Start-PodeServer
         [string]
         $ListenerType = [string]::Empty,
 
+        [Parameter()]
+        [ValidateSet('Timers', 'Schedules')]
+        [string[]]
+        $EnablePool,
+
         [switch]
         $DisableTermination,
 
@@ -151,6 +156,7 @@ function Start-PodeServer
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
             -ServerlessType $ServerlessType `
             -ListenerType $ListenerType `
+            -EnablePool $EnablePool `
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
             -Quiet:$Quiet
@@ -605,7 +611,7 @@ function Show-PodeGui
 
     # only valid for Windows PowerShell
     if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
-        throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7 on Windows'
+        throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7+ on Windows'
     }
 
     # enable the gui and set general settings

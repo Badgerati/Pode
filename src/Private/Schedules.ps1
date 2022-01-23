@@ -7,12 +7,17 @@ function Find-PodeSchedule
         $Name
     )
 
-    return $PodeContext.Schedules[$Name]
+    return $PodeContext.Schedules.Items[$Name]
+}
+
+function Test-PodeSchedulesExist
+{
+    return (($null -ne $PodeContext.Schedules) -and (($PodeContext.Schedules.Enabled) -or ($PodeContext.Schedules.Items.Count -gt 0)))
 }
 
 function Start-PodeScheduleRunspace
 {
-    if ((Get-PodeCount $PodeContext.Schedules) -eq 0) {
+    if (!(Test-PodeSchedulesExist)) {
         return
     }
 
@@ -20,7 +25,7 @@ function Start-PodeScheduleRunspace
         # select the schedules that trigger on-start
         $_now = [DateTime]::Now
 
-        $PodeContext.Schedules.Values |
+        $PodeContext.Schedules.Items.Values |
             Where-Object {
                 $_.OnStart
             } | ForEach-Object {
@@ -38,7 +43,7 @@ function Start-PodeScheduleRunspace
             $_now = [DateTime]::Now
 
             # select the schedules that need triggering
-            $PodeContext.Schedules.Values |
+            $PodeContext.Schedules.Items.Values |
                 Where-Object {
                     !$_.Completed -and
                     (($null -eq $_.StartTime) -or ($_.StartTime -le $_now)) -and
@@ -68,7 +73,7 @@ function Complete-PodeInternalSchedules
     )
 
     # add any schedules to remove that have exceeded their end time
-    $Schedules = @($PodeContext.Schedules.Values |
+    $Schedules = @($PodeContext.Schedules.Items.Values |
         Where-Object { (($null -ne $_.EndTime) -and ($_.EndTime -lt $Now)) })
 
     if (($null -eq $Schedules) -or ($Schedules.Length -eq 0)) {
