@@ -169,8 +169,18 @@ Describe 'Restart-PodeInternalServer' {
                     RestartCount = 0
                 }
             }
-            Timers = @{ 'key' = 'value' }
-            Schedules = @{ 'key' = 'value' }
+            Timers = @{
+                Enabled = $true
+                Items = @{
+                    key = 'value'
+                }
+            }
+            Schedules = @{
+                Enabled = $true
+                Items = @{
+                    key = 'value'
+                }
+            }
         }
 
         Restart-PodeInternalServer | Out-Null
@@ -184,8 +194,8 @@ Describe 'Restart-PodeInternalServer' {
         $PodeContext.Server.State.Count | Should Be 0
         $PodeContext.Server.Configuration | Should Be $null
 
-        $PodeContext.Timers.Count | Should Be 0
-        $PodeContext.Schedules.Count | Should Be 0
+        $PodeContext.Timers.Items.Count | Should Be 0
+        $PodeContext.Schedules.Items.Count | Should Be 0
 
         $PodeContext.Server.ViewEngine.Type | Should Be 'html'
         $PodeContext.Server.ViewEngine.Extension | Should Be 'html'

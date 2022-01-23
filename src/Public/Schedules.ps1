@@ -47,7 +47,7 @@ Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -Ar
 function Add-PodeSchedule
 {
     [CmdletBinding(DefaultParameterSetName='Script')]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -88,7 +88,7 @@ function Add-PodeSchedule
     Test-PodeIsServerless -FunctionName 'Add-PodeSchedule' -ThrowError
 
     # ensure the schedule doesn't already exist
-    if ($PodeContext.Schedules.ContainsKey($Name)) {
+    if ($PodeContext.Schedules.Items.ContainsKey($Name)) {
         throw "[Schedule] $($Name): Schedule already defined"
     }
 
@@ -122,7 +122,8 @@ function Add-PodeSchedule
     $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
     $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime
 
-    $PodeContext.Schedules[$Name] = @{
+    $PodeContext.Schedules.Enabled = $true
+    $PodeContext.Schedules.Items[$Name] = @{
         Name = $Name
         StartTime = $StartTime
         EndTime = $EndTime
@@ -214,12 +215,12 @@ function Invoke-PodeSchedule
     )
 
     # ensure the schedule exists
-    if (!$PodeContext.Schedules.ContainsKey($Name)) {
+    if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
         throw "Schedule '$($Name)' does not exist"
     }
 
     # run schedule logic
-    Invoke-PodeInternalScheduleLogic -Schedule $PodeContext.Schedules[$Name] -ArgumentList $ArgumentList
+    Invoke-PodeInternalScheduleLogic -Schedule $PodeContext.Schedules.Items[$Name] -ArgumentList $ArgumentList
 }
 
 <#
@@ -244,7 +245,7 @@ function Remove-PodeSchedule
         $Name
     )
 
-    $null = $PodeContext.Schedules.Remove($Name)
+    $null = $PodeContext.Schedules.Items.Remove($Name)
 }
 
 <#
@@ -262,7 +263,7 @@ function Clear-PodeSchedules
     [CmdletBinding()]
     param()
 
-    $PodeContext.Schedules.Clear()
+    $PodeContext.Schedules.Items.Clear()
 }
 
 <#
@@ -312,11 +313,11 @@ function Edit-PodeSchedule
     )
 
     # ensure the schedule exists
-    if (!$PodeContext.Schedules.ContainsKey($Name)) {
+    if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
         throw "Schedule '$($Name)' does not exist"
     }
 
-    $_schedule = $PodeContext.Schedules[$Name]
+    $_schedule = $PodeContext.Schedules.Items[$Name]
 
     # edit cron if supplied
     if (!(Test-PodeIsEmpty $Cron)) {
@@ -380,7 +381,7 @@ function Get-PodeSchedule
         $EndTime = $null
     )
 
-    $schedules = $PodeContext.Schedules.Values
+    $schedules = $PodeContext.Schedules.Items.Values
 
     # further filter by schedule names
     if (($null -ne $Name) -and ($Name.Length -gt 0)) {
@@ -475,11 +476,11 @@ function Get-PodeScheduleNextTrigger
     )
 
     # ensure the schedule exists
-    if (!$PodeContext.Schedules.ContainsKey($Name)) {
+    if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
         throw "Schedule '$($Name)' does not exist"
     }
 
-    $_schedule = $PodeContext.Schedules[$Name]
+    $_schedule = $PodeContext.Schedules.Items[$Name]
 
     # ensure date is after start/before end
     if (($null -ne $DateTime) -and ($null -ne $_schedule.StartTime) -and ($DateTime -lt $_schedule.StartTime)) {

@@ -1,18 +1,23 @@
 function Find-PodeTimer
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name
     )
 
-    return $PodeContext.Timers[$Name]
+    return $PodeContext.Timers.Items[$Name]
+}
+
+function Test-PodeTimersExist
+{
+    return (($null -ne $PodeContext.Timers) -and (($PodeContext.Timers.Enabled) -or ($PodeContext.Timers.Items.Count -gt 0)))
 }
 
 function Start-PodeTimerRunspace
 {
-    if ((Get-PodeCount $PodeContext.Timers) -eq 0) {
+    if (!(Test-PodeTimersExist)) {
         return
     }
 
@@ -22,7 +27,7 @@ function Start-PodeTimerRunspace
             $_now = [DateTime]::Now
 
             # only run timers that haven't completed, and have a next trigger in the past
-            $PodeContext.Timers.Values | Where-Object {
+            $PodeContext.Timers.Items.Values | Where-Object {
                 !$_.Completed -and ($_.OnStart -or ($_.NextTriggerTime -le $_now))
             } | ForEach-Object {
                 $_.OnStart = $false

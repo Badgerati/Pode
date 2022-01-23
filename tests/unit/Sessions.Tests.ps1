@@ -197,10 +197,10 @@ Describe 'Get-PodeSessionInMemStore' {
 
 Describe 'Set-PodeSessionInMemClearDown' {
     It 'Adds a new schedule for clearing down' {
-        $PodeContext = @{ 'Schedules' = @{}}
+        $PodeContext = @{ 'Schedules' = @{ Items = @{} } }
         Set-PodeSessionInMemClearDown
-        $PodeContext.Schedules.Count | Should Be 1
-        $PodeContext.Schedules.Contains('__pode_session_inmem_cleanup__') | Should Be $true
+        $PodeContext.Schedules.Items.Count | Should Be 1
+        $PodeContext.Schedules.Items.Contains('__pode_session_inmem_cleanup__') | Should Be $true
     }
 }
 

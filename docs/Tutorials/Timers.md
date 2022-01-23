@@ -3,17 +3,29 @@
 A Timer in Pode is a short-running async task. All timers in Pode run in the same runspace along side your main server logic - so aim to keep them as short running as possible. Timers have unique names, and iterate on a defined number of seconds.
 
 !!! warning
-    Since all timers are run within the same runspace, it is wise to keep them as short running as possible. If you require a long-running task we recommend you use [Schedules](../Schedules) instead.
+    Since all timers are run within the same runspace, it is wise to keep them as short running as possible. If you require a long-running task it's recommend to use [Schedules](../Schedules) instead.
 
 ## Create a Timer
 
-To create a new Timer in your server you use the Timer functions.
-
-To create a basic Timer, the following example will work; this will loop every 5 seconds outputting the date/time:
+You can create a new timer using [`Add-PodeTimer`](../../Functions/Timers/Add-PodeTimer). To create a basic Timer, the following example will work; this will loop every 5 seconds outputting the date/time:
 
 ```powershell
 Add-PodeTimer -Name 'date' -Interval 5 -ScriptBlock {
     Write-Host "$([DateTime]::Now)"
+}
+```
+
+Usually all timers are created within the main `Start-PodeServer` scope, however it is possible to create adhoc timers with routes/etc. If you create adhoc timers in this manor, you might notice that they don't run; this is because the Runspace that timers use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
+
+```powershell
+Start-PodeServer -EnablePool Timers {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/create-timer' -ScriptBlock {
+        Add-PodeTimer -Name 'example' -Interval 5 -ScriptBlock {
+            # logic
+        }
+    }
 }
 ```
 

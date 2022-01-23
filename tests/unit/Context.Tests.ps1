@@ -499,11 +499,11 @@ Describe 'New-PodeAutoRestartServer' {
     It 'Do not create any restart schedules' {
         Mock 'Get-PodeConfig' { return @{} }
 
-        $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
 
-        $PodeContext.Timers.Count | Should Be 0
-        $PodeContext.Schedules.Count | Should Be 0
+        $PodeContext.Timers.Items.Count | Should Be 0
+        $PodeContext.Schedules.Items.Count | Should Be 0
     }
 
     It 'Creates a timer for a period server restart' {
@@ -515,12 +515,12 @@ Describe 'New-PodeAutoRestartServer' {
             }
         } }
 
-        $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
 
-        $PodeContext.Timers.Count | Should Be 1
-        $PodeContext.Schedules.Count | Should Be 0
-        $PodeContext.Timers.Keys[0] | Should Be '__pode_restart_period__'
+        $PodeContext.Timers.Items.Count | Should Be 1
+        $PodeContext.Schedules.Items.Count | Should Be 0
+        $PodeContext.Timers.Items.Keys[0] | Should Be '__pode_restart_period__'
     }
 
     It 'Creates a schedule for a timed server restart' {
@@ -532,12 +532,12 @@ Describe 'New-PodeAutoRestartServer' {
             }
         } }
 
-        $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
 
-        $PodeContext.Timers.Count | Should Be 0
-        $PodeContext.Schedules.Count | Should Be 1
-        $PodeContext.Schedules.Keys[0] | Should Be '__pode_restart_times__'
+        $PodeContext.Timers.Items.Count | Should Be 0
+        $PodeContext.Schedules.Items.Count | Should Be 1
+        $PodeContext.Schedules.Items.Keys[0] | Should Be '__pode_restart_times__'
     }
 
     It 'Creates a schedule for a cron server restart' {
@@ -549,12 +549,12 @@ Describe 'New-PodeAutoRestartServer' {
             }
         } }
 
-        $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
 
-        $PodeContext.Timers.Count | Should Be 0
-        $PodeContext.Schedules.Count | Should Be 1
-        $PodeContext.Schedules.Keys[0] | Should Be '__pode_restart_crons__'
+        $PodeContext.Timers.Items.Count | Should Be 0
+        $PodeContext.Schedules.Items.Count | Should Be 1
+        $PodeContext.Schedules.Items.Keys[0] | Should Be '__pode_restart_crons__'
     }
 
     It 'Creates a timer and schedule for a period and cron server restart' {
@@ -567,13 +567,13 @@ Describe 'New-PodeAutoRestartServer' {
             }
         } }
 
-        $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
 
-        $PodeContext.Timers.Count | Should Be 1
-        $PodeContext.Schedules.Count | Should Be 1
-        $PodeContext.Timers.Keys[0] | Should Be '__pode_restart_period__'
-        $PodeContext.Schedules.Keys[0] | Should Be '__pode_restart_crons__'
+        $PodeContext.Timers.Items.Count | Should Be 1
+        $PodeContext.Schedules.Items.Count | Should Be 1
+        $PodeContext.Timers.Items.Keys[0] | Should Be '__pode_restart_period__'
+        $PodeContext.Schedules.Items.Keys[0] | Should Be '__pode_restart_crons__'
     }
 
     It 'Creates a timer and schedule for a period and timed server restart' {
@@ -586,13 +586,13 @@ Describe 'New-PodeAutoRestartServer' {
             }
         } }
 
-        $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
 
-        $PodeContext.Timers.Count | Should Be 1
-        $PodeContext.Schedules.Count | Should Be 1
-        $PodeContext.Timers.Keys[0] | Should Be '__pode_restart_period__'
-        $PodeContext.Schedules.Keys[0] | Should Be '__pode_restart_times__'
+        $PodeContext.Timers.Items.Count | Should Be 1
+        $PodeContext.Schedules.Items.Count | Should Be 1
+        $PodeContext.Timers.Items.Keys[0] | Should Be '__pode_restart_period__'
+        $PodeContext.Schedules.Items.Keys[0] | Should Be '__pode_restart_times__'
     }
 
     It 'Creates two schedules for a cron and timed server restart' {
@@ -605,10 +605,10 @@ Describe 'New-PodeAutoRestartServer' {
             }
         } }
 
-        $PodeContext = @{ 'Timers' = @{}; 'Schedules' = @{}; }
+        $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
 
-        $PodeContext.Timers.Count | Should Be 0
-        $PodeContext.Schedules.Count | Should Be 2
+        $PodeContext.Timers.Items.Count | Should Be 0
+        $PodeContext.Schedules.Items.Count | Should Be 2
     }
 }

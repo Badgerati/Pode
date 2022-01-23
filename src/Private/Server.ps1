@@ -172,8 +172,8 @@ function Restart-PodeInternalServer
         }
 
         $PodeContext.Server.Views.Clear()
-        $PodeContext.Timers.Clear()
-        $PodeContext.Schedules.Clear()
+        $PodeContext.Timers.Items.Clear()
+        $PodeContext.Schedules.Items.Clear()
         $PodeContext.Server.Logging.Types.Clear()
 
         # auto-importers

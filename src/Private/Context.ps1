@@ -38,6 +38,10 @@ function New-PodeContext
         [string]
         $ListenerType,
 
+        [Parameter()]
+        [string[]]
+        $EnablePool,
+
         [switch]
         $DisableTermination,
 
@@ -85,6 +89,17 @@ function New-PodeContext
 
     # list of created listeners
     $ctx.Listeners = @()
+
+    # list of timers/schedules
+    $ctx.Timers = @{
+        Enabled = ($EnablePool -icontains 'timers')
+        Items = @{}
+    }
+
+    $ctx.Schedules = @{
+        Enabled = ($EnablePool -icontains 'schedules')
+        Items = @{}
+    }
 
     # auto importing (modules, funcs, snap-ins)
     $ctx.Server.AutoImport = @{
@@ -524,6 +539,18 @@ function New-PodeRunspacePools
         Misc = 1
     }
 
+    if (!(Test-PodeTimersExist)) {
+        $threadsCounts.Timer = 0
+    }
+
+    if (!(Test-PodeSchedulesExist)) {
+        $threadsCounts.Schedule = 0
+    }
+
+    if (!(Test-PodeLoggersExist)) {
+        $threadsCounts.Log = 0
+    }
+
     # main runspace - for timers, schedules, etc
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
@@ -563,14 +590,16 @@ function New-PodeRunspacePools
         }
     }
 
-    # setup schedule runspace pool
-    $PodeContext.RunspacePools.Schedules = @{
-        Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
-        State = 'Waiting'
+    # setup schedule runspace pool -if we have any schedules
+    if (Test-PodeSchedulesExist) {
+        $PodeContext.RunspacePools.Schedules = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Schedules, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
     }
 
-    # setup gui runspace pool (only for non-ps-core)
-    if (!$PodeContext.Server.IsServerless -and !((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6))) {
+    # setup gui runspace pool (only for non-ps-core) - if gui enabled
+    if (Test-PodeGuiEnabled) {
         $PodeContext.RunspacePools.Gui = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
             State = 'Waiting'

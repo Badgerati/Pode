@@ -46,6 +46,9 @@ Open the web Server's default endpoint in your default browser.
 .PARAMETER CurrentPath
 Sets the Server's root path to be the current working path - for -FilePath only.
 
+.PARAMETER EnablePool
+Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
+
 .EXAMPLE
 Start-PodeServer { /* logic */ }
 
@@ -100,6 +103,11 @@ function Start-PodeServer
         [string]
         $ListenerType = [string]::Empty,
 
+        [Parameter()]
+        [ValidateSet('Timers', 'Schedules')]
+        [string[]]
+        $EnablePool,
+
         [switch]
         $DisableTermination,
 
@@ -151,6 +159,7 @@ function Start-PodeServer
             -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
             -ServerlessType $ServerlessType `
             -ListenerType $ListenerType `
+            -EnablePool $EnablePool `
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
             -Quiet:$Quiet
@@ -605,7 +614,7 @@ function Show-PodeGui
 
     # only valid for Windows PowerShell
     if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
-        throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7 on Windows'
+        throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7+ on Windows'
     }
 
     # enable the gui and set general settings
