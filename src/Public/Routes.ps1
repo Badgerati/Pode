@@ -612,7 +612,7 @@ function Remove-PodeRoute
     $Path = Update-PodeRoutePlaceholders -Path $Path
 
     # ensure route does exist
-    if (!$PodeContext.Server.Routes[$Method].ContainsKey($Path)) {
+    if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
         return
     }
 
@@ -662,7 +662,7 @@ function Remove-PodeStaticRoute
     $Path = Update-PodeRouteSlashes -Path $Path -Static
 
     # ensure route does exist
-    if (!$PodeContext.Server.Routes[$Method].ContainsKey($Path)) {
+    if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
         return
     }
 
@@ -712,7 +712,7 @@ function Remove-PodeSignalRoute
     $Path = Update-PodeRouteSlashes -Path $Path
 
     # ensure route does exist
-    if (!$PodeContext.Server.Routes[$Method].ContainsKey($Path)) {
+    if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
         return
     }
 
