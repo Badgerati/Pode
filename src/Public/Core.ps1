@@ -46,6 +46,9 @@ Open the web Server's default endpoint in your default browser.
 .PARAMETER CurrentPath
 Sets the Server's root path to be the current working path - for -FilePath only.
 
+.PARAMETER EnablePool
+Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
+
 .EXAMPLE
 Start-PodeServer { /* logic */ }
 
