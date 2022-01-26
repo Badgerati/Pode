@@ -67,6 +67,7 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Threads -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name Tasks -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
@@ -90,7 +91,7 @@ function New-PodeContext
     # list of created listeners
     $ctx.Listeners = @()
 
-    # list of timers/schedules
+    # list of timers/schedules/tasks
     $ctx.Timers = @{
         Enabled = ($EnablePool -icontains 'timers')
         Items = @{}
@@ -99,6 +100,12 @@ function New-PodeContext
     $ctx.Schedules = @{
         Enabled = ($EnablePool -icontains 'schedules')
         Items = @{}
+    }
+
+    $ctx.Tasks = @{
+        Enabled = ($EnablePool -icontains 'tasks')
+        Items = @{}
+        Results = @{}
     }
 
     # auto importing (modules, funcs, snap-ins)
@@ -130,6 +137,7 @@ function New-PodeContext
     $ctx.Threads = @{
         General = $Threads
         Schedules = 10
+        Tasks = 2
     }
 
     # set socket details for pode server
@@ -351,6 +359,7 @@ function New-PodeContext
         Signals = $null
         Schedules = $null
         Gui = $null
+        Tasks = $null
     }
 
     # session state
@@ -598,6 +607,14 @@ function New-PodeRunspacePools
         }
     }
 
+    # setup tasks runspace pool -if we have any tasks
+    if (Test-PodeTasksExist) {
+        $PodeContext.RunspacePools.Tasks = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Tasks, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
+    }
+
     # setup gui runspace pool (only for non-ps-core) - if gui enabled
     if (Test-PodeGuiEnabled) {
         $PodeContext.RunspacePools.Gui = @{
@@ -745,6 +762,7 @@ function New-PodeStateContext
         Add-Member -MemberType NoteProperty -Name Threads -Value $Context.Threads -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
+        Add-Member -MemberType NoteProperty -Name Tasks -Value $Context.Tasks -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |

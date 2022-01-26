@@ -514,7 +514,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks')]
         [string]
         $Type,
 
@@ -526,11 +526,18 @@ function Add-PodeRunspace
         [Parameter()]
         $Parameters,
 
+        [Parameter()]
+        [System.Management.Automation.PSDataCollection[psobject]]
+        $OutputStream = $null,
+
         [switch]
         $Forget,
 
         [switch]
-        $NoProfile
+        $NoProfile,
+
+        [switch]
+        $PassThru
     )
 
     try
@@ -554,15 +561,33 @@ function Add-PodeRunspace
             }
         }
 
+        # start the pipeline
+        if ($null -eq $OutputStream) {
+            $pipeline = $ps.BeginInvoke()
+        }
+        else {
+            $pipeline = $ps.BeginInvoke($OutputStream, $OutputStream)
+        }
+
         # do we need to remember this pipeline? sorry, what did you say?
         if ($Forget) {
-            $null = $ps.BeginInvoke()
+            $null = $pipeline
         }
+
+        # or do we need to return it for custom processing? ie: tasks
+        elseif ($PassThru) {
+            return @{
+                Pipeline = $ps
+                Handler = $pipeline
+            }
+        }
+
+        # or store it here for later clean-up
         else {
             $PodeContext.Runspaces += @{
                 Pool = $Type
-                Runspace = $ps
-                Status = $ps.BeginInvoke()
+                Pipeline = $ps
+                Handler = $pipeline
                 Stopped = $false
             }
         }
@@ -645,16 +670,19 @@ function Close-PodeRunspaces
                 try {
                     # only do this, if the pool is in error
                     if ($PodeContext.RunspacePools[$item.Pool].State -ieq 'error') {
-                        $item.Runspace.EndInvoke($item.Status)
+                        $item.Pipeline.EndInvoke($item.Handler)
                     }
                 }
                 catch {
                     "$($item.Pool) runspace failed to load: $($_.Exception.InnerException.Message)"
                 }
 
-                Close-PodeDisposable -Disposable $item.Runspace
+                Close-PodeDisposable -Disposable $item.Pipeline
                 $item.Stopped = $true
             })
+
+            #TODO: dispose of task runspaces
+            #TODO: (and schedules?)
 
             $PodeContext.Runspaces = @()
             Write-Verbose "Runspaces disposed"

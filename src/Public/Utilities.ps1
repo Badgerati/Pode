@@ -20,13 +20,15 @@ function Wait-PodeTask
     [OutputType([object])]
     param (
         [Parameter(Mandatory=$true)]
-        [System.Threading.Tasks.Task]
+        [System.Threading.Tasks.Task] #TODO: [object]
         $Task,
 
         [Parameter()]
         [int]
         $Timeout = 0
     )
+
+    #TODO: check if Hashtable or System.Threading.Tasks.Task and run appropriate logic
 
     # do we need a timeout?
     $timeoutTask = $null
