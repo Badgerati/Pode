@@ -9,7 +9,7 @@ function Start-PodeTaskHousekeeper
         return
     }
 
-    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval 10 -ScriptBlock {
+    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval 30 -ScriptBlock {
         if ($PodeContext.Tasks.Results.Count -eq 0) {
             return
         }
@@ -52,9 +52,13 @@ function Close-PodeTaskInternal
         $Result
     )
 
+    if ($null -eq $Result) {
+        return
+    }
+
     Close-PodeDisposable -Disposable $Result.Runspace.Pipeline
     Close-PodeDisposable -Disposable $Result.Result
-    $PodeContext.Tasks.Results.Remove($Result.ID)
+    $null = $PodeContext.Tasks.Results.Remove($Result.ID)
 }
 
 function Invoke-PodeInternalTask
@@ -125,5 +129,86 @@ function Invoke-PodeInternalTask
     }
     catch {
         $_ | Write-PodeErrorLog
+    }
+}
+
+function Wait-PodeNetTaskInternal
+{
+    [CmdletBinding()]
+    [OutputType([object])]
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.Threading.Tasks.Task]
+        $Task,
+
+        [Parameter()]
+        [int]
+        $Timeout = -1
+    )
+
+    # do we need a timeout?
+    $timeoutTask = $null
+    if ($Timeout -gt 0) {
+        $timeoutTask = [System.Threading.Tasks.Task]::Delay($Timeout)
+    }
+
+    # set the check task
+    if ($null -eq $timeoutTask) {
+        $checkTask = $Task
+    }
+    else {
+        $checkTask = [System.Threading.Tasks.Task]::WhenAny($Task, $timeoutTask)
+    }
+
+    # is there a cancel token to supply?
+    if (($null -eq $PodeContext) -or ($null -eq $PodeContext.Tokens.Cancellation.Token)) {
+        $checkTask.Wait()
+    }
+    else {
+        $checkTask.Wait($PodeContext.Tokens.Cancellation.Token)
+    }
+
+    # if the main task isnt complete, it timed out
+    if (($null -ne $timeoutTask) -and (!$Task.IsCompleted)) {
+        throw [System.TimeoutException]::new("Task has timed out after $($Timeout)ms")
+    }
+
+    # only return a value if the result has one
+    if ($null -ne $Task.Result) {
+        return $Task.Result
+    }
+}
+
+function Wait-PodeTaskInternal
+{
+    [CmdletBinding()]
+    [OutputType([object])]
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Task,
+
+        [Parameter()]
+        [int]
+        $Timeout = -1
+    )
+
+    # timeout needs to be in milliseconds
+    if ($Timeout -gt 0) {
+        $Timeout *= 1000
+    }
+
+    # wait for the pipeline to finish processing
+    $null = $Task.Runspace.Handler.AsyncWaitHandle.WaitOne($Timeout)
+
+    # get the current result
+    $result = $Task.Result.ReadAll()
+
+    # close the task
+    Close-PodeTask -Task $Task
+
+    # only return a value if the result has one
+    if (($null -ne $result) -and ($result.Count -gt 0)) {
+        return $result
     }
 }

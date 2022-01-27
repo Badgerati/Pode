@@ -180,7 +180,6 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Logging.Types.Clear()
 
         # clear tasks
-        #TODO: test restarting
         $PodeContext.Tasks.Items.Clear()
         $PodeContext.Tasks.Results.Clear()
 

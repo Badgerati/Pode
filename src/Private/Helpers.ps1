@@ -681,8 +681,12 @@ function Close-PodeRunspaces
                 $item.Stopped = $true
             })
 
-            #TODO: dispose of task runspaces
-            #TODO: (and schedules?)
+            # dispose of task runspaces
+            if ($PodeContext.Tasks.Results.Count -gt 0) {
+                foreach ($key in $PodeContext.Tasks.Results.Keys.Clone()) {
+                    Close-PodeTaskInternal -Result $PodeContext.Tasks.Results[$key]
+                }
+            }
 
             $PodeContext.Runspaces = @()
             Write-Verbose "Runspaces disposed"

@@ -181,6 +181,13 @@ Describe 'Restart-PodeInternalServer' {
                     key = 'value'
                 }
             }
+            Tasks = @{
+                Enabled = $true
+                Items = @{
+                    key = 'value'
+                }
+                Results = @{}
+            }
         }
 
         Restart-PodeInternalServer | Out-Null

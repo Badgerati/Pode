@@ -11,7 +11,6 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     Add-PodeTask -Name 'Test1' -ScriptBlock {
-        # start-sleep -seconds 10
         'a string'
         4
         return @{ InnerValue = 'hey look, a value!' }
@@ -24,14 +23,14 @@ Start-PodeServer {
 
     # create a new timer via a route
     Add-PodeRoute -Method Get -Path '/api/task/sync' -ScriptBlock {
-        $result = Invoke-PodeTask -Name 'Test1' -Wait #-Timeout 3
+        $result = Invoke-PodeTask -Name 'Test1' -Wait
         Write-PodeJsonResponse -Value @{ Result = $result }
     }
 
     Add-PodeRoute -Method Get -Path '/api/task/sync2' -ScriptBlock {
         $task = Invoke-PodeTask -Name 'Test1'
-        $task | Wait-PodeTask #TODO:
-        Write-PodeJsonResponse -Value @{ Result = $task.Result }
+        $result = ($task | Wait-PodeTask)
+        Write-PodeJsonResponse -Value @{ Result = $result }
     }
 
     Add-PodeRoute -Method Get -Path '/api/task/async' -ScriptBlock {

@@ -95,7 +95,6 @@
         'Add-PodeViewFolder',
 
         # utility helpers
-        'Wait-PodeTask',
         'Close-PodeDisposable',
         'Lock-PodeObject',
         'Get-PodeServerPath',
@@ -169,6 +168,18 @@
         'Edit-PodeTimer',
         'Get-PodeTimer',
         'Use-PodeTimers',
+
+        # tasks
+        'Add-PodeTask',
+        'Set-PodeTaskConcurrency',
+        'Invoke-PodeTask',
+        'Remove-PodeTask',
+        'Clear-PodeTasks',
+        'Edit-PodeTask',
+        'Get-PodeTask',
+        'Use-PodeTasks',
+        'Close-PodeTask',
+        'Wait-PodeTask',
 
         # middleware
         'Add-PodeMiddleware',
