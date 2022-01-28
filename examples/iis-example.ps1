@@ -12,9 +12,19 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
+    Add-PodeTask -Name 'Test' -ScriptBlock {
+        Start-Sleep -Seconds 10
+        'a message is never late, it arrives exactly when it means to' | Out-Default
+    }
+
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Message = 'Hello' }
         $WebEvent.Request | out-default
+    }
+
+    Add-PodeRoute -Method Get -Path '/run-task' -ScriptBlock {
+        Invoke-PodeTask -Name 'Test' | Out-Null
+        Write-PodeJsonResponse -Value @{ Result = 'jobs done' }
     }
 
 }

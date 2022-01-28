@@ -68,7 +68,7 @@ function Invoke-PodeInternalTask
         $Task,
 
         [Parameter()]
-        [object[]]
+        [hashtable]
         $ArgumentList = $null,
 
         [Parameter()]

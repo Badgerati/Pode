@@ -15,7 +15,7 @@ The script for the Task.
 A literal, or relative, path to a file containing a ScriptBlock for the Task's logic.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Task's ScriptBlock.
+A hashtable of arguments to supply to the Task's ScriptBlock.
 
 .EXAMPLE
 Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
@@ -125,7 +125,7 @@ Invoke a Task either asynchronously or synchronously, with support for returning
 The Name of the Task.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Task's ScriptBlock.
+A hashtable of arguments to supply to the Task's ScriptBlock.
 
 .PARAMETER Timeout
 A Timeout, in seconds, to abort running the task. (Default: -1 [never timeout])
@@ -254,7 +254,7 @@ function Edit-PodeTask
         $ScriptBlock,
 
         [Parameter()]
-        [object[]]
+        [hashtable]
         $ArgumentList
     )
 
@@ -375,6 +375,31 @@ function Close-PodeTask
     )
 
     Close-PodeTaskInternal -Result $Task
+}
+
+<#
+.SYNOPSIS
+Test if a running Task has completed.
+
+.DESCRIPTION
+Test if a running Task has completed.
+
+.PARAMETER Task
+The Task to be check.
+
+.EXAMPLE
+Invoke-PodeTask -Name 'Example1' | Test-PodeTaskCompleted
+#>
+function Test-PodeTaskCompleted
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable]
+        $Task
+    )
+
+    return [bool]$Task.Runspace.Handler.IsCompleted
 }
 
 <#

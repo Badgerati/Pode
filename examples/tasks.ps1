@@ -17,8 +17,9 @@ Start-PodeServer {
     }
 
     Add-PodeTask -Name 'Test2' -ScriptBlock {
+        param($value)
         Start-Sleep -Seconds 10
-        'a message is never late, it arrives when it means to' | Out-Default
+        "a $($value) is never late, it arrives exactly when it means to" | Out-Default
     }
 
     # create a new timer via a route
@@ -34,7 +35,7 @@ Start-PodeServer {
     }
 
     Add-PodeRoute -Method Get -Path '/api/task/async' -ScriptBlock {
-        Invoke-PodeTask -Name 'Test2' | Out-Null
+        Invoke-PodeTask -Name 'Test2' -ArgumentList @{ value = 'wizard' } | Out-Null
         Write-PodeJsonResponse -Value @{ Result = 'jobs done' }
     }
 

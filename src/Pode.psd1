@@ -179,6 +179,7 @@
         'Get-PodeTask',
         'Use-PodeTasks',
         'Close-PodeTask',
+        'Test-PodeTaskCompleted',
         'Wait-PodeTask',
 
         # middleware
