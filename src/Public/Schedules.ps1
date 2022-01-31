@@ -149,7 +149,7 @@ Set the maximum number of concurrent schedules.
 Set the maximum number of concurrent schedules.
 
 .PARAMETER Maximum
-The Maximum number of schdules to run.
+The Maximum number of schedules to run.
 
 .EXAMPLE
 Set-PodeScheduleConcurrency -Maximum 25

@@ -34,15 +34,18 @@ function Start-PodeInternalServer
         # load any functions
         Import-PodeFunctionsIntoRunspaceState -ScriptBlock $_script
 
-        # start the runspace pools for web, schedules, etc
-        New-PodeRunspacePools
-        Open-PodeRunspacePools
-
         # run start event hooks
         Invoke-PodeEvent -Type Start
 
+        # start timer for task housekeeping
+        Start-PodeTaskHousekeeper
+
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
+
+        # start the runspace pools for web, schedules, etc
+        New-PodeRunspacePools
+        Open-PodeRunspacePools
 
         if (!$PodeContext.Server.IsServerless -and ($PodeContext.Server.Types.Length -gt 0))
         {
@@ -175,6 +178,10 @@ function Restart-PodeInternalServer
         $PodeContext.Timers.Items.Clear()
         $PodeContext.Schedules.Items.Clear()
         $PodeContext.Server.Logging.Types.Clear()
+
+        # clear tasks
+        $PodeContext.Tasks.Items.Clear()
+        $PodeContext.Tasks.Results.Clear()
 
         # auto-importers
         $PodeContext.Server.AutoImport.Modules.ExportList = @()

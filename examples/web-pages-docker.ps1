@@ -10,6 +10,12 @@ Start-PodeServer -Threads 2 {
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
 
+    Add-PodeTask -Name 'Test' -ScriptBlock {
+        'a string'
+        4
+        return @{ InnerValue = 'hey look, a value!' }
+    }
+
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
@@ -27,6 +33,11 @@ Start-PodeServer -Threads 2 {
 
     Add-PodeRoute -Method Get -Path '/user/:userId' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ UserId = $WebEvent.Parameters['userId'] }
+    }
+
+    Add-PodeRoute -Method Get -Path '/run-task' -ScriptBlock {
+        $result = Invoke-PodeTask -Name 'Test' -Wait
+        Write-PodeJsonResponse -Value @{ Result = $result }
     }
 
 }
