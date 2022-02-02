@@ -316,6 +316,9 @@ function Start-PodeWebServer
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
                     }
+                    finally {
+                        Close-PodeDisposable -Disposable $message
+                    }
                 }
             }
             catch [System.OperationCanceledException] {}
@@ -404,6 +407,7 @@ function Start-PodeWebServer
                     }
                     finally {
                         Update-PodeServerSignalMetrics -SignalEvent $SignalEvent
+                        Close-PodeDisposable -Disposable $context
                     }
                 }
             }

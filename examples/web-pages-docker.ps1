@@ -1,5 +1,9 @@
 Import-Module /usr/local/share/powershell/Modules/Pode/Pode.psm1 -Force -ErrorAction Stop
 
+<#
+docker-compose up --force-recreate --build
+#>
+
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 
