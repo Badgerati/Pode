@@ -117,14 +117,66 @@ function Get-PodeServerSignalMetric
     return $PodeContext.Metrics.Signals.Total
 }
 
+<#
+.SYNOPSIS
+Returns the count of active requests.
+
+.DESCRIPTION
+Returns the count of all, processing, or queued active requests.
+
+.PARAMETER CountType
+The count type to return. (Default: Total)
+
+.EXAMPLE
+Get-PodeServerActiveRequestMetric
+
+.EXAMPLE
+Get-PodeServerActiveRequestMetric -CountType Queued
+#>
 function Get-PodeServerActiveRequestMetric
 {
     [CmdletBinding()]
-    param()
+    param(
+        [Parameter()]
+        [ValidateSet('Total', 'Queued', 'Processing')]
+        [string]
+        $CountType = 'Total'
+    )
 
-    return $PodeContext.Server.WebSockets.Listener.ContextsCount
+    switch ($CountType.ToLowerInvariant()) {
+        'total' {
+            return $PodeContext.Server.WebSockets.Listener.Contexts.Count
+        }
+
+        'queued' {
+            return $PodeContext.Server.WebSockets.Listener.Contexts.QueuedCount
+        }
+
+        'processing' {
+            return $PodeContext.Server.WebSockets.Listener.Contexts.ProcessingCount
+        }
+    }
 }
 
+<#
+.SYNOPSIS
+Returns the count of active signals.
+
+.DESCRIPTION
+Returns the count of all, processing, or queued active signals; for either server or client signals.
+
+.PARAMETER Type
+The type of signal to return. (Default: Total)
+
+.PARAMETER CountType
+The count type to return. (Default: Total)
+
+.EXAMPLE
+Get-PodeServerActiveSignalMetric
+
+.EXAMPLE
+Get-PodeServerActiveSignalMetric -Type Client -CountType Queued
+#>
 function Get-PodeServerActiveSignalMetric
 {
     [CmdletBinding()]
@@ -132,20 +184,61 @@ function Get-PodeServerActiveSignalMetric
         [Parameter()]
         [ValidateSet('Total', 'Server', 'Client')]
         [string]
-        $Type = 'Total'
+        $Type = 'Total',
+
+        [Parameter()]
+        [ValidateSet('Total', 'Queued', 'Processing')]
+        [string]
+        $CountType = 'Total'
     )
 
     switch ($Type.ToLowerInvariant()) {
         'total' {
-            return $PodeContext.Server.WebSockets.Listener.ServerSignalsCount + $PodeContext.Server.WebSockets.Listener.ClientSignalsCount
+            switch ($CountType.ToLowerInvariant()) {
+                'total' {
+                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.Count + $PodeContext.Server.WebSockets.Listener.ClientSignals.Count
+                }
+
+                'queued' {
+                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.QueuedCount + $PodeContext.Server.WebSockets.Listener.ClientSignals.QueuedCount
+                }
+
+                'processing' {
+                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.ProcessingCount + $PodeContext.Server.WebSockets.Listener.ClientSignals.ProcessingCount
+                }
+            }
         }
 
         'server' {
-            return $PodeContext.Server.WebSockets.Listener.ServerSignalsCount
+            switch ($CountType.ToLowerInvariant()) {
+                'total' {
+                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.Count
+                }
+
+                'queued' {
+                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.QueuedCount
+                }
+
+                'processing' {
+                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.ProcessingCount
+                }
+            }
         }
 
         'client' {
-            return $PodeContext.Server.WebSockets.Listener.ClientSignalsCount
+            switch ($CountType.ToLowerInvariant()) {
+                'total' {
+                    return $PodeContext.Server.WebSockets.Listener.ClientSignals.Count
+                }
+
+                'queued' {
+                    return $PodeContext.Server.WebSockets.Listener.ClientSignals.QueuedCount
+                }
+
+                'processing' {
+                    return $PodeContext.Server.WebSockets.Listener.ClientSignals.ProcessingCount
+                }
+            }
         }
     }
 }
