@@ -1,12 +1,12 @@
-# OAuth2
+# OAuth 2.0 & OIDC
 
-The OAuth2 authentication lets you setup authentication with other services that support OAuth2.
+The OAuth2 authentication lets you setup authentication with services that support OAuth 2.0.
 
-To use this scheme, you'll need to supply an Authorise/Token URL, as well as setup a app registration to acquire a Client ID and Secret.
+To use this scheme, you'll need to supply an Authorise/Token URL, as well as setup a app registration to acquire a Client ID and Secret. There is also support for converting an OpenID Connect Discovery URL to a Pode OAuth2 scheme.
 
 ## Setup
 
-Before using the OAuth2 authentication in Pode, you first need to register a new app within your service of choice. This registration will supply you with the required Client ID and Secret.
+Before using the OAuth2 authentication in Pode, you first need to register a new app within your service of choice. This registration will supply you with the required Client ID and Secret (if you're using [PKCE](#PKCE) then the Client Secret is optional).
 
 To setup and start using OAuth2 authentication in Pode you use `New-PodeAuthScheme -OAuth2`, and then pipe this into the [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth) function.
 
@@ -103,6 +103,34 @@ Add-PodeRoute -Method Get -Path '/login' -Authentication Login -Login -ScriptBlo
 Add-PodeRoute -Method Post -Path '/login' -Authentication Login -Login
 ```
 
+## PKCE
+
+!!! important
+    When using PKCE, you will need to enable the use of [sessions](../../../Middleware/Types/Sessions) in Pode.
+
+If your app is setup as a "Single Page Application" then you'll be able to use PKCE in your OAuth2 requests. To enable Pode's OAuth2 authentication to use PKCE, supply the `-UsePKCE` switch:
+
+```powershell
+Start-PodeServer {
+    $scheme = New-PodeAuthScheme `
+        -OAuth2 `
+        -ClientID '<clientId>' `
+        -AuthoriseUrl 'https://some-service.com/oauth2/authorize' `
+        -TokenUrl 'https://some-service.com/oauth2/token' `
+        -UsePKCE
+
+    $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+        param($user, $accessToken, $refreshToken, $response)
+
+        # check if the user is valid
+
+        return @{ User = $user }
+    }
+}
+```
+
+When using PKCE the `-ClientSecret` is optional, and doesn't need to be supplied.
+
 ## Middleware
 
 Once configured you can start using the OAuth2 Authentication to validate incoming Requests. You can either configure the validation to happen on every Route as global Middleware, or as custom Route Middleware.
@@ -124,6 +152,26 @@ Start-PodeServer {
     }
 }
 ```
+
+## OIDC Discovery
+
+If the provider you're wanting to use OAuth2 for supports OpenID Connect Discovery, and has an appropriate `/.well-known/openid-configuration` endpoint, then you can use this with [`ConvertFrom-PodeOIDCDiscovery`](../../../../Functions/Authentication/ConvertFrom-PodeOIDCDiscovery) to automatically build a Pode OAuth2 scheme.
+
+For example, if you were using Google OAuth2 with PKCE, then the following example would build an OAuth2 scheme:
+
+```powershell
+$scheme = ConvertFrom-PodeOIDCDiscovery -Url 'https://accounts.google.com' -ClientId '<client_id>' -UsePKCE
+
+$scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+    param($user, $accessToken, $refreshToken, $response)
+
+    # check if the user is valid
+
+    return @{ User = $user }
+}
+```
+
+If the `-Url` supplied doesn't end with `/.well-known/openid-configuration`, then Pode will append it to the URL automatically.
 
 ## Full Example
 

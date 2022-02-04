@@ -7,12 +7,17 @@ function Find-PodeSchedule
         $Name
     )
 
-    return $PodeContext.Schedules[$Name]
+    return $PodeContext.Schedules.Items[$Name]
+}
+
+function Test-PodeSchedulesExist
+{
+    return (($null -ne $PodeContext.Schedules) -and (($PodeContext.Schedules.Enabled) -or ($PodeContext.Schedules.Items.Count -gt 0)))
 }
 
 function Start-PodeScheduleRunspace
 {
-    if ((Get-PodeCount $PodeContext.Schedules) -eq 0) {
+    if (!(Test-PodeSchedulesExist)) {
         return
     }
 
@@ -20,7 +25,7 @@ function Start-PodeScheduleRunspace
         # select the schedules that trigger on-start
         $_now = [DateTime]::Now
 
-        $PodeContext.Schedules.Values |
+        $PodeContext.Schedules.Items.Values |
             Where-Object {
                 $_.OnStart
             } | ForEach-Object {
@@ -33,12 +38,12 @@ function Start-PodeScheduleRunspace
         # first, sleep for a period of time to get to 00 seconds (start of minute)
         Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
 
-        while ($true)
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
         {
             $_now = [DateTime]::Now
 
             # select the schedules that need triggering
-            $PodeContext.Schedules.Values |
+            $PodeContext.Schedules.Items.Values |
                 Where-Object {
                     !$_.Completed -and
                     (($null -eq $_.StartTime) -or ($_.StartTime -le $_now)) -and
@@ -56,7 +61,7 @@ function Start-PodeScheduleRunspace
         }
     }
 
-    Add-PodeRunspace -Type Main -ScriptBlock $script
+    Add-PodeRunspace -Type Main -ScriptBlock $script -NoProfile
 }
 
 function Complete-PodeInternalSchedules
@@ -68,7 +73,7 @@ function Complete-PodeInternalSchedules
     )
 
     # add any schedules to remove that have exceeded their end time
-    $Schedules = @($PodeContext.Schedules.Values |
+    $Schedules = @($PodeContext.Schedules.Items.Values |
         Where-Object { (($null -ne $_.EndTime) -and ($_.EndTime -lt $Now)) })
 
     if (($null -eq $Schedules) -or ($Schedules.Length -eq 0)) {
@@ -123,7 +128,11 @@ function Invoke-PodeInternalScheduleLogic
 {
     param(
         [Parameter(Mandatory=$true)]
-        $Schedule
+        $Schedule,
+
+        [Parameter()]
+        [hashtable]
+        $ArgumentList = $null
     )
 
     try {
@@ -135,12 +144,19 @@ function Invoke-PodeInternalScheduleLogic
             }
         }
 
-        # add any custom args as params
+        # add any schedule args
         foreach ($key in $Schedule.Arguments.Keys) {
             $parameters[$key] = $Schedule.Arguments[$key]
         }
 
-        # add any using variables as params
+        # add adhoc schedule invoke args
+        if (($null -ne $ArgumentList) -and ($ArgumentList.Count -gt 0)) {
+            foreach ($key in $ArgumentList.Keys) {
+                $parameters[$key] = $ArgumentList[$key]
+            }
+        }
+
+        # add any using variables
         if ($null -ne $Schedule.UsingVariables) {
             foreach ($usingVar in $Schedule.UsingVariables) {
                 $parameters[$usingVar.NewName] = $usingVar.Value

@@ -1,14 +1,12 @@
 # Schedules
 
-A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, but this can be changed by using the [`Set-PodeScheduleConcurrency`](../../Functions/Schedules/Set-PodeScheduleConcurrency) function.
+A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, but this can be changed by using [`Set-PodeScheduleConcurrency`](../../Functions/Schedules/Set-PodeScheduleConcurrency).
 
 Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions), basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a defined end time.
 
 ## Create a Schedule
 
-To create a new Schedule in your server you use the Schedule functions.
-
-To create a basic Schedule, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:
+You can create a new schedule using [`Add-PodeSchedule`](../../Functions/Schedules/Add-PodeSchedule). To create a basic Schedule, the following example will work; this will trigger at '00:05' every Tuesday outputting the current date/time:
 
 ```powershell
 Add-PodeSchedule -Name 'date' -Cron '5 0 * * TUE' -ScriptBlock {
@@ -29,6 +27,20 @@ You can also supply multiple cron expressions for the same Schedule. For example
 ```powershell
 Add-PodeSchedule -Name 'date' -Cron @('@minutely', '@hourly') -ScriptBlock {
     Write-Host "$([DateTime]::Now)"
+}
+```
+
+Usually all schedules are created within the main `Start-PodeServer` scope, however it is possible to create adhoc schedules with routes/etc. If you create adhoc schedules in this manor, you might notice that they don't run; this is because the Runspace that schedules use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
+
+```powershell
+Start-PodeServer -EnablePool Schedules {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/create-schedule' -ScriptBlock {
+        Add-PodeSchedule -Name 'example' -Cron '@minutely' -ScriptBlock {
+            # logic
+        }
+    }
 }
 ```
 
@@ -128,6 +140,20 @@ You can manually trigger a schedule by using [`Invoke-PodeSchedule`](../../Funct
 ```powershell
 Invoke-PodeSchedule -Name 'schedule-name'
 ```
+
+You can also pass further optional arguments that will be supplied to the schedules's scriptblock by using `-ArgumentList`, which is a hashtable of parameters that will be supplied:
+
+```powershell
+Add-PodeSchedule -Name 'date' -Cron '@minutely' -ScriptBlock {
+    param($Date)
+    Write-Host $Date
+}
+
+Invoke-PodeSchedule -Name 'date' -ArgumentList @{ Date = [DateTime]::Now }
+```
+
+!!! note
+    Remember that names of items in the hashtable, and the name of the parameter in the scriptblock must be identical.
 
 ## Schedule Object
 

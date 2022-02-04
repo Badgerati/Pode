@@ -13,11 +13,13 @@ Start-PodeServer {
     # schedule minutely using predefined cron
     $message = 'Hello, world!'
     Add-PodeSchedule -Name 'predefined' -Cron '@minutely' -Limit 2 -ScriptBlock {
-        param($Event)
+        param($Event, $Message1, $Message2)
         $using:message | Out-Default
         Get-PodeSchedule -Name 'predefined' | Out-Default
         "Last: $($Event.Sender.LastTriggerTime)" | Out-Default
         "Next: $($Event.Sender.NextTriggerTime)" | Out-Default
+        "Message1: $($Message1)" | Out-Default
+        "Message2: $($Message2)" | Out-Default
     }
 
     Add-PodeSchedule -Name 'from-file' -Cron '@minutely' -FilePath './scripts/schedule.ps1'
@@ -45,7 +47,10 @@ Start-PodeServer {
 
     # adhoc invoke a schedule's logic
     Add-PodeRoute -Method Get -Path '/api/run' -ScriptBlock {
-        Invoke-PodeSchedule -Name 'predefined'
+        Invoke-PodeSchedule -Name 'predefined' -ArgumentList @{
+            Message1 = 'Hello!'
+            Message2 = 'Bye!'
+        }
     }
 
 }

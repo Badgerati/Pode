@@ -9,6 +9,7 @@ function Start-PodeWebServer
 
     # setup any inbuilt middleware
     $inbuilt_middleware = @(
+        (Get-PodeSecurityMiddleware),
         (Get-PodeAccessMiddleware),
         (Get-PodeLimitMiddleware),
         (Get-PodePublicMiddleware),
@@ -42,6 +43,7 @@ function Start-PodeWebServer
             Url = $_.Url
             Protocol = $_.Protocol
             Type = $_.Type
+            Pool = $_.Runspace.PoolName
         }
 
         # add endpoint to list
@@ -314,6 +316,9 @@ function Start-PodeWebServer
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
                     }
+                    finally {
+                        Close-PodeDisposable -Disposable $message
+                    }
                 }
             }
             catch [System.OperationCanceledException] {}
@@ -402,6 +407,7 @@ function Start-PodeWebServer
                     }
                     finally {
                         Update-PodeServerSignalMetrics -SignalEvent $SignalEvent
+                        Close-PodeDisposable -Disposable $context
                     }
                 }
             }
@@ -448,14 +454,19 @@ function Start-PodeWebServer
         $waitType = 'Signals'
     }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # browse to the first endpoint, if flagged
     if ($Browse) {
         Start-Process $endpoints[0].Url
     }
 
-    return @($endpoints.Url)
+    return @(foreach ($endpoint in $endpoints) {
+        @{
+            Url  = $endpoint.Url
+            Pool = $endpoint.Pool
+        }
+    })
 }
 
 function New-PodeListener

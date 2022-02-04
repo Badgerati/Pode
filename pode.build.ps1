@@ -9,12 +9,12 @@ param (
 
 $Versions = @{
     Pester = '4.8.0'
-    MkDocs = '1.1.2'
+    MkDocs = '1.2.3'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
     DotNetCore = '3.1.5'
     Checksum = '0.2.0'
-    MkDocsTheme = '7.1.6'
+    MkDocsTheme = '8.1.2'
     PlatyPS = '0.14.0'
 }
 
@@ -324,11 +324,11 @@ task DocsHelpBuild DocsDeps, {
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
             $line = $_
 
-            while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>[^(])') {
+            while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
                 $updated = $true
                 $name = $Matches['name']
                 $char = $Matches['char']
-                $line = ($line -ireplace "\[``$($name)``\][^(]", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
+                $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
             }
 
             $line

@@ -81,7 +81,7 @@ function Add-PodeTimer
     Test-PodeIsServerless -FunctionName 'Add-PodeTimer' -ThrowError
 
     # ensure the timer doesn't already exist
-    if ($PodeContext.Timers.ContainsKey($Name)) {
+    if ($PodeContext.Timers.Items.ContainsKey($Name)) {
         throw "[Timer] $($Name): Timer already defined"
     }
 
@@ -119,7 +119,8 @@ function Add-PodeTimer
     }
 
     # add the timer
-    $PodeContext.Timers[$Name] = @{
+    $PodeContext.Timers.Enabled = $true
+    $PodeContext.Timers.Items[$Name] = @{
         Name = $Name
         Interval = $Interval
         Limit = $Limit
@@ -146,6 +147,9 @@ Adhoc invoke a Timer's logic outside of its defined interval. This invocation do
 .PARAMETER Name
 The Name of the Timer.
 
+.PARAMETER ArgumentList
+An array of arguments to supply to the Timer's ScriptBlock.
+
 .EXAMPLE
 Invoke-PodeTimer -Name 'timer-name'
 #>
@@ -155,16 +159,20 @@ function Invoke-PodeTimer
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
-        $Name
+        $Name,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList = $null
     )
 
     # ensure the timer exists
-    if (!$PodeContext.Timers.ContainsKey($Name)) {
+    if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
         throw "Timer '$($Name)' does not exist"
     }
 
     # run timer logic
-    Invoke-PodeInternalTimer -Timer ($PodeContext.Timers[$Name])
+    Invoke-PodeInternalTimer -Timer $PodeContext.Timers.Items[$Name] -ArgumentList $ArgumentList
 }
 
 <#
@@ -189,7 +197,7 @@ function Remove-PodeTimer
         $Name
     )
 
-    $null = $PodeContext.Timers.Remove($Name)
+    $null = $PodeContext.Timers.Items.Remove($Name)
 }
 
 <#
@@ -207,7 +215,7 @@ function Clear-PodeTimers
     [CmdletBinding()]
     param()
 
-    $PodeContext.Timers.Clear()
+    $PodeContext.Timers.Items.Clear()
 }
 
 <#
@@ -254,11 +262,11 @@ function Edit-PodeTimer
     )
 
     # ensure the timer exists
-    if (!$PodeContext.Timers.ContainsKey($Name)) {
+    if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
         throw "Timer '$($Name)' does not exist"
     }
 
-    $_timer = $PodeContext.Timers[$Name]
+    $_timer = $PodeContext.Timers.Items[$Name]
 
     # edit interval if supplied
     if ($Interval -gt 0) {
@@ -305,7 +313,7 @@ function Get-PodeTimer
         $Name
     )
 
-    $timers = $PodeContext.Timers.Values
+    $timers = $PodeContext.Timers.Items.Values
 
     # further filter by timer names
     if (($null -ne $Name) -and ($Name.Length -gt 0)) {

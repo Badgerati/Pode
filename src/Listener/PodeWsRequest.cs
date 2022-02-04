@@ -44,7 +44,7 @@ namespace Pode
 
         public PodeClientSignal NewClientSignal()
         {
-            return new PodeClientSignal(WebSocket, Body);
+            return new PodeClientSignal(WebSocket, Body, Context.Listener);
         }
 
         protected override bool Parse(byte[] bytes)

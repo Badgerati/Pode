@@ -34,15 +34,18 @@ function Start-PodeInternalServer
         # load any functions
         Import-PodeFunctionsIntoRunspaceState -ScriptBlock $_script
 
-        # start the runspace pools for web, schedules, etc
-        New-PodeRunspacePools
-        Open-PodeRunspacePools
-
         # run start event hooks
         Invoke-PodeEvent -Type Start
 
+        # start timer for task housekeeping
+        Start-PodeTaskHousekeeper
+
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
+
+        # start the runspace pools for web, schedules, etc
+        New-PodeRunspacePools
+        Open-PodeRunspacePools
 
         if (!$PodeContext.Server.IsServerless -and ($PodeContext.Server.Types.Length -gt 0))
         {
@@ -83,6 +86,7 @@ function Start-PodeInternalServer
 
         # - normal
         else {
+            # start each server type
             foreach ($_type in $PodeContext.Server.Types) {
                 switch ($_type.ToUpperInvariant())
                 {
@@ -99,6 +103,24 @@ function Start-PodeInternalServer
                     }
                 }
             }
+
+            # now go back through, and wait for each server type's runspace pool to be ready
+            foreach ($pool in ($endpoints.Pool | Sort-Object -Unique)) {
+                $start = [datetime]::Now
+                Write-Verbose "Waiting for the $($pool) RunspacePool to be Ready"
+
+                # wait
+                while ($PodeContext.RunspacePools[$pool].State -ieq 'Waiting') {
+                    Start-Sleep -Milliseconds 100
+                }
+
+                Write-Verbose "$($pool) RunspacePool $($PodeContext.RunspacePools[$pool].State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+
+                # errored?
+                if ($PodeContext.RunspacePools[$pool].State -ieq 'error') {
+                    throw "$($pool) RunspacePool failed to load"
+                }
+            }
         }
 
         # set the start time of the server (start and after restart)
@@ -108,7 +130,7 @@ function Start-PodeInternalServer
         if ($endpoints.Length -gt 0) {
             Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
-                Write-PodeHost "`t- $($_)" -ForegroundColor Yellow
+                Write-PodeHost "`t- $($_.Url)" -ForegroundColor Yellow
             }
         }
     }
@@ -136,6 +158,9 @@ function Restart-PodeInternalServer
         # remove all of the pode temp drives
         Remove-PodePSDrives
 
+        # clear-up modules
+        $PodeContext.Server.Modules.Clear()
+
         # clear up timers, schedules and loggers
         $PodeContext.Server.Routes.Keys.Clone() | ForEach-Object {
             $PodeContext.Server.Routes[$_].Clear()
@@ -150,9 +175,13 @@ function Restart-PodeInternalServer
         }
 
         $PodeContext.Server.Views.Clear()
-        $PodeContext.Timers.Clear()
-        $PodeContext.Schedules.Clear()
+        $PodeContext.Timers.Items.Clear()
+        $PodeContext.Schedules.Items.Clear()
         $PodeContext.Server.Logging.Types.Clear()
+
+        # clear tasks
+        $PodeContext.Tasks.Items.Clear()
+        $PodeContext.Tasks.Results.Clear()
 
         # auto-importers
         $PodeContext.Server.AutoImport.Modules.ExportList = @()
@@ -163,8 +192,15 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Middleware = @()
         $PodeContext.Server.Endware = @()
 
-        # clear misc
+        # clear body parsers
         $PodeContext.Server.BodyParsers.Clear()
+
+        # clear security headers
+        $PodeContext.Server.Security.Headers.Clear()
+
+        $PodeContext.Server.Security.Cache.Keys.Clone() | ForEach-Object {
+            $PodeContext.Server.Security.Cache[$_].Clear()
+        }
 
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()

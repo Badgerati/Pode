@@ -1,9 +1,14 @@
+function Test-PodeGuiEnabled
+{
+    return ($PodeContext.Server.Gui.Enabled -and
+        !$PodeContext.Server.IsServerless -and
+        !$PodeContext.Server.IsIIS -and
+        !$PodeContext.Server.IsHeroku)
+}
+
 function Start-PodeGuiRunspace {
     # do nothing if gui not enabled, or running as serverless
-    if (!$PodeContext.Server.Gui.Enabled -or
-        $PodeContext.Server.IsServerless -or
-        $PodeContext.Server.IsIIS -or
-        $PodeContext.Server.IsHeroku) {
+    if (!(Test-PodeGuiEnabled)) {
         return
     }
 
@@ -22,7 +27,7 @@ function Start-PodeGuiRunspace {
             # poll the server for a response
             $count = 0
 
-            while ($true) {
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 try {
                     $null = Invoke-WebRequest -Method Get -Uri $uri -UseBasicParsing -ErrorAction Stop
                     if (!$?) {
@@ -116,6 +121,7 @@ function Start-PodeGuiRunspace {
             }
 
             # display the form
+            Write-PodeHost "Opening GUI" -ForegroundColor Yellow
             $null = $form.ShowDialog()
             Start-Sleep -Seconds 1
         }

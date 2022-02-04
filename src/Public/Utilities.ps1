@@ -1,68 +1,5 @@
 <#
 .SYNOPSIS
-Waits for a task to finish, and returns a result if there is one.
-
-.DESCRIPTION
-Waits for a task to finish, and returns a result if there is one.
-
-.PARAMETER Task
-The task to wait on.
-
-.PARAMETER Timeout
-An optional Timeout in milliseconds.
-
-.EXAMPLE
-$context = Wait-PodeTask -Task $listener.GetContextAsync()
-#>
-function Wait-PodeTask
-{
-    [CmdletBinding()]
-    [OutputType([object])]
-    param (
-        [Parameter(Mandatory=$true)]
-        [System.Threading.Tasks.Task]
-        $Task,
-
-        [Parameter()]
-        [int]
-        $Timeout = 0
-    )
-
-    # do we need a timeout?
-    $timeoutTask = $null
-    if ($Timeout -gt 0) {
-        $timeoutTask = [System.Threading.Tasks.Task]::Delay($Timeout)
-    }
-
-    # set the check task
-    if ($null -eq $timeoutTask) {
-        $checkTask = $Task
-    }
-    else {
-        $checkTask = [System.Threading.Tasks.Task]::WhenAny($Task, $timeoutTask)
-    }
-
-    # is there a cancel token to supply?
-    if (($null -eq $PodeContext) -or ($null -eq $PodeContext.Tokens.Cancellation.Token)) {
-        $checkTask.Wait()
-    }
-    else {
-        $checkTask.Wait($PodeContext.Tokens.Cancellation.Token)
-    }
-
-    # if the main task isnt complete, it timed out
-    if (($null -ne $timeoutTask) -and (!$Task.IsCompleted)) {
-        throw [System.TimeoutException]::new("Task has timed out after $($Timeout)ms")
-    }
-
-    # only return a value if the result has one
-    if ($null -ne $Task.Result) {
-        return $Task.Result
-    }
-}
-
-<#
-.SYNOPSIS
 Dispose and close streams, tokens, and other Disposables.
 
 .DESCRIPTION
@@ -494,7 +431,7 @@ function Import-PodeModule
                 $Path = (Get-ChildItem ([System.IO.Path]::Combine($modulePath, '*', "$($Name).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
             }
             else {
-                $Path = (Get-Module -Name $Name -ListAvailable | Select-Object -First 1).Path
+                $Path = Find-PodeModuleFile -Name $Name -ListAvailable
             }
         }
 
@@ -975,6 +912,24 @@ function Test-PodeIsHeroku
     param()
 
     return $PodeContext.Server.IsHeroku
+}
+
+<#
+.SYNOPSIS
+Returns whether or not the server is being hosted behind another application.
+
+.DESCRIPTION
+Returns whether or not the server is being hosted behind another application, such as Heroku or IIS.
+
+.EXAMPLE
+if (Test-PodeIsHosted) { }
+#>
+function Test-PodeIsHosted
+{
+    [CmdletBinding()]
+    param()
+
+    return ((Test-PodeIsIIS) -or (Test-PodeIsHeroku))
 }
 
 <#

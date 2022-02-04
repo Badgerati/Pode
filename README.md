@@ -1,4 +1,4 @@
-# <img src="https://github.com/Badgerati/Pode/blob/develop/images/icon.png?raw=true" width="25" /> Pode
+# <img src="https://github.com/Badgerati/Pode/blob/develop/images/icon-transparent.png?raw=true" width="30" style="margin-bottom:-5px;margin-right:-3px" /> Pode
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
 [![Documentation](https://img.shields.io/github/v/release/badgerati/pode?label=docs)](https://badgerati.github.io/Pode)

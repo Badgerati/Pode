@@ -18,23 +18,9 @@ namespace Pode
 
         private IList<PodeSocket> Sockets;
 
-        private BlockingCollection<PodeContext> Contexts;
-        public int ContextsCount
-        {
-            get => Contexts.Count;
-        }
-
-        private BlockingCollection<PodeServerSignal> ServerSignals;
-        public int ServerSignalsCount
-        {
-            get => ServerSignals.Count;
-        }
-
-        private BlockingCollection<PodeClientSignal> ClientSignals;
-        public int ClientSignalsCount
-        {
-            get => ClientSignals.Count;
-        }
+        public PodeListenerQueue<PodeContext> Contexts { get; private set; }
+        public PodeListenerQueue<PodeServerSignal> ServerSignals { get; private set; }
+        public PodeListenerQueue<PodeClientSignal> ClientSignals { get; private set; }
 
         private int _requestTimeout = 30;
         public int RequestTimeout
@@ -66,9 +52,10 @@ namespace Pode
 
             Sockets = new List<PodeSocket>();
             WebSockets = new Dictionary<string, PodeWebSocket>();
-            Contexts = new BlockingCollection<PodeContext>();
-            ServerSignals = new BlockingCollection<PodeServerSignal>();
-            ClientSignals = new BlockingCollection<PodeClientSignal>();
+
+            Contexts = new PodeListenerQueue<PodeContext>();
+            ServerSignals = new PodeListenerQueue<PodeServerSignal>();
+            ClientSignals = new PodeListenerQueue<PodeClientSignal>();
         }
 
         public void Add(PodeSocket socket)
@@ -92,24 +79,22 @@ namespace Pode
 
         public PodeContext GetContext(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return (cancellationToken == default(CancellationToken)
-                ? Contexts.Take()
-                : Contexts.Take(cancellationToken));
+            return Contexts.Get(cancellationToken);
         }
 
         public Task<PodeContext> GetContextAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return (cancellationToken == default(CancellationToken)
-                ? Task.Factory.StartNew(() => GetContext())
-                : Task.Factory.StartNew(() => GetContext(cancellationToken), cancellationToken));
+            return Contexts.GetAsync(cancellationToken);
         }
 
         public void AddContext(PodeContext context)
         {
-            lock (Contexts)
-            {
-                Contexts.Add(context);
-            }
+            Contexts.Add(context);
+        }
+
+        public void RemoveProcessingContext(PodeContext context)
+        {
+            Contexts.RemoveProcessing(context);
         }
 
         public void AddWebSocket(PodeWebSocket webSocket)
@@ -129,46 +114,42 @@ namespace Pode
 
         public PodeServerSignal GetServerSignal(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return (cancellationToken == default(CancellationToken)
-                ? ServerSignals.Take()
-                : ServerSignals.Take(cancellationToken));
+            return ServerSignals.Get(cancellationToken);
         }
 
         public Task<PodeServerSignal> GetServerSignalAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return (cancellationToken == default(CancellationToken)
-                ? Task.Factory.StartNew(() => GetServerSignal())
-                : Task.Factory.StartNew(() => GetServerSignal(cancellationToken), cancellationToken));
+            return ServerSignals.GetAsync(cancellationToken);
         }
 
         public void AddServerSignal(string value, string path, string clientId)
         {
-            lock (ServerSignals)
-            {
-                ServerSignals.Add(new PodeServerSignal(value, path, clientId));
-            }
+            ServerSignals.Add(new PodeServerSignal(value, path, clientId, this));
+        }
+
+        public void RemoveProcessingServerSignal(PodeServerSignal signal)
+        {
+            ServerSignals.RemoveProcessing(signal);
         }
 
         public PodeClientSignal GetClientSignal(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return (cancellationToken == default(CancellationToken)
-                ? ClientSignals.Take()
-                : ClientSignals.Take(cancellationToken));
+            return ClientSignals.Get(cancellationToken);
         }
 
         public Task<PodeClientSignal> GetClientSignalAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return (cancellationToken == default(CancellationToken)
-                ? Task.Factory.StartNew(() => GetClientSignal())
-                : Task.Factory.StartNew(() => GetClientSignal(cancellationToken), cancellationToken));
+            return ClientSignals.GetAsync(cancellationToken);
         }
 
         public void AddClientSignal(PodeClientSignal signal)
         {
-            lock (ClientSignals)
-            {
-                ClientSignals.Add(signal);
-            }
+            ClientSignals.Add(signal);
+        }
+
+        public void RemoveProcessingClientSignal(PodeClientSignal signal)
+        {
+            ClientSignals.RemoveProcessing(signal);
         }
 
         public void Start()
@@ -209,6 +190,64 @@ namespace Pode
 
             // disposed
             IsDisposed = true;
+        }
+    }
+
+    public class PodeListenerQueue<T>
+    {
+        private BlockingCollection<T> Items;
+        private List<T> ProcessingItems;
+
+        public int Count { get => Items.Count + ProcessingItems.Count; }
+        public int QueuedCount { get => Items.Count; }
+        public int ProcessingCount { get => ProcessingItems.Count; }
+
+        public PodeListenerQueue()
+        {
+            Items = new BlockingCollection<T>();
+            ProcessingItems = new List<T>();
+        }
+
+        public T Get(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var item = (cancellationToken == default(CancellationToken)
+                ? Items.Take()
+                : Items.Take(cancellationToken));
+
+            lock (ProcessingItems)
+            {
+                ProcessingItems.Add(item);
+            }
+
+            return item;
+        }
+
+        public Task<T> GetAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return (cancellationToken == default(CancellationToken)
+                ? Task.Factory.StartNew(() => Get())
+                : Task.Factory.StartNew(() => Get(cancellationToken), cancellationToken));
+        }
+
+        public void Add(T item)
+        {
+            lock (Items)
+            {
+                Items.Add(item);
+            }
+        }
+
+        public void RemoveProcessing(T item)
+        {
+            lock (ProcessingItems)
+            {
+                ProcessingItems.Remove(item);
+            }
+        }
+
+        public T[] ToArray()
+        {
+            return Items.ToArray();
         }
     }
 }

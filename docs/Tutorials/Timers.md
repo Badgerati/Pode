@@ -3,17 +3,41 @@
 A Timer in Pode is a short-running async task. All timers in Pode run in the same runspace along side your main server logic - so aim to keep them as short running as possible. Timers have unique names, and iterate on a defined number of seconds.
 
 !!! warning
-    Since all timers are run within the same runspace, it is wise to keep them as short running as possible. If you require a long-running task we recommend you use [Schedules](../Schedules) instead.
+    Since all timers are run within the same runspace, it is wise to keep them as short running as possible. If you require a long-running task it's recommend to use [Schedules](../Schedules) instead.
 
 ## Create a Timer
 
-To create a new Timer in your server you use the Timer functions.
-
-To create a basic Timer, the following example will work; this will loop every 5 seconds outputting the date/time:
+You can create a new timer using [`Add-PodeTimer`](../../Functions/Timers/Add-PodeTimer). To create a basic Timer, the following example will work; this will loop every 5 seconds outputting the date/time:
 
 ```powershell
 Add-PodeTimer -Name 'date' -Interval 5 -ScriptBlock {
     Write-Host "$([DateTime]::Now)"
+}
+```
+
+Usually all timers are created within the main `Start-PodeServer` scope, however it is possible to create adhoc timers with routes/etc. If you create adhoc timers in this manor, you might notice that they don't run; this is because the Runspace that timers use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
+
+```powershell
+Start-PodeServer -EnablePool Timers {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/create-timer' -ScriptBlock {
+        Add-PodeTimer -Name 'example' -Interval 5 -ScriptBlock {
+            # logic
+        }
+    }
+}
+```
+
+## Arguments
+
+You can supply custom arguments to be passed to your timers by using the `-ArgumentList` parameter. This parameter takes an array of objects, which will be splatted onto the timer's scriptblock:
+
+```powershell
+Add-PodeTimer -Name 'example' -Interval 5 -ArgumentList 'Item1', 'Item2' -ScriptBlock {
+    param($i1, $i2)
+
+    # $i1 will be 'Item1'
 }
 ```
 
@@ -79,6 +103,30 @@ You can manually trigger a timer by using [`Invoke-PodeTimer`](../../Functions/T
 
 ```powershell
 Invoke-PodeTimer -Name 'timer-name'
+```
+
+You can also pass further optional arguments that will be supplied to the timer's scriptblock by using `-ArgumentList`, which is an array of objects that will be splatted:
+
+```powershell
+Add-PodeTimer -Name 'date' -Interval 5 -ScriptBlock {
+    param($date)
+    Write-Host $date
+}
+
+Invoke-PodeTimer -Name 'date' -ArgumentList ([DateTime]::Now)
+```
+
+If you supply an `-ArgumentList` on `Add-PodeTimer` and on `Invoke-PodeTimer`, then the main timer arguments are splatted first:
+
+```powershell
+Add-PodeTimer -Name 'example' -Interval 5 -ArgumentList 'Item1', 'Item2' -ScriptBlock {
+    param($i1, $i2, $a1, $a2)
+
+    # $i1 will be 'Item1'
+    # $a1 will be 'Arg1'
+}
+
+Invoke-PodeTimer -Name 'date' -ArgumentList 'Arg1', 'Arg2'
 ```
 
 ## Timer Object

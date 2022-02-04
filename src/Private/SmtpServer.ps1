@@ -171,8 +171,11 @@ function Start-PodeSmtpServer
         }
     }
 
-    Add-PodeRunspace -Type Smtp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener }
+    Add-PodeRunspace -Type Smtp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running
-    return @("smtp://$($endpoint.FriendlyName):$($port)")
+    return @(@{
+        Url  = "smtp://$($endpoint.FriendlyName):$($port)"
+        Pool = $endpoint.Runspace.PoolName
+    })
 }

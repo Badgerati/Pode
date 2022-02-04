@@ -327,6 +327,8 @@ namespace Pode
         {
             lock (_lockable)
             {
+                Listener.RemoveProcessingContext(this);
+
                 if (IsClosed)
                 {
                     Request.Dispose();

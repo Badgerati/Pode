@@ -1,13 +1,24 @@
 Import-Module /usr/local/share/powershell/Modules/Pode/Pode.psm1 -Force -ErrorAction Stop
 
+<#
+docker-compose up --force-recreate --build
+#>
+
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 
     # listen on *:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    Set-PodeSecurity -Type Simple
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
+
+    Add-PodeTask -Name 'Test' -ScriptBlock {
+        'a string'
+        4
+        return @{ InnerValue = 'hey look, a value!' }
+    }
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
@@ -26,6 +37,11 @@ Start-PodeServer -Threads 2 {
 
     Add-PodeRoute -Method Get -Path '/user/:userId' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ UserId = $WebEvent.Parameters['userId'] }
+    }
+
+    Add-PodeRoute -Method Get -Path '/run-task' -ScriptBlock {
+        $result = Invoke-PodeTask -Name 'Test' -Wait
+        Write-PodeJsonResponse -Value @{ Result = $result }
     }
 
 }

@@ -20,7 +20,7 @@
     Author = 'Matthew Kelly (Badgerati)'
 
     # Copyright statement for this module
-    Copyright = 'Copyright (c) 2017-2021 Matthew Kelly (Badgerati), licensed under the MIT License.'
+    Copyright = 'Copyright (c) 2017-2022 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
     Description = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
@@ -58,9 +58,11 @@
 
         # headers
         'Add-PodeHeader',
+        'Add-PodeHeaderBulk',
         'Test-PodeHeader',
         'Get-PodeHeader',
         'Set-PodeHeader',
+        'Set-PodeHeaderBulk',
         'Test-PodeHeaderSigned',
 
         # state
@@ -93,7 +95,6 @@
         'Add-PodeViewFolder',
 
         # utility helpers
-        'Wait-PodeTask',
         'Close-PodeDisposable',
         'Lock-PodeObject',
         'Get-PodeServerPath',
@@ -123,6 +124,7 @@
         'Get-PodeLockable',
         'Test-PodeLockable',
         'Out-PodeVariable',
+        'Test-PodeIsHosted',
 
         # routes
         'Add-PodeRoute',
@@ -167,6 +169,19 @@
         'Get-PodeTimer',
         'Use-PodeTimers',
 
+        # tasks
+        'Add-PodeTask',
+        'Set-PodeTaskConcurrency',
+        'Invoke-PodeTask',
+        'Remove-PodeTask',
+        'Clear-PodeTasks',
+        'Edit-PodeTask',
+        'Get-PodeTask',
+        'Use-PodeTasks',
+        'Close-PodeTask',
+        'Test-PodeTaskCompleted',
+        'Wait-PodeTask',
+
         # middleware
         'Add-PodeMiddleware',
         'Remove-PodeMiddleware',
@@ -186,6 +201,7 @@
         # auth
         'New-PodeAuthScheme',
         'New-PodeAuthAzureADScheme',
+        'New-PodeAuthTwitterScheme',
         'Add-PodeAuth',
         'Get-PodeAuth',
         'Clear-PodeAuth',
@@ -198,6 +214,7 @@
         'ConvertTo-PodeJwt',
         'ConvertFrom-PodeJwt',
         'Use-PodeAuth',
+        'ConvertFrom-PodeOIDCDiscovery',
 
         # logging
         'New-PodeLoggingMethod',
@@ -263,7 +280,31 @@
         'Test-PodeEvent',
         'Get-PodeEvent',
         'Clear-PodeEvent',
-        'Use-PodeEvents'
+        'Use-PodeEvents',
+
+        # Security
+        'Add-PodeSecurityHeader',
+        'Add-PodeSecurityContentSecurityPolicy',
+        'Add-PodeSecurityPermissionsPolicy',
+        'Remove-PodeSecurity',
+        'Remove-PodeSecurityAccessControl',
+        'Remove-PodeSecurityContentSecurityPolicy',
+        'Remove-PodeSecurityContentTypeOptions',
+        'Remove-PodeSecurityCrossOrigin',
+        'Remove-PodeSecurityFrameOptions',
+        'Remove-PodeSecurityHeader',
+        'Remove-PodeSecurityPermissionsPolicy',
+        'Remove-PodeSecurityReferrerPolicy',
+        'Remove-PodeSecurityStrictTransportSecurity',
+        'Set-PodeSecurity',
+        'Set-PodeSecurityAccessControl',
+        'Set-PodeSecurityContentSecurityPolicy',
+        'Set-PodeSecurityContentTypeOptions',
+        'Set-PodeSecurityCrossOrigin',
+        'Set-PodeSecurityFrameOptions',
+        'Set-PodeSecurityPermissionsPolicy',
+        'Set-PodeSecurityReferrerPolicy',
+        'Set-PodeSecurityStrictTransportSecurity'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
