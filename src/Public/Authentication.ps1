@@ -944,8 +944,15 @@ function Add-PodeAuthWindowsAd
         [switch]
         $NoGroups,
 
+        [Parameter(ParameterSetName='Groups')]
+        [switch]
+        $DirectGroups,
+
         [switch]
         $OpenLDAP,
+
+        [switch]
+        $ADModule,
 
         [switch]
         $SuccessUseOrigin
@@ -964,6 +971,20 @@ function Add-PodeAuthWindowsAd
     # if we're using sessions, ensure sessions have been setup
     if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
         throw 'Sessions are required to use session persistent authentication'
+    }
+
+    # if AD module set, ensure we're on windows and the module is available, then import/export it
+    if ($ADModule) {
+        if (!(Test-PodeIsWindows)) {
+            throw 'Active Directory module only available on Windows'
+        }
+
+        if ($null -eq (Get-Module -Name ActiveDirectory -ListAvailable -ErrorAction Ignore)) {
+            throw 'Active Directory module is not installed'
+        }
+
+        Import-Module -Name ActiveDirectory -Force -ErrorAction Stop
+        Export-PodeModule -Name ActiveDirectory
     }
 
     # set server name if not passed
@@ -1000,7 +1021,9 @@ function Add-PodeAuthWindowsAd
             Users = $Users
             Groups = $Groups
             NoGroups = $NoGroups
+            DirectGroups = $DirectGroups
             OpenLDAP = $OpenLDAP
+            ADModule = $ADModule
             ScriptBlock = @{
                 Script = $ScriptBlock
                 UsingVariables = $usingVars
@@ -1207,6 +1230,13 @@ function Add-PodeAuthIIS
         [switch]
         $NoGroups,
 
+        [Parameter(ParameterSetName='Groups')]
+        [switch]
+        $DirectGroups,
+
+        [switch]
+        $ADModule,
+
         [switch]
         $NoLocalCheck,
 
@@ -1267,6 +1297,8 @@ function Add-PodeAuthIIS
             Users = $Users
             Groups = $Groups
             NoGroups = $NoGroups
+            DirectGroups = $DirectGroups
+            ADModule = $ADModule
             NoLocalCheck = $NoLocalCheck
             ScriptBlock = @{
                 Script = $ScriptBlock
