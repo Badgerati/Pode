@@ -12,7 +12,7 @@ $Versions = @{
     MkDocs = '1.2.3'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
-    DotNetCore = '3.1.5'
+    DotNet = '6.0.1'
     Checksum = '0.2.0'
     MkDocsTheme = '8.1.2'
     PlatyPS = '0.14.0'
@@ -147,7 +147,7 @@ task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
 task BuildDeps {
     # install dotnet
     if (!(Test-PodeBuildCommand 'dotnet')) {
-        Invoke-PodeBuildInstall 'dotnetcore' $Versions.DotNetCore
+        Invoke-PodeBuildInstall 'dotnet' $Versions.DotNet
     }
 }
 
