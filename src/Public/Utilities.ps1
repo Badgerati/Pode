@@ -685,7 +685,7 @@ function Test-PodeIsEmpty
         return ($Value.Length -eq 0)
     }
 
-    if ($Value -is [hashtable]) {
+    if (($Value -is [hashtable]) -or ($Value -is [System.Collections.Specialized.OrderedDictionary])) {
         return ($Value.Count -eq 0)
     }
 

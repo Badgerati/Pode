@@ -983,7 +983,7 @@ function Remove-PodeNullKeysFromHashtable
             continue
         }
 
-        if ($Hashtable[$key] -is [string] -and [string]::IsNullOrEmpty($Hashtable[$key])) {
+        if (($Hashtable[$key] -is [string]) -and [string]::IsNullOrEmpty($Hashtable[$key])) {
             $null = $Hashtable.Remove($key)
             continue
         }
@@ -995,7 +995,7 @@ function Remove-PodeNullKeysFromHashtable
             }
 
             foreach ($item in $Hashtable[$key]) {
-                if ($item -is [hashtable]) {
+                if (($item -is [hashtable]) -or ($item -is [System.Collections.Specialized.OrderedDictionary])) {
                     $item | Remove-PodeNullKeysFromHashtable
                 }
             }
@@ -1003,7 +1003,7 @@ function Remove-PodeNullKeysFromHashtable
             continue
         }
 
-        if ($Hashtable[$key] -is [hashtable]) {
+        if (($Hashtable[$key] -is [hashtable]) -or ($Hashtable[$key] -is [System.Collections.Specialized.OrderedDictionary])) {
             $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
             continue
         }
