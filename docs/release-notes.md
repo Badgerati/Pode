@@ -1,5 +1,30 @@
 # Release Notes
 
+## v2.6.0
+
+```plain
+### Features
+* #893: Add async/sync Task support
+* #894: Add helper support and middleware for security HTTP headers
+
+### Enhancements
+* #867: Add support for PKCE on OAuth2 authentication
+* #868: Add support for building OAuth2 schemes from OpenID Connect Discovery URLs
+* #869: Update support to also get the count of currently processing requests
+* #891: Add `-ArgumentList` to `Invoke-PodeTimer` and `Invoke-PodeSchedule`
+
+### Bugs
+* #905: Fix for route creation and matching order
+* #917: Fix for OpenAPI definition not being generated correctly
+
+### Performance
+* #896: Open and close RunspacePools in parallel - speeds server start-up and close
+* #910: Only create RunspacePools when they're needed
+
+### Packaging
+* #871: Compile the PodeListener into netstandard2.0, and now net6.0
+```
+
 ## v2.5.2
 
 ```plain
