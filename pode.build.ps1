@@ -12,7 +12,7 @@ $Versions = @{
     MkDocs = '1.2.3'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
-    DotNetCore = '3.1.5'
+    DotNet = '6.0.1'
     Checksum = '0.2.0'
     MkDocsTheme = '8.1.2'
     PlatyPS = '0.14.0'
@@ -147,7 +147,7 @@ task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
 task BuildDeps {
     # install dotnet
     if (!(Test-PodeBuildCommand 'dotnet')) {
-        Invoke-PodeBuildInstall 'dotnetcore' $Versions.DotNetCore
+        Invoke-PodeBuildInstall 'dotnet' $Versions.DotNet
     }
 }
 
@@ -192,8 +192,11 @@ task Build BuildDeps, {
     Push-Location ./src/Listener
 
     try {
-        dotnet build --configuration Release
-        dotnet publish --configuration Release --self-contained --output ../Libs
+        dotnet build --configuration Release --self-contained --framework netstandard2.0
+        dotnet publish --configuration Release --self-contained --framework netstandard2.0 --output ../Libs/netstandard2.0
+
+        dotnet build --configuration Release --self-contained --framework net6.0
+        dotnet publish --configuration Release --self-contained --framework net6.0 --output ../Libs/net6.0
     }
     finally {
         Pop-Location
@@ -249,6 +252,7 @@ task Pack -If (Test-PodeBuildIsWindows) Build, {
 task Test Build, TestDeps, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
+        Remove-Module Pester -Force -ErrorAction Ignore
         Import-Module Pester -Force -RequiredVersion $Versions.Pester
     }
 
