@@ -21,6 +21,26 @@ function Start-PodeScheduleRunspace
         return
     }
 
+    Add-PodeSchedule -Name '__pode_schedule_housekeeper__' -Cron '@minutely' -ScriptBlock {
+        if ($PodeContext.Schedules.Processes.Count -eq 0) {
+            return
+        }
+
+        foreach ($key in $PodeContext.Schedules.Processes.Keys.Clone()) {
+            $process = $PodeContext.Schedules.Processes[$key]
+
+            # is it completed?
+            if (!$process.Runspace.Handler.IsCompleted) {
+                continue
+            }
+
+            # dispose and remove the schedule process
+            Close-PodeScheduleInternal -Process $process
+        }
+
+        $process = $null
+    }
+
     $script = {
         # select the schedules that trigger on-start
         $_now = [DateTime]::Now
@@ -62,6 +82,22 @@ function Start-PodeScheduleRunspace
     }
 
     Add-PodeRunspace -Type Main -ScriptBlock $script -NoProfile
+}
+
+function Close-PodeScheduleInternal
+{
+    param(
+        [Parameter()]
+        [hashtable]
+        $Process
+    )
+
+    if ($null -eq $Process) {
+        return
+    }
+
+    Close-PodeDisposable -Disposable $Process.Runspace.Pipeline
+    $null = $PodeContext.Schedules.Processes.Remove($Process.ID)
 }
 
 function Complete-PodeInternalSchedules
@@ -163,7 +199,14 @@ function Invoke-PodeInternalScheduleLogic
             }
         }
 
-        Add-PodeRunspace -Type Schedules -ScriptBlock (($Schedule.Script).GetNewClosure()) -Parameters $parameters -Forget
+        $name = New-PodeGuid
+        $runspace = Add-PodeRunspace -Type Schedules -ScriptBlock (($Schedule.Script).GetNewClosure()) -Parameters $parameters -PassThru
+
+        $PodeContext.Schedules.Processes[$name] = @{
+            ID = $name
+            Schedule = $Schedule.Name
+            Runspace = $runspace
+        }
     }
     catch {
         $_ | Write-PodeErrorLog
