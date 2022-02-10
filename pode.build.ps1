@@ -183,7 +183,7 @@ task DocsDeps ChocoDeps, {
 # Building
 #>
 
-# Synopsis: Build the .NET Core Listener
+# Synopsis: Build the .NET Listener
 task Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null

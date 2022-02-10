@@ -16,6 +16,7 @@
 ### Bugs
 * #905: Fix for route creation and matching order
 * #917: Fix for OpenAPI definition not being generated correctly
+* #932: Dispose of completed Schedule runspaces/pipelines
 
 ### Performance
 * #896: Open and close RunspacePools in parallel - speeds server start-up and close
