@@ -180,6 +180,7 @@ Describe 'Restart-PodeInternalServer' {
                 Items = @{
                     key = 'value'
                 }
+                Processes = @{}
             }
             Tasks = @{
                 Enabled = $true

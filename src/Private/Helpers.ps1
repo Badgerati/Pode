@@ -681,6 +681,13 @@ function Close-PodeRunspaces
                 $item.Stopped = $true
             })
 
+            # dispose of schedule runspaces
+            if ($PodeContext.Schedules.Processes.Count -gt 0) {
+                foreach ($key in $PodeContext.Schedules.Processes.Keys.Clone()) {
+                    Close-PodeScheduleInternal -Process $PodeContext.Schedules.Processes[$key]
+                }
+            }
+
             # dispose of task runspaces
             if ($PodeContext.Tasks.Results.Count -gt 0) {
                 foreach ($key in $PodeContext.Tasks.Results.Keys.Clone()) {
@@ -707,6 +714,9 @@ function Close-PodeRunspaces
                 throw $err
             }
         }
+
+        # garbage collect
+        [GC]::Collect()
     }
     catch {
         $_ | Write-PodeErrorLog

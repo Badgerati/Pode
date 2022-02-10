@@ -41,6 +41,8 @@ function Start-PodeTaskHousekeeper
                 Close-PodeTaskInternal -Result $result
             }
         }
+
+        $result = $null
     }
 }
 

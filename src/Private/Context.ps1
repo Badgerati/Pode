@@ -100,6 +100,7 @@ function New-PodeContext
     $ctx.Schedules = @{
         Enabled = ($EnablePool -icontains 'schedules')
         Items = @{}
+        Processes = @{}
     }
 
     $ctx.Tasks = @{
@@ -642,6 +643,8 @@ function Open-PodeRunspacePools
             continue
         }
 
+        $item.Pool.ThreadOptions = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread
+        $item.Pool.CleanupInterval = [timespan]::FromMinutes(5)
         $item.Result = $item.Pool.BeginOpen($null, $null)
     }
 

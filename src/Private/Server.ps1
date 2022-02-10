@@ -176,8 +176,11 @@ function Restart-PodeInternalServer
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
-        $PodeContext.Schedules.Items.Clear()
         $PodeContext.Server.Logging.Types.Clear()
+
+        # clear schedules
+        $PodeContext.Schedules.Items.Clear()
+        $PodeContext.Schedules.Processes.Clear()
 
         # clear tasks
         $PodeContext.Tasks.Items.Clear()
