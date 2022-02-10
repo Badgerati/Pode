@@ -22,6 +22,9 @@ Start-PodeServer -ScriptBlock {
 }
 ```
 
+!!! note
+    If you're starting your server with `pode start`, you'll need to use `-Scope Global` on `Import-Module`.
+
 ### Disable
 
 If you don't need any modules, or want to stop the auto-importing from occurring, you can use disable it via the `server.psd1` [configuration file](../Configuration):

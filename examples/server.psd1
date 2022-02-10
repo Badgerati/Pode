@@ -43,6 +43,9 @@
             Functions = @{
                 ExportOnly = $true
             }
+            Modules = @{
+                ExportOnly = $true
+            }
         }
         Request = @{
             Timeout = 30

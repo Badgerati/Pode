@@ -52,8 +52,14 @@ $code = (Get-PodeRoute -Method Get -Path '/about').Metrics.Requests.StatusCodes[
 
 ## Active
 
-You can retrieve the current count of active requests by using [`Get-PodeServerActiveRequestMetric`](../../../Functions/Metrics/Get-PodeServerActiveRequestMetric). Active requests are ones that are queued internally, ready to be processed:
+You can retrieve the current count of active requests by using [`Get-PodeServerActiveRequestMetric`](../../../Functions/Metrics/Get-PodeServerActiveRequestMetric). Active requests are ones that are queued, or are currently being processed:
 
 ```powershell
 $activeReqs = Get-PodeServerActiveRequestMetric
+```
+
+The default is to return the count of all requests, but you can filter a count of queued or processing via `-CountType`:
+
+```powershell
+$queuedReqs = Get-PodeServerActiveRequestMetric -CountType Queued
 ```

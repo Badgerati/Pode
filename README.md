@@ -81,7 +81,7 @@ docker pull badgerati/pode
 
 Pull Requests, Bug Reports and Feature Requests are welcome! Feel free to help out with Issues and Projects!
 
-To run the unit tests, run the following command from the root of the repository (this will build Pode and, if needed, auto-install Pester/.NET Core):
+To run the unit tests, run the following command from the root of the repository (this will build Pode and, if needed, auto-install Pester/.NET):
 
 ```powershell
 Invoke-Build Test

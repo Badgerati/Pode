@@ -5,6 +5,7 @@ Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 $PodeContext = @{
     Server = $null
     Metrics = @{ Server = @{ StartTime = [datetime]::UtcNow } }
+    RunspacePools = @{}
 }
 
 Describe 'Start-PodeInternalServer' {
@@ -26,6 +27,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Import-PodeSnapinsIntoRunspaceState { }
     Mock Import-PodeFunctionsIntoRunspaceState { }
     Mock Invoke-PodeEvent { }
+    Mock Write-Verbose { }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {} }
@@ -102,33 +104,33 @@ Describe 'Restart-PodeInternalServer' {
             };
             Server = @{
                 Routes = @{
-                    GET = @{ 'key' = 'value' };
-                    POST = @{ 'key' = 'value' };
-                };
+                    GET = @{ 'key' = 'value' }
+                    POST = @{ 'key' = 'value' }
+                }
                 Handlers = @{
-                    TCP = @{ };
-                };
+                    TCP = @{ }
+                }
                 Logging = @{
-                    Types = @{ 'key' = 'value' };
-                };
-                Middleware = @{ 'key' = 'value' };
-                Endpoints = @{ 'key' = 'value' };
-                EndpointsMap = @{ 'key' = 'value' };
-                Endware = @{ 'key' = 'value' };
+                    Types = @{ 'key' = 'value' }
+                }
+                Middleware = @{ 'key' = 'value' }
+                Endpoints = @{ 'key' = 'value' }
+                EndpointsMap = @{ 'key' = 'value' }
+                Endware = @{ 'key' = 'value' }
                 ViewEngine = @{
-                    Type = 'pode';
-                    Extension = 'pode';
-                    Script = $null;
-                    IsDynamic = $true;
-                };
-                Cookies = @{};
-                Sessions = @{ 'key' = 'value' };
-                Authentications = @{ 'key' = 'value' };
-                State = @{ 'key' = 'value' };
+                    Type = 'pode'
+                    Extension = 'pode'
+                    Script = $null
+                    IsDynamic = $true
+                }
+                Cookies = @{}
+                Sessions = @{ 'key' = 'value' }
+                Authentications = @{ 'key' = 'value' }
+                State = @{ 'key' = 'value' }
                 Output = @{
                     Variables = @{ 'key' = 'value' }
                 }
-                Configuration = @{ 'key' = 'value' };
+                Configuration = @{ 'key' = 'value' }
                 Sockets = @{
                     Listeners = @()
                     Queues = @{
@@ -149,18 +151,44 @@ Describe 'Restart-PodeInternalServer' {
                     Snapins = @{ Exported = @() }
                     Functions = @{ Exported = @() }
                 }
-                Views = @{ 'key' = 'value' };
+                Views = @{ 'key' = 'value' }
                 Events = @{
                     Start = @{}
                 }
-            };
+                Modules = @{}
+                Security = @{
+                    Headers = @{}
+                    Cache = @{
+                        ContentSecurity  = @{}
+                        PermissionsPolicy = @{}
+                    }
+                }
+            }
             Metrics = @{
                 Server = @{
                     RestartCount = 0
                 }
             }
-            Timers = @{ 'key' = 'value' }
-            Schedules = @{ 'key' = 'value' };
+            Timers = @{
+                Enabled = $true
+                Items = @{
+                    key = 'value'
+                }
+            }
+            Schedules = @{
+                Enabled = $true
+                Items = @{
+                    key = 'value'
+                }
+                Processes = @{}
+            }
+            Tasks = @{
+                Enabled = $true
+                Items = @{
+                    key = 'value'
+                }
+                Results = @{}
+            }
         }
 
         Restart-PodeInternalServer | Out-Null
@@ -174,8 +202,8 @@ Describe 'Restart-PodeInternalServer' {
         $PodeContext.Server.State.Count | Should Be 0
         $PodeContext.Server.Configuration | Should Be $null
 
-        $PodeContext.Timers.Count | Should Be 0
-        $PodeContext.Schedules.Count | Should Be 0
+        $PodeContext.Timers.Items.Count | Should Be 0
+        $PodeContext.Schedules.Items.Count | Should Be 0
 
         $PodeContext.Server.ViewEngine.Type | Should Be 'html'
         $PodeContext.Server.ViewEngine.Extension | Should Be 'html'

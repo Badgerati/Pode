@@ -28,13 +28,6 @@
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '5.0'
 
-    # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @(
-        'System.Web',
-        'System.Net.Http',
-        './Libs/Pode.dll'
-    )
-
     # Functions to export from this Module
     FunctionsToExport = @(
         # cookies
@@ -58,9 +51,11 @@
 
         # headers
         'Add-PodeHeader',
+        'Add-PodeHeaderBulk',
         'Test-PodeHeader',
         'Get-PodeHeader',
         'Set-PodeHeader',
+        'Set-PodeHeaderBulk',
         'Test-PodeHeaderSigned',
 
         # state
@@ -93,7 +88,6 @@
         'Add-PodeViewFolder',
 
         # utility helpers
-        'Wait-PodeTask',
         'Close-PodeDisposable',
         'Lock-PodeObject',
         'Get-PodeServerPath',
@@ -168,6 +162,19 @@
         'Get-PodeTimer',
         'Use-PodeTimers',
 
+        # tasks
+        'Add-PodeTask',
+        'Set-PodeTaskConcurrency',
+        'Invoke-PodeTask',
+        'Remove-PodeTask',
+        'Clear-PodeTasks',
+        'Edit-PodeTask',
+        'Get-PodeTask',
+        'Use-PodeTasks',
+        'Close-PodeTask',
+        'Test-PodeTaskCompleted',
+        'Wait-PodeTask',
+
         # middleware
         'Add-PodeMiddleware',
         'Remove-PodeMiddleware',
@@ -187,6 +194,7 @@
         # auth
         'New-PodeAuthScheme',
         'New-PodeAuthAzureADScheme',
+        'New-PodeAuthTwitterScheme',
         'Add-PodeAuth',
         'Get-PodeAuth',
         'Clear-PodeAuth',
@@ -199,6 +207,7 @@
         'ConvertTo-PodeJwt',
         'ConvertFrom-PodeJwt',
         'Use-PodeAuth',
+        'ConvertFrom-PodeOIDCDiscovery',
 
         # logging
         'New-PodeLoggingMethod',
@@ -264,7 +273,31 @@
         'Test-PodeEvent',
         'Get-PodeEvent',
         'Clear-PodeEvent',
-        'Use-PodeEvents'
+        'Use-PodeEvents',
+
+        # Security
+        'Add-PodeSecurityHeader',
+        'Add-PodeSecurityContentSecurityPolicy',
+        'Add-PodeSecurityPermissionsPolicy',
+        'Remove-PodeSecurity',
+        'Remove-PodeSecurityAccessControl',
+        'Remove-PodeSecurityContentSecurityPolicy',
+        'Remove-PodeSecurityContentTypeOptions',
+        'Remove-PodeSecurityCrossOrigin',
+        'Remove-PodeSecurityFrameOptions',
+        'Remove-PodeSecurityHeader',
+        'Remove-PodeSecurityPermissionsPolicy',
+        'Remove-PodeSecurityReferrerPolicy',
+        'Remove-PodeSecurityStrictTransportSecurity',
+        'Set-PodeSecurity',
+        'Set-PodeSecurityAccessControl',
+        'Set-PodeSecurityContentSecurityPolicy',
+        'Set-PodeSecurityContentTypeOptions',
+        'Set-PodeSecurityCrossOrigin',
+        'Set-PodeSecurityFrameOptions',
+        'Set-PodeSecurityPermissionsPolicy',
+        'Set-PodeSecurityReferrerPolicy',
+        'Set-PodeSecurityStrictTransportSecurity'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

@@ -39,13 +39,13 @@ If you have a question, feel free to either ask it on [GitHub Issues](https://gi
 
 ## About Pode
 
-Pode is a PowerShell framework/web server. The aim is to make it purely PowerShell, with *no* external dependencies - other than what is available in .NET Core. This allows Pode to be very lightweight, and just work out-of-the-box when the module is installed on any platform.
+Pode is a PowerShell framework/web server. The aim is to make it purely PowerShell, with *no* external dependencies - other than what is available in .NET. This allows Pode to be very lightweight, and just work out-of-the-box when the module is installed on any platform.
 
-The only current exception to the "all PowerShell" rule is the socket listener Pode uses. This listener is a part of Pode, but is written in .NET Core.
+The only current exception to the "all PowerShell" rule is the socket listener Pode uses. This listener is a part of Pode, but is written in .NET.
 
 ## How to Contribute
 
-When contributing, please try and raise an issue first before working on the issue. This allows us, and other people, to comment and help. If you raise an issue that you're intending on doing yourself, please state this within the issue - to above somebody else picking the issue up.
+When contributing, please try and raise an issue first before working on the issue. This allows us, and other people, to comment and help. If you raise an issue that you're intending on doing yourself, please state this within the issue - to avoid somebody else picking the issue up.
 
 ### Issues
 
@@ -104,6 +104,10 @@ To see the docs you'll need to have the [`Invoke-Build`](https://github.com/nigh
 ```powershell
 Invoke-Build Docs
 ```
+
+### Importing
+
+When editing Pode and you need to import the local dev module for testing, you will need to import the `Pode.psm1` in the `/src` directory. This is the same as importing Pode's `.psd1` file, but will avoid errors for an invalid version number.
 
 ## Styleguide
 

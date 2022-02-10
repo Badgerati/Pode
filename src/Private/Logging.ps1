@@ -324,15 +324,24 @@ function Add-PodeRequestLogEndware
     }
 }
 
+function Test-PodeLoggersExist
+{
+    if (($null -eq $PodeContext.Server.Logging) -or ($null -eq $PodeContext.Server.Logging.Types)) {
+        return $false
+    }
+
+    return (($PodeContext.Server.Logging.Types.Count -gt 0) -or ($PodeContext.Server.Logging.Enabled))
+}
+
 function Start-PodeLoggingRunspace
 {
     # skip if there are no loggers configured, or logging is disabled
-    if (($PodeContext.Server.Logging.Types.Count -eq 0) -or (!$PodeContext.Server.Logging.Enabled)) {
+    if (!(Test-PodeLoggersExist)) {
         return
     }
 
     $script = {
-        while ($true)
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
         {
             # if there are no logs to process, just sleep for a few seconds - but after checking the batch
             if ($PodeContext.LogsToProcess.Count -eq 0) {

@@ -354,6 +354,22 @@ function Get-PodeCookieMiddleware
     })
 }
 
+function Get-PodeSecurityMiddleware
+{
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_security__' -ScriptBlock {
+        # are there any security headers setup?
+        if ($PodeContext.Server.Security.Headers.Count -eq 0) {
+            return $true
+        }
+
+        # add security headers
+        Set-PodeHeaderBulk -Value $PodeContext.Server.Security.Headers
+
+        # continue to next middleware/route
+        return $true
+    })
+}
+
 function Initialize-PodeIISMiddleware
 {
     # do nothing if not iis
