@@ -10,11 +10,12 @@ To enable Windows AD authentication you can use the [`Add-PodeAuthWindowsAd`](..
 
 ```powershell
 Start-PodeServer {
+    Enable-PodeSessionMiddleware -Duration 120 -Extend
     New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login'
 }
 ```
 
-### User Object
+## User Object
 
 The User object returned, and accessible on Routes, and other functions via `$WebEvent.Auth.User`, will contain the following information:
 
@@ -38,48 +39,72 @@ Add-PodeRoute -Method Get -Path '/info' -Authentication 'Login' -ScriptBlock {
 }
 ```
 
-### Server
+## Providers
+
+The default Provider which Pode uses for Windows AD is Directory Services on Windows, or OpenLDAP on *nix environments. However, you can force OpenLDAP or Windows, or you can specify to use the ActiveDirectory module on Windows using the `-OpenLDAP` or `-ADModule` switches:
+
+```powershell
+# force OpenLDAP
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -OpenLDAP
+
+# force ActiveDirectory
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -ADModule
+```
+
+When you use `-ADModule` switch, Pode will automatically import the module for you.
+
+## Groups
+
+By default Pode will retrieve all groups that a user is a member of, recursively. This can at times cause performance issues if you have a lot of groups in your domain.
+
+If you need groups, but you only need the direct groups a user is a member of then you can specify `-DirectGroups`. Or, if you don't need the groups at all, you can specify `-NoGroups`:
+
+```powershell
+# direct groups only
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -DirectGroups
+
+# no groups
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -NoGroups
+```
+
+## Server
 
 If you want to supply a custom DNS domain, then you can supply the `-Fqdn` parameter:
 
 ```powershell
-Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com'
-}
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com'
 ```
 
-### Domain
+## Domain
 
 For OpenLDAP Pode will automatically retrieve the NetBIOS to be prepended on the username, ie: `<domain>\<username>`. This is automatically generate by used the first part of the DNS server's FQDN, for example if your server's FQDN was `test.example.com` then Pode would set the NetBIOS as `test`.
 
 You can use a custom domain NetBIOS by suppliying the `-Domain` parameter:
 
 ```powershell
-Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com' -Domain 'testdomain'
-}
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Fqdn 'test.example.com' -Domain 'testdomain'
 ```
 
-### SearchBase
+## SearchBase
 
 When authenticating users via OpenLDAP, the default base distinguished name searched from will be the server root, ie: `DC=test,DC=example,DC=com`. You can refine this by supplying an optional `-SearchBase`, that should be the full distinguished name:
 
 For example, the below will search in `OU=CustomUsers,DC=test,DC=example,DC=com`:
 
 ```powershell
-Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -SearchBase 'OU=CustomUsers,DC=test,DC=example,DC=com'
-}
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -SearchBase 'OU=CustomUsers,DC=test,DC=example,DC=com'
 ```
+
+## Allow
+
+You can supply an optional array of either User/Group names, or both; and if the user being authenticated is in the list (or on of their groups are) they will be allowed.
 
 ### Groups
 
 You can supply a list of group names to validate that users are a member of them in AD. If you supply multiple group names, the user only needs to be a member of one of the groups. You can supply the list of groups to the function's `-Groups` parameter as an array - the list is not case-sensitive:
 
 ```powershell
-Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @('admins', 'devops')
-}
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Groups @('admins', 'devops')
 ```
 
 If an user being authenticated is not in one of these groups, then a 401 is returned.
@@ -89,14 +114,12 @@ If an user being authenticated is not in one of these groups, then a 401 is retu
 You can supply a list of authorised usernames to validate a user's access, after credentials are validated, and instead of of checking AD groups. You can supply the list of usernames to the function's `-Users` parameter as an array - the list is not case-sensitive:
 
 ```powershell
-Start-PodeServer {
-    New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
-}
+New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -Users @('jsnow', 'rsanchez')
 ```
 
 If an user being authenticated is not one of the allowed users, then a 401 is returned.
 
-### Additional Validation
+## Additional Validation
 
 Similar to the normal [`Add-PodeAuth`](../../../../Functions/Authentication/Add-PodeAuth), [`Add-PodeAuthWindowsAd`](../../../../Functions/Authentication/Add-PodeAuthWindowsAd) can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.
 

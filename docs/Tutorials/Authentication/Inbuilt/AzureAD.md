@@ -140,6 +140,9 @@ Start-PodeServer {
     Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
+    # setup session details
+    Enable-PodeSessionMiddleware -Duration 120 -Extend
+
     # setup authentication to validate a user
     $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>'
 
