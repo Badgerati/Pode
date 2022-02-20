@@ -870,8 +870,14 @@ If supplied, authenticated users will not be stored in sessions, and sessions wi
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
 
+.PARAMETER DirectGroups
+If supplied, only a user's direct groups will be retrieved rather than all groups recursively.
+
 .PARAMETER OpenLDAP
-If supplied, and on Windows, OpenLDAP will be used instead.
+If supplied, and on Windows, OpenLDAP will be used instead (this is the default for Linux/MacOS).
+
+.PARAMETER ADModule
+If supplied, and on Windows, the ActiveDirectory module will be used instead.
 
 .PARAMETER SuccessUseOrigin
 If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
@@ -975,16 +981,7 @@ function Add-PodeAuthWindowsAd
 
     # if AD module set, ensure we're on windows and the module is available, then import/export it
     if ($ADModule) {
-        if (!(Test-PodeIsWindows)) {
-            throw 'Active Directory module only available on Windows'
-        }
-
-        if ($null -eq (Get-Module -Name ActiveDirectory -ListAvailable -ErrorAction Ignore)) {
-            throw 'Active Directory module is not installed'
-        }
-
-        Import-Module -Name ActiveDirectory -Force -ErrorAction Stop
-        Export-PodeModule -Name ActiveDirectory
+        Import-PodeAuthADModule
     }
 
     # set server name if not passed
@@ -1022,8 +1019,7 @@ function Add-PodeAuthWindowsAd
             Groups = $Groups
             NoGroups = $NoGroups
             DirectGroups = $DirectGroups
-            OpenLDAP = $OpenLDAP
-            ADModule = $ADModule
+            Provider = (Get-PodeAuthADProvider -OpenLDAP:$OpenLDAP -ADModule:$ADModule)
             ScriptBlock = @{
                 Script = $ScriptBlock
                 UsingVariables = $usingVars
@@ -1172,6 +1168,12 @@ If supplied, authenticated users will not be stored in sessions, and sessions wi
 .PARAMETER NoGroups
 If supplied, groups will not be retrieved for the user in AD.
 
+.PARAMETER DirectGroups
+If supplied, only a user's direct groups will be retrieved rather than all groups recursively.
+
+.PARAMETER ADModule
+If supplied, and on Windows, the ActiveDirectory module will be used instead.
+
 .PARAMETER NoLocalCheck
 If supplied, Pode will not at attempt to retrieve local User/Group information for the authenticated user.
 
@@ -1254,6 +1256,11 @@ function Add-PodeAuthIIS
         throw "IIS Authentication method already defined: $($Name)"
     }
 
+    # if AD module set, ensure we're on windows and the module is available, then import/export it
+    if ($ADModule) {
+        Import-PodeAuthADModule
+    }
+
     # if we have a scriptblock, deal with using vars
     if ($null -ne $ScriptBlock) {
         $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
@@ -1298,7 +1305,7 @@ function Add-PodeAuthIIS
             Groups = $Groups
             NoGroups = $NoGroups
             DirectGroups = $DirectGroups
-            ADModule = $ADModule
+            Provider = (Get-PodeAuthADProvider -ADModule:$ADModule)
             NoLocalCheck = $NoLocalCheck
             ScriptBlock = @{
                 Script = $ScriptBlock
