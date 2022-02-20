@@ -1,5 +1,19 @@
 # Release Notes
 
+## v2.6.1
+
+```plain
+### Bugs
+* #915: Fix regex issue preventing Pode listening on IPv6 addresses
+* #934: Fix relative path issue when using `-FilePath` on `Start-PodeServer`
+
+### Performance
+* #913: Add new `-DirectGroups`/`-ADModule` switch for WindowsAD authentication
+
+### Documentation
+* #940: Add a list of available options for server.psd1 files to configuration docs page
+```
+
 ## v2.6.0
 
 ```plain
