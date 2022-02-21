@@ -129,7 +129,7 @@ function Start-PodeServer
     try {
         # if we have a filepath, resolve it - and extract a root path from it
         if ($PSCmdlet.ParameterSetName -ieq 'file') {
-            $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath
+            $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath -JoinRoot -RootPath $MyInvocation.PSScriptRoot
 
             # if not already supplied, set root path
             if ([string]::IsNullOrWhiteSpace($RootPath)) {

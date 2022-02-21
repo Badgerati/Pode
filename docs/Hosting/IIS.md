@@ -257,7 +257,8 @@ If you decide to use IIS for Windows Authentication, then you can retrieve the a
 Start-PodeServer {
     Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
 
-    Add-PodeAuthIIS -Name 'IISAuth' -Sessionless
+    Enable-PodeSessionMiddleware -Duration 120 -Extend
+    Add-PodeAuthIIS -Name 'IISAuth'
 
     Add-PodeRoute -Method Get -Path '/test' -Authentication 'IISAuth' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ User = $WebEvent.Auth.User }
@@ -283,6 +284,20 @@ If the required header is missing, then Pode responds with a 401. The retrieved 
 !!! note
     If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName
 
+### Groups
+
+Similar to Windows AD authentication, Pode by default will retrieve all groups that a user is a member of, recursively. This can at times cause performance issues if you have a lot of groups in your domain.
+
+If you need groups, but you only need the direct groups a user is a member of then you can specify `-DirectGroups`. Or, if you don't need the groups at all, you can specify `-NoGroups`:
+
+```powershell
+# direct groups only
+Add-PodeAuthIIS -Name 'IISAuth' -DirectGroups
+
+# no groups
+Add-PodeAuthIIS -Name 'IISAuth' -NoGroups
+```
+
 ### Client Certificates
 
 You can enable Pode to get client certificates from IIS by passing `-AllowClientCertificate` to your [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint). Pode will check for either the `MS-ASPNETCORE-CLIENTCERT` or `X-ARR-ClientCert` headers, and if either is present they'll be used to set the certificate against `$WebEvent.Request.ClientCertificate`.
@@ -298,7 +313,7 @@ The ScriptBlock has the same return rules as [`Add-PodeAuth`](../../Functions/Au
 For example, to return the user back:
 
 ```powershell
-Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
+Add-PodeAuthIIS -Name 'IISAuth' -ScriptBlock {
     param($user)
 
     # check or load extra data
@@ -310,7 +325,7 @@ Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
 Or to fail authentication with an error message:
 
 ```powershell
-Add-PodeAuthIIS -Name 'IISAuth' -Sessionless -ScriptBlock {
+Add-PodeAuthIIS -Name 'IISAuth' -ScriptBlock {
     param($user)
     return @{ Message = 'Authorization failed' }
 }

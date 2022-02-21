@@ -32,7 +32,7 @@ function Install-PodeModule($path, $version)
         # create the directories, then copy the source
         $folders | ForEach-Object {
             New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
-            Copy-Item -Path "./$($_)/*" -Destination (Join-Path $path $_) -Force | Out-Null
+            Copy-Item -Path "./$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
         }
 
         # copy general files
