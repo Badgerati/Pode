@@ -625,6 +625,20 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#-admodule" class="md-nav__link">
+    -ADModule
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-directgroups" class="md-nav__link">
+    -DirectGroups
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-domain" class="md-nav__link">
     -Domain
   </a>
@@ -6750,6 +6764,20 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#-admodule" class="md-nav__link">
+    -ADModule
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-directgroups" class="md-nav__link">
+    -DirectGroups
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-domain" class="md-nav__link">
     -Domain
   </a>
@@ -6918,14 +6946,14 @@
 <h3 id="groups-default">Groups (Default)</h3>
 <div class="highlight"><pre><span></span><code>Add-PodeAuthWindowsAd -Name &lt;String&gt; -Scheme &lt;Hashtable&gt; [-Fqdn &lt;String&gt;] [-Domain &lt;String&gt;]
  [-SearchBase &lt;String&gt;] [-Groups &lt;String[]&gt;] [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;]
- [-FailureMessage &lt;String&gt;] [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-OpenLDAP]
- [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
+ [-FailureMessage &lt;String&gt;] [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-DirectGroups]
+ [-OpenLDAP] [-ADModule] [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h3 id="nogroups">NoGroups</h3>
 <div class="highlight"><pre><span></span><code>Add-PodeAuthWindowsAd -Name &lt;String&gt; -Scheme &lt;Hashtable&gt; [-Fqdn &lt;String&gt;] [-Domain &lt;String&gt;]
  [-SearchBase &lt;String&gt;] [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;]
- [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-NoGroups] [-OpenLDAP] [-SuccessUseOrigin]
- [&lt;CommonParameters&gt;]
+ [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Sessionless] [-NoGroups] [-OpenLDAP] [-ADModule]
+ [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h2 id="description">DESCRIPTION</h2>
 <p>Adds the inbuilt Windows AD Authentication method for verifying users.</p>
@@ -6943,6 +6971,30 @@
 <div class="highlight"><pre><span></span><code>New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name &#39;UnixAuth&#39; -Server &#39;testdomain.company.com&#39; -Domain &#39;testdomain&#39;
 </code></pre></div>
 <h2 id="parameters">PARAMETERS</h2>
+<h3 id="-admodule">-ADModule</h3>
+<p>If supplied, and on Windows, the ActiveDirectory module will be used instead.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+<h3 id="-directgroups">-DirectGroups</h3>
+<p>If supplied, only a user's direct groups will be retrieved rather than all groups recursively.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Groups</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
 <h3 id="-domain">-Domain</h3>
 <p>(Unix Only) A custom NetBIOS domain name that is prepended onto usernames that are missing it (\&lt;Domain>\\&lt;Username>).</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>
@@ -7029,7 +7081,7 @@
 <span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
 <h3 id="-openldap">-OpenLDAP</h3>
-<p>If supplied, and on Windows, OpenLDAP will be used instead.</p>
+<p>If supplied, and on Windows, OpenLDAP will be used instead (this is the default for Linux/MacOS).</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>

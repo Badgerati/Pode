@@ -4814,6 +4814,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    Options
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -6464,6 +6471,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    Options
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -6482,7 +6496,7 @@
 
 
 <h1 id="configuration">Configuration</h1>
-<p>There is an <em>optional</em> configuration file that can be used with Pode called called <code>server.psd1</code>, and should be located at the root directory of your server script.</p>
+<p>There is an <em>optional</em> configuration file that can be used with Pode called <code>server.psd1</code>, and should be located at the root directory of your server script.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>When a server restart occurs, the <code>server.psd1</code> file will always be reloaded.</p>
@@ -6501,7 +6515,7 @@
 <p>After this, you can put whatever else you want into the configuration file.</p>
 <h2 id="usage">Usage</h2>
 <p>The configuration file is automatically loaded when you start your server. Pode will look in the root directory of your server for a <code>server.psd1</code> file, and if found it will be loaded internally.</p>
-<p>Within your scripts you can use the <a href="../../Functions/Utilities/Get-PodeConfig"><code>Get-PodeConfig</code></a> function, which will return the values of the relevant configuration file.</p>
+<p>Within your scripts you can use the <a href="../../Functions/Utilities/Get-PodeConfig"><code>Get-PodeConfig</code></a> function, which will return the values of the configuration file.</p>
 <p>For example, say you have the following <code>server.psd1</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="p">@{</span>
     <span class="n">Port</span> <span class="p">=</span> <span class="n">8080</span>
@@ -6516,6 +6530,88 @@
 <h2 id="environments">Environments</h2>
 <p>Besides the default <code>server.psd1</code> file, Pode also supports environmental files based on the <code>$env:PODE_ENVIRONMENT</code> environment variable.</p>
 <p>For example, if you set the <code>PODE_ENVIRONMENT</code> variable to <code>dev</code>, then Pode will look for <code>server.dev.psd1</code> first. If <code>server.dev.psd1</code> does not exist, then the default <code>server.psd1</code> is loaded instead.</p>
+<h2 id="options">Options</h2>
+<p>The following table details all of the currently available, inbuilt, <code>server.psd1</code> options that can be used.</p>
+<p>A "path" like <code>Server.Ssl.Protocols</code> looks like the below in the file:</p>
+<div class="highlight"><pre><span></span><code><span class="p">@{</span>
+    <span class="n">Server</span> <span class="p">=</span> <span class="p">@{</span>
+        <span class="n">Ssl</span><span class="p">=</span> <span class="p">@{</span>
+            <span class="n">Protocols</span> <span class="p">=</span> <span class="p">@(</span><span class="s1">&#39;TLS&#39;</span><span class="p">,</span> <span class="s1">&#39;TLS11&#39;</span><span class="p">,</span> <span class="s1">&#39;TLS12&#39;</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Description</th>
+<th>Docs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Server.Ssl.Protocols</td>
+<td>Indicates the SSL Protocols that should be used</td>
+<td><a href="../Certificates">link</a></td>
+</tr>
+<tr>
+<td>Server.Request</td>
+<td>Defines request timeout and maximum body size</td>
+<td><a href="../RequestLimits">link</a></td>
+</tr>
+<tr>
+<td>Server.AutoImport</td>
+<td>Defines the AutoImport scoping rules for Modules, SnapIns and Functions</td>
+<td><a href="../Scoping">link</a></td>
+</tr>
+<tr>
+<td>Server.Logging</td>
+<td>Defines extra configuration for Logging, like masking sensitive data</td>
+<td><a href="../Logging/Overview">link</a></td>
+</tr>
+<tr>
+<td>Server.Root</td>
+<td>Overrides root path of the server</td>
+<td><a href="../Misc/ServerRoot">link</a></td>
+</tr>
+<tr>
+<td>Server.Restart</td>
+<td>Defines configuration for automatically restarting the server</td>
+<td><a href="../Restarting/Types/AutoRestarting">link</a></td>
+</tr>
+<tr>
+<td>Server.FileMonitor</td>
+<td>Defines configuration for restarting the server based on file updates</td>
+<td><a href="../Restarting/Types/FileMonitoring">link</a></td>
+</tr>
+<tr>
+<td>Web.TransferEncoding</td>
+<td>Sets the Request TransferEncoding</td>
+<td><a href="../Compression/Requests">link</a></td>
+</tr>
+<tr>
+<td>Web.Compression</td>
+<td>Sets any compression to use on the Response</td>
+<td><a href="../Compression/Responses">link</a></td>
+</tr>
+<tr>
+<td>Web.ContentType</td>
+<td>Define expected Content Types for certain Routes</td>
+<td><a href="../Routes/Utilities/ContentTypes">link</a></td>
+</tr>
+<tr>
+<td>Web.ErrorPages</td>
+<td>Defines configuration for custom error pages</td>
+<td><a href="../Routes/Utilities/ErrorPages">link</a></td>
+</tr>
+<tr>
+<td>Web.Static</td>
+<td>Defines configuration for static content, such as caching</td>
+<td><a href="../Routes/Utilities/StaticContent">link</a></td>
+</tr>
+</tbody>
+</table>
 
               
             </article>

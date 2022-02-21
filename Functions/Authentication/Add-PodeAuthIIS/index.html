@@ -576,6 +576,20 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#-admodule" class="md-nav__link">
+    -ADModule
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-directgroups" class="md-nav__link">
+    -DirectGroups
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-failuremessage" class="md-nav__link">
     -FailureMessage
   </a>
@@ -6715,6 +6729,20 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#-admodule" class="md-nav__link">
+    -ADModule
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-directgroups" class="md-nav__link">
+    -DirectGroups
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-failuremessage" class="md-nav__link">
     -FailureMessage
   </a>
@@ -6862,12 +6890,12 @@
 <h3 id="groups-default">Groups (Default)</h3>
 <div class="highlight"><pre><span></span><code>Add-PodeAuthIIS -Name &lt;String&gt; [-Groups &lt;String[]&gt;] [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;]
  [-FailureMessage &lt;String&gt;] [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Middleware &lt;Object[]&gt;]
- [-Sessionless] [-NoLocalCheck] [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
+ [-Sessionless] [-DirectGroups] [-ADModule] [-NoLocalCheck] [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h3 id="nogroups">NoGroups</h3>
 <div class="highlight"><pre><span></span><code>Add-PodeAuthIIS -Name &lt;String&gt; [-Users &lt;String[]&gt;] [-FailureUrl &lt;String&gt;] [-FailureMessage &lt;String&gt;]
  [-SuccessUrl &lt;String&gt;] [-ScriptBlock &lt;ScriptBlock&gt;] [-Middleware &lt;Object[]&gt;] [-Sessionless] [-NoGroups]
- [-NoLocalCheck] [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
+ [-ADModule] [-NoLocalCheck] [-SuccessUseOrigin] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h2 id="description">DESCRIPTION</h2>
 <p>Adds the inbuilt IIS Authentication method for verifying users passed to Pode from IIS.</p>
@@ -6882,6 +6910,30 @@
 <div class="highlight"><pre><span></span><code>Add-PodeAuthIIS -Name &#39;IISAuth&#39; -NoGroups
 </code></pre></div>
 <h2 id="parameters">PARAMETERS</h2>
+<h3 id="-admodule">-ADModule</h3>
+<p>If supplied, and on Windows, the ActiveDirectory module will be used instead.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+<h3 id="-directgroups">-DirectGroups</h3>
+<p>If supplied, only a user's direct groups will be retrieved rather than all groups recursively.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Groups</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
 <h3 id="-failuremessage">-FailureMessage</h3>
 <p>An override Message to throw when authentication fails.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">String</span>

@@ -4731,6 +4731,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#groups" class="md-nav__link">
+    Groups
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#client-certificates" class="md-nav__link">
     Client Certificates
   </a>
@@ -6710,6 +6717,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#groups" class="md-nav__link">
+    Groups
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#client-certificates" class="md-nav__link">
     Client Certificates
   </a>
@@ -7020,7 +7034,8 @@ At C:\Program Files\PowerShell\Modules\Pode\2.0.3\Public\Core.ps1:176 char:13
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
     <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="n">127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span> <span class="n">-Protocol</span> <span class="n">Http</span>
 
-    <span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-Sessionless</span>
+    <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Duration</span> <span class="n">120</span> <span class="n">-Extend</span>
+    <span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span>
 
     <span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Get</span> <span class="n">-Path</span> <span class="s1">&#39;/test&#39;</span> <span class="n">-Authentication</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
         <span class="nb">Write-PodeJsonResponse</span> <span class="n">-Value</span> <span class="p">@{</span> <span class="n">User</span> <span class="p">=</span> <span class="nv">$WebEvent</span><span class="p">.</span><span class="n">Auth</span><span class="p">.</span><span class="n">User</span> <span class="p">}</span>
@@ -7093,6 +7108,15 @@ At C:\Program Files\PowerShell\Modules\Pode\2.0.3\Public\Core.ps1:176 char:13
 <p class="admonition-title">Note</p>
 <p>If the authenticated user is a Local User, then the following properties will be empty: FQDN, Email, and DistinguishedName</p>
 </div>
+<h3 id="groups">Groups</h3>
+<p>Similar to Windows AD authentication, Pode by default will retrieve all groups that a user is a member of, recursively. This can at times cause performance issues if you have a lot of groups in your domain.</p>
+<p>If you need groups, but you only need the direct groups a user is a member of then you can specify <code>-DirectGroups</code>. Or, if you don't need the groups at all, you can specify <code>-NoGroups</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c"># direct groups only</span>
+<span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-DirectGroups</span>
+
+<span class="c"># no groups</span>
+<span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-NoGroups</span>
+</code></pre></div>
 <h3 id="client-certificates">Client Certificates</h3>
 <p>You can enable Pode to get client certificates from IIS by passing <code>-AllowClientCertificate</code> to your <a href="../../Functions/Core/Add-PodeEndpoint"><code>Add-PodeEndpoint</code></a>. Pode will check for either the <code>MS-ASPNETCORE-CLIENTCERT</code> or <code>X-ARR-ClientCert</code> headers, and if either is present they'll be used to set the certificate against <code>$WebEvent.Request.ClientCertificate</code>.</p>
 <p>This also allows for using <a href="../../Tutorials/Authentication/Methods/ClientCertificate">Client Certificate</a> authentication in Pode, even when behind IIS.</p>
@@ -7100,7 +7124,7 @@ At C:\Program Files\PowerShell\Modules\Pode\2.0.3\Public\Core.ps1:176 char:13
 <p>Similar to the normal <a href="../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a>, <a href="../../Functions/Authentication/Add-PodeAuthIIS"><code>Add-PodeAuthIIS</code></a> can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.</p>
 <p>The ScriptBlock has the same return rules as <a href="../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a>, as can be seen in the <a href="../../Tutorials/Authentication/Overview">Overview</a>.</p>
 <p>For example, to return the user back:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-Sessionless</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><code><span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
     <span class="k">param</span><span class="p">(</span><span class="nv">$user</span><span class="p">)</span>
 
     <span class="c"># check or load extra data</span>
@@ -7109,7 +7133,7 @@ At C:\Program Files\PowerShell\Modules\Pode\2.0.3\Public\Core.ps1:176 char:13
 <span class="p">}</span>
 </code></pre></div>
 <p>Or to fail authentication with an error message:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-Sessionless</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><code><span class="nb">Add-PodeAuthIIS</span> <span class="n">-Name</span> <span class="s1">&#39;IISAuth&#39;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
     <span class="k">param</span><span class="p">(</span><span class="nv">$user</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">@{</span> <span class="n">Message</span> <span class="p">=</span> <span class="s1">&#39;Authorization failed&#39;</span> <span class="p">}</span>
 <span class="p">}</span>

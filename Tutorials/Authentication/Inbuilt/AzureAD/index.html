@@ -6669,6 +6669,9 @@ This method only works if you're either using Password Hash Sync (PHS), Pass-thr
     <span class="nb">Add-PodeEndpoint</span> <span class="n">-Address</span> <span class="p">*</span> <span class="n">-Port</span> <span class="n">8080</span> <span class="n">-Protocol</span> <span class="n">Http</span>
     <span class="nb">Set-PodeViewEngine</span> <span class="n">-Type</span> <span class="n">Pode</span>
 
+    <span class="c"># setup session details</span>
+    <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Duration</span> <span class="n">120</span> <span class="n">-Extend</span>
+
     <span class="c"># setup authentication to validate a user</span>
     <span class="nv">$scheme</span> <span class="p">=</span> <span class="nb">New-PodeAuthAzureADScheme</span> <span class="n">-ClientID</span> <span class="s1">&#39;&lt;clientId&gt;&#39;</span> <span class="n">-ClientSecret</span> <span class="s1">&#39;&lt;clientSecret&gt;&#39;</span> <span class="n">-Tenant</span> <span class="s1">&#39;&lt;tenant&gt;&#39;</span>
 

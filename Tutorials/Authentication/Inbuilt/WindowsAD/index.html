@@ -5120,39 +5120,60 @@
     Usage
   </a>
   
-    <nav class="md-nav" aria-label="Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#user-object" class="md-nav__link">
     User Object
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
+  <a href="#providers" class="md-nav__link">
+    Providers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groups" class="md-nav__link">
+    Groups
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#server" class="md-nav__link">
     Server
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#domain" class="md-nav__link">
     Domain
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#searchbase" class="md-nav__link">
     SearchBase
   </a>
   
 </li>
+      
+        <li class="md-nav__item">
+  <a href="#allow" class="md-nav__link">
+    Allow
+  </a>
+  
+    <nav class="md-nav" aria-label="Allow">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#groups" class="md-nav__link">
+  <a href="#groups_1" class="md-nav__link">
     Groups
   </a>
   
@@ -5165,15 +5186,15 @@
   
 </li>
         
-          <li class="md-nav__item">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#additional-validation" class="md-nav__link">
     Additional Validation
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -6493,39 +6514,60 @@
     Usage
   </a>
   
-    <nav class="md-nav" aria-label="Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#user-object" class="md-nav__link">
     User Object
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
+  <a href="#providers" class="md-nav__link">
+    Providers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groups" class="md-nav__link">
+    Groups
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#server" class="md-nav__link">
     Server
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#domain" class="md-nav__link">
     Domain
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#searchbase" class="md-nav__link">
     SearchBase
   </a>
   
 </li>
+      
+        <li class="md-nav__item">
+  <a href="#allow" class="md-nav__link">
+    Allow
+  </a>
+  
+    <nav class="md-nav" aria-label="Allow">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#groups" class="md-nav__link">
+  <a href="#groups_1" class="md-nav__link">
     Groups
   </a>
   
@@ -6538,15 +6580,15 @@
   
 </li>
         
-          <li class="md-nav__item">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#additional-validation" class="md-nav__link">
     Additional Validation
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -6573,10 +6615,11 @@
 <h2 id="usage">Usage</h2>
 <p>To enable Windows AD authentication you can use the <a href="../../../../Functions/Authentication/Add-PodeAuthWindowsAd"><code>Add-PodeAuthWindowsAd</code></a> function. The following example will validate a user's credentials, supplied via a web-form, against the default AD the current server is joined to:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
+    <span class="nb">Enable-PodeSessionMiddleware</span> <span class="n">-Duration</span> <span class="n">120</span> <span class="n">-Extend</span>
     <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="user-object">User Object</h3>
+<h2 id="user-object">User Object</h2>
 <p>The User object returned, and accessible on Routes, and other functions via <code>$WebEvent.Auth.User</code>, will contain the following information:</p>
 <table>
 <thead>
@@ -6639,41 +6682,51 @@
     <span class="nb">Write-Host</span> <span class="nv">$WebEvent</span><span class="p">.</span><span class="n">Auth</span><span class="p">.</span><span class="n">User</span><span class="p">.</span><span class="n">Username</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="server">Server</h3>
-<p>If you want to supply a custom DNS domain, then you can supply the <code>-Fqdn</code> parameter:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Fqdn</span> <span class="s1">&#39;test.example.com&#39;</span>
-<span class="p">}</span>
+<h2 id="providers">Providers</h2>
+<p>The default Provider which Pode uses for Windows AD is Directory Services on Windows, or OpenLDAP on *nix environments. However, you can force OpenLDAP or Windows, or you can specify to use the ActiveDirectory module on Windows using the <code>-OpenLDAP</code> or <code>-ADModule</code> switches:</p>
+<div class="highlight"><pre><span></span><code><span class="c"># force OpenLDAP</span>
+<span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-OpenLDAP</span>
+
+<span class="c"># force ActiveDirectory</span>
+<span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-ADModule</span>
 </code></pre></div>
-<h3 id="domain">Domain</h3>
+<p>When you use <code>-ADModule</code> switch, Pode will automatically import the module for you.</p>
+<h2 id="groups">Groups</h2>
+<p>By default Pode will retrieve all groups that a user is a member of, recursively. This can at times cause performance issues if you have a lot of groups in your domain.</p>
+<p>If you need groups, but you only need the direct groups a user is a member of then you can specify <code>-DirectGroups</code>. Or, if you don't need the groups at all, you can specify <code>-NoGroups</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c"># direct groups only</span>
+<span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-DirectGroups</span>
+
+<span class="c"># no groups</span>
+<span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-NoGroups</span>
+</code></pre></div>
+<h2 id="server">Server</h2>
+<p>If you want to supply a custom DNS domain, then you can supply the <code>-Fqdn</code> parameter:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Fqdn</span> <span class="s1">&#39;test.example.com&#39;</span>
+</code></pre></div>
+<h2 id="domain">Domain</h2>
 <p>For OpenLDAP Pode will automatically retrieve the NetBIOS to be prepended on the username, ie: <code>&lt;domain&gt;\&lt;username&gt;</code>. This is automatically generate by used the first part of the DNS server's FQDN, for example if your server's FQDN was <code>test.example.com</code> then Pode would set the NetBIOS as <code>test</code>.</p>
 <p>You can use a custom domain NetBIOS by suppliying the <code>-Domain</code> parameter:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Fqdn</span> <span class="s1">&#39;test.example.com&#39;</span> <span class="n">-Domain</span> <span class="s1">&#39;testdomain&#39;</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Fqdn</span> <span class="s1">&#39;test.example.com&#39;</span> <span class="n">-Domain</span> <span class="s1">&#39;testdomain&#39;</span>
 </code></pre></div>
-<h3 id="searchbase">SearchBase</h3>
+<h2 id="searchbase">SearchBase</h2>
 <p>When authenticating users via OpenLDAP, the default base distinguished name searched from will be the server root, ie: <code>DC=test,DC=example,DC=com</code>. You can refine this by supplying an optional <code>-SearchBase</code>, that should be the full distinguished name:</p>
 <p>For example, the below will search in <code>OU=CustomUsers,DC=test,DC=example,DC=com</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-SearchBase</span> <span class="s1">&#39;OU=CustomUsers,DC=test,DC=example,DC=com&#39;</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-SearchBase</span> <span class="s1">&#39;OU=CustomUsers,DC=test,DC=example,DC=com&#39;</span>
 </code></pre></div>
-<h3 id="groups">Groups</h3>
+<h2 id="allow">Allow</h2>
+<p>You can supply an optional array of either User/Group names, or both; and if the user being authenticated is in the list (or on of their groups are) they will be allowed.</p>
+<h3 id="groups_1">Groups</h3>
 <p>You can supply a list of group names to validate that users are a member of them in AD. If you supply multiple group names, the user only needs to be a member of one of the groups. You can supply the list of groups to the function's <code>-Groups</code> parameter as an array - the list is not case-sensitive:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Groups</span> <span class="p">@(</span><span class="s1">&#39;admins&#39;</span><span class="p">,</span> <span class="s1">&#39;devops&#39;</span><span class="p">)</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Groups</span> <span class="p">@(</span><span class="s1">&#39;admins&#39;</span><span class="p">,</span> <span class="s1">&#39;devops&#39;</span><span class="p">)</span>
 </code></pre></div>
 <p>If an user being authenticated is not in one of these groups, then a 401 is returned.</p>
 <h3 id="users">Users</h3>
 <p>You can supply a list of authorised usernames to validate a user's access, after credentials are validated, and instead of of checking AD groups. You can supply the list of usernames to the function's <code>-Users</code> parameter as an array - the list is not case-sensitive:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">Start-PodeServer</span> <span class="p">{</span>
-    <span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Users</span> <span class="p">@(</span><span class="s1">&#39;jsnow&#39;</span><span class="p">,</span> <span class="s1">&#39;rsanchez&#39;</span><span class="p">)</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="nb">New-PodeAuthScheme</span> <span class="n">-Form</span> <span class="p">|</span> <span class="nb">Add-PodeAuthWindowsAd</span> <span class="n">-Name</span> <span class="s1">&#39;Login&#39;</span> <span class="n">-Users</span> <span class="p">@(</span><span class="s1">&#39;jsnow&#39;</span><span class="p">,</span> <span class="s1">&#39;rsanchez&#39;</span><span class="p">)</span>
 </code></pre></div>
 <p>If an user being authenticated is not one of the allowed users, then a 401 is returned.</p>
-<h3 id="additional-validation">Additional Validation</h3>
+<h2 id="additional-validation">Additional Validation</h2>
 <p>Similar to the normal <a href="../../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a>, <a href="../../../../Functions/Authentication/Add-PodeAuthWindowsAd"><code>Add-PodeAuthWindowsAd</code></a> can be supplied can an optional ScriptBlock parameter. This ScriptBlock is supplied the found User object as a parameter, structured as details above. You can then use this to further check the user, or load additional user information from another storage.</p>
 <p>The ScriptBlock has the same return rules as <a href="../../../../Functions/Authentication/Add-PodeAuth"><code>Add-PodeAuth</code></a>, as can be seen in the <a href="../../Overview">Overview</a>.</p>
 <p>For example, to return the user back:</p>
