@@ -1,5 +1,12 @@
 # Release Notes
 
+## v2.6.2
+
+```plain
+### Bugs
+* #948: Hotfix to resolve issue with importing ActiveDirectory module into runspaces
+```
+
 ## v2.6.1
 
 ```plain

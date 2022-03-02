@@ -37,7 +37,7 @@ The following table outlines some of the predefined cron expressions supported b
 | @yearly | `0 0 1 1 *` |
 | @annually | `0 0 1 1 *` |
 | @twice-hourly | `0,30 * * * *` |
-| @twice-daily | `0,12 0 * * *` |
+| @twice-daily | `0 0,12 * * *` |
 | @twice-weekly | `0 0 * * 0,4` |
 | @twice-monthly | `0 0 1,15 * *` |
 | @twice-yearly | `0 0 1 1,6 *` |
