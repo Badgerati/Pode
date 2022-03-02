@@ -6607,21 +6607,21 @@
 </tbody>
 </table>
 <p>For example:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span>
-    <span class="p">{</span>
-        <span class="nt">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;Joe Bloggs&quot;</span><span class="p">,</span>
-        <span class="nt">&quot;Username&quot;</span><span class="p">:</span> <span class="s2">&quot;j.bloggs&quot;</span><span class="p">,</span>
-        <span class="nt">&quot;Email&quot;</span><span class="p">:</span> <span class="s2">&quot;j.bloggs@company.com&quot;</span><span class="p">,</span>
-        <span class="nt">&quot;Password&quot;</span><span class="p">:</span> <span class="s2">&quot;XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg=&quot;</span><span class="p">,</span>
-        <span class="nt">&quot;Groups&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;Admin&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Developer&quot;</span>
-        <span class="p">],</span>
-        <span class="nt">&quot;Metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="nt">&quot;Created&quot;</span><span class="p">:</span> <span class="s2">&quot;2001-01-01&quot;</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">]</span>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Joe Bloggs&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Username&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;j.bloggs&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Email&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;j.bloggs@company.com&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg=&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Groups&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">            </span><span class="s2">&quot;Admin&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="s2">&quot;Developer&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">],</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;Created&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2001-01-01&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">]</span><span class="w"></span>
 </code></pre></div>
 <h3 id="hmac-passwords">HMAC Passwords</h3>
 <p>The password is normally a standard SHA256 hash, but Pode does support HMAC SHA256 hashes as well. If you use an HMAC hash, you can specify the secret used as follows:</p>

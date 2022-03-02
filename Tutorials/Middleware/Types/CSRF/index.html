@@ -6588,13 +6588,13 @@
         <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>Clicking submit will just reload the page with your message<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
 
         <span class="p">&lt;</span><span class="nt">form</span> <span class="na">action</span><span class="o">=</span><span class="s">&#39;/token&#39;</span> <span class="na">method</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">&gt;</span>
-            <span class="c">&lt;!-- the hidden input for the CSRF token needs to have the name &#39;pode.csrf&#39; --&gt;</span>
+            <span class="cm">&lt;!-- the hidden input for the CSRF token needs to have the name &#39;pode.csrf&#39; --&gt;</span>
             <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&#39;hidden&#39;</span> <span class="na">name</span><span class="o">=</span><span class="s">&#39;pode.csrf&#39;</span> <span class="na">value</span><span class="o">=</span><span class="s">&#39;$($data.csrfToken)&#39;</span> <span class="p">/&gt;</span>
             <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&#39;text&#39;</span> <span class="na">name</span><span class="o">=</span><span class="s">&#39;message&#39;</span> <span class="na">placeholder</span><span class="o">=</span><span class="s">&#39;Enter any random text&#39;</span> <span class="p">/&gt;</span>
             <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&#39;submit&#39;</span> <span class="na">value</span><span class="o">=</span><span class="s">&#39;Submit&#39;</span> <span class="p">/&gt;</span>
         <span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
 
-        <span class="c">&lt;!-- on the page reload, display your message --&gt;</span>
+        <span class="cm">&lt;!-- on the page reload, display your message --&gt;</span>
         $(if ($data.flash[&#39;message&#39;]) {
             &quot;<span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>$($data.flash[&#39;message&#39;])<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>&quot;
         })

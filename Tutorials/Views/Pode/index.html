@@ -6506,7 +6506,7 @@
 <p>Any PowerShell in a <code>.pode</code> files will need to be wrapped in <code>$(...)</code> and each line must end with a semi-colon.</p>
 </div>
 <p>Below is a basic example of a <code>.pode</code> view file, which just writes the current date to the browser:</p>
-<div class="highlight"><pre><span></span><code><span class="c">&lt;!-- /views/index.pode --&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="cm">&lt;!-- /views/index.pode --&gt;</span>
 <span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
     <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
         <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Current Date<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
@@ -6536,7 +6536,7 @@
 <span class="p">}</span>
 </code></pre></div>
 <p>You can see that we're supplying the found accounts to the <code>view</code> function as a <code>hashtable</code>. Next, we see the <code>search.pode</code> view file which generates the HTML:</p>
-<div class="highlight"><pre><span></span><code><span class="c">&lt;!-- /views/search.pode --&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="cm">&lt;!-- /views/search.pode --&gt;</span>
 <span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
     <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
         <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Search<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
@@ -6557,7 +6557,7 @@
 <p>Remember, you can access supplied data by using <code>$data</code></p>
 </blockquote>
 <p>This next quick example allows you to include content from another view:</p>
-<div class="highlight"><pre><span></span><code><span class="c">&lt;!-- /views/index.pode --&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="cm">&lt;!-- /views/index.pode --&gt;</span>
 <span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
     $(Use-PodePartialView -Path &#39;shared/head&#39; -data @{ &#39;Title&#39; = &#39;Include Example&#39;})
 
@@ -6566,7 +6566,7 @@
     <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
 <span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
 
-<span class="c">&lt;!-- /views/shared/head.pode --&gt;</span>
+<span class="cm">&lt;!-- /views/shared/head.pode --&gt;</span>
 <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
     <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>$($data.Title)<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
 <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
@@ -6578,21 +6578,21 @@
 </code></pre></div>
 <p>Here you'll see the main extension is <code>.pode</code>, but you need to specify a sub-extension of the main file type such as <code>.css</code> - this helps Pode work out the main content type when writing to the response.</p>
 <p>Below is a <code>.css.pode</code> file that will render the page in purple on even seconds, or red on odd seconds:</p>
-<div class="highlight"><pre><span></span><code><span class="c">/* /public/styles/main.css.pode */</span>
-<span class="nt">body</span> <span class="p">{</span>
-    <span class="err">$(</span>
-        <span class="err">$date</span> <span class="err">=</span> <span class="err">[DateTime]::UtcNow</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="c">/* /public/styles/main.css.pode */</span><span class="w"></span>
+<span class="nt">body</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="err">$(</span><span class="w"></span>
+<span class="w">        </span><span class="err">$date</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="err">[DateTime]::UtcNow</span><span class="p">;</span><span class="w"></span>
 
-        <span class="err">if</span> <span class="err">($date.Second</span> <span class="err">%</span> <span class="err">2</span> <span class="err">-eq</span> <span class="err">0)</span> <span class="err">{</span>
-            <span class="err">&quot;</span><span class="k">background-color</span><span class="p">:</span> <span class="kc">rebeccapurple</span><span class="p">;</span><span class="err">&quot;</span><span class="p">;</span>
-        <span class="p">}</span> <span class="nt">else</span> <span class="p">{</span>
-            <span class="err">&quot;</span><span class="k">background-color</span><span class="p">:</span> <span class="kc">red</span><span class="p">;</span><span class="err">&quot;</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="o">)</span>
-<span class="err">}</span>
+<span class="w">        </span><span class="err">if</span><span class="w"> </span><span class="err">($date.Second</span><span class="w"> </span><span class="err">%</span><span class="w"> </span><span class="err">2</span><span class="w"> </span><span class="err">-eq</span><span class="w"> </span><span class="err">0)</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">            </span><span class="err">&quot;</span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="kc">rebeccapurple</span><span class="p">;</span><span class="err">&quot;</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="nt">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="err">&quot;</span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="kc">red</span><span class="p">;</span><span class="err">&quot;</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="o">)</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
 </code></pre></div>
 <p>To load the above <code>.css.pode</code> file in a view file:</p>
-<div class="highlight"><pre><span></span><code><span class="c">&lt;!-- /views/index.pode --&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="cm">&lt;!-- /views/index.pode --&gt;</span>
 <span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
    <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
       <span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;/styles/main.css.pode&quot;</span><span class="p">&gt;</span>

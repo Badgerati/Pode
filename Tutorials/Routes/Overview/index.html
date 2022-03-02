@@ -6559,9 +6559,9 @@ DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.</p>
 <span class="p">}</span>
 </code></pre></div>
 <p>Here, anyone who calls <code>http://localhost:8080/ping</code> will receive the following response:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;pong&quot;</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pong&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>The scriptblock for the route will have access to the <code>$WebEvent</code> variable which contains information about the current <a href="../../WebEvent">web event</a>. This argument will contain the <code>Request</code> and <code>Response</code> objects, <code>Data</code> (from POST), and the <code>Query</code> (from the query string of the URL), as well as any <code>Parameters</code> from the route itself (eg: <code>/:accountId</code>).</p>
 <p>You can add your routes straight into the <a href="../../../Functions/Core/Start-PodeServer"><code>Start-PodeServer</code></a> scriptblock, or separate them into different files. These files can then be dot-sourced, or you can use <a href="../../../Functions/Routes/Use-PodeRoutes"><code>Use-PodeRoutes</code></a> to automatically load all ps1 files within a <code>/routes</code> directory at the root of your server.</p>

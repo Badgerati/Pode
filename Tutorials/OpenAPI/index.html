@@ -6870,10 +6870,10 @@
     <span class="p">}</span>
 </code></pre></div>
 <p>the JSON response payload defined is as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;Name&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">s</span><span class="kc">tr</span><span class="err">i</span><span class="kc">n</span><span class="err">g</span><span class="p">],</span>
-    <span class="nt">&quot;UserId&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">i</span><span class="kc">nte</span><span class="err">ger</span><span class="p">]</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">s</span><span class="kc">tr</span><span class="err">i</span><span class="kc">n</span><span class="err">g</span><span class="p">],</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;UserId&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">i</span><span class="kc">nte</span><span class="err">ger</span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>Internally, each route is created with an empty default 200 and 500 response. You can remove these, or other added responses, by using <a href="../../Functions/OpenApi/Add-PodeOAResponse"><code>Remove-PodeOAResponse</code></a>:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Add-PodeRoute</span> <span class="n">-Method</span> <span class="n">Get</span> <span class="n">-Path</span> <span class="s2">&quot;/api/user/:userId&quot;</span> <span class="n">-ScriptBlock</span> <span class="p">{</span>
@@ -6926,10 +6926,10 @@
     <span class="p">)</span>
 </code></pre></div>
 <p>The expected payload would look as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">s</span><span class="kc">tr</span><span class="err">i</span><span class="kc">n</span><span class="err">g</span><span class="p">],</span>
-    <span class="nt">&quot;userId&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">i</span><span class="kc">nte</span><span class="err">ger</span><span class="p">]</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">s</span><span class="kc">tr</span><span class="err">i</span><span class="kc">n</span><span class="err">g</span><span class="p">],</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;userId&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">i</span><span class="kc">nte</span><span class="err">ger</span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <h2 id="components">Components</h2>
 <p>You can define reusable OpenAPI components in Pode. Currently supported are Schemas, Parameters, Request Bodies, and Responses.</p>
@@ -6976,11 +6976,11 @@
     <span class="nb">Set-PodeOARequest</span> <span class="n">-RequestBody</span> <span class="p">(</span><span class="nb">New-PodeOARequestBody</span> <span class="n">-Reference</span> <span class="s1">&#39;UserBody&#39;</span><span class="p">)</span>
 </code></pre></div>
 <p>The JSON payload expected is of the format:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;Name&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">s</span><span class="kc">tr</span><span class="err">i</span><span class="kc">n</span><span class="err">g</span><span class="p">],</span>
-    <span class="nt">&quot;UserId&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">i</span><span class="kc">nte</span><span class="err">ger</span><span class="p">],</span>
-    <span class="nt">&quot;Enabled&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">boolea</span><span class="kc">n</span><span class="p">]</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">s</span><span class="kc">tr</span><span class="err">i</span><span class="kc">n</span><span class="err">g</span><span class="p">],</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;UserId&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">i</span><span class="kc">nte</span><span class="err">ger</span><span class="p">],</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;Enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">boolea</span><span class="kc">n</span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <h3 id="parameters_1">Parameters</h3>
 <p>To define reusable parameters that are used on requests, you can use the <a href="../../Functions/OpenApi/Add-PodeOAComponentParameter"><code>Add-PodeOAComponentParameter</code></a> function. You'll need to supply a Name and the Parameter definition.</p>
@@ -7018,12 +7018,12 @@
     <span class="nb">Add-PodeOAResponse</span> <span class="n">-StatusCode</span> <span class="n">200</span> <span class="n">-Reference</span> <span class="s1">&#39;OK&#39;</span>
 </code></pre></div>
 <p>the JSON response payload defined is as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span>
-    <span class="p">{</span>
-        <span class="nt">&quot;Name&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">s</span><span class="kc">tr</span><span class="err">i</span><span class="kc">n</span><span class="err">g</span><span class="p">],</span>
-        <span class="nt">&quot;UserId&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">i</span><span class="kc">nte</span><span class="err">ger</span><span class="p">]</span>
-    <span class="p">}</span>
-<span class="p">]</span>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">s</span><span class="kc">tr</span><span class="err">i</span><span class="kc">n</span><span class="err">g</span><span class="p">],</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;UserId&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">i</span><span class="kc">nte</span><span class="err">ger</span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">]</span><span class="w"></span>
 </code></pre></div>
 <h2 id="properties">Properties</h2>
 <p>Properties are used to create all Parameters and Schemas in OpenAPI. You can use the simple types on their own, or you can combine multiple of them together to form complex objects.</p>
@@ -7060,11 +7060,11 @@
 <div class="highlight"><pre><span></span><code><span class="nb">New-PodeOAIntProperty</span> <span class="n">-Array</span>
 </code></pre></div>
 <p>When used in a Response, this could return the following JSON example:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span>
-    <span class="mi">0</span><span class="p">,</span>
-    <span class="mi">1</span><span class="p">,</span>
-    <span class="mi">2</span>
-<span class="p">]</span>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="mi">2</span><span class="w"></span>
+<span class="p">]</span><span class="w"></span>
 </code></pre></div>
 <h3 id="objects">Objects</h3>
 <p>An object property is a combination of multiple other properties - both simple, array of more objects.</p>
@@ -7079,17 +7079,17 @@
 <div class="highlight"><pre><span></span><code><span class="nb">New-PodeOAIntProperty</span> <span class="n">-Name</span> <span class="s1">&#39;userId&#39;</span> <span class="n">-Object</span>
 </code></pre></div>
 <p>In a response as JSON, this could look as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;userId&quot;</span><span class="p">:</span> <span class="mi">0</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;userId&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>Furthermore, you can also supply both <code>-Array</code> and <code>-Object</code> switches:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">New-PodeOAIntProperty</span> <span class="n">-Name</span> <span class="s1">&#39;userId&#39;</span> <span class="n">-Object</span> <span class="n">-Array</span>
 </code></pre></div>
 <p>This wil result in something like the following JSON:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;userId&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span> <span class="p">]</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;userId&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <h4 id="complex">Complex</h4>
 <p>Unlike the <code>-Object</code> switch that simply converts a single property into an object, the <a href="../../Functions/OpenApi/New-PodeOAObjectProperty"><code>New-PodeOAObjectProperty</code></a> function can combine and convert multiple properties.</p>
@@ -7101,11 +7101,11 @@
 <span class="p">)</span>
 </code></pre></div>
 <p>As JSON, this could look as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;userId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Gary Goodspeed&quot;</span><span class="p">,</span>
-    <span class="nt">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">true</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;userId&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Gary Goodspeed&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>You can also supply the <code>-Array</code> switch to the <a href="../../Functions/OpenApi/New-PodeOAObjectProperty"><code>New-PodeOAObjectProperty</code></a> function. This will result in an array of objects. For example, if we took the above:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">New-PodeOAObjectProperty</span> <span class="n">-Array</span> <span class="n">-Properties</span> <span class="p">@(</span>
@@ -7115,18 +7115,18 @@
 <span class="p">)</span>
 </code></pre></div>
 <p>As JSON, this could look as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span>
-    <span class="p">{</span>
-        <span class="nt">&quot;userId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Gary Goodspeed&quot;</span><span class="p">,</span>
-        <span class="nt">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">true</span>
-    <span class="p">},</span>
-    <span class="p">{</span>
-        <span class="nt">&quot;userId&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Kevin&quot;</span><span class="p">,</span>
-        <span class="nt">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">false</span>
-    <span class="p">}</span>
-<span class="p">]</span>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;userId&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Gary Goodspeed&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+<span class="w">    </span><span class="p">},</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;userId&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Kevin&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">]</span><span class="w"></span>
 </code></pre></div>
 <p>You can also combine objects into other objects:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">$usersArray</span> <span class="p">=</span> <span class="nb">New-PodeOAObjectProperty</span> <span class="n">-Name</span> <span class="s1">&#39;users&#39;</span> <span class="n">-Array</span> <span class="n">-Properties</span> <span class="p">@(</span>
@@ -7141,21 +7141,21 @@
 <span class="p">)</span>
 </code></pre></div>
 <p>As JSON, this could look as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;found&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="nt">&quot;users&quot;</span><span class="p">:</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="nt">&quot;userId&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Gary Goodspeed&quot;</span><span class="p">,</span>
-            <span class="nt">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">true</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="nt">&quot;userId&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Kevin&quot;</span><span class="p">,</span>
-            <span class="nt">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">false</span>
-        <span class="p">}</span>
-    <span class="p">]</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;found&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;users&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;userId&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Gary Goodspeed&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;userId&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Kevin&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <h2 id="swagger-and-redoc">Swagger and ReDoc</h2>
 <p>If you're not using a custom OpenAPI viewer, then you can use one of the inbuilt ones with Pode - either Swagger and ReDoc, or both!</p>

@@ -6603,23 +6603,23 @@
 </code></pre></div>
 <h3 id="template">Template</h3>
 <p>One Function can accept many routes if you setup the template. Your SAM/serverless YAML template could look as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">AWSTemplateFormatVersion </span><span class="p">:</span> <span class="s">&#39;2010-09-09&#39;</span>
-<span class="nt">Transform</span><span class="p">:</span> <span class="s">&#39;AWS::Serverless-2016-10-31&#39;</span>
-<span class="nt">Resources</span><span class="p">:</span>
-  <span class="nt">ExampleFunction</span><span class="p">:</span>
-    <span class="nt">Type</span><span class="p">:</span> <span class="s">&#39;AWS::Serverless::Function&#39;</span>
-    <span class="nt">Properties</span><span class="p">:</span>
-      <span class="nt">Handler</span><span class="p">:</span> <span class="s">&#39;Example::Example.Bootstrap::ExecuteFunction&#39;</span>
-      <span class="nt">Runtime</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dotnetcore2.1</span>
-      <span class="nt">CodeUri</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Example.zip</span>
-      <span class="nt">Timeout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
-      <span class="nt">MemorySize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-      <span class="nt">Events</span><span class="p">:</span>
-        <span class="nt">Example</span><span class="p">:</span>
-          <span class="nt">Type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Api</span>
-          <span class="nt">Properties</span><span class="p">:</span>
-            <span class="nt">Path</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">/{proxy+}</span>
-            <span class="nt">Method</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">get</span>
+<div class="highlight"><pre><span></span><code><span class="nt">AWSTemplateFormatVersion </span><span class="p">:</span><span class="w"> </span><span class="s">&#39;2010-09-09&#39;</span><span class="w"></span>
+<span class="nt">Transform</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;AWS::Serverless-2016-10-31&#39;</span><span class="w"></span>
+<span class="nt">Resources</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">ExampleFunction</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;AWS::Serverless::Function&#39;</span><span class="w"></span>
+<span class="w">    </span><span class="nt">Properties</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">Handler</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Example::Example.Bootstrap::ExecuteFunction&#39;</span><span class="w"></span>
+<span class="w">      </span><span class="nt">Runtime</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dotnetcore2.1</span><span class="w"></span>
+<span class="w">      </span><span class="nt">CodeUri</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Example.zip</span><span class="w"></span>
+<span class="w">      </span><span class="nt">Timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span><span class="w"></span>
+<span class="w">      </span><span class="nt">MemorySize</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">256</span><span class="w"></span>
+<span class="w">      </span><span class="nt">Events</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">Example</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Api</span><span class="w"></span>
+<span class="w">          </span><span class="nt">Properties</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="nt">Path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/{proxy+}</span><span class="w"></span>
+<span class="w">            </span><span class="nt">Method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">get</span><span class="w"></span>
 </code></pre></div>
 <p>Here, the <code>/{proxy+}</code> will enable one Function for all routes - which can be controlled via Pode within your Function.</p>
 <h3 id="the-server">The Server</h3>

@@ -6508,10 +6508,10 @@
 <p>You'll also need an account with <a href="https://heroku.com/">Heroku</a>.</p>
 <h2 id="server">Server</h2>
 <p>Your server will need a Dockerfile, such as the following:</p>
-<div class="highlight"><pre><span></span><code><span class="k">FROM</span> <span class="s">badgerati/pode:latest</span>
-<span class="k">COPY</span> . /usr/src/app/
-<span class="k">EXPOSE</span><span class="s"> $PORT</span>
-<span class="k">CMD</span> <span class="p">[</span> <span class="s2">&quot;pwsh&quot;</span><span class="p">,</span> <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;cd /usr/src/app; ./server.ps1&quot;</span> <span class="p">]</span>
+<div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">badgerati/pode:latest</span>
+<span class="k">COPY</span><span class="w"> </span>. /usr/src/app/
+<span class="k">EXPOSE</span><span class="w"> </span><span class="s">$PORT</span>
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;pwsh&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-c&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cd /usr/src/app; ./server.ps1&quot;</span><span class="w"> </span><span class="p">]</span>
 </code></pre></div>
 <p>While Pode can detect that your server is running in Heroku, and can set your server's endpoints appropriately, the Dockerfile will need to use the <code>$PORT</code> variable that Heroku set.</p>
 <p>You can set this when testing locally as follows (assuming your server is listening on port 5000 locally):</p>

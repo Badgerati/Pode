@@ -6532,53 +6532,53 @@
 <h3 id="default">Default</h3>
 <p>The default Pode image is an Ubuntu Focal image with PowerShell v7.2.1 and Pode installed. An example of using this image in your Dockerfile could be as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="c"># pull down the pode image</span>
-<span class="k">FROM</span> <span class="s">badgerati/pode:latest</span>
+<span class="k">FROM</span><span class="w"> </span><span class="s">badgerati/pode:latest</span>
 
 <span class="c"># or use the following for GitHub</span>
 <span class="c"># FROM docker.pkg.github.com/badgerati/pode/pode:latest</span>
 
 <span class="c"># copy over the local files to the container</span>
-<span class="k">COPY</span> . /usr/src/app/
+<span class="k">COPY</span><span class="w"> </span>. /usr/src/app/
 
 <span class="c"># expose the port</span>
-<span class="k">EXPOSE</span><span class="s"> 8085</span>
+<span class="k">EXPOSE</span><span class="w"> </span><span class="s">8085</span>
 
 <span class="c"># run the server</span>
-<span class="k">CMD</span> <span class="p">[</span> <span class="s2">&quot;pwsh&quot;</span><span class="p">,</span> <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;cd /usr/src/app; ./web-pages-docker.ps1&quot;</span> <span class="p">]</span>
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;pwsh&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-c&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cd /usr/src/app; ./web-pages-docker.ps1&quot;</span><span class="w"> </span><span class="p">]</span>
 </code></pre></div>
 <h3 id="alpine">Alpine</h3>
 <p>Pode also has an image for Alpine, an example of using this image in your Dockerfile could be as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="c"># pull down the pode image</span>
-<span class="k">FROM</span> <span class="s">badgerati/pode:latest-alpine</span>
+<span class="k">FROM</span><span class="w"> </span><span class="s">badgerati/pode:latest-alpine</span>
 
 <span class="c"># or use the following for GitHub</span>
 <span class="c"># FROM docker.pkg.github.com/badgerati/pode/pode:latest-alpine</span>
 
 <span class="c"># copy over the local files to the container</span>
-<span class="k">COPY</span> . /usr/src/app/
+<span class="k">COPY</span><span class="w"> </span>. /usr/src/app/
 
 <span class="c"># expose the port</span>
-<span class="k">EXPOSE</span><span class="s"> 8085</span>
+<span class="k">EXPOSE</span><span class="w"> </span><span class="s">8085</span>
 
 <span class="c"># run the server</span>
-<span class="k">CMD</span> <span class="p">[</span> <span class="s2">&quot;pwsh&quot;</span><span class="p">,</span> <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;cd /usr/src/app; ./web-pages-docker.ps1&quot;</span> <span class="p">]</span>
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;pwsh&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-c&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cd /usr/src/app; ./web-pages-docker.ps1&quot;</span><span class="w"> </span><span class="p">]</span>
 </code></pre></div>
 <h3 id="arm32">ARM32</h3>
 <p>Pode also has an image for ARM32, meaning you can run Pode on Raspberry Pis. An example of using this image in your Dockerfile could be as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="c"># pull down the pode image</span>
-<span class="k">FROM</span> <span class="s">badgerati/pode:latest-arm32</span>
+<span class="k">FROM</span><span class="w"> </span><span class="s">badgerati/pode:latest-arm32</span>
 
 <span class="c"># or use the following for GitHub</span>
 <span class="c"># FROM docker.pkg.github.com/badgerati/pode/pode:latest-arm32</span>
 
 <span class="c"># copy over the local files to the container</span>
-<span class="k">COPY</span> . /usr/src/app/
+<span class="k">COPY</span><span class="w"> </span>. /usr/src/app/
 
 <span class="c"># expose the port</span>
-<span class="k">EXPOSE</span><span class="s"> 8085</span>
+<span class="k">EXPOSE</span><span class="w"> </span><span class="s">8085</span>
 
 <span class="c"># run the server</span>
-<span class="k">CMD</span> <span class="p">[</span> <span class="s2">&quot;pwsh&quot;</span><span class="p">,</span> <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;cd /usr/src/app; ./web-pages-docker.ps1&quot;</span> <span class="p">]</span>
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;pwsh&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-c&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cd /usr/src/app; ./web-pages-docker.ps1&quot;</span><span class="w"> </span><span class="p">]</span>
 </code></pre></div>
 <h2 id="build-and-run">Build and Run</h2>
 <p>To build and run the above Dockerfiles, you can use the following commands:</p>

@@ -6965,13 +6965,13 @@
 <p>The <code>pode.&lt;env&gt;.json</code> configuration files have been changed from <code>json</code> to <code>psd1</code> format, and their name changed from <code>pode</code> to <code>server</code>.</p>
 <p>The structure of the file name still uses the environment format: <code>server.&lt;env&gt;.psd1</code>.</p>
 <p>The structure of the file itself is basically a PowerShell hashtable, so the following:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="nt">&quot;server&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;fileMonitor&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="nt">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">true</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;server&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;fileMonitor&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;enable&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </code></pre></div>
 <p>would now be:</p>
 <div class="highlight"><pre><span></span><code><span class="p">@{</span>
