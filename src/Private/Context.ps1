@@ -487,20 +487,26 @@ function Import-PodeModulesIntoRunspaceState
     }
 
     # load modules into runspaces, if allowed
-    $modules = (Get-Module |
+    $modules = Get-Module |
         Where-Object {
             ($_.Name -ine 'pode') -and ($_.Name -inotlike 'microsoft.powershell.*')
-        }).Name | Sort-Object -Unique
+        } | Sort-Object -Unique
 
     foreach ($module in $modules) {
         # only exported modules? is the module exported?
-        if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList -inotcontains $module)) {
+        if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList -inotcontains $module.Name)) {
             continue
         }
 
         # import the module
-        $path = Find-PodeModuleFile -Name $module
-        $PodeContext.Server.Modules[$module] = $path
+        $path = Find-PodeModuleFile -Name $module.Name
+
+        if ($module.ModuleType -ieq 'Manifest') {
+            $PodeContext.RunspaceState.ImportPSModule($path)
+        }
+        else {
+            $PodeContext.Server.Modules[$module] = $path
+        }
     }
 }
 
