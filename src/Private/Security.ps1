@@ -2,7 +2,7 @@ using namespace System.Security.Cryptography
 
 function Test-PodeIPLimit
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         $IP
@@ -264,7 +264,7 @@ function Test-PodeEndpointLimit
 
 function Test-PodeIPAccess
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         $IP

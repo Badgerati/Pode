@@ -700,6 +700,9 @@ The location of a certifcate store where a certificate can be found (Default: Cu
 .PARAMETER X509Certificate
 The raw X509 certificate that can be use to enable HTTPS
 
+.PARAMETER TlsMode
+The TLS mode to use on secure connections, options are Implicit or Explicit (SMTP only) (Default: Implicit).
+
 .PARAMETER Name
 An optional name for the endpoint, that can be used with other functions (Default: GUID).
 
@@ -759,7 +762,7 @@ function Add-PodeEndpoint
         $Hostname,
 
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Ws', 'Wss')]
         [string]
         $Protocol,
 
@@ -794,9 +797,17 @@ function Add-PodeEndpoint
         $CertificateStoreLocation = 'CurrentUser',
 
         [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
-        [Parameter()]
         [X509Certificate]
         $X509Certificate = $null,
+
+        [Parameter(ParameterSetName='CertFile')]
+        [Parameter(ParameterSetName='CertThumb')]
+        [Parameter(ParameterSetName='CertName')]
+        [Parameter(ParameterSetName='CertRaw')]
+        [Parameter(ParameterSetName='CertSelf')]
+        [ValidateSet('Implicit', 'Explicit')]
+        [string]
+        $TlsMode = "Implicit",
 
         [Parameter()]
         [string]
@@ -889,6 +900,11 @@ function Add-PodeEndpoint
         throw "Client certificates are only supported on HTTPS endpoints"
     }
 
+    # explicit tls is only supported for smtp
+    if (($type -ine 'smtp') -and ($TlsMode -ieq 'explicit')) {
+        throw "The Explicit TLS mode is only supported on SMTPS endpoints"
+    }
+
     # new endpoint object
     $obj = @{
         Name = $Name
@@ -900,7 +916,7 @@ function Add-PodeEndpoint
         HostName = $Hostname
         FriendlyName = $Hostname
         Url = $null
-        Ssl = (@('https', 'wss') -icontains $Protocol)
+        Ssl = (@('https', 'wss', 'smtps') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
         Type = $type.ToLowerInvariant()
         Runspace = @{
@@ -911,6 +927,7 @@ function Add-PodeEndpoint
             Raw = $X509Certificate
             SelfSigned = $SelfSigned
             AllowClientCertificate = $AllowClientCertificate
+            TlsMode = $TlsMode
         }
     }
 
@@ -954,7 +971,7 @@ function Add-PodeEndpoint
     # if we're dealing with a certificate, attempt to import it
     if (!(Test-PodeIsHosted) -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
-        if (@('https', 'wss') -inotcontains $Protocol) {
+        if (@('https', 'wss', 'smtps') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
         }
 
@@ -985,7 +1002,7 @@ function Add-PodeEndpoint
 
     if (!$exists) {
         # has an endpoint already been defined for smtp/tcp?
-        if ((@('smtp', 'tcp') -icontains $type) -and ($PodeContext.Server.Types -icontains $type)) {
+        if ((@('tcp') -icontains $type) -and ($PodeContext.Server.Types -icontains $type)) {
             throw "An endpoint for $($type.ToUpperInvariant()) has already been defined"
         }
 
@@ -1074,7 +1091,7 @@ function Get-PodeEndpoint
         $Hostname,
 
         [Parameter()]
-        [ValidateSet('', 'Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('', 'Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Ws', 'Wss')]
         [string]
         $Protocol,
 

@@ -20,6 +20,7 @@ namespace Pode
         public X509Certificate Certificate { get; private set; }
         public bool AllowClientCertificate { get; private set; }
         public SslProtocols Protocols { get; private set; }
+        public PodeTlsMode TlsMode { get; private set; }
         public Socket Socket { get; private set; }
 
         private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
@@ -41,13 +42,19 @@ namespace Pode
 
         public bool HasHostnames => Hostnames.Any();
 
-        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeProtocolType type, X509Certificate certificate = null, bool allowClientCertificate = false)
+        public string Hostname
+        {
+            get => (HasHostnames ? Hostnames[0] : IPAddress.ToString());
+        }
+
+        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeProtocolType type, X509Certificate certificate = null, bool allowClientCertificate = false, PodeTlsMode tlsMode = PodeTlsMode.Implicit)
             : base(type)
         {
             IPAddress = ipAddress;
             Port = port;
             Certificate = certificate;
             AllowClientCertificate = allowClientCertificate;
+            TlsMode = tlsMode;
             Protocols = protocols;
             Hostnames = new List<string>();
             Endpoint = new IPEndPoint(ipAddress, port);
@@ -224,7 +231,7 @@ namespace Pode
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex, Listener);
+                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
             }
             catch (Exception ex)
             {

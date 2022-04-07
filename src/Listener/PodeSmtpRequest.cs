@@ -32,8 +32,8 @@ namespace Pode
             get => (string.IsNullOrWhiteSpace(Command) || Command.Equals("QUIT", StringComparison.InvariantCultureIgnoreCase));
         }
 
-        public PodeSmtpRequest(Socket socket)
-            : base(socket)
+        public PodeSmtpRequest(Socket socket, PodeSocket podeSocket)
+            : base(socket, podeSocket)
         {
             CanProcess = false;
             IsKeepAlive = true;
@@ -54,7 +54,7 @@ namespace Pode
 
         public void SendAck()
         {
-            Context.Response.WriteLine($"220 {Context.PodeSocket.Hostnames[0]} -- Pode Proxy Server", true);
+            Context.Response.WriteLine($"220 {Context.PodeSocket.Hostname} -- Pode Proxy Server", true);
         }
 
         protected override bool ValidateInput(byte[] bytes)
@@ -109,10 +109,37 @@ namespace Pode
             }
 
             // helo
-            if (IsCommand(content, "EHLO") || IsCommand(content, "HELO"))
+            if (IsCommand(content, "HELO"))
             {
-                Command = "EHLO";
+                //TODO: we should only ever recieve this once
+                Command = "HELO";
                 Context.Response.WriteLine("250 OK", true);
+                return true;
+            }
+
+            // ehlo
+            if (IsCommand(content, "EHLO"))
+            {
+                //TODO: we should only ever recieve this once - unless starttls is sent, then reset
+                Command = "EHLO";
+
+                if (TlsMode == PodeTlsMode.Explicit)
+                {
+                    Context.Response.WriteLine("250-STARTTLS", true);
+                }
+
+                Context.Response.WriteLine("250 OK", true);
+                return true;
+            }
+
+            // starttls
+            if (IsCommand(content, "STARTTLS"))
+            {
+                //TODO: if in explicit mode, this command should be sent after EHLO.
+                // if anything else, fail.
+                Command = "STARTTLS";
+                Context.Response.WriteLine("220 GO AHEAD");
+                UpgradeToSSL();
                 return true;
             }
 

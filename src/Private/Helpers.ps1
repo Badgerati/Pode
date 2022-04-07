@@ -2214,7 +2214,7 @@ function Get-PodeDefaultPort
 {
     param(
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Ws', 'Wss')]
         [string]
         $Protocol,
 
@@ -2228,6 +2228,7 @@ function Get-PodeDefaultPort
             Http    = 80
             Https   = 443
             Smtp    = 25
+            Smtps   = 465
             Tcp     = 9001
             Ws      = 80
             Wss     = 443
@@ -2249,6 +2250,7 @@ function Get-PodeDefaultPort
         Http    = 8080
         Https   = 8443
         Smtp    = 25
+        Smtps   = 465 #TODO: this needs to toggle based on implicit/explicit
         Tcp     = 9001
         Ws      = 9080
         Wss     = 9443

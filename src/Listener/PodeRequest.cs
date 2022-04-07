@@ -17,13 +17,17 @@ namespace Pode
         public EndPoint RemoteEndPoint { get; private set; }
         public EndPoint LocalEndPoint { get; private set; }
         public bool IsSsl { get; private set; }
+        public bool SslUpgraded { get; private set; }
         public bool IsKeepAlive { get; protected set; }
         public virtual bool CloseImmediately { get => false; }
 
         public Stream InputStream { get; private set; }
+        public X509Certificate Certificate { get; private set; }
         public bool AllowClientCertificate { get; private set; }
+        public PodeTlsMode TlsMode { get; private set; }
         public X509Certificate2 ClientCertificate { get; set; }
         public SslPolicyErrors ClientCertificateErrors { get; set; }
+        public SslProtocols Protocols { get; private set; }
         public HttpRequestException Error { get; set; }
         public bool IsAborted => (Error != default(HttpRequestException));
         public bool IsDisposed { get; private set; }
@@ -36,11 +40,16 @@ namespace Pode
         private MemoryStream BufferStream;
         private const int BufferSize = 16384;
 
-        public PodeRequest(Socket socket)
+        public PodeRequest(Socket socket, PodeSocket podeSocket)
         {
             Socket = socket;
             RemoteEndPoint = socket.RemoteEndPoint;
             LocalEndPoint = socket.LocalEndPoint;
+            TlsMode = podeSocket.TlsMode;
+            Certificate = podeSocket.Certificate;
+            IsSsl = (Certificate != default(X509Certificate));
+            AllowClientCertificate = podeSocket.AllowClientCertificate;
+            Protocols = podeSocket.Protocols;
         }
 
         public PodeRequest(PodeRequest request)
@@ -53,26 +62,32 @@ namespace Pode
             LocalEndPoint = Socket.LocalEndPoint;
             Error = request.Error;
             Context = request.Context;
+            Certificate = request.Certificate;
+            AllowClientCertificate = request.AllowClientCertificate;
+            Protocols = request.Protocols;
+            TlsMode = request.TlsMode;
         }
 
-        public void Open(X509Certificate certificate, SslProtocols protocols, bool allowClientCertificate)
+        public void Open()
         {
-            // ssl or not?
-            IsSsl = (certificate != default(X509Certificate));
-            AllowClientCertificate = allowClientCertificate;
-
             // open the socket's stream
             InputStream = new NetworkStream(Socket, true);
-            if (!IsSsl)
+            if (!IsSsl || TlsMode == PodeTlsMode.Explicit)
             {
                 // if not ssl, use the main network stream
                 return;
             }
 
             // otherwise, convert the stream to an ssl stream
+            UpgradeToSSL();
+        }
+
+        public void UpgradeToSSL()
+        {
             var ssl = new SslStream(InputStream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
-            ssl.AuthenticateAsServerAsync(certificate, allowClientCertificate, protocols, false).Wait(Context.Listener.CancellationToken);
+            ssl.AuthenticateAsServerAsync(Certificate, AllowClientCertificate, Protocols, false).Wait(Context.Listener.CancellationToken);
             InputStream = ssl;
+            SslUpgraded = true;
         }
 
         private bool ValidateCertificateCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
