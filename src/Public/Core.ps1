@@ -807,7 +807,7 @@ function Add-PodeEndpoint
         [Parameter(ParameterSetName='CertSelf')]
         [ValidateSet('Implicit', 'Explicit')]
         [string]
-        $TlsMode = "Implicit",
+        $TlsMode = 'Implicit',
 
         [Parameter()]
         [string]
@@ -945,7 +945,7 @@ function Add-PodeEndpoint
     # set the port for the context, if 0 use a default port for protocol
     $obj.Port = $_endpoint.Port
     if (([int]$obj.Port) -eq 0) {
-        $obj.Port = Get-PodeDefaultPort -Protocol $Protocol
+        $obj.Port = Get-PodeDefaultPort -Protocol $Protocol -TlsMode $TlsMode
     }
 
     if ($obj.IsIPAddress) {

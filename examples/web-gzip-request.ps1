@@ -12,7 +12,7 @@ Start-PodeServer -Threads 2 {
 
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    # GET request that recieves gzip'd json
+    # GET request that receives gzip'd json
     Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
         Write-PodeJsonResponse -Value $WebEvent.Data
     }

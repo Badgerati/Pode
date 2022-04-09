@@ -184,7 +184,7 @@ function Find-PodeEndpointName
 
     # add a default port to the address if missing
     if (!$Address.Contains(':')) {
-        $port = Get-PodeDefaultPort -Protocol $Protocol -Real
+        $port = Get-PodeDefaultPort -Protocol $Protocol -Real -TlsMode Implicit
         $Address = "$($Address):$($port)"
     }
 

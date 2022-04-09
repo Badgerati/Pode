@@ -101,7 +101,7 @@ Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda -RootPath '/tmp
 
 ### Static Content
 
-Unlike Azure Functions, static content in AWS Functions can be served up in the normal way - assuming your function can recieve multiple routes.
+Unlike Azure Functions, static content in AWS Functions can be served up in the normal way - assuming your function can receive multiple routes.
 
 For example, if you have a CSS stylesheet at `/tmp/www/styles/main.css.pode`, then your `index.pode` view would get this as such:
 

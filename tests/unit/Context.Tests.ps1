@@ -324,10 +324,24 @@ Describe 'Add-PodeEndpoint' {
             { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'Example' } | Should Throw 'already been defined'
         }
 
-        It 'Throws error when adding two SMTP endpoints' {
+        It 'Add two endpoints to listen on, one of SMTP and one of SMTPS' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
-            Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'SMTP'
-            { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'SMTP' } | Should Throw 'already been defined'
+            Add-PodeEndpoint -Address '127.0.0.1' -Port 25 -Protocol 'SMTP' -Name 'Smtp'
+            Add-PodeEndpoint -Address 'pode.mail.com' -Port 465 -Protocol 'SMTPS' -Name 'Smtps'
+
+            $PodeContext.Server.Types | Should Be 'SMTP'
+            $PodeContext.Server.Endpoints | Should Not Be $null
+            $PodeContext.Server.Endpoints.Count | Should Be 2
+
+            $endpoint = $PodeContext.Server.Endpoints['Smtp']
+            $endpoint.Port | Should Be 25
+            $endpoint.HostName | Should Be ''
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
+
+            $endpoint = $PodeContext.Server.Endpoints['Smtps']
+            $endpoint.Port | Should Be 465
+            $endpoint.HostName | Should Be 'pode.mail.com'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Throws error when adding two TCP endpoints' {

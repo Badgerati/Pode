@@ -14,8 +14,8 @@ Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -
 Start-PodeServer -Threads 2 {
 
     Add-PodeEndpoint -Address localhost -Protocol Smtp
-    Add-PodeEndpoint -Address localhost -Port 587 -Protocol Smtps -SelfSigned -TlsMode Explicit
-    Add-PodeEndpoint -Address localhost -Port 465 -Protocol Smtps -SelfSigned -TlsMode Implicit
+    Add-PodeEndpoint -Address localhost -Protocol Smtps -SelfSigned -TlsMode Explicit
+    Add-PodeEndpoint -Address localhost -Protocol Smtps -SelfSigned -TlsMode Implicit
 
     # enable logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error, Debug

@@ -2218,6 +2218,11 @@ function Get-PodeDefaultPort
         [string]
         $Protocol,
 
+        [Parameter()]
+        [ValidateSet('Implicit', 'Explicit')]
+        [string]
+        $TlsMode = 'Implicit',
+
         [switch]
         $Real
     )
@@ -2225,14 +2230,14 @@ function Get-PodeDefaultPort
     # are we after the real default ports?
     if ($Real) {
         return (@{
-            Http    = 80
-            Https   = 443
-            Smtp    = 25
-            Smtps   = 465
-            Tcp     = 9001
-            Ws      = 80
-            Wss     = 443
-        })[$Protocol.ToLowerInvariant()]
+            Http    = @{ Implicit = 80 }
+            Https   = @{ Implicit = 443 }
+            Smtp    = @{ Implicit = 25 }
+            Smtps   = @{ Implicit = 465; Explicit = 587 }
+            Tcp     = @{ Implicit = 9001 }
+            Ws      = @{ Implicit = 80 }
+            Wss     = @{ Implicit = 443 }
+        })[$Protocol.ToLowerInvariant()][$TlsMode.ToLowerInvariant()]
     }
 
     # if we running as iis, return the ASPNET port
@@ -2247,14 +2252,14 @@ function Get-PodeDefaultPort
 
     # otherwise, get the port for the protocol
     return (@{
-        Http    = 8080
-        Https   = 8443
-        Smtp    = 25
-        Smtps   = 465 #TODO: this needs to toggle based on implicit/explicit
-        Tcp     = 9001
-        Ws      = 9080
-        Wss     = 9443
-    })[$Protocol.ToLowerInvariant()]
+        Http    = @{ Implicit = 8080 }
+        Https   = @{ Implicit = 8443 }
+        Smtp    = @{ Implicit = 25 }
+        Smtps   = @{ Implicit = 465; Explicit = 587 }
+        Tcp     = @{ Implicit = 9001 }
+        Ws      = @{ Implicit = 9080 }
+        Wss     = @{ Implicit = 9443 }
+    })[$Protocol.ToLowerInvariant()][$TlsMode.ToLowerInvariant()]
 }
 
 function Set-PodeServerHeader

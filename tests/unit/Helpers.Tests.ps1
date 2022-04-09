@@ -1405,6 +1405,10 @@ Describe 'Get-PodeDefaultPort' {
         Get-PodeDefaultPort -Protocol Smtp | Should Be 25
     }
 
+    It 'Returns default port for smtps' {
+        Get-PodeDefaultPort -Protocol Smtp | Should Be 465
+    }
+
     It 'Returns default port for tcp' {
         Get-PodeDefaultPort -Protocol Tcp | Should Be 9001
     }
