@@ -97,6 +97,11 @@ namespace Pode
             get => (State == PodeContextState.Closed);
         }
 
+        public bool IsOpened
+        {
+            get => (State == PodeContextState.Open);
+        }
+
         public CancellationTokenSource ContextTimeoutToken { get; private set; }
         private Timer TimeoutTimer;
 
@@ -140,11 +145,11 @@ namespace Pode
             switch (PodeSocket.Type)
             {
                 case PodeProtocolType.Smtp:
-                    Request = new PodeSmtpRequest(Socket);
+                    Request = new PodeSmtpRequest(Socket, PodeSocket);
                     break;
 
                 default:
-                    Request = new PodeHttpRequest(Socket);
+                    Request = new PodeHttpRequest(Socket, PodeSocket);
                     break;
             }
 
@@ -153,8 +158,15 @@ namespace Pode
             // attempt to open the request stream
             try
             {
-                Request.Open(PodeSocket.Certificate, PodeSocket.Protocols, PodeSocket.AllowClientCertificate);
+                Request.Open();
                 State = PodeContextState.Open;
+            }
+            catch (AggregateException aex)
+            {
+                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Debug, true);
+                State = (Request.InputStream == default(Stream)
+                    ? PodeContextState.Error
+                    : PodeContextState.SslError);
             }
             catch (Exception ex)
             {
@@ -165,7 +177,7 @@ namespace Pode
             }
 
             // if request is SMTP, send ACK
-            if (PodeSocket.IsSmtp)
+            if (IsOpened && PodeSocket.IsSmtp)
             {
                 SmtpRequest.SendAck();
             }

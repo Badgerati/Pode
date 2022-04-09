@@ -282,9 +282,9 @@ function New-PodeContext
 
     # handlers for tcp
     $ctx.Server.Handlers = @{
-        'tcp' = @{};
-        'smtp' = @{};
-        'service' = @{};
+        tcp     = @{}
+        smtp    = @{}
+        service = @{}
     }
 
     # setup basic access placeholders
@@ -353,14 +353,14 @@ function New-PodeContext
 
     # runspace pools
     $ctx.RunspacePools = @{
-        Main = $null
-        Web = $null
-        Smtp = $null
-        Tcp = $null
-        Signals = $null
-        Schedules = $null
-        Gui = $null
-        Tasks = $null
+        Main        = $null
+        Web         = $null
+        Smtp        = $null
+        Tcp         = $null
+        Signals     = $null
+        Schedules   = $null
+        Gui         = $null
+        Tasks       = $null
     }
 
     # session state

@@ -24,20 +24,21 @@ namespace Pode
         public bool IsUrgent { get; private set; }
         public string From { get; private set; }
         public IList<string> To { get; private set; }
-        public string Command { get; private set; }
+        public PodeSmtpCommand Command { get; private set; }
         public bool CanProcess { get; private set; }
+        public PodeSmtpStartType StartType { get; private set; }
 
         public override bool CloseImmediately
         {
-            get => (string.IsNullOrWhiteSpace(Command) || Command.Equals("QUIT", StringComparison.InvariantCultureIgnoreCase));
+            get => (Command == PodeSmtpCommand.None || Command == PodeSmtpCommand.Quit);
         }
 
-        public PodeSmtpRequest(Socket socket)
-            : base(socket)
+        public PodeSmtpRequest(Socket socket, PodeSocket podeSocket)
+            : base(socket, podeSocket)
         {
             CanProcess = false;
             IsKeepAlive = true;
-            Command = string.Empty;
+            Command = PodeSmtpCommand.None;
             To = new List<string>();
             Type = PodeProtocolType.Smtp;
         }
@@ -54,7 +55,7 @@ namespace Pode
 
         public void SendAck()
         {
-            Context.Response.WriteLine($"220 {Context.PodeSocket.Hostnames[0]} -- Pode Proxy Server", true);
+            Context.Response.WriteLine($"220 {Context.PodeSocket.Hostname} -- Pode Proxy Server", true);
         }
 
         protected override bool ValidateInput(byte[] bytes)
@@ -66,7 +67,7 @@ namespace Pode
             }
 
             // for data, we need to wait till it ends with a '.<CR><LF>'
-            if (IsCommand(Command, "DATA"))
+            if (Command == PodeSmtpCommand.Data)
             {
                 if (bytes.Length < 3)
                 {
@@ -86,7 +87,7 @@ namespace Pode
             // if there are no bytes, return (0 bytes read means we can close the socket)
             if (bytes.Length == 0)
             {
-                Command = string.Empty;
+                Command = PodeSmtpCommand.None;
                 return true;
             }
 
@@ -96,7 +97,7 @@ namespace Pode
             // empty
             if (string.IsNullOrWhiteSpace(content))
             {
-                Command = string.Empty;
+                Command = PodeSmtpCommand.None;
                 Context.Response.WriteLine("501 Invalid command received", true);
                 return true;
             }
@@ -104,22 +105,64 @@ namespace Pode
             // quit
             if (IsCommand(content, "QUIT"))
             {
-                Command = "QUIT";
+                Command = PodeSmtpCommand.Quit;
+                return true;
+            }
+
+            // ensure starttls is sent for explicit tls
+            if (StartType == PodeSmtpStartType.Ehlo && TlsMode == PodeTlsMode.Explicit && !SslUpgraded && !IsCommand(content, "STARTTLS"))
+            {
+                Command = PodeSmtpCommand.None;
+                Context.Response.WriteLine("530 Must issue a STARTTLS command first", true);
                 return true;
             }
 
             // helo
-            if (IsCommand(content, "EHLO") || IsCommand(content, "HELO"))
+            if (IsCommand(content, "HELO"))
             {
-                Command = "EHLO";
+                Command = PodeSmtpCommand.Helo;
+                StartType = PodeSmtpStartType.Helo;
                 Context.Response.WriteLine("250 OK", true);
+                return true;
+            }
+
+            // ehlo
+            if (IsCommand(content, "EHLO"))
+            {
+                Command = PodeSmtpCommand.Ehlo;
+                StartType = PodeSmtpStartType.Ehlo;
+                Context.Response.WriteLine($"250-{Context.PodeSocket.Hostname} hello there", true);
+
+                if (TlsMode == PodeTlsMode.Explicit && !SslUpgraded)
+                {
+                    Context.Response.WriteLine("250-STARTTLS", true);
+                }
+
+                Context.Response.WriteLine("250 OK", true);
+                return true;
+            }
+
+            // starttls
+            if (IsCommand(content, "STARTTLS"))
+            {
+                if (TlsMode != PodeTlsMode.Explicit)
+                {
+                    Command = PodeSmtpCommand.None;
+                    Context.Response.WriteLine("501 SMTP server not running on Explicit TLS for the STARTTLS command", true);
+                    return true;
+                }
+
+                Reset();
+                Command = PodeSmtpCommand.StartTls;
+                Context.Response.WriteLine("220 Ready to start TLS");
+                UpgradeToSSL();
                 return true;
             }
 
             // to
             if (IsCommand(content, "RCPT TO"))
             {
-                Command = "RCPT TO";
+                Command = PodeSmtpCommand.RcptTo;
                 Context.Response.WriteLine("250 OK", true);
                 To.Add(ParseEmail(content));
                 return true;
@@ -128,7 +171,7 @@ namespace Pode
             // from
             if (IsCommand(content, "MAIL FROM"))
             {
-                Command = "MAIL FROM";
+                Command = PodeSmtpCommand.MailFrom;
                 Context.Response.WriteLine("250 OK", true);
                 From = ParseEmail(content);
                 return true;
@@ -137,15 +180,15 @@ namespace Pode
             // data
             if (IsCommand(content, "DATA"))
             {
-                Command = "DATA";
+                Command = PodeSmtpCommand.Data;
                 Context.Response.WriteLine("354 Start mail input; end with <CR><LF>.<CR><LF>", true);
                 return true;
             }
 
             // check prior command
-            switch (Command.ToUpperInvariant())
+            switch (Command)
             {
-                case "DATA":
+                case PodeSmtpCommand.Data:
                     CanProcess = true;
                     Context.Response.WriteLine("250 OK", true);
                     RawBody = bytes;
@@ -178,7 +221,7 @@ namespace Pode
                     }
                     else
                     {
-                        Command = string.Empty;
+                        Command = PodeSmtpCommand.None;
                         Context.Response.WriteLine("501 Invalid DATA received", true);
                         return true;
                     }
@@ -201,11 +244,12 @@ namespace Pode
             To = new List<string>();
             Body = string.Empty;
             RawBody = default(byte[]);
-            Command = string.Empty;
+            Command = PodeSmtpCommand.None;
             ContentType = string.Empty;
             ContentEncoding = string.Empty;
             Subject = string.Empty;
             IsUrgent = false;
+            StartType = PodeSmtpStartType.None;
 
             if (Attachments != default(List<PodeSmtpAttachment>))
             {

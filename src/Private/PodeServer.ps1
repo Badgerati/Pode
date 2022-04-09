@@ -176,14 +176,14 @@ function Start-PodeWebServer
 
                             # invoke global and route middleware
                             if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                                # has thr request been aborted
+                                # has the request been aborted
                                 if ($Request.IsAborted) {
                                     throw $Request.Error
                                 }
 
                                 if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware))
                                 {
-                                    # has thr request been aborted
+                                    # has the request been aborted
                                     if ($Request.IsAborted) {
                                         throw $Request.Error
                                     }

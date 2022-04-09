@@ -7,31 +7,56 @@ function Start-PodeSmtpServer
         throw 'No SMTP handlers have been defined'
     }
 
-    # the endpoint to listen on
-    $endpoint = @(Get-PodeEndpoints -Type Smtp)[0]
+    # work out which endpoints to listen on
+    $endpoints = @()
 
-    # grab the relavant port
-    $port = $endpoint.Port
+    @(Get-PodeEndpoints -Type Smtp) | ForEach-Object {
+        # get the ip address
+        $_ip = [string]($_.Address)
+        $_ip = (Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1)
+        $_ip = (Get-PodeIPAddress $_ip)
 
-    # get the IP address for the server
-    $ipAddress = $endpoint.Address
-    if (Test-PodeHostname -Hostname $ipAddress) {
-        $ipAddress = (Get-PodeIPAddressesForHostname -Hostname $ipAddress -Type All | Select-Object -First 1)
-        $ipAddress = (Get-PodeIPAddress $ipAddress)
+        # the endpoint
+        $_endpoint = @{
+            Key = "$($_ip):$($_.Port)"
+            Address = $_ip
+            Hostname = $_.HostName
+            IsIPAddress = $_.IsIPAddress
+            Port = $_.Port
+            Certificate = $_.Certificate.Raw
+            AllowClientCertificate = $_.Certificate.AllowClientCertificate
+            TlsMode = $_.Certificate.TlsMode
+            Url = $_.Url
+            Protocol = $_.Protocol
+            Type = $_.Type
+            Pool = $_.Runspace.PoolName
+        }
+
+        # add endpoint to list
+        $endpoints += $_endpoint
     }
 
     # create the listener
     $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
+    $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
+    $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
     try
     {
-        # register endpoint on the listener
-        $socket = [PodeSocket]::new($ipAddress, $port, $PodeContext.Server.Sockets.Ssl.Protocols, [PodeProtocolType]::Smtp, $null)
-        $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
-        $socket.Hostnames.Add($endpoint.HostName)
-        $listener.Add($socket)
+        # register endpoints on the listener
+        $endpoints | ForEach-Object {
+            $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, [PodeProtocolType]::Smtp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
+            $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
+
+            if (!$_.IsIPAddress) {
+                $socket.Hostnames.Add($_.HostName)
+            }
+
+            $listener.Add($socket)
+        }
+
         $listener.Start()
         $PodeContext.Listeners += $listener
     }
@@ -84,7 +109,16 @@ function Start-PodeSmtpServer
                                 Attachments = $Request.Attachments
                                 Body = $Request.Body
                             }
+                            Endpoint = @{
+                                Protocol = $Request.Url.Scheme
+                                Address = $Request.Host
+                                Name = $null
+                            }
+                            Timestamp = [datetime]::UtcNow
                         }
+
+                        # endpoint name
+                        $SmtpEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SmtpEvent.Endpoint.Protocol -Address $SmtpEvent.Endpoint.Address -LocalAddress $SmtpEvent.Request.LocalEndPoint)
 
                         # stop now if the request has an error
                         if ($Request.IsAborted) {
@@ -130,6 +164,7 @@ function Start-PodeSmtpServer
                     }
                 }
                 finally {
+                    $SmtpEvent = $null
                     Close-PodeDisposable -Disposable $context
                 }
             }
@@ -174,8 +209,10 @@ function Start-PodeSmtpServer
     Add-PodeRunspace -Type Smtp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running
-    return @(@{
-        Url  = "smtp://$($endpoint.FriendlyName):$($port)"
-        Pool = $endpoint.Runspace.PoolName
+    return @(foreach ($endpoint in $endpoints) {
+        @{
+            Url  = $endpoint.Url
+            Pool = $endpoint.Pool
+        }
     })
 }

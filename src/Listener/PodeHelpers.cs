@@ -35,20 +35,36 @@ namespace Pode
             // write the exception to terminal
             Console.WriteLine($"[{level}] {ex.GetType().Name}: {ex.Message}");
             Console.WriteLine(ex.StackTrace);
+
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"[{level}] {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+                Console.WriteLine(ex.InnerException.StackTrace);
+            }
         }
 
-        public static void HandleAggregateException(AggregateException aex, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error)
+        public static void HandleAggregateException(AggregateException aex, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
         {
-            aex.Handle((ex) =>
+            try
             {
-                if (ex is IOException || ex is OperationCanceledException)
+                aex.Handle((ex) =>
                 {
-                    return true;
-                }
+                    if (ex is IOException || ex is OperationCanceledException)
+                    {
+                        return true;
+                    }
 
-                PodeHelpers.WriteException(ex, listener, level);
-                return false;
-            });
+                    PodeHelpers.WriteException(ex, listener, level);
+                    return false;
+                });
+            }
+            catch
+            {
+                if (!handled)
+                {
+                    throw;
+                }
+            }
         }
 
         public static void WriteErrorMessage(string message, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default(PodeContext))

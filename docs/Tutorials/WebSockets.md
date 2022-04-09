@@ -114,12 +114,12 @@ $('#form').submit(function(e) {
 })
 ```
 
-This will send the message to the server, which will in-turn broadcast it to all other clients. To broadcast the message to just clients connected on a specific path, such as `/recieve`:
+This will send the message to the server, which will in-turn broadcast it to all other clients. To broadcast the message to just clients connected on a specific path, such as `/receive`:
 
 ```javascript
 $('#form').submit(function(e) {
     e.preventDefault();
-    ws.send(JSON.stringify({ message: $('#input').val(), path: '/recieve' }));
+    ws.send(JSON.stringify({ message: $('#input').val(), path: '/receive' }));
     $('#input').val('');
 })
 ```

@@ -54,8 +54,8 @@ namespace Pode
                 || (IsWebSocket && !HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase)));
         }
 
-        public PodeHttpRequest(Socket socket)
-            : base(socket)
+        public PodeHttpRequest(Socket socket, PodeSocket podeSocket)
+            : base(socket, podeSocket)
         {
             Protocol = "HTTP/1.1";
             Type = PodeProtocolType.Http;

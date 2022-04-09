@@ -1,15 +1,13 @@
 # SMTP Server
 
-Pode has an inbuilt SMTP server for receiving Email which automatically creates a TCP listener on port 25 - unless you specify a different port via the [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint) function.
-
-Unlike with web servers that use the Route functions, SMTP servers use the Handler functions, which let you specify logic for handling responses from TCP streams.
+Pode has an inbuilt SMTP server for receiving emails, with support for non-TLS as well as implicit and explicit TLS. Unlike with web servers that use the Route functions, an SMTP server use the Handler functions, which let you specify logic for handling responses from TCP streams.
 
 !!! tip
-    You can setup multiple different Handlers to run different logic for one Email.
+    You can setup multiple different Handlers to run different logic for one email.
 
 ## Usage
 
-To create a Handler for the inbuilt SMTP server you can use the following example:
+To create a Handler for the SMTP server you can use the following example:
 
 ```powershell
 Start-PodeServer {
@@ -23,12 +21,41 @@ Start-PodeServer {
 }
 ```
 
-Starting this server will listen for incoming email on `localhost:25`. The Handler will have access to the `$SmtpEvent` object (see below), which contains information about the Email.
+Starting this server will listen for incoming email on `localhost:25`. The Handler will have access to an `$SmtpEvent` object (see below), which contains information about the received email.
 
-An example of sending Email to the above server via `Send-MailMessage`:
+An example of sending an email to the above server via `Send-MailMessage`:
 
 ```powershell
 Send-MailMessage -SmtpServer localhost -To 'to@example.com' -From 'from@example.com' -Body 'Hello' -Subject 'Hi there' -Port 25
+```
+
+## TLS
+
+You can enable TLS for your endpoints by supplying the normal relevant certificates parameters on [`Add-PodeEndpoint`](../../Functions/Core/Add-PodeEndpoint), and setting the `-Protocol` to `Smtps`. You can also toggle between implicit and explicit TLS by using the `-TlsMode` parameter.
+
+By default the TLS mode is implicit, and the default port for implicit TLS is 465; for explicit TLS it's 587. These can of course be customised using `-Port`.
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Protocol Smtps -SelfSigned -TlsMode Explicit
+    Add-PodeEndpoint -Address * -Protocol Smtps -SelfSigned -TlsMode Implicit
+
+    Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
+        Write-Host $SmtpEvent.Email.From
+        Write-Host $SmtpEvent.Email.To
+        Write-Host $SmtpEvent.Email.Body
+    }
+}
+```
+
+.NET only supports explicit TLS, so an example of sending an email to the explicit TLS endpoint, on port 587, is as follows:
+
+```powershell
+# if using a self signed cert, make sure to run the below
+[System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+
+# send the email
+Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -Body 'Hello' -Subject 'Hi there' -Port 587 -UseSSL
 ```
 
 ## Attachments
