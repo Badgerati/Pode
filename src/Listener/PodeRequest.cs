@@ -84,6 +84,11 @@ namespace Pode
 
         public void UpgradeToSSL()
         {
+            if (SslUpgraded)
+            {
+                return;
+            }
+
             var ssl = new SslStream(InputStream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
             ssl.AuthenticateAsServerAsync(Certificate, AllowClientCertificate, Protocols, false).Wait(Context.Listener.CancellationToken);
             InputStream = ssl;

@@ -113,7 +113,7 @@ namespace Pode
             if (StartType == PodeSmtpStartType.Ehlo && TlsMode == PodeTlsMode.Explicit && !SslUpgraded && !IsCommand(content, "STARTTLS"))
             {
                 Command = PodeSmtpCommand.None;
-                Context.Response.WriteLine("501 Expected STARTTLS", true);
+                Context.Response.WriteLine("530 Must issue a STARTTLS command first", true);
                 return true;
             }
 
@@ -131,6 +131,7 @@ namespace Pode
             {
                 Command = PodeSmtpCommand.Ehlo;
                 StartType = PodeSmtpStartType.Ehlo;
+                Context.Response.WriteLine($"250-{Context.PodeSocket.Hostname} hello there", true);
 
                 if (TlsMode == PodeTlsMode.Explicit && !SslUpgraded)
                 {
@@ -144,9 +145,16 @@ namespace Pode
             // starttls
             if (IsCommand(content, "STARTTLS"))
             {
+                if (TlsMode != PodeTlsMode.Explicit)
+                {
+                    Command = PodeSmtpCommand.None;
+                    Context.Response.WriteLine("501 SMTP server not running on Explicit TLS for the STARTTLS command", true);
+                    return true;
+                }
+
                 Reset();
                 Command = PodeSmtpCommand.StartTls;
-                Context.Response.WriteLine("220 GO AHEAD");
+                Context.Response.WriteLine("220 Ready to start TLS");
                 UpgradeToSSL();
                 return true;
             }
