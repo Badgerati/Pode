@@ -159,6 +159,23 @@ namespace Pode
                 return true;
             }
 
+            // reset
+            if (IsCommand(content, "RSET"))
+            {
+                Reset();
+                Command = PodeSmtpCommand.Reset;
+                Context.Response.WriteLine("250 OK", true);
+                return true;
+            }
+
+            // noop
+            if (IsCommand(content, "NOOP"))
+            {
+                Command = PodeSmtpCommand.NoOp;
+                Context.Response.WriteLine("250 OK", true);
+                return true;
+            }
+
             // to
             if (IsCommand(content, "RCPT TO"))
             {

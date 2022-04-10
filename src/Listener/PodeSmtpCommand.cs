@@ -9,6 +9,8 @@ namespace Pode
         Quit,
         StartTls,
         RcptTo,
-        MailFrom
+        MailFrom,
+        NoOp,
+        Reset
     }
 }
