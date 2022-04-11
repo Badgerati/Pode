@@ -1353,7 +1353,13 @@ function ConvertTo-PodeOAParameter
         schema = @{
             type = $Property.type
             format = $Property.format
-            enum = $Property.enum
+            #enum = $Property.meta.enum
+        }
+    }
+
+    if ($null -ne $Property.meta) {
+        foreach ($key in $Property.meta.Keys) {
+            $prop.schema[$key] = $Property.meta[$key]
         }
     }
 
