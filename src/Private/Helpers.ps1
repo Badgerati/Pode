@@ -2287,7 +2287,7 @@ function Get-PodeHandler
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Service', 'Smtp', 'Tcp')]
+        [ValidateSet('Service', 'Smtp')]
         [string]
         $Type,
 

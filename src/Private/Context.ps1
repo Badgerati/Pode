@@ -289,7 +289,6 @@ function New-PodeContext
 
     # handlers for tcp
     $ctx.Server.Handlers = @{
-        tcp     = @{}
         smtp    = @{}
         service = @{}
     }
