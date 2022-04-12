@@ -55,7 +55,11 @@ namespace Pode
 
         public void SendAck()
         {
-            Context.Response.WriteLine($"220 {Context.PodeSocket.Hostname} -- Pode Proxy Server", true);
+            var ack = string.IsNullOrWhiteSpace(Context.PodeSocket.AcknowledgeMessage)
+                ? $"{Context.PodeSocket.Hostname} -- Pode Proxy Server"
+                : Context.PodeSocket.AcknowledgeMessage;
+
+            Context.Response.WriteLine($"220 {ack}", true);
         }
 
         protected override bool ValidateInput(byte[] bytes)

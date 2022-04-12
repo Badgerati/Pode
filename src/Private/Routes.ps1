@@ -25,7 +25,7 @@ function Test-PodeRoute
 
 function Find-PodeRoute
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
@@ -67,28 +67,25 @@ function Find-PodeRoute
         return $found
     }
 
-    # otherwise, attempt to match on regex parameters
-    else {
-        # match the path to routes on regex (first match only)
-        $valid = @(foreach ($key in $_method.Keys) {
-            if ($Path -imatch "^$($key)$") {
-                $key
-                break
-            }
-        })[0]
-
-        if ($null -eq $valid) {
-            return $null
+    # otherwise, match the path to routes on regex (first match only)
+    $valid = @(foreach ($key in $_method.Keys) {
+        if ($Path -imatch "^$($key)$") {
+            $key
+            break
         }
+    })[0]
 
-        # is the route valid for any protocols/endpoints?
-        $found = Get-PodeRouteByUrl -Routes $_method[$valid] -EndpointName $EndpointName
-        if ($null -eq $found) {
-            return $null
-        }
-
-        return $found
+    if ($null -eq $valid) {
+        return $null
     }
+
+    # is the route valid for any protocols/endpoints?
+    $found = Get-PodeRouteByUrl -Routes $_method[$valid] -EndpointName $EndpointName
+    if ($null -eq $found) {
+        return $null
+    }
+
+    return $found
 }
 
 function Find-PodePublicRoute
@@ -233,7 +230,7 @@ function Test-PodeRouteValidForCaching
 
 function Get-PodeRouteByUrl
 {
-    param (
+    param(
         [Parameter()]
         [hashtable[]]
         $Routes,
@@ -254,7 +251,7 @@ function Get-PodeRouteByUrl
 
 function Get-PodeRoutesByUrl
 {
-    param (
+    param(
         [Parameter()]
         [hashtable[]]
         $Routes,
@@ -285,7 +282,7 @@ function Get-PodeRoutesByUrl
 
 function Update-PodeRoutePlaceholders
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path

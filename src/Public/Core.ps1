@@ -762,7 +762,7 @@ function Add-PodeEndpoint
         $Hostname,
 
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
         [string]
         $Protocol,
 
@@ -820,6 +820,13 @@ function Add-PodeEndpoint
         [Parameter()]
         [string]
         $Description,
+
+        [Parameter()]
+        [string]
+        $Acknowledge,
+
+        [switch]
+        $CRLFMessageEnd,
 
         [switch]
         $Force,
@@ -900,9 +907,19 @@ function Add-PodeEndpoint
         throw "Client certificates are only supported on HTTPS endpoints"
     }
 
-    # explicit tls is only supported for smtp
-    if (($type -ine 'smtp') -and ($TlsMode -ieq 'explicit')) {
-        throw "The Explicit TLS mode is only supported on SMTPS endpoints"
+    # explicit tls is only supported for smtp/tcp
+    if (($type -inotin @('smtp', 'tcp')) -and ($TlsMode -ieq 'explicit')) {
+        throw "The Explicit TLS mode is only supported on SMTPS and TCPS endpoints"
+    }
+
+    # ack message is only for smtp/tcp
+    if (($type -inotin @('smtp', 'tcp')) -and ![string]::IsNullOrEmpty($Acknowledge)) {
+        throw "The Acknowledge message is only supported on SMTP and TCP endpoints"
+    }
+
+    # crlf message end is only for tcp
+    if (($type -ine 'tcp') -and $CRLFMessageEnd) {
+        throw "The CRLF message end check is only supported on TCP endpoints"
     }
 
     # new endpoint object
@@ -916,7 +933,7 @@ function Add-PodeEndpoint
         HostName = $Hostname
         FriendlyName = $Hostname
         Url = $null
-        Ssl = (@('https', 'wss', 'smtps') -icontains $Protocol)
+        Ssl = (@('https', 'wss', 'smtps', 'tcps') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
         Type = $type.ToLowerInvariant()
         Runspace = @{
@@ -928,6 +945,10 @@ function Add-PodeEndpoint
             SelfSigned = $SelfSigned
             AllowClientCertificate = $AllowClientCertificate
             TlsMode = $TlsMode
+        }
+        Tcp = @{
+            Acknowledge = $Acknowledge
+            CRLFMessageEnd = $CRLFMessageEnd
         }
     }
 
@@ -971,7 +992,7 @@ function Add-PodeEndpoint
     # if we're dealing with a certificate, attempt to import it
     if (!(Test-PodeIsHosted) -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
-        if (@('https', 'wss', 'smtps') -inotcontains $Protocol) {
+        if (@('https', 'wss', 'smtps', 'tcps') -inotcontains $Protocol) {
             throw "Certificate supplied for non-HTTPS/WSS endpoint"
         }
 
@@ -1001,11 +1022,6 @@ function Add-PodeEndpoint
     }
 
     if (!$exists) {
-        # has an endpoint already been defined for smtp/tcp?
-        if ((@('tcp') -icontains $type) -and ($PodeContext.Server.Types -icontains $type)) {
-            throw "An endpoint for $($type.ToUpperInvariant()) has already been defined"
-        }
-
         # set server type
         $_type = $type
         if ($_type -iin @('http', 'ws')) {
@@ -1091,7 +1107,7 @@ function Get-PodeEndpoint
         $Hostname,
 
         [Parameter()]
-        [ValidateSet('', 'Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('', 'Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
         [string]
         $Protocol,
 

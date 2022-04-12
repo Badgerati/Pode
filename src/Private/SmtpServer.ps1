@@ -30,6 +30,7 @@ function Start-PodeSmtpServer
             Protocol = $_.Protocol
             Type = $_.Type
             Pool = $_.Runspace.PoolName
+            Acknowledge = $_.Tcp.Acknowledge
         }
 
         # add endpoint to list
@@ -49,6 +50,7 @@ function Start-PodeSmtpServer
         $endpoints | ForEach-Object {
             $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, [PodeProtocolType]::Smtp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
+            $socket.AcknowledgeMessage = $_.Acknowledge
 
             if (!$_.IsIPAddress) {
                 $socket.Hostnames.Add($_.HostName)
@@ -110,15 +112,15 @@ function Start-PodeSmtpServer
                                 Body = $Request.Body
                             }
                             Endpoint = @{
-                                Protocol = $Request.Url.Scheme
-                                Address = $Request.Host
+                                Protocol = $Request.Scheme
+                                Address = $Request.Address
                                 Name = $null
                             }
                             Timestamp = [datetime]::UtcNow
                         }
 
                         # endpoint name
-                        $SmtpEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SmtpEvent.Endpoint.Protocol -Address $SmtpEvent.Endpoint.Address -LocalAddress $SmtpEvent.Request.LocalEndPoint)
+                        $SmtpEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SmtpEvent.Endpoint.Protocol -Address $SmtpEvent.Endpoint.Address -LocalAddress $SmtpEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Smtp))
 
                         # stop now if the request has an error
                         if ($Request.IsAborted) {

@@ -65,17 +65,7 @@ function Add-PodeHandler
 
     # if we have a file path supplied, load that path as a scriptblock
     if ($PSCmdlet.ParameterSetName -ieq 'file') {
-        # if file doesn't exist, error
-        if (!(Test-PodePath -Path $FilePath -NoStatus)) {
-            throw "[$($Type)] $($Name): The FilePath does not exist: $($FilePath)"
-        }
-
-        # if the path is a wildcard or directory, error
-        if (!(Test-PodePathIsFile -Path $FilePath -FailOnWildcard)) {
-            throw "[$($Type)] $($Name): The FilePath cannot be a wildcard or directory: $($FilePath)"
-        }
-
-        $ScriptBlock = [scriptblock](Use-PodeScript -Path $FilePath)
+        $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
     # check if the scriptblock has any using vars
@@ -86,6 +76,7 @@ function Add-PodeHandler
     $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
 
     # add the handler
+    Write-Verbose "Adding Handler: [$($Type)] $($Name)"
     $PodeContext.Server.Handlers[$Type][$Name] += @(@{
         Logic = $ScriptBlock
         UsingVariables = $usingVars
