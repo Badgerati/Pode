@@ -108,7 +108,10 @@ Describe 'Restart-PodeInternalServer' {
                     POST = @{ 'key' = 'value' }
                 }
                 Handlers = @{
-                    TCP = @{ }
+                    SMTP = @{}
+                }
+                Verbs = @{
+                    key = @{}
                 }
                 Logging = @{
                     Types = @{ 'key' = 'value' }

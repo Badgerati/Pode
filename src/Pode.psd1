@@ -81,6 +81,7 @@
         'Move-PodeResponseUrl',
         'Write-PodeTcpClient',
         'Read-PodeTcpClient',
+        'Close-PodeTcpClient',
         'Save-PodeRequestFile',
         'Set-PodeViewEngine',
         'Use-PodePartialView',
@@ -297,7 +298,14 @@
         'Set-PodeSecurityFrameOptions',
         'Set-PodeSecurityPermissionsPolicy',
         'Set-PodeSecurityReferrerPolicy',
-        'Set-PodeSecurityStrictTransportSecurity'
+        'Set-PodeSecurityStrictTransportSecurity',
+
+        # Verbs
+        'Add-PodeVerb',
+        'Remove-PodeVerb',
+        'Clear-PodeVerbs',
+        'Get-PodeVerb',
+        'Use-PodeVerbs'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

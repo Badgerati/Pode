@@ -167,7 +167,7 @@ function Get-PodeVerb
     return $verbs
 }
 
-function Use-PodeVerb
+function Use-PodeVerbs
 {
     [CmdletBinding()]
     param(
