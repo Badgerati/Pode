@@ -1134,20 +1134,42 @@ Reads data from a TCP socket stream.
 .PARAMETER Timeout
 An optional Timeout in milliseconds.
 
+.PARAMETER CheckBytes
+An optional array of bytes to check at the end of a receievd data stream, to determine if the data is complete.
+
+.PARAMETER CRLFMessageEnd
+If supplied, the CheckBytes will be set to 13 and 10 to make sure a message ends with CR and LF.
+
 .EXAMPLE
 $data = Read-PodeTcpClient
+
+.EXAMPLE
+$data = Read-PodeTcpClient -CRLFMessageEnd
 #>
 function Read-PodeTcpClient
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='default')]
     [OutputType([string])]
     param(
         [Parameter()]
         [int]
-        $Timeout = 0
+        $Timeout = 0,
+
+        [Parameter(ParameterSetName='CheckBytes')]
+        [byte[]]
+        $CheckBytes = $null,
+
+        [Parameter(ParameterSetName='CRLF')]
+        [switch]
+        $CRLFMessageEnd
     )
 
-    return (Wait-PodeTask -Task $TcpEvent.Request.Read($PodeContext.Tokens.Cancellation.Token) -Timeout $Timeout)
+    $cBytes = $CheckBytes
+    if ($CRLFMessageEnd) {
+        $cBytes = [byte[]]@(13, 10)
+    }
+
+    return (Wait-PodeTask -Task $TcpEvent.Request.Read($cBytes, $PodeContext.Tokens.Cancellation.Token) -Timeout $Timeout)
 }
 
 <#

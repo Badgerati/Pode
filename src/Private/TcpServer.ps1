@@ -144,18 +144,6 @@ function Start-PodeTcpServer
                             continue
                         }
 
-                        # is the verb auto-upgrade to ssl?
-                        if ($verb.Connection.UpgradeToSsl) {
-                            $Request.UpgradeToSSL()
-                            continue
-                        }
-
-                        # is the verb auto-close?
-                        if ($verb.Connection.Close) {
-                            Close-PodeTcpClient
-                            continue
-                        }
-
                         # set the route parameters
                         if ($verb.Verb -ine '*') {
                             $TcpEvent.Parameters = @{}
@@ -165,16 +153,29 @@ function Start-PodeTcpServer
                         }
 
                         # invoke it
-                        $_args = @($verb.Arguments)
-                        if ($null -ne $verb.UsingVariables) {
-                            $_vars = @()
-                            foreach ($_var in $verb.UsingVariables) {
-                                $_vars += ,$_var.Value
+                        if ($null -ne $verb.Logic) {
+                            $_args = @($verb.Arguments)
+                            if ($null -ne $verb.UsingVariables) {
+                                $_vars = @()
+                                foreach ($_var in $verb.UsingVariables) {
+                                    $_vars += ,$_var.Value
+                                }
+                                $_args = $_vars + $_args
                             }
-                            $_args = $_vars + $_args
+
+                            Invoke-PodeScriptBlock -ScriptBlock $verb.Logic -Arguments $_args -Scoped -Splat
                         }
 
-                        Invoke-PodeScriptBlock -ScriptBlock $verb.Logic -Arguments $_args -Scoped -Splat
+                        # is the verb auto-close?
+                        if ($verb.Connection.Close) {
+                            Close-PodeTcpClient
+                            continue
+                        }
+
+                        # is the verb auto-upgrade to ssl?
+                        if ($verb.Connection.UpgradeToSsl) {
+                            $Request.UpgradeToSSL()
+                        }
                     }
                     catch [System.OperationCanceledException] {}
                     catch {

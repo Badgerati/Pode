@@ -179,7 +179,7 @@ namespace Pode
             return false;
         }
 
-        public async Task<string> Read(CancellationToken cancellationToken)
+        public async Task<string> Read(byte[] checkBytes, CancellationToken cancellationToken)
         {
             var buffer = new byte[BufferSize];
             var bufferStream = new MemoryStream();
@@ -192,7 +192,7 @@ namespace Pode
                     cancellationToken.ThrowIfCancellationRequested();
                     bufferStream.Write(buffer, 0, read);
 
-                    if (Socket.Available > 0)
+                    if (Socket.Available > 0 || !ValidateInputInternal(BufferStream.ToArray(), checkBytes))
                     {
                         continue;
                     }
@@ -208,6 +208,38 @@ namespace Pode
                 bufferStream.Dispose();
                 buffer = default(byte[]);
             }
+        }
+
+        private bool ValidateInputInternal(byte[] bytes, byte[] checkBytes)
+        {
+            // we need more bytes!
+            if (bytes.Length == 0)
+            {
+                return false;
+            }
+
+            // do we have any checkBytes?
+            if (checkBytes == default(byte[]) || checkBytes.Length == 0)
+            {
+                return true;
+            }
+
+            // check bytes against checkBytes length
+            if (bytes.Length < checkBytes.Length)
+            {
+                return false;
+            }
+
+            // expect to end with checkBytes?
+            for (var i = 0; i < checkBytes.Length; i++)
+            {
+                if (bytes[bytes.Length - (checkBytes.Length - i)] != checkBytes[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         protected virtual bool Parse(byte[] bytes)

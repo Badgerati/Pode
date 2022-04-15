@@ -1,4 +1,4 @@
-# SMTP Server
+# SMTP
 
 Pode has an inbuilt SMTP server for receiving emails, with support for non-TLS as well as implicit and explicit TLS. Unlike with web servers that use the Route functions, an SMTP server use the Handler functions, which let you specify logic for handling responses from TCP streams.
 
@@ -82,6 +82,8 @@ The SMTP Handler will be passed the `$SmtpEvent` object, that contains the Reque
 | Response | object | The raw Response object |
 | Lockable | hashtable | A synchronized hashtable that can be used with `Lock-PodeObject` |
 | Email | hashtable | An object containing data from the email, as seen below |
+| Endpoint | hashtable | Contains the Address and Protocol of the endpoint being hit - such as "pode.example.com" or "127.0.0.2", or HTTP or HTTPS for the Protocol |
+| Timestamp | datetime | The current date and time of the Request |
 
 ### Email
 
