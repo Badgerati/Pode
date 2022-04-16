@@ -312,7 +312,7 @@ namespace Pode
                 }
 
                 // boundary line
-                match = Regex.Match(line, "^\\s*boundary=(?<boundary>.+?)$");
+                match = Regex.Match(line, "^\\s*boundary=\"?(?<boundary>.+?)\"?$");
                 if (match.Success)
                 {
                     Boundary = match.Groups["boundary"].Value;
@@ -364,9 +364,9 @@ namespace Pode
 
                 // file or main body?
                 var contentDisposition = $"{headers["Content-Disposition"]}";
-                if (!string.IsNullOrEmpty(contentDisposition) && contentDisposition.Equals("attachment", StringComparison.InvariantCultureIgnoreCase))
+                if (!string.IsNullOrEmpty(contentDisposition) && contentDisposition.ToLowerInvariant().Contains("attachment"))
                 {
-                    var match = Regex.Match(contentType, "name=(?<name>.+)");
+                    var match = Regex.Match(contentType, "name=\"?(?<name>.+)\"?");
                     var name = match.Groups["name"].Value;
 
                     var stream = new MemoryStream();
