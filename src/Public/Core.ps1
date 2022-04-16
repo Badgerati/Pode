@@ -712,6 +712,12 @@ The Name of another Endpoint to automatically generate a redirect route for all 
 .PARAMETER Description
 A quick description of the Endpoint - normally used in OpenAPI.
 
+.PARAMETER Acknowledge
+An optional Acknowledge message to send to clients when they first connect, for TCP and SMTP endpoints only.
+
+.PARAMETER CRLFMessageEnd
+If supplied, TCP endpoints will expect incoming data to end with CRLF.
+
 .PARAMETER Force
 Ignore Adminstrator checks for non-localhost endpoints.
 
