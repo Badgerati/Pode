@@ -192,7 +192,7 @@ namespace Pode
                     cancellationToken.ThrowIfCancellationRequested();
                     bufferStream.Write(buffer, 0, read);
 
-                    if (Socket.Available > 0 || !ValidateInputInternal(BufferStream.ToArray(), checkBytes))
+                    if (Socket.Available > 0 || !ValidateInputInternal(bufferStream.ToArray(), checkBytes))
                     {
                         continue;
                     }
@@ -201,7 +201,7 @@ namespace Pode
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                return Encoding.GetString(bufferStream.ToArray());
+                return Encoding.GetString(bufferStream.ToArray()).Trim();
             }
             finally
             {

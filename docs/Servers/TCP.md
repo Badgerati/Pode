@@ -4,6 +4,9 @@ Pode has a generic TCP server type inbuilt. Unlike the other server types, the T
 
 Where a web server using Routes, a TCP server uses Verbs - think of them like "commands" or "phrases". Requests sent will be matched to a Verb, and that Verb's logic invoked (more info below).
 
+!!! important
+    This server type is still in the early days, so if you find any bugs or have any suggestions, please feel free to raise them over on [GitHub](https://github.com/badgerati/pode) or [Discord](https://discord.gg/fRqeGcbF6h)! 😄
+
 ## Usage
 
 To create a TCP server you need to create an appropriate [Endpoint](../../Tutorials/Endpoints/Basics) with the TCP protocol, plus some [Verbs](#verbs).
@@ -12,7 +15,7 @@ The following example will create a TCP endpoint listening on `localhost:9000`, 
 
 ```powershell
 Start-PodeServer {
-    Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Tcp -CRLFMessageEnd
+    Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Tcp -CRLFMessageEnd -Acknowledge 'Welcome!'
 
     Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
         Write-PodeTcpClient -Message 'HI'
@@ -27,11 +30,15 @@ Start the above server, and then in a different terminal start telnet and send "
 
 ```powershell
 $> telnet localhost 9000
+S> Welcome!
 C> HELLO
 S> HI
 ```
 
 When you send "HELLO", the server will respond with "HI". If you can't use telnet, then there's a quick [test script](#test-send) below to use.
+
+!!! important
+    If you're using telnet to send data, backspaces will be recorded as sent data.
 
 ### Acknowledge
 
@@ -93,7 +100,7 @@ Start-PodeServer {
 }
 ```
 
-Running the above server and navigating to http://localhost:9000 will greet you with a message. The raw data sent by the browser will be display on the terminal; this could be parsed to do different things.
+Running the above server and navigating to `http://localhost:9000` will greet you with a message. The raw data sent by the browser will be display on the terminal; this could be parsed to do different things.
 
 ### SSL Upgrade
 
@@ -137,7 +144,7 @@ In the above examples you've seen [`Write-PodeTcpClient`](../../Functions/Respon
 ```powershell
 Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
     Write-PodeTcpClient -Message "Hi! What's your name?"
-    $name = Read-PodeTcpClient
+    $name = Read-PodeTcpClient -CRLFMessageEnd
     Write-PodeTcpClient -Message "Hi, $($name)!"
 }
 ```
