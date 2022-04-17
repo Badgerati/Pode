@@ -22,6 +22,8 @@ namespace Pode
         public SslProtocols Protocols { get; private set; }
         public PodeTlsMode TlsMode { get; private set; }
         public Socket Socket { get; private set; }
+        public string AcknowledgeMessage { get; set; }
+        public bool CRLFMessageEnd { get; set; }
 
         private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
         private ConcurrentQueue<SocketAsyncEventArgs> ReceiveConnections;

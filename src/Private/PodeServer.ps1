@@ -164,7 +164,7 @@ function Start-PodeWebServer
                             $WebEvent.Ranges = (Get-PodeRanges -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
                             # endpoint name
-                            $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint)
+                            $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Route))
 
                             # add logging endware for post-request
                             Add-PodeRequestLogEndware -WebEvent $WebEvent
@@ -379,7 +379,7 @@ function Start-PodeWebServer
                         }
 
                         # endpoint name
-                        $SignalEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SignalEvent.Endpoint.Protocol -Address $SignalEvent.Endpoint.Address -LocalAddress $SignalEvent.Request.LocalEndPoint)
+                        $SignalEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SignalEvent.Endpoint.Protocol -Address $SignalEvent.Endpoint.Address -LocalAddress $SignalEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Route))
 
                         # see if we have a route and invoke it, otherwise auto-send
                         $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name

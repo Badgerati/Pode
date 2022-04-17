@@ -32,6 +32,18 @@ namespace Pode
         public bool IsAborted => (Error != default(HttpRequestException));
         public bool IsDisposed { get; private set; }
 
+        public virtual string Address
+        {
+            get => (Context.PodeSocket.HasHostnames
+                ? $"{Context.PodeSocket.Hostname}:{((IPEndPoint)LocalEndPoint).Port}"
+                : $"{((IPEndPoint)LocalEndPoint).Address}:{((IPEndPoint)LocalEndPoint).Port}");
+        }
+
+        public virtual string Scheme
+        {
+            get => (SslUpgraded ? $"{Context.PodeSocket.Type}s" : $"{Context.PodeSocket.Type}");
+        }
+
         private Socket Socket;
         protected PodeContext Context;
         protected static UTF8Encoding Encoding = new UTF8Encoding();
@@ -106,10 +118,10 @@ namespace Pode
             return true;
         }
 
-        protected async Task<int> BeginRead(CancellationToken cancellationToken)
+        protected async Task<int> BeginRead(byte[] buffer, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return await Task<int>.Factory.FromAsync(InputStream.BeginRead, InputStream.EndRead, Buffer, 0, BufferSize, null);
+            return await Task<int>.Factory.FromAsync(InputStream.BeginRead, InputStream.EndRead, buffer, 0, BufferSize, null);
         }
 
         public async Task<bool> Receive(CancellationToken cancellationToken)
@@ -124,7 +136,7 @@ namespace Pode
                 var read = 0;
                 var close = true;
 
-                while ((read = await BeginRead(cancellationToken)) > 0)
+                while ((read = await BeginRead(Buffer, cancellationToken)) > 0)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     BufferStream.Write(Buffer, 0, read);
@@ -134,16 +146,13 @@ namespace Pode
                         continue;
                     }
 
-                    var bytes = BufferStream.ToArray();
-                    if (!Parse(bytes))
+                    if (!Parse(BufferStream.ToArray()))
                     {
-                        bytes = default(byte[]);
                         BufferStream.Dispose();
                         BufferStream = new MemoryStream();
                         continue;
                     }
 
-                    bytes = default(byte[]);
                     close = false;
                     break;
                 }
@@ -168,6 +177,69 @@ namespace Pode
             }
 
             return false;
+        }
+
+        public async Task<string> Read(byte[] checkBytes, CancellationToken cancellationToken)
+        {
+            var buffer = new byte[BufferSize];
+            var bufferStream = new MemoryStream();
+
+            try
+            {
+                var read = 0;
+                while ((read = await BeginRead(buffer, cancellationToken)) > 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    bufferStream.Write(buffer, 0, read);
+
+                    if (Socket.Available > 0 || !ValidateInputInternal(bufferStream.ToArray(), checkBytes))
+                    {
+                        continue;
+                    }
+
+                    break;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                return Encoding.GetString(bufferStream.ToArray()).Trim();
+            }
+            finally
+            {
+                bufferStream.Dispose();
+                buffer = default(byte[]);
+            }
+        }
+
+        private bool ValidateInputInternal(byte[] bytes, byte[] checkBytes)
+        {
+            // we need more bytes!
+            if (bytes.Length == 0)
+            {
+                return false;
+            }
+
+            // do we have any checkBytes?
+            if (checkBytes == default(byte[]) || checkBytes.Length == 0)
+            {
+                return true;
+            }
+
+            // check bytes against checkBytes length
+            if (bytes.Length < checkBytes.Length)
+            {
+                return false;
+            }
+
+            // expect to end with checkBytes?
+            for (var i = 0; i < checkBytes.Length; i++)
+            {
+                if (bytes[bytes.Length - (checkBytes.Length - i)] != checkBytes[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         protected virtual bool Parse(byte[] bytes)

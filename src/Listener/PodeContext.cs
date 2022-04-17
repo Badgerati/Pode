@@ -148,6 +148,10 @@ namespace Pode
                     Request = new PodeSmtpRequest(Socket, PodeSocket);
                     break;
 
+                case PodeProtocolType.Tcp:
+                    Request = new PodeTcpRequest(Socket, PodeSocket);
+                    break;
+
                 default:
                     Request = new PodeHttpRequest(Socket, PodeSocket);
                     break;
@@ -176,10 +180,17 @@ namespace Pode
                     : PodeContextState.SslError);
             }
 
-            // if request is SMTP, send ACK
-            if (IsOpened && PodeSocket.IsSmtp)
+            // if request is SMTP or TCP, send ACK if available
+            if (IsOpened)
             {
-                SmtpRequest.SendAck();
+                if (PodeSocket.IsSmtp)
+                {
+                    SmtpRequest.SendAck();
+                }
+                else if (PodeSocket.IsTcp && !string.IsNullOrWhiteSpace(PodeSocket.AcknowledgeMessage))
+                {
+                    Response.WriteLine(PodeSocket.AcknowledgeMessage, true);
+                }
             }
         }
 
@@ -201,6 +212,16 @@ namespace Pode
                     }
 
                     Type = PodeProtocolType.Smtp;
+                    break;
+
+                // - only allow tcp
+                case PodeProtocolType.Tcp:
+                    if (!Request.IsTcp)
+                    {
+                        throw new HttpRequestException("Request is not Tcp");
+                    }
+
+                    Type = PodeProtocolType.Tcp;
                     break;
 
                 // - only allow http

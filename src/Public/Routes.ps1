@@ -138,8 +138,8 @@ function Add-PodeRoute
     $Path = Update-PodeRoutePlaceholders -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindRouteEndpoint) {
-        $PodeContext.Server.FindRouteEndpoint = !(Test-PodeIsEmpty $EndpointName)
+    if (!$PodeContext.Server.FindEndpoints.Route) {
+        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
     }
 
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
@@ -354,8 +354,8 @@ function Add-PodeStaticRoute
     $Path = Update-PodeRoutePlaceholders -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindRouteEndpoint) {
-        $PodeContext.Server.FindRouteEndpoint = !(Test-PodeIsEmpty $EndpointName)
+    if (!$PodeContext.Server.FindEndpoints.Route) {
+        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
     }
 
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
@@ -507,8 +507,8 @@ function Add-PodeSignalRoute
     $Path = Update-PodeRouteSlashes -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindRouteEndpoint) {
-        $PodeContext.Server.FindRouteEndpoint = !(Test-PodeIsEmpty $EndpointName)
+    if (!$PodeContext.Server.FindEndpoints.Route) {
+        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
     }
 
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
@@ -586,7 +586,7 @@ Remove-PodeRoute -Method Post -Route '/users/:userId' -EndpointName User
 function Remove-PodeRoute
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
         [string]
@@ -746,7 +746,7 @@ Clear-PodeRoutes -Method Get
 function Clear-PodeRoutes
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter()]
         [ValidateSet('', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
         [string]
@@ -1172,7 +1172,7 @@ Get-PodeRoute -Method Post -Path '/users/:userId' -EndpointName User
 function Get-PodeRoute
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter()]
         [ValidateSet('', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
         [string]

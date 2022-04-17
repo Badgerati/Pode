@@ -20,7 +20,7 @@ Pode is a Cross-Platform framework to create web servers that host REST APIs, We
 * Azure Functions, AWS Lambda, and IIS support
 * OpenAPI, Swagger, and ReDoc support
 * Listen on a single or multiple IP address/hostnames
-* Cross-platform support for HTTP, HTTPS, TCP and SMTP
+* Cross-platform support for HTTP(S), SMTP(S), and TCP(S)
 * Cross-platform support for WebSockets, including secure WebSockets
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages

@@ -170,6 +170,10 @@ function Restart-PodeInternalServer
             $PodeContext.Server.Handlers[$_].Clear()
         }
 
+        $PodeContext.Server.Verbs.Keys.Clone() | ForEach-Object {
+            $PodeContext.Server.Verbs[$_].Clear()
+        }
+
         $PodeContext.Server.Events.Keys.Clone() | ForEach-Object {
             $PodeContext.Server.Events[$_].Clear()
         }
@@ -208,7 +212,11 @@ function Restart-PodeInternalServer
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
         $PodeContext.Server.EndpointsMap.Clear()
-        $PodeContext.Server.FindRouteEndpoint = $false
+        $PodeContext.Server.FindEndpoints = @{
+            Route = $false
+            Smtp  = $false
+            Tcp   = $false
+        }
 
         # clear openapi
         $PodeContext.Server.OpenAPI = Get-PodeOABaseObject

@@ -344,10 +344,24 @@ Describe 'Add-PodeEndpoint' {
             $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
-        It 'Throws error when adding two TCP endpoints' {
+        It 'Add two endpoints to listen on, one of TCP and one of TCPS' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
-            Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'TCP'
-            { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'TCP' } | Should Throw 'already been defined'
+            Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'TCP' -Name 'Tcp'
+            Add-PodeEndpoint -Address 'pode.foo.com' -Port 443 -Protocol 'TCPS' -Name 'Tcps'
+
+            $PodeContext.Server.Types | Should Be 'TCP'
+            $PodeContext.Server.Endpoints | Should Not Be $null
+            $PodeContext.Server.Endpoints.Count | Should Be 2
+
+            $endpoint = $PodeContext.Server.Endpoints['Tcp']
+            $endpoint.Port | Should Be 80
+            $endpoint.HostName | Should Be ''
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
+
+            $endpoint = $PodeContext.Server.Endpoints['Tcps']
+            $endpoint.Port | Should Be 443
+            $endpoint.HostName | Should Be 'pode.foo.com'
+            $endpoint.Address.ToString() | Should Be '127.0.0.1'
         }
 
         It 'Throws an error for not running as admin' {

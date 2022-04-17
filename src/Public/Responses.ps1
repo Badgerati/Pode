@@ -1101,16 +1101,13 @@ function Move-PodeResponseUrl
 
 <#
 .SYNOPSIS
-Writes data to a TCP Client stream.
+Writes data to a TCP socket stream.
 
 .DESCRIPTION
-Writes data to a TCP Client stream.
+Writes data to a TCP socket stream.
 
 .PARAMETER Message
-Parameter description
-
-.PARAMETER Client
-An optional TcpClient to write data.
+The message to write
 
 .EXAMPLE
 Write-PodeTcpClient -Message '250 OK'
@@ -1118,79 +1115,79 @@ Write-PodeTcpClient -Message '250 OK'
 function Write-PodeTcpClient
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(ValueFromPipeline=$true)]
         [string]
-        $Message,
-
-        [Parameter()]
-        $Client
+        $Message
     )
 
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'Write-PodeTcpClient' -ThrowError
-
-    # use the main client if one isn't supplied
-    if ($null -eq $Client) {
-        $Client = $TcpEvent.Client
-    }
-
-    $encoder = New-Object System.Text.ASCIIEncoding
-    $buffer = $encoder.GetBytes("$($Message)`r`n")
-    $stream = $Client.GetStream()
-    Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
-    $stream.Flush()
+    $TcpEvent.Response.WriteLine($Message, $true)
 }
 
 <#
 .SYNOPSIS
-Reads data from a TCP Client stream.
+Reads data from a TCP socket stream.
 
 .DESCRIPTION
-Reads data from a TCP Client stream.
-
-.PARAMETER Client
-An optional TcpClient from which to read data.
+Reads data from a TCP socket stream.
 
 .PARAMETER Timeout
 An optional Timeout in milliseconds.
 
+.PARAMETER CheckBytes
+An optional array of bytes to check at the end of a receievd data stream, to determine if the data is complete.
+
+.PARAMETER CRLFMessageEnd
+If supplied, the CheckBytes will be set to 13 and 10 to make sure a message ends with CR and LF.
+
 .EXAMPLE
 $data = Read-PodeTcpClient
+
+.EXAMPLE
+$data = Read-PodeTcpClient -CRLFMessageEnd
 #>
 function Read-PodeTcpClient
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='default')]
     [OutputType([string])]
-    param (
-        [Parameter()]
-        $Client,
-
+    param(
         [Parameter()]
         [int]
-        $Timeout = 0
+        $Timeout = 0,
+
+        [Parameter(ParameterSetName='CheckBytes')]
+        [byte[]]
+        $CheckBytes = $null,
+
+        [Parameter(ParameterSetName='CRLF')]
+        [switch]
+        $CRLFMessageEnd
     )
 
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'Read-PodeTcpClient' -ThrowError
-
-    # use the main client if one isn't supplied
-    if ($null -eq $Client) {
-        $Client = $TcpEvent.Client
+    $cBytes = $CheckBytes
+    if ($CRLFMessageEnd) {
+        $cBytes = [byte[]]@(13, 10)
     }
 
-    # read the data from the stream
-    $bytes = New-Object byte[] 8192
-    $data = [string]::Empty
-    $encoder = New-Object System.Text.ASCIIEncoding
-    $stream = $Client.GetStream()
+    return (Wait-PodeTask -Task $TcpEvent.Request.Read($cBytes, $PodeContext.Tokens.Cancellation.Token) -Timeout $Timeout)
+}
 
-    do {
-        $bytesRead = (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $bytes.Length) -Timeout $Timeout)
-        $data += $encoder.GetString($bytes, 0, $bytesRead)
-    } while ($stream.DataAvailable)
+<#
+.SYNOPSIS
+Close an open TCP client connection
 
-    return $data
+.DESCRIPTION
+Close an open TCP client connection
+
+.EXAMPLE
+Close-PodeTcpClient
+#>
+function Close-PodeTcpClient
+{
+    [CmdletBinding()]
+    param()
+
+    $TcpEvent.Request.Close()
 }
 
 <#

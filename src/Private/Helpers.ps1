@@ -2214,7 +2214,7 @@ function Get-PodeDefaultPort
 {
     param(
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
         [string]
         $Protocol,
 
@@ -2235,6 +2235,7 @@ function Get-PodeDefaultPort
             Smtp    = @{ Implicit = 25 }
             Smtps   = @{ Implicit = 465; Explicit = 587 }
             Tcp     = @{ Implicit = 9001 }
+            Tcps    = @{ Implicit = 9002; Explicit = 9003 }
             Ws      = @{ Implicit = 80 }
             Wss     = @{ Implicit = 443 }
         })[$Protocol.ToLowerInvariant()][$TlsMode.ToLowerInvariant()]
@@ -2257,6 +2258,7 @@ function Get-PodeDefaultPort
         Smtp    = @{ Implicit = 25 }
         Smtps   = @{ Implicit = 465; Explicit = 587 }
         Tcp     = @{ Implicit = 9001 }
+        Tcps    = @{ Implicit = 9002; Explicit = 9003 }
         Ws      = @{ Implicit = 9080 }
         Wss     = @{ Implicit = 9443 }
     })[$Protocol.ToLowerInvariant()][$TlsMode.ToLowerInvariant()]
@@ -2285,7 +2287,7 @@ function Get-PodeHandler
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Service', 'Smtp', 'Tcp')]
+        [ValidateSet('Service', 'Smtp')]
         [string]
         $Type,
 
