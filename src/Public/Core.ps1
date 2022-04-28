@@ -104,7 +104,7 @@ function Start-PodeServer
         $ListenerType = [string]::Empty,
 
         [Parameter()]
-        [ValidateSet('Timers', 'Schedules', 'Tasks')]
+        [ValidateSet('Timers', 'Schedules', 'Tasks', 'WebSockets')]
         [string[]]
         $EnablePool,
 

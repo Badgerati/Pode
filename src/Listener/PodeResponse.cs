@@ -353,6 +353,7 @@ namespace Pode
             if (OutputStream != default(MemoryStream))
             {
                 OutputStream.Dispose();
+                OutputStream = default(MemoryStream);
             }
 
             PodeHelpers.WriteErrorMessage($"Response disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);

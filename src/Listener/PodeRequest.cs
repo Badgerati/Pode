@@ -173,6 +173,7 @@ namespace Pode
             finally
             {
                 BufferStream.Dispose();
+                BufferStream = default(MemoryStream);
                 Buffer = default(byte[]);
             }
 
@@ -206,6 +207,7 @@ namespace Pode
             finally
             {
                 bufferStream.Dispose();
+                bufferStream = default(MemoryStream);
                 buffer = default(byte[]);
             }
         }
@@ -274,11 +276,13 @@ namespace Pode
             if (InputStream != default(Stream))
             {
                 InputStream.Dispose();
+                InputStream = default(Stream);
             }
 
             if (BufferStream != default(MemoryStream))
             {
                 BufferStream.Dispose();
+                BufferStream = default(MemoryStream);
             }
 
             PodeHelpers.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);

@@ -4,14 +4,14 @@ namespace Pode
 {
     public class PodeClientSignal : IDisposable
     {
-        public PodeWebSocket WebSocket { get; private set; }
+        public PodeSignal Signal { get; private set; }
         public string Message { get; private set; }
         public DateTime Timestamp { get; private set; }
         public PodeListener Listener { get; private set; }
 
-        public PodeClientSignal(PodeWebSocket webSocket, string message, PodeListener listener)
+        public PodeClientSignal(PodeSignal signal, string message, PodeListener listener)
         {
-            WebSocket = webSocket;
+            Signal = signal;
             Message = message;
             Timestamp = DateTime.UtcNow;
             Listener = listener;

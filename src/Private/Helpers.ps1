@@ -514,7 +514,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets')]
         [string]
         $Type,
 
@@ -646,6 +646,13 @@ function Close-PodeRunspaces
                 $continue = $false
                 foreach ($listener in $PodeContext.Listeners) {
                     if (!$listener.IsDisposed) {
+                        $continue = $true
+                        break
+                    }
+                }
+
+                foreach ($receiver in $PodeContext.Receivers) {
+                    if (!$receiver.IsDisposed) {
                         $continue = $true
                         break
                     }

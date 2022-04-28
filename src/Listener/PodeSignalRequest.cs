@@ -3,12 +3,12 @@ using System.Net.WebSockets;
 
 namespace Pode
 {
-    public class PodeWsRequest : PodeRequest
+    public class PodeSignalRequest : PodeRequest
     {
         public PodeWsOpCode OpCode { get; private set; }
         public string Body { get; private set; }
         public byte[] RawBody { get; private set; }
-        public PodeWebSocket WebSocket { get; private set; }
+        public PodeSignal Signal { get; private set; }
         public Uri Url { get; private set; }
         public string Host { get; private set; }
         public int ContentLength { get; private set; }
@@ -30,10 +30,10 @@ namespace Pode
             get => (OpCode == PodeWsOpCode.Close);
         }
 
-        public PodeWsRequest(PodeHttpRequest request, PodeWebSocket webSocket)
+        public PodeSignalRequest(PodeHttpRequest request, PodeSignal signal)
             : base(request)
         {
-            WebSocket = webSocket;
+            Signal = signal;
             IsKeepAlive = true;
             Type = PodeProtocolType.Ws;
 
@@ -44,7 +44,7 @@ namespace Pode
 
         public PodeClientSignal NewClientSignal()
         {
-            return new PodeClientSignal(WebSocket, Body, Context.Listener);
+            return new PodeClientSignal(Signal, Body, Context.Listener);
         }
 
         protected override bool Parse(byte[] bytes)
@@ -128,7 +128,7 @@ namespace Pode
             }
 
             // remove client, and dispose
-            Context.Listener.WebSockets.Remove(WebSocket.ClientId);
+            Context.Listener.Signals.Remove(Signal.ClientId);
             base.Dispose();
         }
 

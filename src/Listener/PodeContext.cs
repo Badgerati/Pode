@@ -49,7 +49,7 @@ namespace Pode
 
         public bool IsWebSocketUpgraded
         {
-            get => (IsWebSocket && Request is PodeWsRequest);
+            get => (IsWebSocket && Request is PodeSignalRequest);
         }
 
         public new bool IsSmtp
@@ -72,9 +72,9 @@ namespace Pode
             get => (PodeHttpRequest)Request;
         }
 
-        public PodeWsRequest WsRequest
+        public PodeSignalRequest SignalRequest
         {
-            get => (PodeWsRequest)Request;
+            get => (PodeSignalRequest)Request;
         }
 
         public bool IsKeepAlive
@@ -302,7 +302,7 @@ namespace Pode
 
         public void UpgradeWebSocket(string clientId = null)
         {
-            PodeHelpers.WriteErrorMessage($"Uprading Websocket", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
 
             // websocket
             if (!IsWebSocket)
@@ -342,12 +342,9 @@ namespace Pode
             Response.Send();
 
             // add open web socket to listener
-            var webSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
-
-            var wsRequest = new PodeWsRequest(HttpRequest, webSocket);
-            Request = wsRequest;
-
-            Listener.AddWebSocket(WsRequest.WebSocket);
+            var signal = new PodeSignal(this, HttpRequest.Url.AbsolutePath, clientId);
+            Request = new PodeSignalRequest(HttpRequest, signal);
+            Listener.AddSignal(SignalRequest.Signal);
             PodeHelpers.WriteErrorMessage($"Websocket upgraded", Listener, PodeLoggingLevel.Verbose, this);
         }
 

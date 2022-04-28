@@ -294,7 +294,7 @@ namespace Pode
                     if (context.IsWebSocket)
                     {
                         PodeHelpers.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, context);
-                        Listener.AddClientSignal(context.WsRequest.NewClientSignal());
+                        Listener.AddClientSignal(context.SignalRequest.NewClientSignal());
                         context.Dispose();
                     }
                     else
@@ -428,6 +428,7 @@ namespace Pode
             // dispose
             socket.Close();
             socket.Dispose();
+            socket = default(Socket);
         }
 
         private void ClearSocketAsyncEvent(SocketAsyncEventArgs e)
