@@ -52,7 +52,7 @@ namespace Pode
 
         public PodeWebSocket GetWebSocket(string name)
         {
-            return WebSockets[name];
+            return (WebSockets.ContainsKey(name) ? WebSockets[name] : default(PodeWebSocket));
         }
 
         public void DisconnectWebSocket(string name)

@@ -1,5 +1,3 @@
-param($token)
-
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
 Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
@@ -7,7 +5,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Import-Module Pode
 
 # create a server, and start listening
-Start-PodeServer {
+Start-PodeServer -EnablePool WebSockets {
 
     # listen
     Add-PodeEndpoint -Address * -Port 8092 -Protocol Http
@@ -23,24 +21,15 @@ Start-PodeServer {
     #     }
     # }
 
-    $slack = Invoke-RestMethod -Method Post -Uri 'https://slack.com/api/apps.connections.open' -Headers @{ Authorization = "Bearer $token" }
-    Connect-PodeWebSocket -Name 'Slack' -Url $slack.url -ScriptBlock {
-        # $WsEvent.Request.Body | out-default
-
-        $msg = $WsEvent.Request.Body | ConvertFrom-Json -AsHashtable
-        $msg | out-default
-        switch ($msg.type) {
-            'disconnect' {
-                Disconnect-PodeWebSocket
-            }
-
-            'events_api' {
-                Send-PodeWebSocket -Message (@{
-                    envelope_id = $msg.envelope_id
-                } | ConvertTo-Json -Compress) # acknowledge
-
-            }
+    Add-PodeRoute -Method Get -Path '/connect' -ScriptBlock {
+        Connect-PodeWebSocket -Name 'Test' -Url 'wss://ws.ifelse.io/' -ScriptBlock {
+            $WsEvent.Request | out-default
         }
+    }
+
+    Add-PodeTimer -Name 'Test' -Interval 10 -ScriptBlock {
+        $rand = Get-Random -Minimum 10 -Maximum 1000
+        Send-PodeWebSocket -Name 'Test' -Message "hello $rand"
     }
 
     # Add-PodeRoute -Method Get -Path '/reset' -ScriptBlock {

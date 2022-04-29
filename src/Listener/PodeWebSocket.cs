@@ -104,14 +104,14 @@ namespace Pode
             }
         }
 
-        public void Send(string message)
+        public void Send(string message, WebSocketMessageType type = WebSocketMessageType.Text)
         {
             if (WebSocket.State != WebSocketState.Open)
             {
                 return;
             }
 
-            WebSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)), WebSocketMessageType.Binary, true, Receiver.CancellationToken).Wait();
+            WebSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)), type, true, Receiver.CancellationToken).Wait();
         }
 
         public void Disconnect()

@@ -54,8 +54,19 @@ function Connect-PodeWebSocket
     # ensure we have a receiver
     New-PodeWebSocketReceiver
 
+    # fail if already exists
+    if (Test-PodeWebSocket -Name $Name) {
+        throw "Already connected to websocket with name '$($Name)'"
+    }
+
     # connect
-    $PodeContext.Server.WebSockets.Receiver.ConnectWebSocket($Name, $Url)
+    try {
+        $PodeContext.Server.WebSockets.Receiver.ConnectWebSocket($Name, $Url)
+    }
+    catch {
+        throw "Failed to connect to websocket: $($_.Exception.Message)"
+    }
+
     $PodeContext.Server.WebSockets.Connections[$Name] = @{
         Name = $Name
         Url = $Url
@@ -84,8 +95,10 @@ function Disconnect-PodeWebSocket
         throw "No Name for a WebSocket to disconnect from supplied"
     }
 
-    $PodeContext.Server.WebSockets.Receiver.DisconnectWebSocket($Name)
-    $PodeContext.Server.WebSockets.Connections.Remove($Name)
+    if (Test-PodeWebSocket -Name $Name) {
+        $PodeContext.Server.WebSockets.Receiver.DisconnectWebSocket($Name)
+        $PodeContext.Server.WebSockets.Connections.Remove($Name)
+    }
 }
 
 function Send-PodeWebSocket
@@ -98,11 +111,16 @@ function Send-PodeWebSocket
 
         [Parameter()]
         [string]
-        $Message
+        $Message,
+
+        [Parameter()]
+        [ValidateSet('Text', 'Binary')]
+        [string]
+        $Type = 'Text'
     )
 
     if ([string]::IsNullOrWhiteSpace($Name) -and ($null -ne $WsEvent)) {
-        $WsEvent.Request.WebSocket.Send($Message)
+        $WsEvent.Request.WebSocket.Send($Message, $Type)
         return
     }
 
@@ -110,7 +128,9 @@ function Send-PodeWebSocket
         throw "No Name for a WebSocket to send message to supplied"
     }
 
-    $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name).Send($Message)
+    if (Test-PodeWebSocket -Name $Name) {
+        $ws.Send($Message, $Type)
+    }
 }
 
 function Reset-PodeWebSocket
@@ -135,5 +155,19 @@ function Reset-PodeWebSocket
         throw "No Name for a WebSocket to reset supplied"
     }
 
-    $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name).Reconnect($Url)
+    if (Test-PodeWebSocket -Name $Name) {
+        $ws.Reconnect($Url)
+    }
+}
+
+function Test-PodeWebSocket
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return ($null -ne $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name))
 }

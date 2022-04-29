@@ -629,6 +629,8 @@ function New-PodeRunspacePools
             Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.WebSockets + 1, $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
         }
+
+        New-PodeWebSocketReceiver
     }
 
     # setup schedule runspace pool -if we have any schedules
