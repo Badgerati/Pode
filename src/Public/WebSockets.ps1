@@ -36,7 +36,7 @@ function Set-PodeWebSocketConcurrency
 
 function Connect-PodeWebSocket
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Script')]
     param(
         [Parameter(Mandatory=$true)]
         [string]
@@ -46,9 +46,17 @@ function Connect-PodeWebSocket
         [string]
         $Url,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(ParameterSetName='Script')]
         [scriptblock]
-        $ScriptBlock
+        $ScriptBlock,
+
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [string]
+        $FilePath,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList
     )
 
     # ensure we have a receiver
@@ -58,6 +66,18 @@ function Connect-PodeWebSocket
     if (Test-PodeWebSocket -Name $Name) {
         throw "Already connected to websocket with name '$($Name)'"
     }
+
+    # if we have a file path supplied, load that path as a scriptblock
+    if ($PSCmdlet.ParameterSetName -ieq 'file') {
+        $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
+    }
+
+    # check if the scriptblock has any using vars
+    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+    # check for state/session vars
+    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
 
     # connect
     try {
@@ -71,10 +91,8 @@ function Connect-PodeWebSocket
         Name = $Name
         Url = $Url
         Logic = $ScriptBlock
-        #TODO: using-vars
-        UsingVariables = $null
-        #TODO: args list
-        Arguments = $null
+        UsingVariables = $usingVars
+        Arguments = $ArgumentList
     }
 }
 
@@ -99,6 +117,9 @@ function Disconnect-PodeWebSocket
         $PodeContext.Server.WebSockets.Receiver.DisconnectWebSocket($Name)
         $PodeContext.Server.WebSockets.Connections.Remove($Name)
     }
+
+    #TODO: this should just disconnect, not disconnect and remove
+    # make a new Remove-WS to disconnect and remove
 }
 
 function Send-PodeWebSocket

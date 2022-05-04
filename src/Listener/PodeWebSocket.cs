@@ -106,7 +106,7 @@ namespace Pode
 
         public void Send(string message, WebSocketMessageType type = WebSocketMessageType.Text)
         {
-            if (WebSocket.State != WebSocketState.Open)
+            if (!IsConnected)
             {
                 return;
             }

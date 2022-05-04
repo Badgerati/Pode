@@ -27,8 +27,6 @@ namespace Pode
 
             WebSockets = new Dictionary<string, PodeWebSocket>();
             Requests = new PodeItemQueue<PodeWebSocketRequest>();
-            //TODO: change to PodeReceiverRequest? or PodeReceiverContext?
-            //TODO: rename PodeContext to PodeListenerContext?
 
             IsReceiving = true;
             IsDisposed = false;
