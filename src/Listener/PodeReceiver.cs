@@ -63,6 +63,19 @@ namespace Pode
                 }
 
                 WebSockets[name].Dispose();
+            }
+        }
+
+        public void RemoveWebSocket(string name)
+        {
+            lock (WebSockets)
+            {
+                if (!WebSockets.ContainsKey(name))
+                {
+                    return;
+                }
+
+                WebSockets[name].Dispose();
                 WebSockets.Remove(name);
             }
         }

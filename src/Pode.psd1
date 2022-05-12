@@ -311,6 +311,7 @@
         'Set-PodeWebSocketConcurrency',
         'Connect-PodeWebSocket',
         'Disconnect-PodeWebSocket',
+        'Remove-PodeWebSocket',
         'Send-PodeWebSocket',
         'Reset-PodeWebSocket',
         'Test-PodeWebSocket'

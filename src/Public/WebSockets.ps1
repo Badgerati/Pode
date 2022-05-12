@@ -115,11 +115,28 @@ function Disconnect-PodeWebSocket
 
     if (Test-PodeWebSocket -Name $Name) {
         $PodeContext.Server.WebSockets.Receiver.DisconnectWebSocket($Name)
-        $PodeContext.Server.WebSockets.Connections.Remove($Name)
+    }
+}
+
+function Remove-PodeWebSocket
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Name
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Name) -and ($null -ne $WsEvent)) {
+        $Name = $WsEvent.Request.WebSocket.Name
     }
 
-    #TODO: this should just disconnect, not disconnect and remove
-    # make a new Remove-WS to disconnect and remove
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        throw "No Name for a WebSocket to remove supplied"
+    }
+
+    $PodeContext.Server.WebSockets.Receiver.RemoveWebSocket($Name)
+    $PodeContext.Server.WebSockets.Connections.Remove($Name)
 }
 
 function Send-PodeWebSocket
@@ -150,7 +167,7 @@ function Send-PodeWebSocket
     }
 
     if (Test-PodeWebSocket -Name $Name) {
-        $ws.Send($Message, $Type)
+        $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name).Send($Message, $Type)
     }
 }
 
@@ -177,7 +194,7 @@ function Reset-PodeWebSocket
     }
 
     if (Test-PodeWebSocket -Name $Name) {
-        $ws.Reconnect($Url)
+        $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name).Reconnect($Url)
     }
 }
 
@@ -190,5 +207,14 @@ function Test-PodeWebSocket
         $Name
     )
 
-    return ($null -ne $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name))
+    $found = ($null -ne $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name))
+    if ($found) {
+        return $true
+    }
+
+    if ($PodeContext.Server.WebSockets.Connections.ContainsKey($Name)) {
+        Remove-PodeWebSocket -Name $Name
+    }
+
+    return $false
 }
