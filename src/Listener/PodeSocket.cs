@@ -165,7 +165,7 @@ namespace Pode
             socket.Start();
 
             // close socket if not successful, or if listener is stopped - close now!
-            if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
+            if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsConnected))
             {
                 if (error != SocketError.Success)
                 {
@@ -202,7 +202,7 @@ namespace Pode
             RemovePendingSocket(received);
 
             // close socket if not successful, or if listener is stopped - close now!
-            if ((received == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
+            if ((received == default(Socket)) || (error != SocketError.Success) || (!Listener.IsConnected))
             {
                 if (error != SocketError.Success)
                 {

@@ -7,29 +7,18 @@ using System.Threading.Tasks;
 
 namespace Pode
 {
-    public class PodeReceiver : IDisposable
+    public class PodeReceiver : PodeConnector
     {
-        public bool IsReceiving { get; private set; }
-        public bool IsDisposed { get; private set; }
-        public bool ErrorLoggingEnabled { get; set; }
-        public string[] ErrorLoggingLevels { get; set; }
-        public CancellationToken CancellationToken { get; private set; }
-
         private IDictionary<string, PodeWebSocket> WebSockets;
 
         public PodeItemQueue<PodeWebSocketRequest> Requests { get; private set; }
 
         public PodeReceiver(CancellationToken cancellationToken = default(CancellationToken))
+            : base(cancellationToken)
         {
-            CancellationToken = cancellationToken == default(CancellationToken)
-                ? cancellationToken
-                : (new CancellationTokenSource()).Token;
-
             WebSockets = new Dictionary<string, PodeWebSocket>();
             Requests = new PodeItemQueue<PodeWebSocketRequest>();
-
-            IsReceiving = true;
-            IsDisposed = false;
+            Start();
         }
 
         public void ConnectWebSocket(string name, string url)
@@ -95,29 +84,29 @@ namespace Pode
             return Requests.GetAsync(cancellationToken);
         }
 
-        public void Dispose()
+        protected override void Close()
         {
-            // stop receiving
-            IsReceiving = false;
-
             // disconnect websockets
-            foreach (var _webSocket in WebSockets.Values)
+            PodeHelpers.WriteErrorMessage($"Closing client web sockets", this, PodeLoggingLevel.Verbose);
+
+            foreach (var _webSocket in WebSockets.Values.ToArray())
             {
                 _webSocket.Dispose();
             }
 
             WebSockets.Clear();
+            PodeHelpers.WriteErrorMessage($"Closed client web sockets", this, PodeLoggingLevel.Verbose);
 
             // close existing websocket requests
+            PodeHelpers.WriteErrorMessage($"Closing client web sockets requests", this, PodeLoggingLevel.Verbose);
+
             foreach (var _req in Requests.ToArray())
             {
                 _req.Dispose();
             }
 
             Requests.Clear();
-
-            // disposed
-            IsDisposed = true;
+            PodeHelpers.WriteErrorMessage($"Closed client web requests", this, PodeLoggingLevel.Verbose);
         }
     }
 }

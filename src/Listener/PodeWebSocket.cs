@@ -41,6 +41,7 @@ namespace Pode
 
             if (WebSocket != default(ClientWebSocket))
             {
+                Disconnect(PodeWebSocketCloseFrom.Client);
                 WebSocket.Dispose();
             }
 
@@ -56,7 +57,7 @@ namespace Pode
                 URL = new Uri(url);
             }
 
-            Disconnect();
+            Disconnect(PodeWebSocketCloseFrom.Client);
             Connect();
         }
 
@@ -82,6 +83,7 @@ namespace Pode
 
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
+                        Disconnect(PodeWebSocketCloseFrom.Server);
                         break;
                     }
 
@@ -114,7 +116,7 @@ namespace Pode
             WebSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)), type, true, Receiver.CancellationToken).Wait();
         }
 
-        public void Disconnect()
+        public void Disconnect(PodeWebSocketCloseFrom closeFrom)
         {
             if (WebSocket == default(ClientWebSocket))
             {
@@ -123,8 +125,21 @@ namespace Pode
 
             if (IsConnected)
             {
-                WebSocket.CloseOutputAsync(WebSocketCloseStatus.Empty, string.Empty, CancellationToken.None).Wait();
-                WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).Wait();
+                PodeHelpers.WriteErrorMessage($"Closing client web socket: {Name}", Receiver, PodeLoggingLevel.Verbose);
+
+                // only close output in client closing
+                if (closeFrom == PodeWebSocketCloseFrom.Client)
+                {
+                    WebSocket.CloseOutputAsync(WebSocketCloseStatus.Empty, string.Empty, CancellationToken.None).Wait();
+                }
+
+                // if the server is closing, or client and netcore, then close properly
+                if (closeFrom == PodeWebSocketCloseFrom.Server || !PodeHelpers.IsNetFramework)
+                {
+                    WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).Wait();
+                }
+
+                PodeHelpers.WriteErrorMessage($"Closed client web socket: {Name}", Receiver, PodeLoggingLevel.Verbose);
             }
 
             WebSocket.Dispose();
@@ -133,7 +148,7 @@ namespace Pode
 
         public void Dispose()
         {
-            Disconnect();
+            Disconnect(PodeWebSocketCloseFrom.Client);
         }
     }
 }

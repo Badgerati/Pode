@@ -6,17 +6,11 @@ using System.Threading.Tasks;
 
 namespace Pode
 {
-    public class PodeListener : IDisposable
+    public class PodeListener : PodeConnector
     {
-        public IDictionary<string, PodeSignal> Signals { get; private set; }
-        public bool IsListening { get; private set; }
-        public bool IsDisposed { get; private set; }
-        public bool ErrorLoggingEnabled { get; set; }
-        public string[] ErrorLoggingLevels { get; set; }
-        public CancellationToken CancellationToken { get; private set; }
-
         private IList<PodeSocket> Sockets;
 
+        public IDictionary<string, PodeSignal> Signals { get; private set; }
         public PodeItemQueue<PodeContext> Contexts { get; private set; }
         public PodeItemQueue<PodeServerSignal> ServerSignals { get; private set; }
         public PodeItemQueue<PodeClientSignal> ClientSignals { get; private set; }
@@ -43,12 +37,6 @@ namespace Pode
 
         public PodeListener(CancellationToken cancellationToken = default(CancellationToken))
         {
-            CancellationToken = cancellationToken == default(CancellationToken)
-                ? cancellationToken
-                : (new CancellationTokenSource()).Token;
-
-            IsDisposed = false;
-
             Sockets = new List<PodeSocket>();
             Signals = new Dictionary<string, PodeSignal>();
 
@@ -151,7 +139,7 @@ namespace Pode
             ClientSignals.RemoveProcessing(signal);
         }
 
-        public void Start()
+        public override void Start()
         {
             foreach (var socket in Sockets)
             {
@@ -159,40 +147,41 @@ namespace Pode
                 socket.Start();
             }
 
-            IsListening = true;
+            base.Start();
         }
 
-        public void Dispose()
+        // public void Dispose()
+        protected override void Close()
         {
-            // stop listening
-            IsListening = false;
-
             // shutdown the sockets
+            PodeHelpers.WriteErrorMessage($"Closing sockets", this, PodeLoggingLevel.Verbose);
             for (var i = Sockets.Count - 1; i >= 0; i--)
             {
                 Sockets[i].Dispose();
             }
 
             Sockets.Clear();
+            PodeHelpers.WriteErrorMessage($"Closed sockets", this, PodeLoggingLevel.Verbose);
 
             // close existing contexts
+            PodeHelpers.WriteErrorMessage($"Closing contexts", this, PodeLoggingLevel.Verbose);
             foreach (var _context in Contexts.ToArray())
             {
                 _context.Dispose(true);
             }
 
             Contexts.Clear();
+            PodeHelpers.WriteErrorMessage($"Closed contexts", this, PodeLoggingLevel.Verbose);
 
             // close connected signals
-            foreach (var _signal in Signals.Values)
+            PodeHelpers.WriteErrorMessage($"Closing signals", this, PodeLoggingLevel.Verbose);
+            foreach (var _signal in Signals.Values.ToArray())
             {
                 _signal.Context.Dispose(true);
             }
 
             Signals.Clear();
-
-            // disposed
-            IsDisposed = true;
+            PodeHelpers.WriteErrorMessage($"Closed signals", this, PodeLoggingLevel.Verbose);
         }
     }
 }
