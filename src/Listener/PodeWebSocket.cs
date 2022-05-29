@@ -108,7 +108,7 @@ namespace Pode
             catch (TaskCanceledException) {}
             catch (WebSocketException ex)
             {
-                PodeHelpers.WriteException(ex, Receiver, PodeLoggingLevel.Error);
+                PodeHelpers.WriteException(ex, Receiver, PodeLoggingLevel.Debug);
                 Dispose();
             }
             finally
