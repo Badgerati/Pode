@@ -55,6 +55,10 @@ function Connect-PodeWebSocket
         $FilePath,
 
         [Parameter()]
+        [string]
+        $ContentType = 'application/json',
+
+        [Parameter()]
         [object[]]
         $ArgumentList
     )
@@ -81,7 +85,7 @@ function Connect-PodeWebSocket
 
     # connect
     try {
-        $PodeContext.Server.WebSockets.Receiver.ConnectWebSocket($Name, $Url)
+        $PodeContext.Server.WebSockets.Receiver.ConnectWebSocket($Name, $Url, $ContentType)
     }
     catch {
         throw "Failed to connect to websocket: $($_.Exception.Message)"
@@ -148,8 +152,11 @@ function Send-PodeWebSocket
         $Name,
 
         [Parameter()]
-        [string]
         $Message,
+
+        [Parameter()]
+        [int]
+        $Depth = 10,
 
         [Parameter()]
         [ValidateSet('Text', 'Binary')]
@@ -157,18 +164,29 @@ function Send-PodeWebSocket
         $Type = 'Text'
     )
 
+    # get ws name
     if ([string]::IsNullOrWhiteSpace($Name) -and ($null -ne $WsEvent)) {
-        $WsEvent.Request.WebSocket.Send($Message, $Type)
-        return
+        $Name = $WsEvent.Request.WebSocket.Name
     }
 
+    # do we have a name?
     if ([string]::IsNullOrWhiteSpace($Name)) {
         throw "No Name for a WebSocket to send message to supplied"
     }
 
-    if (Test-PodeWebSocket -Name $Name) {
-        $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name).Send($Message, $Type)
+    # do the socket exist?
+    if (!(Test-PodeWebSocket -Name $Name)) {
+        return
     }
+
+    # get the websocket
+    $ws = $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name)
+
+    # parse message
+    $Message = ConvertTo-PodeResponseContent -InputObject $Message -ContentType $ws.ContentType
+
+    # send message
+    $ws.Send($Message, $Type)
 }
 
 function Reset-PodeWebSocket

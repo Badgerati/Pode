@@ -261,17 +261,25 @@ namespace Pode
                 }
 
                 // if it's a websocket, upgrade it, then add context back for re-receiving
-                else if (context.IsWebSocket && !context.IsWebSocketUpgraded)
+                else if (context.IsWebSocket)
                 {
-                    context.UpgradeWebSocket();
-                    process = false;
-                    context.Dispose();
+                    if (!context.IsWebSocketUpgraded)
+                    {
+                        context.UpgradeWebSocket();
+                        process = false;
+                        context.Dispose();
+                    }
+                    else if (!context.Request.IsProcessable)
+                    {
+                        process = false;
+                        context.Dispose();
+                    }
                 }
 
                 // if it's an email, re-receive unless processable
                 else if (context.IsSmtp)
                 {
-                    if (!context.SmtpRequest.CanProcess)
+                    if (!context.Request.IsProcessable)
                     {
                         process = false;
                         context.Dispose();

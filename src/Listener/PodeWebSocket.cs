@@ -13,6 +13,7 @@ namespace Pode
     {
         public string Name { get; private set; }
         public Uri URL { get; private set; }
+        public string ContentType { get; private set; }
         public bool IsConnected
         {
             get => (WebSocket != default(ClientWebSocket) && WebSocket.State == WebSocketState.Open);
@@ -21,10 +22,14 @@ namespace Pode
         private ClientWebSocket WebSocket;
         private PodeReceiver Receiver;
 
-        public PodeWebSocket(string name, string url)
+        public PodeWebSocket(string name, string url, string contentType)
         {
             Name = name;
             URL = new Uri(url);
+
+            ContentType = string.IsNullOrWhiteSpace(contentType)
+                ? "application/json"
+                : contentType;
         }
 
         public void BindReceiver(PodeReceiver receiver)
@@ -46,6 +51,8 @@ namespace Pode
             }
 
             WebSocket = new ClientWebSocket();
+            WebSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(60);
+
             await WebSocket.ConnectAsync(URL, Receiver.CancellationToken);
             await Task.Factory.StartNew(Receive, Receiver.CancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
@@ -88,14 +95,20 @@ namespace Pode
                     }
 
                     bufferStream.Position = 0;
-                    Receiver.AddWebSocketRequest(new PodeWebSocketRequest(this, bufferStream));
+
+                    if (bufferStream.Length > 0)
+                    {
+                        Receiver.AddWebSocketRequest(new PodeWebSocketRequest(this, bufferStream));
+                    }
+
                     bufferStream.Dispose();
                     bufferStream = new MemoryStream();
                 }
             }
             catch (TaskCanceledException) {}
-            catch (WebSocketException)
+            catch (WebSocketException ex)
             {
+                PodeHelpers.WriteException(ex, Receiver, PodeLoggingLevel.Error);
                 Dispose();
             }
             finally
@@ -144,6 +157,7 @@ namespace Pode
 
             WebSocket.Dispose();
             WebSocket = default(ClientWebSocket);
+            PodeHelpers.WriteErrorMessage($"Disconnected client web socket: {Name}", Receiver, PodeLoggingLevel.Verbose);
         }
 
         public void Dispose()

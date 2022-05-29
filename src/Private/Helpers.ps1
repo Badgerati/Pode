@@ -1355,9 +1355,111 @@ function New-PodeRequestException
     return $err
 }
 
+function ConvertTo-PodeResponseContent
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        $InputObject,
+
+        [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [int]
+        $Depth = 10,
+
+        [Parameter()]
+        [string]
+        $Delimiter = ',',
+
+        [switch]
+        $AsHtml
+    )
+
+    # split for the main content type
+    $ContentType = Split-PodeContentType -ContentType $ContentType
+
+    # if there is no content-type then convert straight to string
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
+        return ([string]$InputObject)
+    }
+    
+    # run action for the content type
+    switch ($ContentType) {
+        { $_ -ilike '*/json' } {
+            if ($InputObject -isnot [string]) {
+                if ($Depth -le 0) {
+                    return (ConvertTo-Json -InputObject $InputObject -Compress)
+                }
+                else {
+                    return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
+                }
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return '{}'
+            }
+        }
+
+        { $_ -ilike '*/xml' } {
+            if ($InputObject -isnot [string]) {
+                $temp = @(foreach ($item in $InputObject) {
+                    New-Object psobject -Property $item
+                })
+
+                return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
+            }
+        }
+
+        { $_ -ilike '*/csv' } {
+            if ($InputObject -isnot [string]) {
+                $temp = @(foreach ($item in $InputObject) {
+                    New-Object psobject -Property $item
+                })
+
+                if (Test-PodeIsPSCore) {
+                    $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -IncludeTypeInformation:$false)
+                }
+                else {
+                    $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -NoTypeInformation)
+                }
+
+                return ($temp -join ([environment]::NewLine))
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
+            }
+        }
+
+        { $_ -ilike '*/html' } {
+            if ($InputObject -isnot [string]) {
+                return (($InputObject | ConvertTo-Html) -join ([environment]::NewLine))
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
+            }
+        }
+
+        { $_ -ilike '*/markdown' } {
+            if ($AsHtml -and ($PSVersionTable.PSVersion.Major -ge 7)) {
+                return ($InputObject | ConvertFrom-Markdown).Html
+            }
+        }
+    }
+
+    return ([string]$InputObject)
+}
+
 function ConvertFrom-PodeRequestContent
 {
-    param (
+    param(
         [Parameter()]
         $Request,
 

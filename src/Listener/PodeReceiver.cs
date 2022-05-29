@@ -21,7 +21,7 @@ namespace Pode
             Start();
         }
 
-        public void ConnectWebSocket(string name, string url)
+        public void ConnectWebSocket(string name, string url, string contentType)
         {
             lock (WebSockets)
             {
@@ -30,7 +30,7 @@ namespace Pode
                     throw new Exception($"WebSocket connection with name {name} already defined");
                 }
 
-                var socket = new PodeWebSocket(name, url);
+                var socket = new PodeWebSocket(name, url, contentType);
                 socket.BindReceiver(this);
                 socket.Connect();
                 WebSockets.Add(name, socket);

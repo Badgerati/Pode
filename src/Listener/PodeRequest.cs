@@ -20,6 +20,7 @@ namespace Pode
         public bool SslUpgraded { get; private set; }
         public bool IsKeepAlive { get; protected set; }
         public virtual bool CloseImmediately { get => false; }
+        public virtual bool IsProcessable { get => true; }
 
         public Stream InputStream { get; private set; }
         public X509Certificate Certificate { get; private set; }

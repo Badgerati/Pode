@@ -182,7 +182,10 @@ namespace Pode
 
         public void SendSignal(PodeServerSignal signal)
         {
-            Write(signal.Value);
+            if (!string.IsNullOrEmpty(signal.Value))
+            {
+                Write(signal.Value);
+            }
         }
 
         public void Write(string message, bool flush = false)
@@ -274,10 +277,17 @@ namespace Pode
 
         private void SetDefaultHeaders()
         {
-            // ensure content length
-            if (ContentLength64 == 0)
+            // ensure content length (remove for 1xx responses, ensure added otherwise)
+            if (StatusCode < 200)
             {
-                ContentLength64 = (OutputStream.Length > 0 ? OutputStream.Length : 0);
+                Headers.Remove("Content-Length");
+            }
+            else
+            {
+                if (ContentLength64 == 0)
+                {
+                    ContentLength64 = (OutputStream.Length > 0 ? OutputStream.Length : 0);
+                }
             }
 
             // set the date

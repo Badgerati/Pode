@@ -25,7 +25,6 @@ namespace Pode
         public string From { get; private set; }
         public IList<string> To { get; private set; }
         public PodeSmtpCommand Command { get; private set; }
-        public bool CanProcess { get; private set; }
         public PodeSmtpStartType StartType { get; private set; }
 
         public override bool CloseImmediately
@@ -33,10 +32,16 @@ namespace Pode
             get => (Command == PodeSmtpCommand.None || Command == PodeSmtpCommand.Quit);
         }
 
+        private bool _canProcess = false;
+        public override bool IsProcessable
+        {
+            get => (!CloseImmediately && _canProcess);
+        }
+
         public PodeSmtpRequest(Socket socket, PodeSocket podeSocket)
             : base(socket, podeSocket)
         {
-            CanProcess = false;
+            _canProcess = false;
             IsKeepAlive = true;
             Command = PodeSmtpCommand.None;
             To = new List<string>();
@@ -210,7 +215,7 @@ namespace Pode
             switch (Command)
             {
                 case PodeSmtpCommand.Data:
-                    CanProcess = true;
+                    _canProcess = true;
                     Context.Response.WriteLine("250 OK", true);
                     RawBody = bytes;
                     Attachments = new List<PodeSmtpAttachment>();
@@ -259,7 +264,7 @@ namespace Pode
         {
             PodeHelpers.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
 
-            CanProcess = false;
+            _canProcess = false;
             Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
             From = string.Empty;
             To = new List<string>();

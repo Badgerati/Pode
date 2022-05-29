@@ -30,6 +30,11 @@ namespace Pode
             get => (OpCode == PodeWsOpCode.Close);
         }
 
+        public override bool IsProcessable
+        {
+            get => (!CloseImmediately && OpCode != PodeWsOpCode.Pong && OpCode != PodeWsOpCode.Ping && !string.IsNullOrEmpty(Body));
+        }
+
         public PodeSignalRequest(PodeHttpRequest request, PodeSignal signal)
             : base(request)
         {
@@ -86,33 +91,35 @@ namespace Pode
             ContentLength = RawBody.Length;
             Body = Encoding.GetString(decoded);
 
-            // get the close status and description
-            if (OpCode == PodeWsOpCode.Close)
+            // determine action based on code
+            switch (OpCode)
             {
-                _closeStatus = WebSocketCloseStatus.Empty;
-                _closeDescription = string.Empty;
+                // get the close status and description
+                case PodeWsOpCode.Close:
+                    _closeStatus = WebSocketCloseStatus.Empty;
+                    _closeDescription = string.Empty;
 
-                if (dataLength >= 2)
-                {
-                    Array.Reverse(decoded, 0, 2);
-                    var code = (int)BitConverter.ToUInt16(decoded, 0);
-
-                    _closeStatus = Enum.IsDefined(typeof(WebSocketCloseStatus), code)
-                        ? (WebSocketCloseStatus)code
-                        : WebSocketCloseStatus.Empty;
-
-                    var descCount = dataLength - 2;
-                    if (descCount > 0)
+                    if (dataLength >= 2)
                     {
-                        _closeDescription = Encoding.GetString(decoded, 2, descCount);
-                    }
-                }
-            }
+                        Array.Reverse(decoded, 0, 2);
+                        var code = (int)BitConverter.ToUInt16(decoded, 0);
 
-            // send back a pong
-            if (OpCode == PodeWsOpCode.Ping)
-            {
-                Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Pong);
+                        _closeStatus = Enum.IsDefined(typeof(WebSocketCloseStatus), code)
+                            ? (WebSocketCloseStatus)code
+                            : WebSocketCloseStatus.Empty;
+
+                        var descCount = dataLength - 2;
+                        if (descCount > 0)
+                        {
+                            _closeDescription = Encoding.GetString(decoded, 2, descCount);
+                        }
+                    }
+                    break;
+
+                // send back a pong
+                case PodeWsOpCode.Ping:
+                    Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Pong);
+                    break;
             }
 
             return true;

@@ -15,10 +15,10 @@ Start-PodeServer -EnablePool WebSockets {
 
     # connect to web socket from web-signal.ps1
     Connect-PodeWebSocket -Name 'Example' -Url 'ws://localhost:8091' -ScriptBlock {
-        $WsEvent.Request | out-default
-        # if ($WsEvent.Request.Body -inotlike '*Ex:*') {
-        #     Send-PodeWebSocket -Message (@{ message = "Ex: $($WsEvent.Request.Body)" } | ConvertTo-Json -Compress)
-        # }
+        $WsEvent.Data | Out-Default
+        if ($WsEvent.Data.message -inotlike '*Ex:*') {
+            Send-PodeWebSocket -Message @{ message = "Ex: $($WsEvent.Data.message)" }
+        }
     }
 
     # Add-PodeRoute -Method Get -Path '/connect' -ScriptBlock {

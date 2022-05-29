@@ -403,7 +403,7 @@ namespace Pode
                     }
 
                     // if it was smtp, and it was processable, RESET!
-                    if (IsSmtp && SmtpRequest.CanProcess)
+                    if (IsSmtp && Request.IsProcessable)
                     {
                         SmtpRequest.Reset();
                     }
