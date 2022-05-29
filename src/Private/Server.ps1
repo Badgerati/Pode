@@ -60,6 +60,9 @@ function Start-PodeInternalServer
 
             # start runspace for gui
             Start-PodeGuiRunspace
+
+            # start runspace for websockets
+            Start-PodeWebSocketRunspace
         }
 
         # start the appropriate server
@@ -222,8 +225,10 @@ function Restart-PodeInternalServer
         $PodeContext.Server.OpenAPI = Get-PodeOABaseObject
 
         # clear the sockets
-        $PodeContext.Server.WebSockets.Listener = $null
+        $PodeContext.Server.Signals.Enabled = $false
+        $PodeContext.Server.Signals.Listener = $null
         $PodeContext.Listeners = @()
+        $PodeContext.Receivers = @()
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{

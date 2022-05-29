@@ -83,7 +83,8 @@ function Start-PodeWebServer
 
         $listener.Start()
         $PodeContext.Listeners += $listener
-        $PodeContext.Server.WebSockets.Listener = $listener
+        $PodeContext.Server.Signals.Enabled = $true
+        $PodeContext.Server.Signals.Listener = $listener
     }
     catch {
         $_ | Write-PodeErrorLog
@@ -107,7 +108,7 @@ function Start-PodeWebServer
 
             try
             {
-                while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
                 {
                     # get request and response
                     $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
@@ -269,7 +270,7 @@ function Start-PodeWebServer
             )
 
             try {
-                while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
                 {
                     $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -280,10 +281,10 @@ function Start-PodeWebServer
 
                         # by clientId
                         if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
-                            $sockets = @($Listener.WebSockets[$message.ClientId])
+                            $sockets = @($Listener.Signals[$message.ClientId])
                         }
                         else {
-                            $sockets = @($Listener.WebSockets.Values)
+                            $sockets = @($Listener.Signals.Values)
 
                             # by path
                             if (![string]::IsNullOrWhiteSpace($message.Path)) {
@@ -307,7 +308,7 @@ function Start-PodeWebServer
                                 $socket.Context.Response.SendSignal($message)
                             }
                             catch {
-                                $null = $Listener.WebSockets.Remove($socket.ClientId)
+                                $null = $Listener.Signals.Remove($socket.ClientId)
                             }
                         }
                     }
@@ -346,15 +347,15 @@ function Start-PodeWebServer
             )
 
             try {
-                while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
                 {
                     $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
                     try
                     {
                         $payload = ($context.Message | ConvertFrom-Json)
-                        $Request = $context.WebSocket.Context.Request
-                        $Response = $context.WebSocket.Context.Response
+                        $Request = $context.Signal.Context.Request
+                        $Response = $context.Signal.Context.Response
 
                         $SignalEvent = @{
                             Response = $Response
@@ -373,7 +374,7 @@ function Start-PodeWebServer
                                 Name = $null
                             }
                             Route = $null
-                            ClientId = $context.WebSocket.ClientId
+                            ClientId = $context.Signal.ClientId
                             Timestamp = $context.Timestamp
                             Streamed = $true
                         }
@@ -434,7 +435,7 @@ function Start-PodeWebServer
         )
 
         try {
-            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Seconds 1
             }
         }

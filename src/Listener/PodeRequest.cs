@@ -20,6 +20,7 @@ namespace Pode
         public bool SslUpgraded { get; private set; }
         public bool IsKeepAlive { get; protected set; }
         public virtual bool CloseImmediately { get => false; }
+        public virtual bool IsProcessable { get => true; }
 
         public Stream InputStream { get; private set; }
         public X509Certificate Certificate { get; private set; }
@@ -173,6 +174,7 @@ namespace Pode
             finally
             {
                 BufferStream.Dispose();
+                BufferStream = default(MemoryStream);
                 Buffer = default(byte[]);
             }
 
@@ -206,6 +208,7 @@ namespace Pode
             finally
             {
                 bufferStream.Dispose();
+                bufferStream = default(MemoryStream);
                 buffer = default(byte[]);
             }
         }
@@ -274,11 +277,13 @@ namespace Pode
             if (InputStream != default(Stream))
             {
                 InputStream.Dispose();
+                InputStream = default(Stream);
             }
 
             if (BufferStream != default(MemoryStream))
             {
                 BufferStream.Dispose();
+                BufferStream = default(MemoryStream);
             }
 
             PodeHelpers.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);

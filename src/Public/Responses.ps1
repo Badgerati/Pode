@@ -1411,7 +1411,7 @@ function Send-PodeSignal
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline=$true)]
         $Value,
 
         [Parameter()]
@@ -1436,8 +1436,13 @@ function Send-PodeSignal
     )
 
     # error if not configured
-    if ($null -eq $PodeContext.Server.WebSockets.Listener) {
+    if (!$PodeContext.Server.Signals.Enabled) {
         throw "WebSockets have not been configured to send signal messages"
+    }
+
+    # do nothing if no value
+    if (($null -eq $Value) -or ([string]::IsNullOrEmpty($Value))) {
+        return
     }
 
     # jsonify the value
@@ -1467,7 +1472,7 @@ function Send-PodeSignal
 
     # broadcast or direct?
     if ($Mode -iin @('Auto', 'Broadcast')) {
-        $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+        $PodeContext.Server.Signals.Listener.AddServerSignal($Value, $Path, $ClientId)
     }
     else {
         $SignalEvent.Response.Write($Value)

@@ -305,7 +305,16 @@
         'Remove-PodeVerb',
         'Clear-PodeVerbs',
         'Get-PodeVerb',
-        'Use-PodeVerbs'
+        'Use-PodeVerbs',
+
+        # WebSockets
+        'Set-PodeWebSocketConcurrency',
+        'Connect-PodeWebSocket',
+        'Disconnect-PodeWebSocket',
+        'Remove-PodeWebSocket',
+        'Send-PodeWebSocket',
+        'Reset-PodeWebSocket',
+        'Test-PodeWebSocket'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

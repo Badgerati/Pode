@@ -140,7 +140,7 @@ Describe 'Restart-PodeInternalServer' {
                         Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
                     }
                 }
-                WebSockets = @{
+                Signals = @{
                     Listeners = @()
                     Queues = @{
                         Sockets = @{}

@@ -193,10 +193,24 @@ task Build BuildDeps, {
 
     try {
         dotnet build --configuration Release --self-contained --framework netstandard2.0
+        if (!$?) {
+            throw "dotnet build failed for netstandard2"
+        }
+
         dotnet publish --configuration Release --self-contained --framework netstandard2.0 --output ../Libs/netstandard2.0
+        if (!$?) {
+            throw "dotnet publish failed for netstandard2"
+        }
 
         dotnet build --configuration Release --self-contained --framework net6.0
+        if (!$?) {
+            throw "dotnet build failed for net6"
+        }
+
         dotnet publish --configuration Release --self-contained --framework net6.0 --output ../Libs/net6.0
+        if (!$?) {
+            throw "dotnet publish failed for net6"
+        }
     }
     finally {
         Pop-Location
