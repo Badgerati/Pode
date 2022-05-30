@@ -23,16 +23,7 @@ function Start-PodeServiceServer
                 $handlers = Get-PodeHandler -Type Service
                 foreach ($name in $handlers.Keys) {
                     $handler = $handlers[$name]
-
-                    $_args = @($handler.Arguments)
-                    if ($null -ne $handler.UsingVariables) {
-                        $_vars = @()
-                        foreach ($_var in $handler.UsingVariables) {
-                            $_vars += ,$_var.Value
-                        }
-                        $_args = $_vars + $_args
-                    }
-
+                    $_args = @(Get-PodeScriptblockArguments -ArgumentList $handler.Arguments -UsingVariables $handler.UsingVariables)
                     Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $_args -Scoped -Splat
                 }
 

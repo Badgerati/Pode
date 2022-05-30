@@ -86,15 +86,7 @@ function Start-PodeWebSocketRunspace
                         $WsEvent.Files = $result.Files
 
                         # invoke websocket script
-                        $_args = @($websocket.Arguments)
-                        if ($null -ne $websocket.UsingVariables) {
-                            $_vars = @()
-                            foreach ($_var in $websocket.UsingVariables) {
-                                $_vars += ,$_var.Value
-                            }
-                            $_args = $_vars + $_args
-                        }
-
+                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $websocket.Arguments -UsingVariables $websocket.UsingVariables)
                         Invoke-PodeScriptBlock -ScriptBlock $websocket.Logic -Arguments $_args -Scoped -Splat
                     }
                     catch [System.OperationCanceledException] {}

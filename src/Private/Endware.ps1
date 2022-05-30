@@ -18,15 +18,7 @@ function Invoke-PodeEndware
         }
 
         try {
-            $_args = @($eware.Arguments)
-            if ($null -ne $eware.UsingVariables) {
-                $_vars = @()
-                foreach ($_var in $eware.UsingVariables) {
-                    $_vars += ,$_var.Value
-                }
-                $_args = $_vars + $_args
-            }
-
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $eware.Arguments -UsingVariables $eware.UsingVariables)
             $null = Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments $_args -Scoped -Splat
         }
         catch {

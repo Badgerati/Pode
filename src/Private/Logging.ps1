@@ -369,13 +369,7 @@ function Start-PodeLoggingRunspace
 
             # convert to log item into a writable format
             $_args = @($log.Item) + @($logger.Arguments)
-            if ($null -ne $logger.UsingVariables) {
-                $_vars = @()
-                foreach ($_var in $logger.UsingVariables) {
-                    $_vars += ,$_var.Value
-                }
-                $_args = $_vars + $_args
-            }
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.UsingVariables)
 
             $rawItems = $log.Item
             $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -Return -Splat)
@@ -405,14 +399,7 @@ function Start-PodeLoggingRunspace
             # send the writable log item off to the log writer
             if ($null -ne $result) {
                 $_args = @(,$result) + @($logger.Method.Arguments) + @(,$rawItems)
-                if ($null -ne $logger.Method.UsingVariables) {
-                    $_vars = @()
-                    foreach ($_var in $logger.Method.UsingVariables) {
-                        $_vars += ,$_var.Value
-                    }
-                    $_args = $_vars + $_args
-                }
-
+                $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.Method.UsingVariables)
                 Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -Splat
             }
 
@@ -442,14 +429,7 @@ function Test-PodeLoggerBatches
             $batch.RawItems = @()
 
             $_args = @(,$result) + @($logger.Method.Arguments) + @(,$rawItems)
-            if ($null -ne $logger.Method.UsingVariables) {
-                $_vars = @()
-                foreach ($_var in $logger.Method.UsingVariables) {
-                    $_vars += ,$_var.Value
-                }
-                $_args = $_vars + $_args
-            }
-
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.Method.UsingVariables)
             Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -Splat
         }
     }

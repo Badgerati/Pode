@@ -95,15 +95,7 @@ function Start-PodeAzFuncServer
                         }
                     }
                     else {
-                        $_args = @($WebEvent.Route.Arguments)
-                        if ($null -ne $WebEvent.Route.UsingVariables) {
-                            $_vars = @()
-                            foreach ($_var in $WebEvent.Route.UsingVariables) {
-                                $_vars += ,$_var.Value
-                            }
-                            $_args = $_vars + $_args
-                        }
-
+                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
                         Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                     }
                 }
@@ -216,15 +208,7 @@ function Start-PodeAwsLambdaServer
                         }
                     }
                     else {
-                        $_args = @($WebEvent.Route.Arguments)
-                        if ($null -ne $WebEvent.Route.UsingVariables) {
-                            $_vars = @()
-                            foreach ($_var in $WebEvent.Route.UsingVariables) {
-                                $_vars += ,$_var.Value
-                            }
-                            $_args = $_vars + $_args
-                        }
-
+                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
                         Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                     }
                 }

@@ -84,14 +84,7 @@ function Get-PodeFileContentUsingViewEngine
                     $_args = @($Path, $Data)
                 }
 
-                if ($null -ne $PodeContext.Server.ViewEngine.UsingVariables) {
-                    $_vars = @()
-                    foreach ($_var in $PodeContext.Server.ViewEngine.UsingVariables) {
-                        $_vars += ,$_var.Value
-                    }
-                    $_args = $_vars + $_args
-                }
-
+                $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables)
                 $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
             }
         }
@@ -1525,16 +1518,7 @@ function ConvertFrom-PodeRequestContent
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             $parser = $PodeContext.Server.BodyParsers[$ContentType]
-
-            $_args = @($Content)
-            if ($null -ne $parser.UsingVariables) {
-                $_vars = @()
-                foreach ($_var in $parser.UsingVariables) {
-                    $_vars += ,$_var.Value
-                }
-                $_args = $_vars + $_args
-            }
-
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $Content -UsingVariables $parser.UsingVariables)
             $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
             $Content = $null
             return $Result
@@ -2906,4 +2890,28 @@ function Find-PodeModuleFile
     }
 
     return $path
+}
+
+function Get-PodeScriptblockArguments
+{
+    param(
+        [Parameter()]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter()]
+        [object[]]
+        $UsingVariables
+    )
+
+    if (($null -eq $UsingVariables) -or ($UsingVariables.Length -le 0)) {
+        return $ArgumentList
+    }
+
+    $_vars = @()
+    foreach ($_var in $UsingVariables) {
+        $_vars += ,$_var.Value
+    }
+
+    return ($_vars + $ArgumentList)
 }

@@ -94,13 +94,7 @@ function Invoke-PodeInternalTimer
         }
 
         # add timer $using args
-        if ($null -ne $Timer.UsingVariables) {
-            $_vars = @()
-            foreach ($_var in $Timer.UsingVariables) {
-                $_vars += ,$_var.Value
-            }
-            $_args = $_vars + $_args
-        }
+        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $Timer.UsingVariables)
 
         # invoke timer
         Invoke-PodeScriptBlock -ScriptBlock $Timer.Script -Arguments $_args -Scoped -Splat

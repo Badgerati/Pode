@@ -19,15 +19,7 @@ function Invoke-PodeEvent
         }
 
         try {
-            $_args = @($evt.Arguments)
-            if ($null -ne $evt.UsingVariables) {
-                $_vars = @()
-                foreach ($_var in $evt.UsingVariables) {
-                    $_vars += ,$_var.Value
-                }
-                $_args = $_vars + $_args
-            }
-
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $evt.Arguments -UsingVariables $evt.UsingVariables)
             $null = Invoke-PodeScriptBlock -ScriptBlock $evt.ScriptBlock -Arguments $_args -Scoped -Splat
         }
         catch {

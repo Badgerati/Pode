@@ -209,6 +209,7 @@
         'ConvertFrom-PodeJwt',
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
+        'Test-PodeAuthUser',
 
         # logging
         'New-PodeLoggingMethod',
