@@ -200,15 +200,7 @@ function Start-PodeWebServer
                                         }
                                     }
                                     elseif ($null -ne $WebEvent.Route.Logic) {
-                                        $_args = @($WebEvent.Route.Arguments)
-                                        if ($null -ne $WebEvent.Route.UsingVariables) {
-                                            $_vars = @()
-                                            foreach ($_var in $WebEvent.Route.UsingVariables) {
-                                                $_vars += ,$_var.Value
-                                            }
-                                            $_args = $_vars + $_args
-                                        }
-
+                                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
                                         Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                                     }
                                 }
@@ -386,15 +378,7 @@ function Start-PodeWebServer
                         $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name
 
                         if ($null -ne $SignalEvent.Route) {
-                            $_args = @($SignalEvent.Route.Arguments)
-                            if ($null -ne $SignalEvent.Route.UsingVariables) {
-                                $_vars = @()
-                                foreach ($_var in $SignalEvent.Route.UsingVariables) {
-                                    $_vars += ,$_var.Value
-                                }
-                                $_args = $_vars + $_args
-                            }
-
+                            $_args = @(Get-PodeScriptblockArguments -ArgumentList $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables)
                             Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $_args -Scoped -Splat
                         }
                         else {

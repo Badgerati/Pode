@@ -1,0 +1,17 @@
+<html>
+    <head>
+        <title>Auth Home</title>
+        <link rel="stylesheet" type="text/css" href="/styles/simple.css">
+    </head>
+    <body>
+
+        Hello, there! Welcome to the home page, please login below.
+
+        <form action="/login" method="get">
+            <div>
+                <input type="submit" value="Login"/>
+            </div>
+        </form>
+
+    </body>
+</html>

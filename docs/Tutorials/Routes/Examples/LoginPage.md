@@ -98,7 +98,7 @@ Finally, we have the logout Route. Here we have another switch of `-Logout`, whi
 Add-PodeRoute -Method Post -Path '/logout' -Authentication 'Login' -Logout
 ```
 
-## Full Server
+## Example Code
 
 This is the full code for the server above:
 
@@ -154,7 +154,7 @@ Start-PodeServer -Thread 2 {
 }
 ```
 
-## Pages
+### Pages
 
 The following are the web pages used above, as well as the CSS style. The web pages have been created using [`.pode`](../../../Views/Pode) files, which allows you to embed PowerShell into the files.
 

@@ -38,6 +38,9 @@ An array of arguments to supply to the Route's ScriptBlock.
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
+.PARAMETER AllowAnon
+If supplied, the Route will allow anonymous access for non-authenticated users.
+
 .PARAMETER Login
 If supplied, the Route will be flagged to Authentication as being a Route that handles user logins.
 
@@ -117,6 +120,9 @@ function Add-PodeRoute
         $Authentication,
 
         [switch]
+        $AllowAnon,
+
+        [switch]
         $Login,
 
         [switch]
@@ -179,6 +185,7 @@ function Add-PodeRoute
             Name = $Authentication
             Login = $Login
             Logout = $Logout
+            Anon = $AllowAnon
         }
 
         $Middleware = (@(Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
@@ -275,6 +282,9 @@ The content type of any error pages that may get returned.
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
+.PARAMETER AllowAnon
+If supplied, the static route will allow anonymous access for non-authenticated users.
+
 .PARAMETER DownloadOnly
 When supplied, all static content on this Route will be attached as downloads - rather than rendered.
 
@@ -333,6 +343,9 @@ function Add-PodeStaticRoute
         $Authentication,
 
         [switch]
+        $AllowAnon,
+
+        [switch]
         $DownloadOnly,
 
         [switch]
@@ -388,7 +401,11 @@ function Add-PodeStaticRoute
             throw "Authentication method does not exist: $($Authentication)"
         }
 
-        $options = @{ Name = $Authentication }
+        $options = @{
+            Name = $Authentication
+            Anon = $AllowAnon
+        }
+
         $Middleware = (@(Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
     }
 
@@ -824,6 +841,9 @@ Like normal Routes, an array of Middleware that will be applied to all generated
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
+.PARAMETER AllowAnon
+If supplied, the Route will allow anonymous access for non-authenticated users.
+
 .PARAMETER NoVerb
 If supplied, the Command's Verb will not be included in the Route's path.
 
@@ -871,6 +891,9 @@ function ConvertTo-PodeRoute
         [Alias('Auth')]
         [string]
         $Authentication,
+
+        [switch]
+        $AllowAnon,
 
         [switch]
         $NoVerb,
@@ -940,7 +963,7 @@ function ConvertTo-PodeRoute
         $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
 
         # create the route
-        $route = (Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -Authentication $Authentication -ArgumentList $cmd -ScriptBlock {
+        $route = (Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -Authentication $Authentication -AllowAnon:$AllowAnon -ArgumentList $cmd -ScriptBlock {
             param($cmd)
 
             # either get params from the QueryString or Payload
@@ -1022,6 +1045,9 @@ Like normal Routes, an array of Middleware that will be applied to all generated
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
+.PARAMETER AllowAnon
+If supplied, the Page will allow anonymous access for non-authenticated users.
+
 .PARAMETER FlashMessages
 If supplied, Views will have any flash messages supplied to them for rendering.
 
@@ -1071,6 +1097,9 @@ function Add-PodePage
         [Alias('Auth')]
         [string]
         $Authentication,
+
+        [switch]
+        $AllowAnon,
 
         [Parameter(ParameterSetName='View')]
         [switch]
@@ -1143,6 +1172,7 @@ function Add-PodePage
         -Path $_path `
         -Middleware $Middleware `
         -Authentication $Authentication `
+        -AllowAnon:$AllowAnon `
         -ArgumentList $arg `
         -ScriptBlock $logic
 }

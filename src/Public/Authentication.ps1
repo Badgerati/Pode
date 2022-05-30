@@ -1935,3 +1935,14 @@ function ConvertFrom-PodeOIDCDiscovery
         -CodeChallengeMethod $codeMethod `
         -UsePKCE:$UsePKCE)
 }
+
+function Test-PodeAuthUser
+{
+    [CmdletBinding()]
+    param()
+
+    return (
+        (($null -ne $WebEvent.Auth.User) -and $WebEvent.Auth.IsAuthenticated) -or
+        (($null -ne $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated)
+    )
+}
