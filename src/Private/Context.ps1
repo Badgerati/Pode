@@ -518,7 +518,7 @@ function Import-PodeModulesIntoRunspaceState
         # import the module
         $path = Find-PodeModuleFile -Name $module.Name
 
-        if ($module.ModuleType -ieq 'Manifest') {
+        if (($module.ModuleType -ieq 'Manifest') -or ($path.EndsWith('.ps1'))) {
             $PodeContext.RunspaceState.ImportPSModule($path)
         }
         else {
