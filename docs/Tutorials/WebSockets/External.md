@@ -1,5 +1,8 @@
 # External
 
+!!! Note
+    This is still in the early stages, so if you find any issues or have any suggestion, please feel free to raise it over on [GitHub](https://github.com/Badgerati/Pode/issues)!
+
 Pode has support to connect to external WebSocket servers, and has the ability to receive and send messages to/from them. This is useful if you want to connect to external metrics servers to update dashboards; send messages to external WebSockets; or even create a bot.
 
 ## Connecting
