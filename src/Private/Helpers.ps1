@@ -2760,10 +2760,16 @@ function Get-PodeFunctionsFromAst
             continue
         }
 
+        # definition
+        $def = "$($func.Body)".Trim('{}').Trim()
+        if (($null -ne $func.Parameters) -and ($func.Parameters.Count -gt 0)) {
+            $def = "param($($func.Parameters.Name -join ','))`n$($def)"
+        }
+
         # the found func
         @{
             Name = $func.Name
-            Definition = "$($func.Body)".Trim('{}')
+            Definition = $def
         }
     })
 }
