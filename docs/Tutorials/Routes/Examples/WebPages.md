@@ -21,7 +21,7 @@ Start-PodeServer {
 !!! info
     If your web page references any CSS, JavaScript, etc. files, then Pode will automatically find them within the `/public` directory - or any relative static routes you may have defined. For example, if you reference `<link rel="stylesheet" type="text/css" href="/styles/simple.css">` in your HTML file, then Pode will look for `/public/styles/simple.css`.
 
-## Full Example
+## Example Code
 
 Here we'll have two simple HTML pages, with a CSS file and a simple server script. The directory structure is as follows:
 

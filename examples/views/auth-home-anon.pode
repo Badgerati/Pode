@@ -5,7 +5,7 @@
     </head>
     <body>
 
-        Hello, there! You have view this page $($data.Views) times, please login below.
+        Hello, there! Welcome to the home page, please login below.
 
         <form action="/login" method="get">
             <div>
