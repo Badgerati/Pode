@@ -539,29 +539,37 @@ function ConvertTo-PodeMiddleware
         return $null
     }
 
+    $Middleware = @($Middleware)
+
     # ensure supplied middlewares are either a scriptblock, or a valid hashtable
-    @($Middleware) | ForEach-Object {
+    foreach ($mid in $Middleware) {
+        if ($null -eq $mid) {
+            continue
+        }
+
         # check middleware is a type valid
-        if (($_ -isnot [scriptblock]) -and ($_ -isnot [hashtable])) {
-            throw "One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($_.GetType().Name)"
+        if (($mid -isnot [scriptblock]) -and ($mid -isnot [hashtable])) {
+            throw "One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($mid.GetType().Name)"
         }
 
         # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
-        if ($_ -is [hashtable]) {
-            if ($null -eq $_.Logic) {
+        if ($mid -is [hashtable]) {
+            if ($null -eq $mid.Logic) {
                 throw "A Hashtable Middleware supplied has no Logic defined"
             }
 
-            if ($_.Logic -isnot [scriptblock]) {
-                throw "A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: $($_.Logic.GetType().Name)"
+            if ($mid.Logic -isnot [scriptblock]) {
+                throw "A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: $($mid.Logic.GetType().Name)"
             }
         }
     }
 
     # if we have middleware, convert scriptblocks to hashtables
-    $Middleware = @($Middleware)
+    $converted = @(for ($i = 0; $i -lt $Middleware.Length; $i++) {
+        if ($null -eq $Middleware[$i]) {
+            continue
+        }
 
-    for ($i = 0; $i -lt $Middleware.Length; $i++) {
         if ($Middleware[$i] -is [scriptblock]) {
             $_script, $_usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Middleware[$i] -PSSession $PSSession
 
@@ -574,7 +582,9 @@ function ConvertTo-PodeMiddleware
                 UsingVariables = $_usingVars
             }
         }
-    }
 
-    return $Middleware
+        $Middleware[$i]
+    })
+
+    return $converted
 }

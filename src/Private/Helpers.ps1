@@ -2910,6 +2910,10 @@ function Get-PodeScriptblockArguments
         $UsingVariables
     )
 
+    if ($null -eq $ArgumentList) {
+        $ArgumentList = @()
+    }
+
     if (($null -eq $UsingVariables) -or ($UsingVariables.Length -le 0)) {
         return $ArgumentList
     }
