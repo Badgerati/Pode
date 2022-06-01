@@ -667,6 +667,43 @@ function Add-PodeSignalRoute
     $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
 }
 
+<#
+.SYNOPSIS
+Add a Route Group for multiple Routes.
+
+.DESCRIPTION
+Add a Route Group for sharing values between multiple Routes.
+
+.PARAMETER Path
+The URI path to use as a base for the Routes.
+
+.PARAMETER Routes
+A ScriptBlock for adding Routes.
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to give each Route.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) to use for the Routes.
+
+.PARAMETER ContentType
+The content type to use for the Routes, when parsing any payloads.
+
+.PARAMETER TransferEncoding
+The transfer encoding to use for the Routes, when parsing any payloads.
+
+.PARAMETER ErrorContentType
+The content type of any error pages that may get returned.
+
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on the Routes.
+
+.PARAMETER AllowAnon
+If supplied, the Routes will allow anonymous access for non-authenticated users.
+
+.EXAMPLE
+Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
+#>
 function Add-PodeRouteGroup
 {
     [CmdletBinding()]
@@ -737,6 +774,49 @@ function Add-PodeRouteGroup
     $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
 }
 
+<#
+.SYNOPSIS
+Add a Static Route Group for multiple Static Routes.
+
+.DESCRIPTION
+Add a Static Route Group for sharing values between multiple Static Routes.
+
+.PARAMETER Path
+The URI path to use as a base for the Static Routes.
+
+.PARAMETER Routes
+A ScriptBlock for adding Static Routes.
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to give each Static Route.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) to use for the Static Routes.
+
+.PARAMETER ContentType
+The content type to use for the Static Routes, when parsing any payloads.
+
+.PARAMETER TransferEncoding
+The transfer encoding to use for the Static Routes, when parsing any payloads.
+
+.PARAMETER Defaults
+An array of default pages to display, such as 'index.html', for each Static Route.
+
+.PARAMETER ErrorContentType
+The content type of any error pages that may get returned.
+
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on the Static Routes.
+
+.PARAMETER AllowAnon
+If supplied, the Static Routes will allow anonymous access for non-authenticated users.
+
+.PARAMETER DownloadOnly
+When supplied, all static content on the Routes will be attached as downloads - rather than rendered.
+
+.EXAMPLE
+Add-PodeStaticRouteGroup -Path '/static' -Routes { Add-PodeStaticRoute -Path '/images' -Etc }
+#>
 function Add-PodeStaticRouteGroup
 {
     [CmdletBinding()]
