@@ -393,6 +393,10 @@ function Add-PodeStaticRoute
             $Path = "$($RouteGroup.Path)$($Path)"
         }
 
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Source)) {
+            $Source = [System.IO.Path]::Combine($Source, $RouteGroup.Source.TrimStart('\/'))
+        }
+
         if ($null -ne $RouteGroup.Middleware) {
             $Middleware = $RouteGroup.Middleware + $Middleware
         }
@@ -675,7 +679,7 @@ Add a Route Group for multiple Routes.
 Add a Route Group for sharing values between multiple Routes.
 
 .PARAMETER Path
-The URI path to use as a base for the Routes.
+The URI path to use as a base for the Routes, that should be prepended.
 
 .PARAMETER Routes
 A ScriptBlock for adding Routes.
@@ -708,7 +712,7 @@ function Add-PodeRouteGroup
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $Path,
 
@@ -750,6 +754,10 @@ function Add-PodeRouteGroup
         throw "No scriptblock for -Routes passed"
     }
 
+    if ($Path -eq '/') {
+        $Path = $null
+    }
+
     # check if the scriptblock has any using vars
     $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
 
@@ -758,6 +766,40 @@ function Add-PodeRouteGroup
     $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
 
     # group details
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if ($null -ne $RouteGroup.Middleware) {
+            $Middleware = $RouteGroup.Middleware + $Middleware
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ContentType)) {
+            $ContentType = $RouteGroup.ContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+            $TransferEncoding = $RouteGroup.TransferEncoding
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ErrorContentType)) {
+            $ErrorContentType = $RouteGroup.ErrorContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            $Authentication = $RouteGroup.Authentication
+        }
+
+        if ($RouteGroup.AllowAnon) {
+            $AllowAnon = $RouteGroup.AllowAnon
+        }
+    }
+
     $RouteGroup = @{
         Path = $Path
         Middleware = $Middleware
@@ -783,6 +825,9 @@ Add a Static Route Group for sharing values between multiple Static Routes.
 
 .PARAMETER Path
 The URI path to use as a base for the Static Routes.
+
+.PARAMETER Source
+A literal, or relative, base path to the directory that contains the static content, that should be prepended.
 
 .PARAMETER Routes
 A ScriptBlock for adding Static Routes.
@@ -821,9 +866,13 @@ function Add-PodeStaticRouteGroup
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $Path,
+
+        [Parameter()]
+        [string]
+        $Source,
 
         [Parameter(Mandatory=$true)]
         [scriptblock]
@@ -870,6 +919,10 @@ function Add-PodeStaticRouteGroup
         throw "No scriptblock for -Routes passed"
     }
 
+    if ($Path -eq '/') {
+        $Path = $null
+    }
+
     # check if the scriptblock has any using vars
     $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
 
@@ -878,8 +931,55 @@ function Add-PodeStaticRouteGroup
     $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
 
     # group details
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Source)) {
+            $Source = [System.IO.Path]::Combine($Source, $RouteGroup.Source.TrimStart('\/'))
+        }
+
+        if ($null -ne $RouteGroup.Middleware) {
+            $Middleware = $RouteGroup.Middleware + $Middleware
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ContentType)) {
+            $ContentType = $RouteGroup.ContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+            $TransferEncoding = $RouteGroup.TransferEncoding
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ErrorContentType)) {
+            $ErrorContentType = $RouteGroup.ErrorContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            $Authentication = $RouteGroup.Authentication
+        }
+
+        if (Test-PodeIsEmpty $Defaults) {
+            $Defaults = $RouteGroup.Defaults
+        }
+
+        if ($RouteGroup.AllowAnon) {
+            $AllowAnon = $RouteGroup.AllowAnon
+        }
+
+        if ($RouteGroup.DownloadOnly) {
+            $DownloadOnly = $RouteGroup.DownloadOnly
+        }
+    }
+
     $RouteGroup = @{
         Path = $Path
+        Source = $Source
         Middleware = $Middleware
         EndpointName = $EndpointName
         ContentType = $ContentType
@@ -905,7 +1005,7 @@ Adds a Signal Route Group for multiple WebSockets.
 Adds a Signal Route Group for sharing values between multiple WebSockets.
 
 .PARAMETER Path
-The URI path to use as a base for the Signal Routes.
+The URI path to use as a base for the Signal Routes, that should be prepended.
 
 .PARAMETER Routes
 A ScriptBlock for adding Signal Routes.
@@ -920,7 +1020,7 @@ function Add-PodeSignalRouteGroup
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter()]
         [string]
         $Path,
 
@@ -937,6 +1037,10 @@ function Add-PodeSignalRouteGroup
         throw "No scriptblock for -Routes passed"
     }
 
+    if ($Path -eq '/') {
+        $Path = $null
+    }
+
     # check if the scriptblock has any using vars
     $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
 
@@ -945,6 +1049,16 @@ function Add-PodeSignalRouteGroup
     $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
 
     # group details
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+    }
+
     $RouteGroup = @{
         Path = $Path
         EndpointName = $EndpointName

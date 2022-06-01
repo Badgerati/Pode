@@ -23,13 +23,15 @@ Start-PodeServer -Threads 2 {
             Write-PodeJsonResponse -Value @{ ID = 1 }
         }
 
-        Add-PodeRoute -Method Get -Path '/route2' -Middleware $using:mid2 -ScriptBlock {
-            Write-PodeJsonResponse -Value @{ ID = 2 }
-        }
+        Add-PodeRouteGroup -Path '/inner' -Routes {
+            Add-PodeRoute -Method Get -Path '/route2' -Middleware $using:mid2 -ScriptBlock {
+                Write-PodeJsonResponse -Value @{ ID = 2 }
+            }
 
-        Add-PodeRoute -Method Get -Path '/route3' -ScriptBlock {
-            "Hello there, $($using:message)" | Out-Default
-            Write-PodeJsonResponse -Value @{ ID = 3 }
+            Add-PodeRoute -Method Get -Path '/route3' -ScriptBlock {
+                "Hello there, $($using:message)" | Out-Default
+                Write-PodeJsonResponse -Value @{ ID = 3 }
+            }
         }
     }
 
