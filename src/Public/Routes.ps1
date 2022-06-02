@@ -132,6 +132,41 @@ function Add-PodeRoute
         $PassThru
     )
 
+    # check if we have any route group info defined
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if ($null -ne $RouteGroup.Middleware) {
+            $Middleware = $RouteGroup.Middleware + $Middleware
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ContentType)) {
+            $ContentType = $RouteGroup.ContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+            $TransferEncoding = $RouteGroup.TransferEncoding
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ErrorContentType)) {
+            $ErrorContentType = $RouteGroup.ErrorContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            $Authentication = $RouteGroup.Authentication
+        }
+
+        if ($RouteGroup.AllowAnon) {
+            $AllowAnon = $RouteGroup.AllowAnon
+        }
+    }
+
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
@@ -352,6 +387,53 @@ function Add-PodeStaticRoute
         $PassThru
     )
 
+    # check if we have any route group info defined
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Source)) {
+            $Source = [System.IO.Path]::Combine($Source, $RouteGroup.Source.TrimStart('\/'))
+        }
+
+        if ($null -ne $RouteGroup.Middleware) {
+            $Middleware = $RouteGroup.Middleware + $Middleware
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ContentType)) {
+            $ContentType = $RouteGroup.ContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+            $TransferEncoding = $RouteGroup.TransferEncoding
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ErrorContentType)) {
+            $ErrorContentType = $RouteGroup.ErrorContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            $Authentication = $RouteGroup.Authentication
+        }
+
+        if (Test-PodeIsEmpty $Defaults) {
+            $Defaults = $RouteGroup.Defaults
+        }
+
+        if ($RouteGroup.AllowAnon) {
+            $AllowAnon = $RouteGroup.AllowAnon
+        }
+
+        if ($RouteGroup.DownloadOnly) {
+            $DownloadOnly = $RouteGroup.DownloadOnly
+        }
+    }
+
     # store the route method
     $Method = 'Static'
 
@@ -518,6 +600,17 @@ function Add-PodeSignalRoute
         $ArgumentList
     )
 
+    # check if we have any route group info defined
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+    }
+
     $Method = 'Signal'
 
     # ensure the route has appropriate slashes
@@ -576,6 +669,404 @@ function Add-PodeSignalRoute
     })
 
     $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
+}
+
+<#
+.SYNOPSIS
+Add a Route Group for multiple Routes.
+
+.DESCRIPTION
+Add a Route Group for sharing values between multiple Routes.
+
+.PARAMETER Path
+The URI path to use as a base for the Routes, that should be prepended.
+
+.PARAMETER Routes
+A ScriptBlock for adding Routes.
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to give each Route.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) to use for the Routes.
+
+.PARAMETER ContentType
+The content type to use for the Routes, when parsing any payloads.
+
+.PARAMETER TransferEncoding
+The transfer encoding to use for the Routes, when parsing any payloads.
+
+.PARAMETER ErrorContentType
+The content type of any error pages that may get returned.
+
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on the Routes.
+
+.PARAMETER AllowAnon
+If supplied, the Routes will allow anonymous access for non-authenticated users.
+
+.EXAMPLE
+Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
+#>
+function Add-PodeRouteGroup
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $Routes,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter()]
+        [string[]]
+        $EndpointName,
+
+        [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [ValidateSet('', 'gzip', 'deflate')]
+        [string]
+        $TransferEncoding,
+
+        [Parameter()]
+        [string]
+        $ErrorContentType,
+
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
+
+        [switch]
+        $AllowAnon
+    )
+
+    if (Test-PodeIsEmpty $Routes) {
+        throw "No scriptblock for -Routes passed"
+    }
+
+    if ($Path -eq '/') {
+        $Path = $null
+    }
+
+    # check if the scriptblock has any using vars
+    $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
+
+    # check for state/session vars
+    $Routes = Invoke-PodeStateScriptConversion -ScriptBlock $Routes
+    $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
+
+    # group details
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if ($null -ne $RouteGroup.Middleware) {
+            $Middleware = $RouteGroup.Middleware + $Middleware
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ContentType)) {
+            $ContentType = $RouteGroup.ContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+            $TransferEncoding = $RouteGroup.TransferEncoding
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ErrorContentType)) {
+            $ErrorContentType = $RouteGroup.ErrorContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            $Authentication = $RouteGroup.Authentication
+        }
+
+        if ($RouteGroup.AllowAnon) {
+            $AllowAnon = $RouteGroup.AllowAnon
+        }
+    }
+
+    $RouteGroup = @{
+        Path = $Path
+        Middleware = $Middleware
+        EndpointName = $EndpointName
+        ContentType = $ContentType
+        TransferEncoding = $TransferEncoding
+        ErrorContentType = $ErrorContentType
+        Authentication = $Authentication
+        AllowAnon = $AllowAnon
+    }
+
+    # add routes
+    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
+}
+
+<#
+.SYNOPSIS
+Add a Static Route Group for multiple Static Routes.
+
+.DESCRIPTION
+Add a Static Route Group for sharing values between multiple Static Routes.
+
+.PARAMETER Path
+The URI path to use as a base for the Static Routes.
+
+.PARAMETER Source
+A literal, or relative, base path to the directory that contains the static content, that should be prepended.
+
+.PARAMETER Routes
+A ScriptBlock for adding Static Routes.
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to give each Static Route.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) to use for the Static Routes.
+
+.PARAMETER ContentType
+The content type to use for the Static Routes, when parsing any payloads.
+
+.PARAMETER TransferEncoding
+The transfer encoding to use for the Static Routes, when parsing any payloads.
+
+.PARAMETER Defaults
+An array of default pages to display, such as 'index.html', for each Static Route.
+
+.PARAMETER ErrorContentType
+The content type of any error pages that may get returned.
+
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on the Static Routes.
+
+.PARAMETER AllowAnon
+If supplied, the Static Routes will allow anonymous access for non-authenticated users.
+
+.PARAMETER DownloadOnly
+When supplied, all static content on the Routes will be attached as downloads - rather than rendered.
+
+.EXAMPLE
+Add-PodeStaticRouteGroup -Path '/static' -Routes { Add-PodeStaticRoute -Path '/images' -Etc }
+#>
+function Add-PodeStaticRouteGroup
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Source,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $Routes,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter()]
+        [string[]]
+        $EndpointName,
+
+        [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [ValidateSet('', 'gzip', 'deflate')]
+        [string]
+        $TransferEncoding,
+
+        [Parameter()]
+        [string[]]
+        $Defaults,
+
+        [Parameter()]
+        [string]
+        $ErrorContentType,
+
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
+
+        [switch]
+        $AllowAnon,
+
+        [switch]
+        $DownloadOnly
+    )
+
+    if (Test-PodeIsEmpty $Routes) {
+        throw "No scriptblock for -Routes passed"
+    }
+
+    if ($Path -eq '/') {
+        $Path = $null
+    }
+
+    # check if the scriptblock has any using vars
+    $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
+
+    # check for state/session vars
+    $Routes = Invoke-PodeStateScriptConversion -ScriptBlock $Routes
+    $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
+
+    # group details
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Source)) {
+            $Source = [System.IO.Path]::Combine($Source, $RouteGroup.Source.TrimStart('\/'))
+        }
+
+        if ($null -ne $RouteGroup.Middleware) {
+            $Middleware = $RouteGroup.Middleware + $Middleware
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ContentType)) {
+            $ContentType = $RouteGroup.ContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
+            $TransferEncoding = $RouteGroup.TransferEncoding
+        }
+
+        if ([string]::IsNullOrWhiteSpace($ErrorContentType)) {
+            $ErrorContentType = $RouteGroup.ErrorContentType
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            $Authentication = $RouteGroup.Authentication
+        }
+
+        if (Test-PodeIsEmpty $Defaults) {
+            $Defaults = $RouteGroup.Defaults
+        }
+
+        if ($RouteGroup.AllowAnon) {
+            $AllowAnon = $RouteGroup.AllowAnon
+        }
+
+        if ($RouteGroup.DownloadOnly) {
+            $DownloadOnly = $RouteGroup.DownloadOnly
+        }
+    }
+
+    $RouteGroup = @{
+        Path = $Path
+        Source = $Source
+        Middleware = $Middleware
+        EndpointName = $EndpointName
+        ContentType = $ContentType
+        TransferEncoding = $TransferEncoding
+        Defaults = $Defaults
+        ErrorContentType = $ErrorContentType
+        Authentication = $Authentication
+        AllowAnon = $AllowAnon
+        DownloadOnly = $DownloadOnly
+    }
+
+    # add routes
+    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
+}
+
+
+<#
+.SYNOPSIS
+Adds a Signal Route Group for multiple WebSockets.
+
+.DESCRIPTION
+Adds a Signal Route Group for sharing values between multiple WebSockets.
+
+.PARAMETER Path
+The URI path to use as a base for the Signal Routes, that should be prepended.
+
+.PARAMETER Routes
+A ScriptBlock for adding Signal Routes.
+
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) to use for the Signal Routes.
+
+.EXAMPLE
+Add-PodeSignalRouteGroup -Path '/signals' -Routes { Add-PodeSignalRoute -Path '/signal1' -Etc }
+#>
+function Add-PodeSignalRouteGroup
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory=$true)]
+        [scriptblock]
+        $Routes,
+
+        [Parameter()]
+        [string[]]
+        $EndpointName
+    )
+
+    if (Test-PodeIsEmpty $Routes) {
+        throw "No scriptblock for -Routes passed"
+    }
+
+    if ($Path -eq '/') {
+        $Path = $null
+    }
+
+    # check if the scriptblock has any using vars
+    $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
+
+    # check for state/session vars
+    $Routes = Invoke-PodeStateScriptConversion -ScriptBlock $Routes
+    $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
+
+    # group details
+    if ($null -ne $RouteGroup) {
+        if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
+            $Path = "$($RouteGroup.Path)$($Path)"
+        }
+
+        if ([string]::IsNullOrWhiteSpace($EndpointName)) {
+            $EndpointName = $RouteGroup.EndpointName
+        }
+    }
+
+    $RouteGroup = @{
+        Path = $Path
+        EndpointName = $EndpointName
+    }
+
+    # add routes
+    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
 }
 
 <#
