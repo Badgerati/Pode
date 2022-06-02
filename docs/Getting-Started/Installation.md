@@ -73,7 +73,7 @@ docker pull badgerati/pode:latest-arm32
 docker pull badgerati/pode:2.2.2-arm32
 ```
 
-Once pulled, you can [view here](../Docker) on how to use the image.
+Once pulled, you can [view here](../../Hosting/Docker) on how to use the image.
 
 ## GitHub Package Registry
 
@@ -109,7 +109,7 @@ docker pull docker.pkg.github.com/badgerati/pode/pode:latest-arm32
 docker pull docker.pkg.github.com/badgerati/pode/pode:2.2.2-arm32
 ```
 
-Once pulled, you can [view here](../Docker) on how to use the image.
+Once pulled, you can [view here](../../Hosting/Docker) on how to use the image.
 
 ## Using the Module
 
