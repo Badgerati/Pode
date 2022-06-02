@@ -162,7 +162,7 @@ function Write-PodeTextResponse
 {
     [CmdletBinding(DefaultParameterSetName='String')]
     param (
-        [Parameter(ParameterSetName='String', ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='String', ValueFromPipeline=$true, Position=0)]
         [string]
         $Value,
 
@@ -478,7 +478,7 @@ function Write-PodeCsvResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -551,7 +551,7 @@ function Write-PodeHtmlResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -614,7 +614,7 @@ function Write-PodeMarkdownResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -685,7 +685,7 @@ function Write-PodeJsonResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -756,7 +756,7 @@ function Write-PodeXmlResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
