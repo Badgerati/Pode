@@ -901,8 +901,14 @@ function Test-PodePSDrive
 
 function Add-PodePSDrives
 {
-    foreach ($key in $PodeContext.Server.Drives.Keys) {
-        $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$key] -Name $key
+    if ($null -eq $PodeContext.Server.Drives) {
+        return
+    }
+
+    Lock-PodeObject -Object $PodeContext.Server.Drives -ScriptBlock {
+        foreach ($key in $PodeContext.Server.Drives.Keys) {
+            $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$key] -Name $key
+        }
     }
 }
 
