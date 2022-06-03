@@ -1,26 +1,5 @@
 <p align="center">
-    <style>
-        img.icon {
-            margin-bottom:-5px;
-            margin-right:-81px;
-        }
-        img.icon.p {
-            margin-left:-81px;
-        }
-        img.icon.o {
-            transform:rotate(120deg);
-        }
-        img.icon.d {
-            transform:rotate(180deg);
-        }
-        img.icon.e {
-            transform:rotate(300deg);
-        }
-    </style>
-    <img src="https://github.com/Badgerati/Pode/blob/new-icon-testing/images/icon-new.svg?raw=true" width="250" class="icon p" />
-    <img src="https://github.com/Badgerati/Pode/blob/new-icon-testing/images/icon-new.svg?raw=true" width="250" class="icon o" />
-    <img src="https://github.com/Badgerati/Pode/blob/new-icon-testing/images/icon-new.svg?raw=true" width="250" class="icon d" />
-    <img src="https://github.com/Badgerati/Pode/blob/new-icon-testing/images/icon-new.svg?raw=true" width="250" class="icon e" />
+    <img src="https://github.com/Badgerati/Pode/raw/new-icon-testing/images/icon-new.svg?raw=true" width="250" />
 </p>
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
