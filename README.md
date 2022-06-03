@@ -1,4 +1,9 @@
-# <img src="https://github.com/Badgerati/Pode/blob/develop/images/icon-transparent.png?raw=true" width="30" style="margin-bottom:-5px;margin-right:-3px" /> Pode
+<p align="center">
+    <img src="https://github.com/Badgerati/Pode/blob/new-icon-testing/images/icon-new.svg?raw=true" width="250" style="margin-bottom:-5px;margin-left:-81px;margin-right:-81px;" />
+    <img src="https://github.com/Badgerati/Pode/blob/new-icon-testing/images/icon-new.svg?raw=true" width="250" style="margin-bottom:-5px;margin-right:-81px;transform:rotate(120deg)" />
+    <img src="https://github.com/Badgerati/Pode/blob/new-icon-testing/images/icon-new.svg?raw=true" width="250" style="margin-bottom:-5px;margin-right:-81px;transform:rotate(180deg)" />
+    <img src="https://github.com/Badgerati/Pode/blob/new-icon-testing/images/icon-new.svg?raw=true" width="250" style="margin-bottom:-5px;margin-right:-81px;transform:rotate(300deg)" />
+</p>
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
 [![Documentation](https://img.shields.io/github/v/release/badgerati/pode?label=docs)](https://badgerati.github.io/Pode)
