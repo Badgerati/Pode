@@ -232,6 +232,23 @@ task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { choco pack ./packers/choco/pode.nuspec }
 }
 
+# Synopsis: Create docker tags
+task DockerPack {
+    docker build -t badgerati/pode:$Version -f ./Dockerfile .
+    docker build -t badgerati/pode:latest -f ./Dockerfile .
+    docker build -t badgerati/pode:$Version-alpine -f ./alpine.dockerfile .
+    docker build -t badgerati/pode:latest-alpine -f ./alpine.dockerfile .
+    docker build -t badgerati/pode:$Version-arm32 -f ./arm32.dockerfile .
+    docker build -t badgerati/pode:latest-arm32 -f ./arm32.dockerfile .
+
+    docker tag badgerati/pode:latest docker.pkg.github.com/badgerati/pode/pode:latest
+    docker tag badgerati/pode:$Version docker.pkg.github.com/badgerati/pode/pode:$Version
+    docker tag badgerati/pode:latest-alpine docker.pkg.github.com/badgerati/pode/pode:latest-alpine
+    docker tag badgerati/pode:$Version-alpine docker.pkg.github.com/badgerati/pode/pode:$Version-alpine
+    docker tag badgerati/pode:latest-arm32 docker.pkg.github.com/badgerati/pode/pode:latest-arm32
+    docker tag badgerati/pode:$Version-arm32 docker.pkg.github.com/badgerati/pode/pode:$Version-arm32
+}
+
 # Synopsis: Package up the Module
 task Pack -If (Test-PodeBuildIsWindows) Build, {
     $path = './pkg'
@@ -255,7 +272,7 @@ task Pack -If (Test-PodeBuildIsWindows) Build, {
     Copy-Item -Path ./src/Pode.psm1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./src/Pode.psd1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
-}, 7Zip, ChocoPack
+}, 7Zip, ChocoPack, DockerPack
 
 
 <#
