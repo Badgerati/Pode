@@ -322,7 +322,7 @@ function Enable-PodeErrorLogging
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
+        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug', '*')]
         [string[]]
         $Levels = @('Error'),
 
@@ -340,6 +340,11 @@ function Enable-PodeErrorLogging
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
         throw "The supplied output Method for Error Logging requires a valid ScriptBlock"
+    }
+
+    # all errors?
+    if ($Levels -contains '*') {
+        $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
     }
 
     # add the error logger
