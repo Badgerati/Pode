@@ -233,7 +233,7 @@ task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
 }
 
 # Synopsis: Create docker tags
-task DockerPack {
+task DockerPack -If ((Test-PodeBuildIsWindows) -or $IsLinux) {
     docker build -t badgerati/pode:$Version -f ./Dockerfile .
     docker build -t badgerati/pode:latest -f ./Dockerfile .
     docker build -t badgerati/pode:$Version-alpine -f ./alpine.dockerfile .
