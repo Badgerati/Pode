@@ -1936,6 +1936,16 @@ function ConvertFrom-PodeOIDCDiscovery
         -UsePKCE:$UsePKCE)
 }
 
+<#
+.SYNOPSIS
+Test whether the current WebEvent or Session has an authenticated user.
+
+.DESCRIPTION
+Test whether the current WebEvent or Session has an authenticated user. Returns true if there is an authenticated user.
+
+.EXAMPLE
+if (Test-PodeAuthUser) { ... }
+#>
 function Test-PodeAuthUser
 {
     [CmdletBinding()]

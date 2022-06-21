@@ -1,5 +1,18 @@
 using namespace Pode
 
+<#
+.SYNOPSIS
+Set the maximum number of concurrent WebSocket connection threads.
+
+.DESCRIPTION
+Set the maximum number of concurrent WebSocket connection threads.
+
+.PARAMETER Maximum
+The Maximum number of threads available to process WebSocket connection messages received.
+
+.EXAMPLE
+Set-PodeWebSocketConcurrency -Maximum 5
+#>
 function Set-PodeWebSocketConcurrency
 {
     [CmdletBinding()]
@@ -34,6 +47,43 @@ function Set-PodeWebSocketConcurrency
     }
 }
 
+<#
+.SYNOPSIS
+Connect to an external WebSocket.
+
+.DESCRIPTION
+Connect to an external WebSocket.
+
+.PARAMETER Name
+The Name of the WebSocket connection.
+
+.PARAMETER Url
+The URL of the WebSocket. Should start with either ws:// or wss://.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to invoke for processing received messages from the WebSocket. The ScriptBlock will have access to a $WsEvent variable with details of the received message.
+
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the WebSocket's logic.
+
+.PARAMETER ContentType
+An optional ContentType for parsing/converting received/sent messages. (default: application/json)
+
+.PARAMETER ArgumentList
+AN optional array of extra arguments, that will be passed to the ScriptBlock.
+
+.EXAMPLE
+Connect-PodeWebSocket -Name 'Example' -Url 'ws://example.com/some/socket' -ScriptBlock { ... }
+
+.EXAMPLE
+Connect-PodeWebSocket -Name 'Example' -Url 'ws://example.com/some/socket' -ScriptBlock { param($arg1, $arg2) ... } -ArgumentList 'arg1', 'arg2'
+
+.EXAMPLE
+Connect-PodeWebSocket -Name 'Example' -Url 'ws://example.com/some/socket' -FilePath './some/path/file.ps1'
+
+.EXAMPLE
+Connect-PodeWebSocket -Name 'Example' -Url 'ws://example.com/some/socket' -ScriptBlock { ... } -ContentType 'text/xml'
+#>
 function Connect-PodeWebSocket
 {
     [CmdletBinding(DefaultParameterSetName='Script')]
@@ -100,6 +150,19 @@ function Connect-PodeWebSocket
     }
 }
 
+<#
+.SYNOPSIS
+Disconnect from a WebSocket connection.
+
+.DESCRIPTION
+Disconnect from a WebSocket connection. These connections can be reconnected later using Reset-PodeWebSocket
+
+.PARAMETER Name
+The Name of the WebSocket connection (optional if in the scope where $WsEvent is available).
+
+.EXAMPLE
+Disconnect-PodeWebSocket -Name 'Example'
+#>
 function Disconnect-PodeWebSocket
 {
     [CmdletBinding()]
@@ -122,6 +185,19 @@ function Disconnect-PodeWebSocket
     }
 }
 
+<#
+.SYNOPSIS
+Remove a WebSocket connection.
+
+.DESCRIPTION
+Disconnects and then removes a WebSocket connection.
+
+.PARAMETER Name
+The Name of the WebSocket connection (optional if in the scope where $WsEvent is available).
+
+.EXAMPLE
+Remove-PodeWebSocket -Name 'Example'
+#>
 function Remove-PodeWebSocket
 {
     [CmdletBinding()]
@@ -143,6 +219,28 @@ function Remove-PodeWebSocket
     $PodeContext.Server.WebSockets.Connections.Remove($Name)
 }
 
+<#
+.SYNOPSIS
+Send a message back to a WebSocket connection.
+
+.DESCRIPTION
+Send a message back to a WebSocket connection.
+
+.PARAMETER Name
+The Name of the WebSocket connection (optional if in the scope where $WsEvent is available).
+
+.PARAMETER Message
+The Message to send. Can either be a raw string, hashtable, or psobject. Non-strings will be parsed to JSON, or the WebSocket's ContentType.
+
+.PARAMETER Depth
+An optional Depth to parse any JSON or XML messages. (default: 10)
+
+.PARAMETER Type
+An optional message Type. (default: Text)
+
+.EXAMPLE
+Send-PodeWebSocket -Name 'Example' -Message @{ message = 'Hello, there' }
+#>
 function Send-PodeWebSocket
 {
     [CmdletBinding()]
@@ -183,12 +281,31 @@ function Send-PodeWebSocket
     $ws = $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name)
 
     # parse message
-    $Message = ConvertTo-PodeResponseContent -InputObject $Message -ContentType $ws.ContentType
+    $Message = ConvertTo-PodeResponseContent -InputObject $Message -ContentType $ws.ContentType -Depth $Depth
 
     # send message
     $ws.Send($Message, $Type)
 }
 
+<#
+.SYNOPSIS
+Reset an existing WebSocket connection.
+
+.DESCRIPTION
+Reset an existing WebSocket connection, either using it's current URL or a new one.
+
+.PARAMETER Name
+The Name of the WebSocket connection (optional if in the scope where $WsEvent is available).
+
+.PARAMETER Url
+An optional new URL to reset the connection to. If not supplied, the connection's original URL will be used.
+
+.EXAMPLE
+Reset-PodeWebSocket -Name 'Example'
+
+.EXAMPLE
+Reset-PodeWebSocket -Name 'Example' -Url 'ws://example.com/some/socket'
+#>
 function Reset-PodeWebSocket
 {
     [CmdletBinding()]
@@ -216,6 +333,19 @@ function Reset-PodeWebSocket
     }
 }
 
+<#
+.SYNOPSIS
+Test whether an WebSocket connection exists.
+
+.DESCRIPTION
+Test whether an WebSocket connection exists for the given Name.
+
+.PARAMETER Name
+The Name of the WebSocket connection.
+
+.EXAMPLE
+Test-PodeWebSocket -Name 'Example'
+#>
 function Test-PodeWebSocket
 {
     [CmdletBinding()]
