@@ -60,6 +60,9 @@ function Start-PodeInternalServer
 
             # start runspace for gui
             Start-PodeGuiRunspace
+
+            # start runspace for websockets
+            Start-PodeWebSocketRunspace
         }
 
         # start the appropriate server
@@ -170,6 +173,10 @@ function Restart-PodeInternalServer
             $PodeContext.Server.Handlers[$_].Clear()
         }
 
+        $PodeContext.Server.Verbs.Keys.Clone() | ForEach-Object {
+            $PodeContext.Server.Verbs[$_].Clear()
+        }
+
         $PodeContext.Server.Events.Keys.Clone() | ForEach-Object {
             $PodeContext.Server.Events[$_].Clear()
         }
@@ -208,14 +215,20 @@ function Restart-PodeInternalServer
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
         $PodeContext.Server.EndpointsMap.Clear()
-        $PodeContext.Server.FindRouteEndpoint = $false
+        $PodeContext.Server.FindEndpoints = @{
+            Route = $false
+            Smtp  = $false
+            Tcp   = $false
+        }
 
         # clear openapi
         $PodeContext.Server.OpenAPI = Get-PodeOABaseObject
 
         # clear the sockets
-        $PodeContext.Server.WebSockets.Listener = $null
+        $PodeContext.Server.Signals.Enabled = $false
+        $PodeContext.Server.Signals.Listener = $null
         $PodeContext.Listeners = @()
+        $PodeContext.Receivers = @()
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{

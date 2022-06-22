@@ -162,7 +162,7 @@ function Write-PodeTextResponse
 {
     [CmdletBinding(DefaultParameterSetName='String')]
     param (
-        [Parameter(ParameterSetName='String', ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='String', ValueFromPipeline=$true, Position=0)]
         [string]
         $Value,
 
@@ -478,7 +478,7 @@ function Write-PodeCsvResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -551,7 +551,7 @@ function Write-PodeHtmlResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -614,7 +614,7 @@ function Write-PodeMarkdownResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -685,7 +685,7 @@ function Write-PodeJsonResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -756,7 +756,7 @@ function Write-PodeXmlResponse
 {
     [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory=$true, ParameterSetName='File')]
@@ -1101,16 +1101,13 @@ function Move-PodeResponseUrl
 
 <#
 .SYNOPSIS
-Writes data to a TCP Client stream.
+Writes data to a TCP socket stream.
 
 .DESCRIPTION
-Writes data to a TCP Client stream.
+Writes data to a TCP socket stream.
 
 .PARAMETER Message
-Parameter description
-
-.PARAMETER Client
-An optional TcpClient to write data.
+The message to write
 
 .EXAMPLE
 Write-PodeTcpClient -Message '250 OK'
@@ -1118,79 +1115,79 @@ Write-PodeTcpClient -Message '250 OK'
 function Write-PodeTcpClient
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(ValueFromPipeline=$true)]
         [string]
-        $Message,
-
-        [Parameter()]
-        $Client
+        $Message
     )
 
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'Write-PodeTcpClient' -ThrowError
-
-    # use the main client if one isn't supplied
-    if ($null -eq $Client) {
-        $Client = $TcpEvent.Client
-    }
-
-    $encoder = New-Object System.Text.ASCIIEncoding
-    $buffer = $encoder.GetBytes("$($Message)`r`n")
-    $stream = $Client.GetStream()
-    Wait-PodeTask -Task $stream.WriteAsync($buffer, 0, $buffer.Length)
-    $stream.Flush()
+    $TcpEvent.Response.WriteLine($Message, $true)
 }
 
 <#
 .SYNOPSIS
-Reads data from a TCP Client stream.
+Reads data from a TCP socket stream.
 
 .DESCRIPTION
-Reads data from a TCP Client stream.
-
-.PARAMETER Client
-An optional TcpClient from which to read data.
+Reads data from a TCP socket stream.
 
 .PARAMETER Timeout
 An optional Timeout in milliseconds.
 
+.PARAMETER CheckBytes
+An optional array of bytes to check at the end of a receievd data stream, to determine if the data is complete.
+
+.PARAMETER CRLFMessageEnd
+If supplied, the CheckBytes will be set to 13 and 10 to make sure a message ends with CR and LF.
+
 .EXAMPLE
 $data = Read-PodeTcpClient
+
+.EXAMPLE
+$data = Read-PodeTcpClient -CRLFMessageEnd
 #>
 function Read-PodeTcpClient
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='default')]
     [OutputType([string])]
-    param (
-        [Parameter()]
-        $Client,
-
+    param(
         [Parameter()]
         [int]
-        $Timeout = 0
+        $Timeout = 0,
+
+        [Parameter(ParameterSetName='CheckBytes')]
+        [byte[]]
+        $CheckBytes = $null,
+
+        [Parameter(ParameterSetName='CRLF')]
+        [switch]
+        $CRLFMessageEnd
     )
 
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'Read-PodeTcpClient' -ThrowError
-
-    # use the main client if one isn't supplied
-    if ($null -eq $Client) {
-        $Client = $TcpEvent.Client
+    $cBytes = $CheckBytes
+    if ($CRLFMessageEnd) {
+        $cBytes = [byte[]]@(13, 10)
     }
 
-    # read the data from the stream
-    $bytes = New-Object byte[] 8192
-    $data = [string]::Empty
-    $encoder = New-Object System.Text.ASCIIEncoding
-    $stream = $Client.GetStream()
+    return (Wait-PodeTask -Task $TcpEvent.Request.Read($cBytes, $PodeContext.Tokens.Cancellation.Token) -Timeout $Timeout)
+}
 
-    do {
-        $bytesRead = (Wait-PodeTask -Task $stream.ReadAsync($bytes, 0, $bytes.Length) -Timeout $Timeout)
-        $data += $encoder.GetString($bytes, 0, $bytesRead)
-    } while ($stream.DataAvailable)
+<#
+.SYNOPSIS
+Close an open TCP client connection
 
-    return $data
+.DESCRIPTION
+Close an open TCP client connection
+
+.EXAMPLE
+Close-PodeTcpClient
+#>
+function Close-PodeTcpClient
+{
+    [CmdletBinding()]
+    param()
+
+    $TcpEvent.Request.Close()
 }
 
 <#
@@ -1414,7 +1411,7 @@ function Send-PodeSignal
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline=$true)]
         $Value,
 
         [Parameter()]
@@ -1439,8 +1436,13 @@ function Send-PodeSignal
     )
 
     # error if not configured
-    if ($null -eq $PodeContext.Server.WebSockets.Listener) {
+    if (!$PodeContext.Server.Signals.Enabled) {
         throw "WebSockets have not been configured to send signal messages"
+    }
+
+    # do nothing if no value
+    if (($null -eq $Value) -or ([string]::IsNullOrEmpty($Value))) {
+        return
     }
 
     # jsonify the value
@@ -1470,7 +1472,7 @@ function Send-PodeSignal
 
     # broadcast or direct?
     if ($Mode -iin @('Auto', 'Broadcast')) {
-        $PodeContext.Server.WebSockets.Listener.AddServerSignal($Value, $Path, $ClientId)
+        $PodeContext.Server.Signals.Listener.AddServerSignal($Value, $Path, $ClientId)
     }
     else {
         $SignalEvent.Response.Write($Value)

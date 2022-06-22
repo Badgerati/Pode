@@ -386,50 +386,11 @@ Describe 'Use-PodePartialView' {
     }
 }
 
-Describe 'Close-PodeTcpConnection' {
-    It 'Disposes a passes client' {
-        Mock Close-PodeDisposable { }
-
-        try {
-            $_client = New-Object System.IO.MemoryStream
-            Close-PodeTcpConnection -Client $_client
-        }
-        finally {
-            $_client.Dispose()
-        }
-
-        Assert-MockCalled Close-PodeDisposable -Times 1 -Scope It
-    }
-
-    It 'Disposes and Quits a passes client' {
-        Mock Close-PodeDisposable { }
-        Mock Write-PodeTcpClient { }
-
-        try {
-            $_client = New-Object System.IO.MemoryStream
-            $_client | Add-Member -MemberType NoteProperty -Name Connected -Value $true -Force
-            Close-PodeTcpConnection -Client $_client -Quit
-        }
-        finally {
-            $_client.Dispose()
-        }
-
-        Assert-MockCalled Write-PodeTcpClient -Times 1 -Scope It
-        Assert-MockCalled Close-PodeDisposable -Times 1 -Scope It
-    }
-
+Describe 'Close-PodeTcpClient' {
     It 'Disposes a stored client' {
-        Mock Close-PodeDisposable { }
-
-        try {
-            $TcpEvent = @{ 'Client' = New-Object System.IO.MemoryStream }
-            Close-PodeTcpConnection
-        }
-        finally {
-            $TcpEvent.Client.Dispose()
-        }
-
-        Assert-MockCalled Close-PodeDisposable -Times 1 -Scope It
+        $TcpEvent = @{ 'Request' = @{} }
+        $TcpEvent.Request | Add-Member -MemberType ScriptMethod -Name Close -Value { return $true } -Force
+        Close-PodeTcpClient
     }
 }
 

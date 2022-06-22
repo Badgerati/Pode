@@ -166,6 +166,32 @@ Get-PodeRoute -EndpointName Admin
 
 The [`Get-PodeStaticRoute`](../../../Functions/Routes/Get-PodeStaticRoute) function works in the same way as above - but with no `-Method` parameter.
 
+## Grouping
+
+If you have a number of Routes that all share the same base path, middleware, authentication, or other parameters, then you can add these Routes within a Route Group (via [`Add-PodeRouteGroup`](../../../Functions/Routes/Add-PodeRouteGroup)) to share the parameter values:
+
+```powershell
+Add-PodeRouteGroup -Path '/api' -Authentication Basic -Routes {
+    Add-PodeRoute -Method Get -Path '/route1' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ ID = 1 }
+    }
+
+    Add-PodeRoute -Method Get -Path '/route2' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ ID = 2 }
+    }
+
+    Add-PodeRoute -Method Get -Path '/route3' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ ID = 3 }
+    }
+}
+```
+
+In the above example, this will create 3 Routes: `/api/route1`, `/api/route2`, and `/api/route3`. Each of the Routes will also all require some Basic authentication.
+
+You can also do the same with Static and Signal Routes via [`Add-PodeStaticRouteGroup`](../../../Functions/Routes/Add-PodeStaticRouteGroup) and [`Add-PodeSignalRouteGroup`](../../../Functions/Routes/Add-PodeSignalRouteGroup).
+
+More information on Route grouping can be [found here](../Utilities/RouteGrouping).
+
 ## Route Object
 
 !!! warning

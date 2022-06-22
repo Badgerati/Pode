@@ -14,17 +14,17 @@ Describe 'Get-PodeHandler' {
     Context 'Valid parameters' {
         It 'Return null as type does not exist' {
             $PodeContext.Server = @{ 'Handlers' = @{}; }
-            Get-PodeHandler -Type Tcp | Should Be $null
+            Get-PodeHandler -Type Smtp | Should Be $null
         }
 
         It 'Returns handlers for type' {
-            $PodeContext.Server = @{ 'Handlers' = @{ 'TCP' = @{
+            $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{
                 'Main' = @{
                     'Logic' = { Write-Host 'hello' };
                 };
              }; }; }
 
-            $result = (Get-PodeHandler -Type Tcp)
+            $result = (Get-PodeHandler -Type Smtp)
 
             $result | Should Not Be $null
             $result.Count | Should Be 1
@@ -32,26 +32,26 @@ Describe 'Get-PodeHandler' {
         }
 
         It 'Returns handler for type by name' {
-            $PodeContext.Server = @{ 'Handlers' = @{ 'TCP' = @{
+            $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{
                 'Main' = @{
                     'Logic' = { Write-Host 'hello' };
                 };
              }; }; }
 
-            $result = (Get-PodeHandler -Type Tcp -Name 'Main')
+            $result = (Get-PodeHandler -Type Smtp -Name 'Main')
 
             $result | Should Not Be $null
             $result.Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
         }
 
         It 'Returns no handler for type by name' {
-            $PodeContext.Server = @{ 'Handlers' = @{ 'TCP' = @{
+            $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{
                 'Main' = @{
                     'Logic' = { Write-Host 'hello' };
                 };
              }; }; }
 
-            $result = (Get-PodeHandler -Type Tcp -Name 'Fail')
+            $result = (Get-PodeHandler -Type Smtp -Name 'Fail')
             $result | Should Be $null
         }
     }
@@ -59,17 +59,8 @@ Describe 'Get-PodeHandler' {
 
 Describe 'Add-PodeHandler' {
     It 'Throws error because type already exists' {
-        $PodeContext.Server = @{ 'Handlers' = @{ 'TCP' = @{ 'Main' = @{}; }; }; }
-        { Add-PodeHandler -Type Tcp -Name 'Main' -ScriptBlock {} } | Should Throw 'already defined'
-    }
-
-    It 'Adds tcp handler' {
-        $PodeContext.Server = @{ 'Handlers' = @{ 'TCP' = @{}; }; }
-        Add-PodeHandler -Type Tcp -Name 'Main' -ScriptBlock { Write-Host 'hello' }
-
-        $handler = $PodeContext.Server.Handlers['tcp']
-        $handler.Count | Should Be 1
-        $handler['Main'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{ 'Main' = @{}; }; }; }
+        { Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {} } | Should Throw 'already defined'
     }
 
     It 'Adds smtp handler' {
@@ -93,19 +84,19 @@ Describe 'Add-PodeHandler' {
 
 Describe 'Remove-PodeHandler' {
     It 'Adds two handlers, and removes one by name' {
-        $PodeContext.Server = @{ 'Handlers' = @{ 'TCP' = @{}; }; }
+        $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{}; }; }
 
-        Add-PodeHandler -Type Tcp -Name 'Main1' -ScriptBlock { Write-Host 'hello1' }
-        Add-PodeHandler -Type Tcp -Name 'Main2' -ScriptBlock { Write-Host 'hello2' }
+        Add-PodeHandler -Type Smtp -Name 'Main1' -ScriptBlock { Write-Host 'hello1' }
+        Add-PodeHandler -Type Smtp -Name 'Main2' -ScriptBlock { Write-Host 'hello2' }
 
-        $handler = $PodeContext.Server.Handlers['tcp']
+        $handler = $PodeContext.Server.Handlers['Smtp']
         $handler.Count | Should Be 2
         $handler['Main1'].Logic.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
         $handler['Main2'].Logic.ToString() | Should Be ({ Write-Host 'hello2' }).ToString()
 
-        Remove-PodeHandler -Type Tcp -Name 'Main1'
+        Remove-PodeHandler -Type Smtp -Name 'Main1'
 
-        $handler = $PodeContext.Server.Handlers['tcp']
+        $handler = $PodeContext.Server.Handlers['Smtp']
         $handler.Count | Should Be 1
         $handler['Main2'].Logic.ToString() | Should Be ({ Write-Host 'hello2' }).ToString()
     }
@@ -114,17 +105,12 @@ Describe 'Remove-PodeHandler' {
 Describe 'Clear-PodeHandlers' {
     It 'Adds handlers, and removes them all for one type' {
         $PodeContext.Server = @{ 'Handlers' = @{
-            'TCP' = @{};
             'SMTP' = @{};
             'Service' = @{};
         }; }
 
-        Add-PodeHandler -Type Tcp -Name 'Main' -ScriptBlock { Write-Host 'hello' }
         Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { Write-Host 'hello' }
         Add-PodeHandler -Type Service -Name 'Main' -ScriptBlock { Write-Host 'hello' }
-
-        $handler = $PodeContext.Server.Handlers['tcp']
-        $handler.Count | Should Be 1
 
         $handler = $PodeContext.Server.Handlers['smtp']
         $handler.Count | Should Be 1
@@ -132,13 +118,10 @@ Describe 'Clear-PodeHandlers' {
         $handler = $PodeContext.Server.Handlers['service']
         $handler.Count | Should Be 1
 
-        Clear-PodeHandlers -Type Tcp
-
-        $handler = $PodeContext.Server.Handlers['tcp']
-        $handler.Count | Should Be 0
+        Clear-PodeHandlers -Type Smtp
 
         $handler = $PodeContext.Server.Handlers['smtp']
-        $handler.Count | Should Be 1
+        $handler.Count | Should Be 0
 
         $handler = $PodeContext.Server.Handlers['service']
         $handler.Count | Should Be 1
@@ -146,17 +129,12 @@ Describe 'Clear-PodeHandlers' {
 
     It 'Adds handlers, and removes them all' {
         $PodeContext.Server = @{ 'Handlers' = @{
-            'TCP' = @{};
             'SMTP' = @{};
             'Service' = @{};
         }; }
 
-        Add-PodeHandler -Type Tcp -Name 'Main' -ScriptBlock { Write-Host 'hello' }
         Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { Write-Host 'hello' }
         Add-PodeHandler -Type Service -Name 'Main' -ScriptBlock { Write-Host 'hello' }
-
-        $handler = $PodeContext.Server.Handlers['tcp']
-        $handler.Count | Should Be 1
 
         $handler = $PodeContext.Server.Handlers['smtp']
         $handler.Count | Should Be 1
@@ -165,9 +143,6 @@ Describe 'Clear-PodeHandlers' {
         $handler.Count | Should Be 1
 
         Clear-PodeHandlers
-
-        $handler = $PodeContext.Server.Handlers['tcp']
-        $handler.Count | Should Be 0
 
         $handler = $PodeContext.Server.Handlers['smtp']
         $handler.Count | Should Be 0

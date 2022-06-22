@@ -84,14 +84,7 @@ function Get-PodeFileContentUsingViewEngine
                     $_args = @($Path, $Data)
                 }
 
-                if ($null -ne $PodeContext.Server.ViewEngine.UsingVariables) {
-                    $_vars = @()
-                    foreach ($_var in $PodeContext.Server.ViewEngine.UsingVariables) {
-                        $_vars += ,$_var.Value
-                    }
-                    $_args = $_vars + $_args
-                }
-
+                $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables)
                 $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
             }
         }
@@ -514,7 +507,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets')]
         [string]
         $Type,
 
@@ -646,6 +639,13 @@ function Close-PodeRunspaces
                 $continue = $false
                 foreach ($listener in $PodeContext.Listeners) {
                     if (!$listener.IsDisposed) {
+                        $continue = $true
+                        break
+                    }
+                }
+
+                foreach ($receiver in $PodeContext.Receivers) {
+                    if (!$receiver.IsDisposed) {
                         $continue = $true
                         break
                     }
@@ -1348,9 +1348,111 @@ function New-PodeRequestException
     return $err
 }
 
+function ConvertTo-PodeResponseContent
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        $InputObject,
+
+        [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [int]
+        $Depth = 10,
+
+        [Parameter()]
+        [string]
+        $Delimiter = ',',
+
+        [switch]
+        $AsHtml
+    )
+
+    # split for the main content type
+    $ContentType = Split-PodeContentType -ContentType $ContentType
+
+    # if there is no content-type then convert straight to string
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
+        return ([string]$InputObject)
+    }
+    
+    # run action for the content type
+    switch ($ContentType) {
+        { $_ -ilike '*/json' } {
+            if ($InputObject -isnot [string]) {
+                if ($Depth -le 0) {
+                    return (ConvertTo-Json -InputObject $InputObject -Compress)
+                }
+                else {
+                    return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
+                }
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return '{}'
+            }
+        }
+
+        { $_ -ilike '*/xml' } {
+            if ($InputObject -isnot [string]) {
+                $temp = @(foreach ($item in $InputObject) {
+                    New-Object psobject -Property $item
+                })
+
+                return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
+            }
+        }
+
+        { $_ -ilike '*/csv' } {
+            if ($InputObject -isnot [string]) {
+                $temp = @(foreach ($item in $InputObject) {
+                    New-Object psobject -Property $item
+                })
+
+                if (Test-PodeIsPSCore) {
+                    $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -IncludeTypeInformation:$false)
+                }
+                else {
+                    $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -NoTypeInformation)
+                }
+
+                return ($temp -join ([environment]::NewLine))
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
+            }
+        }
+
+        { $_ -ilike '*/html' } {
+            if ($InputObject -isnot [string]) {
+                return (($InputObject | ConvertTo-Html) -join ([environment]::NewLine))
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
+            }
+        }
+
+        { $_ -ilike '*/markdown' } {
+            if ($AsHtml -and ($PSVersionTable.PSVersion.Major -ge 7)) {
+                return ($InputObject | ConvertFrom-Markdown).Html
+            }
+        }
+    }
+
+    return ([string]$InputObject)
+}
+
 function ConvertFrom-PodeRequestContent
 {
-    param (
+    param(
         [Parameter()]
         $Request,
 
@@ -1416,16 +1518,7 @@ function ConvertFrom-PodeRequestContent
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             $parser = $PodeContext.Server.BodyParsers[$ContentType]
-
-            $_args = @($Content)
-            if ($null -ne $parser.UsingVariables) {
-                $_vars = @()
-                foreach ($_var in $parser.UsingVariables) {
-                    $_vars += ,$_var.Value
-                }
-                $_args = $_vars + $_args
-            }
-
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $Content -UsingVariables $parser.UsingVariables)
             $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
             $Content = $null
             return $Result
@@ -2214,9 +2307,14 @@ function Get-PodeDefaultPort
 {
     param(
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
         [string]
         $Protocol,
+
+        [Parameter()]
+        [ValidateSet('Implicit', 'Explicit')]
+        [string]
+        $TlsMode = 'Implicit',
 
         [switch]
         $Real
@@ -2225,13 +2323,15 @@ function Get-PodeDefaultPort
     # are we after the real default ports?
     if ($Real) {
         return (@{
-            Http    = 80
-            Https   = 443
-            Smtp    = 25
-            Tcp     = 9001
-            Ws      = 80
-            Wss     = 443
-        })[$Protocol.ToLowerInvariant()]
+            Http    = @{ Implicit = 80 }
+            Https   = @{ Implicit = 443 }
+            Smtp    = @{ Implicit = 25 }
+            Smtps   = @{ Implicit = 465; Explicit = 587 }
+            Tcp     = @{ Implicit = 9001 }
+            Tcps    = @{ Implicit = 9002; Explicit = 9003 }
+            Ws      = @{ Implicit = 80 }
+            Wss     = @{ Implicit = 443 }
+        })[$Protocol.ToLowerInvariant()][$TlsMode.ToLowerInvariant()]
     }
 
     # if we running as iis, return the ASPNET port
@@ -2246,13 +2346,15 @@ function Get-PodeDefaultPort
 
     # otherwise, get the port for the protocol
     return (@{
-        Http    = 8080
-        Https   = 8443
-        Smtp    = 25
-        Tcp     = 9001
-        Ws      = 9080
-        Wss     = 9443
-    })[$Protocol.ToLowerInvariant()]
+        Http    = @{ Implicit = 8080 }
+        Https   = @{ Implicit = 8443 }
+        Smtp    = @{ Implicit = 25 }
+        Smtps   = @{ Implicit = 465; Explicit = 587 }
+        Tcp     = @{ Implicit = 9001 }
+        Tcps    = @{ Implicit = 9002; Explicit = 9003 }
+        Ws      = @{ Implicit = 9080 }
+        Wss     = @{ Implicit = 9443 }
+    })[$Protocol.ToLowerInvariant()][$TlsMode.ToLowerInvariant()]
 }
 
 function Set-PodeServerHeader
@@ -2278,7 +2380,7 @@ function Get-PodeHandler
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Service', 'Smtp', 'Tcp')]
+        [ValidateSet('Service', 'Smtp')]
         [string]
         $Type,
 
@@ -2658,10 +2760,16 @@ function Get-PodeFunctionsFromAst
             continue
         }
 
+        # definition
+        $def = "$($func.Body)".Trim('{}').Trim()
+        if (($null -ne $func.Parameters) -and ($func.Parameters.Count -gt 0)) {
+            $def = "param($($func.Parameters.Name -join ','))`n$($def)"
+        }
+
         # the found func
         @{
             Name = $func.Name
-            Definition = "$($func.Body)".Trim('{}')
+            Definition = $def
         }
     })
 }
@@ -2788,4 +2896,32 @@ function Find-PodeModuleFile
     }
 
     return $path
+}
+
+function Get-PodeScriptblockArguments
+{
+    param(
+        [Parameter()]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter()]
+        [object[]]
+        $UsingVariables
+    )
+
+    if ($null -eq $ArgumentList) {
+        $ArgumentList = @()
+    }
+
+    if (($null -eq $UsingVariables) -or ($UsingVariables.Length -le 0)) {
+        return $ArgumentList
+    }
+
+    $_vars = @()
+    foreach ($_var in $UsingVariables) {
+        $_vars += ,$_var.Value
+    }
+
+    return ($_vars + $ArgumentList)
 }

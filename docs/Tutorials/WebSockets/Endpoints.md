@@ -1,8 +1,6 @@
-# Web Sockets
+# Endpoints
 
-Pode has support for using WebSockets, including secure WebSockets, for either server-to-client or vice-versa.
-
-WebSockets allow you to broadcast messages directly from your server to connected clients. This allows you to get real-time continuous updates on the frontend without having to constantly refresh the page, or by using async javascript.
+Pode has support for creating WebSocket endpoints, for server-to-client and/or client-to-server communications. WebSockets allow you to broadcast messages directly from your server to connected clients. This allows you to get real-time continuous updates on the frontend without having to constantly refresh the page, or by using async javascript.
 
 ## Server Side
 
@@ -114,12 +112,12 @@ $('#form').submit(function(e) {
 })
 ```
 
-This will send the message to the server, which will in-turn broadcast it to all other clients. To broadcast the message to just clients connected on a specific path, such as `/recieve`:
+This will send the message to the server, which will in-turn broadcast it to all other clients. To broadcast the message to just clients connected on a specific path, such as `/receive`:
 
 ```javascript
 $('#form').submit(function(e) {
     e.preventDefault();
-    ws.send(JSON.stringify({ message: $('#input').val(), path: '/recieve' }));
+    ws.send(JSON.stringify({ message: $('#input').val(), path: '/receive' }));
     $('#input').val('');
 })
 ```

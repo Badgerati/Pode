@@ -108,7 +108,10 @@ Describe 'Restart-PodeInternalServer' {
                     POST = @{ 'key' = 'value' }
                 }
                 Handlers = @{
-                    TCP = @{ }
+                    SMTP = @{}
+                }
+                Verbs = @{
+                    key = @{}
                 }
                 Logging = @{
                     Types = @{ 'key' = 'value' }
@@ -137,7 +140,7 @@ Describe 'Restart-PodeInternalServer' {
                         Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
                     }
                 }
-                WebSockets = @{
+                Signals = @{
                     Listeners = @()
                     Queues = @{
                         Sockets = @{}

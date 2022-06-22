@@ -1,26 +1,19 @@
 using System;
 using System.Linq;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pode
 {
-    public class PodeListener : IDisposable
+    public class PodeListener : PodeConnector
     {
-        public IDictionary<string, PodeWebSocket> WebSockets { get; private set; }
-        public bool IsListening { get; private set; }
-        public bool IsDisposed { get; private set; }
-        public bool ErrorLoggingEnabled { get; set; }
-        public string[] ErrorLoggingLevels { get; set; }
-        public CancellationToken CancellationToken { get; private set; }
-
         private IList<PodeSocket> Sockets;
 
-        public PodeListenerQueue<PodeContext> Contexts { get; private set; }
-        public PodeListenerQueue<PodeServerSignal> ServerSignals { get; private set; }
-        public PodeListenerQueue<PodeClientSignal> ClientSignals { get; private set; }
+        public IDictionary<string, PodeSignal> Signals { get; private set; }
+        public PodeItemQueue<PodeContext> Contexts { get; private set; }
+        public PodeItemQueue<PodeServerSignal> ServerSignals { get; private set; }
+        public PodeItemQueue<PodeClientSignal> ClientSignals { get; private set; }
 
         private int _requestTimeout = 30;
         public int RequestTimeout
@@ -44,18 +37,12 @@ namespace Pode
 
         public PodeListener(CancellationToken cancellationToken = default(CancellationToken))
         {
-            CancellationToken = cancellationToken == default(CancellationToken)
-                ? cancellationToken
-                : (new CancellationTokenSource()).Token;
-
-            IsDisposed = false;
-
             Sockets = new List<PodeSocket>();
-            WebSockets = new Dictionary<string, PodeWebSocket>();
+            Signals = new Dictionary<string, PodeSignal>();
 
-            Contexts = new PodeListenerQueue<PodeContext>();
-            ServerSignals = new PodeListenerQueue<PodeServerSignal>();
-            ClientSignals = new PodeListenerQueue<PodeClientSignal>();
+            Contexts = new PodeItemQueue<PodeContext>();
+            ServerSignals = new PodeItemQueue<PodeServerSignal>();
+            ClientSignals = new PodeItemQueue<PodeClientSignal>();
         }
 
         public void Add(PodeSocket socket)
@@ -97,17 +84,17 @@ namespace Pode
             Contexts.RemoveProcessing(context);
         }
 
-        public void AddWebSocket(PodeWebSocket webSocket)
+        public void AddSignal(PodeSignal signal)
         {
-            lock (WebSockets)
+            lock (Signals)
             {
-                if (WebSockets.ContainsKey(webSocket.ClientId))
+                if (Signals.ContainsKey(signal.ClientId))
                 {
-                    WebSockets[webSocket.ClientId] = webSocket;
+                    Signals[signal.ClientId] = signal;
                 }
                 else
                 {
-                    WebSockets.Add(webSocket.ClientId, webSocket);
+                    Signals.Add(signal.ClientId, signal);
                 }
             }
         }
@@ -152,7 +139,7 @@ namespace Pode
             ClientSignals.RemoveProcessing(signal);
         }
 
-        public void Start()
+        public override void Start()
         {
             foreach (var socket in Sockets)
             {
@@ -160,94 +147,41 @@ namespace Pode
                 socket.Start();
             }
 
-            IsListening = true;
+            base.Start();
         }
 
-        public void Dispose()
+        // public void Dispose()
+        protected override void Close()
         {
-            // stop listening
-            IsListening = false;
-
             // shutdown the sockets
+            PodeHelpers.WriteErrorMessage($"Closing sockets", this, PodeLoggingLevel.Verbose);
             for (var i = Sockets.Count - 1; i >= 0; i--)
             {
                 Sockets[i].Dispose();
             }
 
             Sockets.Clear();
+            PodeHelpers.WriteErrorMessage($"Closed sockets", this, PodeLoggingLevel.Verbose);
 
             // close existing contexts
+            PodeHelpers.WriteErrorMessage($"Closing contexts", this, PodeLoggingLevel.Verbose);
             foreach (var _context in Contexts.ToArray())
             {
                 _context.Dispose(true);
             }
 
-            // close connected web sockets
-            foreach (var _socket in WebSockets.Values)
+            Contexts.Clear();
+            PodeHelpers.WriteErrorMessage($"Closed contexts", this, PodeLoggingLevel.Verbose);
+
+            // close connected signals
+            PodeHelpers.WriteErrorMessage($"Closing signals", this, PodeLoggingLevel.Verbose);
+            foreach (var _signal in Signals.Values.ToArray())
             {
-                _socket.Context.Dispose(true);
+                _signal.Context.Dispose(true);
             }
 
-            // disposed
-            IsDisposed = true;
-        }
-    }
-
-    public class PodeListenerQueue<T>
-    {
-        private BlockingCollection<T> Items;
-        private List<T> ProcessingItems;
-
-        public int Count { get => Items.Count + ProcessingItems.Count; }
-        public int QueuedCount { get => Items.Count; }
-        public int ProcessingCount { get => ProcessingItems.Count; }
-
-        public PodeListenerQueue()
-        {
-            Items = new BlockingCollection<T>();
-            ProcessingItems = new List<T>();
-        }
-
-        public T Get(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var item = (cancellationToken == default(CancellationToken)
-                ? Items.Take()
-                : Items.Take(cancellationToken));
-
-            lock (ProcessingItems)
-            {
-                ProcessingItems.Add(item);
-            }
-
-            return item;
-        }
-
-        public Task<T> GetAsync(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return (cancellationToken == default(CancellationToken)
-                ? Task.Factory.StartNew(() => Get())
-                : Task.Factory.StartNew(() => Get(cancellationToken), cancellationToken));
-        }
-
-        public void Add(T item)
-        {
-            lock (Items)
-            {
-                Items.Add(item);
-            }
-        }
-
-        public void RemoveProcessing(T item)
-        {
-            lock (ProcessingItems)
-            {
-                ProcessingItems.Remove(item);
-            }
-        }
-
-        public T[] ToArray()
-        {
-            return Items.ToArray();
+            Signals.Clear();
+            PodeHelpers.WriteErrorMessage($"Closed signals", this, PodeLoggingLevel.Verbose);
         }
     }
 }

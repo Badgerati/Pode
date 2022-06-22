@@ -4,14 +4,15 @@ $(document).ready(() => {
 
     // event for inbound messages to append them
     ws.onmessage = function(evt) {
-        //var data = JSON.parse(evt.data)
-        console.log(evt.data);
-        $('#messages').append(`<p>${evt.data}</p>`);
+        var data = JSON.parse(evt.data)
+        console.log(data);
+        $('#messages').append(`<p>${data.message}</p>`);
     }
 
     // send message on the socket, to all clients
     $('#bc-form').submit(function(e) {
         e.preventDefault();
+        console.log(`send: ${$('#bc-message').val()}`);
         ws.send(JSON.stringify({ message: $('#bc-message').val() }));
         $('input[name=message]').val('');
     })

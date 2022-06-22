@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Reflection;
+using System.Runtime.Versioning;
 
 namespace Pode
 {
     public class PodeHelpers
     {
-
         public static readonly string[] HTTP_METHODS = new string[] { "DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE" };
         public const string WEB_SOCKET_MAGIC_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         public readonly static char[] NEW_LINE_ARRAY = new char[] { '\r', '\n' };
@@ -19,7 +20,23 @@ namespace Pode
         public const byte CARRIAGE_RETURN_BYTE = 13;
         public const byte DASH_BYTE = 45;
 
-        public static void WriteException(Exception ex, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error)
+        private static string _dotnet_version = string.Empty;
+        private static bool _is_net_framework = false;
+        public static bool IsNetFramework
+        {
+            get
+            {
+                if (String.IsNullOrWhiteSpace(_dotnet_version))
+                {
+                    _dotnet_version = Assembly.GetEntryAssembly()?.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName ?? "Framework";
+                    _is_net_framework = _dotnet_version.Equals("Framework", StringComparison.InvariantCultureIgnoreCase);
+                }
+
+                return _is_net_framework;
+            }
+        }
+
+        public static void WriteException(Exception ex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error)
         {
             if (ex == default(Exception))
             {
@@ -27,7 +44,7 @@ namespace Pode
             }
 
             // return if logging disabled, or if level isn't being logged
-            if (listener != default(PodeListener) && (!listener.ErrorLoggingEnabled || !listener.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
@@ -35,23 +52,39 @@ namespace Pode
             // write the exception to terminal
             Console.WriteLine($"[{level}] {ex.GetType().Name}: {ex.Message}");
             Console.WriteLine(ex.StackTrace);
-        }
 
-        public static void HandleAggregateException(AggregateException aex, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error)
-        {
-            aex.Handle((ex) =>
+            if (ex.InnerException != null)
             {
-                if (ex is IOException || ex is OperationCanceledException)
-                {
-                    return true;
-                }
-
-                PodeHelpers.WriteException(ex, listener, level);
-                return false;
-            });
+                Console.WriteLine($"[{level}] {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+                Console.WriteLine(ex.InnerException.StackTrace);
+            }
         }
 
-        public static void WriteErrorMessage(string message, PodeListener listener = default(PodeListener), PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default(PodeContext))
+        public static void HandleAggregateException(AggregateException aex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
+        {
+            try
+            {
+                aex.Handle((ex) =>
+                {
+                    if (ex is IOException || ex is OperationCanceledException)
+                    {
+                        return true;
+                    }
+
+                    PodeHelpers.WriteException(ex, connector, level);
+                    return false;
+                });
+            }
+            catch
+            {
+                if (!handled)
+                {
+                    throw;
+                }
+            }
+        }
+
+        public static void WriteErrorMessage(string message, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default(PodeContext))
         {
             // do nothing if no message
             if (string.IsNullOrWhiteSpace(message))
@@ -60,7 +93,7 @@ namespace Pode
             }
 
             // return if logging disabled, or if level isn't being logged
-            if (listener != default(PodeListener) && (!listener.ErrorLoggingEnabled || !listener.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }

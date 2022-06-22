@@ -73,11 +73,11 @@ function Get-PodeEndpoints
             }
 
             'smtp' {
-                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('smtp') -icontains $_.Protocol })
+                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('smtp', 'smtps') -icontains $_.Protocol })
             }
 
             'tcp' {
-                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('tcp') -icontains $_.Protocol })
+                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('tcp', 'tcps') -icontains $_.Protocol })
             }
         }
     }
@@ -89,7 +89,7 @@ function Test-PodeEndpointProtocol
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Http', 'Https', 'Ws', 'Wss', 'Smtp', 'Tcp')]
+        [ValidateSet('Http', 'Https', 'Ws', 'Wss', 'Smtp', 'Smtps', 'Tcp', 'Tcps')]
         [string]
         $Protocol
     )
@@ -102,7 +102,7 @@ function Get-PodeEndpointType
 {
     param(
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
         [string]
         $Protocol
     )
@@ -110,6 +110,8 @@ function Get-PodeEndpointType
     switch ($Protocol) {
         { $_ -iin @('http', 'https') } { 'Http' }
         { $_ -iin @('ws', 'wss') } { 'Ws' }
+        { $_ -iin @('smtp', 'smtps') } { 'Smtp' }
+        { $_ -iin @('tcp', 'tcps') } { 'Tcp' }
         default { $Protocol }
     }
 }
@@ -118,7 +120,7 @@ function Get-PodeEndpointRunspacePoolName
 {
     param(
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Tcp', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
         [string]
         $Protocol
     )
@@ -126,6 +128,8 @@ function Get-PodeEndpointRunspacePoolName
     switch ($Protocol) {
         { $_ -iin @('http', 'https') } { 'Web' }
         { $_ -iin @('ws', 'wss') } { 'Signals' }
+        { $_ -iin @('smtp', 'smtps') } { 'Smtp' }
+        { $_ -iin @('tcp', 'tcps') } { 'Tcp' }
         default { $Protocol }
     }
 }
@@ -163,10 +167,13 @@ function Find-PodeEndpointName
         $Force,
 
         [switch]
-        $ThrowError
+        $ThrowError,
+
+        [switch]
+        $Enabled
     )
 
-    if (!$PodeContext.Server.FindRouteEndpoint -and !$Force) {
+    if (!$Enabled -and !$Force) {
         return $null
     }
 
@@ -182,7 +189,7 @@ function Find-PodeEndpointName
 
     # add a default port to the address if missing
     if (!$Address.Contains(':')) {
-        $port = Get-PodeDefaultPort -Protocol $Protocol -Real
+        $port = Get-PodeDefaultPort -Protocol $Protocol -Real -TlsMode Implicit
         $Address = "$($Address):$($port)"
     }
 

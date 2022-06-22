@@ -145,15 +145,15 @@ function Get-PodeServerActiveRequestMetric
 
     switch ($CountType.ToLowerInvariant()) {
         'total' {
-            return $PodeContext.Server.WebSockets.Listener.Contexts.Count
+            return $PodeContext.Server.Signals.Listener.Contexts.Count
         }
 
         'queued' {
-            return $PodeContext.Server.WebSockets.Listener.Contexts.QueuedCount
+            return $PodeContext.Server.Signals.Listener.Contexts.QueuedCount
         }
 
         'processing' {
-            return $PodeContext.Server.WebSockets.Listener.Contexts.ProcessingCount
+            return $PodeContext.Server.Signals.Listener.Contexts.ProcessingCount
         }
     }
 }
@@ -196,15 +196,15 @@ function Get-PodeServerActiveSignalMetric
         'total' {
             switch ($CountType.ToLowerInvariant()) {
                 'total' {
-                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.Count + $PodeContext.Server.WebSockets.Listener.ClientSignals.Count
+                    return $PodeContext.Server.Signals.Listener.ServerSignals.Count + $PodeContext.Server.Signals.Listener.ClientSignals.Count
                 }
 
                 'queued' {
-                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.QueuedCount + $PodeContext.Server.WebSockets.Listener.ClientSignals.QueuedCount
+                    return $PodeContext.Server.Signals.Listener.ServerSignals.QueuedCount + $PodeContext.Server.Signals.Listener.ClientSignals.QueuedCount
                 }
 
                 'processing' {
-                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.ProcessingCount + $PodeContext.Server.WebSockets.Listener.ClientSignals.ProcessingCount
+                    return $PodeContext.Server.Signals.Listener.ServerSignals.ProcessingCount + $PodeContext.Server.Signals.Listener.ClientSignals.ProcessingCount
                 }
             }
         }
@@ -212,15 +212,15 @@ function Get-PodeServerActiveSignalMetric
         'server' {
             switch ($CountType.ToLowerInvariant()) {
                 'total' {
-                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.Count
+                    return $PodeContext.Server.Signals.Listener.ServerSignals.Count
                 }
 
                 'queued' {
-                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.QueuedCount
+                    return $PodeContext.Server.Signals.Listener.ServerSignals.QueuedCount
                 }
 
                 'processing' {
-                    return $PodeContext.Server.WebSockets.Listener.ServerSignals.ProcessingCount
+                    return $PodeContext.Server.Signals.Listener.ServerSignals.ProcessingCount
                 }
             }
         }
@@ -228,15 +228,15 @@ function Get-PodeServerActiveSignalMetric
         'client' {
             switch ($CountType.ToLowerInvariant()) {
                 'total' {
-                    return $PodeContext.Server.WebSockets.Listener.ClientSignals.Count
+                    return $PodeContext.Server.Signals.Listener.ClientSignals.Count
                 }
 
                 'queued' {
-                    return $PodeContext.Server.WebSockets.Listener.ClientSignals.QueuedCount
+                    return $PodeContext.Server.Signals.Listener.ClientSignals.QueuedCount
                 }
 
                 'processing' {
-                    return $PodeContext.Server.WebSockets.Listener.ClientSignals.ProcessingCount
+                    return $PodeContext.Server.Signals.Listener.ClientSignals.ProcessingCount
                 }
             }
         }

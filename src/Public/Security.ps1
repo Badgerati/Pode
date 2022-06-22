@@ -1332,6 +1332,9 @@ Specifies a value for Access-Control-Max-Age in seconds. (Default: 7200)
 .PARAMETER Credentials
 Specifies a value for Access-Control-Allow-Credentials
 
+.PARAMETER WithOptions
+If supplied, a global Options Route will be created.
+
 .EXAMPLE
 Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
 #>
@@ -1357,7 +1360,10 @@ function Set-PodeSecurityAccessControl
         $Duration = 7200,
 
         [switch]
-        $Credentials
+        $Credentials,
+
+        [switch]
+        $WithOptions
     )
 
     # origin
@@ -1393,6 +1399,13 @@ function Set-PodeSecurityAccessControl
     # creds
     if ($Credentials) {
         Add-PodeSecurityHeader -Name 'Access-Control-Allow-Credentials' -Value 'true'
+    }
+
+    # opts route
+    if ($WithOptions) {
+        Add-PodeRoute -Method Options -Path * -ScriptBlock {
+            Set-PodeResponseStatus -Code 200
+        }
     }
 }
 

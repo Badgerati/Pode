@@ -41,7 +41,7 @@ Install-Module -Name Pode
 [![Docker](https://img.shields.io/docker/stars/badgerati/pode.svg?label=Stars)](https://hub.docker.com/r/badgerati/pode/)
 [![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Pulls)](https://hub.docker.com/r/badgerati/pode/)
 
-Pode can run on *nix environments, therefore it only makes sense for there to be Docker images for you to use! The images use PowerShell v7.2.1 on either an Ubuntu Focal image (default), an Alpine image, or an ARM32 image (for Raspberry Pis).
+Pode can run on *nix environments, therefore it only makes sense for there to be Docker images for you to use! The images use PowerShell v7.2 on either an Ubuntu Focal image (default), an Alpine image, or an ARM32 image (for Raspberry Pis).
 
 * To pull down the latest Pode image you can do:
 
@@ -73,7 +73,7 @@ docker pull badgerati/pode:latest-arm32
 docker pull badgerati/pode:2.2.2-arm32
 ```
 
-Once pulled, you can [view here](../Docker) on how to use the image.
+Once pulled, you can [view here](../../Hosting/Docker) on how to use the image.
 
 ## GitHub Package Registry
 
@@ -109,7 +109,7 @@ docker pull docker.pkg.github.com/badgerati/pode/pode:latest-arm32
 docker pull docker.pkg.github.com/badgerati/pode/pode:2.2.2-arm32
 ```
 
-Once pulled, you can [view here](../Docker) on how to use the image.
+Once pulled, you can [view here](../../Hosting/Docker) on how to use the image.
 
 ## Using the Module
 

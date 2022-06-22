@@ -49,7 +49,7 @@ namespace Pode
 
         public bool IsWebSocketUpgraded
         {
-            get => (IsWebSocket && Request is PodeWsRequest);
+            get => (IsWebSocket && Request is PodeSignalRequest);
         }
 
         public new bool IsSmtp
@@ -72,9 +72,9 @@ namespace Pode
             get => (PodeHttpRequest)Request;
         }
 
-        public PodeWsRequest WsRequest
+        public PodeSignalRequest SignalRequest
         {
-            get => (PodeWsRequest)Request;
+            get => (PodeSignalRequest)Request;
         }
 
         public bool IsKeepAlive
@@ -95,6 +95,11 @@ namespace Pode
         public bool IsClosed
         {
             get => (State == PodeContextState.Closed);
+        }
+
+        public bool IsOpened
+        {
+            get => (State == PodeContextState.Open);
         }
 
         public CancellationTokenSource ContextTimeoutToken { get; private set; }
@@ -140,11 +145,15 @@ namespace Pode
             switch (PodeSocket.Type)
             {
                 case PodeProtocolType.Smtp:
-                    Request = new PodeSmtpRequest(Socket);
+                    Request = new PodeSmtpRequest(Socket, PodeSocket);
+                    break;
+
+                case PodeProtocolType.Tcp:
+                    Request = new PodeTcpRequest(Socket, PodeSocket);
                     break;
 
                 default:
-                    Request = new PodeHttpRequest(Socket);
+                    Request = new PodeHttpRequest(Socket, PodeSocket);
                     break;
             }
 
@@ -153,8 +162,15 @@ namespace Pode
             // attempt to open the request stream
             try
             {
-                Request.Open(PodeSocket.Certificate, PodeSocket.Protocols, PodeSocket.AllowClientCertificate);
+                Request.Open();
                 State = PodeContextState.Open;
+            }
+            catch (AggregateException aex)
+            {
+                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Debug, true);
+                State = (Request.InputStream == default(Stream)
+                    ? PodeContextState.Error
+                    : PodeContextState.SslError);
             }
             catch (Exception ex)
             {
@@ -164,10 +180,17 @@ namespace Pode
                     : PodeContextState.SslError);
             }
 
-            // if request is SMTP, send ACK
-            if (PodeSocket.IsSmtp)
+            // if request is SMTP or TCP, send ACK if available
+            if (IsOpened)
             {
-                SmtpRequest.SendAck();
+                if (PodeSocket.IsSmtp)
+                {
+                    SmtpRequest.SendAck();
+                }
+                else if (PodeSocket.IsTcp && !string.IsNullOrWhiteSpace(PodeSocket.AcknowledgeMessage))
+                {
+                    Response.WriteLine(PodeSocket.AcknowledgeMessage, true);
+                }
             }
         }
 
@@ -189,6 +212,16 @@ namespace Pode
                     }
 
                     Type = PodeProtocolType.Smtp;
+                    break;
+
+                // - only allow tcp
+                case PodeProtocolType.Tcp:
+                    if (!Request.IsTcp)
+                    {
+                        throw new HttpRequestException("Request is not Tcp");
+                    }
+
+                    Type = PodeProtocolType.Tcp;
                     break;
 
                 // - only allow http
@@ -269,7 +302,7 @@ namespace Pode
 
         public void UpgradeWebSocket(string clientId = null)
         {
-            PodeHelpers.WriteErrorMessage($"Uprading Websocket", Listener, PodeLoggingLevel.Verbose, this);
+            PodeHelpers.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
 
             // websocket
             if (!IsWebSocket)
@@ -309,12 +342,9 @@ namespace Pode
             Response.Send();
 
             // add open web socket to listener
-            var webSocket = new PodeWebSocket(this, HttpRequest.Url.AbsolutePath, clientId);
-
-            var wsRequest = new PodeWsRequest(HttpRequest, webSocket);
-            Request = wsRequest;
-
-            Listener.AddWebSocket(WsRequest.WebSocket);
+            var signal = new PodeSignal(this, HttpRequest.Url.AbsolutePath, clientId);
+            Request = new PodeSignalRequest(HttpRequest, signal);
+            Listener.AddSignal(SignalRequest.Signal);
             PodeHelpers.WriteErrorMessage($"Websocket upgraded", Listener, PodeLoggingLevel.Verbose, this);
         }
 
@@ -373,7 +403,7 @@ namespace Pode
                     }
 
                     // if it was smtp, and it was processable, RESET!
-                    if (IsSmtp && SmtpRequest.CanProcess)
+                    if (IsSmtp && Request.IsProcessable)
                     {
                         SmtpRequest.Reset();
                     }

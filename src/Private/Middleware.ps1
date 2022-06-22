@@ -41,15 +41,7 @@ function Invoke-PodeMiddleware
         }
 
         try {
-            $_args = @($midware.Arguments)
-            if ($null -ne $midware.UsingVariables) {
-                $_vars = @()
-                foreach ($_var in $midware.UsingVariables) {
-                    $_vars += ,$_var.Value
-                }
-                $_args = $_vars + $_args
-            }
-
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $midware.Arguments -UsingVariables $midware.UsingVariables)
             $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments $_args -Return -Scoped -Splat
             if ($null -eq $continue) {
                 $continue = $true

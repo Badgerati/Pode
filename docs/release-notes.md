@@ -1,5 +1,34 @@
 # Release Notes
 
+## v2.7.0
+
+```plain
+### Features
+* #895: Add support for server to be able to connect to external WebSockets
+* #902: New TCP server, listener, and endpoints; plus Verbs support
+* #976: Add support for grouping Routes
+
+### Enhancements
+* #901: Enable support for multiple SMTP endpoints, and certificates
+* #954: Add anonymous route access support, when authentication is enabled on a route
+* #960: Add RSET and NOOP SMTP commands
+* #981: Add switch for AccessControl to create global Options route
+* #982: Add * level for errors to enable everything
+
+### Bugs
+* #956: Fix for importing functionss with inline parameters
+* #957: Fix for some OpenAPI properties being dropped
+* #958: Some SMTP attachment boundaries can include double quotes
+* #965: Fix for importing ps1 files
+* #974: Add Position=0 to most response write functions
+
+### Documentation
+* #978: Icon and Donation link updates
+
+### Packaging
+* #984: Bump Docker images to use PS7.2.4
+```
+
 ## v2.6.2
 
 ```plain

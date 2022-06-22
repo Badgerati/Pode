@@ -83,7 +83,8 @@ function Start-PodeWebServer
 
         $listener.Start()
         $PodeContext.Listeners += $listener
-        $PodeContext.Server.WebSockets.Listener = $listener
+        $PodeContext.Server.Signals.Enabled = $true
+        $PodeContext.Server.Signals.Listener = $listener
     }
     catch {
         $_ | Write-PodeErrorLog
@@ -107,7 +108,7 @@ function Start-PodeWebServer
 
             try
             {
-                while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
                 {
                     # get request and response
                     $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
@@ -164,7 +165,7 @@ function Start-PodeWebServer
                             $WebEvent.Ranges = (Get-PodeRanges -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
                             # endpoint name
-                            $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint)
+                            $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Route))
 
                             # add logging endware for post-request
                             Add-PodeRequestLogEndware -WebEvent $WebEvent
@@ -176,14 +177,14 @@ function Start-PodeWebServer
 
                             # invoke global and route middleware
                             if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                                # has thr request been aborted
+                                # has the request been aborted
                                 if ($Request.IsAborted) {
                                     throw $Request.Error
                                 }
 
                                 if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware))
                                 {
-                                    # has thr request been aborted
+                                    # has the request been aborted
                                     if ($Request.IsAborted) {
                                         throw $Request.Error
                                     }
@@ -199,15 +200,7 @@ function Start-PodeWebServer
                                         }
                                     }
                                     elseif ($null -ne $WebEvent.Route.Logic) {
-                                        $_args = @($WebEvent.Route.Arguments)
-                                        if ($null -ne $WebEvent.Route.UsingVariables) {
-                                            $_vars = @()
-                                            foreach ($_var in $WebEvent.Route.UsingVariables) {
-                                                $_vars += ,$_var.Value
-                                            }
-                                            $_args = $_vars + $_args
-                                        }
-
+                                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
                                         Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                                     }
                                 }
@@ -269,7 +262,7 @@ function Start-PodeWebServer
             )
 
             try {
-                while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
                 {
                     $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
@@ -280,10 +273,10 @@ function Start-PodeWebServer
 
                         # by clientId
                         if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
-                            $sockets = @($Listener.WebSockets[$message.ClientId])
+                            $sockets = @($Listener.Signals[$message.ClientId])
                         }
                         else {
-                            $sockets = @($Listener.WebSockets.Values)
+                            $sockets = @($Listener.Signals.Values)
 
                             # by path
                             if (![string]::IsNullOrWhiteSpace($message.Path)) {
@@ -307,7 +300,7 @@ function Start-PodeWebServer
                                 $socket.Context.Response.SendSignal($message)
                             }
                             catch {
-                                $null = $Listener.WebSockets.Remove($socket.ClientId)
+                                $null = $Listener.Signals.Remove($socket.ClientId)
                             }
                         }
                     }
@@ -346,15 +339,15 @@ function Start-PodeWebServer
             )
 
             try {
-                while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
                 {
                     $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
                     try
                     {
                         $payload = ($context.Message | ConvertFrom-Json)
-                        $Request = $context.WebSocket.Context.Request
-                        $Response = $context.WebSocket.Context.Response
+                        $Request = $context.Signal.Context.Request
+                        $Response = $context.Signal.Context.Response
 
                         $SignalEvent = @{
                             Response = $Response
@@ -373,27 +366,19 @@ function Start-PodeWebServer
                                 Name = $null
                             }
                             Route = $null
-                            ClientId = $context.WebSocket.ClientId
+                            ClientId = $context.Signal.ClientId
                             Timestamp = $context.Timestamp
                             Streamed = $true
                         }
 
                         # endpoint name
-                        $SignalEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SignalEvent.Endpoint.Protocol -Address $SignalEvent.Endpoint.Address -LocalAddress $SignalEvent.Request.LocalEndPoint)
+                        $SignalEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SignalEvent.Endpoint.Protocol -Address $SignalEvent.Endpoint.Address -LocalAddress $SignalEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Route))
 
                         # see if we have a route and invoke it, otherwise auto-send
                         $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name
 
                         if ($null -ne $SignalEvent.Route) {
-                            $_args = @($SignalEvent.Route.Arguments)
-                            if ($null -ne $SignalEvent.Route.UsingVariables) {
-                                $_vars = @()
-                                foreach ($_var in $SignalEvent.Route.UsingVariables) {
-                                    $_vars += ,$_var.Value
-                                }
-                                $_args = $_vars + $_args
-                            }
-
+                            $_args = @(Get-PodeScriptblockArguments -ArgumentList $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables)
                             Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $_args -Scoped -Splat
                         }
                         else {
@@ -434,7 +419,7 @@ function Start-PodeWebServer
         )
 
         try {
-            while ($Listener.IsListening -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Seconds 1
             }
         }

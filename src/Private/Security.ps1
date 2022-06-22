@@ -2,7 +2,7 @@ using namespace System.Security.Cryptography
 
 function Test-PodeIPLimit
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         $IP
@@ -264,7 +264,7 @@ function Test-PodeEndpointLimit
 
 function Test-PodeIPAccess
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         $IP
@@ -465,7 +465,7 @@ function Add-PodeRouteLimit
 
 function Add-PodeEndpointLimit
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         [string]
@@ -486,6 +486,12 @@ function Add-PodeEndpointLimit
     # current limit type
     $type = 'Endpoint'
 
+    # does the endpoint exist?
+    $endpoint = Get-PodeEndpointByName -Name $EndpointName
+    if ($null -eq $endpoint) {
+        throw "Endpoint not found: $($EndpointName)"
+    }
+
     # ensure limit and seconds are non-zero and negative
     if ($Limit -le 0) {
         throw "Limit value cannot be 0 or less for $($IP)"
@@ -496,7 +502,23 @@ function Add-PodeEndpointLimit
     }
 
     # we need to check endpoints on requests
-    $PodeContext.Server.FindRouteEndpoint = $true
+    switch ($endpoint.Type.ToLowerInvariant()) {
+        'http' {
+            $PodeContext.Server.FindEndpoints.Route = $true
+        }
+
+        'ws' {
+            $PodeContext.Server.FindEndpoints.Route = $true
+        }
+
+        'smtp' {
+            $PodeContext.Server.FindEndpoints.Smtp = $true
+        }
+
+        'tcp' {
+            $PodeContext.Server.FindEndpoints.Tcp = $true
+        }
+    }
 
     # get current rules
     $rules = $PodeContext.Server.Limits.Rules[$type]

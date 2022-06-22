@@ -1,3 +1,5 @@
+using namespace Pode
+
 function New-PodeContext
 {
     [CmdletBinding()]
@@ -76,7 +78,8 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Lockables -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru
+        Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru |
+        Add-Member -MemberType NoteProperty -Name Receivers -Value @() -PassThru
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
@@ -88,8 +91,9 @@ function New-PodeContext
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
 
-    # list of created listeners
+    # list of created listeners/receivers
     $ctx.Listeners = @()
+    $ctx.Receivers = @()
 
     # list of timers/schedules/tasks
     $ctx.Timers = @{
@@ -139,6 +143,7 @@ function New-PodeContext
         General = $Threads
         Schedules = 10
         Tasks = 2
+        WebSockets = 2
     }
 
     # set socket details for pode server
@@ -149,9 +154,15 @@ function New-PodeContext
         ReceiveTimeout = 100
     }
 
-    $ctx.Server.WebSockets = @{
+    $ctx.Server.Signals = @{
         Enabled = $false
         Listener = $null
+    }
+
+    $ctx.Server.WebSockets = @{
+        Enabled     = ($EnablePool -icontains 'websockets')
+        Receiver    = $null
+        Connections = @{}
     }
 
     # set default request config
@@ -232,7 +243,11 @@ function New-PodeContext
     # set the IP address details
     $ctx.Server.Endpoints = @{}
     $ctx.Server.EndpointsMap = @{}
-    $ctx.Server.FindRouteEndpoint = $false
+    $ctx.Server.FindEndpoints = @{
+        Route = $false
+        Smtp  = $false
+        Tcp   = $false
+    }
 
     # general encoding for the server
     $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
@@ -277,14 +292,16 @@ function New-PodeContext
         '*'         = [ordered]@{}
     }
 
+    # verbs for tcp
+    $ctx.Server.Verbs = @{}
+
     # custom view paths
     $ctx.Server.Views = @{}
 
     # handlers for tcp
     $ctx.Server.Handlers = @{
-        'tcp' = @{};
-        'smtp' = @{};
-        'service' = @{};
+        smtp    = @{}
+        service = @{}
     }
 
     # setup basic access placeholders
@@ -353,14 +370,14 @@ function New-PodeContext
 
     # runspace pools
     $ctx.RunspacePools = @{
-        Main = $null
-        Web = $null
-        Smtp = $null
-        Tcp = $null
-        Signals = $null
-        Schedules = $null
-        Gui = $null
-        Tasks = $null
+        Main        = $null
+        Web         = $null
+        Smtp        = $null
+        Tcp         = $null
+        Signals     = $null
+        Schedules   = $null
+        Gui         = $null
+        Tasks       = $null
     }
 
     # session state
@@ -501,7 +518,7 @@ function Import-PodeModulesIntoRunspaceState
         # import the module
         $path = Find-PodeModuleFile -Name $module.Name
 
-        if ($module.ModuleType -ieq 'Manifest') {
+        if (($module.ModuleType -ieq 'Manifest') -or ($path.EndsWith('.ps1'))) {
             $PodeContext.RunspaceState.ImportPSModule($path)
         }
         else {
@@ -598,12 +615,22 @@ function New-PodeRunspacePools
         }
     }
 
-    # web socket runspace - if we have any ws/s endpoints
+    # signals runspace - if we have any ws/s endpoints
     if (Test-PodeEndpoints -Type Ws) {
         $PodeContext.RunspacePools.Signals = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
         }
+    }
+
+    # web socket connections runspace - for receiving data for external sockets
+    if (Test-PodeWebSocketsExist) {
+        $PodeContext.RunspacePools.WebSockets = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.WebSockets + 1, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
+
+        New-PodeWebSocketReceiver
     }
 
     # setup schedule runspace pool -if we have any schedules

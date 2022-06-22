@@ -50,35 +50,3 @@ function Show-PodeErrorPage
     # write the error page to the stream
     Write-PodeFileResponse -Path $errorPage.Path -Data $data -ContentType $errorPage.ContentType
 }
-
-function Close-PodeTcpConnection
-{
-    param (
-        [Parameter()]
-        $Client,
-
-        [Parameter(ParameterSetName='Quit')]
-        [string]
-        $Message,
-
-        [Parameter(ParameterSetName='Quit')]
-        [switch]
-        $Quit
-    )
-
-    if ($null -eq $Client) {
-        $Client = $TcpEvent.Client
-    }
-
-    if ($null -ne $Client) {
-        if ($Quit -and $Client.Connected) {
-            if ([string]::IsNullOrWhiteSpace($Message)) {
-                $Message = '221 Bye'
-            }
-
-            Write-PodeTcpClient -Message $Message
-        }
-
-        Close-PodeDisposable -Disposable $Client -Close
-    }
-}

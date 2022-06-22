@@ -81,6 +81,7 @@
         'Move-PodeResponseUrl',
         'Write-PodeTcpClient',
         'Read-PodeTcpClient',
+        'Close-PodeTcpClient',
         'Save-PodeRequestFile',
         'Set-PodeViewEngine',
         'Use-PodePartialView',
@@ -135,6 +136,9 @@
         'Get-PodeStaticRoute',
         'Get-PodeSignalRoute',
         'Use-PodeRoutes',
+        'Add-PodeRouteGroup',
+        'Add-PodeStaticRouteGroup',
+        'Add-PodeSignalRouteGroup',
 
         # handlers
         'Add-PodeHandler',
@@ -208,6 +212,7 @@
         'ConvertFrom-PodeJwt',
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
+        'Test-PodeAuthUser',
 
         # logging
         'New-PodeLoggingMethod',
@@ -297,7 +302,23 @@
         'Set-PodeSecurityFrameOptions',
         'Set-PodeSecurityPermissionsPolicy',
         'Set-PodeSecurityReferrerPolicy',
-        'Set-PodeSecurityStrictTransportSecurity'
+        'Set-PodeSecurityStrictTransportSecurity',
+
+        # Verbs
+        'Add-PodeVerb',
+        'Remove-PodeVerb',
+        'Clear-PodeVerbs',
+        'Get-PodeVerb',
+        'Use-PodeVerbs',
+
+        # WebSockets
+        'Set-PodeWebSocketConcurrency',
+        'Connect-PodeWebSocket',
+        'Disconnect-PodeWebSocket',
+        'Remove-PodeWebSocket',
+        'Send-PodeWebSocket',
+        'Reset-PodeWebSocket',
+        'Test-PodeWebSocket'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

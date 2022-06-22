@@ -1,19 +1,24 @@
-# <img src="https://github.com/Badgerati/Pode/blob/develop/images/icon-transparent.png?raw=true" width="30" style="margin-bottom:-5px;margin-right:-3px" /> Pode
+<p align="center">
+    <img src="https://github.com/Badgerati/Pode/raw/develop/images/icon-new.svg?raw=true" width="250" />
+</p>
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt)
-[![Documentation](https://img.shields.io/github/v/release/badgerati/pode?label=docs)](https://badgerati.github.io/Pode)
+[![Documentation](https://img.shields.io/github/v/release/badgerati/pode?label=docs&logo=readthedocs&logoColor=white)](https://badgerati.github.io/Pode)
 [![GitHub Actions](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fbadgerati%2Fpode%2Fbadge&style=flat&label=GitHub)](https://actions-badge.atrox.dev/badgerati/pode/goto)
 [![Code Coverage](https://coveralls.io/repos/github/Badgerati/Pode/badge.svg?branch=develop)](https://coveralls.io/github/Badgerati/Pode?branch=develop)
-[![Discord](https://img.shields.io/discord/887398607727255642)](https://discord.gg/fRqeGcbF6h)
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/Badgerati?color=%23ff69b4&logo=github&style=flat&label=Sponsers)](https://github.com/sponsors/Badgerati)
+[![Discord](https://img.shields.io/discord/887398607727255642?logo=discord&logoColor=white)](https://discord.gg/fRqeGcbF6h)
 
-[![Chocolatey](https://img.shields.io/chocolatey/dt/pode.svg?label=Chocolatey&colorB=a1301c)](https://chocolatey.org/packages/pode)
-[![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298)](https://www.powershellgallery.com/packages/Pode)
-[![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker)](https://hub.docker.com/r/badgerati/pode/)
+[![Chocolatey](https://img.shields.io/chocolatey/dt/pode.svg?label=Chocolatey&colorB=a1301c&logo=chocolatey&logoColor=white)](https://chocolatey.org/packages/pode)
+[![PowerShell](https://img.shields.io/powershellgallery/dt/pode.svg?label=PowerShell&colorB=085298&logo=powershell&logoColor=white)](https://www.powershellgallery.com/packages/Pode)
+[![Docker](https://img.shields.io/docker/pulls/badgerati/pode.svg?label=Docker&logoColor=white&logo=docker)](https://hub.docker.com/r/badgerati/pode/)
+
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/Badgerati?color=%23ff69b4&logo=github&style=flat&label=Sponsers)](https://github.com/sponsors/Badgerati)
+[![Ko-fi](https://img.shields.io/static/v1?logo=kofi&label=Ko-fi&logoColor=white&message=Buy+me+a+coffee&color=ff5f5f)](https://ko-fi.com/badgerati)
+[![PayPal](https://img.shields.io/static/v1?logo=paypal&label=PayPal&logoColor=white&message=Donate&color=00457C)](https://paypal.me/badgerati)
 
 > 💝 A lot of my free time, evenings, and weekends goes into making Pode happen; please do consider sponsoring as it will really help! 😊
 
-Pode is a Cross-Platform framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/Examples/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Hosting/SmtpServer/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/Views/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/Views/ThirdParty/) template engines. Plus many more features, including [Azure Functions](https://badgerati.github.io/Pode/Hosting/AzureFunctions/) and [AWS Lambda](https://badgerati.github.io/Pode/Hosting/AwsLambda/) support!
+Pode is a Cross-Platform framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/Examples/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Servers/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/Views/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/Views/ThirdParty/) template engines. Plus many more features, including [Azure Functions](https://badgerati.github.io/Pode/Hosting/AzureFunctions/) and [AWS Lambda](https://badgerati.github.io/Pode/Hosting/AwsLambda/) support!
 
 <p align="center">
     <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code_2.png?raw=true" />
@@ -40,7 +45,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Azure Functions, AWS Lambda, and IIS support
 * OpenAPI, Swagger, and ReDoc support
 * Listen on a single or multiple IP address/hostnames
-* Cross-platform support for HTTP, HTTPS, TCP and SMTP
+* Cross-platform support for HTTP(S), SMTP(S), and TCP(S)
 * Cross-platform support for WebSockets, including secure WebSockets
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages

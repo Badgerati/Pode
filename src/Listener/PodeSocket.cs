@@ -20,7 +20,10 @@ namespace Pode
         public X509Certificate Certificate { get; private set; }
         public bool AllowClientCertificate { get; private set; }
         public SslProtocols Protocols { get; private set; }
+        public PodeTlsMode TlsMode { get; private set; }
         public Socket Socket { get; private set; }
+        public string AcknowledgeMessage { get; set; }
+        public bool CRLFMessageEnd { get; set; }
 
         private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
         private ConcurrentQueue<SocketAsyncEventArgs> ReceiveConnections;
@@ -41,13 +44,19 @@ namespace Pode
 
         public bool HasHostnames => Hostnames.Any();
 
-        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeProtocolType type, X509Certificate certificate = null, bool allowClientCertificate = false)
+        public string Hostname
+        {
+            get => (HasHostnames ? Hostnames[0] : IPAddress.ToString());
+        }
+
+        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeProtocolType type, X509Certificate certificate = null, bool allowClientCertificate = false, PodeTlsMode tlsMode = PodeTlsMode.Implicit)
             : base(type)
         {
             IPAddress = ipAddress;
             Port = port;
             Certificate = certificate;
             AllowClientCertificate = allowClientCertificate;
+            TlsMode = tlsMode;
             Protocols = protocols;
             Hostnames = new List<string>();
             Endpoint = new IPEndPoint(ipAddress, port);
@@ -156,7 +165,7 @@ namespace Pode
             socket.Start();
 
             // close socket if not successful, or if listener is stopped - close now!
-            if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
+            if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsConnected))
             {
                 if (error != SocketError.Success)
                 {
@@ -193,7 +202,7 @@ namespace Pode
             RemovePendingSocket(received);
 
             // close socket if not successful, or if listener is stopped - close now!
-            if ((received == default(Socket)) || (error != SocketError.Success) || (!Listener.IsListening))
+            if ((received == default(Socket)) || (error != SocketError.Success) || (!Listener.IsConnected))
             {
                 if (error != SocketError.Success)
                 {
@@ -224,7 +233,7 @@ namespace Pode
             catch (IOException) {}
             catch (AggregateException aex)
             {
-                PodeHelpers.HandleAggregateException(aex, Listener);
+                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
             }
             catch (Exception ex)
             {
@@ -252,17 +261,25 @@ namespace Pode
                 }
 
                 // if it's a websocket, upgrade it, then add context back for re-receiving
-                else if (context.IsWebSocket && !context.IsWebSocketUpgraded)
+                else if (context.IsWebSocket)
                 {
-                    context.UpgradeWebSocket();
-                    process = false;
-                    context.Dispose();
+                    if (!context.IsWebSocketUpgraded)
+                    {
+                        context.UpgradeWebSocket();
+                        process = false;
+                        context.Dispose();
+                    }
+                    else if (!context.Request.IsProcessable)
+                    {
+                        process = false;
+                        context.Dispose();
+                    }
                 }
 
                 // if it's an email, re-receive unless processable
                 else if (context.IsSmtp)
                 {
-                    if (!context.SmtpRequest.CanProcess)
+                    if (!context.Request.IsProcessable)
                     {
                         process = false;
                         context.Dispose();
@@ -285,7 +302,7 @@ namespace Pode
                     if (context.IsWebSocket)
                     {
                         PodeHelpers.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, context);
-                        Listener.AddClientSignal(context.WsRequest.NewClientSignal());
+                        Listener.AddClientSignal(context.SignalRequest.NewClientSignal());
                         context.Dispose();
                     }
                     else
@@ -419,6 +436,7 @@ namespace Pode
             // dispose
             socket.Close();
             socket.Dispose();
+            socket = default(Socket);
         }
 
         private void ClearSocketAsyncEvent(SocketAsyncEventArgs e)
