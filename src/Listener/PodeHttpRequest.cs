@@ -297,9 +297,13 @@ namespace Pode
             }
 
             // keep-alive?
-            IsKeepAlive = (IsWebSocket ||
-                (Headers.ContainsKey("Connection")
-                    && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase)));
+            var connHeader = $"{Headers["Connection"]}".ToLowerInvariant();
+
+            IsKeepAlive = (IsWebSocket || string.IsNullOrWhiteSpace(connHeader) || connHeader == "keep-alive");
+                // (Headers.ContainsKey("Connection")
+                //     && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase)));
+
+            Console.WriteLine($"connection: {Headers["Connection"]}");
 
             // return index where body starts in req
             return bodyIndex;

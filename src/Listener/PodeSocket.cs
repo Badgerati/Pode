@@ -130,13 +130,61 @@ namespace Pode
 
         private void StartReceive(SocketAsyncEventArgs args)
         {
+            // close socket if errored while keeping alive, or if listener is stopped
+            if ((args.AcceptSocket == default(Socket)) || (args.SocketError != SocketError.Success) || (!Listener.IsConnected))
+            {
+                if (args.SocketError != SocketError.Success)
+                {
+                    PodeHelpers.WriteErrorMessage($"Closing receiving socket: {args.SocketError}", Listener, PodeLoggingLevel.Debug);
+                }
+
+                // close socket
+                if (args.AcceptSocket != default(Socket))
+                {
+                    args.AcceptSocket.Close();
+                }
+
+                // close the context
+                ((PodeContext)args.UserToken).Dispose(true);
+
+                // add args back to connections
+                ClearSocketAsyncEvent(args);
+                ReceiveConnections.Enqueue(args);
+                return;
+            }
+
             args.SetBuffer(new byte[0], 0, 0);
+            Console.WriteLine(args.AcceptSocket.Available);
+            Console.WriteLine(args.AcceptSocket.DualMode);
+            Console.WriteLine(args.AcceptSocket.IsBound);
+            Console.WriteLine(args.AcceptSocket.NoDelay);
+            Console.WriteLine(args.AcceptSocket.DontFragment);
+            Console.WriteLine(args.AcceptSocket.ReceiveBufferSize);
+            Console.WriteLine(args.BytesTransferred);
+            Console.WriteLine(args.Count);
+            Console.WriteLine(args.LastOperation);
+            Console.WriteLine(args.Offset);
+            Console.WriteLine(args.SocketError);
+            Console.WriteLine(args.SocketFlags);
+            Console.WriteLine("---------------------");
             var raised = false;
 
             try
             {
                 AddPendingSocket(args.AcceptSocket);
                 raised = args.AcceptSocket.ReceiveAsync(args);
+                
+                Console.WriteLine(args.AcceptSocket.Available);
+                Console.WriteLine(args.AcceptSocket.DualMode);
+                Console.WriteLine(args.AcceptSocket.IsBound);
+                Console.WriteLine(args.AcceptSocket.LingerState);
+                Console.WriteLine(args.BytesTransferred);
+                Console.WriteLine(args.Count);
+                Console.WriteLine(args.LastOperation);
+                Console.WriteLine(args.Offset);
+                Console.WriteLine(args.SocketError);
+                Console.WriteLine(args.SocketFlags);
+                Console.WriteLine("---------------------");
             }
             catch (ObjectDisposedException)
             {
@@ -443,6 +491,7 @@ namespace Pode
         {
             e.AcceptSocket = default(Socket);
             e.UserToken = default(object);
+            e.SocketError = SocketError.Success;
         }
 
         public new bool Equals(object obj)
