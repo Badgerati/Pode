@@ -307,8 +307,6 @@ namespace Pode
             var match = default(Match);
             var previousHeader = string.Empty;
 
-            Console.WriteLine(value);
-
             foreach (var line in lines)
             {
                 if (string.IsNullOrWhiteSpace(line))
