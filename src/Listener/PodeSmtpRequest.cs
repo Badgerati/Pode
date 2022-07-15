@@ -305,6 +305,7 @@ namespace Pode
 
             var lines = value.Split(new string[] { PodeHelpers.NEW_LINE }, StringSplitOptions.None);
             var match = default(Match);
+            var previousHeader = string.Empty;
 
             foreach (var line in lines)
             {
@@ -317,7 +318,16 @@ namespace Pode
                 match = Regex.Match(line, "^(?<name>.*?)\\:\\s+(?<value>.*?)$");
                 if (match.Success)
                 {
+                    previousHeader = match.Groups["name"].Value;
                     headers.Add(match.Groups["name"].Value, match.Groups["value"].Value);
+                }
+                else
+                {
+                    match = Regex.Match(line, "^(?<name>.*?)\\:\\s+");
+                    if (!match.Success)
+                    {
+                        headers[previousHeader] += line;
+                    }
                 }
 
                 // boundary line
@@ -375,8 +385,8 @@ namespace Pode
                 var contentDisposition = $"{headers["Content-Disposition"]}";
                 if (!string.IsNullOrEmpty(contentDisposition) && contentDisposition.ToLowerInvariant().Contains("attachment"))
                 {
-                    var match = Regex.Match(contentType, "name=\"?(?<name>.+)\"?");
-                    var name = match.Groups["name"].Value;
+                    var match = Regex.Match(contentType, "name=(?<name>.+)");
+                    var name = match.Groups["name"].Value.Trim('"');
 
                     var stream = new MemoryStream();
                     stream.Write(bodyBytes, 0, bodyBytes.Length);
