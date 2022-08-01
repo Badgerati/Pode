@@ -770,6 +770,7 @@ function Get-PodeAuthWindowsADMethod
         # validate and retrieve the AD user
         $noGroups = $options.NoGroups
         $directGroups = $options.DirectGroups
+        $keepCredential = $options.KeepCredential
 
         $result = Get-PodeAuthADResult `
             -Server $options.Server `
@@ -779,7 +780,8 @@ function Get-PodeAuthWindowsADMethod
             -Password $password `
             -Provider $options.Provider `
             -NoGroups:$noGroups `
-            -DirectGroups:$directGroups
+            -DirectGroups:$directGroups `
+            -KeepCredential:$keepCredential
 
         # if there's a message, fail and return the message
         if (![string]::IsNullOrWhiteSpace($result.Message)) {
@@ -1412,7 +1414,10 @@ function Get-PodeAuthADResult
         $NoGroups,
 
         [switch]
-        $DirectGroups
+        $DirectGroups,
+
+        [switch]
+        $KeepCredential
     )
 
     try
@@ -1438,6 +1443,14 @@ function Get-PodeAuthADResult
             $groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName -Username $Username -Direct:$DirectGroups -Provider $Provider)
         }
 
+        # check if we want to keep the credentials in the User object
+        if($KeepCredential){
+            $credential = [pscredential]::new($($Domain+'\'+$Username), (ConvertTo-SecureString -String $Password -AsPlainText -Force)) 
+        }
+        else{
+            $credential = $null
+        }
+
         # return the user
         return @{
             User = @{
@@ -1450,6 +1463,7 @@ function Get-PodeAuthADResult
                 Fqdn = $Server
                 Domain = $Domain
                 Groups = $groups
+                Credential = $credential
             }
         }
     }
