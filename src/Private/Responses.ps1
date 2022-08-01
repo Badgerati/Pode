@@ -1,6 +1,6 @@
 function Show-PodeErrorPage
 {
-    param (
+    param(
         [Parameter()]
         [int]
         $Code,
@@ -29,22 +29,22 @@ function Show-PodeErrorPage
     $ex = $null
     if (!(Test-PodeIsEmpty $Exception) -and $PodeContext.Server.Web.ErrorPages.ShowExceptions) {
         $ex = @{
-            'Message' = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message);
-            'StackTrace' = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace);
-            'Line' = [System.Web.HttpUtility]::HtmlEncode($Exception.InvocationInfo.PositionMessage);
-            'Category' = [System.Web.HttpUtility]::HtmlEncode($Exception.CategoryInfo.ToString());
+            Message    = [System.Web.HttpUtility]::HtmlEncode($Exception.Exception.Message)
+            StackTrace = [System.Web.HttpUtility]::HtmlEncode($Exception.ScriptStackTrace)
+            Line       = [System.Web.HttpUtility]::HtmlEncode($Exception.InvocationInfo.PositionMessage)
+            Category   = [System.Web.HttpUtility]::HtmlEncode($Exception.CategoryInfo.ToString())
         }
     }
 
     # setup the data object for dynamic pages
     $data = @{
-        'Url' = (Get-PodeUrl);
-        'Status' = @{
-            'Code' = $Code;
-            'Description' = $Description;
-        };
-        'Exception' = $ex;
-        'ContentType' = $errorPage.ContentType;
+        Url    = [System.Web.HttpUtility]::HtmlEncode((Get-PodeUrl))
+        Status = @{
+            Code        = $Code
+            Description = $Description
+        }
+        Exception   = $ex
+        ContentType = $errorPage.ContentType
     }
 
     # write the error page to the stream

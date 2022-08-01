@@ -1,5 +1,15 @@
 # Release Notes
 
+## v2.7.1
+
+```plain
+### Bugs
+* #990: Fix SMTP attachment name parsing, when the name contains a space
+
+### Security
+* #997: Fix an XSS exploit on the default error pages
+```
+
 ## v2.7.0
 
 ```plain
