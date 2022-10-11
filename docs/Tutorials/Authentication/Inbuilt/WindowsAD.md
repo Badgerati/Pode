@@ -15,6 +15,9 @@ Start-PodeServer {
 }
 ```
 
+!!! Tip
+    The authenticating user's credentials are disposed of after authentication. If you need to use the credentials for later use in routes from `$WebEvent.Auth.User`, pass the `-KeepCredential` switch on `Add-PodeAuthWindowsAd`.
+
 ## User Object
 
 The User object returned, and accessible on Routes, and other functions via `$WebEvent.Auth.User`, will contain the following information:
@@ -30,6 +33,7 @@ The User object returned, and accessible on Routes, and other functions via `$We
 | FQDN | string | The FQDN of the AD server |
 | Domain | string | The domain part of the user's username |
 | Groups | string[] | All groups, and nested groups, of which the the user is a member |
+| Credential | pscredential | The credentials of the authenticating user, if `-KeepCredential` was supplied |
 
 Such as:
 
