@@ -165,21 +165,10 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Modules.Clear()
 
         # clear up timers, schedules and loggers
-        $PodeContext.Server.Routes.Keys.Clone() | ForEach-Object {
-            $PodeContext.Server.Routes[$_].Clear()
-        }
-
-        $PodeContext.Server.Handlers.Keys.Clone() | ForEach-Object {
-            $PodeContext.Server.Handlers[$_].Clear()
-        }
-
-        $PodeContext.Server.Verbs.Keys.Clone() | ForEach-Object {
-            $PodeContext.Server.Verbs[$_].Clear()
-        }
-
-        $PodeContext.Server.Events.Keys.Clone() | ForEach-Object {
-            $PodeContext.Server.Events[$_].Clear()
-        }
+        $PodeContext.Server.Routes | Clear-PodeHashtableInnerKeys
+        $PodeContext.Server.Handlers | Clear-PodeHashtableInnerKeys
+        $PodeContext.Server.Verbs | Clear-PodeHashtableInnerKeys
+        $PodeContext.Server.Events | Clear-PodeHashtableInnerKeys
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
@@ -207,10 +196,7 @@ function Restart-PodeInternalServer
 
         # clear security headers
         $PodeContext.Server.Security.Headers.Clear()
-
-        $PodeContext.Server.Security.Cache.Keys.Clone() | ForEach-Object {
-            $PodeContext.Server.Security.Cache[$_].Clear()
-        }
+        $PodeContext.Server.Security.Cache | Clear-PodeHashtableInnerKeys
 
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
