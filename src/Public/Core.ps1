@@ -34,6 +34,10 @@ Optional, this is the serverless type, to define how Pode should run and deal wi
 An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
 If supplied this value will override the ShowExceptions setting in the server.psd1 file.
 
+.PARAMETER ListenerType
+An optional value to use a custom Socket Listener. The default is Pode's inbuilt listener.
+There's the Pode.Kestrel module, so the value here should be "Kestrel" if using that.
+
 .PARAMETER DisableTermination
 Disables the ability to terminate the Server.
 
