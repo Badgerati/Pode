@@ -1,5 +1,21 @@
 # Release Notes
 
+## v2.7.2
+
+```plain
+### Enhancements
+* #1002: Adds a `-KeepCredential` switch for `Add-PodeAuthWindowsAd` (thanks @TheBakaBandit!)
+
+### Bugs
+* #988: Add missing `-ListenerType` parameter description for `Start-PodeServer`
+* #1001: Fix no Verbs being defined from crashing the server on restart
+
+### Documentation
+* #975: Update the code sample image in the README to an SVG (thanks @pcgeek86!)
+* #987: Adds the beginnings of a Roadmap and Project board
+* #993: Improves documentation for the WebEvent variable
+```
+
 ## v2.7.1
 
 ```plain

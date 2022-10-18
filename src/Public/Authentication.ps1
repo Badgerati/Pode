@@ -882,6 +882,9 @@ If supplied, and on Windows, the ActiveDirectory module will be used instead.
 .PARAMETER SuccessUseOrigin
 If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
 
+.PARAMETER KeepCredential
+If suplied pode will save the AD credential as a PSCredential object in $WebEvent.Auth.User.Credential
+
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'WinAuth'
 
@@ -961,7 +964,10 @@ function Add-PodeAuthWindowsAd
         $ADModule,
 
         [switch]
-        $SuccessUseOrigin
+        $SuccessUseOrigin,
+
+        [switch]
+        $KeepCredential
     )
 
     # ensure the name doesn't already exist
@@ -1019,6 +1025,7 @@ function Add-PodeAuthWindowsAd
             Groups = $Groups
             NoGroups = $NoGroups
             DirectGroups = $DirectGroups
+            KeepCredential = $KeepCredential
             Provider = (Get-PodeAuthADProvider -OpenLDAP:$OpenLDAP -ADModule:$ADModule)
             ScriptBlock = @{
                 Script = $ScriptBlock

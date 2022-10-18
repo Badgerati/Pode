@@ -2925,3 +2925,20 @@ function Get-PodeScriptblockArguments
 
     return ($_vars + $ArgumentList)
 }
+
+function Clear-PodeHashtableInnerKeys
+{
+    param(
+        [Parameter(ValueFromPipeline=$true)]
+        [hashtable]
+        $InputObject
+    )
+
+    if (Test-PodeIsEmpty $InputObject) {
+        return
+    }
+
+    $InputObject.Keys.Clone() | ForEach-Object {
+        $InputObject[$_].Clear()
+    }
+}
