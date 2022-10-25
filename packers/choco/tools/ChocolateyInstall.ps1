@@ -51,7 +51,7 @@ function Install-PodeModule($path, $version)
 $progFiles = [string]$env:ProgramFiles
 
 # determine the path to choco tools
-$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$toolsDir = Split-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Definition)
 
 # Install PS Module
 # Set the module path
