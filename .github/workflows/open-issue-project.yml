@@ -10,7 +10,7 @@ jobs:
     name: Add issue to project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/add-to-project@RELEASE_VERSION
+      - uses: actions/add-to-project@v0.3.0
         with:
           project-url: https://github.com/users/Badgerati/projects/2
           github-token: ${{ secrets.PROJECT_TOKEN }}
