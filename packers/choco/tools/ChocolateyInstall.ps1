@@ -24,7 +24,7 @@ function Install-PodeModule($path, $version)
 
     try
     {
-        Push-Location (Join-Path $env:ChocolateyPackageFolder 'src')
+        Push-Location (Join-Path $toolsDir 'src')
 
         # which folders do we need?
         $folders = @('Private', 'Public', 'Misc', 'Libs')
@@ -49,6 +49,9 @@ function Install-PodeModule($path, $version)
 
 # Determine which Program Files path to use
 $progFiles = [string]$env:ProgramFiles
+
+# determine the path to choco tools
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 
 # Install PS Module
 # Set the module path
