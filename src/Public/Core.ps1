@@ -768,7 +768,7 @@ function Add-PodeEndpoint
         $Hostname,
 
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss', 'Ftp', 'Ftps')]
         [string]
         $Protocol,
 
@@ -913,14 +913,14 @@ function Add-PodeEndpoint
         throw "Client certificates are only supported on HTTPS endpoints"
     }
 
-    # explicit tls is only supported for smtp/tcp
-    if (($type -inotin @('smtp', 'tcp')) -and ($TlsMode -ieq 'explicit')) {
-        throw "The Explicit TLS mode is only supported on SMTPS and TCPS endpoints"
+    # explicit tls is only supported for smtp/tcp/ftp
+    if (($type -inotin @('smtp', 'tcp', 'ftp')) -and ($TlsMode -ieq 'explicit')) {
+        throw "The Explicit TLS mode is only supported on SMTPS, FTPS and TCPS endpoints"
     }
 
-    # ack message is only for smtp/tcp
-    if (($type -inotin @('smtp', 'tcp')) -and ![string]::IsNullOrEmpty($Acknowledge)) {
-        throw "The Acknowledge message is only supported on SMTP and TCP endpoints"
+    # ack message is only for smtp/tcp/ftp
+    if (($type -inotin @('smtp', 'tcp', 'ftp')) -and ![string]::IsNullOrEmpty($Acknowledge)) {
+        throw "The Acknowledge message is only supported on SMTP, FTP and TCP endpoints"
     }
 
     # crlf message end is only for tcp
@@ -939,7 +939,7 @@ function Add-PodeEndpoint
         HostName = $Hostname
         FriendlyName = $Hostname
         Url = $null
-        Ssl = (@('https', 'wss', 'smtps', 'tcps') -icontains $Protocol)
+        Ssl = (@('https', 'wss', 'smtps', 'tcps', 'ftps') -icontains $Protocol)
         Protocol = $Protocol.ToLowerInvariant()
         Type = $type.ToLowerInvariant()
         Runspace = @{
@@ -998,8 +998,8 @@ function Add-PodeEndpoint
     # if we're dealing with a certificate, attempt to import it
     if (!(Test-PodeIsHosted) -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
-        if (@('https', 'wss', 'smtps', 'tcps') -inotcontains $Protocol) {
-            throw "Certificate supplied for non-HTTPS/WSS endpoint"
+        if (!$obj.Ssl) {
+            throw "Certificate supplied for non-SSL endpoint"
         }
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
@@ -1113,7 +1113,7 @@ function Get-PodeEndpoint
         $Hostname,
 
         [Parameter()]
-        [ValidateSet('', 'Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
+        [ValidateSet('', 'Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss', 'Ftp', 'Ftps')]
         [string]
         $Protocol,
 

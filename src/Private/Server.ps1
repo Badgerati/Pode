@@ -97,6 +97,10 @@ function Start-PodeInternalServer
                         $endpoints += (Start-PodeSmtpServer)
                     }
 
+                    'FTP' {
+                        $endpoints += (Start-PodeFtpServer)
+                    }
+
                     'TCP' {
                         $endpoints += (Start-PodeTcpServer)
                     }
@@ -218,6 +222,7 @@ function Restart-PodeInternalServer
         $PodeContext.Server.FindEndpoints = @{
             Route = $false
             Smtp  = $false
+            Ftp   = $false
             Tcp   = $false
         }
 

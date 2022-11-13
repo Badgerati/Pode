@@ -55,7 +55,7 @@ function Get-PodeEndpoints
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
+        [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp', 'Ftp')]
         [string[]]
         $Type
     )
@@ -79,6 +79,10 @@ function Get-PodeEndpoints
             'tcp' {
                 $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('tcp', 'tcps') -icontains $_.Protocol })
             }
+
+            'ftp' {
+                $endpoints += @($PodeContext.Server.Endpoints.Values | Where-Object { @('ftp', 'ftps') -icontains $_.Protocol })
+            }
         }
     }
 
@@ -89,7 +93,7 @@ function Test-PodeEndpointProtocol
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Http', 'Https', 'Ws', 'Wss', 'Smtp', 'Smtps', 'Tcp', 'Tcps')]
+        [ValidateSet('Http', 'Https', 'Ws', 'Wss', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ftp', 'Ftps')]
         [string]
         $Protocol
     )
@@ -102,7 +106,7 @@ function Get-PodeEndpointType
 {
     param(
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss', 'Ftp', 'Ftps')]
         [string]
         $Protocol
     )
@@ -112,6 +116,7 @@ function Get-PodeEndpointType
         { $_ -iin @('ws', 'wss') } { 'Ws' }
         { $_ -iin @('smtp', 'smtps') } { 'Smtp' }
         { $_ -iin @('tcp', 'tcps') } { 'Tcp' }
+        { $_ -iin @('ftp', 'ftps') } { 'Ftp' }
         default { $Protocol }
     }
 }
@@ -120,7 +125,7 @@ function Get-PodeEndpointRunspacePoolName
 {
     param(
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss', 'Ftp', 'Ftps')]
         [string]
         $Protocol
     )
@@ -130,6 +135,7 @@ function Get-PodeEndpointRunspacePoolName
         { $_ -iin @('ws', 'wss') } { 'Signals' }
         { $_ -iin @('smtp', 'smtps') } { 'Smtp' }
         { $_ -iin @('tcp', 'tcps') } { 'Tcp' }
+        { $_ -iin @('ftp', 'ftps') } { 'Ftp' }
         default { $Protocol }
     }
 }
@@ -138,7 +144,7 @@ function Test-PodeEndpoints
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
+        [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp', 'Ftp')]
         [string]
         $Type
     )

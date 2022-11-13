@@ -518,6 +518,10 @@ function Add-PodeEndpointLimit
         'tcp' {
             $PodeContext.Server.FindEndpoints.Tcp = $true
         }
+
+        'ftp' {
+            $PodeContext.Server.FindEndpoints.Ftp = $true
+        }
     }
 
     # get current rules

@@ -247,6 +247,7 @@ function New-PodeContext
         Route = $false
         Smtp  = $false
         Tcp   = $false
+        Ftp   = $false
     }
 
     # general encoding for the server
@@ -302,6 +303,7 @@ function New-PodeContext
     $ctx.Server.Handlers = @{
         smtp    = @{}
         service = @{}
+        ftp     = @{}
     }
 
     # setup basic access placeholders
@@ -373,6 +375,7 @@ function New-PodeContext
         Main        = $null
         Web         = $null
         Smtp        = $null
+        Ftp         = $null
         Tcp         = $null
         Signals     = $null
         Schedules   = $null
@@ -602,6 +605,14 @@ function New-PodeRunspacePools
     # smtp runspace - if we have any smtp endpoints
     if (Test-PodeEndpoints -Type Smtp) {
         $PodeContext.RunspacePools.Smtp = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
+    }
+
+    # ftp runspace - if we have any ftp endpoints
+    if (Test-PodeEndpoints -Type Ftp) {
+        $PodeContext.RunspacePools.Ftp = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
         }

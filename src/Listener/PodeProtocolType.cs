@@ -7,6 +7,7 @@ namespace Pode
         Ws,
         HttpAndWs,
         Smtp,
-        Tcp
+        Tcp,
+        Ftp
     }
 }

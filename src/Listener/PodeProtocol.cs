@@ -19,6 +19,11 @@ namespace Pode
             get => Type == PodeProtocolType.Smtp;
         }
 
+        public bool IsFtp
+        {
+            get => Type == PodeProtocolType.Ftp;
+        }
+
         public bool IsTcp
         {
             get => Type == PodeProtocolType.Tcp;

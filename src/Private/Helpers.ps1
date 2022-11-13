@@ -507,7 +507,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Ftp')]
         [string]
         $Type,
 
@@ -2307,7 +2307,7 @@ function Get-PodeDefaultPort
 {
     param(
         [Parameter()]
-        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
+        [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss', 'Ftp', 'Ftps')]
         [string]
         $Protocol,
 
@@ -2331,6 +2331,8 @@ function Get-PodeDefaultPort
             Tcps    = @{ Implicit = 9002; Explicit = 9003 }
             Ws      = @{ Implicit = 80 }
             Wss     = @{ Implicit = 443 }
+            Ftp    = @{ Implicit = 21 }
+            Ftps   = @{ Implicit = 990; Explicit = 21 }
         })[$Protocol.ToLowerInvariant()][$TlsMode.ToLowerInvariant()]
     }
 
@@ -2354,6 +2356,8 @@ function Get-PodeDefaultPort
         Tcps    = @{ Implicit = 9002; Explicit = 9003 }
         Ws      = @{ Implicit = 9080 }
         Wss     = @{ Implicit = 9443 }
+        Ftp     = @{ Implicit = 21 }
+        Ftps    = @{ Implicit = 990; Explicit = 21 }
     })[$Protocol.ToLowerInvariant()][$TlsMode.ToLowerInvariant()]
 }
 
@@ -2380,7 +2384,7 @@ function Get-PodeHandler
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Service', 'Smtp')]
+        [ValidateSet('Service', 'Smtp', 'Ftp')]
         [string]
         $Type,
 

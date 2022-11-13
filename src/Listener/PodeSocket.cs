@@ -286,6 +286,8 @@ namespace Pode
                     }
                 }
 
+                //TODO: ftp?
+
                 // if it's http and awaiting the body
                 else if (context.IsHttp)
                 {

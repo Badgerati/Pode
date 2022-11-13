@@ -34,7 +34,7 @@ function Add-PodeHandler
     [CmdletBinding(DefaultParameterSetName='Script')]
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Service', 'Smtp')]
+        [ValidateSet('Service', 'Smtp', 'Ftp')]
         [string]
         $Type,
 
@@ -105,7 +105,7 @@ function Remove-PodeHandler
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Service', 'Smtp')]
+        [ValidateSet('Service', 'Smtp', 'Ftp')]
         [string]
         $Type,
 
@@ -141,7 +141,7 @@ function Clear-PodeHandlers
     [CmdletBinding()]
     param (
         [Parameter()]
-        [ValidateSet('', 'Service', 'Smtp')]
+        [ValidateSet('', 'Service', 'Smtp', 'Ftp')]
         [string]
         $Type
     )
