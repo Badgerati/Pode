@@ -14,5 +14,5 @@ jobs:
         with:
           project-url: https://github.com/users/Badgerati/projects/2
           github-token: ${{ secrets.PROJECT_TOKEN }}
-          labeled: 'bug :bug:, documentation :book:, packaging :package:'
+          labeled: 'bug :bug:, documentation :book:, packaging :package:, enhancement :arrow_up:, feature :sunny:'
           label-operator: OR

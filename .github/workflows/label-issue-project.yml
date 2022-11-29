@@ -14,12 +14,5 @@ jobs:
         with:
           project-url: https://github.com/users/Badgerati/projects/2
           github-token: ${{ secrets.PROJECT_TOKEN }}
-          labeled: 'planned :calendar:, roadmap :rocket:, backlog :scroll:'
-          label-operator: OR
-
-      - uses: actions/add-to-project@v0.3.0
-        with:
-          project-url: https://github.com/users/Badgerati/projects/4
-          github-token: ${{ secrets.PROJECT_TOKEN }}
-          labeled: 'design :art:, draft :pencil2:, idea :bulb:'
+          labeled: 'planned :calendar:, roadmap :rocket:, backlog :scroll:, draft :pencil2:, idea :bulb:'
           label-operator: OR
