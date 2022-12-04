@@ -115,6 +115,7 @@ namespace Pode
             if (IsCommand(content, "QUIT"))
             {
                 Command = PodeSmtpCommand.Quit;
+                Context.Response.WriteLine("221 OK", true);
                 return true;
             }
 
