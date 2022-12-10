@@ -276,6 +276,13 @@ function New-PodeContext
         IsDynamic = $false
     }
 
+    # pode default preferences
+    $ctx.Server.Preferences = @{
+        Routes = @{
+            IfExists = $null
+        }
+    }
+
     # routes for pages and api
     $ctx.Server.Routes = @{
         'delete'    = [ordered]@{}

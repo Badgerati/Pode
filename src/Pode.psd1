@@ -139,6 +139,10 @@
         'Add-PodeRouteGroup',
         'Add-PodeStaticRouteGroup',
         'Add-PodeSignalRouteGroup',
+        'Set-PodeRouteIfExistsPreference',
+        'Test-PodeRoute',
+        'Test-PodeStaticRoute',
+        'Test-PodeSignalRoute',
 
         # handlers
         'Add-PodeHandler',
