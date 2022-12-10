@@ -795,6 +795,9 @@ The content type of any error pages that may get returned.
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on the Routes.
 
+.PARAMETER IfExists
+Specifies what action to take when a Route already exists. (Default: Default)
+
 .PARAMETER AllowAnon
 If supplied, the Routes will allow anonymous access for non-authenticated users.
 
@@ -838,6 +841,10 @@ function Add-PodeRouteGroup
         [Alias('Auth')]
         [string]
         $Authentication,
+
+        [Parameter()]
+        [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        $IfExists = 'Default',
 
         [switch]
         $AllowAnon
@@ -891,6 +898,10 @@ function Add-PodeRouteGroup
         if ($RouteGroup.AllowAnon) {
             $AllowAnon = $RouteGroup.AllowAnon
         }
+
+        if ($IfExists -ieq 'default') {
+            $IfExists = Get-PodeRouteIfExistsPreference
+        }
     }
 
     $RouteGroup = @{
@@ -902,6 +913,7 @@ function Add-PodeRouteGroup
         ErrorContentType = $ErrorContentType
         Authentication = $Authentication
         AllowAnon = $AllowAnon
+        IfExists = $IfExists
     }
 
     # add routes
@@ -945,6 +957,9 @@ The content type of any error pages that may get returned.
 
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on the Static Routes.
+
+.PARAMETER IfExists
+Specifies what action to take when a Static Route already exists. (Default: Default)
 
 .PARAMETER AllowAnon
 If supplied, the Static Routes will allow anonymous access for non-authenticated users.
@@ -1000,6 +1015,10 @@ function Add-PodeStaticRouteGroup
         [Alias('Auth')]
         [string]
         $Authentication,
+
+        [Parameter()]
+        [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        $IfExists = 'Default',
 
         [switch]
         $AllowAnon,
@@ -1068,6 +1087,10 @@ function Add-PodeStaticRouteGroup
         if ($RouteGroup.DownloadOnly) {
             $DownloadOnly = $RouteGroup.DownloadOnly
         }
+
+        if ($IfExists -ieq 'default') {
+            $IfExists = Get-PodeRouteIfExistsPreference
+        }
     }
 
     $RouteGroup = @{
@@ -1082,6 +1105,7 @@ function Add-PodeStaticRouteGroup
         Authentication = $Authentication
         AllowAnon = $AllowAnon
         DownloadOnly = $DownloadOnly
+        IfExists = $IfExists
     }
 
     # add routes
@@ -1106,6 +1130,9 @@ A ScriptBlock for adding Signal Routes.
 .PARAMETER EndpointName
 The EndpointName of an Endpoint(s) to use for the Signal Routes.
 
+.PARAMETER IfExists
+Specifies what action to take when a Signal Route already exists. (Default: Default)
+
 .EXAMPLE
 Add-PodeSignalRouteGroup -Path '/signals' -Routes { Add-PodeSignalRoute -Path '/signal1' -Etc }
 #>
@@ -1123,7 +1150,11 @@ function Add-PodeSignalRouteGroup
 
         [Parameter()]
         [string[]]
-        $EndpointName
+        $EndpointName,
+
+        [Parameter()]
+        [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        $IfExists = 'Default'
     )
 
     if (Test-PodeIsEmpty $Routes) {
@@ -1150,11 +1181,16 @@ function Add-PodeSignalRouteGroup
         if ([string]::IsNullOrWhiteSpace($EndpointName)) {
             $EndpointName = $RouteGroup.EndpointName
         }
+
+        if ($IfExists -ieq 'default') {
+            $IfExists = Get-PodeRouteIfExistsPreference
+        }
     }
 
     $RouteGroup = @{
         Path = $Path
         EndpointName = $EndpointName
+        IfExists = $IfExists
     }
 
     # add routes

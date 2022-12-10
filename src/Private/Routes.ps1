@@ -609,16 +609,23 @@ function ConvertTo-PodeMiddleware
 
 function Get-PodeRouteIfExistsPreference
 {
-    $interalPref = $RouteIfExists
+    # from route groups
+    $groupPref = $RouteGroup.IfExists
+    if (![string]::IsNullOrWhiteSpace($groupPref) -and ($groupPref -ine 'default')) {
+        return $groupPref
+    }
+
+    # from Use-PodeRoute
+    if (![string]::IsNullOrWhiteSpace($RouteIfExists) -and ($RouteIfExists -ine 'default')) {
+        return $RouteIfExists
+    }
+
+    # global preference
     $globalPref = $PodeContext.Server.Preferences.Routes.IfExists
-
-    if ([string]::IsNullOrWhiteSpace($interalPref) -or ($interalPref -ieq 'default')) {
-        if ([string]::IsNullOrWhiteSpace($globalPref) -or ($globalPref -ieq 'default')) {
-            return 'Error'
-        }
-
+    if (![string]::IsNullOrWhiteSpace($globalPref) -and ($globalPref -ine 'default')) {
         return $globalPref
     }
 
-    return $interalPref
+    # final global default
+    return 'Error'
 }

@@ -166,6 +166,71 @@ Get-PodeRoute -EndpointName Admin
 
 The [`Get-PodeStaticRoute`](../../../Functions/Routes/Get-PodeStaticRoute) function works in the same way as above - but with no `-Method` parameter.
 
+## If Exists Preference
+
+By default when you try and add a Route with the same Method and Path twice, Pode will throw an error when attempting to add the second Route.
+
+You can alter this behaviour by using the `-IfExists` parameter on several of the Route functions:
+
+* [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute)
+* [`Add-PodeStaticRoute`](../../../Functions/Routes/Add-PodeStaticRoute)
+* [`Add-PodeSignalRoute`](../../../Functions/Routes/Add-PodeSignalRoute)
+* [`Add-PodeRouteGroup`](../../../Functions/Routes/Add-PodeRouteGroup)
+* [`Add-PodeStaticRouteGroup`](../../../Functions/Routes/Add-PodeStaticRouteGroup)
+* [`Add-PodeSignalRouteGroup`](../../../Functions/Routes/Add-PodeSignalRouteGroup)
+* [`Use-PodeRoutes`](../../../Functions/Routes/Use-PodeRoutes)
+
+Or you can alter the global default preference for all Routes using [`Set-PodeRouteIfExistsPreference`](../../../Functions/Routes/Set-PodeRouteIfExistsPreference).
+
+This parameter accepts the following options:
+
+| Option | Description |
+| ------ | ----------- |
+| Default | This will use the `-IfExists` value from higher up the hierarchy (as defined see below) - if none defined, Error is the final default |
+| Error | Throw an error if the Route already exists |
+| Overwrite | Delete the existing Route if one exists, and then recreate the Route with the new definition |
+| Skip | Skip over adding the Route if it already exists |
+
+and the following hierarchy is used when deciding which behaviour to use. At each step if the value defined is `Default` then check the next value in the hierarchy:
+
+1. Use the value defined directly on the Route, such as [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute)
+2. Use the value defined on a Route Group, such as [`Add-PodeRouteGroup`](../../../Functions/Routes/Add-PodeRouteGroup)
+3. Use the value defined on [`Use-PodeRoutes`](../../../Functions/Routes/Use-PodeRoutes)
+4. Use the value defined from [`Set-PodeRouteIfExistsPreference`](../../../Functions/Routes/Set-PodeRouteIfExistsPreference)
+5. Throw an error if the Route already exists
+
+For example, the following will now skip attempting to add the second Route because it already exists; meaning the value returned from `http://localhost:8080` is `1` not `2`:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Result = 1 }
+    }
+
+    Add-PodeRoute -Method Get -Path '/' -IfExists Skip -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Result = 2 }
+    }
+}
+```
+
+Or, we could use Overwrite and the value returned will now be `2` not `1`:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Result = 1 }
+    }
+
+    Add-PodeRoute -Method Get -Path '/' -IfExists Overwrite -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ Result = 2 }
+    }
+}
+```
+
 ## Grouping
 
 If you have a number of Routes that all share the same base path, middleware, authentication, or other parameters, then you can add these Routes within a Route Group (via [`Add-PodeRouteGroup`](../../../Functions/Routes/Add-PodeRouteGroup)) to share the parameter values:
