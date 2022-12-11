@@ -119,6 +119,7 @@
         'Test-PodeLockable',
         'Out-PodeVariable',
         'Test-PodeIsHosted',
+        'New-PodeCron',
 
         # routes
         'Add-PodeRoute',
@@ -156,7 +157,6 @@
         'Get-PodeSchedule',
         'Get-PodeScheduleNextTrigger',
         'Use-PodeSchedules',
-        'New-PodeCron',
 
         # timers
         'Add-PodeTimer',

@@ -1167,16 +1167,6 @@ function New-PodeCron
         $Interval = 0
     )
 
-    # New-PodeCron -Every Day                                             # every 00:00
-    # New-PodeCron -Every Day -Day Tuesday, Friday -Hour 1                # every tuesday and friday at 01:00
-    # New-PodeCron -Every Month -Date 15                                  # every 15th of the month at 00:00
-    # New-PodeCron -Every Date -Interval 2 -Date 2                        # every month, every other day from 2nd, at 00:00
-    # New-PodeCron -Every Year -Month June                                # every 1st june, at 00:00
-    # New-PodeCron -Every Hour -Hour 1 -Interval 1                        # every hour, starting at 01:00
-    # New-PodeCron -Every Minute -Hour 1, 2, 3, 4, 5 -Interval 15         # every 15mins, starting at 01:00 until 05:00
-    # New-PodeCron -Every Hour -Day Monday                                # every hour of every monday
-    # New-PodeCron -Every Quarter                                         # every 1st jan, apr, jul, oct, at 00:00
-
     # cant have None and Interval
     if (($Every -ieq 'none') -and ($Interval -gt 0)) {
         throw "Cannot supply an interval when -Every is set to None"
@@ -1228,7 +1218,7 @@ function New-PodeCron
     # set "every" defaults
     switch ($Every.ToUpperInvariant()) {
         'MINUTE' {
-            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Minute' -Value $Minute -Interval $Interval) {
+            if (Set-PodeCronInterval -Cron $cron -Type 'Minute' -Value $Minute -Interval $Interval) {
                 $Minute = @()
             }
         }
@@ -1236,7 +1226,7 @@ function New-PodeCron
         'HOUR' {
             $cron.Minute = '0'
 
-            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Hour' -Value $Hour -Interval $Interval) {
+            if (Set-PodeCronInterval -Cron $cron -Type 'Hour' -Value $Hour -Interval $Interval) {
                 $Hour = @()
             }
         }
@@ -1245,7 +1235,7 @@ function New-PodeCron
             $cron.Minute = '0'
             $cron.Hour = '0'
 
-            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Day' -Value $DayInts -Interval $Interval) {
+            if (Set-PodeCronInterval -Cron $cron -Type 'Day' -Value $DayInts -Interval $Interval) {
                 $DayInts = @()
             }
         }
@@ -1254,7 +1244,7 @@ function New-PodeCron
             $cron.Minute = '0'
             $cron.Hour = '0'
 
-            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Date' -Value $Date -Interval $Interval) {
+            if (Set-PodeCronInterval -Cron $cron -Type 'Date' -Value $Date -Interval $Interval) {
                 $Date = @()
             }
         }
@@ -1267,7 +1257,7 @@ function New-PodeCron
                 $cron.Date = '1'
             }
 
-            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Month' -Value $MonthInts -Interval $Interval) {
+            if (Set-PodeCronInterval -Cron $cron -Type 'Month' -Value $MonthInts -Interval $Interval) {
                 $MonthInts = @()
             }
         }

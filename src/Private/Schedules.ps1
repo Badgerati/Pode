@@ -212,39 +212,3 @@ function Invoke-PodeInternalScheduleLogic
         $_ | Write-PodeErrorLog
     }
 }
-
-function Set-PodeScheduleCronInterval
-{
-    param(
-        [Parameter()]
-        [hashtable]
-        $Cron,
-
-        [Parameter()]
-        [string]
-        $Type,
-
-        [Parameter()]
-        [int[]]
-        $Value,
-
-        [Parameter()]
-        [int]
-        $Interval
-    )
-
-    if ($Interval -le 0) {
-        return $false
-    }
-
-    if ($Value.Length -gt 1) {
-        throw "You can only supply a single $($Type) value when using intervals"
-    }
-
-    if ($Value.Length -eq 1) {
-        $Cron[$Type] = "$(@($Value)[0])"
-    }
-
-    $Cron[$Type] += "/$($Interval)"
-    return ($Value.Length -eq 1)
-}

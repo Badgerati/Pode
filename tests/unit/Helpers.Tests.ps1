@@ -1704,4 +1704,24 @@ Describe 'New-PodeCron' {
     It 'Returns an expression for everyday at 5:15am' {
         New-PodeCron -Every Day -Hour 5 -Minute 15 | Should Be '15 5 * * *'
     }
+
+    It 'Throws an error for multiple Hours when using Interval' {
+        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should Throw 'only supply a single'
+    }
+
+    It 'Throws an error for multiple Minutes when using Interval' {
+        { New-PodeCron -Every Minute -Minute 2, 4 -Interval 15 } | Should Throw 'only supply a single'
+    }
+
+    It 'Throws an error when using Interval without Every' {
+        { New-PodeCron -Interval 3 } | Should Throw 'Cannot supply an interval'
+    }
+
+    It 'Throws an error when using Interval for Every Quarter' {
+        { New-PodeCron -Every Quarter -Interval 3 } | Should Throw 'Cannot supply interval value for every quarter'
+    }
+
+    It 'Throws an error when using Interval for Every Year' {
+        { New-PodeCron -Every Year -Interval 3 } | Should Throw 'Cannot supply interval value for every year'
+    }
 }
