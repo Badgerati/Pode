@@ -96,3 +96,14 @@ New-PodeCron -Day Tuesday -Minute 0, 10, 20, 30, 40, 50
 # Every minute on Tuesdays
 New-PodeCron -Day Tuesday
 ```
+
+The value returned by [`New-PodeCron`](../../../Functions/Utilities/New-PodeCron) is a valid cron expression, that can then be used when creating Schedules:
+
+```powershell
+# Every Tuesday, at 00:05
+$cron = New-PodeCron -Day Tuesday -Hour 0 -Minute 5
+
+Add-PodeSchedule -Name 'date' -Cron $cron -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
+}
+```
