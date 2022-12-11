@@ -1069,3 +1069,253 @@ function Out-PodeVariable
 
     $PodeContext.Server.Output.Variables[$Name] = $Value
 }
+
+<#
+.SYNOPSIS
+A helper function to generate cron expressions.
+
+.DESCRIPTION
+A helper function to generate cron expressions, which can be used for Schedules and other functions that use cron expressions.
+This helper function only covers simple cron use-cases, with some advanced use-cases. If you need further advanced cron
+expressions it would be best to write the expression by hand.
+
+.PARAMETER Minute
+This is an array of Minutes that the expression should use between 0-59.
+
+.PARAMETER Hour
+This is an array of Hours that the expression should use between 0-23.
+
+.PARAMETER Date
+This is an array of Dates in the monnth that the expression should use between 1-31.
+
+.PARAMETER Month
+This is an array of Months that the expression should use between January-December.
+
+.PARAMETER Day
+This is an array of Days in the week that the expression should use between Monday-Sunday.
+
+.PARAMETER Every
+This can be used to more easily specify "Every Hour" than writing out all the hours.
+
+.PARAMETER Interval
+This can only be used when using the Every parameter, and will setup an interval on the "every" used.
+If you want "every 2 hours" then Every should be set to Hour and Interval to 2.
+
+.EXAMPLE
+New-PodeCron -Every Day                                             # every 00:00
+
+.EXAMPLE
+New-PodeCron -Every Day -Day Tuesday, Friday -Hour 1                # every tuesday and friday at 01:00
+
+.EXAMPLE
+New-PodeCron -Every Month -Date 15                                  # every 15th of the month at 00:00
+
+.EXAMPLE
+New-PodeCron -Every Date -Interval 2 -Date 2                        # every month, every other day from 2nd, at 00:00
+
+.EXAMPLE
+New-PodeCron -Every Year -Month June                                # every 1st june, at 00:00
+
+.EXAMPLE
+New-PodeCron -Every Hour -Hour 1 -Interval 1                        # every hour, starting at 01:00
+
+.EXAMPLE
+New-PodeCron -Every Minute -Hour 1, 2, 3, 4, 5 -Interval 15         # every 15mins, starting at 01:00 until 05:00
+
+.EXAMPLE
+New-PodeCron -Every Hour -Day Monday                                # every hour of every monday
+
+.EXAMPLE
+New-PodeCron -Every Quarter                                         # every 1st jan, apr, jul, oct, at 00:00
+#>
+function New-PodeCron
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [ValidateRange(0, 59)]
+        [int[]]
+        $Minute = $null,
+
+        [Parameter()]
+        [ValidateRange(0, 23)]
+        [int[]]
+        $Hour = $null,
+
+        [Parameter()]
+        [ValidateRange(1, 31)]
+        [int[]]
+        $Date = $null,
+
+        [Parameter()]
+        [ValidateSet('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')]
+        [string[]]
+        $Month = $null,
+
+        [Parameter()]
+        [ValidateSet('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')]
+        [string[]]
+        $Day = $null,
+
+        [Parameter()]
+        [ValidateSet('Minute', 'Hour', 'Day', 'Date', 'Month', 'Quarter', 'Year', 'None')]
+        [string]
+        $Every = 'None',
+
+        [Parameter()]
+        [int]
+        $Interval = 0
+    )
+
+    # New-PodeCron -Every Day                                             # every 00:00
+    # New-PodeCron -Every Day -Day Tuesday, Friday -Hour 1                # every tuesday and friday at 01:00
+    # New-PodeCron -Every Month -Date 15                                  # every 15th of the month at 00:00
+    # New-PodeCron -Every Date -Interval 2 -Date 2                        # every month, every other day from 2nd, at 00:00
+    # New-PodeCron -Every Year -Month June                                # every 1st june, at 00:00
+    # New-PodeCron -Every Hour -Hour 1 -Interval 1                        # every hour, starting at 01:00
+    # New-PodeCron -Every Minute -Hour 1, 2, 3, 4, 5 -Interval 15         # every 15mins, starting at 01:00 until 05:00
+    # New-PodeCron -Every Hour -Day Monday                                # every hour of every monday
+    # New-PodeCron -Every Quarter                                         # every 1st jan, apr, jul, oct, at 00:00
+
+    # cant have None and Interval
+    if (($Every -ieq 'none') -and ($Interval -gt 0)) {
+        throw "Cannot supply an interval when -Every is set to None"
+    }
+
+    # base cron
+    $cron = @{
+        Minute = '*'
+        Hour = '*'
+        Date = '*'
+        Month = '*'
+        Day = '*'
+    }
+
+    # convert month/day to numbers
+    if ($Month.Length -gt 0) {
+        $MonthInts = @(foreach ($item in $Month) {
+            (@{
+                January   = 1
+                February  = 2
+                March     = 3
+                April     = 4
+                May       = 5
+                June      = 6
+                July      = 7
+                August    = 8
+                September = 9
+                October   = 10
+                November  = 11
+                December  = 12
+            })[$item]
+        })
+    }
+
+    if ($Day.Length -gt 0) {
+        $DayInts = @(foreach ($item in $Day) {
+            (@{
+                Sunday    = 0
+                Monday    = 1
+                Tuesday   = 2
+                Wednesday = 3
+                Thursday  = 4
+                Friday    = 5
+                Saturday  = 6
+            })[$item]
+        })
+    }
+
+    # set "every" defaults
+    switch ($Every.ToUpperInvariant()) {
+        'MINUTE' {
+            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Minute' -Value $Minute -Interval $Interval) {
+                $Minute = @()
+            }
+        }
+
+        'HOUR' {
+            $cron.Minute = '0'
+
+            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Hour' -Value $Hour -Interval $Interval) {
+                $Hour = @()
+            }
+        }
+
+        'DAY' {
+            $cron.Minute = '0'
+            $cron.Hour = '0'
+
+            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Day' -Value $DayInts -Interval $Interval) {
+                $DayInts = @()
+            }
+        }
+
+        'DATE' {
+            $cron.Minute = '0'
+            $cron.Hour = '0'
+
+            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Date' -Value $Date -Interval $Interval) {
+                $Date = @()
+            }
+        }
+
+        'MONTH' {
+            $cron.Minute = '0'
+            $cron.Hour = '0'
+
+            if ($DayInts.Length -eq 0) {
+                $cron.Date = '1'
+            }
+
+            if (Set-PodeScheduleCronInterval -Cron $cron -Type 'Month' -Value $MonthInts -Interval $Interval) {
+                $MonthInts = @()
+            }
+        }
+
+        'QUARTER' {
+            $cron.Minute = '0'
+            $cron.Hour = '0'
+            $cron.Date = '1'
+            $cron.Month = '1,4,7,10'
+
+            if ($Interval -gt 0) {
+                throw "Cannot supply interval value for every quarter"
+            }
+        }
+
+        'YEAR' {
+            $cron.Minute = '0'
+            $cron.Hour = '0'
+            $cron.Date = '1'
+            $cron.Month = '1'
+
+            if ($Interval -gt 0) {
+                throw "Cannot supply interval value for every year"
+            }
+        }
+    }
+
+    # set any custom overrides
+    if ($Minute.Length -gt 0) {
+        $cron.Minute = $Minute -join ','
+    }
+
+    if ($Hour.Length -gt 0) {
+        $cron.Hour = $Hour -join ','
+    }
+
+    if ($DayInts.Length -gt 0) {
+        $cron.Day = $DayInts -join ','
+    }
+
+    if ($Date.Length -gt 0) {
+        $cron.Date = $Date -join ','
+    }
+
+    if ($MonthInts.Length -gt 0) {
+        $cron.Month = $MonthInts -join ','
+    }
+
+    # build and return
+    return "$($cron.Minute) $($cron.Hour) $($cron.Date) $($cron.Month) $($cron.Day)"
+}

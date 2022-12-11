@@ -1643,3 +1643,65 @@ Describe 'Get-PodeEncodingFromContentType' {
         $enc.EncodingName | Should Be 'Unicode (UTF-8)'
     }
 }
+
+Describe 'New-PodeCron' {
+    It 'Returns a minutely expression' {
+        New-PodeCron -Every Minute | Should Be '* * * * *'
+    }
+
+    It 'Returns an hourly expression' {
+        New-PodeCron -Every Hour | Should Be '0 * * * *'
+    }
+
+    It 'Returns a daily expression (by day)' {
+        New-PodeCron -Every Day | Should Be '0 0 * * *'
+    }
+
+    It 'Returns a daily expression (by date)' {
+        New-PodeCron -Every Date | Should Be '0 0 * * *'
+    }
+
+    It 'Returns a monthly expression' {
+        New-PodeCron -Every Month | Should Be '0 0 1 * *'
+    }
+
+    It 'Returns a quarterly expression' {
+        New-PodeCron -Every Quarter | Should Be '0 0 1 1,4,7,10 *'
+    }
+
+    It 'Returns a yearly expression' {
+        New-PodeCron -Every Year | Should Be '0 0 1 1 *'
+    }
+
+    It 'Returns an expression for every 15mins' {
+        New-PodeCron -Every Minute -Interval 15 | Should Be '*/15 * * * *'
+    }
+
+    It 'Returns an expression for every tues/fri at 1am' {
+        New-PodeCron -Every Day -Day Tuesday, Friday -Hour 1 | Should Be '0 1 * * 2,5'
+    }
+
+    It 'Returns an expression for every 15th of the month' {
+        New-PodeCron -Every Month -Date 15 | Should Be '0 0 15 * *'
+    }
+
+    It 'Returns an expression for every other day, from the 2nd' {
+        New-PodeCron -Every Date -Interval 2 -Date 2 | Should Be '0 0 2/2 * *'
+    }
+
+    It 'Returns an expression for every june 1st' {
+        New-PodeCron -Every Year -Month June | Should Be '0 0 1 6 *'
+    }
+
+    It 'Returns an expression for every 15mins between 1am-5am' {
+        New-PodeCron -Every Minute -Interval 15 -Hour 1, 2, 3, 4, 5 | Should Be '*/15 1,2,3,4,5 * * *'
+    }
+
+    It 'Returns an expression for every hour of every monday' {
+        New-PodeCron -Every Hour -Day Monday | Should Be '0 * * * 1'
+    }
+
+    It 'Returns an expression for everyday at 5:15am' {
+        New-PodeCron -Every Day -Hour 5 -Minute 15 | Should Be '15 5 * * *'
+    }
+}

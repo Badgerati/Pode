@@ -156,6 +156,7 @@
         'Get-PodeSchedule',
         'Get-PodeScheduleNextTrigger',
         'Use-PodeSchedules',
+        'New-PodeCron',
 
         # timers
         'Add-PodeTimer',
