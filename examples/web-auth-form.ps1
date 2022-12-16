@@ -56,6 +56,7 @@ Start-PodeServer -Threads 2 {
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.Name
             Views = $session:Views
+            Expiry = Get-PodeSessionExpiry
         }
     }
 

@@ -7,78 +7,93 @@ $now = [datetime]::UtcNow
 Describe 'Get-PodeSession' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Get-PodeSession -Session @{ Name = $null } } | Should Throw 'because it is an empty string'
+            $PodeContext = @{
+                Server = @{
+                    Sessions = @{
+                        Name = $null
+                    }
+                }
+            }
+
+            { Get-PodeSession } | Should Throw 'because it is an empty string'
         }
 
         It 'Throws an empry string value error' {
-            { Get-PodeSession -Session @{ Name = [string]::Empty } } | Should Throw 'because it is an empty string'
+            $PodeContext = @{
+                Server = @{
+                    Sessions = @{
+                        Name = [string]::Empty
+                    }
+                }
+            }
+
+            { Get-PodeSession } | Should Throw 'because it is an empty string'
         }
     }
 
     Context 'Valid parameters' {
         It 'Returns no session details for invalid sessionId' {
-            $WebEvent = @{ 'Cookies' = @{} }
+            $WebEvent = @{ Cookies = @{} }
 
             $PodeContext = @{
-                'Server' = @{
-                    'Cookies' = @{}
-                    'Sessions' = @{
-                        'Name' = 'pode.sid';
-                        'Secret' = 'key';
-                        'Info' = @{ 'Duration' = 60; };
+                Server = @{
+                    Cookies = @{}
+                    Sessions = @{
+                        Name = 'pode.sid'
+                        Secret = 'key'
+                        Info = @{ 'Duration' = 60 }
                     }
                 }
             }
 
-            $data = Get-PodeSession -Session @{ Name = 'pode.sid' }
+            $data = Get-PodeSession
             $data | Should Be $null
         }
 
         It 'Returns no session details for invalid signed sessionId' {
             $cookie = [System.Net.Cookie]::new('pode.sid', 's:value.kPv88V5o2uJ29sqh2a7P/f3dxcg+JdZJZT3GTIE=')
 
-            $WebEvent = @{ 'Cookies' = @{
-                'pode.sid' = $cookie;
+            $WebEvent = @{ Cookies = @{
+                'pode.sid' = $cookie
             } }
 
             $PodeContext = @{
-                'Server' = @{
-                    'Cookies' = @{}
-                    'Sessions' = @{
-                        'Name' = 'pode.sid';
-                        'Secret' = 'key';
-                        'Info' = @{ 'Duration' = 60; };
+                Server = @{
+                    Cookies = @{}
+                    Sessions = @{
+                        Name = 'pode.sid'
+                        Secret = 'key'
+                        Info = @{ 'Duration' = 60 }
                     }
                 }
             }
 
-            $data = Get-PodeSession -Session @{ Name = 'pode.sid'; Secret = 'key'; Info = @{ Duration = 60; }; }
+            $data = Get-PodeSession
             $data | Should Be $null
         }
 
         It 'Returns session details' {
             $cookie = [System.Net.Cookie]::new('pode.sid', 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=')
 
-            $WebEvent = @{ 'Cookies' = @{
-                'pode.sid' = $cookie;
+            $WebEvent = @{ Cookies = @{
+                'pode.sid' = $cookie
             } }
 
             $PodeContext = @{
-                'Server' = @{
-                    'Cookies' = @{}
-                    'Sessions' = @{
-                        'Name' = 'pode.sid';
-                        'Secret' = 'key';
-                        'Info' = @{ 'Duration' = 60; };
+                Server = @{
+                    Cookies = @{}
+                    Sessions = @{
+                        Name = 'pode.sid'
+                        Secret = 'key'
+                        Info = @{ 'Duration' = 60 }
                     }
                 }
             }
 
-            $data = Get-PodeSession -Session @{ Name = 'pode.sid'; Secret = 'key'; Info = @{ Duration = 60; }; }
+            $data = Get-PodeSession
             $data | Should Not Be $null
             $data.Id | Should Be 'value'
             $data.Name | Should Be 'pode.sid'
-            $data.Properties.Duration | Should Be 60
         }
     }
 }
@@ -86,33 +101,37 @@ Describe 'Get-PodeSession' {
 Describe 'Set-PodeSessionDataHash' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Set-PodeSessionDataHash -Session $null } | Should Throw 'argument is null'
+            { Set-PodeSessionDataHash } | Should Throw 'No session available'
         }
     }
 
     Context 'Valid parameters' {
         It 'Sets a hash for no data' {
-            $Session = @{}
-            Set-PodeSessionDataHash -Session $Session
-            $Session.Data | Should Not Be $null
+            $WebEvent = @{
+                Session = @{}
+            }
+            Set-PodeSessionDataHash
+            $WebEvent.Session.Data | Should Not Be $null
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data | ConvertTo-Json -Depth 10 -Compress)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($WebEvent.Session.Data | ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
 
-            $Session.DataHash | Should Be $hash
+            $WebEvent.Session.DataHash | Should Be $hash
         }
 
         It 'Sets a hash for data' {
-            $Session = @{ 'Data' = @{ 'Counter' = 2; } }
-            Set-PodeSessionDataHash -Session $Session
-            $Session.Data | Should Not Be $null
+            $WebEvent = @{
+                Session = @{ 'Data' = @{ 'Counter' = 2; } }
+            }
+            Set-PodeSessionDataHash
+            $WebEvent.Session.Data | Should Not Be $null
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data | ConvertTo-Json -Depth 10 -Compress)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($WebEvent.Session.Data | ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
 
-            $Session.DataHash | Should Be $hash
+            $WebEvent.Session.DataHash | Should Be $hash
         }
     }
 }
@@ -121,63 +140,67 @@ Describe 'New-PodeSession' {
     Mock 'Invoke-PodeScriptBlock' { return 'value' }
 
     It 'Creates a new session object' {
+        $WebEvent = @{
+            Session = @{}
+        }
+
         $PodeContext = @{
-            'Server' = @{
-                'Cookies' = @{}
-                'Sessions' = @{
-                    'Name' = 'pode.sid';
-                    'Secret' = 'key';
-                    'Info' = @{ 'Duration' = 60; };
-                    'GenerateId' = {}
+            Server = @{
+                Cookies = @{}
+                Sessions = @{
+                    Name = 'pode.sid'
+                    Secret = 'key'
+                    Info = @{ 'Duration' = 60 }
+                    GenerateId = {}
                 }
             }
         }
 
-        $session = New-PodeSession
+        $WebEvent.Session = New-PodeSession
+        Set-PodeSessionDataHash
 
-        $session | Should Not Be $null
-        $session.Id | Should Be 'value'
-        $session.Name | Should Be 'pode.sid'
-        $session.Data.Count | Should Be 0
-        $session.Properties.Duration | Should Be 60
+        $WebEvent.Session | Should Not Be $null
+        $WebEvent.Session.Id | Should Be 'value'
+        $WebEvent.Session.Name | Should Be 'pode.sid'
+        $WebEvent.Session.Data.Count | Should Be 0
 
         $crypto = [System.Security.Cryptography.SHA256]::Create()
-        $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($session.Data| ConvertTo-Json -Depth 10 -Compress)))
+        $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($WebEvent.Session.Data| ConvertTo-Json -Depth 10 -Compress)))
         $hash = [System.Convert]::ToBase64String($hash)
 
-        $session.DataHash | Should Be $hash
+        $WebEvent.Session.DataHash | Should Be $hash
     }
 }
 
 Describe 'Test-PodeSessionDataHash' {
-    Context 'Invalid parameters supplied' {
-        It 'Throws null value error' {
-            { Test-PodeSessionDataHash -Session $null } | Should Throw 'argument is null'
-        }
-    }
-
     Context 'Valid parameters' {
         It 'Returns false for no hash set' {
-            $Session = @{}
-            Test-PodeSessionDataHash -Session $Session | Should Be $false
+            $WebEvent = @{
+                Session = @{}
+            }
+            Test-PodeSessionDataHash | Should Be $false
         }
 
         It 'Returns false for invalid hash' {
-            $Session = @{ 'DataHash' = 'fake' }
-            Test-PodeSessionDataHash -Session $Session | Should Be $false
+            $WebEvent = @{
+                Session = @{ 'DataHash' = 'fake' }
+            }
+            Test-PodeSessionDataHash | Should Be $false
         }
 
         It 'Returns true for a valid hash' {
-            $Session = @{
-                'Data' = @{ 'Counter' = 2; };
+            $WebEvent = @{
+                Session = @{
+                    'Data' = @{ 'Counter' = 2; };
+                }
             }
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($Session.Data| ConvertTo-Json -Depth 10 -Compress)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($WebEvent.Session.Data| ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
-            $Session.DataHash = $hash
+            $WebEvent.Session.DataHash = $hash
 
-            Test-PodeSessionDataHash -Session $Session | Should Be $true
+            Test-PodeSessionDataHash | Should Be $true
         }
     }
 }
@@ -209,13 +232,15 @@ Describe 'Set-PodeSession' {
         Mock Set-PodeCookie { }
         Mock Get-PodeSessionExpiry { return ([datetime]::UtcNow) }
 
-        $session = @{
-            'Name' = 'name';
-            'Id' = 'sessionId';
-            'Cookie' = @{};
+        $WebEvent = @{
+            Session = @{
+                'Name' = 'name';
+                'Id' = 'sessionId';
+                'Cookie' = @{};
+            }
         }
 
-        Set-PodeSession -Session $session
+        Set-PodeSession
 
         Assert-MockCalled Set-PodeCookie -Times 1 -Scope It
         Assert-MockCalled Get-PodeSessionExpiry -Times 1 -Scope It
@@ -225,7 +250,7 @@ Describe 'Set-PodeSession' {
 Describe 'Remove-PodeSession' {
     It 'Throws an error if sessions are not configured' {
         Mock Test-PodeSessionsConfigured { return $false }
-        { Remove-PodeSession } | Should Throw 'sessions have not been configured'
+        { Remove-PodeSession } | Should Throw 'Sessions have not been configured'
     }
 
     It 'Does nothing if there is no session' {
@@ -252,7 +277,7 @@ Describe 'Remove-PodeSession' {
 Describe 'Save-PodeSession' {
     It 'Throws an error if sessions are not configured' {
         Mock Test-PodeSessionsConfigured { return $false }
-        { Save-PodeSession } | Should Throw 'sessions have not been configured'
+        { Save-PodeSession } | Should Throw 'Sessions have not been configured'
     }
 
     It 'Throws error if there is no session' {

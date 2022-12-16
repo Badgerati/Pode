@@ -325,6 +325,8 @@ function Get-PodeCookieMiddleware
             return $true
         }
 
+        $h_cookie | Out-Default
+
         # parse the cookies from the header
         $cookies = @($h_cookie -split '; ')
         $WebEvent.Cookies = @{}
