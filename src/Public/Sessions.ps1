@@ -319,7 +319,7 @@ function Get-PodeSessionDuration
     [CmdletBinding()]
     param()
 
-    return $PodeContext.Server.Sessions.Info.Duration
+    return [int]$PodeContext.Server.Sessions.Info.Duration
 }
 
 <#
