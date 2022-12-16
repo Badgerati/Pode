@@ -119,6 +119,7 @@
         'Test-PodeLockable',
         'Out-PodeVariable',
         'Test-PodeIsHosted',
+        'New-PodeCron',
 
         # routes
         'Add-PodeRoute',

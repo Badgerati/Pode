@@ -2,7 +2,7 @@
 
 A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, but this can be changed by using [`Set-PodeScheduleConcurrency`](../../Functions/Schedules/Set-PodeScheduleConcurrency).
 
-Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions), basic syntax is supported as well as some predefined expressions. Schedules can start immediately, have a delayed start time, and also have a defined end time.
+Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions), basic syntax is supported as well as some predefined expressions. Pode also has an inbuilt helper, [`New-PodeCron`](../../Functions/Utilities/New-PodeCron), to help with building cron expressions - as [described here](../Misc/CronExpressions#helper). Schedules can start immediately, have a delayed start time, and also have a defined end time.
 
 ## Create a Schedule
 
@@ -10,6 +10,13 @@ You can create a new schedule using [`Add-PodeSchedule`](../../Functions/Schedul
 
 ```powershell
 Add-PodeSchedule -Name 'date' -Cron '5 0 * * TUE' -ScriptBlock {
+    Write-Host "$([DateTime]::Now)"
+}
+
+# or, using Pode's helper
+$cron = New-PodeCron -Day Tuesday -Hour 0 -Minute 5
+
+Add-PodeSchedule -Name 'date' -Cron $cron -ScriptBlock {
     Write-Host "$([DateTime]::Now)"
 }
 ```
