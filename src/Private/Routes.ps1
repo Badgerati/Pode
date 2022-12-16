@@ -1,4 +1,4 @@
-function Test-PodeRoute
+function Test-PodeRouteFromRequest
 {
     param (
         [Parameter(Mandatory=$true)]
@@ -395,9 +395,9 @@ function Get-PodeStaticRouteDefaults
     )
 }
 
-function Test-PodeRouteAndError
+function Test-PodeRouteInternal
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Method,
@@ -412,15 +412,34 @@ function Test-PodeRouteAndError
 
         [Parameter()]
         [string]
-        $Address
+        $Address,
+
+        [switch]
+        $ThrowError
     )
 
-    $found = @($PodeContext.Server.Routes[$Method][$Path])
+    # check the routes
+    $found = $false
+    $routes = @($PodeContext.Server.Routes[$Method][$Path])
 
-    if (($found | Where-Object { ($_.Endpoint.Protocol -ieq $Protocol) -and ($_.Endpoint.Address -ieq $Address) } | Measure-Object).Count -eq 0) {
-        return
+    foreach ($route in $routes) {
+        if (($route.Endpoint.Protocol -ieq $Protocol) -and ($route.Endpoint.Address -ieq $Address)) {
+            $found = $true
+            break
+        }
     }
 
+    # skip if not found
+    if (!$found) {
+        return $false
+    }
+
+    # do we want to throw an error if found, or skip?
+    if (!$ThrowError) {
+        return $true
+    }
+
+    # throw error
     $_url = $Protocol
     if (![string]::IsNullOrEmpty($_url) -and ![string]::IsNullOrWhiteSpace($Address)) {
         $_url = "$($_url)://$($Address)"
@@ -432,9 +451,8 @@ function Test-PodeRouteAndError
     if ([string]::IsNullOrEmpty($_url)) {
         throw "[$($Method)] $($Path): Already defined"
     }
-    else {
-        throw "[$($Method)] $($Path): Already defined for $($_url)"
-    }
+
+    throw "[$($Method)] $($Path): Already defined for $($_url)"
 }
 
 function Convert-PodeFunctionVerbToHttpMethod
@@ -587,4 +605,27 @@ function ConvertTo-PodeMiddleware
     })
 
     return $converted
+}
+
+function Get-PodeRouteIfExistsPreference
+{
+    # from route groups
+    $groupPref = $RouteGroup.IfExists
+    if (![string]::IsNullOrWhiteSpace($groupPref) -and ($groupPref -ine 'default')) {
+        return $groupPref
+    }
+
+    # from Use-PodeRoute
+    if (![string]::IsNullOrWhiteSpace($RouteIfExists) -and ($RouteIfExists -ine 'default')) {
+        return $RouteIfExists
+    }
+
+    # global preference
+    $globalPref = $PodeContext.Server.Preferences.Routes.IfExists
+    if (![string]::IsNullOrWhiteSpace($globalPref) -and ($globalPref -ine 'default')) {
+        return $globalPref
+    }
+
+    # final global default
+    return 'Error'
 }
