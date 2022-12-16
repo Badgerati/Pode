@@ -6,6 +6,9 @@
     <body>
 
         Hello, $($data.Username)! You have view this page $($data.Views) times!
+        <br /><br />
+        Your session will expire on $($data.Expiry)
+        <br />
 
         <form action="/logout" method="post">
             <div>

@@ -190,15 +190,20 @@
         'Clear-PodeMiddleware',
         'Add-PodeAccessRule',
         'Add-PodeLimitRule',
-        'Enable-PodeSessionMiddleware',
         'New-PodeCsrfToken',
         'Get-PodeCsrfMiddleware',
         'Initialize-PodeCsrf',
         'Enable-PodeCsrfMiddleware',
+        'Use-PodeMiddleware',
+
+        # sessions
+        'Enable-PodeSessionMiddleware',
         'Remove-PodeSession',
         'Save-PodeSession',
         'Get-PodeSessionId',
-        'Use-PodeMiddleware',
+        'Reset-PodeSessionExpiry',
+        'Get-PodeSessionDuration',
+        'Get-PodeSessionExpiry',
 
         # auth
         'New-PodeAuthScheme',

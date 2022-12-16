@@ -1,10 +1,10 @@
 # Cookies
 
-In Pode you can add/retrieve cookies for the Request/Response of the current web event. Using the cookie functions has to be done within the context of a web event, such as in Routes/Middleware/Authentication/Logging/Endware.
+In Pode you can add/retrieve cookies for the Request/Response of the current web request. Using the cookie functions has to be done within the context of a web event, such as within Routes; Middleware; Authentication; Logging; and Endware.
 
 ## Adding Cookies
 
-You can add a cookie to the response by using [`Set-PodeCookie`](../../Functions/Cookies/Set-PodeCookie), passing the Name and Value of cookie:
+You can add a cookie to the response by using [`Set-PodeCookie`](../../Functions/Cookies/Set-PodeCookie), and passing the Name and Value of cookie:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

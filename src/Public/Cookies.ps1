@@ -42,7 +42,7 @@ function Set-PodeCookie
 {
     [CmdletBinding(DefaultParameterSetName='Duration')]
     [OutputType([hashtable])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -85,7 +85,11 @@ function Set-PodeCookie
     $cookie.HttpOnly = $HttpOnly
     $cookie.Path = '/'
 
-    if (!(Test-PodeIsEmpty $ExpiryDate)) {
+    if ($null -ne $ExpiryDate) {
+        if ($ExpiryDate.Kind -eq [System.DateTimeKind]::Local) {
+            $ExpiryDate = $ExpiryDate.ToUniversalTime()
+        }
+
         $cookie.Expires = $ExpiryDate
     }
     elseif ($Duration -gt 0) {
@@ -124,7 +128,7 @@ function Get-PodeCookie
 {
     [CmdletBinding()]
     [OutputType([hashtable])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -180,7 +184,7 @@ Get-PodeCookieValue -Name 'Views' -Secret 'hunter2'
 function Get-PodeCookieValue
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -215,7 +219,7 @@ function Test-PodeCookie
 {
     [CmdletBinding()]
     [OutputType([bool])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name
@@ -241,7 +245,7 @@ Remove-PodeCookie -Name 'Views'
 function Remove-PodeCookie
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name
@@ -283,7 +287,7 @@ function Test-PodeCookieSigned
 {
     [CmdletBinding()]
     [OutputType([bool])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -328,7 +332,7 @@ function Update-PodeCookieExpiry
 {
     [CmdletBinding(DefaultParameterSetName='Duration')]
     [OutputType([hashtable])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -349,7 +353,11 @@ function Update-PodeCookieExpiry
     }
 
     # extends the expiry on the cookie
-    if (!(Test-PodeIsEmpty $ExpiryDate)) {
+    if ($null -ne $ExpiryDate) {
+        if ($ExpiryDate.Kind -eq [System.DateTimeKind]::Local) {
+            $ExpiryDate = $ExpiryDate.ToUniversalTime()
+        }
+
         $cookie.Expires = $ExpiryDate
     }
     elseif ($Duration -gt 0) {
@@ -389,7 +397,7 @@ Set-PodeCookieSecret -Value 'hunter2' -Global
 function Set-PodeCookieSecret
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true, ParameterSetName='General')]
         [string]
         $Name,
@@ -433,7 +441,7 @@ function Get-PodeCookieSecret
 {
     [CmdletBinding()]
     [OutputType([string])]
-    param (
+    param(
         [Parameter(Mandatory=$true, ParameterSetName='General')]
         [string]
         $Name,
