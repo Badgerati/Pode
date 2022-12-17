@@ -83,6 +83,7 @@
         'Read-PodeTcpClient',
         'Close-PodeTcpClient',
         'Save-PodeRequestFile',
+        'Test-PodeRequestFile',
         'Set-PodeViewEngine',
         'Use-PodePartialView',
         'Send-PodeSignal',
