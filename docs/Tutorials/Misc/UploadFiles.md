@@ -56,6 +56,33 @@ You can upload multiple files from one `<form>` by either supplying multiple fil
 
 If you use the `multiple` property then all the file names will be available under the same `$WebEvent.Data` key. When you use [`Save-PodeRequestFile`](../../../Functions/Responses/Save-PodeRequestFile) on this key, all of the files will be saved at once.
 
+## CLI
+
+You can upload files from the CLI by using `Invoke-WebRequest` (or `Invoke-RestMethod`), and to do so you'll need to pass the `-Form` parameter. Assuming you have the following Route to save some "avatar" file:
+
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+
+    Add-PodeRoute -Method Post -Path '/upload' -ScriptBlock {
+        Save-PodeRequestFile -Key 'avatar'
+    }
+}
+```
+
+You can call this Route by using the following `Invoke-WebRequest` command to save the uploaded file:
+
+```powershell
+Invoke-WebRequest -Uri "http://localhost:8085/upload" -Method Post -Form @{ avatar = (Get-Item .\path\to\file.png) }
+```
+
+You can also achieve the same results with `curl`:
+
+```bash
+curl http://localhost:8085/upload -F avatar=@"C:\path\to\file.png"
+```
+
 ## Examples
 
 ### Inbuilt Save
