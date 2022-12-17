@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Linq;
 
 namespace Pode
 {
@@ -18,6 +19,7 @@ namespace Pode
 
         public void Dispose()
         {
+            // dispose all file streams
             foreach (var file in Files)
             {
                 file.Dispose();
@@ -28,13 +30,16 @@ namespace Pode
         {
             var form = new PodeForm();
 
+            // do nothing if there are no bytes to parse
             if (bytes == default(byte[]) || bytes.Length == 0)
             {
                 return form;
             }
 
+            // convert to bytes to lines of bytes
             var lines = PodeHelpers.ConvertToByteLines(bytes);
 
+            // get the boundary start/end
             var parts = contentType.Split(';');
             var boundaryStart = $"--{parts[1].Split('=')[1].Trim()}";
             var boundaryEnd = $"{boundaryStart}--";
@@ -48,6 +53,7 @@ namespace Pode
                 }
             }
 
+            // now parse the lines for data/files
             return ParseHttp(form, lines, boundaryLineIndexes, contentEncoding);
         }
 
@@ -57,10 +63,12 @@ namespace Pode
             var disposition = string.Empty;
             var fields = new Dictionary<string, string>();
 
+            // loop through all boundary sections and parse them
             for (var i = 0; i < (boundaryLineIndexes.Count - 1); i++)
             {
                 fields.Clear();
 
+                // get the content disposition and data headers
                 boundaryLineIndex = boundaryLineIndexes[i];
                 disposition = contentEncoding.GetString(lines[boundaryLineIndex + 1]).Trim(PodeHelpers.NEW_LINE_ARRAY);
 
@@ -73,17 +81,31 @@ namespace Pode
                     }
                 }
 
+                // is this just a regular data field?
                 if (!fields.ContainsKey("filename"))
                 {
+                    // add the data item as name=value
                     form.Data.Add(new PodeFormData(fields["name"], contentEncoding.GetString(lines[boundaryLineIndex + 3]).Trim(PodeHelpers.NEW_LINE_ARRAY)));
                 }
 
-                if (fields.ContainsKey("filename"))
+                // otherwise it's a file field
+                else
                 {
-                    form.Data.Add(new PodeFormData(fields["name"], fields["filename"]));
+                    // add a data item for mapping name=filename
+                    var currentData = form.Data.FirstOrDefault(x => x.Key == fields["name"]);
+                    if (currentData == default(PodeFormData))
+                    {
+                        form.Data.Add(new PodeFormData(fields["name"], fields["filename"]));
+                    }
+                    else
+                    {
+                        currentData.AddValue(fields["filename"]);
+                    }
 
+                    // do we actually have a filename?
                     if (!string.IsNullOrWhiteSpace(fields["filename"]))
                     {
+                        // parse the file contents, and create a stream for the payload
                         var fileContentType = contentEncoding.GetString(lines[boundaryLineIndex + 2]).Trim(PodeHelpers.NEW_LINE_ARRAY);
                         var fileBytesLength = 0;
                         var stream = new MemoryStream();
@@ -107,6 +129,7 @@ namespace Pode
                             stream.Write(lines[j], 0, fileBytesLength);
                         }
 
+                        // add a file item for filename=stream [+name/content-type]
                         form.Files.Add(new PodeFormFile(fields["filename"], stream, fields["name"], fileContentType.Split(':')[1].Trim()));
                     }
                 }

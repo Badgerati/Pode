@@ -16,6 +16,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port $port -Protocol Http
 
     Set-PodeViewEngine -Type HTML
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
@@ -26,6 +27,19 @@ Start-PodeServer -Threads 2 {
     Add-PodeRoute -Method Post -Path '/upload' -ScriptBlock {
         Save-PodeRequestFile -Key 'avatar'
         Move-PodeResponseUrl -Url '/'
+    }
+
+    # GET request for web page on "localhost:8085/multi"
+    Add-PodeRoute -Method Get -Path '/multi' -ScriptBlock {
+        Write-PodeViewResponse -Path 'web-upload-multi'
+    }
+
+    # POST request to upload multiple files
+    Add-PodeRoute -Method Post -Path '/upload-multi' -ScriptBlock {
+        # $WebEvent.Data | Out-Default
+        # $WebEvent.Files | Out-Default
+        Save-PodeRequestFile -Key 'avatar' -Path 'C:/temp' -FileName 'Ruler.png'
+        Move-PodeResponseUrl -Url '/multi'
     }
 
 }

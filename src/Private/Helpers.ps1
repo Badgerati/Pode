@@ -1576,7 +1576,12 @@ function ConvertFrom-PodeRequestContent
             }
 
             foreach ($item in $form.Data) {
-                $Result.Data.Add($item.Key, $item.Value)
+                if ($item.IsSingular) {
+                    $Result.Data.Add($item.Key, $item.Values[0])
+                }
+                else {
+                    $Result.Data.Add($item.Key, $item.Values)
+                }
             }
 
             $form = $null

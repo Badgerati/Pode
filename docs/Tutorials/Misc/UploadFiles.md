@@ -3,7 +3,7 @@
 Pode's inbuilt middleware supports parsing a request's body/payload and query string, and this also extends to uploading files via a `<form>`. Like how POST data can be accessed in a Route via the [web event](../../WebEvent) as `$WebEvent.Data[<name>]`, uploaded files can be accessed via `$WebEvent.Files[<filename>]`.
 
 !!! important
-    In order for uploaded files to work, your `<form>` must contain `enctype="multipart/form-data"`
+    In order for uploaded files to work, your `<form>` must contain the `enctype="multipart/form-data"` property.
 
 ## Web Form
 
@@ -36,8 +36,6 @@ The following HTML is an example of a `<form>` for a simple sign-up flow. Here t
 </html>
 ```
 
-> You can upload multiple files from one `<form>`
-
 The inputs will be POSTed to the server, and accessible via the [web event](../../WebEvent)'s `.Data` and `.Files`.
 
 For the `.Data`:
@@ -52,7 +50,13 @@ For the `.Files`:
 $WebEvent.Files['image.png']   # the bytes of the uploaded file
 ```
 
-## Script
+## Multiple Files
+
+You can upload multiple files from one `<form>` by either supplying multiple file `<input>` fields, or by using the `multiple` property in a file `<input>`.
+
+If you use the `multiple` property then all the file names will be available under the same `$WebEvent.Data` key. When you use [`Save-PodeRequestFile`](../../../Functions/Responses/Save-PodeRequestFile) on this key, all of the files will be saved at once.
+
+## Examples
 
 ### Inbuilt Save
 
