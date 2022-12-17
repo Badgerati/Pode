@@ -36,8 +36,6 @@ Start-PodeServer -Threads 2 {
 
     # POST request to upload multiple files
     Add-PodeRoute -Method Post -Path '/upload-multi' -ScriptBlock {
-        # $WebEvent.Data | Out-Default
-        # $WebEvent.Files | Out-Default
         Save-PodeRequestFile -Key 'avatar' -Path 'C:/temp' -FileName 'Ruler.png'
         Move-PodeResponseUrl -Url '/multi'
     }
