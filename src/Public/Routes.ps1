@@ -231,12 +231,8 @@ function Add-PodeRoute
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
@@ -731,12 +727,8 @@ function Add-PodeSignalRoute
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
@@ -858,12 +850,8 @@ function Add-PodeRouteGroup
         $Path = $null
     }
 
-    # check if the scriptblock has any using vars
-    $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $Routes = Invoke-PodeStateScriptConversion -ScriptBlock $Routes
-    $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
+    # check for scoped vars
+    $Routes, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
 
     # group details
     if ($null -ne $RouteGroup) {
@@ -1035,12 +1023,8 @@ function Add-PodeStaticRouteGroup
         $Path = $null
     }
 
-    # check if the scriptblock has any using vars
-    $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $Routes = Invoke-PodeStateScriptConversion -ScriptBlock $Routes
-    $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
+    # check for scoped vars
+    $Routes, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
 
     # group details
     if ($null -ne $RouteGroup) {
@@ -1165,12 +1149,8 @@ function Add-PodeSignalRouteGroup
         $Path = $null
     }
 
-    # check if the scriptblock has any using vars
-    $Routes, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $Routes = Invoke-PodeStateScriptConversion -ScriptBlock $Routes
-    $Routes = Invoke-PodeSessionScriptConversion -ScriptBlock $Routes
+    # check for scoped vars
+    $Routes, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Routes -PSSession $PSCmdlet.SessionState
 
     # group details
     if ($null -ne $RouteGroup) {

@@ -53,12 +53,8 @@ function Add-PodeTask
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add the task
     $PodeContext.Tasks.Enabled = $true
@@ -267,9 +263,7 @@ function Edit-PodeTask
 
     # edit scriptblock if supplied
     if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $_task.Script = $ScriptBlock
         $_task.UsingVariables = $usingVars
     }

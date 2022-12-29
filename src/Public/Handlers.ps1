@@ -68,12 +68,8 @@ function Add-PodeHandler
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add the handler
     Write-Verbose "Adding Handler: [$($Type)] $($Name)"

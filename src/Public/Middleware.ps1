@@ -371,12 +371,8 @@ function Add-PodeBodyParser
         throw "There is already a body parser defined for the $($ContentType) content-type"
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     $PodeContext.Server.BodyParsers[$ContentType] = @{
         ScriptBlock = $ScriptBlock
