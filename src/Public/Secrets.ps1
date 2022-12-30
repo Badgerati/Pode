@@ -1,10 +1,4 @@
 <#
-TODO:
-- DOCS!
-  - auto-import
-#>
-
-<#
 .SYNOPSIS
 Register a Secret Vault.
 
@@ -23,8 +17,11 @@ An optional Secret to be used to unlock the Secret Vault if need.
 .PARAMETER UnlockSecureSecret
 An optional Secret, as a SecureString, to be used to unlock the Secret Vault if need.
 
-.PARAMETER Unlock
-If supplied, the Secret Vault will be unlocked now, after being registered with Pode.
+.PARAMETER UnlockInterval
+An optional number of minutes that Pode will periodically check/unlock the Secret Vault. (Default: 0)
+
+.PARAMETER NoUnlock
+If supplied, the Secret Vault will not be unlocked after registration. To unlock you'll need to call Unlock-PodeSecretVault.
 
 .PARAMETER CacheTtl
 An optional number of minutes that Secrets should be cached for. (Default: 0)
@@ -79,8 +76,12 @@ function Register-PodeSecretVault
         [securestring]
         $UnlockSecureSecret,
 
+        [Parameter()]
+        [int]
+        $UnlockInterval = 0,
+
         [switch]
-        $Unlock,
+        $NoUnlock,
 
         [Parameter()]
         [int]
@@ -95,6 +96,7 @@ function Register-PodeSecretVault
         $VaultName,
 
         [Parameter(Mandatory=$true, ParameterSetName='SecretManagement')]
+        [Alias('Module')]
         [string]
         $ModuleName,
 
@@ -103,18 +105,22 @@ function Register-PodeSecretVault
         $ScriptBlock, # Read a secret
 
         [Parameter(ParameterSetName='Custom')]
+        [Alias('Unlock')]
         [scriptblock]
         $UnlockScriptBlock,
 
         [Parameter(ParameterSetName='Custom')]
+        [Alias('Remove')]
         [scriptblock]
         $RemoveScriptBlock,
 
         [Parameter(ParameterSetName='Custom')]
+        [Alias('Set')]
         [scriptblock]
         $SetScriptBlock,
 
         [Parameter(ParameterSetName='Custom')]
+        [Alias('Unregister')]
         [scriptblock]
         $UnregisterScriptBlock
     )
@@ -142,7 +148,8 @@ function Register-PodeSecretVault
         Unlock = @{
             Secret = $UnlockSecureSecret
             Expiry = $null
-            Enabled = $Unlock.IsPresent
+            Interval = $UnlockInterval
+            Enabled = (!(Test-PodeIsEmpty $UnlockSecureSecret))
         }
         Cache = @{
             Ttl = $CacheTtl
@@ -180,7 +187,7 @@ function Register-PodeSecretVault
     $PodeContext.Server.Secrets.Vaults[$Name] = $vault
 
     # unlock the vault?
-    if ($Unlock) {
+    if (!$NoUnlock -and $vault.Unlock.Enabled) {
         Unlock-PodeSecretVault -Name $Name
     }
 }

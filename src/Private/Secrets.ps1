@@ -76,6 +76,11 @@ function Register-PodeSecretCustomVault
         $UnregisterScriptBlock
     )
 
+    # unlock secret with no script?
+    if ($VaultConfig.Unlock.Enabled -and (Test-PodeIsEmpty $UnlockScriptBlock)) {
+        throw 'Unlock secret supplied for custom Secret Vault type, but not Unlock ScriptBlock supplied'
+    }
+
     # all is good, so set the config
     $VaultConfig['Custom'] = @{
         Read = $ScriptBlock
@@ -99,8 +104,14 @@ function Unlock-PodeSecretManagementVault
         return $null
     }
 
-    # unlock the vault, and return null for the expiry
+    # unlock the vault
     $null = Unlock-SecretVault -Name $VaultConfig.SecretManagement.VaultName -Password $VaultConfig.Unlock.Secret -ErrorAction Stop
+
+    # interval?
+    if ($VaultConfig.Unlock.Interval -gt 0) {
+        return ([datetime]::UtcNow.AddMinutes($VaultConfig.Unlock.Interval))
+    }
+
     return $null
 }
 
@@ -123,10 +134,21 @@ function Unlock-PodeSecretCustomVault
     }
 
     # unlock the vault, and get back an expiry
-    return (Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unlock -Splat -Return -Arguments @(
+    $expiry = (Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unlock -Splat -Return -Arguments @(
         $VaultConfig.Parameters,
         (ConvertFrom-SecureString -SecureString $VaultConfig.Unlock.Secret -AsPlainText)
     ))
+
+    # return expiry if given, otherwise check interval
+    if ($null -ne $expiry) {
+        return $expiry
+    }
+
+    if ($VaultConfig.Unlock.Interval -gt 0) {
+        return ([datetime]::UtcNow.AddMinutes($VaultConfig.Unlock.Interval))
+    }
+
+    return $null
 }
 
 function Unregister-PodeSecretManagementVault

@@ -288,44 +288,8 @@ function New-PodeContext
 
     # secrets
     $ctx.Server.Secrets = @{
-        Vaults = @{
-            # NAME = @{
-            #     TYPE = [CUSTOM|SECRETMANAGEMENT]
-            #     PARAMETERS = @{}
-            #     UNLOCK = @{
-            #         PASSWORD = SECURESTRING
-            #         EXPIRY = DATE
-            #         ENABLED = [TRUE|FALSE]
-            #     }
-            #     CACHE = @{
-            #         TTL = 0
-            #         ENABLED = [TRUE|FALSE]
-            #     }
-            #     CUSTOM = @{
-            #         READ = SCRIPTBLOCK
-            #         UNLOCK = SCRIPTBLOCK
-            #         REMOVE = SCRIPTBLOCK
-            #         NEW = SCRIPTBLOCK
-            #         UPDATE = SCRIPTBLOCK
-            #     }
-            #     SECRETMANAGEMENT = @{
-            #         VAULTNAME = NAME
-            #         MODULENAME = [NAME|PATH]
-            #     }
-            # }
-        }
-        Keys   = @{
-            # NAME = @{
-            #     VAULT = NAME
-            #     ARGS = [VALUES]
-            #     CACHE = @{
-            #         EXPIRY = DATE
-            #         VALUE = SECUTESTRING
-            #         TTL = 0
-            #         ENABLED = [TRUE|FALSE]
-            #     }
-            # }
-        }
+        Vaults = @{}
+        Keys   = @{}
     }
 
     # custom view paths
