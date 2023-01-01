@@ -59,7 +59,7 @@ Start-PodeServer {
 }
 ```
 
-Regardless of whether the password is a standard SHA256 hash or HMAC hash, the hashed output should be a base64 string. The following functions will return the a hashed value in the expected format:
+Regardless of whether the password is a standard SHA256 hash or HMAC hash, the hashed output should be a base64 string. The following functions will return the hashed value in the expected format:
 
 **SHA256 HASH**:
 ```powershell
