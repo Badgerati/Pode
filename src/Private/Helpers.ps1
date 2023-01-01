@@ -823,7 +823,7 @@ function Close-PodeServerInternal
 
 function New-PodePSDrive
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
