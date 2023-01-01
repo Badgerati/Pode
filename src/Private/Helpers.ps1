@@ -848,6 +848,9 @@ function New-PodePSDrive
         throw "Path does not exist: $($Path)"
     }
 
+    # resolve the path
+    $Path = [System.IO.Path]::GetFullPath($Path)
+
     # create the temp drive
     if (!(Test-PodePSDrive -Name $Name -Path $Path)) {
         $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global -ErrorAction Stop)
@@ -2178,13 +2181,13 @@ function Find-PodeFileForContentType
 
 function Test-PodePathIsRelative
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path
     )
 
-    if (@('.', '..') -contains $Path) {
+    if (($Path.Length -le 2) -and (@('.', '..') -contains $Path)) {
         return $true
     }
 
@@ -2193,7 +2196,7 @@ function Test-PodePathIsRelative
 
 function Get-PodeRelativePath
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
@@ -2224,7 +2227,7 @@ function Get-PodeRelativePath
     # if flagged, resolve the path
     if ($Resolve) {
         $_rawPath = $Path
-        $Path = (Resolve-Path -Path $Path -ErrorAction Ignore).Path
+        $Path = [System.IO.Path]::GetFullPath($Path)
     }
 
     # if flagged, test the path and throw error if it doesn't exist
