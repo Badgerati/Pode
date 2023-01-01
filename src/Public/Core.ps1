@@ -151,8 +151,8 @@ function Start-PodeServer
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
-        # check for state vars
-        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        # check for scoped vars
+        $ScriptBlock = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -Skip Session, Using
 
         # create main context object
         $PodeContext = New-PodeContext `
@@ -221,6 +221,9 @@ function Start-PodeServer
 
         # set output values
         Set-PodeOutputVariables
+
+        # unregister secret vaults
+        Unregister-PodeSecretVaults
 
         # clean the runspaces and tokens
         Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage

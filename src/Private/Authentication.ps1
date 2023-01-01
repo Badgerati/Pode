@@ -1877,7 +1877,7 @@ function Import-PodeAuthADModule
         throw 'Active Directory module only available on Windows'
     }
 
-    if ($null -eq (Get-Module -Name ActiveDirectory -ListAvailable -ErrorAction Ignore)) {
+    if (!(Test-PodeModuleInstalled -Name ActiveDirectory)) {
         throw 'Active Directory module is not installed'
     }
 

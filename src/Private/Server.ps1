@@ -19,6 +19,9 @@ function Start-PodeInternalServer
         # if iis, setup global middleware to validate token
         Initialize-PodeIISMiddleware
 
+        # load any secret vaults
+        Import-PodeSecretVaultsIntoRegistry
+
         # get the server's script and invoke it - to set up routes, timers, middleware, etc
         $_script = $PodeContext.Server.Logic
         if (Test-PodePath -Path $PodeContext.Server.LogicPath -NoStatus) {
@@ -183,9 +186,7 @@ function Restart-PodeInternalServer
         $PodeContext.Tasks.Results.Clear()
 
         # auto-importers
-        $PodeContext.Server.AutoImport.Modules.ExportList = @()
-        $PodeContext.Server.AutoImport.Snapins.ExportList = @()
-        $PodeContext.Server.AutoImport.Functions.ExportList = @()
+        Reset-PodeAutoImportConfiguration
 
         # clear middle/endware
         $PodeContext.Server.Middleware = @()
@@ -233,6 +234,11 @@ function Restart-PodeInternalServer
 
         # clear up shared state
         $PodeContext.Server.State.Clear()
+
+        # clear up secret vaults/cache
+        Unregister-PodeSecretVaults -ThrowError
+        $PodeContext.Server.Secrets.Vaults.Clear()
+        $PodeContext.Server.Secrets.Keys.Clear()
 
         # clear up output
         $PodeContext.Server.Output.Variables.Clear()

@@ -99,9 +99,9 @@ Describe 'Restart-PodeInternalServer' {
     It 'Resetting the server values' {
         $PodeContext = @{
             Tokens = @{
-                Cancellation = New-Object System.Threading.CancellationTokenSource;
-                Restart = New-Object System.Threading.CancellationTokenSource;
-            };
+                Cancellation = New-Object System.Threading.CancellationTokenSource
+                Restart = New-Object System.Threading.CancellationTokenSource
+            }
             Server = @{
                 Routes = @{
                     GET = @{ 'key' = 'value' }
@@ -153,6 +153,9 @@ Describe 'Restart-PodeInternalServer' {
                     Modules = @{ Exported = @() }
                     Snapins = @{ Exported = @() }
                     Functions = @{ Exported = @() }
+                    SecretVaults = @{ 
+                        SecretManagement = @{ Exported = @() }
+                    }
                 }
                 Views = @{ 'key' = 'value' }
                 Events = @{
@@ -165,6 +168,10 @@ Describe 'Restart-PodeInternalServer' {
                         ContentSecurity  = @{}
                         PermissionsPolicy = @{}
                     }
+                }
+                Secrets = @{
+                    Vaults = @{}
+                    Keys = @{}
                 }
             }
             Metrics = @{

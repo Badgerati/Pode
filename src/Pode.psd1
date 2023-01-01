@@ -162,6 +162,7 @@
         'Get-PodeSchedule',
         'Get-PodeScheduleNextTrigger',
         'Use-PodeSchedules',
+        'Test-PodeSchedule',
 
         # timers
         'Add-PodeTimer',
@@ -171,6 +172,7 @@
         'Edit-PodeTimer',
         'Get-PodeTimer',
         'Use-PodeTimers',
+        'Test-PodeTimer',
 
         # tasks
         'Add-PodeTask',
@@ -282,6 +284,7 @@
         'Export-PodeModule',
         'Export-PodeSnapin',
         'Export-PodeFunction',
+        'Export-PodeSecretVault',
 
         # Events
         'Register-PodeEvent',
@@ -330,6 +333,21 @@
         'Send-PodeWebSocket',
         'Reset-PodeWebSocket',
         'Test-PodeWebSocket'
+
+        # Secrets
+        'Register-PodeSecretVault',
+        'Unregister-PodeSecretVault',
+        'Unlock-PodeSecretVault',
+        'Get-PodeSecretVault',
+        'Test-PodeSecretVault',
+        'Mount-PodeSecret',
+        'Dismount-PodeSecret',
+        'Get-PodeSecret',
+        'Test-PodeSecret',
+        'Update-PodeSecret',
+        'Remove-PodeSecret',
+        'Read-PodeSecret',
+        'Set-PodeSecret'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
@@ -341,7 +359,7 @@
                 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform', 'access-control',
                 'file-monitoring', 'multithreaded', 'rate-limiting', 'cron', 'schedule', 'middleware', 'session',
                 'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets', 'swagger', 'openapi', 'redoc')
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'redoc', 'webserver', 'secrets', 'vault')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

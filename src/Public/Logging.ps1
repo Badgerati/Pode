@@ -208,9 +208,7 @@ function New-PodeLoggingMethod
         }
 
         'custom' {
-            $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-            $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-            $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
             return @{
                 ScriptBlock = $ScriptBlock
@@ -436,12 +434,8 @@ function Add-PodeLogger
         throw "The supplied output Method for the '$($Name)' Logging method requires a valid ScriptBlock"
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add logging method to server
     $PodeContext.Server.Logging.Types[$Name] = @{

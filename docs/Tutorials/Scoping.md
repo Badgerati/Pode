@@ -258,3 +258,104 @@ Start-PodeServer -ScriptBlock {
     }
 }
 ```
+
+## Secret Vaults
+
+This mostly only applies to vaults registered via the SecretManagement module, and its `Register-SecretVault` function. You can register vaults as the user that will run your Pode server, before you start the server using the normal `Register-SecretVault` function. On start, Pode will detect these vaults and will automatically register then within Pode for you - ready to be used for mounting secrets with [`Mount-PodeSecret`](../../Functions/Secrets/Mount-PodeSecret).
+
+Below, `AzVault1` will be automatically registered within Pode:
+
+```powershell
+Register-SecretVault -Name 'AzVault1' -ModuleName 'Az.KeyVault' -VaultParameters @{
+    AZKVaultName = 'VaultNameInAzure'
+    SubscriptionId = $SubscriptionId
+}
+
+Start-PodeServer -ScriptBlock {
+    Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Http
+
+    Mount-PodeSecret -Name 'SecretName' -Vault 'AzVault1' -Key 'SecretKeyNameInVault'
+
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeJsonResponse @{ Value = $secret:SecretName }
+    }
+}
+```
+
+### Disable
+
+If Pode detects that the SecretManagement module isn't installed, then this functionality is automatically disabled. However, if it is, and you don't need any secret vaults, or want to stop the auto-importing from occurring, you can use disable it via the `server.psd1` [configuration file](../Configuration).
+
+The following will disable it for every registration type:
+
+```powershell
+@{
+    Server = @{
+        AutoImport = @{
+            SecretVaults = @{
+                Enable = $false
+            }
+        }
+    }
+}
+```
+
+Whereas the following will disable it solely for the SecretManagement type:
+
+```powershell
+@{
+    Server = @{
+        AutoImport = @{
+            SecretVaults = @{
+                SecretManagement = @{
+                    Enable = $false
+                }
+            }
+        }
+    }
+}
+```
+
+### Export
+
+If you want finer control over which vaults are auto-imported, then you can set the auto-import to use an export list. To do so, you set Pode to only import exported secret vaults:
+
+```powershell
+@{
+    Server = @{
+        AutoImport = @{
+            SecretVaults = @{
+                SecretManagement = @{
+                    Enable = $true
+                    ExportOnly = $true
+                }
+            }
+        }
+    }
+}
+```
+
+Then you can "export" vaults that Pode should import by using [`Export-PodeSecretVault`](../../Functions/AutoImport/Export-PodeSecretVault). Below only `AzVault2` will be auto-imported into Pode:
+
+```powershell
+Register-SecretVault -Name 'AzVault1' -ModuleName 'Az.KeyVault' -VaultParameters @{
+    AZKVaultName = 'VaultNameInAzure1'
+    SubscriptionId = $SubscriptionId
+}
+
+Register-SecretVault -Name 'AzVault2' -ModuleName 'Az.KeyVault' -VaultParameters @{
+    AZKVaultName = 'VaultNameInAzure2'
+    SubscriptionId = $SubscriptionId
+}
+
+Start-PodeServer -ScriptBlock {
+    Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Http
+
+    Export-PodeSecretVault -Name AzVault2
+    Mount-PodeSecret -Name 'SecretName' -Vault 'AzVault2' -Key 'SecretKeyNameInVault'
+
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeJsonResponse @{ Value = $secret:SecretName }
+    }
+}
+```

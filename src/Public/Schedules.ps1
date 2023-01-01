@@ -111,12 +111,8 @@ function Add-PodeSchedule
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add the schedule
     $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
@@ -328,9 +324,7 @@ function Edit-PodeSchedule
 
     # edit scriptblock if supplied
     if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $_schedule.Script = $ScriptBlock
         $_schedule.UsingVariables = $usingVars
     }
@@ -442,6 +436,31 @@ function Get-PodeSchedule
 
     # return
     return $schedules
+}
+
+<#
+.SYNOPSIS
+Tests whether the passed Schedule exists.
+
+.DESCRIPTION
+Tests whether the passed Schedule exists by its name.
+
+.PARAMETER Name
+The Name of the Schedule.
+
+.EXAMPLE
+if (Test-PodeSchedule -Name ScheduleName) { }
+#>
+function Test-PodeSchedule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return (($null -ne $PodeContext.Schedules.Items) -and $PodeContext.Schedules.Items.ContainsKey($Name))
 }
 
 <#

@@ -77,3 +77,36 @@ function Export-PodeFunction
 
     $PodeContext.Server.AutoImport.Functions.ExportList += @($Name)
 }
+
+<#
+.SYNOPSIS
+Exports Secret Vaults that can be auto-imported by Pode, and into its runspaces.
+
+.DESCRIPTION
+Exports Secret Vaults that can be auto-imported by Pode, and into its runspaces.
+
+.PARAMETER Name
+The Name(s) of a Secret Vault to export.
+
+.PARAMETER Type
+The Type of the Secret Vault to import - only option currently is SecretManagement (default: SecretManagement)
+
+.EXAMPLE
+Export-PodeSecretVault -Name Vault1, Vault2
+#>
+function Export-PodeSecretVault
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string[]]
+        $Name,
+
+        [Parameter()]
+        [ValidateSet('SecretManagement')]
+        [string]
+        $Type = 'SecretManagement'
+    )
+
+    $PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList += @($Name)
+}

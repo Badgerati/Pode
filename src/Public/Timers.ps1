@@ -105,12 +105,8 @@ function Add-PodeTimer
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # calculate the next tick time (based on Skip)
     $NextTriggerTime = [DateTime]::Now.AddSeconds($Interval)
@@ -275,9 +271,7 @@ function Edit-PodeTimer
 
     # edit scriptblock if supplied
     if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $_timer.Script = $ScriptBlock
         $_timer.UsingVariables = $usingVars
     }
@@ -330,6 +324,31 @@ function Get-PodeTimer
 
     # return
     return $timers
+}
+
+<#
+.SYNOPSIS
+Tests whether the passed Timer exists.
+
+.DESCRIPTION
+Tests whether the passed Timer exists by its name.
+
+.PARAMETER Name
+The Name of the Timer.
+
+.EXAMPLE
+if (Test-PodeTimer -Name TimerName) { }
+#>
+function Test-PodeTimer
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return (($null -ne $PodeContext.Timers.Items) -and $PodeContext.Timers.Items.ContainsKey($Name))
 }
 
 <#

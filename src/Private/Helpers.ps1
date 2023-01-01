@@ -117,8 +117,8 @@ function Get-PodeType
 
     $type = $Value.GetType()
     return @{
-        'Name' = $type.Name.ToLowerInvariant();
-        'BaseName' = $type.BaseType.Name.ToLowerInvariant();
+        Name     = $type.Name.ToLowerInvariant()
+        BaseName = $type.BaseType.Name.ToLowerInvariant()
     }
 }
 
@@ -2450,6 +2450,59 @@ function Convert-PodeQueryStringToHashTable
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 }
 
+function Convert-PodeScopedVariables
+{
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [System.Management.Automation.SessionState]
+        $PSSession,
+
+        [Parameter()]
+        [ValidateSet('State', 'Session', 'Secret', 'Using')]
+        $Skip
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        if (($null -ne $Skip) -and ($Skip -icontains 'Using')) {
+            return $ScriptBlock
+        }
+        else {
+            return @($ScriptBlock, $null)
+        }
+    }
+
+    # conversions
+    $usingVars = $null
+    if (($null -eq $Skip) -or ($Skip -inotcontains 'Using')) {
+        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSSession
+    }
+
+    if (($null -eq $Skip) -or ($Skip -inotcontains 'State')) {
+        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+    }
+
+    if (($null -eq $Skip) -or ($Skip -inotcontains 'Session')) {
+        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    }
+
+    if (($null -eq $Skip) -or ($Skip -inotcontains 'Secret')) {
+        $ScriptBlock = Invoke-PodeSecretScriptConversion -ScriptBlock $ScriptBlock
+    }
+
+    # return
+    if (($null -ne $Skip) -and ($Skip -icontains 'Using')) {
+        return $ScriptBlock
+    }
+    else {
+        return @($ScriptBlock, $usingVars)
+    }
+}
+
 function Invoke-PodeStateScriptConversion
 {
     param(
@@ -2475,6 +2528,40 @@ function Invoke-PodeStateScriptConversion
     while ($scriptStr -imatch '(?<full>\$state\:(?<name>[a-z0-9_\?]+))') {
         $found = $true
         $scriptStr = $scriptStr.Replace($Matches['full'], "`$PodeContext.Server.State.'$($Matches['name'])'.Value")
+    }
+
+    if ($found) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
+    return $ScriptBlock
+}
+
+function Invoke-PodeSecretScriptConversion
+{
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return $ScriptBlock
+    }
+
+    # rename any $secret:<name> vars
+    $scriptStr = "$($ScriptBlock)"
+    $found = $false
+
+    while ($scriptStr -imatch '(?<full>\$secret\:(?<name>[a-z0-9_\?]+)\s*=)') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "Update-PodeSecret -Name '$($Matches['name'])' -InputObject ")
+    }
+
+    while ($scriptStr -imatch '(?<full>\$secret\:(?<name>[a-z0-9_\?]+))') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "(Get-PodeSecret -Name '$($Matches['name'])')")
     }
 
     if ($found) {
@@ -2982,4 +3069,15 @@ function Set-PodeCronInterval
 
     $Cron[$Type] += "/$($Interval)"
     return ($Value.Length -eq 1)
+}
+
+function Test-PodeModuleInstalled
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return ($null -ne (Get-Module -Name $Name -ListAvailable -ErrorAction Ignore -Verbose:$false))
 }

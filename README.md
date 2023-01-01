@@ -69,6 +69,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Authentication on requests, such as Basic, Windows and Azure AD
 * Support for dynamically building Routes from Functions and Modules
 * Generate/bind self-signed certificates
+* Secret management support to load secrets from vaults
 * (Windows) Open the hosted server as a desktop application
 
 ## 📦 Install

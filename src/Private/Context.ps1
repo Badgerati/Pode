@@ -114,23 +114,7 @@ function New-PodeContext
     }
 
     # auto importing (modules, funcs, snap-ins)
-    $ctx.Server.AutoImport = @{
-        Modules = @{
-            Enabled = $true
-            ExportList = @()
-            ExportOnly = $false
-        }
-        Snapins = @{
-            Enabled = $true
-            ExportList = @()
-            ExportOnly = $false
-        }
-        Functions = @{
-            Enabled = $true
-            ExportList = @()
-            ExportOnly = $false
-        }
-    }
+    $ctx.Server.AutoImport = Initialize-PodeAutoImportConfiguration
 
     # basic logging setup
     $ctx.Server.Logging = @{
@@ -302,6 +286,12 @@ function New-PodeContext
     # verbs for tcp
     $ctx.Server.Verbs = @{}
 
+    # secrets
+    $ctx.Server.Secrets = @{
+        Vaults = @{}
+        Keys   = @{}
+    }
+
     # custom view paths
     $ctx.Server.Views = @{}
 
@@ -442,126 +432,6 @@ function New-PodeRunspaceState
     }
 
     $PodeContext.RunspaceState = $state
-}
-
-function Import-PodeFunctionsIntoRunspaceState
-{
-    param(
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
-        [scriptblock]
-        $ScriptBlock,
-
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
-        [string]
-        $FilePath
-    )
-
-    # do nothing if disabled
-    if (!$PodeContext.Server.AutoImport.Functions.Enabled) {
-        return
-    }
-
-    # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList.Length -eq 0)) {
-        return
-    }
-
-    # script or file functions?
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'script' {
-            $funcs = (Get-PodeFunctionsFromScriptBlock -ScriptBlock $ScriptBlock)
-        }
-
-        'file' {
-            $funcs = (Get-PodeFunctionsFromFile -FilePath $FilePath)
-        }
-    }
-
-    # looks like we have nothing!
-    if (($null -eq $funcs) -or ($funcs.Length -eq 0)) {
-        return
-    }
-
-    # groups funcs in case there or multiple definitions
-    $funcs = ($funcs | Group-Object -Property { $_.Name })
-
-    # import them, but also check if they're exported
-    foreach ($func in $funcs) {
-        # only exported funcs? is the func exported?
-        if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList -inotcontains $func.Name)) {
-            continue
-        }
-
-        # load the function
-        $funcDef = [System.Management.Automation.Runspaces.SessionStateFunctionEntry]::new($func.Name, $func.Group[-1].Definition)
-        $PodeContext.RunspaceState.Commands.Add($funcDef)
-    }
-}
-
-function Import-PodeModulesIntoRunspaceState
-{
-    # do nothing if disabled
-    if (!$PodeContext.Server.AutoImport.Modules.Enabled) {
-        return
-    }
-
-    # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList.Length -eq 0)) {
-        return
-    }
-
-    # load modules into runspaces, if allowed
-    $modules = Get-Module |
-        Where-Object {
-            ($_.Name -ine 'pode') -and ($_.Name -inotlike 'microsoft.powershell.*')
-        } | Sort-Object -Unique
-
-    foreach ($module in $modules) {
-        # only exported modules? is the module exported?
-        if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList -inotcontains $module.Name)) {
-            continue
-        }
-
-        # import the module
-        $path = Find-PodeModuleFile -Name $module.Name
-
-        if (($module.ModuleType -ieq 'Manifest') -or ($path.EndsWith('.ps1'))) {
-            $PodeContext.RunspaceState.ImportPSModule($path)
-        }
-        else {
-            $PodeContext.Server.Modules[$module] = $path
-        }
-    }
-}
-
-function Import-PodeSnapinsIntoRunspaceState
-{
-    # if non-windows or core, do nothing
-    if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
-        return
-    }
-
-    # do nothing if disabled
-    if (!$PodeContext.Server.AutoImport.Snapins.Enabled) {
-        return
-    }
-
-    # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList.Length -eq 0)) {
-        return
-    }
-
-    # load snapins into runspaces, if allowed
-    $snapins = (Get-PSSnapin | Where-Object { !$_.IsDefault }).Name | Sort-Object -Unique
-
-    foreach ($snapin in $snapins) {
-        # only exported snapins? is the snapin exported?
-        if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList -inotcontains $snapin)) {
-            continue
-        }
-
-        $PodeContext.RunspaceState.ImportPSSnapIn($snapin, [ref]$null)
-    }
 }
 
 function New-PodeRunspacePools
@@ -850,7 +720,7 @@ function Open-PodeConfiguration
 
 function Set-PodeServerConfiguration
 {
-    param (
+    param(
         [Parameter()]
         [hashtable]
         $Configuration,
@@ -888,23 +758,7 @@ function Set-PodeServerConfiguration
     }
 
     # auto-import
-    $Context.Server.AutoImport = @{
-        Modules = @{
-            Enabled = (($null -eq $Configuration.AutoImport.Modules.Enable) -or [bool]$Configuration.AutoImport.Modules.Enable)
-            ExportList = @()
-            ExportOnly = ([bool]$Configuration.AutoImport.Modules.ExportOnly)
-        }
-        Snapins = @{
-            Enabled = (($null -eq $Configuration.AutoImport.Snapins.Enable) -or [bool]$Configuration.AutoImport.Snapins.Enable)
-            ExportList = @()
-            ExportOnly = ([bool]$Configuration.AutoImport.Snapins.ExportOnly)
-        }
-        Functions = @{
-            Enabled = (($null -eq $Configuration.AutoImport.Functions.Enable) -or [bool]$Configuration.AutoImport.Functions.Enable)
-            ExportList = @()
-            ExportOnly = ([bool]$Configuration.AutoImport.Functions.ExportOnly)
-        }
-    }
+    $Context.Server.AutoImport = Read-PodeAutoImportConfiguration
 
     # request
     if ([int]$Configuration.Request.Timeout -gt 0) {
@@ -1028,6 +882,11 @@ function Set-PodeOutputVariables
     }
 
     foreach ($key in $PodeContext.Server.Output.Variables.Keys) {
-        Set-Variable -Name $key -Value $PodeContext.Server.Output.Variables[$key] -Force -Scope Global
+        try {
+            Set-Variable -Name $key -Value $PodeContext.Server.Output.Variables[$key] -Force -Scope Global
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
     }
 }
