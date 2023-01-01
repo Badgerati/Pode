@@ -178,7 +178,7 @@ function Import-PodeSecretManagementVaultsIntoRegistry
     $null = Import-Module -Name Microsoft.PowerShell.SecretManagement -Force -DisableNameChecking -Scope Global -ErrorAction Stop -Verbose:$false
 
     # get the current secret vaults
-    $vaults =  @(Get-SecretVault -ErrorAction Stop)
+    $vaults = @(Get-SecretVault -ErrorAction Stop)
 
     # register the vaults
     foreach ($vault in $vaults) {

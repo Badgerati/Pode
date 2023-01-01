@@ -3079,5 +3079,5 @@ function Test-PodeModuleInstalled
         $Name
     )
 
-    return ($null -ne (Get-Module -Name $Name -ListAvailable -ErrorAction Ignore))
+    return ($null -ne (Get-Module -Name $Name -ListAvailable -ErrorAction Ignore -Verbose:$false))
 }
