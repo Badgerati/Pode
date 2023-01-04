@@ -18,7 +18,7 @@ if ($PODE_SCOPE_RUNSPACE) {
 }
 
 # load private functions
-Get-ChildItem "$($root)/Private/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
+Get-ChildItem "$($root)/Private/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
 # only import public functions if not in a runspace
 if (!$PODE_SCOPE_RUNSPACE) {
@@ -26,7 +26,7 @@ if (!$PODE_SCOPE_RUNSPACE) {
 }
 
 # load public functions
-Get-ChildItem "$($root)/Public/*.ps1" | Resolve-Path | ForEach-Object { . $_ }
+Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
 # get functions from memory and compare to existing to find new functions added
 $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }

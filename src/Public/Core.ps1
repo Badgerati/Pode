@@ -634,7 +634,7 @@ function Show-PodeGui
 
     # set the window's icon path
     if (![string]::IsNullOrWhiteSpace($Icon)) {
-        $PodeContext.Server.Gui.Icon = (Resolve-Path $Icon).Path
+        $PodeContext.Server.Gui.Icon = [System.IO.Path]::GetFullPath($Icon.Replace('\', '/'), $pwd.Path)
         if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
             throw "Path to icon for GUI does not exist: $($PodeContext.Server.Gui.Icon)"
         }

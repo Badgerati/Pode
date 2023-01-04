@@ -823,7 +823,7 @@ function Close-PodeServerInternal
 
 function New-PodePSDrive
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
@@ -847,6 +847,9 @@ function New-PodePSDrive
     if (!(Test-Path $Path)) {
         throw "Path does not exist: $($Path)"
     }
+
+    # resolve the path
+    $Path = [System.IO.Path]::GetFullPath($Path.Replace('\', '/') , $pwd.Path)
 
     # create the temp drive
     if (!(Test-PodePSDrive -Name $Name -Path $Path)) {
@@ -1661,9 +1664,8 @@ function Get-PodeCount
 
 function Test-PodePathAccess
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
         [string]
         $Path
     )
@@ -1680,7 +1682,7 @@ function Test-PodePathAccess
 
 function Test-PodePath
 {
-    param (
+    param(
         [Parameter()]
         $Path,
 
@@ -2176,24 +2178,9 @@ function Find-PodeFileForContentType
     return $null
 }
 
-function Test-PodePathIsRelative
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Path
-    )
-
-    if (@('.', '..') -contains $Path) {
-        return $true
-    }
-
-    return ($Path -match '^\.{1,2}[\\/]')
-}
-
 function Get-PodeRelativePath
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
@@ -2213,7 +2200,7 @@ function Get-PodeRelativePath
     )
 
     # if the path is relative, join to root if flagged
-    if ($JoinRoot -and (Test-PodePathIsRelative -Path $Path)) {
+    if ($JoinRoot -and ($Path -match '^\.{1,2}([\\\/]|$)')) {
         if ([string]::IsNullOrWhiteSpace($RootPath)) {
             $RootPath = $PodeContext.Server.Root
         }
@@ -2224,7 +2211,7 @@ function Get-PodeRelativePath
     # if flagged, resolve the path
     if ($Resolve) {
         $_rawPath = $Path
-        $Path = (Resolve-Path -Path $Path -ErrorAction Ignore).Path
+        $Path = [System.IO.Path]::GetFullPath($Path.Replace('\', '/'), $pwd.Path)
     }
 
     # if flagged, test the path and throw error if it doesn't exist
