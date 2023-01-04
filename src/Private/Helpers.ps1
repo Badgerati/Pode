@@ -849,7 +849,7 @@ function New-PodePSDrive
     }
 
     # resolve the path
-    $Path = [System.IO.Path]::GetFullPath($Path, $pwd.Path)
+    $Path = [System.IO.Path]::GetFullPath($Path.Replace('\', '/') , $pwd.Path)
 
     # create the temp drive
     if (!(Test-PodePSDrive -Name $Name -Path $Path)) {
@@ -2211,7 +2211,7 @@ function Get-PodeRelativePath
     # if flagged, resolve the path
     if ($Resolve) {
         $_rawPath = $Path
-        $Path = [System.IO.Path]::GetFullPath($Path, $pwd.Path)
+        $Path = [System.IO.Path]::GetFullPath($Path.Replace('\', '/'), $pwd.Path)
     }
 
     # if flagged, test the path and throw error if it doesn't exist
