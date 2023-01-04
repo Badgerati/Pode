@@ -65,7 +65,7 @@ New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 The following example will enable Error logging, and it will log all errors levels except Debug:
 
 ```powershell
-New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error, Warning, Information, Verbose
+New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error, Warning, Informational, Verbose
 ```
 
 ### Using Raw Item
