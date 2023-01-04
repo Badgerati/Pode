@@ -1,6 +1,5 @@
 $path = $MyInvocation.MyCommand.Path
 $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Add-Type -LiteralPath "$($src)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
 Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 Describe 'Get-PodeType' {
