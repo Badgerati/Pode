@@ -9,12 +9,12 @@ param (
 
 $Versions = @{
     Pester = '4.8.0'
-    MkDocs = '1.2.3'
+    MkDocs = '1.4.2'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
     DotNet = '6.0.1'
     Checksum = '0.2.0'
-    MkDocsTheme = '8.1.2'
+    MkDocsTheme = '9.0.2'
     PlatyPS = '0.14.0'
 }
 
