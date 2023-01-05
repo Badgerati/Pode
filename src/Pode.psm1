@@ -5,11 +5,17 @@ $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName System.Net.Http
 
+# netstandard2 for <7.2
 if ($PSVersionTable.PSVersion -lt [version]'7.2.0') {
     Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
 }
-else {
+# net6 for =7.2
+elseif ($PSVersionTable.PSVersion -lt [version]'7.3.0') {
     Add-Type -LiteralPath "$($root)/Libs/net6.0/Pode.dll" -ErrorAction Stop
+}
+# net7 for >7.2
+else {
+    Add-Type -LiteralPath "$($root)/Libs/net7.0/Pode.dll" -ErrorAction Stop
 }
 
 # import everything if in a runspace

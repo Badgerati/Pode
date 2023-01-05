@@ -12,7 +12,7 @@ $Versions = @{
     MkDocs = '1.4.2'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
-    DotNet = '6.0.1'
+    DotNet = '7.0.1'
     Checksum = '0.2.0'
     MkDocsTheme = '9.0.2'
     PlatyPS = '0.14.0'
@@ -93,6 +93,19 @@ function Install-PodeBuildModule($name)
     Write-Host "Installing $($name) v$($Versions[$name])"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
+}
+
+function Invoke-PodeBuildDotnetBuild($target)
+{
+    dotnet build --configuration Release --self-contained --framework $target
+    if (!$?) {
+        throw "dotnet build failed for $($target)"
+    }
+
+    dotnet publish --configuration Release --self-contained --framework $target --output ../Libs/$target
+    if (!$?) {
+        throw "dotnet publish failed for $($target)"
+    }
 }
 
 
@@ -192,25 +205,9 @@ task Build BuildDeps, {
     Push-Location ./src/Listener
 
     try {
-        dotnet build --configuration Release --self-contained --framework netstandard2.0
-        if (!$?) {
-            throw "dotnet build failed for netstandard2"
-        }
-
-        dotnet publish --configuration Release --self-contained --framework netstandard2.0 --output ../Libs/netstandard2.0
-        if (!$?) {
-            throw "dotnet publish failed for netstandard2"
-        }
-
-        dotnet build --configuration Release --self-contained --framework net6.0
-        if (!$?) {
-            throw "dotnet build failed for net6"
-        }
-
-        dotnet publish --configuration Release --self-contained --framework net6.0 --output ../Libs/net6.0
-        if (!$?) {
-            throw "dotnet publish failed for net6"
-        }
+        Invoke-PodeBuildDotnetBuild -target 'netstandard2.0'
+        Invoke-PodeBuildDotnetBuild -target 'net6.0'
+        Invoke-PodeBuildDotnetBuild -target 'net7.0'
     }
     finally {
         Pop-Location
