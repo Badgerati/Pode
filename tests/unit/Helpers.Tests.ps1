@@ -1017,7 +1017,13 @@ Describe 'Get-PodeRelativePath' {
     }
 
     It 'Returns path for literal path when resolving' {
-        Get-PodeRelativePath -Path $pwd.Path -Resolve | Should Be $pwd.Path
+        $PodeContext = @{
+            Server = @{
+                Root = $pwd.Path
+            }
+        }
+
+        Get-PodeRelativePath -Path $pwd.Path -Resolve -JoinRoot | Should Be $pwd.Path
     }
 
     It 'Returns back a relative path' {
@@ -1025,7 +1031,13 @@ Describe 'Get-PodeRelativePath' {
     }
 
     It 'Returns path for a relative path when resolving' {
-        Get-PodeRelativePath -Path ".\src" -Resolve | Should Be (Join-Path $pwd.Path "src")
+        $PodeContext = @{
+            Server = @{
+                Root = $pwd.Path
+            }
+        }
+
+        Get-PodeRelativePath -Path ".\src" -Resolve -JoinRoot | Should Be (Join-Path $pwd.Path "src")
     }
 
     It 'Returns path for a relative path joined to default root' {
