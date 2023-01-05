@@ -10,6 +10,8 @@ theme:
     - navigation.tabs.sticky
     - navigation.tracking
     - navigation.top
+    - content.copy.code
+    - content.action.edit
   font:
     text: Fira Sans
     code: Fira Code
