@@ -36,8 +36,8 @@ Describe 'Start-PodeInternalServer' {
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-        Assert-MockCalled Start-PodeTimerRunspace -Times 0 -Scope It
-        Assert-MockCalled Start-PodeScheduleRunspace -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
         Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
         Assert-MockCalled Start-PodeWebServer -Times 0 -Scope It
@@ -198,6 +198,12 @@ Describe 'Restart-PodeInternalServer' {
                     key = 'value'
                 }
                 Results = @{}
+            }
+            Fim = @{
+                Enabled = $true
+                Items = @{
+                    key = 'value'
+                }
             }
         }
 

@@ -50,7 +50,7 @@ function Start-PodeInternalServer
         New-PodeRunspacePools
         Open-PodeRunspacePools
 
-        if (!$PodeContext.Server.IsServerless -and ($PodeContext.Server.Types.Length -gt 0))
+        if (!$PodeContext.Server.IsServerless)
         {
             # start runspace for loggers
             Start-PodeLoggingRunspace
@@ -273,4 +273,20 @@ function Restart-PodeInternalServer
         $_ | Write-PodeErrorLog
         throw $_.Exception
     }
+}
+
+function Test-PodeServerKeepOpen
+{
+    # if we have any timers/schedules/fim - keep open
+    if ((Test-PodeTimersExist) -or (Test-PodeSchedulesExist) -or (Test-PodeFileWatchersExist)) {
+        return $true
+    }
+
+    # if not a service, and not any type/serverless - close server
+    if (!$PodeContext.Server.IsService -and (($PodeContext.Server.Types.Length -eq 0) -or $PodeContext.Server.IsServerless)) {
+        return $false
+    }
+
+    # keep server open
+    return $true
 }

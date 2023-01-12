@@ -8,7 +8,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Verbose {
 
     # add two endpoints
-    Add-PodeEndpoint -Address * -Port 9000 -Protocol Http
+    # Add-PodeEndpoint -Address * -Port 9000 -Protocol Http
 
     # enable logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -18,23 +18,17 @@ Start-PodeServer -Verbose {
     #     "[$($FileEvent.Type)]: $($FileEvent.FullPath)" | Out-Default
     # }
 
-    # Add-PodeFileWatcher -Path 'C:/Projects/:project/src' -Include '*.ps1' -ScriptBlock {
-    #     "[$($FileEvent.Type)][$($FileEvent.Parameters['project'])]: $($FileEvent.FullPath)" | Out-Default
-    # }
-    # Add-PodeFileWatcher -Path 'C:/Projects/Pode/:folder' -Include '*.psd1', '*.txt' -ScriptBlock {
-    #     "[$($FileEvent.Type)][$($FileEvent.Parameters['folder'])]: $($FileEvent.FullPath)" | Out-Default
-    # }
-    # Add-PodeFileWatcher -Path '/mnt/c/Projects/:project/src' -Include '*.ps1' -ScriptBlock {
-    #     "[$($FileEvent.Type)][$($FileEvent.Parameters['project'])]: $($FileEvent.FullPath)" | Out-Default
-    # }
-
-    Add-PodeTimer -Name 'Test' -Interval 10 -ScriptBlock {
-        $root = Get-PodeServerPath
-        $file = Join-Path $root 'myfile.txt'
-        'hi!' | Out-File -FilePath $file -Append -Force
+    Add-PodeFileWatcher -Path 'C:/Projects/:project/src' -Include '*.ps1' -ScriptBlock {
+        "[$($FileEvent.Type)][$($FileEvent.Parameters['project'])]: $($FileEvent.FullPath)" | Out-Default
     }
 
-    Add-PodeFileWatcher -Path '.' -Include '*.txt' -ScriptBlock {
-        "[$($FileEvent.Type)]: $($FileEvent.FullPath)" | Out-Default
-    }
+    # Add-PodeTimer -Name 'Test' -Interval 10 -ScriptBlock {
+    #     $root = Get-PodeServerPath
+    #     $file = Join-Path $root 'myfile.txt'
+    #     'hi!' | Out-File -FilePath $file -Append -Force
+    # }
+
+    # Add-PodeFileWatcher -Path '.' -Include '*.txt' -ScriptBlock {
+    #     "[$($FileEvent.Type)]: $($FileEvent.FullPath)" | Out-Default
+    # }
 }

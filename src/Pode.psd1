@@ -347,7 +347,15 @@
         'Update-PodeSecret',
         'Remove-PodeSecret',
         'Read-PodeSecret',
-        'Set-PodeSecret'
+        'Set-PodeSecret',
+
+        # File Watchers
+        'Add-PodeFileWatcher',
+        'Test-PodeFileWatcher',
+        'Get-PodeFileWatcher',
+        'Remove-PodeFileWatcher',
+        'Clear-PodeFileWatchers',
+        'Use--PodeFileWatchers'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
@@ -356,10 +364,10 @@
 
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
-                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform', 'access-control',
-                'file-monitoring', 'multithreaded', 'rate-limiting', 'cron', 'schedule', 'middleware', 'session',
-                'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets', 'swagger', 'openapi', 'redoc', 'webserver', 'secrets', 'vault')
+                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform',
+                'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
+                'authentication', 'arm', 'raspberry-pi', 'aws-lambda',
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

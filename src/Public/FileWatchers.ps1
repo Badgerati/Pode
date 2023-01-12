@@ -1,3 +1,58 @@
+<#
+.SYNOPSIS
+Adds a new File Watcher to monitor file changes in a directory.
+
+.DESCRIPTION
+Adds a new File Watcher to monitor file changes in a directory.
+
+.PARAMETER Name
+An optional Name for the File Watcher. (Default: GUID)
+
+.PARAMETER EventName
+An optional EventName to be monitored. Note: '*' refers to Created, Deleted, Changed, and Renamed. (Default: *)
+
+.PARAMETER Path
+The Path to a directory which contains the files to be monitored.
+
+.PARAMETER ScriptBlock
+The ScriptBlock defining logic to be run when events are triggered.
+
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the File Watcher's logic.
+
+.PARAMETER ArgumentList
+A hashtable of arguments to supply to the File Watcher's ScriptBlock.
+
+.PARAMETER NotifyFilter
+The attributes on files to monitor and notify about. (Default: FileName, DirectoryName, LastWrite, CreationTime)
+
+.PARAMETER Exclude
+An optional array of file patterns to be excluded.
+
+.PARAMETER Include
+An optional array of file patterns to be included. (Default: *.*)
+
+.PARAMETER InternalBufferSize
+The InternalBufferSize of the file monitor, used when temporarily storing events. (Default: 8kb)
+
+.PARAMETER NoSubdirectories
+If supplied, the File Watcher will only monitor files in the specified directory path, and not in all sub-directories as well.
+
+.PARAMETER PassThru
+If supplied, the File Watcher object registered will be returned.
+
+.EXAMPLE
+Add-PodeFileWatcher -Path 'C:/Projects/:project/src' -Include '*.ps1' -ScriptBlock {}
+
+.EXAMPLE
+Add-PodeFileWatcher -Path 'C:/Websites/:site' -Include '*.config' -EventName Changed -ScriptBlock {}
+
+.EXAMPLE
+Add-PodeFileWatcher -Path '/temp/logs' -EventName Created -NotifyFilter CreationTime -ScriptBlock {}
+
+.EXAMPLE
+$watcher = Add-PodeFileWatcher -Path '/temp/logs' -Exclude *.txt -ScriptBlock {} -PassThru
+#>
 function Add-PodeFileWatcher
 {
     [CmdletBinding(DefaultParameterSetName='Script')]
@@ -63,7 +118,15 @@ function Add-PodeFileWatcher
     }
 
     # resolve path if relative
+    if (!(Test-PodeIsPSCore)) {
+        $Path = Convert-PodePlaceholders -Path $Path -Prepend '%' -Append '%'
+    }
+
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
+
+    if (!(Test-PodeIsPSCore)) {
+        $Path = Convert-PodePlaceholders -Path $Path -Pattern '\%(?<tag>[\w]+)\%' -Prepend ':' -Append ([string]::Empty)
+    }
 
     # resolve path, and test it
     $hasPlaceholders = Test-PodePlaceholders -Path $Path
@@ -133,6 +196,19 @@ function Add-PodeFileWatcher
     }
 }
 
+<#
+.SYNOPSIS
+Tests whether the passed File Watcher exists.
+
+.DESCRIPTION
+Tests whether the passed File Watcher exists by its name.
+
+.PARAMETER Name
+The Name of the File Watcher.
+
+.EXAMPLE
+if (Test-PodeFileWatcher -Name WatcherName) { }
+#>
 function Test-PodeFileWatcher
 {
     [CmdletBinding()]
@@ -145,6 +221,22 @@ function Test-PodeFileWatcher
     return (($null -ne $PodeContext.Fim.Items) -and $PodeContext.Fim.Items.ContainsKey($Name))
 }
 
+<#
+.SYNOPSIS
+Returns any defined File Watchers.
+
+.DESCRIPTION
+Returns any defined File Watchers.
+
+.PARAMETER Name
+An optional File Watcher Name(s) to be returned.
+
+.EXAMPLE
+Get-PodeFileWatcher
+
+.EXAMPLE
+Get-PodeFileWatcher -Name Name1, Name2
+#>
 function Get-PodeFileWatcher
 {
     [CmdletBinding()]
@@ -173,6 +265,19 @@ function Get-PodeFileWatcher
     return $watchers
 }
 
+<#
+.SYNOPSIS
+Removes a specific File Watchers.
+
+.DESCRIPTION
+Removes a specific File Watchers.
+
+.PARAMETER Name
+The Name of the File Watcher to be removed.
+
+.EXAMPLE
+Remove-PodeFileWatcher -Name 'Logs'
+#>
 function Remove-PodeFileWatcher
 {
     [CmdletBinding()]
@@ -185,6 +290,16 @@ function Remove-PodeFileWatcher
     $null = $PodeContext.Fim.Items.Remove($Name)
 }
 
+<#
+.SYNOPSIS
+Removes all File Watchers.
+
+.DESCRIPTION
+Removes all File Watchers.
+
+.EXAMPLE
+Clear-PodeFileWatchers
+#>
 function Clear-PodeFileWatchers
 {
     [CmdletBinding()]
@@ -193,6 +308,22 @@ function Clear-PodeFileWatchers
     $PodeContext.Fim.Items.Clear()
 }
 
+<#
+.SYNOPSIS
+Automatically loads File Watchers ps1 files
+
+.DESCRIPTION
+Automatically loads File Watchers ps1 files from either a /filewatcher folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeFileWatchers
+
+.EXAMPLE
+Use-PodeFileWatchers -Path './my-watchers'
+#>
 function Use-PodeFileWatchers
 {
     [CmdletBinding()]

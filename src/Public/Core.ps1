@@ -180,7 +180,7 @@ function Start-PodeServer
         Start-PodeInternalServer -Request $Request -Browse:$Browse
 
         # at this point, if it's just a one-one off script, return
-        if (!$PodeContext.Server.IsService -and (($PodeContext.Server.Types.Length -eq 0) -or $PodeContext.Server.IsServerless)) {
+        if (!(Test-PodeServerKeepOpen)) {
             return
         }
 

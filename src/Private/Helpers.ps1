@@ -3117,6 +3117,33 @@ function Resolve-PodePlaceholders
         $Path = "$($Path)[\\\/]"
     }
 
+    return (Convert-PodePlaceholders -Path $Path -Pattern $Pattern -Prepend $Prepend -Append $Append)
+}
+
+function Convert-PodePlaceholders
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Pattern,
+
+        [Parameter()]
+        [string]
+        $Prepend = '(?<',
+
+        [Parameter()]
+        [string]
+        $Append = '>[^\/]+?)'
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Pattern)) {
+        $Pattern = Get-PodePlaceholderRegex
+    }
+
     while ($Path -imatch $Pattern) {
         $Path = ($Path -ireplace $Matches[0], "$($Prepend)$($Matches['tag'])$($Append)")
     }
