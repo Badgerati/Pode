@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -72,6 +71,11 @@ namespace Pode
         public void AddWebSocketRequest(PodeWebSocketRequest request)
         {
             Requests.Add(request);
+        }
+
+        public void RemoveProcessingWebSocketRequest(PodeWebSocketRequest request)
+        {
+            Requests.RemoveProcessing(request);
         }
 
         public PodeWebSocketRequest GetWebSocketRequest(CancellationToken cancellationToken = default(CancellationToken))

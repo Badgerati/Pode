@@ -1,6 +1,6 @@
 function Test-PodeRouteFromRequest
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
@@ -280,7 +280,7 @@ function Get-PodeRoutesByUrl
     return $null
 }
 
-function Update-PodeRoutePlaceholders
+function ConvertTo-PodeOpenApiRoutePath
 {
     param(
         [Parameter(Mandatory=$true)]
@@ -288,53 +288,25 @@ function Update-PodeRoutePlaceholders
         $Path
     )
 
-    # replace placeholder parameters with regex
-    $placeholder = '\:(?<tag>[\w]+)'
-    if ($Path -imatch $placeholder) {
-        $Path = [regex]::Escape($Path)
-    }
-
-    while ($Path -imatch $placeholder) {
-        $Path = ($Path -ireplace $Matches[0], "(?<$($Matches['tag'])>[^\/]+?)")
-    }
-
-    return $Path
-}
-
-function ConvertTo-PodeOpenApiRoutePath
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Path
-    )
-
-    # replace placeholder parameters with regex
-    $placeholder = '\:(?<tag>[\w]+)'
-    if ($Path -imatch $placeholder) {
-        $Path = [regex]::Escape($Path)
-    }
-
-    while ($Path -imatch $placeholder) {
-        $Path = ($Path -ireplace $Matches[0], "{$($Matches['tag'])}")
-    }
-
-    return $Path
+    return (Resolve-PodePlaceholders -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')
 }
 
 function Update-PodeRouteSlashes
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
 
         [switch]
-        $Static
+        $Static,
+
+        [switch]
+        $NoLeadingSlash
     )
 
     # ensure route starts with a '/'
-    if (!$Path.StartsWith('/')) {
+    if (!$NoLeadingSlash -and !$Path.StartsWith('/')) {
         $Path = "/$($Path)"
     }
 
@@ -351,7 +323,7 @@ function Update-PodeRouteSlashes
 
 function Split-PodeRouteQuery
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path
@@ -362,7 +334,7 @@ function Split-PodeRouteQuery
 
 function ConvertTo-PodeRouteRegex
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Path
@@ -376,7 +348,7 @@ function ConvertTo-PodeRouteRegex
     $Path = Split-PodeRouteQuery -Path $Path
     $Path = Protect-PodeValue -Value $Path -Default '/'
     $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Update-PodeRoutePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholders -Path $Path
 
     return $Path
 }
@@ -457,7 +429,7 @@ function Test-PodeRouteInternal
 
 function Convert-PodeFunctionVerbToHttpMethod
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Verb

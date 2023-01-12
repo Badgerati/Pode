@@ -66,6 +66,9 @@ function Start-PodeInternalServer
 
             # start runspace for websockets
             Start-PodeWebSocketRunspace
+
+            # start runspace for file watchers
+            Start-PodeFileWatcherRunspace
         }
 
         # start the appropriate server
@@ -185,6 +188,9 @@ function Restart-PodeInternalServer
         $PodeContext.Tasks.Items.Clear()
         $PodeContext.Tasks.Results.Clear()
 
+        # clear file watchers
+        $PodeContext.Fim.Items.Clear()
+
         # auto-importers
         Reset-PodeAutoImportConfiguration
 
@@ -216,6 +222,7 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Signals.Listener = $null
         $PodeContext.Listeners = @()
         $PodeContext.Receivers = @()
+        $PodeContext.Watchers = @{}
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{

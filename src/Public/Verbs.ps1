@@ -71,7 +71,7 @@ function Add-PodeVerb
     )
 
     # find placeholder parameters in verb (ie: COMMAND :parameter)
-    $Verb = Update-PodeRoutePlaceholders -Path $Verb
+    $Verb = Resolve-PodePlaceholders -Path $Verb
 
     # get endpoints from name
     if (!$PodeContext.Server.FindEndpoints.Tcp) {
@@ -152,7 +152,7 @@ function Remove-PodeVerb
     )
 
     # ensure the verb placeholders are replaced
-    $Verb = Update-PodeRoutePlaceholders -Path $Verb
+    $Verb = Resolve-PodePlaceholders -Path $Verb
 
     # ensure verb does exist
     if (!$PodeContext.Server.Verbs.Contains($Verb)) {
@@ -225,7 +225,7 @@ function Get-PodeVerb
 
     # if we have a verb, filter
     if (![string]::IsNullOrWhiteSpace($Verb)) {
-        $Verb = Update-PodeRoutePlaceholders -Path $Verb
+        $Verb = Resolve-PodePlaceholders -Path $Verb
         $verbs = $PodeContext.Server.Verbs[$Verb]
     }
     else {

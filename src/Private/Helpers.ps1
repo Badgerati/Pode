@@ -507,7 +507,7 @@ function Add-PodeRunspace
 {
     param (
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
         [string]
         $Type,
 
@@ -646,6 +646,13 @@ function Close-PodeRunspaces
 
                 foreach ($receiver in $PodeContext.Receivers) {
                     if (!$receiver.IsDisposed) {
+                        $continue = $true
+                        break
+                    }
+                }
+
+                foreach ($watcher in $PodeContext.Watchers) {
+                    if (!$watcher.IsDisposed) {
                         $continue = $true
                         break
                     }
@@ -1828,7 +1835,7 @@ function Convert-PodePathPatternToRegex
 
 function Convert-PodePathPatternsToRegex
 {
-    param (
+    param(
         [Parameter()]
         [string[]]
         $Paths,
@@ -3067,4 +3074,71 @@ function Test-PodeModuleInstalled
     )
 
     return ($null -ne (Get-Module -Name $Name -ListAvailable -ErrorAction Ignore -Verbose:$false))
+}
+
+function Get-PodePlaceholderRegex
+{
+    return '\:(?<tag>[\w]+)'
+}
+
+function Resolve-PodePlaceholders
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Pattern,
+
+        [Parameter()]
+        [string]
+        $Prepend = '(?<',
+
+        [Parameter()]
+        [string]
+        $Append = '>[^\/]+?)',
+
+        [switch]
+        $Slashes
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Pattern)) {
+        $Pattern = Get-PodePlaceholderRegex
+    }
+
+    if ($Path -imatch $Pattern) {
+        $Path = [regex]::Escape($Path)
+    }
+
+    if ($Slashes) {
+        $Path = ($Path.TrimEnd('\/') -replace '(\\\\|\/)', '[\\\/]')
+        $Path = "$($Path)[\\\/]"
+    }
+
+    while ($Path -imatch $Pattern) {
+        $Path = ($Path -ireplace $Matches[0], "$($Prepend)$($Matches['tag'])$($Append)")
+    }
+
+    return $Path
+}
+
+function Test-PodePlaceholders
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $Placeholder
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Placeholder)) {
+        $Placeholder = Get-PodePlaceholderRegex
+    }
+
+    return ($Path -imatch $Placeholder)
 }

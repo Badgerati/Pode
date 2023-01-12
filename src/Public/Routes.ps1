@@ -186,7 +186,7 @@ function Add-PodeRoute
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path
     $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-    $Path = Update-PodeRoutePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
     if (!$PodeContext.Server.FindEndpoints.Route) {
@@ -483,7 +483,7 @@ function Add-PodeStaticRoute
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path -Static
     $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-    $Path = Update-PodeRoutePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
     if (!$PodeContext.Server.FindEndpoints.Route) {
@@ -1226,7 +1226,7 @@ function Remove-PodeRoute
 
     # ensure the route has appropriate slashes and replace parameters
     $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Update-PodeRoutePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholders -Path $Path
 
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
@@ -1838,7 +1838,7 @@ function Get-PodeRoute
     if (![string]::IsNullOrWhiteSpace($Path)) {
         $Path = Split-PodeRouteQuery -Path $Path
         $Path = Update-PodeRouteSlashes -Path $Path
-        $Path = Update-PodeRoutePlaceholders -Path $Path
+        $Path = Resolve-PodePlaceholders -Path $Path
 
         $routes = @(foreach ($route in $routes) {
             if ($route.Path -ine $Path) {
@@ -2119,7 +2119,7 @@ function Test-PodeRoute
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Update-PodeRoutePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoint from name
     $endpoint = @(Find-PodeEndpoints -EndpointName $EndpointName)[0]
@@ -2173,7 +2173,7 @@ function Test-PodeStaticRoute
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path -Static
-    $Path = Update-PodeRoutePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoint from name
     $endpoint = @(Find-PodeEndpoints -EndpointName $EndpointName)[0]
