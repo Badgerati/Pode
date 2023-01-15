@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-// A better FileSystemWatcher from https://github.com/petermeinl/LeanWork.IO.FileSystem.Watcher
+// A tweaked version of the FileSystemWatcher from https://github.com/petermeinl/LeanWork.IO.FileSystem.Watcher
 namespace Pode.FileSystemWatcher
 {
     public class BufferingFileSystemWatcher : Component

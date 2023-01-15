@@ -9,7 +9,7 @@ Adds a new File Watcher to monitor file changes in a directory.
 An optional Name for the File Watcher. (Default: GUID)
 
 .PARAMETER EventName
-An optional EventName to be monitored. Note: '*' refers to Created, Deleted, Changed, and Renamed. (Default: *)
+An optional EventName to be monitored. Note: '*' refers to all event names. (Default: Changed, Created, Deleted, Renamed)
 
 .PARAMETER Path
 The Path to a directory which contains the files to be monitored.
@@ -64,7 +64,7 @@ function Add-PodeFileWatcher
         [Parameter()]
         [ValidateSet('Changed', 'Created', 'Deleted', 'Renamed', 'Existed', '*')]
         [string[]]
-        $EventName = '*',
+        $EventName = @('Changed', 'Created', 'Deleted', 'Renamed'),
 
         [Parameter(Mandatory=$true)]
         [string]
@@ -114,7 +114,7 @@ function Add-PodeFileWatcher
 
     # set all for * event
     if ('*' -iin $EventName) {
-        $EventName = @('Changed', 'Created', 'Deleted', 'Renamed')
+        $EventName = @('Changed', 'Created', 'Deleted', 'Renamed', 'Existed')
     }
 
     # resolve path if relative
@@ -163,13 +163,6 @@ function Add-PodeFileWatcher
         $paths = @(Get-ChildItem -Path $Path -Directory -Force | Select-Object -ExpandProperty FullName)
     }
 
-    $watchers = @(foreach ($p in $paths) {
-        @{
-            Path = $p
-            Watcher = $null
-        }
-    })
-
     # add the file watcher
     $PodeContext.Fim.Items[$Name] = @{
         Name = $Name
@@ -185,9 +178,9 @@ function Add-PodeFileWatcher
         NotifyFilters = @($NotifyFilter)
         IncludeSubdirectories = !$NoSubdirectories.IsPresent
         InternalBufferSize = $InternalBufferSize
-        Exclude = (Convert-PodePathPatternsToRegex -Paths @($Exclude))
-        Include = (Convert-PodePathPatternsToRegex -Paths @($Include))
-        Watchers = $watchers
+        Exclude = $Exclude
+        Include = $Include
+        Paths = $paths
     }
 
     # return?

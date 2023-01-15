@@ -25,9 +25,9 @@ function Start-PodeFileWatcherRunspace
 
         # register file watchers and events
         foreach ($item in $PodeContext.Fim.Items.Values) {
-            for ($i = 0; $i -lt $item.Watchers.Length; $i++) {
-                Write-Verbose "Creating FileWatcher for '$($item.Watchers[$i].Path)'"
-                $fileWatcher = [PodeFileWatcher]::new($item.Name, $item.Watchers[$i].Path, $item.IncludeSubdirectories, $item.InternalBufferSize, $item.NotifyFilters)
+            foreach ($path in $item.Paths) {
+                Write-Verbose "Creating FileWatcher for '$($path)'"
+                $fileWatcher = [PodeFileWatcher]::new($item.Name, $path, $item.IncludeSubdirectories, $item.InternalBufferSize, $item.NotifyFilters)
 
                 foreach ($evt in $item.Events) {
                     Write-Verbose "-> Registering event: $($evt)"
@@ -75,12 +75,14 @@ function Start-PodeFileWatcherRunspace
                         }
 
                         # if there are exclusions, and one matches, return
-                        if (($null -ne $fileWatcher.Exclude) -and ($evt.Name -imatch $fileWatcher.Exclude)) {
+                        $exc = (Convert-PodePathPatternsToRegex -Paths $fileWatcher.Exclude)
+                        if (($null -ne $exc) -and ($evt.Name -imatch $exc)) {
                             continue
                         }
 
                         # if there are inclusions, and none match, return
-                        if (($null -ne $fileWatcher.Include) -and ($evt.Name -inotmatch $fileWatcher.Include)) {
+                        $inc = (Convert-PodePathPatternsToRegex -Paths $fileWatcher.Include)
+                        if (($null -ne $inc) -and ($evt.Name -inotmatch $inc)) {
                             continue
                         }
 
@@ -155,111 +157,6 @@ function Start-PodeFileWatcherRunspace
     }
 
     Add-PodeRunspace -Type Files -ScriptBlock $waitScript -Parameters @{ 'Watcher' = $watcher } -NoProfile
-
-
-
-
-    # $script = {
-    #     # wrapper action handler
-    #     $action = Get-PodeFileWatcherAction
-
-    #     # error action hanlder
-    #     $errAction = Get-PodeFileWatcherErrorAction
-
-    #     try {
-    #         # register file watchers for each one setup
-    #         foreach ($item in $PodeContext.Fim.Items.Values) {
-    #             for ($i = 0; $i -lt $item.Watchers.Length; $i++) {
-    #                 # create .net file watcher for path
-    #                 $item.Watchers[$i].Watcher = New-Object Pode.FileWatcher.RecoveringFileSystemWatcher $item.Watchers[$i].Path -Property @{
-    #                     IncludeSubdirectories = $item.IncludeSubdirectories
-    #                     InternalBufferSize = $item.InternalBufferSize
-    #                     NotifyFilter = $item.NotifyFilters
-    #                     EnableRaisingEvents = $true
-    #                 }
-
-    #                 # setup message data ith script/args
-    #                 $msgData = @{
-    #                     ScriptBlock = $item.Script
-    #                     ArgumentList = @(Get-PodeScriptblockArguments -ArgumentList $item.Arguments -UsingVariables $item.UsingVariables) 
-    #                     Exclude = $item.Exclude
-    #                     Include = $item.Include
-    #                     Placeholders = $item.Placeholders
-    #                 }
-
-    #                 # register defined events
-    #                 foreach ($evt in $item.Events) {
-    #                     Register-PodeFileWatcherEvent `
-    #                         -Name $item.Name `
-    #                         -Index $i `
-    #                         -EventName $evt `
-    #                         -Watcher $item.Watchers[$i].Watcher `
-    #                         -ScriptBlock $action `
-    #                         -MessageData $msgData
-    #                 }
-
-    #                 # register "Error" event type - log the exception
-    #                 Register-PodeFileWatcherEvent `
-    #                     -Name $item.Name `
-    #                     -Index $i `
-    #                     -EventName 'Error' `
-    #                     -Watcher $item.Watchers[$i].Watcher `
-    #                     -ScriptBlock $errAction
-    #             }
-    #         }
-
-    #         # keep the runspace alive
-    #         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-    #             $PodeContext.Fim.Items.Values[0].Watchers[0].Watcher | Out-Default
-    #             $PodeContext.Tokens.Cancellation.Token | Out-Default
-    #             $null = (Wait-PodeTask -Task $PodeContext.Fim.Items.Values[0].Watchers[0].Watcher.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
-    #             # $processing = $false
-
-    #             # foreach ($item in $PodeContext.Fim.Items.Values) {
-    #             #     foreach ($watcher in $item.Watchers) {
-    #             #         if ($watcher.Watcher.Count -gt 0) {
-    #             #             $processing = $true
-    #             #             break
-    #             #         }
-    #             #     }
-    #             # }
-
-    #             # if ($processing) {
-    #             #     Start-Sleep -Milliseconds 10
-    #             # }
-    #             # else {
-    #             #     Start-Sleep -Seconds 1
-    #             # }
-    #         }
-    #     }
-    #     catch [System.OperationCanceledException] {}
-    #     catch {
-    #         $_ | Write-PodeErrorLog
-    #         $_.Exception | Write-PodeErrorLog -CheckInnerException
-    #         throw
-    #     }
-    #     finally {
-    #         # dispose/unregister all watchers
-    #         foreach ($item in $PodeContext.Fim.Items.Values) {
-    #             for ($i = 0; $i -lt $item.Watchers.Length; $i++) {
-    #                 # unregister events
-    #                 foreach ($evt in $item.Events) {
-    #                     Unregister-PodeFileWatcherEvent -Name $item.Name -Index $i -EventName $evt
-    #                 }
-
-    #                 # unregister error event
-    #                 Unregister-PodeFileWatcherEvent -Name $item.Name -Index $i -EventName 'Error'
-
-    #                 # dispose watcher
-    #                 if ($null -ne $item.Watchers[$i].Watcher) {
-    #                     $item.Watchers[$i].Watcher.Dispose()
-    #                 }
-    #             }
-    #         }
-    #     }
-    # }
-
-    # Add-PodeRunspace -Type Files -ScriptBlock $script -NoProfile
 }
 
 function Get-PodeFileWatcherIdenifierName

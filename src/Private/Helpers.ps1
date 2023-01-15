@@ -3,7 +3,7 @@ using namespace Pode
 # read in the content from a dynamic pode file and invoke its content
 function ConvertFrom-PodeFile
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         $Content,
@@ -26,7 +26,7 @@ function ConvertFrom-PodeFile
 
 function Get-PodeViewEngineType
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path
@@ -45,7 +45,7 @@ function Get-PodeViewEngineType
 
 function Get-PodeFileContentUsingViewEngine
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
@@ -95,7 +95,7 @@ function Get-PodeFileContentUsingViewEngine
 
 function Get-PodeFileContent
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path
@@ -106,7 +106,7 @@ function Get-PodeFileContent
 
 function Get-PodeType
 {
-    param (
+    param(
         [Parameter()]
         $Value
     )
@@ -151,7 +151,7 @@ function Test-PodeIsAdminUser
 
 function Get-PodeHostIPRegex
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('Both', 'Hostname', 'IP')]
         [string]
@@ -184,7 +184,7 @@ function Get-PortRegex
 
 function Get-PodeEndpointInfo
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Address,
@@ -237,7 +237,7 @@ function Get-PodeEndpointInfo
 
 function Test-PodeIPAddress
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $IP,
@@ -265,7 +265,7 @@ function Test-PodeIPAddress
 
 function Test-PodeHostname
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Hostname
@@ -276,7 +276,7 @@ function Test-PodeHostname
 
 function ConvertTo-PodeIPAddress
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
         $Address
@@ -287,7 +287,7 @@ function ConvertTo-PodeIPAddress
 
 function Get-PodeIPAddressesForHostname
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Hostname,
@@ -335,7 +335,7 @@ function Get-PodeIPAddressesForHostname
 
 function Test-PodeIPAddressLocal
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $IP
@@ -346,7 +346,7 @@ function Test-PodeIPAddressLocal
 
 function Test-PodeIPAddressAny
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $IP
@@ -357,7 +357,7 @@ function Test-PodeIPAddressAny
 
 function Test-PodeIPAddressLocalOrAny
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $IP
@@ -368,7 +368,7 @@ function Test-PodeIPAddressLocalOrAny
 
 function Get-PodeIPAddress
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $IP
@@ -400,7 +400,7 @@ function Get-PodeIPAddress
 
 function Test-PodeIPAddressInRange
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         $IP,
 
@@ -429,7 +429,7 @@ function Test-PodeIPAddressInRange
 
 function Test-PodeIPAddressIsSubnetMask
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -441,7 +441,7 @@ function Test-PodeIPAddressIsSubnetMask
 
 function Get-PodeSubnetRange
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -505,7 +505,7 @@ function Get-PodeSubnetRange
 
 function Add-PodeRunspace
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
         [string]
@@ -617,7 +617,7 @@ function Open-PodeRunspace
 
 function Close-PodeRunspaces
 {
-    param (
+    param(
         [switch]
         $ClosePool
     )
@@ -795,7 +795,7 @@ function Test-PodeKeyPressed
 
 function Close-PodeServerInternal
 {
-    param (
+    param(
         [switch]
         $ShowDoneMessage
     )
@@ -951,7 +951,7 @@ function Remove-PodePSDrives
 
 function Join-PodeServerRoot
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -977,7 +977,7 @@ function Join-PodeServerRoot
 
 function Remove-PodeEmptyItemsFromArray
 {
-    param (
+    param(
         [Parameter(ValueFromPipeline=$true)]
         $Array
     )
@@ -1032,7 +1032,7 @@ function Remove-PodeNullKeysFromHashtable
 
 function Get-PodeFileExtension
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Path,
@@ -1051,7 +1051,7 @@ function Get-PodeFileExtension
 
 function Get-PodeFileName
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Path,
@@ -1069,7 +1069,7 @@ function Get-PodeFileName
 
 function Test-PodeValidNetworkFailure
 {
-    param (
+    param(
         [Parameter()]
         $Exception
     )
@@ -1623,7 +1623,7 @@ function Split-PodeContentType
 
 function ConvertFrom-PodeNameValueToHashTable
 {
-    param (
+    param(
         [Parameter()]
         [System.Collections.Specialized.NameValueCollection]
         $Collection
@@ -1643,7 +1643,7 @@ function ConvertFrom-PodeNameValueToHashTable
 
 function Get-PodeCount
 {
-    param (
+    param(
         [Parameter()]
         $Object
     )
@@ -1732,7 +1732,7 @@ function Test-PodePath
 
 function Test-PodePathIsFile
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Path,
@@ -1754,7 +1754,7 @@ function Test-PodePathIsFile
 
 function Test-PodePathIsWildcard
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Path
@@ -1769,7 +1769,7 @@ function Test-PodePathIsWildcard
 
 function Test-PodePathIsDirectory
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -1788,7 +1788,7 @@ function Test-PodePathIsDirectory
 
 function Convert-PodePathSeparators
 {
-    param (
+    param(
         [Parameter()]
         $Paths
     )
@@ -1802,7 +1802,7 @@ function Convert-PodePathSeparators
 
 function Convert-PodePathPatternToRegex
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Path,
@@ -1823,7 +1823,6 @@ function Convert-PodePathPatternToRegex
     }
 
     $Path = $Path -ireplace '\.', '\.'
-
     $Path = $Path -ireplace '\*', '.*?'
 
     if ($NotStrict) {
@@ -1847,28 +1846,23 @@ function Convert-PodePathPatternsToRegex
         $NotStrict
     )
 
-    # remove any empty entries
-    $Paths = @($Paths | Where-Object {
-        !(Test-PodeIsEmpty $_)
+    # replace certain chars
+    $Paths = @(foreach ($path in $Paths) {
+        if (![string]::IsNullOrEmpty($path)) {
+            Convert-PodePathPatternToRegex -Path $path -NotStrict -NotSlashes:$NotSlashes
+        }
     })
 
     # if no paths, return null
-    if (Test-PodeIsEmpty $Paths) {
+    if (($null -eq $Paths) -or ($Paths.Length -eq 0)) {
         return $null
     }
-
-    # replace certain chars
-    $Paths = @($Paths | ForEach-Object {
-        if (!(Test-PodeIsEmpty $_)) {
-            Convert-PodePathPatternToRegex -Path $_ -NotStrict -NotSlashes:$NotSlashes
-        }
-    })
 
     # join them all together
     $joined = "($($Paths -join '|'))"
 
     if ($NotStrict) {
-        return "$($joined)"
+        return $joined
     }
 
     return "^$($joined)$"
@@ -1943,7 +1937,7 @@ function Get-PodeUrl
 
 function Find-PodeErrorPage
 {
-    param (
+    param(
         [Parameter()]
         [int]
         $Code,
@@ -2017,7 +2011,7 @@ function Find-PodeErrorPage
 
 function Get-PodeErrorPage
 {
-    param (
+    param(
         [Parameter()]
         [int]
         $Code,
@@ -2052,7 +2046,7 @@ function Get-PodeErrorPage
 
 function Find-PodeCustomErrorPage
 {
-    param (
+    param(
         [Parameter()]
         [int]
         $Code,
@@ -2088,7 +2082,7 @@ function Find-PodeCustomErrorPage
 
 function Find-PodeFileForContentType
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Path,
@@ -2231,7 +2225,7 @@ function Get-PodeRelativePath
 
 function Get-PodeWildcardFiles
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
@@ -2261,7 +2255,7 @@ function Get-PodeWildcardFiles
 
 function Test-PodeIsServerless
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $FunctionName,
@@ -2281,7 +2275,7 @@ function Test-PodeIsServerless
 
 function Get-PodeEndpointUrl
 {
-    param (
+    param(
         [Parameter()]
         $Endpoint
     )
@@ -2358,7 +2352,7 @@ function Get-PodeDefaultPort
 
 function Set-PodeServerHeader
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Type,
@@ -2377,7 +2371,7 @@ function Set-PodeServerHeader
 
 function Get-PodeHandler
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('Service', 'Smtp')]
         [string]
