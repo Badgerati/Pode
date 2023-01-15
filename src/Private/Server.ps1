@@ -50,7 +50,7 @@ function Start-PodeInternalServer
         New-PodeRunspacePools
         Open-PodeRunspacePools
 
-        if (!$PodeContext.Server.IsServerless -and ($PodeContext.Server.Types.Length -gt 0))
+        if (!$PodeContext.Server.IsServerless)
         {
             # start runspace for loggers
             Start-PodeLoggingRunspace
@@ -66,6 +66,9 @@ function Start-PodeInternalServer
 
             # start runspace for websockets
             Start-PodeWebSocketRunspace
+
+            # start runspace for file watchers
+            Start-PodeFileWatcherRunspace
         }
 
         # start the appropriate server
@@ -185,6 +188,9 @@ function Restart-PodeInternalServer
         $PodeContext.Tasks.Items.Clear()
         $PodeContext.Tasks.Results.Clear()
 
+        # clear file watchers
+        $PodeContext.Fim.Items.Clear()
+
         # auto-importers
         Reset-PodeAutoImportConfiguration
 
@@ -216,6 +222,7 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Signals.Listener = $null
         $PodeContext.Listeners = @()
         $PodeContext.Receivers = @()
+        $PodeContext.Watchers = @{}
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
@@ -266,4 +273,20 @@ function Restart-PodeInternalServer
         $_ | Write-PodeErrorLog
         throw $_.Exception
     }
+}
+
+function Test-PodeServerKeepOpen
+{
+    # if we have any timers/schedules/fim - keep open
+    if ((Test-PodeTimersExist) -or (Test-PodeSchedulesExist) -or (Test-PodeFileWatchersExist)) {
+        return $true
+    }
+
+    # if not a service, and not any type/serverless - close server
+    if (!$PodeContext.Server.IsService -and (($PodeContext.Server.Types.Length -eq 0) -or $PodeContext.Server.IsServerless)) {
+        return $false
+    }
+
+    # keep server open
+    return $true
 }

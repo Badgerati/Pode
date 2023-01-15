@@ -11,6 +11,7 @@ namespace Pode
 {
     public class PodeWebSocket : IDisposable
     {
+        public PodeReceiver Receiver { get; private set; }
         public string Name { get; private set; }
         public Uri URL { get; private set; }
         public string ContentType { get; private set; }
@@ -20,7 +21,6 @@ namespace Pode
         }
 
         private ClientWebSocket WebSocket;
-        private PodeReceiver Receiver;
 
         public PodeWebSocket(string name, string url, string contentType)
         {

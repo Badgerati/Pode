@@ -79,7 +79,9 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru |
-        Add-Member -MemberType NoteProperty -Name Receivers -Value @() -PassThru
+        Add-Member -MemberType NoteProperty -Name Receivers -Value @() -PassThru |
+        Add-Member -MemberType NoteProperty -Name Watchers -Value @() -PassThru |
+        Add-Member -MemberType NoteProperty -Name Fim -Value @{} -PassThru
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
@@ -94,8 +96,9 @@ function New-PodeContext
     # list of created listeners/receivers
     $ctx.Listeners = @()
     $ctx.Receivers = @()
+    $ctx.Watchers = @()
 
-    # list of timers/schedules/tasks
+    # list of timers/schedules/tasks/fim
     $ctx.Timers = @{
         Enabled = ($EnablePool -icontains 'timers')
         Items = @{}
@@ -113,6 +116,11 @@ function New-PodeContext
         Results = @{}
     }
 
+    $ctx.Fim = @{
+        Enabled = ($EnablePool -icontains 'files')
+        Items = @{}
+    }
+
     # auto importing (modules, funcs, snap-ins)
     $ctx.Server.AutoImport = Initialize-PodeAutoImportConfiguration
 
@@ -126,6 +134,7 @@ function New-PodeContext
     $ctx.Threads = @{
         General = $Threads
         Schedules = 10
+        Files = 1
         Tasks = 2
         WebSockets = 2
     }
@@ -375,6 +384,7 @@ function New-PodeContext
         Schedules   = $null
         Gui         = $null
         Tasks       = $null
+        Files       = $null
     }
 
     # session state
@@ -522,6 +532,14 @@ function New-PodeRunspacePools
     if (Test-PodeTasksExist) {
         $PodeContext.RunspacePools.Tasks = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Tasks, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
+    }
+
+    # setup files runspace pool -if we have any file watchers
+    if (Test-PodeFileWatchersExist) {
+        $PodeContext.RunspacePools.Files = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Files + 1, $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
         }
     }
@@ -676,6 +694,7 @@ function New-PodeStateContext
         Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
         Add-Member -MemberType NoteProperty -Name Tasks -Value $Context.Tasks -PassThru |
+        Add-Member -MemberType NoteProperty -Name Fim -Value $Context.Fim -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
