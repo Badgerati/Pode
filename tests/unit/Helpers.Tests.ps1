@@ -66,7 +66,7 @@ Describe 'Test-PodeIsEmpty' {
         It 'Return true for no value' {
             Test-PodeIsEmpty | Should be $true
         }
-        
+
         It 'Return true for null value' {
             Test-PodeIsEmpty -Value $null | Should be $true
         }
@@ -856,6 +856,15 @@ Describe 'ConvertFrom-PodeNameValueToHashTable' {
         $r = ConvertFrom-PodeNameValueToHashTable -Collection $c
         $r.GetType().Name | Should Be 'Hashtable'
         $r.colour | Should Be 'blue'
+    }
+
+    It 'Returns a hashtable from a value without key collection' {
+        $c = [System.Collections.Specialized.NameValueCollection]::new()
+        $c.Add($null, 'blue')
+
+        $r = ConvertFrom-PodeNameValueToHashTable -Collection $c
+        $r.GetType().Name | Should Be 'Hashtable'
+        $r[''] | Should Be 'blue'
     }
 }
 
