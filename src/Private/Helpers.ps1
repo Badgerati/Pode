@@ -1661,14 +1661,8 @@ function Get-PodeCount
         return $Object.Length
     }
 
-    if ($Object -is [System.Collections.Specialized.NameValueCollection]) {
-        if ($Object.Count -eq 0) {
-            return 0
-        }
-
-        if (($Object.Count -eq 1) -and ($null -eq $Object.Keys[0])) {
-            return 0
-        }
+    if ($Object -is [System.Collections.Specialized.NameValueCollection] -and $Object.Count -eq 0) {
+        return 0
     }
 
     return $Object.Count

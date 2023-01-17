@@ -859,12 +859,11 @@ Describe 'ConvertFrom-PodeNameValueToHashTable' {
     }
 
     It 'Returns a hashtable from a value without key collection' {
-        $c = [System.Collections.Specialized.NameValueCollection]::new()
-        $c.Add($null, 'blue')
+        $c = [System.Web.HttpUtility]::ParseQueryString('?blue')
 
         $r = ConvertFrom-PodeNameValueToHashTable -Collection $c
         $r.GetType().Name | Should Be 'Hashtable'
-        $r[''] | Should Be 'blue'
+        $r.'' | Should Be 'blue'
     }
 }
 
