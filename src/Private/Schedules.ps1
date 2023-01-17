@@ -175,7 +175,7 @@ function Invoke-PodeInternalScheduleLogic
         # setup event param
         $parameters = @{
             Event = @{
-                Lockable = $PodeContext.Lockables.Global
+                Lockable = $PodeContext.Threading.Lockables.Global
                 Sender = $Schedule
             }
         }

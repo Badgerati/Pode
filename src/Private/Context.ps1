@@ -75,7 +75,7 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Lockables -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name Threading -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru |
@@ -387,11 +387,14 @@ function New-PodeContext
         Files       = $null
     }
 
-    # session state
-    $ctx.Lockables = @{
+    # threading locks, etc.
+    $ctx.Threading.Lockables = @{
         Global = [hashtable]::Synchronized(@{})
         Custom = @{}
     }
+
+    $ctx.Threading.Mutexes = @{}
+    $ctx.Threading.Semaphores = @{}
 
     # setup runspaces
     $ctx.Runspaces = @()
@@ -699,7 +702,7 @@ function New-PodeStateContext
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
-        Add-Member -MemberType NoteProperty -Name Lockables -Value $Context.Lockables -PassThru |
+        Add-Member -MemberType NoteProperty -Name Threading -Value $Context.Threading -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
 }
 

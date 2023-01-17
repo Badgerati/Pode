@@ -70,7 +70,7 @@ function Start-PodeWebSocketRunspace
                             Request = $request
                             Data = $null
                             Files = $null
-                            Lockable = $PodeContext.Lockables.Global
+                            Lockable = $PodeContext.Threading.Lockables.Global
                             Timestamp = [datetime]::UtcNow
                         }
 

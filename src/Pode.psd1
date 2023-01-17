@@ -91,7 +91,6 @@
 
         # utility helpers
         'Close-PodeDisposable',
-        'Lock-PodeObject',
         'Get-PodeServerPath',
         'Start-PodeStopwatch',
         'Use-PodeStream',
@@ -114,10 +113,6 @@
         'Test-PodeIsIIS',
         'Test-PodeIsHeroku',
         'Get-PodeIISApplicationPath',
-        'New-PodeLockable',
-        'Remove-PodeLockable',
-        'Get-PodeLockable',
-        'Test-PodeLockable',
         'Out-PodeVariable',
         'Test-PodeIsHosted',
         'New-PodeCron',
@@ -355,7 +350,33 @@
         'Get-PodeFileWatcher',
         'Remove-PodeFileWatcher',
         'Clear-PodeFileWatchers',
-        'Use--PodeFileWatchers'
+        'Use-PodeFileWatchers',
+
+        # Threading
+        'Lock-PodeObject',
+        'New-PodeLockable',
+        'Remove-PodeLockable',
+        'Get-PodeLockable',
+        'Test-PodeLockable',
+        'Enter-PodeLockable',
+        'Exit-PodeLockable',
+        'Clear-PodeLockables',
+        'New-PodeMutex',
+        'Test-PodeMutex',
+        'Get-PodeMutex',
+        'Remove-PodeMutex',
+        'Use-PodeMutex',
+        'Enter-PodeMutex',
+        'Exit-PodeMutex',
+        'Clear-PodeMutexes',
+        'New-PodeSemaphore',
+        'Test-PodeSemaphore',
+        'Get-PodeSemaphore',
+        'Remove-PodeSemaphore',
+        'Use-PodeSemaphore',
+        'Enter-PodeSemaphore',
+        'Exit-PodeSemaphore',
+        'Clear-PodeSemaphores'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
