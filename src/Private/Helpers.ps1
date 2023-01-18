@@ -1634,13 +1634,13 @@ function ConvertFrom-PodeNameValueToHashTable
     }
 
     $ht = @{}
-    $i = 0
     foreach ($key in $Collection.Keys) {
+        $htKey = $key
         if (!$key) {
-            $key = ''
+            $htKey = ''
         }
-        $ht[$key] = $Collection[$i]
-        $i++
+
+        $ht[$htKey] = $Collection.GetValues($key)
     }
 
     return $ht
