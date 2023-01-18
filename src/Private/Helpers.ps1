@@ -1640,7 +1640,7 @@ function ConvertFrom-PodeNameValueToHashTable
             $htKey = ''
         }
 
-        $ht[$htKey] = $Collection.GetValues($key)
+        $ht[$htKey] = $Collection.Get($key)
     }
 
     return $ht

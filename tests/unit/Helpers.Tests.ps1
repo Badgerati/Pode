@@ -855,6 +855,7 @@ Describe 'ConvertFrom-PodeNameValueToHashTable' {
 
         $r = ConvertFrom-PodeNameValueToHashTable -Collection $c
         $r.GetType().Name | Should Be 'Hashtable'
+        $r.colour.GetType().Name | Should Be 'string'
         $r.colour | Should Be 'blue'
     }
 
