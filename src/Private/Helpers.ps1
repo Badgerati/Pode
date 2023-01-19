@@ -1387,7 +1387,7 @@ function ConvertTo-PodeResponseContent
     if ([string]::IsNullOrWhiteSpace($ContentType)) {
         return ([string]$InputObject)
     }
-    
+
     # run action for the content type
     switch ($ContentType) {
         { $_ -ilike '*/json' } {
@@ -1635,7 +1635,12 @@ function ConvertFrom-PodeNameValueToHashTable
 
     $ht = @{}
     foreach ($key in $Collection.Keys) {
-        $ht[$key] = $Collection[$key]
+        $htKey = $key
+        if (!$key) {
+            $htKey = ''
+        }
+
+        $ht[$htKey] = $Collection.Get($key)
     }
 
     return $ht
@@ -1656,14 +1661,8 @@ function Get-PodeCount
         return $Object.Length
     }
 
-    if ($Object -is [System.Collections.Specialized.NameValueCollection]) {
-        if ($Object.Count -eq 0) {
-            return 0
-        }
-
-        if (($Object.Count -eq 1) -and ($null -eq $Object.Keys[0])) {
-            return 0
-        }
+    if ($Object -is [System.Collections.Specialized.NameValueCollection] -and $Object.Count -eq 0) {
+        return 0
     }
 
     return $Object.Count
