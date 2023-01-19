@@ -86,8 +86,8 @@ Start-PodeServer -Threads 2 -Verbose {
         Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
-    # GET request with parameters
-    Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
+    # GET and POST request with parameters
+    Add-PodeRoute -Method Get, Post -Path '/:userId/details' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'userId' = $WebEvent.Parameters['userId'] }
     }
 
