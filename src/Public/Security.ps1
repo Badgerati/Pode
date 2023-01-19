@@ -1347,7 +1347,7 @@ function Set-PodeSecurityAccessControl
         $Origin,
 
         [Parameter()]
-        [ValidateSet('', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
+        [ValidateSet('', 'Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
         [string[]]
         $Methods = '',
 

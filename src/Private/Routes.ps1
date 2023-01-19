@@ -2,7 +2,7 @@ function Test-PodeRouteFromRequest
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
+        [ValidateSet('CONNECT', 'DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
         $Method,
 
@@ -27,7 +27,7 @@ function Find-PodeRoute
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
+        [ValidateSet('CONNECT', 'DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
         $Method,
 

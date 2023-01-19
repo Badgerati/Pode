@@ -8,7 +8,7 @@ Routes can also be bound against a specific protocol or endpoint. This allows yo
 
 !!! info
     The following HTTP methods are supported by routes in Pode:
-    DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
+    CONNECT, DELETE, GET, HEAD, MERGE, OPTIONS, PATCH, POST, PUT, and TRACE.
 
 ## Usage
 

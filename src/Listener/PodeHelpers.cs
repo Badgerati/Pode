@@ -10,7 +10,7 @@ namespace Pode
 {
     public class PodeHelpers
     {
-        public static readonly string[] HTTP_METHODS = new string[] { "DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE" };
+        public static readonly string[] HTTP_METHODS = new string[] { "CONNECT", "DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE" };
         public const string WEB_SOCKET_MAGIC_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         public readonly static char[] NEW_LINE_ARRAY = new char[] { '\r', '\n' };
         public const string NEW_LINE = "\r\n";
