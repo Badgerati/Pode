@@ -539,7 +539,7 @@ The path to a HTML file.
 The status code to set against the response.
 
 .EXAMPLE
-Write-PodeHtmlResponse -Value '<html><body>Hello!</body></html>'
+Write-PodeHtmlResponse -Value "Raw HTML can be placed here"
 
 .EXAMPLE
 Write-PodeHtmlResponse -Value @{ Message = 'Hello, all!' }
