@@ -15,7 +15,7 @@ $Versions = @{
     DotNet = '7.0.1'
     Checksum = '0.2.0'
     MkDocsTheme = '9.0.2'
-    PlatyPS = '0.14.0'
+    PlatyPS = '0.14.2'
 }
 
 <#
