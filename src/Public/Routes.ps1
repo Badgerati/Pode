@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-Adds a Route for a specific HTTP Method.
+Adds a Route for a specific HTTP Method(s).
 
 .DESCRIPTION
-Adds a Route for a specific HTTP Method, with path, that when called with invoke any logic and/or Middleware.
+Adds a Route for a specific HTTP Method(s), with path, that when called with invoke any logic and/or Middleware.
 
 .PARAMETER Method
-The HTTP Method of this Route.
+The HTTP Method of this Route, multiple can be supplied.
 
 .PARAMETER Path
 The URI path for the Route.
@@ -77,7 +77,7 @@ function Add-PodeRoute
     param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
-        [string]
+        [string[]]
         $Method,
 
         [Parameter(Mandatory=$true)]
@@ -174,13 +174,16 @@ function Add-PodeRoute
         }
     }
 
+    # var for new routes created
+    $newRoutes = @()
+
     # store the original path
     $origPath = $Path
 
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw "[$($Method)]: No Path supplied for Route"
+        throw "No Path supplied for Route"
     }
 
     # ensure the route has appropriate slashes
@@ -200,30 +203,9 @@ function Add-PodeRoute
         $IfExists = Get-PodeRouteIfExistsPreference
     }
 
-    # ensure the route doesn't already exist for each endpoint
-    $endpoints = @(foreach ($_endpoint in $endpoints) {
-        $found = Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $_endpoint.Protocol -Address $_endpoint.Address -ThrowError:($IfExists -ieq 'Error')
-
-        if ($found) {
-            if ($IfExists -ieq 'Overwrite') {
-                Remove-PodeRoute -Method $Method -Path $origPath -EndpointName $_endpoint.Name
-            }
-
-            if ($IfExists -ieq 'Skip') {
-                continue
-            }
-        }
-
-        $_endpoint
-    })
-
-    if (($null -eq $endpoints) -or ($endpoints.Length -eq 0)) {
-        return
-    }
-
     # if middleware, scriptblock and file path are all null/empty, error
     if ((Test-PodeIsEmpty $Middleware) -and (Test-PodeIsEmpty $ScriptBlock) -and (Test-PodeIsEmpty $FilePath) -and (Test-PodeIsEmpty $Authentication)) {
-        throw "[$($Method)] $($Path): No logic passed"
+        throw "No logic passed for Route: $($Path)"
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -259,50 +241,77 @@ function Add-PodeRoute
     # workout a default transfer encoding for the route
     $TransferEncoding = Find-PodeRouteTransferEncoding -Path $Path -TransferEncoding $TransferEncoding
 
-    # add the route(s)
-    Write-Verbose "Adding Route: [$($Method)] $($Path)"
-    $newRoutes = @(foreach ($_endpoint in $endpoints) {
-        @{
-            Logic = $ScriptBlock
-            UsingVariables = $usingVars
-            Middleware = $Middleware
-            Authentication = $Authentication
-            Endpoint = @{
-                Protocol = $_endpoint.Protocol
-                Address = $_endpoint.Address.Trim()
-                Name = $_endpoint.Name
-            }
-            ContentType = $ContentType
-            TransferEncoding = $TransferEncoding
-            ErrorType = $ErrorContentType
-            Arguments = $ArgumentList
-            Method = $Method
-            Path = $Path
-            OpenApi = @{
-                Path = $OpenApiPath
-                Responses = @{
-                    '200' = @{ description = 'OK' }
-                    'default' = @{ description = 'Internal server error' }
+    # loop through each method
+    foreach ($_method in $Method) {
+        # ensure the route doesn't already exist for each endpoint
+        $endpoints = @(foreach ($_endpoint in $endpoints) {
+            $found = Test-PodeRouteInternal -Method $_method -Path $Path -Protocol $_endpoint.Protocol -Address $_endpoint.Address -ThrowError:($IfExists -ieq 'Error')
+
+            if ($found) {
+                if ($IfExists -ieq 'Overwrite') {
+                    Remove-PodeRoute -Method $_method -Path $origPath -EndpointName $_endpoint.Name
                 }
-                Parameters = $null
-                RequestBody = $null
-                Authentication = @()
-            }
-            IsStatic = $false
-            Metrics = @{
-                Requests = @{
-                    Total = 0
-                    StatusCodes = @{}
+
+                if ($IfExists -ieq 'Skip') {
+                    continue
                 }
             }
+
+            $_endpoint
+        })
+
+        if (($null -eq $endpoints) -or ($endpoints.Length -eq 0)) {
+            continue
         }
-    })
 
-    if (![string]::IsNullOrWhiteSpace($Authentication)) {
-        Set-PodeOAAuth -Route $newRoutes -Name $Authentication
+        # add the route(s)
+        Write-Verbose "Adding Route: [$($_method)] $($Path)"
+        $methodRoutes = @(foreach ($_endpoint in $endpoints) {
+            @{
+                Logic = $ScriptBlock
+                UsingVariables = $usingVars
+                Middleware = $Middleware
+                Authentication = $Authentication
+                Endpoint = @{
+                    Protocol = $_endpoint.Protocol
+                    Address = $_endpoint.Address.Trim()
+                    Name = $_endpoint.Name
+                }
+                ContentType = $ContentType
+                TransferEncoding = $TransferEncoding
+                ErrorType = $ErrorContentType
+                Arguments = $ArgumentList
+                Method = $_method
+                Path = $Path
+                OpenApi = @{
+                    Path = $OpenApiPath
+                    Responses = @{
+                        '200' = @{ description = 'OK' }
+                        'default' = @{ description = 'Internal server error' }
+                    }
+                    Parameters = $null
+                    RequestBody = $null
+                    Authentication = @()
+                }
+                IsStatic = $false
+                Metrics = @{
+                    Requests = @{
+                        Total = 0
+                        StatusCodes = @{}
+                    }
+                }
+            }
+        })
+
+        if (![string]::IsNullOrWhiteSpace($Authentication)) {
+            Set-PodeOAAuth -Route $methodRoutes -Name $Authentication
+        }
+
+        $PodeContext.Server.Routes[$_method][$Path] += @($methodRoutes)
+        if ($PassThru) {
+            $newRoutes += $methodRoutes
+        }
     }
-
-    $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
 
     # return the routes?
     if ($PassThru) {
