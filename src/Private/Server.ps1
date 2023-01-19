@@ -222,7 +222,7 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Signals.Listener = $null
         $PodeContext.Listeners = @()
         $PodeContext.Receivers = @()
-        $PodeContext.Watchers = @{}
+        $PodeContext.Watchers = @()
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
@@ -246,6 +246,11 @@ function Restart-PodeInternalServer
         Unregister-PodeSecretVaults -ThrowError
         $PodeContext.Server.Secrets.Vaults.Clear()
         $PodeContext.Server.Secrets.Keys.Clear()
+
+        # dispose mutex/semaphores
+        Clear-PodeLockables
+        Clear-PodeMutexes
+        Clear-PodeSemaphores
 
         # clear up output
         $PodeContext.Server.Output.Variables.Clear()

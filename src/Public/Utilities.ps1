@@ -20,7 +20,7 @@ Close-PodeDisposable -Disposable $stream -Close
 function Close-PodeDisposable
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter()]
         [System.IDisposable]
         $Disposable,
@@ -51,93 +51,6 @@ function Close-PodeDisposable
     }
     finally {
         $Disposable.Dispose()
-    }
-}
-
-<#
-.SYNOPSIS
-Places a temporary lock on a object while a ScriptBlock is invoked.
-
-.DESCRIPTION
-Places a temporary lock on a object while a ScriptBlock is invoked.
-
-.PARAMETER Object
-The object to lock, if no object is supplied then the global lockable is used by default.
-
-.PARAMETER ScriptBlock
-The ScriptBlock to invoke.
-
-.PARAMETER Return
-If supplied, any values from the ScriptBlock will be returned.
-
-.PARAMETER CheckGlobal
-If supplied, will check the global Lockable object and wait until it's freed-up before locking the passed object.
-
-.EXAMPLE
-Lock-PodeObject -ScriptBlock { /* logic */ }
-
-.EXAMPLE
-Lock-PodeObject -Object $SomeArray -ScriptBlock { /* logic */ }
-
-.EXAMPLE
-$result = (Lock-PodeObject -Return -Object $SomeArray -ScriptBlock { /* logic */ })
-#>
-function Lock-PodeObject
-{
-    [CmdletBinding()]
-    [OutputType([object])]
-    param (
-        [Parameter(ValueFromPipeline=$true)]
-        [object]
-        $Object,
-
-        [Parameter(Mandatory=$true)]
-        [scriptblock]
-        $ScriptBlock,
-
-        [switch]
-        $Return,
-
-        [switch]
-        $CheckGlobal
-    )
-
-    if ($null -eq $Object) {
-        $Object = $PodeContext.Lockables.Global
-    }
-
-    if ($Object -is [valuetype]) {
-        throw 'Cannot lock value types'
-    }
-
-    $locked = $false
-
-    try {
-        if ($CheckGlobal) {
-            Lock-PodeObject -Object $PodeContext.Lockables.Global -ScriptBlock {}
-        }
-
-        [System.Threading.Monitor]::Enter($Object.SyncRoot)
-        $locked = $true
-
-        if ($null -ne $ScriptBlock) {
-            if ($Return) {
-                return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure -Return)
-            }
-            else {
-                Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure
-            }
-        }
-    }
-    catch {
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
-    }
-    finally {
-        if ($locked) {
-            [System.Threading.Monitor]::Pulse($Object.SyncRoot)
-            [System.Threading.Monitor]::Exit($Object.SyncRoot)
-        }
     }
 }
 
@@ -179,7 +92,7 @@ Start-PodeStopwatch -Name 'ReadFile' -ScriptBlock { $content = Get-Content './fi
 function Start-PodeStopwatch
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -223,7 +136,7 @@ function Use-PodeStream
 {
     [CmdletBinding()]
     [OutputType([object])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [System.IDisposable]
         $Stream,
@@ -261,7 +174,7 @@ Use-PodeScript -Path './scripts/tools.ps1'
 function Use-PodeScript
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path
@@ -332,7 +245,7 @@ Add-PodeEndware -ScriptBlock { /* logic */ }
 function Add-PodeEndware
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [scriptblock]
         $ScriptBlock,
@@ -473,7 +386,7 @@ Import-PodeSnapin -Name 'WDeploySnapin3.0'
 function Import-PodeSnapin
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name
@@ -508,7 +421,7 @@ function Protect-PodeValue
 {
     [CmdletBinding()]
     [OutputType([object])]
-    param (
+    param(
         [Parameter()]
         $Value,
 
@@ -542,7 +455,7 @@ function Resolve-PodeValue
 {
     [CmdletBinding()]
     [OutputType([object])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [bool]
         $Check,
@@ -596,7 +509,7 @@ function Invoke-PodeScriptBlock
 {
     [CmdletBinding()]
     [OutputType([object])]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [scriptblock]
         $ScriptBlock,
@@ -664,7 +577,7 @@ function Test-PodeIsEmpty
 {
     [CmdletBinding()]
     [OutputType([bool])]
-    param (
+    param(
         [Parameter()]
         $Value
     )
@@ -926,112 +839,6 @@ function Test-PodeIsHosted
     param()
 
     return ((Test-PodeIsIIS) -or (Test-PodeIsHeroku))
-}
-
-<#
-.SYNOPSIS
-Creates a new custom lockable object for use with Lock-PodeObject.
-
-.DESCRIPTION
-Creates a new custom lockable object for use with Lock-PodeObject.
-
-.PARAMETER Name
-The Name of the lockable object.
-
-.EXAMPLE
-New-PodeLockable -Name 'Lock1'
-#>
-function New-PodeLockable
-{
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name
-    )
-
-    if (Test-PodeLockable -Name $Name) {
-        return
-    }
-
-    $PodeContext.Lockables.Custom[$Name] = [hashtable]::Synchronized(@{})
-}
-
-<#
-.SYNOPSIS
-Removes a custom lockable object.
-
-.DESCRIPTION
-Removes a custom lockable object.
-
-.PARAMETER Name
-The Name of the lockable object to remove.
-
-.EXAMPLE
-Remove-PodeLockable -Name 'Lock1'
-#>
-function Remove-PodeLockable
-{
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name
-    )
-
-    if (Test-PodeLockable -Name $Name) {
-        $PodeContext.Lockables.Custom.Remove($Name)
-    }
-}
-
-<#
-.SYNOPSIS
-Get a custom lockable object for use with Lock-PodeObject.
-
-.DESCRIPTION
-Get a custom lockable object for use with Lock-PodeObject.
-
-.PARAMETER Name
-The Name of the lockable object.
-
-.EXAMPLE
-Get-PodeLockable -Name 'Lock1' | Lock-PodeObject -ScriptBlock {}
-#>
-function Get-PodeLockable
-{
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name
-    )
-
-    return $PodeContext.Lockables.Custom[$Name]
-}
-
-<#
-.SYNOPSIS
-Test if a custom lockable object exists.
-
-.DESCRIPTION
-Test if a custom lockable object exists.
-
-.PARAMETER Name
-The Name of the lockable object.
-
-.EXAMPLE
-Test-PodeLockable -Name 'Lock1'
-#>
-function Test-PodeLockable
-{
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name
-    )
-
-    return $PodeContext.Lockables.Custom.ContainsKey($Name)
 }
 
 <#

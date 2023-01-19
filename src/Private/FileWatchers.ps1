@@ -96,7 +96,7 @@ function Start-PodeFileWatcherRunspace
                                 Name = $evt.OldName
                             }
                             Parameters = @{}
-                            Lockable = $PodeContext.Lockables.Global
+                            Lockable = $PodeContext.Threading.Lockables.Global
                             Timestamp = [datetime]::UtcNow
                         }
 

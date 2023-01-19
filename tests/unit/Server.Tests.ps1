@@ -205,6 +205,11 @@ Describe 'Restart-PodeInternalServer' {
                     key = 'value'
                 }
             }
+            Threading = @{
+                Lockables = @{ Custom = @{} }
+                Mutexes = @{}
+                Semaphores = @{}
+            }
         }
 
         Restart-PodeInternalServer | Out-Null
