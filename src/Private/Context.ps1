@@ -278,6 +278,7 @@ function New-PodeContext
 
     # routes for pages and api
     $ctx.Server.Routes = @{
+        'connect'   = [ordered]@{}
         'delete'    = [ordered]@{}
         'get'       = [ordered]@{}
         'head'      = [ordered]@{}

@@ -228,7 +228,7 @@ function Initialize-PodeCsrf
     [CmdletBinding()]
     param (
         [Parameter()]
-        [ValidateSet('Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
+        [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
         [string[]]
         $IgnoreMethods = @('Get', 'Head', 'Options', 'Trace'),
 
@@ -295,7 +295,7 @@ function Enable-PodeCsrfMiddleware
     [CmdletBinding()]
     param (
         [Parameter()]
-        [ValidateSet('Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
+        [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
         [string[]]
         $IgnoreMethods = @('Get', 'Head', 'Options', 'Trace'),
 
