@@ -88,7 +88,7 @@ function New-PodeContext
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
-    $ctx.Server.PodeModulePath = (Get-PodeModulePath)
+    $ctx.Server.PodeModule = (Get-PodeModuleDetails)
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
@@ -411,7 +411,7 @@ function New-PodeContext
     }
 
     # modules
-    $ctx.Server.Modules = @{}
+    $ctx.Server.Modules = [ordered]@{}
 
     # setup security
     $ctx.Server.Security = @{
@@ -430,7 +430,7 @@ function New-PodeRunspaceState
 {
     # create the state, and add the pode module
     $state = [initialsessionstate]::CreateDefault()
-    $state.ImportPSModule($PodeContext.Server.PodeModulePath)
+    $state.ImportPSModule($PodeContext.Server.PodeModule.Path)
 
     # load the vars into the share state
     $session = New-PodeStateContext -Context $PodeContext
