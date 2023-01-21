@@ -1179,6 +1179,7 @@ function Get-PodeAuthMiddlewareScript
 
         # did the auth force a redirect?
         if ($result.IsRedirected) {
+            Set-PodeRedirectUrl -Success $auth.Success
             return $false
         }
 
@@ -1273,7 +1274,7 @@ function Remove-PodeAuthSession
 
 function Set-PodeAuthStatus
 {
-    param (
+    param(
         [Parameter()]
         [int]
         $StatusCode = 0,
@@ -1326,10 +1327,7 @@ function Set-PodeAuthStatus
 
         # check if we have a failure url redirect
         if (!$NoFailureRedirect -and ![string]::IsNullOrWhiteSpace($Failure.Url)) {
-            if ($Success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
-                $null = Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
-            }
-
+            Set-PodeRedirectUrl -Success $Success
             Move-PodeResponseUrl -Url $Failure.Url
         }
         else {
@@ -1341,21 +1339,48 @@ function Set-PodeAuthStatus
 
     # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
     if ((!$NoSuccessRedirect -or $LoginRoute) -and ![string]::IsNullOrWhiteSpace($Success.Url)) {
-        $url = $Success.Url
-        if ($Success.UseOrigin) {
-            $tmpUrl = Get-PodeCookieValue -Name 'pode.redirecturl'
-            Remove-PodeCookie -Name 'pode.redirecturl'
-
-            if (![string]::IsNullOrWhiteSpace($tmpUrl)) {
-                $url = $tmpUrl
-            }
-        }
-
+        $url = Get-PodeRedirectUrl -Success $Success
         Move-PodeResponseUrl -Url $url
         return $false
     }
 
     return $true
+}
+
+function Set-PodeRedirectUrl
+{
+    param(
+        [Parameter()]
+        [hashtable]
+        $Success
+    )
+
+    if ($Success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
+        $null = Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
+    }
+}
+
+function Get-PodeRedirectUrl
+{
+    param(
+        [Parameter()]
+        [hashtable]
+        $Success
+    )
+
+    $url = $Success.Url
+    if (!$Success.UseOrigin) {
+        return $url
+    }
+
+    $tmpUrl = Get-PodeCookieValue -Name 'pode.redirecturl'
+    Remove-PodeCookie -Name 'pode.redirecturl'
+
+    if (![string]::IsNullOrWhiteSpace($tmpUrl)) {
+        $url = $tmpUrl
+    }
+
+    return $url
 }
 
 function Get-PodeADServerFromDistinguishedName
