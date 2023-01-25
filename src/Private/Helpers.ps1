@@ -928,11 +928,6 @@ function Add-PodePSDrives
 
 function Import-PodeModules
 {
-    # force re-import pode via psd1 if a local version of pode is being used - to fix the "version"
-    if (!$PodeContext.Server.PodeModule.InPath -and ![string]::IsNullOrEmpty($PodeContext.Server.PodeModule.DataPath) -and ((Get-Module -Name Pode).Version -ieq '0.0')) {
-        $null = Import-Module $PodeContext.Server.PodeModule.DataPath -DisableNameChecking -Scope Global -Force -ErrorAction Stop
-    }
-
     # import other modules in the session
     foreach ($path in $PodeContext.Server.Modules.Values) {
         $null = Import-Module $path -DisableNameChecking -Scope Global -ErrorAction Stop
@@ -1943,13 +1938,17 @@ function Convert-PodeModuleDetails
         $Module
     )
 
-    return @{
+    $details = @{
         Name = $Module.Name
         Path = $Module.Path
         BasePath = $Module.ModuleBase
-        DataPath = (Find-PodeModuleFile -Module $Module -DataOnly -CheckVersion)
+        DataPath = (Find-PodeModuleFile -Module $Module -CheckVersion)
+        InternalPath = $null
         InPath = (Test-PodeModuleInPath -Module $Module)
     }
+
+    $details.InternalPath = $details.DataPath -ireplace 'Pode\.(ps[md]1)', 'Pode.Internal.$1'
+    return $details
 }
 
 function Test-PodeModuleInPath

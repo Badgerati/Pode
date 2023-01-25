@@ -428,9 +428,10 @@ function New-PodeContext
 
 function New-PodeRunspaceState
 {
-    # create the state, and add the pode module
+    # create the state, and add the pode modules
     $state = [initialsessionstate]::CreateDefault()
-    $state.ImportPSModule($PodeContext.Server.PodeModule.Path)
+    $state.ImportPSModule($PodeContext.Server.PodeModule.DataPath)
+    $state.ImportPSModule($PodeContext.Server.PodeModule.InternalPath)
 
     # load the vars into the share state
     $session = New-PodeStateContext -Context $PodeContext

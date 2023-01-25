@@ -67,7 +67,7 @@ function Import-PodeModulesIntoRunspaceState
     # get modules currently loaded in session
     $modules = Get-Module |
         Where-Object {
-            ($_.Name -ine 'pode') -and ($_.Name -inotlike 'microsoft.powershell.*')
+            ($_.Name -inotin @('pode', 'pode.internal')) -and ($_.Name -inotlike 'microsoft.powershell.*')
         } | Select-Object -Unique
 
     # work out which order the modules need to be loaded
@@ -75,7 +75,7 @@ function Import-PodeModulesIntoRunspaceState
         Get-PodeModuleDependencies -Module $module
     }) |
         Where-Object {
-            ($_.Name -ine 'pode') -and ($_.Name -inotlike 'microsoft.powershell.*')
+            ($_.Name -inotin @('pode', 'pode.internal')) -and ($_.Name -inotlike 'microsoft.powershell.*')
         } | Select-Object -Unique
 
     # load modules into runspaces, if allowed
