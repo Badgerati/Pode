@@ -272,7 +272,7 @@ task Pack -If (Test-PodeBuildIsWindows) Build, {
     Copy-Item -Path ./src/Pode.Internal.psm1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./src/Pode.Internal.psd1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
-}, 7Zip, ChocoPack, DockerPack
+}, StampVersion, 7Zip, ChocoPack, DockerPack
 
 
 <#
