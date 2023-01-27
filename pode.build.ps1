@@ -116,6 +116,7 @@ function Invoke-PodeBuildDotnetBuild($target)
 # Synopsis: Stamps the version onto the Module
 task StampVersion {
     (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.psd1
+    (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
 }
@@ -268,6 +269,8 @@ task Pack -If (Test-PodeBuildIsWindows) Build, {
     # copy general files
     Copy-Item -Path ./src/Pode.psm1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./src/Pode.psd1 -Destination $path -Force | Out-Null
+    Copy-Item -Path ./src/Pode.Internal.psm1 -Destination $path -Force | Out-Null
+    Copy-Item -Path ./src/Pode.Internal.psd1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
 }, 7Zip, ChocoPack, DockerPack
 
@@ -336,7 +339,7 @@ task DocsHelpBuild DocsDeps, {
 
     # build the function docs
     $path = './docs/Functions'
-    $map =@{}
+    $map = @{}
 
     (Get-Module Pode).ExportedFunctions.Keys | ForEach-Object {
         $type = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf -Path (Get-Command $_ -Module Pode).ScriptBlock.File))
