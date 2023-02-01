@@ -1,5 +1,39 @@
 # Release Notes
 
+## v2.8.0
+
+```plain
+### Features
+* #980: Adds support for Secret Management, either via the SecretManagement module or using custom logic
+* #1063: Adds support for File Watchers, allowing you to run logic on file events
+* #1067: Adds support for Mutexes and Semaphores
+
+### Enhancements
+* #647: Adds a new helper function, `New-PodeCron`, to help with creating cron expressions for schedules
+* #964: Adds a new `-IfExists` parameter for Routes, letting you now specify if Pode should overwrite a Route if it already exists
+* #996: Multiple `-Method` values can now be passed for Routes
+* #1036: Adds functions to reset and retrieve the current session's expiry
+* #1071: Adds support for the `CONNECT` HTTP method
+
+### Bugs
+* #1028: Fixes the QUIT command on the SMTP server to also return a "221 OK" response
+* #1029: Resolves the "A drive with this name already exists" message
+* #1041: Fixes a parsing error when sending form data from `Invoke-WebRequest`
+* #1044: Fixes a duplicate key error when using the `multiple` attribute on HTML file inputs
+* #1046: Fixes the version of Pode within its runspaces, so it's no "0.0"
+* #1065: Fixes query string parsing when key is null (thanks @ili101!)
+
+### Documentation
+* #1009: Adds clarification around password formats when using a file to store user authentication details (thanks @fatherofinvention!)
+* #1054: Fixes rendering issue with `Write-PodeHtmlResponse` example
+* #1056: Fixes typo in logging documentation (thanks @fatherofinvention!)
+
+### Packaging:
+* #1050: Bump Dockerfiles to use PS7.3
+* #1051: Bump the PodeListener to use .NET7
+* #1052: Bump version of mkdocs and material theme
+```
+
 ## v2.7.2
 
 ```plain

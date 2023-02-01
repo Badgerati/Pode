@@ -37,6 +37,7 @@ Pode is a Cross-Platform framework for creating web servers to host REST APIs an
 * Support for dynamically building Routes from Functions and Modules
 * Generate/bind self-signed certificates
 * Secret management support to load secrets from vaults
+* Support for File Watchers
 * (Windows) Open the hosted server as a desktop application
 
     </description>
