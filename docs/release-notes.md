@@ -28,7 +28,7 @@
 * #1054: Fixes rendering issue with `Write-PodeHtmlResponse` example
 * #1056: Fixes typo in logging documentation (thanks @fatherofinvention!)
 
-### Packaging:
+### Packaging
 * #1050: Bump Dockerfiles to use PS7.3
 * #1051: Bump the PodeListener to use .NET7
 * #1052: Bump version of mkdocs and material theme
