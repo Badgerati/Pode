@@ -64,26 +64,35 @@ function Import-PodeModulesIntoRunspaceState
         return
     }
 
-    # load modules into runspaces, if allowed
+    # get modules currently loaded in session
     $modules = Get-Module |
         Where-Object {
-            ($_.Name -ine 'pode') -and ($_.Name -inotlike 'microsoft.powershell.*')
-        } | Sort-Object -Unique
+            ($_.Name -inotin @('pode', 'pode.internal')) -and ($_.Name -inotlike 'microsoft.powershell.*')
+        } | Select-Object -Unique
 
-    foreach ($module in $modules) {
+    # work out which order the modules need to be loaded
+    $modulesOrder = @(foreach ($module in $modules) {
+        Get-PodeModuleDependencies -Module $module
+    }) |
+        Where-Object {
+            ($_.Name -inotin @('pode', 'pode.internal')) -and ($_.Name -inotlike 'microsoft.powershell.*')
+        } | Select-Object -Unique
+
+    # load modules into runspaces, if allowed
+    foreach ($module in $modulesOrder) {
         # only exported modules? is the module exported?
         if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList -inotcontains $module.Name)) {
             continue
         }
 
         # import the module
-        $path = Find-PodeModuleFile -Name $module.Name
+        $path = Find-PodeModuleFile -Module $module
 
         if (($module.ModuleType -ieq 'Manifest') -or ($path.EndsWith('.ps1'))) {
             $PodeContext.RunspaceState.ImportPSModule($path)
         }
         else {
-            $PodeContext.Server.Modules[$module] = $path
+            $PodeContext.Server.Modules[$module.Name] = $path
         }
     }
 }

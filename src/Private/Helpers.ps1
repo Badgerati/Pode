@@ -928,6 +928,7 @@ function Add-PodePSDrives
 
 function Import-PodeModules
 {
+    # import other modules in the session
     foreach ($path in $PodeContext.Server.Modules.Values) {
         $null = Import-Module $path -DisableNameChecking -Scope Global -ErrorAction Stop
     }
@@ -1903,35 +1904,100 @@ function ConvertTo-PodeSslProtocols
     return [System.Security.Authentication.SslProtocols]($protos)
 }
 
-function Get-PodeModulePath
+function Get-PodeModuleDetails
 {
     # if there's 1 module imported already, use that
     $importedModule = @(Get-Module -Name Pode)
     if (($importedModule | Measure-Object).Count -eq 1) {
-        return (@($importedModule)[0]).Path
+        return (Convert-PodeModuleDetails -Module @($importedModule)[0])
     }
 
     # if there's none or more, attempt to get the module used for 'engine'
     try {
         $usedModule = (Get-Command -Name 'Set-PodeViewEngine').Module
         if (($usedModule | Measure-Object).Count -eq 1) {
-            return $usedModule.Path
+            return (Convert-PodeModuleDetails -Module $usedModule)
         }
     }
-    catch { }
+    catch {}
 
     # if there were multiple to begin with, use the newest version
     if (($importedModule | Measure-Object).Count -gt 1) {
-        return (@($importedModule | Sort-Object -Property Version)[-1]).Path
+        return (Convert-PodeModuleDetails -Module @($importedModule | Sort-Object -Property Version)[-1])
     }
 
     # otherwise there were none, use the latest installed
-    return (@(Get-Module -ListAvailable -Name Pode | Sort-Object -Property Version)[-1]).Path
+    return (Convert-PodeModuleDetails -Module @(Get-Module -ListAvailable -Name Pode | Sort-Object -Property Version)[-1])
+}
+
+function Convert-PodeModuleDetails
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [psmoduleinfo]
+        $Module
+    )
+
+    $details = @{
+        Name = $Module.Name
+        Path = $Module.Path
+        BasePath = $Module.ModuleBase
+        DataPath = (Find-PodeModuleFile -Module $Module -CheckVersion)
+        InternalPath = $null
+        InPath = (Test-PodeModuleInPath -Module $Module)
+    }
+
+    $details.InternalPath = $details.DataPath -ireplace 'Pode\.(ps[md]1)', 'Pode.Internal.$1'
+    return $details
+}
+
+function Test-PodeModuleInPath
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [psmoduleinfo]
+        $Module
+    )
+
+    $separator = ';'
+    if (Test-PodeIsUnix) {
+        $separator = ':'
+    }
+
+    $paths = @($env:PSModulePath -split $separator)
+
+    foreach ($path in $paths) {
+        if ($Module.Path.StartsWith($path)) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Get-PodeModuleDependencies
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [psmoduleinfo]
+        $Module
+    )
+
+    if (!$Module.RequiredModules) {
+        return $Module
+    }
+
+    $mods = @()
+    foreach ($mod in $Module.RequiredModules) {
+        $mods += (Get-PodeModuleDependencies -Module $mod)
+    }
+
+    return ($mods + $module)
 }
 
 function Get-PodeModuleRootPath
 {
-    return (Split-Path -Parent -Path $PodeContext.Server.PodeModulePath)
+    return (Split-Path -Parent -Path $PodeContext.Server.PodeModule.Path)
 }
 
 function Get-PodeModuleMiscPath
@@ -2967,21 +3033,54 @@ function Use-PodeFolder
 function Find-PodeModuleFile
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, ParameterSetName='Name')]
         [string]
         $Name,
 
+        [Parameter(Mandatory=$true, ParameterSetName='Module')]
+        [psmoduleinfo]
+        $Module,
+
         [switch]
-        $ListAvailable
+        $ListAvailable,
+
+        [switch]
+        $DataOnly,
+
+        [switch]
+        $CheckVersion
     )
 
     # get module and check psd1, then psm1
-    $mod = (Get-Module -Name $Name -ListAvailable:$ListAvailable | Sort-Object -Property Version -Descending | Select-Object -First 1)
+    if ($null -eq $Module) {
+        $Module = (Get-Module -Name $Name -ListAvailable:$ListAvailable | Sort-Object -Property Version -Descending | Select-Object -First 1)
+    }
 
     # if the path isn't already a psd1 do this
-    $path = Join-Path $mod.ModuleBase "$($mod.Name).psd1"
+    $path = Join-Path $Module.ModuleBase "$($Module.Name).psd1"
     if (!(Test-Path $path)) {
-        $path = $mod.Path
+        # if we only want a psd1, return null
+        if ($DataOnly) {
+            $path = $null
+        }
+        else {
+            $path = $Module.Path
+        }
+    }
+
+    # check the Version of the psd1
+    elseif ($CheckVersion) {
+        $data = Import-PowerShellDataFile -Path $path -ErrorAction Stop
+
+        $version = $null
+        if (![version]::TryParse($data.ModuleVersion, [ref]$version)) {
+            if ($DataOnly) {
+                $path = $null
+            }
+            else {
+                $path = $Module.Path
+            }
+        }
     }
 
     return $path
