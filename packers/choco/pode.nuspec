@@ -36,6 +36,8 @@ Pode is a Cross-Platform framework for creating web servers to host REST APIs an
 * Authentication on requests, such as Basic, Windows and Azure AD
 * Support for dynamically building Routes from Functions and Modules
 * Generate/bind self-signed certificates
+* Secret management support to load secrets from vaults
+* Support for File Watchers
 * (Windows) Open the hosted server as a desktop application
 
     </description>
@@ -43,8 +45,8 @@ Pode is a Cross-Platform framework for creating web servers to host REST APIs an
     <packageSourceUrl>https://github.com/Badgerati/Pode/tree/master/packers</packageSourceUrl>
     <docsUrl>https://badgerati.github.io/Pode</docsUrl>
     <bugTrackerUrl>https://github.com/Badgerati/Pode/issues</bugTrackerUrl>
-    <tags>powershell web server rest api http tcp smtp listener unix cross-platform file-monitoring multithreaded schedule middleware session authentication active-directory csrf lambda aws azure functions websockets openapi swagger redoc</tags>
-    <copyright>Copyright 2017-2022</copyright>
+    <tags>powershell web server rest api smtp unix cross-platform file-monitoring multithreaded schedule middleware authentication aws azure websockets openapi</tags>
+    <copyright>Copyright 2017-2023</copyright>
     <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <iconUrl>https://raw.githubusercontent.com/Badgerati/Pode/master/images/icon.png</iconUrl>

@@ -59,6 +59,30 @@ Start-PodeServer {
 }
 ```
 
+Regardless of whether the password is a standard SHA256 hash or HMAC hash, the hashed output should be a base64 string. The following functions will return the hashed value in the expected format:
+
+**SHA256 HASH**:
+```powershell
+function ConvertTo-SHA256([string]$String)
+{
+    $SHA256 = New-Object System.Security.Cryptography.SHA256Managed
+    $SHA256Hash = $SHA256.ComputeHash([Text.Encoding]::ASCII.GetBytes($String))
+    $SHA256HashString = [Convert]::ToBase64String($SHA256Hash)
+    return $SHA256HashString
+}
+```
+
+**HMAC HASH:**
+```powershell
+function ConvertTo-HMACSHA256([string]$String, [string]$Secret) {
+    $HMACSHA256 = New-Object System.Security.Cryptography.HMACSHA256
+    $HMACSHA256.Secret = [Text.Encoding]::ASCII.GetBytes($Secret)
+    $HMACSHA256Hash = $HMACSHA256.ComputeHash([Text.Encoding]::ASCII.GetBytes($String))
+    $HMACSHA256HashString = [Convert]::ToBase64String($HMACSHA256Hash)
+    return $HMACSHA256HashString
+}
+```
+
 ### User Object
 
 The User object returned, and accessible on Routes, and other functions via the [web event](../../../WebEvent)'s `$WebEvent.Auth.User` property, will contain the following information:

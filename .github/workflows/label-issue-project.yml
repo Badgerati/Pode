@@ -1,0 +1,18 @@
+name: Add labeled issues to project
+
+on:
+  issues:
+    types:
+      - labeled
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.3.0
+        with:
+          project-url: https://github.com/users/Badgerati/projects/2
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          labeled: 'planned :calendar:, roadmap :rocket:, backlog :scroll:, draft :pencil2:, idea :bulb:'
+          label-operator: OR

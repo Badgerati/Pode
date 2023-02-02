@@ -1,6 +1,6 @@
 function ConvertTo-PodeCookie
 {
-    param (
+    param(
         [Parameter()]
         [System.Net.Cookie]
         $Cookie
@@ -26,45 +26,56 @@ function ConvertTo-PodeCookie
 
 function ConvertTo-PodeCookieString
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         $Cookie
     )
 
-    $str = "$($Cookie.Name)=$($Cookie.Value)"
+    try {
+        $builder = [System.Text.StringBuilder]::new()
+        $null = $builder.Append($Cookie.Name)
+        $null = $builder.Append('=')
+        $null = $builder.Append($Cookie.Value)
 
-    if ($Cookie.Discard) {
-        $str += '; Discard'
-    }
-
-    if ($Cookie.HttpOnly) {
-        $str += '; HttpOnly'
-    }
-
-    if ($Cookie.Secure) {
-        $str += '; Secure'
-    }
-
-    if (![string]::IsNullOrWhiteSpace($Cookie.Domain)) {
-        $str += "; Domain=$($Cookie.Domain)"
-    }
-
-    if (![string]::IsNullOrWhiteSpace($Cookie.Path)) {
-        $str += "; Path=$($Cookie.Path)"
-    }
-
-    if ($null -ne $Cookie.Expires -and $Cookie.Expires -ne [datetime]::MinValue) {
-        $secs = ($Cookie.Expires.ToLocalTime() - [datetime]::Now).TotalSeconds
-        if ($secs -lt 0) {
-            $secs = 0
+        if ($Cookie.Discard) {
+            $null = $builder.Append('; Discard')
         }
 
-        $str += "; Max-Age=$($secs)"
-    }
+        if ($Cookie.HttpOnly) {
+            $null = $builder.Append('; HttpOnly')
+        }
 
-    if ($str -eq '=') {
-        return $null
-    }
+        if ($Cookie.Secure) {
+            $null = $builder.Append('; Secure')
+        }
 
-    return $str
+        if (![string]::IsNullOrEmpty($Cookie.Domain)) {
+            $null = $builder.Append('; Domain=')
+            $null = $builder.Append($Cookie.Domain)
+        }
+
+        if (![string]::IsNullOrEmpty($Cookie.Path)) {
+            $null = $builder.Append('; Path=')
+            $null = $builder.Append($Cookie.Path)
+        }
+
+        if (($null -ne $Cookie.Expires) -and ($Cookie.Expires.Ticks -ne 0)) {
+            $secs = ($Cookie.Expires.Subtract([datetime]::UtcNow)).TotalSeconds
+            if ($secs -lt 0) {
+                $secs = 0
+            }
+
+            $null = $builder.Append('; Max-Age=')
+            $null = $builder.Append($secs)
+        }
+
+        if ($builder.Length -le 1) {
+            return $null
+        }
+
+        return $builder.ToString()
+    }
+    finally {
+        $builder = $null
+    }
 }

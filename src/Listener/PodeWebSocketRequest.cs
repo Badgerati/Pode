@@ -38,6 +38,7 @@ namespace Pode
 
         public void Dispose()
         {
+            WebSocket.Receiver.RemoveProcessingWebSocketRequest(this);
             RawBody = default(byte[]);
             _body = string.Empty;
         }

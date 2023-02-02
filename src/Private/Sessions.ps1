@@ -1,16 +1,12 @@
 function New-PodeSession
 {
-    $sid = @{
+    return @{
         Name = $PodeContext.Server.Sessions.Name
         Id = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.GenerateId -Return)
-        Properties = $PodeContext.Server.Sessions.Info
+        Extend = $PodeContext.Server.Sessions.Info.Extend
+        TimeStamp = [datetime]::UtcNow
         Data = @{}
     }
-
-    Set-PodeSessionDataHash -Session $sid
-
-    $sid.Properties.TimeStamp = [DateTime]::UtcNow
-    return $sid
 }
 
 function ConvertTo-PodeSessionStrictSecret
@@ -26,70 +22,54 @@ function ConvertTo-PodeSessionStrictSecret
 
 function Set-PodeSession
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [hashtable]
-        $Session
-    )
+    if ($null -eq $WebEvent.Session) {
+        throw 'there is no session available to set on the response'
+    }
 
-    $secure = [bool]($Session.Properties.Secure)
-    $strict = [bool]($Session.Properties.Strict)
-    $discard = [bool]($Session.Properties.Discard)
-    $httpOnly = [bool]($Session.Properties.HttpOnly)
-    $useHeaders = [bool]($Session.Properties.UseHeaders)
     $secret = $PodeContext.Server.Sessions.Secret
 
     # covert secret to strict mode
-    if ($strict) {
+    if ($PodeContext.Server.Sessions.Info.Strict) {
         $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
     }
 
     # set session on header
-    if ($useHeaders) {
-        Set-PodeHeader -Name $Session.Name -Value $Session.Id -Secret $secret
+    if ($PodeContext.Server.Sessions.Info.UseHeaders) {
+        Set-PodeHeader -Name $WebEvent.Session.Name -Value $WebEvent.Session.Id -Secret $secret
     }
 
     # set session as cookie
     else {
         $null = Set-PodeCookie `
-            -Name $Session.Name `
-            -Value $Session.Id `
+            -Name $WebEvent.Session.Name `
+            -Value $WebEvent.Session.Id `
             -Secret $secret `
-            -ExpiryDate (Get-PodeSessionExpiry -Session $Session) `
-            -HttpOnly:$httpOnly `
-            -Discard:$discard `
-            -Secure:$secure
+            -ExpiryDate (Get-PodeSessionExpiry) `
+            -HttpOnly:$PodeContext.Server.Sessions.Info.HttpOnly `
+            -Secure:$PodeContext.Server.Sessions.Info.Secure
     }
 }
 
 function Get-PodeSession
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [hashtable]
-        $Session
-    )
-
-    $secret = $Session.Secret
-    $timestamp = [datetime]::UtcNow
+    $secret = $PodeContext.Server.Sessions.Secret
     $value = $null
-    $name = $Session.Name
+    $name = $PodeContext.Server.Sessions.Name
 
     # covert secret to strict mode
-    if ($Session.Info.Strict) {
+    if ($PodeContext.Server.Sessions.Info.Strict) {
         $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
     }
 
     # session from header
-    if ($Session.Info.UseHeaders) {
+    if ($PodeContext.Server.Sessions.Info.UseHeaders) {
         # check that the header is validly signed
-        if (!(Test-PodeHeaderSigned -Name $Session.Name -Secret $secret)) {
+        if (!(Test-PodeHeaderSigned -Name $PodeContext.Server.Sessions.Name -Secret $secret)) {
             return $null
         }
 
         # get the header from the request
-        $value = Get-PodeHeader -Name $Session.Name -Secret $secret
+        $value = Get-PodeHeader -Name $PodeContext.Server.Sessions.Name -Secret $secret
         if ([string]::IsNullOrWhiteSpace($value)) {
             return $null
         }
@@ -98,12 +78,12 @@ function Get-PodeSession
     # session from cookie
     else {
         # check that the cookie is validly signed
-        if (!(Test-PodeCookieSigned -Name $Session.Name -Secret $secret)) {
+        if (!(Test-PodeCookieSigned -Name $PodeContext.Server.Sessions.Name -Secret $secret)) {
             return $null
         }
 
         # get the cookie from the request
-        $cookie = Get-PodeCookie -Name $Session.Name -Secret $secret
+        $cookie = Get-PodeCookie -Name $PodeContext.Server.Sessions.Name -Secret $secret
         if ([string]::IsNullOrWhiteSpace($cookie)) {
             return $null
         }
@@ -111,144 +91,115 @@ function Get-PodeSession
         # get details from cookie
         $name = $cookie.Name
         $value = $cookie.Value
-
-        $timestamp = $cookie.TimeStamp
-        if ($null -ne $timestamp) {
-            $timestamp = $timestamp.ToUniversalTime()
-        }
     }
 
     # generate the session data
     $data = @{
         Name = $name
         Id = $value
-        Properties = $Session.Info
+        Extend = $PodeContext.Server.Sessions.Info.Extend
+        TimeStamp = $null
         Data = @{}
     }
 
-    $data.Properties.TimeStamp = $timeStamp
     return $data
 }
 
 function Revoke-PodeSession
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [hashtable]
-        $Session
-    )
+    # do nothing if no current session
+    if ($null -eq $WebEvent.Session) {
+        return
+    }
 
     # remove from cookie
-    if (!$Session.Properties.UseHeaders) {
-        Remove-PodeCookie -Name $Session.Name
+    if (!$PodeContext.Server.Sessions.Info.UseHeaders) {
+        Remove-PodeCookie -Name $WebEvent.Session.Name
     }
 
     # remove session from store
-    Invoke-PodeScriptBlock -ScriptBlock $Session.Delete -Arguments @($Session) -Splat
+    Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Delete
 
     # blank the session
-    $Session.Clear()
+    $WebEvent.Session.Clear()
 }
 
 function Set-PodeSessionDataHash
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [hashtable]
-        $Session
-    )
-
-    if (($null -eq $Session.Data) -or ($Session.Data.Count -eq 0)) {
-        $Session.Data = @{}
+    if ($null -eq $WebEvent.Session) {
+        throw 'No session available to calculate data hash'
     }
 
-    $Session.DataHash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $Session.Data.Clone() -Depth 10 -Compress))
+    if (($null -eq $WebEvent.Session.Data) -or ($WebEvent.Session.Data.Count -eq 0)) {
+        $WebEvent.Session.Data = @{}
+    }
+
+    $WebEvent.Session.DataHash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $WebEvent.Session.Data.Clone() -Depth 10 -Compress))
 }
 
 function Test-PodeSessionDataHash
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [hashtable]
-        $Session
-    )
-
-    if ([string]::IsNullOrWhiteSpace($Session.DataHash)) {
+    if ($null -eq $WebEvent.Session) {
         return $false
     }
 
-    if (($null -eq $Session.Data) -or ($Session.Data.Count -eq 0)) {
-        $Session.Data = @{}
+    if ([string]::IsNullOrWhiteSpace($WebEvent.Session.DataHash)) {
+        return $false
     }
 
-    $hash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $Session.Data -Depth 10 -Compress))
-    return ($Session.DataHash -eq $hash)
-}
-
-function Get-PodeSessionExpiry
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [hashtable]
-        $Session
-    )
-
-    if ($null -eq $Session.Properties) {
-        return [DateTime]::MinValue
+    if (($null -eq $WebEvent.Session.Data) -or ($WebEvent.Session.Data.Count -eq 0)) {
+        $WebEvent.Session.Data = @{}
     }
 
-    $expiry = [DateTime]::UtcNow
-    if (!([bool]$Session.Properties.Extend)) {
-        $expiry = $Session.Properties.TimeStamp
-        if ($null -ne $expiry) {
-            $expiry = $expiry.ToUniversalTime()
-        }
-    }
-
-    $expiry = $expiry.AddSeconds($Session.Properties.Duration)
-    return $expiry
+    $hash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $WebEvent.Session.Data -Depth 10 -Compress))
+    return ($WebEvent.Session.DataHash -eq $hash)
 }
 
 function Set-PodeSessionHelpers
 {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [hashtable]
-        $Session
-    )
+    if ($null -eq $WebEvent.Session) {
+        throw 'No session available to set helpers'
+    }
 
     # force save a session's data to the store
-    $Session | Add-Member -MemberType NoteProperty -Name Save -Value {
-        param($session, $check)
+    $WebEvent.Session | Add-Member -MemberType NoteProperty -Name Save -Value {
+        param($check)
+
+        # the current session
+        $session = $WebEvent.Session
 
         # do nothing if session has no ID
         if ([string]::IsNullOrWhiteSpace($session.Id)) {
             return
         }
 
-        # only save if check and hashes different, but not if extending expiry
-        if (!$session.Properties.Extend -and $check -and (Test-PodeSessionDataHash -Session $session)) {
+        # only save if check and hashes different, but not if extending expiry or updated
+        if (!$session.Extend -and $check -and (Test-PodeSessionDataHash)) {
             return
         }
 
         # generate the expiry
-        $expiry = (Get-PodeSessionExpiry -Session $session)
+        $expiry = Get-PodeSessionExpiry
+
+        # the data to save - which will be the data, some extra metadata
+        $data = @{
+            Metadata = @{
+                TimeStamp = $session.TimeStamp
+            }
+            Data = $session.Data
+        }
 
         # save session data to store
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $session.Data, $expiry) -Splat
+        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $data, $expiry) -Splat
 
         # update session's data hash
-        Set-PodeSessionDataHash -Session $session
+        Set-PodeSessionDataHash
     }
 
     # delete the current session
-    $Session | Add-Member -MemberType NoteProperty -Name Delete -Value {
-        param($session)
+    $WebEvent.Session | Add-Member -MemberType NoteProperty -Name Delete -Value {
+        # the current session
+        $session = $WebEvent.Session
 
         # remove data from store
         Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $session.Id
@@ -317,7 +268,7 @@ function Set-PodeSessionInMemClearDown
         $now = [DateTime]::UtcNow
         foreach ($key in $store.Memory.Keys) {
             if ($store.Memory[$key].Expiry -lt $now) {
-                $store.Memory.Remove($key)
+                $null = $store.Memory.Remove($key)
             }
         }
     }
@@ -354,33 +305,42 @@ function Get-PodeSessionMiddleware
 
         try
         {
-            # get the session from cookie/header
-            $WebEvent.Session = Get-PodeSession -Session $PodeContext.Server.Sessions
+            # retrieve the current session from cookie/header
+            $WebEvent.Session = Get-PodeSession
 
             # if no session found, create a new one on the current web event
             if (!$WebEvent.Session) {
-                $WebEvent.Session = (New-PodeSession)
+                $WebEvent.Session = New-PodeSession
                 $new = $true
             }
 
-            # get the session's data
+            # get the session's data from store
             elseif ($null -ne ($data = (Get-PodeSessionData -SessionId $WebEvent.Session.Id))) {
-                $WebEvent.Session.Data = $data
-                Set-PodeSessionDataHash -Session $WebEvent.Session
+                if ($null -eq $data.Metadata) {
+                    $WebEvent.Session.Data = $data
+                    $WebEvent.Session.TimeStamp = [datetime]::UtcNow
+                }
+                else {
+                    $WebEvent.Session.Data = $data.Data
+                    $WebEvent.Session.TimeStamp = $data.Metadata.TimeStamp
+                }
             }
 
             # session not in store, create a new one
             else {
-                $WebEvent.Session = (New-PodeSession)
+                $WebEvent.Session = New-PodeSession
                 $new = $true
             }
 
-            # add helper methods to session
-            Set-PodeSessionHelpers -Session $WebEvent.Session
+            # set data hash
+            Set-PodeSessionDataHash
+
+            # add helper methods to current session
+            Set-PodeSessionHelpers
 
             # add session to response if it's new or extendible
-            if ($new -or $WebEvent.Session.Properties.Extend) {
-                Set-PodeSession -Session $WebEvent.Session
+            if ($new -or $WebEvent.Session.Extend) {
+                Set-PodeSession
             }
 
             # assign endware for session to set cookie/header

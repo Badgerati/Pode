@@ -95,7 +95,7 @@ function Start-PodeTcpServer
                         $TcpEvent = @{
                             Response = $Response
                             Request = $Request
-                            Lockable = $PodeContext.Lockables.Global
+                            Lockable = $PodeContext.Threading.Lockables.Global
                             Endpoint = @{
                                 Protocol = $Request.Scheme
                                 Address = $Request.Address

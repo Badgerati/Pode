@@ -108,7 +108,7 @@ function Start-PodeServer
         $ListenerType = [string]::Empty,
 
         [Parameter()]
-        [ValidateSet('Timers', 'Schedules', 'Tasks', 'WebSockets')]
+        [ValidateSet('Timers', 'Schedules', 'Tasks', 'WebSockets', 'Files')]
         [string[]]
         $EnablePool,
 
@@ -151,8 +151,8 @@ function Start-PodeServer
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
-        # check for state vars
-        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
+        # check for scoped vars
+        $ScriptBlock = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -Skip Session, Using
 
         # create main context object
         $PodeContext = New-PodeContext `
@@ -180,7 +180,7 @@ function Start-PodeServer
         Start-PodeInternalServer -Request $Request -Browse:$Browse
 
         # at this point, if it's just a one-one off script, return
-        if (!$PodeContext.Server.IsService -and (($PodeContext.Server.Types.Length -eq 0) -or $PodeContext.Server.IsServerless)) {
+        if (!(Test-PodeServerKeepOpen)) {
             return
         }
 
@@ -221,6 +221,9 @@ function Start-PodeServer
 
         # set output values
         Set-PodeOutputVariables
+
+        # unregister secret vaults
+        Unregister-PodeSecretVaults
 
         # clean the runspaces and tokens
         Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
@@ -631,7 +634,7 @@ function Show-PodeGui
 
     # set the window's icon path
     if (![string]::IsNullOrWhiteSpace($Icon)) {
-        $PodeContext.Server.Gui.Icon = (Resolve-Path $Icon).Path
+        $PodeContext.Server.Gui.Icon = Get-PodeRelativePath -Path $Icon -JoinRoot -Resolve
         if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
             throw "Path to icon for GUI does not exist: $($PodeContext.Server.Gui.Icon)"
         }

@@ -1,8 +1,8 @@
-function Test-PodeRoute
+function Test-PodeRouteFromRequest
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
+        [ValidateSet('CONNECT', 'DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
         $Method,
 
@@ -27,7 +27,7 @@ function Find-PodeRoute
 {
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
+        [ValidateSet('CONNECT', 'DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
         $Method,
 
@@ -280,7 +280,7 @@ function Get-PodeRoutesByUrl
     return $null
 }
 
-function Update-PodeRoutePlaceholders
+function ConvertTo-PodeOpenApiRoutePath
 {
     param(
         [Parameter(Mandatory=$true)]
@@ -288,53 +288,25 @@ function Update-PodeRoutePlaceholders
         $Path
     )
 
-    # replace placeholder parameters with regex
-    $placeholder = '\:(?<tag>[\w]+)'
-    if ($Path -imatch $placeholder) {
-        $Path = [regex]::Escape($Path)
-    }
-
-    while ($Path -imatch $placeholder) {
-        $Path = ($Path -ireplace $Matches[0], "(?<$($Matches['tag'])>[^\/]+?)")
-    }
-
-    return $Path
-}
-
-function ConvertTo-PodeOpenApiRoutePath
-{
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Path
-    )
-
-    # replace placeholder parameters with regex
-    $placeholder = '\:(?<tag>[\w]+)'
-    if ($Path -imatch $placeholder) {
-        $Path = [regex]::Escape($Path)
-    }
-
-    while ($Path -imatch $placeholder) {
-        $Path = ($Path -ireplace $Matches[0], "{$($Matches['tag'])}")
-    }
-
-    return $Path
+    return (Resolve-PodePlaceholders -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')
 }
 
 function Update-PodeRouteSlashes
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path,
 
         [switch]
-        $Static
+        $Static,
+
+        [switch]
+        $NoLeadingSlash
     )
 
     # ensure route starts with a '/'
-    if (!$Path.StartsWith('/')) {
+    if (!$NoLeadingSlash -and !$Path.StartsWith('/')) {
         $Path = "/$($Path)"
     }
 
@@ -351,7 +323,7 @@ function Update-PodeRouteSlashes
 
 function Split-PodeRouteQuery
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Path
@@ -362,7 +334,7 @@ function Split-PodeRouteQuery
 
 function ConvertTo-PodeRouteRegex
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Path
@@ -376,7 +348,7 @@ function ConvertTo-PodeRouteRegex
     $Path = Split-PodeRouteQuery -Path $Path
     $Path = Protect-PodeValue -Value $Path -Default '/'
     $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Update-PodeRoutePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholders -Path $Path
 
     return $Path
 }
@@ -395,9 +367,9 @@ function Get-PodeStaticRouteDefaults
     )
 }
 
-function Test-PodeRouteAndError
+function Test-PodeRouteInternal
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Method,
@@ -412,15 +384,34 @@ function Test-PodeRouteAndError
 
         [Parameter()]
         [string]
-        $Address
+        $Address,
+
+        [switch]
+        $ThrowError
     )
 
-    $found = @($PodeContext.Server.Routes[$Method][$Path])
+    # check the routes
+    $found = $false
+    $routes = @($PodeContext.Server.Routes[$Method][$Path])
 
-    if (($found | Where-Object { ($_.Endpoint.Protocol -ieq $Protocol) -and ($_.Endpoint.Address -ieq $Address) } | Measure-Object).Count -eq 0) {
-        return
+    foreach ($route in $routes) {
+        if (($route.Endpoint.Protocol -ieq $Protocol) -and ($route.Endpoint.Address -ieq $Address)) {
+            $found = $true
+            break
+        }
     }
 
+    # skip if not found
+    if (!$found) {
+        return $false
+    }
+
+    # do we want to throw an error if found, or skip?
+    if (!$ThrowError) {
+        return $true
+    }
+
+    # throw error
     $_url = $Protocol
     if (![string]::IsNullOrEmpty($_url) -and ![string]::IsNullOrWhiteSpace($Address)) {
         $_url = "$($_url)://$($Address)"
@@ -432,14 +423,13 @@ function Test-PodeRouteAndError
     if ([string]::IsNullOrEmpty($_url)) {
         throw "[$($Method)] $($Path): Already defined"
     }
-    else {
-        throw "[$($Method)] $($Path): Already defined for $($_url)"
-    }
+
+    throw "[$($Method)] $($Path): Already defined for $($_url)"
 }
 
 function Convert-PodeFunctionVerbToHttpMethod
 {
-    param (
+    param(
         [Parameter()]
         [string]
         $Verb
@@ -571,11 +561,7 @@ function ConvertTo-PodeMiddleware
         }
 
         if ($Middleware[$i] -is [scriptblock]) {
-            $_script, $_usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $Middleware[$i] -PSSession $PSSession
-
-            # check for state/session vars
-            $_script = Invoke-PodeStateScriptConversion -ScriptBlock $_script
-            $_script = Invoke-PodeSessionScriptConversion -ScriptBlock $_script
+            $_script, $_usingVars = Convert-PodeScopedVariables -ScriptBlock $Middleware[$i] -PSSession $PSSession
 
             $Middleware[$i] = @{
                 Logic = $_script
@@ -587,4 +573,27 @@ function ConvertTo-PodeMiddleware
     })
 
     return $converted
+}
+
+function Get-PodeRouteIfExistsPreference
+{
+    # from route groups
+    $groupPref = $RouteGroup.IfExists
+    if (![string]::IsNullOrWhiteSpace($groupPref) -and ($groupPref -ine 'default')) {
+        return $groupPref
+    }
+
+    # from Use-PodeRoute
+    if (![string]::IsNullOrWhiteSpace($RouteIfExists) -and ($RouteIfExists -ine 'default')) {
+        return $RouteIfExists
+    }
+
+    # global preference
+    $globalPref = $PodeContext.Server.Preferences.Routes.IfExists
+    if (![string]::IsNullOrWhiteSpace($globalPref) -and ($globalPref -ine 'default')) {
+        return $globalPref
+    }
+
+    # final global default
+    return 'Error'
 }

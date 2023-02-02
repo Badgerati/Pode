@@ -1070,7 +1070,7 @@ function Get-PodeAuthMiddlewareScript
         # route options for using sessions
         $sessionless = $auth.Sessionless
         $usingSessions = (Test-PodeSessionsInUse)
-        $useHeaders = [bool]($WebEvent.Session.Properties.UseHeaders)
+        $useHeaders = $PodeContext.Server.Sessions.Info.UseHeaders
         $loginRoute = $opts.Login
 
         # check for logout command
@@ -1097,7 +1097,7 @@ function Get-PodeAuthMiddlewareScript
             # if we're allowing anon access, and using sessions, then stop here - as a session will be created from a login route for auth'ing users
             if ($opts.Anon) {
                 if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
-                    Revoke-PodeSession -Session $WebEvent.Session
+                    Revoke-PodeSession
                 }
 
                 return $true
@@ -1107,7 +1107,7 @@ function Get-PodeAuthMiddlewareScript
         # check if the login flag is set, in which case just return and load a login get-page (allowing anon access)
         if ($loginRoute -and !$useHeaders -and ($WebEvent.Method -ieq 'get')) {
             if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
-                Revoke-PodeSession -Session $WebEvent.Session
+                Revoke-PodeSession
             }
 
             return $true
@@ -1267,8 +1267,8 @@ function Remove-PodeAuthSession
         $WebEvent.Session.Data.Remove('Auth')
     }
 
-    # Delete the session (remove from store, blank it, and remove from Response)
-    Revoke-PodeSession -Session $WebEvent.Session
+    # Delete the current session (remove from store, blank it, and remove from Response)
+    Revoke-PodeSession
 }
 
 function Set-PodeAuthStatus
@@ -1327,7 +1327,7 @@ function Set-PodeAuthStatus
         # check if we have a failure url redirect
         if (!$NoFailureRedirect -and ![string]::IsNullOrWhiteSpace($Failure.Url)) {
             if ($Success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
-                Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
+                $null = Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
             }
 
             Move-PodeResponseUrl -Url $Failure.Url
@@ -1342,7 +1342,7 @@ function Set-PodeAuthStatus
     # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
     if ((!$NoSuccessRedirect -or $LoginRoute) -and ![string]::IsNullOrWhiteSpace($Success.Url)) {
         $url = $Success.Url
-        if ($Success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
+        if ($Success.UseOrigin) {
             $tmpUrl = Get-PodeCookieValue -Name 'pode.redirecturl'
             Remove-PodeCookie -Name 'pode.redirecturl'
 
@@ -1877,7 +1877,7 @@ function Import-PodeAuthADModule
         throw 'Active Directory module only available on Windows'
     }
 
-    if ($null -eq (Get-Module -Name ActiveDirectory -ListAvailable -ErrorAction Ignore)) {
+    if (!(Test-PodeModuleInstalled -Name ActiveDirectory)) {
         throw 'Active Directory module is not installed'
     }
 

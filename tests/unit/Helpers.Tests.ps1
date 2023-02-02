@@ -66,7 +66,7 @@ Describe 'Test-PodeIsEmpty' {
         It 'Return true for no value' {
             Test-PodeIsEmpty | Should be $true
         }
-        
+
         It 'Return true for null value' {
             Test-PodeIsEmpty -Value $null | Should be $true
         }
@@ -855,7 +855,16 @@ Describe 'ConvertFrom-PodeNameValueToHashTable' {
 
         $r = ConvertFrom-PodeNameValueToHashTable -Collection $c
         $r.GetType().Name | Should Be 'Hashtable'
+        $r.colour.GetType().Name | Should Be 'string'
         $r.colour | Should Be 'blue'
+    }
+
+    It 'Returns a hashtable from a value without key collection' {
+        $c = [System.Web.HttpUtility]::ParseQueryString('?blue')
+
+        $r = ConvertFrom-PodeNameValueToHashTable -Collection $c
+        $r.GetType().Name | Should Be 'Hashtable'
+        $r.'' | Should Be 'blue'
     }
 }
 
@@ -1009,87 +1018,56 @@ Describe 'ConvertFrom-PodeFile' {
     }
 }
 
-Describe 'Test-PodePathIsRelative' {
-    It 'Returns true for .' {
-        Test-PodePathIsRelative -Path '.' | Should Be $true
-    }
-
-    It 'Returns true for ..' {
-        Test-PodePathIsRelative -Path '..' | Should Be $true
-    }
-
-    It 'Returns true for relative file' {
-        Test-PodePathIsRelative -Path './file.txt' | Should Be $true
-    }
-
-    It 'Returns true for relative folder' {
-        Test-PodePathIsRelative -Path '../folder' | Should Be $true
-    }
-
-    It 'Returns false for literal windows path' {
-        Test-PodePathIsRelative -Path 'c:/path' | Should Be $false
-    }
-
-    It 'Returns false for literal nix path' {
-        Test-PodePathIsRelative -Path '/path' | Should Be $false
-    }
-}
-
 Describe 'Get-PodeRelativePath' {
     $PodeContext = @{ 'Server' = @{ 'Root' = 'c:/' } }
 
     It 'Returns back a literal path' {
-        Mock Test-PodePathIsRelative { return $false }
         Get-PodeRelativePath -Path 'c:/path' | Should Be 'c:/path'
     }
 
-    It 'Returns null for non-existent literal path when resolving' {
-        Mock Test-PodePathIsRelative { return $false }
-        Mock Resolve-Path { return $null }
-        Get-PodeRelativePath -Path 'c:/path' -Resolve | Should Be ([string]::Empty)
-    }
-
     It 'Returns path for literal path when resolving' {
-        Mock Test-PodePathIsRelative { return $false }
-        Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
-        Get-PodeRelativePath -Path 'c:/path' -Resolve | Should Be 'c:/path'
+        $PodeContext = @{
+            Server = @{
+                Root = $pwd.Path
+            }
+        }
+
+        Get-PodeRelativePath -Path $pwd.Path -Resolve -JoinRoot | Should Be $pwd.Path
     }
 
     It 'Returns back a relative path' {
-        Mock Test-PodePathIsRelative { return $true }
         Get-PodeRelativePath -Path './path' | Should Be './path'
     }
 
-    It 'Returns null for a non-existent relative path when resolving' {
-        Mock Test-PodePathIsRelative { return $true }
-        Mock Resolve-Path { return $null }
-        Get-PodeRelativePath -Path './path' -Resolve | Should Be ([string]::Empty)
-    }
-
     It 'Returns path for a relative path when resolving' {
-        Mock Test-PodePathIsRelative { return $true }
-        Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
-        Get-PodeRelativePath -Path './path' -Resolve | Should Be 'c:/path'
+        $PodeContext = @{
+            Server = @{
+                Root = $pwd.Path
+            }
+        }
+
+        Get-PodeRelativePath -Path ".\src" -Resolve -JoinRoot | Should Be (Join-Path $pwd.Path "src")
     }
 
     It 'Returns path for a relative path joined to default root' {
-        Mock Test-PodePathIsRelative { return $true }
         Get-PodeRelativePath -Path './path' -JoinRoot | Should Be 'c:/./path'
     }
 
     It 'Returns resolved path for a relative path joined to default root when resolving' {
-        Mock Test-PodePathIsRelative { return $true }
-        Mock Resolve-Path { return @{ 'Path' = 'c:/path' } }
-        Get-PodeRelativePath -Path './path' -JoinRoot -Resolve | Should Be 'c:/path'
+        $PodeContext = @{
+            Server = @{
+                Root = $pwd.Path
+            }
+        }
+
+        Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should Be (Join-Path $pwd.Path "src")
     }
 
     It 'Returns path for a relative path joined to passed root' {
-        Mock Test-PodePathIsRelative { return $true }
         Get-PodeRelativePath -Path './path' -JoinRoot -RootPath 'e:/' | Should Be 'e:/./path'
     }
 
     It 'Throws error for path ot existing' {
-        Mock Test-PodePathIsRelative { return $false }
         Mock Test-PodePath { return $false }
         { Get-PodeRelativePath -Path './path' -TestPath } | Should Throw 'The path does not exist'
     }
@@ -1641,5 +1619,87 @@ Describe 'Get-PodeEncodingFromContentType' {
     It 'Return utf8 when charset is set' {
         $enc = Get-PodeEncodingFromContentType -ContentType 'application/json;charset=utf-8'
         $enc.EncodingName | Should Be 'Unicode (UTF-8)'
+    }
+}
+
+Describe 'New-PodeCron' {
+    It 'Returns a minutely expression' {
+        New-PodeCron -Every Minute | Should Be '* * * * *'
+    }
+
+    It 'Returns an hourly expression' {
+        New-PodeCron -Every Hour | Should Be '0 * * * *'
+    }
+
+    It 'Returns a daily expression (by day)' {
+        New-PodeCron -Every Day | Should Be '0 0 * * *'
+    }
+
+    It 'Returns a daily expression (by date)' {
+        New-PodeCron -Every Date | Should Be '0 0 * * *'
+    }
+
+    It 'Returns a monthly expression' {
+        New-PodeCron -Every Month | Should Be '0 0 1 * *'
+    }
+
+    It 'Returns a quarterly expression' {
+        New-PodeCron -Every Quarter | Should Be '0 0 1 1,4,7,10 *'
+    }
+
+    It 'Returns a yearly expression' {
+        New-PodeCron -Every Year | Should Be '0 0 1 1 *'
+    }
+
+    It 'Returns an expression for every 15mins' {
+        New-PodeCron -Every Minute -Interval 15 | Should Be '*/15 * * * *'
+    }
+
+    It 'Returns an expression for every tues/fri at 1am' {
+        New-PodeCron -Every Day -Day Tuesday, Friday -Hour 1 | Should Be '0 1 * * 2,5'
+    }
+
+    It 'Returns an expression for every 15th of the month' {
+        New-PodeCron -Every Month -Date 15 | Should Be '0 0 15 * *'
+    }
+
+    It 'Returns an expression for every other day, from the 2nd' {
+        New-PodeCron -Every Date -Interval 2 -Date 2 | Should Be '0 0 2/2 * *'
+    }
+
+    It 'Returns an expression for every june 1st' {
+        New-PodeCron -Every Year -Month June | Should Be '0 0 1 6 *'
+    }
+
+    It 'Returns an expression for every 15mins between 1am-5am' {
+        New-PodeCron -Every Minute -Interval 15 -Hour 1, 2, 3, 4, 5 | Should Be '*/15 1,2,3,4,5 * * *'
+    }
+
+    It 'Returns an expression for every hour of every monday' {
+        New-PodeCron -Every Hour -Day Monday | Should Be '0 * * * 1'
+    }
+
+    It 'Returns an expression for everyday at 5:15am' {
+        New-PodeCron -Every Day -Hour 5 -Minute 15 | Should Be '15 5 * * *'
+    }
+
+    It 'Throws an error for multiple Hours when using Interval' {
+        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should Throw 'only supply a single'
+    }
+
+    It 'Throws an error for multiple Minutes when using Interval' {
+        { New-PodeCron -Every Minute -Minute 2, 4 -Interval 15 } | Should Throw 'only supply a single'
+    }
+
+    It 'Throws an error when using Interval without Every' {
+        { New-PodeCron -Interval 3 } | Should Throw 'Cannot supply an interval'
+    }
+
+    It 'Throws an error when using Interval for Every Quarter' {
+        { New-PodeCron -Every Quarter -Interval 3 } | Should Throw 'Cannot supply interval value for every quarter'
+    }
+
+    It 'Throws an error when using Interval for Every Year' {
+        { New-PodeCron -Every Year -Interval 3 } | Should Throw 'Cannot supply interval value for every year'
     }
 }

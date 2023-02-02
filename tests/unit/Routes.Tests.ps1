@@ -710,35 +710,35 @@ Describe 'Update-PodeRouteSlashes' {
     }
 }
 
-Describe 'Update-PodeRoutePlaceholders' {
+Describe 'Resolve-PodePlaceholders' {
     It 'Update route placeholders, basic' {
         $input = 'route'
-        Update-PodeRoutePlaceholders -Path $input | Should Be 'route'
+        Resolve-PodePlaceholders -Path $input | Should Be 'route'
     }
 
     It 'Update route placeholders' {
         $input = ':route'
-        Update-PodeRoutePlaceholders -Path $input | Should Be '(?<route>[^\/]+?)'
+        Resolve-PodePlaceholders -Path $input | Should Be '(?<route>[^\/]+?)'
     }
 
     It 'Update route placeholders, double with no spacing' {
         $input = ':route:placeholder'
-        Update-PodeRoutePlaceholders -Path $input | Should Be '(?<route>[^\/]+?)(?<placeholder>[^\/]+?)'
+        Resolve-PodePlaceholders -Path $input | Should Be '(?<route>[^\/]+?)(?<placeholder>[^\/]+?)'
     }
 
     It 'Update route placeholders, double with double ::' {
         $input = '::route:placeholder'
-        Update-PodeRoutePlaceholders -Path $input | Should Be ':(?<route>[^\/]+?)(?<placeholder>[^\/]+?)'
+        Resolve-PodePlaceholders -Path $input | Should Be ':(?<route>[^\/]+?)(?<placeholder>[^\/]+?)'
     }
 
     It 'Update route placeholders, double with slash' {
         $input = ':route/:placeholder'
-        Update-PodeRoutePlaceholders -Path $input | Should Be '(?<route>[^\/]+?)/(?<placeholder>[^\/]+?)'
+        Resolve-PodePlaceholders -Path $input | Should Be '(?<route>[^\/]+?)/(?<placeholder>[^\/]+?)'
     }
 
     It 'Update route placeholders, no update' {
         $input = ': route'
-        Update-PodeRoutePlaceholders -Path $input | Should Be ': route'
+        Resolve-PodePlaceholders -Path $input | Should Be ': route'
     }
 }
 

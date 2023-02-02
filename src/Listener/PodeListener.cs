@@ -36,6 +36,7 @@ namespace Pode
         }
 
         public PodeListener(CancellationToken cancellationToken = default(CancellationToken))
+            : base(cancellationToken)
         {
             Sockets = new List<PodeSocket>();
             Signals = new Dictionary<string, PodeSignal>();
@@ -150,7 +151,6 @@ namespace Pode
             base.Start();
         }
 
-        // public void Dispose()
         protected override void Close()
         {
             // shutdown the sockets

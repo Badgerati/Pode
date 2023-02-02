@@ -89,12 +89,8 @@ function New-PodeMiddlewareInternal
     # if route is empty, set it to root
     $Route = ConvertTo-PodeRouteRegex -Path $Route
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSSession
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSSession
 
     # create the middleware hashtable from a scriptblock
     $HashTable = @{
@@ -222,7 +218,7 @@ function Get-PodeRouteValidateMiddleware
             # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
             if ($null -eq $route) {
                 # check if a route exists for another method
-                $methods = @('DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
+                $methods = @('CONNECT', 'DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
                 $diff_route = @(foreach ($method in $methods) {
                     $r = Find-PodeRoute -Method $method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
                     if ($null -ne $r) {

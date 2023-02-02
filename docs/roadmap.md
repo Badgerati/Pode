@@ -1,10 +1,10 @@
 # Roadmap
 
-This page lists the planned features and enhancements that will, hopefully, one day make it into Pode. There is no timeframe on when to expect them, some could be in-progress right now, and others in the future.
+This page lists the planned features and enhancements that will, hopefully, one day make it into Pode. There is no time-frame on when to expect them, some could be in-progress right now, and others in the future.
 
 Where possible items listed here will have a link to any relevant issues in GitHub.
 
-There is also a [Project](https://github.com/users/Badgerati/projects/2) in the beginnings of being setup for Pode, with milestone progression and current roadmap issues. Plus, there is a [Draft Board](https://github.com/users/Badgerati/projects/2/views/3) which contains a range of ideas for Pode features/enhancements which are either brilliant, ludicrous, or down right insane! Draft Issues are purely ideas, and any in the design stage might one day make it in! If you see a Draft Issue you which to discuss, or have an idea for one, please dicuss it over on [Discord](https://discord.gg/fRqeGcbF6h) in the `#ideas` or `#pode` channel.
+There is also a [Project Board](https://github.com/users/Badgerati/projects/2) in the beginnings of being setup for Pode, with milestone progression and current roadmap issues and ideas. If you see any draft issues you wish to discuss, or have an idea for one, please discuss it over on [Discord](https://discord.gg/fRqeGcbF6h) in the `#ideas` or `#pode` channel.
 
 ## 🎯 Goal
 
@@ -14,9 +14,9 @@ The eventual goal is to have Pode be a central PowerShell module for a number of
 
 ## 🚢 Releases
 
-Under normal circumstanes Pode releases approximately once every 2 months, where the following month is usually a Pode.Web release.
+Under normal circumstances Pode releases approximately once every 2 months, where the following month is usually a Pode.Web release.
 
-Sometimes there could be more, if patch releases are needed. But sometimes there could be fewer if peronsal time constraints prevent releases.
+Sometimes there could be more, if patch releases are needed. But sometimes there could be fewer if personal time constraints prevent releases.
 
 ## 📃 Plan
 
@@ -30,7 +30,7 @@ Sometimes there could be more, if patch releases are needed. But sometimes there
 - [ ] HTTP/2.0 support
 - [ ] HTTP/3.0 support
 - [ ] Inbuilt authorization support, on top the current authentications support [#992](https://github.com/Badgerati/Pode/issues/992)
-- [ ] Secret management support [#980](https://github.com/Badgerati/Pode/issues/980)
+- [x] Secret management support [#980](https://github.com/Badgerati/Pode/issues/980)
 - [ ] Some way of being able to merge authentication types [588](https://github.com/Badgerati/Pode/issues/588)
 - [ ] Improved garbage collection in runspaces, to help free up memory
 - [ ] A Session Pool that can be used to port/re-use PSSessions in Pode more easily
@@ -39,7 +39,7 @@ Sometimes there could be more, if patch releases are needed. But sometimes there
 - [ ] Is it possible to implement an inbuilt SFTP server?
 - [ ] Inbuilt connectors for connecting to message brokers, like Kafka, RabbitMQ, etc.
 - [ ] Would is be possible to create an inbuilt pub/sub server?
-- [ ] An inbuilt FIM server, so we can fun logic on FIM events
+- [x] An inbuilt FIM server, so we can fun logic on FIM events
 
 ### Misc
 

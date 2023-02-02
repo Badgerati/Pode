@@ -75,18 +75,20 @@ function New-PodeContext
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Lockables -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name Threading -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru |
-        Add-Member -MemberType NoteProperty -Name Receivers -Value @() -PassThru
+        Add-Member -MemberType NoteProperty -Name Receivers -Value @() -PassThru |
+        Add-Member -MemberType NoteProperty -Name Watchers -Value @() -PassThru |
+        Add-Member -MemberType NoteProperty -Name Fim -Value @{} -PassThru
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
-    $ctx.Server.PodeModulePath = (Get-PodeModulePath)
+    $ctx.Server.PodeModule = (Get-PodeModuleDetails)
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
@@ -94,8 +96,9 @@ function New-PodeContext
     # list of created listeners/receivers
     $ctx.Listeners = @()
     $ctx.Receivers = @()
+    $ctx.Watchers = @()
 
-    # list of timers/schedules/tasks
+    # list of timers/schedules/tasks/fim
     $ctx.Timers = @{
         Enabled = ($EnablePool -icontains 'timers')
         Items = @{}
@@ -113,24 +116,13 @@ function New-PodeContext
         Results = @{}
     }
 
-    # auto importing (modules, funcs, snap-ins)
-    $ctx.Server.AutoImport = @{
-        Modules = @{
-            Enabled = $true
-            ExportList = @()
-            ExportOnly = $false
-        }
-        Snapins = @{
-            Enabled = $true
-            ExportList = @()
-            ExportOnly = $false
-        }
-        Functions = @{
-            Enabled = $true
-            ExportList = @()
-            ExportOnly = $false
-        }
+    $ctx.Fim = @{
+        Enabled = ($EnablePool -icontains 'files')
+        Items = @{}
     }
+
+    # auto importing (modules, funcs, snap-ins)
+    $ctx.Server.AutoImport = Initialize-PodeAutoImportConfiguration
 
     # basic logging setup
     $ctx.Server.Logging = @{
@@ -142,6 +134,7 @@ function New-PodeContext
     $ctx.Threads = @{
         General = $Threads
         Schedules = 10
+        Files = 1
         Tasks = 2
         WebSockets = 2
     }
@@ -276,8 +269,16 @@ function New-PodeContext
         IsDynamic = $false
     }
 
+    # pode default preferences
+    $ctx.Server.Preferences = @{
+        Routes = @{
+            IfExists = $null
+        }
+    }
+
     # routes for pages and api
     $ctx.Server.Routes = @{
+        'connect'   = [ordered]@{}
         'delete'    = [ordered]@{}
         'get'       = [ordered]@{}
         'head'      = [ordered]@{}
@@ -294,6 +295,12 @@ function New-PodeContext
 
     # verbs for tcp
     $ctx.Server.Verbs = @{}
+
+    # secrets
+    $ctx.Server.Secrets = @{
+        Vaults = @{}
+        Keys   = @{}
+    }
 
     # custom view paths
     $ctx.Server.Views = @{}
@@ -378,13 +385,17 @@ function New-PodeContext
         Schedules   = $null
         Gui         = $null
         Tasks       = $null
+        Files       = $null
     }
 
-    # session state
-    $ctx.Lockables = @{
+    # threading locks, etc.
+    $ctx.Threading.Lockables = @{
         Global = [hashtable]::Synchronized(@{})
         Custom = @{}
     }
+
+    $ctx.Threading.Mutexes = @{}
+    $ctx.Threading.Semaphores = @{}
 
     # setup runspaces
     $ctx.Runspaces = @()
@@ -400,7 +411,7 @@ function New-PodeContext
     }
 
     # modules
-    $ctx.Server.Modules = @{}
+    $ctx.Server.Modules = [ordered]@{}
 
     # setup security
     $ctx.Server.Security = @{
@@ -417,9 +428,10 @@ function New-PodeContext
 
 function New-PodeRunspaceState
 {
-    # create the state, and add the pode module
+    # create the state, and add the pode modules
     $state = [initialsessionstate]::CreateDefault()
-    $state.ImportPSModule($PodeContext.Server.PodeModulePath)
+    $state.ImportPSModule($PodeContext.Server.PodeModule.DataPath)
+    $state.ImportPSModule($PodeContext.Server.PodeModule.InternalPath)
 
     # load the vars into the share state
     $session = New-PodeStateContext -Context $PodeContext
@@ -435,126 +447,6 @@ function New-PodeRunspaceState
     }
 
     $PodeContext.RunspaceState = $state
-}
-
-function Import-PodeFunctionsIntoRunspaceState
-{
-    param(
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
-        [scriptblock]
-        $ScriptBlock,
-
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
-        [string]
-        $FilePath
-    )
-
-    # do nothing if disabled
-    if (!$PodeContext.Server.AutoImport.Functions.Enabled) {
-        return
-    }
-
-    # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList.Length -eq 0)) {
-        return
-    }
-
-    # script or file functions?
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'script' {
-            $funcs = (Get-PodeFunctionsFromScriptBlock -ScriptBlock $ScriptBlock)
-        }
-
-        'file' {
-            $funcs = (Get-PodeFunctionsFromFile -FilePath $FilePath)
-        }
-    }
-
-    # looks like we have nothing!
-    if (($null -eq $funcs) -or ($funcs.Length -eq 0)) {
-        return
-    }
-
-    # groups funcs in case there or multiple definitions
-    $funcs = ($funcs | Group-Object -Property { $_.Name })
-
-    # import them, but also check if they're exported
-    foreach ($func in $funcs) {
-        # only exported funcs? is the func exported?
-        if ($PodeContext.Server.AutoImport.Functions.ExportOnly -and ($PodeContext.Server.AutoImport.Functions.ExportList -inotcontains $func.Name)) {
-            continue
-        }
-
-        # load the function
-        $funcDef = [System.Management.Automation.Runspaces.SessionStateFunctionEntry]::new($func.Name, $func.Group[-1].Definition)
-        $PodeContext.RunspaceState.Commands.Add($funcDef)
-    }
-}
-
-function Import-PodeModulesIntoRunspaceState
-{
-    # do nothing if disabled
-    if (!$PodeContext.Server.AutoImport.Modules.Enabled) {
-        return
-    }
-
-    # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList.Length -eq 0)) {
-        return
-    }
-
-    # load modules into runspaces, if allowed
-    $modules = Get-Module |
-        Where-Object {
-            ($_.Name -ine 'pode') -and ($_.Name -inotlike 'microsoft.powershell.*')
-        } | Sort-Object -Unique
-
-    foreach ($module in $modules) {
-        # only exported modules? is the module exported?
-        if ($PodeContext.Server.AutoImport.Modules.ExportOnly -and ($PodeContext.Server.AutoImport.Modules.ExportList -inotcontains $module.Name)) {
-            continue
-        }
-
-        # import the module
-        $path = Find-PodeModuleFile -Name $module.Name
-
-        if (($module.ModuleType -ieq 'Manifest') -or ($path.EndsWith('.ps1'))) {
-            $PodeContext.RunspaceState.ImportPSModule($path)
-        }
-        else {
-            $PodeContext.Server.Modules[$module] = $path
-        }
-    }
-}
-
-function Import-PodeSnapinsIntoRunspaceState
-{
-    # if non-windows or core, do nothing
-    if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
-        return
-    }
-
-    # do nothing if disabled
-    if (!$PodeContext.Server.AutoImport.Snapins.Enabled) {
-        return
-    }
-
-    # if export only, and there are none, do nothing
-    if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList.Length -eq 0)) {
-        return
-    }
-
-    # load snapins into runspaces, if allowed
-    $snapins = (Get-PSSnapin | Where-Object { !$_.IsDefault }).Name | Sort-Object -Unique
-
-    foreach ($snapin in $snapins) {
-        # only exported snapins? is the snapin exported?
-        if ($PodeContext.Server.AutoImport.Snapins.ExportOnly -and ($PodeContext.Server.AutoImport.Snapins.ExportList -inotcontains $snapin)) {
-            continue
-        }
-
-        $PodeContext.RunspaceState.ImportPSSnapIn($snapin, [ref]$null)
-    }
 }
 
 function New-PodeRunspacePools
@@ -645,6 +537,14 @@ function New-PodeRunspacePools
     if (Test-PodeTasksExist) {
         $PodeContext.RunspacePools.Tasks = @{
             Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Tasks, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
+    }
+
+    # setup files runspace pool -if we have any file watchers
+    if (Test-PodeFileWatchersExist) {
+        $PodeContext.RunspacePools.Files = @{
+            Pool = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Files + 1, $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
         }
     }
@@ -799,11 +699,12 @@ function New-PodeStateContext
         Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
         Add-Member -MemberType NoteProperty -Name Tasks -Value $Context.Tasks -PassThru |
+        Add-Member -MemberType NoteProperty -Name Fim -Value $Context.Fim -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
-        Add-Member -MemberType NoteProperty -Name Lockables -Value $Context.Lockables -PassThru |
+        Add-Member -MemberType NoteProperty -Name Threading -Value $Context.Threading -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
 }
 
@@ -843,7 +744,7 @@ function Open-PodeConfiguration
 
 function Set-PodeServerConfiguration
 {
-    param (
+    param(
         [Parameter()]
         [hashtable]
         $Configuration,
@@ -881,23 +782,7 @@ function Set-PodeServerConfiguration
     }
 
     # auto-import
-    $Context.Server.AutoImport = @{
-        Modules = @{
-            Enabled = (($null -eq $Configuration.AutoImport.Modules.Enable) -or [bool]$Configuration.AutoImport.Modules.Enable)
-            ExportList = @()
-            ExportOnly = ([bool]$Configuration.AutoImport.Modules.ExportOnly)
-        }
-        Snapins = @{
-            Enabled = (($null -eq $Configuration.AutoImport.Snapins.Enable) -or [bool]$Configuration.AutoImport.Snapins.Enable)
-            ExportList = @()
-            ExportOnly = ([bool]$Configuration.AutoImport.Snapins.ExportOnly)
-        }
-        Functions = @{
-            Enabled = (($null -eq $Configuration.AutoImport.Functions.Enable) -or [bool]$Configuration.AutoImport.Functions.Enable)
-            ExportList = @()
-            ExportOnly = ([bool]$Configuration.AutoImport.Functions.ExportOnly)
-        }
-    }
+    $Context.Server.AutoImport = Read-PodeAutoImportConfiguration
 
     # request
     if ([int]$Configuration.Request.Timeout -gt 0) {
@@ -1021,6 +906,11 @@ function Set-PodeOutputVariables
     }
 
     foreach ($key in $PodeContext.Server.Output.Variables.Keys) {
-        Set-Variable -Name $key -Value $PodeContext.Server.Output.Variables[$key] -Force -Scope Global
+        try {
+            Set-Variable -Name $key -Value $PodeContext.Server.Output.Variables[$key] -Force -Scope Global
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
     }
 }

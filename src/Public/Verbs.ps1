@@ -71,7 +71,7 @@ function Add-PodeVerb
     )
 
     # find placeholder parameters in verb (ie: COMMAND :parameter)
-    $Verb = Update-PodeRoutePlaceholders -Path $Verb
+    $Verb = Resolve-PodePlaceholders -Path $Verb
 
     # get endpoints from name
     if (!$PodeContext.Server.FindEndpoints.Tcp) {
@@ -95,12 +95,8 @@ function Add-PodeVerb
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
     }
 
-    # check if the scriptblock has any using vars
-    $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # check for state/session vars
-    $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+    # check for scoped vars
+    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add the verb(s)
     Write-Verbose "Adding Verb: $($Verb)"
@@ -156,7 +152,7 @@ function Remove-PodeVerb
     )
 
     # ensure the verb placeholders are replaced
-    $Verb = Update-PodeRoutePlaceholders -Path $Verb
+    $Verb = Resolve-PodePlaceholders -Path $Verb
 
     # ensure verb does exist
     if (!$PodeContext.Server.Verbs.Contains($Verb)) {
@@ -229,7 +225,7 @@ function Get-PodeVerb
 
     # if we have a verb, filter
     if (![string]::IsNullOrWhiteSpace($Verb)) {
-        $Verb = Update-PodeRoutePlaceholders -Path $Verb
+        $Verb = Resolve-PodePlaceholders -Path $Verb
         $verbs = $PodeContext.Server.Verbs[$Verb]
     }
     else {

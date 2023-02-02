@@ -539,7 +539,7 @@ The path to a HTML file.
 The status code to set against the response.
 
 .EXAMPLE
-Write-PodeHtmlResponse -Value '<html><body>Hello!</body></html>'
+Write-PodeHtmlResponse -Value "Raw HTML can be placed here"
 
 .EXAMPLE
 Write-PodeHtmlResponse -Value @{ Message = 'Hello, all!' }
@@ -1192,57 +1192,134 @@ function Close-PodeTcpClient
 
 <#
 .SYNOPSIS
-Saves an uploaded file on the Request to the File System.
+Saves any uploaded files on the Request to the File System.
 
 .DESCRIPTION
-Saves an uploaded file on the Request to the File System.
+Saves any uploaded files on the Request to the File System.
 
 .PARAMETER Key
-The name of the key within the web event's Data HashTable that stores the file's name.
+The name of the key within the $WebEvent's Data HashTable that stores the file names.
 
 .PARAMETER Path
-The path to save files.
+The path to save files. If this is a directory then the file name of the uploaded file will be used, but if this is a file path then that name is used instead.
+If the Request has multiple files in, and you specify a file path, then all files will be saved to that one file path - overwriting each other.
+
+.PARAMETER FileName
+An optional FileName to save a specific files if multiple files were supplied in the Request. By default, every file is saved.
 
 .EXAMPLE
 Save-PodeRequestFile -Key 'avatar'
 
 .EXAMPLE
 Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images'
+
+.EXAMPLE
+Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images' -FileName 'icon.png'
 #>
 function Save-PodeRequestFile
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Key,
 
         [Parameter()]
         [string]
-        $Path = '.'
+        $Path = '.',
+
+        [Parameter()]
+        [string[]]
+        $FileName
     )
 
     # if path is '.', replace with server root
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # ensure the parameter name exists in data
-    $fileName = $WebEvent.Data[$Key]
-    if ([string]::IsNullOrWhiteSpace($fileName)) {
-        throw "A parameter called '$($Key)' was not supplied in the request"
+    if (!(Test-PodeRequestFile -Key $Key)) {
+        throw "A parameter called '$($Key)' was not supplied in the request, or has no data available"
+    }
+
+    # get the file names
+    $files = @($WebEvent.Data[$Key])
+    if (($null -ne $FileName) -and ($FileName.Length -gt 0)) {
+        $files = @(foreach ($file in $files) {
+            if ($FileName -icontains $file) {
+                $file
+            }
+        })
     }
 
     # ensure the file data exists
-    if (!$WebEvent.Files.ContainsKey($fileName)) {
-        throw "No data for file '$($fileName)' was uploaded in the request"
+    foreach ($file in $files) {
+        if (!$WebEvent.Files.ContainsKey($file)) {
+            throw "No data for file '$($file)' was uploaded in the request"
+        }
     }
 
-    # if the path is a directory, add the filename
-    if (Test-PodePathIsDirectory -Path $Path) {
-        $Path = [System.IO.Path]::Combine($Path, $fileName)
+    # save the files
+    foreach ($file in $files) {
+        # if the path is a directory, add the filename
+        $filePath = $Path
+        if (Test-PodePathIsDirectory -Path $filePath) {
+            $filePath = [System.IO.Path]::Combine($filePath, $file)
+        }
+
+        # save the file
+        $WebEvent.Files[$file].Save($filePath)
+    }
+}
+
+<#
+.SYNOPSIS
+Test to see if the Request contains the key for any uploaded files.
+
+.DESCRIPTION
+Test to see if the Request contains the key for any uploaded files.
+
+.PARAMETER Key
+The name of the key within the $WebEvent's Data HashTable that stores the file names.
+
+.PARAMETER FileName
+An optional FileName to test for a specific file within the list of uploaded files.
+
+.EXAMPLE
+Test-PodeRequestFile -Key 'avatar'
+
+.EXAMPLE
+Test-PodeRequestFile -Key 'avatar' -FileName 'icon.png'
+#>
+function Test-PodeRequestFile
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Key,
+
+        [Parameter()]
+        [string]
+        $FileName
+    )
+
+    # ensure the parameter name exists in data
+    if (!$WebEvent.Data.ContainsKey($Key)) {
+        return $false
     }
 
-    # save the file
-    $WebEvent.Files[$fileName].Save($Path)
+    # ensure it has filenames
+    if ([string]::IsNullOrEmpty($WebEvent.Data[$Key])) {
+        return $false
+    }
+
+    # do we have any specific files?
+    if (![string]::IsNullOrEmpty($FileName)) {
+        return (@($WebEvent.Data[$Key]) -icontains $FileName)
+    }
+
+    # we have files
+    return $true
 }
 
 <#
@@ -1299,9 +1376,7 @@ function Set-PodeViewEngine
 
     # check if the scriptblock has any using vars
     if ($null -ne $ScriptBlock) {
-        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
     }
 
     # setup view engine config

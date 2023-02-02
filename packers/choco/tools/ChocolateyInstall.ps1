@@ -38,6 +38,8 @@ function Install-PodeModule($path, $version)
         # copy general files
         Copy-Item -Path ./Pode.psm1 -Destination $path -Force | Out-Null
         Copy-Item -Path ./Pode.psd1 -Destination $path -Force | Out-Null
+        Copy-Item -Path ./Pode.Internal.psm1 -Destination $path -Force | Out-Null
+        Copy-Item -Path ./Pode.Internal.psd1 -Destination $path -Force | Out-Null
         Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
     }
     finally {

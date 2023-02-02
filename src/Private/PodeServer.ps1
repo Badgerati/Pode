@@ -126,7 +126,7 @@ function Start-PodeWebServer
                                 Auth = @{}
                                 Response = $Response
                                 Request = $Request
-                                Lockable = $PodeContext.Lockables.Global
+                                Lockable = $PodeContext.Threading.Lockables.Global
                                 Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
                                 Method = $Request.HttpMethod.ToLowerInvariant()
                                 Query = $null
@@ -352,7 +352,7 @@ function Start-PodeWebServer
                         $SignalEvent = @{
                             Response = $Response
                             Request = $Request
-                            Lockable = $PodeContext.Lockables.Global
+                            Lockable = $PodeContext.Threading.Lockables.Global
                             Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
                             Data = @{
                                 Path = [System.Web.HttpUtility]::UrlDecode($payload.path)

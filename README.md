@@ -69,6 +69,8 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Authentication on requests, such as Basic, Windows and Azure AD
 * Support for dynamically building Routes from Functions and Modules
 * Generate/bind self-signed certificates
+* Secret management support to load secrets from vaults
+* Support for File Watchers
 * (Windows) Open the hosted server as a desktop application
 
 ## 📦 Install
@@ -110,4 +112,4 @@ To work on issues you can fork Pode, and then open a Pull Request for approval. 
 
 You can find a list of the features, enhancements and ideas that will hopefully one day make it into Pode [here in the documentation](https://badgerati.github.io/Pode/roadmap/).
 
-There is also a [Project](https://github.com/users/Badgerati/projects/2) in the beginnings of being setup for Pode, with milestone progression and current roadmap issues. Plus, there is a [Draft Board](https://github.com/users/Badgerati/projects/2/views/3) which contains a range of ideas for Pode features/enhancements which are either brilliant, ludicrous, or down right insane! Draft Issues are purely ideas, and any in the design stage might one day make it in! If you see a Draft Issue you which to discuss, or have an idea for one, please dicuss it over on [Discord](https://discord.gg/fRqeGcbF6h) in the `#ideas` or `#pode` channel.
+There is also a [Project Board](https://github.com/users/Badgerati/projects/2) in the beginnings of being setup for Pode, with milestone progression and current roadmap issues and ideas. If you see any draft issues you wish to discuss, or have an idea for one, please discuss it over on [Discord](https://discord.gg/fRqeGcbF6h) in the `#ideas` or `#pode` channel.

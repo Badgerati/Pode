@@ -36,8 +36,8 @@ Describe 'Start-PodeInternalServer' {
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
-        Assert-MockCalled Start-PodeTimerRunspace -Times 0 -Scope It
-        Assert-MockCalled Start-PodeScheduleRunspace -Times 0 -Scope It
+        Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
+        Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeSmtpServer -Times 0 -Scope It
         Assert-MockCalled Start-PodeTcpServer -Times 0 -Scope It
         Assert-MockCalled Start-PodeWebServer -Times 0 -Scope It
@@ -99,9 +99,9 @@ Describe 'Restart-PodeInternalServer' {
     It 'Resetting the server values' {
         $PodeContext = @{
             Tokens = @{
-                Cancellation = New-Object System.Threading.CancellationTokenSource;
-                Restart = New-Object System.Threading.CancellationTokenSource;
-            };
+                Cancellation = New-Object System.Threading.CancellationTokenSource
+                Restart = New-Object System.Threading.CancellationTokenSource
+            }
             Server = @{
                 Routes = @{
                     GET = @{ 'key' = 'value' }
@@ -153,6 +153,9 @@ Describe 'Restart-PodeInternalServer' {
                     Modules = @{ Exported = @() }
                     Snapins = @{ Exported = @() }
                     Functions = @{ Exported = @() }
+                    SecretVaults = @{ 
+                        SecretManagement = @{ Exported = @() }
+                    }
                 }
                 Views = @{ 'key' = 'value' }
                 Events = @{
@@ -165,6 +168,10 @@ Describe 'Restart-PodeInternalServer' {
                         ContentSecurity  = @{}
                         PermissionsPolicy = @{}
                     }
+                }
+                Secrets = @{
+                    Vaults = @{}
+                    Keys = @{}
                 }
             }
             Metrics = @{
@@ -191,6 +198,17 @@ Describe 'Restart-PodeInternalServer' {
                     key = 'value'
                 }
                 Results = @{}
+            }
+            Fim = @{
+                Enabled = $true
+                Items = @{
+                    key = 'value'
+                }
+            }
+            Threading = @{
+                Lockables = @{ Custom = @{} }
+                Mutexes = @{}
+                Semaphores = @{}
             }
         }
 

@@ -20,7 +20,7 @@
     Author = 'Matthew Kelly (Badgerati)'
 
     # Copyright statement for this module
-    Copyright = 'Copyright (c) 2017-2022 Matthew Kelly (Badgerati), licensed under the MIT License.'
+    Copyright = 'Copyright (c) 2017-2023 Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
     Description = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
@@ -83,6 +83,7 @@
         'Read-PodeTcpClient',
         'Close-PodeTcpClient',
         'Save-PodeRequestFile',
+        'Test-PodeRequestFile',
         'Set-PodeViewEngine',
         'Use-PodePartialView',
         'Send-PodeSignal',
@@ -90,7 +91,6 @@
 
         # utility helpers
         'Close-PodeDisposable',
-        'Lock-PodeObject',
         'Get-PodeServerPath',
         'Start-PodeStopwatch',
         'Use-PodeStream',
@@ -113,12 +113,9 @@
         'Test-PodeIsIIS',
         'Test-PodeIsHeroku',
         'Get-PodeIISApplicationPath',
-        'New-PodeLockable',
-        'Remove-PodeLockable',
-        'Get-PodeLockable',
-        'Test-PodeLockable',
         'Out-PodeVariable',
         'Test-PodeIsHosted',
+        'New-PodeCron',
 
         # routes
         'Add-PodeRoute',
@@ -139,6 +136,10 @@
         'Add-PodeRouteGroup',
         'Add-PodeStaticRouteGroup',
         'Add-PodeSignalRouteGroup',
+        'Set-PodeRouteIfExistsPreference',
+        'Test-PodeRoute',
+        'Test-PodeStaticRoute',
+        'Test-PodeSignalRoute',
 
         # handlers
         'Add-PodeHandler',
@@ -156,6 +157,7 @@
         'Get-PodeSchedule',
         'Get-PodeScheduleNextTrigger',
         'Use-PodeSchedules',
+        'Test-PodeSchedule',
 
         # timers
         'Add-PodeTimer',
@@ -165,6 +167,7 @@
         'Edit-PodeTimer',
         'Get-PodeTimer',
         'Use-PodeTimers',
+        'Test-PodeTimer',
 
         # tasks
         'Add-PodeTask',
@@ -185,15 +188,20 @@
         'Clear-PodeMiddleware',
         'Add-PodeAccessRule',
         'Add-PodeLimitRule',
-        'Enable-PodeSessionMiddleware',
         'New-PodeCsrfToken',
         'Get-PodeCsrfMiddleware',
         'Initialize-PodeCsrf',
         'Enable-PodeCsrfMiddleware',
+        'Use-PodeMiddleware',
+
+        # sessions
+        'Enable-PodeSessionMiddleware',
         'Remove-PodeSession',
         'Save-PodeSession',
         'Get-PodeSessionId',
-        'Use-PodeMiddleware',
+        'Reset-PodeSessionExpiry',
+        'Get-PodeSessionDuration',
+        'Get-PodeSessionExpiry',
 
         # auth
         'New-PodeAuthScheme',
@@ -271,6 +279,7 @@
         'Export-PodeModule',
         'Export-PodeSnapin',
         'Export-PodeFunction',
+        'Export-PodeSecretVault',
 
         # Events
         'Register-PodeEvent',
@@ -319,6 +328,55 @@
         'Send-PodeWebSocket',
         'Reset-PodeWebSocket',
         'Test-PodeWebSocket'
+
+        # Secrets
+        'Register-PodeSecretVault',
+        'Unregister-PodeSecretVault',
+        'Unlock-PodeSecretVault',
+        'Get-PodeSecretVault',
+        'Test-PodeSecretVault',
+        'Mount-PodeSecret',
+        'Dismount-PodeSecret',
+        'Get-PodeSecret',
+        'Test-PodeSecret',
+        'Update-PodeSecret',
+        'Remove-PodeSecret',
+        'Read-PodeSecret',
+        'Set-PodeSecret',
+
+        # File Watchers
+        'Add-PodeFileWatcher',
+        'Test-PodeFileWatcher',
+        'Get-PodeFileWatcher',
+        'Remove-PodeFileWatcher',
+        'Clear-PodeFileWatchers',
+        'Use-PodeFileWatchers',
+
+        # Threading
+        'Lock-PodeObject',
+        'New-PodeLockable',
+        'Remove-PodeLockable',
+        'Get-PodeLockable',
+        'Test-PodeLockable',
+        'Enter-PodeLockable',
+        'Exit-PodeLockable',
+        'Clear-PodeLockables',
+        'New-PodeMutex',
+        'Test-PodeMutex',
+        'Get-PodeMutex',
+        'Remove-PodeMutex',
+        'Use-PodeMutex',
+        'Enter-PodeMutex',
+        'Exit-PodeMutex',
+        'Clear-PodeMutexes',
+        'New-PodeSemaphore',
+        'Test-PodeSemaphore',
+        'Get-PodeSemaphore',
+        'Remove-PodeSemaphore',
+        'Use-PodeSemaphore',
+        'Enter-PodeSemaphore',
+        'Exit-PodeSemaphore',
+        'Clear-PodeSemaphores'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
@@ -327,10 +385,10 @@
 
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
-                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform', 'access-control',
-                'file-monitoring', 'multithreaded', 'rate-limiting', 'cron', 'schedule', 'middleware', 'session',
-                'authentication', 'active-directory', 'caching', 'csrf', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets', 'swagger', 'openapi', 'redoc')
+                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform',
+                'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
+                'authentication', 'arm', 'raspberry-pi', 'aws-lambda',
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim')
 
             # A URL to the license for this module.
             LicenseUri = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'

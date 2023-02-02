@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title>Upload Multiple Files</title>
+        <link rel="stylesheet" type="text/css" href="/styles/simple.css">
+    </head>
+    <body>
+
+        <form action="/upload-multi" method="post" enctype="multipart/form-data">
+            <div>
+                <label>Comment:</label>
+                <input type="text" name="comment"/>
+            </div>
+            <div>
+                <label>Files:</label>
+                <input type="file" name="avatar" multiple="multiple"/>
+            </div>
+            <div>
+                <input type="submit" value="Submit"/>
+            </div>
+        </form>
+
+    </body>
+</html>

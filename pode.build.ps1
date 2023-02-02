@@ -9,13 +9,13 @@ param (
 
 $Versions = @{
     Pester = '4.8.0'
-    MkDocs = '1.2.3'
+    MkDocs = '1.4.2'
     PSCoveralls = '1.0.0'
     SevenZip = '18.5.0.20180730'
-    DotNet = '6.0.1'
+    DotNet = '7.0.1'
     Checksum = '0.2.0'
-    MkDocsTheme = '8.1.2'
-    PlatyPS = '0.14.0'
+    MkDocsTheme = '9.0.2'
+    PlatyPS = '0.14.2'
 }
 
 <#
@@ -95,6 +95,19 @@ function Install-PodeBuildModule($name)
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
+function Invoke-PodeBuildDotnetBuild($target)
+{
+    dotnet build --configuration Release --self-contained --framework $target
+    if (!$?) {
+        throw "dotnet build failed for $($target)"
+    }
+
+    dotnet publish --configuration Release --self-contained --framework $target --output ../Libs/$target
+    if (!$?) {
+        throw "dotnet publish failed for $($target)"
+    }
+}
+
 
 <#
 # Helper Tasks
@@ -103,6 +116,7 @@ function Install-PodeBuildModule($name)
 # Synopsis: Stamps the version onto the Module
 task StampVersion {
     (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.psd1
+    (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
 }
@@ -192,25 +206,9 @@ task Build BuildDeps, {
     Push-Location ./src/Listener
 
     try {
-        dotnet build --configuration Release --self-contained --framework netstandard2.0
-        if (!$?) {
-            throw "dotnet build failed for netstandard2"
-        }
-
-        dotnet publish --configuration Release --self-contained --framework netstandard2.0 --output ../Libs/netstandard2.0
-        if (!$?) {
-            throw "dotnet publish failed for netstandard2"
-        }
-
-        dotnet build --configuration Release --self-contained --framework net6.0
-        if (!$?) {
-            throw "dotnet build failed for net6"
-        }
-
-        dotnet publish --configuration Release --self-contained --framework net6.0 --output ../Libs/net6.0
-        if (!$?) {
-            throw "dotnet publish failed for net6"
-        }
+        Invoke-PodeBuildDotnetBuild -target 'netstandard2.0'
+        Invoke-PodeBuildDotnetBuild -target 'net6.0'
+        Invoke-PodeBuildDotnetBuild -target 'net7.0'
     }
     finally {
         Pop-Location
@@ -271,8 +269,10 @@ task Pack -If (Test-PodeBuildIsWindows) Build, {
     # copy general files
     Copy-Item -Path ./src/Pode.psm1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./src/Pode.psd1 -Destination $path -Force | Out-Null
+    Copy-Item -Path ./src/Pode.Internal.psm1 -Destination $path -Force | Out-Null
+    Copy-Item -Path ./src/Pode.Internal.psd1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
-}, 7Zip, ChocoPack, DockerPack
+}, StampVersion, 7Zip, ChocoPack, DockerPack
 
 
 <#
@@ -339,7 +339,7 @@ task DocsHelpBuild DocsDeps, {
 
     # build the function docs
     $path = './docs/Functions'
-    $map =@{}
+    $map = @{}
 
     (Get-Module Pode).ExportedFunctions.Keys | ForEach-Object {
         $type = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf -Path (Get-Command $_ -Module Pode).ScriptBlock.File))
