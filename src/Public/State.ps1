@@ -207,6 +207,9 @@ An optional array of state object names to exclude from being saved. (This has a
 .PARAMETER Include
 An optional array of state object names to only include when being saved.
 
+.PARAMETER Depth
+Saved JSON maximum depth. Will be passed to ConvertTo-JSON's -Depth parameter. Default is 10.
+
 .PARAMETER Compress
 If supplied, the saved JSON will be compressed.
 
@@ -238,6 +241,10 @@ function Save-PodeState
         [Parameter()]
         [string[]]
         $Include,
+
+        [Parameter()]
+        [int16]
+        $depth = 10,
 
         [switch]
         $Compress
@@ -301,7 +308,7 @@ function Save-PodeState
     }
 
     # save the state
-    $null = ConvertTo-Json -InputObject $state -Depth 10 -Compress:$Compress | Out-File -FilePath $Path -Force
+    $null = ConvertTo-Json -InputObject $state -Depth $depth -Compress:$Compress | Out-File -FilePath $Path -Force
 }
 
 <#
@@ -317,6 +324,9 @@ The path to a JSON file that contains the state information.
 .PARAMETER Merge
 If supplied, the state loaded from the JSON file will be merged with the current state, instead of overwriting it.
 
+.PARAMETER Depth
+Saved JSON maximum depth. Will be passed to ConvertFrom-JSON's -Depth parameter (Powershell >=6). Default is 10.
+
 .EXAMPLE
 Restore-PodeState -Path './state.json'
 #>
@@ -329,7 +339,10 @@ function Restore-PodeState
         $Path,
 
         [switch]
-        $Merge
+        $Merge,
+
+        [int16]
+        $Depth = 10
     )
 
     # error if attempting to use outside of the pode server
@@ -347,7 +360,7 @@ function Restore-PodeState
     $state = @{}
 
     if (Test-PodeIsPSCore) {
-        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
+        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $depth)
     }
     else {
         $props = (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties
