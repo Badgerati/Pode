@@ -244,7 +244,7 @@ function Save-PodeState
 
         [Parameter()]
         [int16]
-        $depth = 10,
+        $Depth = 10,
 
         [switch]
         $Compress
@@ -308,7 +308,7 @@ function Save-PodeState
     }
 
     # save the state
-    $null = ConvertTo-Json -InputObject $state -Depth $depth -Compress:$Compress | Out-File -FilePath $Path -Force
+    $null = ConvertTo-Json -InputObject $state -Depth $Depth -Compress:$Compress | Out-File -FilePath $Path -Force
 }
 
 <#
@@ -360,7 +360,7 @@ function Restore-PodeState
     $state = @{}
 
     if (Test-PodeIsPSCore) {
-        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $depth)
+        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $Depth)
     }
     else {
         $props = (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties
