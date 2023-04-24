@@ -261,8 +261,8 @@ function Test-PodeJwt
         $Payload
     )
 
-    $now = [datetime]::Now
-    $unixStart = [datetime]::new(1970, 1, 1)
+    $now = [datetime]::UtcNow
+    $unixStart = [datetime]::new(1970, 1, 1, 0, 0, [DateTimeKind]::Utc)
 
     # validate expiry
     if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
