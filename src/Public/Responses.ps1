@@ -1277,7 +1277,7 @@ function Save-PodeRequestFile
     }
 
     # set up filepath list
-    if($Return){
+    if ($Return) {
         $filePathsList = New-Object System.Collections.Generic.List[string]
     }
 
@@ -1290,13 +1290,13 @@ function Save-PodeRequestFile
         }
 		
         # add numeric suffix to file name if overwrites are not permitted
-        if($NoOverwrite -and [System.IO.File]::Exists($filePath)){
+        if ($NoOverwrite -and [System.IO.File]::Exists($filePath)) {
             # set up necessary variables for looping
             $splitPathArray = $filePath -split '\.(?=[^\\\/]+$)'
             $i = 0
 
             # loop until suggested filepath doesn't already exist
-            while([System.IO.File]::Exists($filePath)){
+            while ([System.IO.File]::Exists($filePath)) {
                 $i++
                 $tempSplitPathArray = $splitPathArray.Clone()
                 $tempSplitPathArray[0] = -join ($splitPathArray[0], " ($i)")
@@ -1305,7 +1305,7 @@ function Save-PodeRequestFile
         }
 		
         # add filepath to filepath list
-        if($Return){
+        if ($Return) {
             $filePathsList.Add($filePath)
         }
 
@@ -1315,7 +1315,7 @@ function Save-PodeRequestFile
     }
 	
     # return filepath list
-    if($Return){
+    if ($Return) {
         return ,$filePathsList
     }
 	
