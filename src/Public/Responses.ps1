@@ -1230,7 +1230,15 @@ function Save-PodeRequestFile
 
         [Parameter()]
         [string[]]
-        $FileName
+        $FileName,
+		
+		[Parameter()]
+		[switch]
+		$NoOverwrite,
+		
+		[Parameter()]
+		[switch]
+		$Return
     )
 
     # if path is '.', replace with server root
@@ -1257,6 +1265,11 @@ function Save-PodeRequestFile
             throw "No data for file '$($file)' was uploaded in the request"
         }
     }
+    
+	# set up filepath list
+	if($Return){
+		$filePathsList = New-Object System.Collections.Generic.List[string]
+	}
 
     # save the files
     foreach ($file in $files) {
@@ -1265,10 +1278,37 @@ function Save-PodeRequestFile
         if (Test-PodePathIsDirectory -Path $filePath) {
             $filePath = [System.IO.Path]::Combine($filePath, $file)
         }
+		
+		# add numeric suffix to file name if overwrites are not permitted
+		if($NoOverwrite -and [System.IO.File]::Exists($filePath)){
+			# set up necessary variables for looping
+			$splitPathArray = $filePath -split '\.(?=[^\\]+$)'
+			$i = 0
+			
+			# loop until suggested filepath doesn't exist
+			while([System.IO.File]::Exists($filePath)){
+				$i++
+				$tempSplitPathArray = $splitPathArray.Clone()
+				$tempSplitPathArray[0] = -join ($splitPathArray[0], " ($i)")
+				$filePath = $tempSplitPathArray -join '.'
+			}
+		}
+		
+		# add filepath to filepath list
+		if($Return){
+			$filePathsList.Add($filePath)
+		}
 
         # save the file
         $WebEvent.Files[$file].Save($filePath)
+		
     }
+	
+	# return filepath list
+	if($Return){
+		return ,$filePathsList
+	}
+	
 }
 
 <#
