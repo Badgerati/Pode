@@ -1224,7 +1224,7 @@ Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images'
 Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images' -FileName 'icon.png'
 
 .EXAMPLE
-Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images' -NoOverwrite -Return
+$filePaths = Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images' -NoOverwrite -Return
 #>
 function Save-PodeRequestFile
 {
