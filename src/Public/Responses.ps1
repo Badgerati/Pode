@@ -1292,7 +1292,7 @@ function Save-PodeRequestFile
         # add numeric suffix to file name if overwrites are not permitted
         if($NoOverwrite -and [System.IO.File]::Exists($filePath)){
             # set up necessary variables for looping
-            $splitPathArray = $filePath -split '\.(?=[^\\]+$)'
+            $splitPathArray = $filePath -split '\.(?=[^\\\/]+$)'
             $i = 0
 
             # loop until suggested filepath doesn't already exist
