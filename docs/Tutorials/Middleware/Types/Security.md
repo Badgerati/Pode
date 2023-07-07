@@ -19,6 +19,8 @@ The following headers are currently supported, but you can add custom header val
 * X-Content-Type-Options
 * Referrer-Policy
 
+You can also set the "Server" header to be hidden on responses if required.
+
 ## Types
 
 Pode has an inbuilt wrapper to easily toggle all headers with default values: [`Set-PodeSecurity`](../../../../Functions/Security/Set-PodeSecurity). This function lets you specify a `-Type` of either `Simple` or `Strict`. The specified value will setup the headers with the default values defined below. You can also force `X-XSS-Protection` to use blocking mode if you want to support older browsers, or enable `Strict-Transport-Security` via `-UseHsts`.
@@ -51,6 +53,8 @@ The following values are used for each header when the `Simple` type is supplied
 | X-Content-Type-Options | nosniff |
 | Referred-Policy | strict-origin |
 
+The Server header is also hidden.
+
 ### Strict
 
 The following values are used for each header when the `Strict` type is supplied:
@@ -71,6 +75,8 @@ The following values are used for each header when the `Strict` type is supplied
 | X-Frame-Options | DENY |
 | X-Content-Type-Options | nosniff |
 | Referred-Policy | no-referrer |
+
+The Server header is also hidden.
 
 ## Headers
 
@@ -204,6 +210,13 @@ The `Referrer-Policy` header tells the browser how much information to include i
 ```powershell
 Set-PodeSecurityReferrerPolicy -Type Strict-Origin
 ```
+
+### Server
+
+You can hide or show the Server header on responses using the following functions, by default the Server header is visible:
+
+* [`Hide-PodeSecurityServer`](../../../../Functions/Security/Hide-PodeSecurityServer)
+* [`Show-PodeSecurityServer`](../../../../Functions/Security/Show-PodeSecurityServer)
 
 ## Custom
 

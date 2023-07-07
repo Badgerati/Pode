@@ -298,10 +298,20 @@ namespace Pode
 
             Headers.Add("Date", DateTime.UtcNow.ToString("r", CultureInfo.InvariantCulture));
 
-            // set the server
-            if (!Headers.ContainsKey("Server"))
+            // set the server if allowed
+            if (Context.Listener.ShowServerDetails)
             {
-                Headers.Add("Server", "Pode");
+                if (!Headers.ContainsKey("Server"))
+                {
+                    Headers.Add("Server", "Pode");
+                }
+            }
+            else
+            {
+                if (Headers.ContainsKey("Server"))
+                {
+                    Headers.Remove("Server");
+                }
             }
 
             // set context/socket ID

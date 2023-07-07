@@ -312,6 +312,8 @@
         'Set-PodeSecurityPermissionsPolicy',
         'Set-PodeSecurityReferrerPolicy',
         'Set-PodeSecurityStrictTransportSecurity',
+        'Hide-PodeSecurityServer',
+        'Show-PodeSecurityServer',
 
         # Verbs
         'Add-PodeVerb',

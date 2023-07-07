@@ -75,6 +75,9 @@ function Set-PodeSecurity
             Set-PodeSecurityReferrerPolicy -Type No-Referrer
         }
     }
+
+    # hide server info
+    Hide-PodeSecurityServer
 }
 
 <#
@@ -93,6 +96,7 @@ function Remove-PodeSecurity
     param()
 
     $PodeContext.Server.Security.Headers.Clear()
+    Show-PodeSecurityServer
 }
 
 <#
@@ -152,6 +156,42 @@ function Remove-PodeSecurityHeader
     )
 
     $PodeContext.Server.Security.Headers.Remove($Name)
+}
+
+<#
+.SYNOPSIS
+Hide the Server HTTP Header from Responses
+
+.DESCRIPTION
+Hide the Server HTTP Header from Responses
+
+.EXAMPLE
+Hide-PodeSecurityServer
+#>
+function Hide-PodeSecurityServer
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Server.Security.ServerDetails = $false
+}
+
+<#
+.SYNOPSIS
+Show the Server HTTP Header on Responses
+
+.DESCRIPTION
+Show the Server HTTP Header on Responses
+
+.EXAMPLE
+Show-PodeSecurityServer
+#>
+function Show-PodeSecurityServer
+{
+    [CmdletBinding()]
+    param()
+
+    $PodeContext.Server.Security.ServerDetails = $true
 }
 
 <#

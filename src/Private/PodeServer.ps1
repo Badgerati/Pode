@@ -66,6 +66,7 @@ function Start-PodeWebServer
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
+    $listener.ShowServerDetails = [bool]$PodeContext.Server.Security.ServerDetails
 
     try
     {
