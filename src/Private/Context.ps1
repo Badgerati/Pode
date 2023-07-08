@@ -408,6 +408,8 @@ function New-PodeContext
         Browser = [ordered]@{}
         Crash = [ordered]@{}
         Stop = [ordered]@{}
+        Running = [ordered]@{}
+        Closed = [ordered]@{}
     }
 
     # modules
