@@ -415,6 +415,7 @@ function New-PodeContext
 
     # setup security
     $ctx.Server.Security = @{
+        ServerDetails = $true
         Headers = @{}
         Cache = @{
             ContentSecurity  = @{}

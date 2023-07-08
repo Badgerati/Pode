@@ -35,6 +35,16 @@ namespace Pode
             }
         }
 
+        private bool _showServerDetails = true;
+        public bool ShowServerDetails
+        {
+            get => _showServerDetails;
+            set
+            {
+                _showServerDetails = value;
+            }
+        }
+
         public PodeListener(CancellationToken cancellationToken = default(CancellationToken))
             : base(cancellationToken)
         {
