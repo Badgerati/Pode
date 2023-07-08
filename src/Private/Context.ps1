@@ -409,7 +409,6 @@ function New-PodeContext
         Crash = [ordered]@{}
         Stop = [ordered]@{}
         Running = [ordered]@{}
-        Closed = [ordered]@{}
     }
 
     # modules
