@@ -135,6 +135,9 @@ function Start-PodeInternalServer
         # set the start time of the server (start and after restart)
         $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
 
+        # run running event hooks
+        Invoke-PodeEvent -Type Running
+
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
             Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
@@ -268,6 +271,7 @@ function Restart-PodeInternalServer
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
+        # done message
         Write-PodeHost " Done" -ForegroundColor Green
 
         # restart the server
