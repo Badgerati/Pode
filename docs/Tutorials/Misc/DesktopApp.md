@@ -5,7 +5,6 @@ Normally in Pode you define a server and run it, however if you use the [`Show-P
 !!! warning
     Currently only supported in Windows PowerShell, and PowerShell 7 on Windows due to using WPF.
 
-
 ## Setting Server to run as Application
 
 To serve up you server as a desktop application you can just write you Pode server script as normal. The only difference is you can use the [`Show-PodeGui`](../../../Functions/Core/Show-PodeGui) function to display the application.
@@ -61,10 +60,10 @@ In order to switch to [`CefSharp`](http://cefsharp.github.io/), either compile o
 Pode will automatically switch to CefSharp, if the binaries are loaded into the Powershell Session before the Pode Module itself gets initialized.
 
 The required packages are the following and can be compiled from scratch or downloaded from the Nuget Repository:
+
 - [`cef.redist.x64`](https://www.nuget.org/packages/cef.redist.x64/)
 - [`cefsharp.common`](https://www.nuget.org/packages/cefsharp.common)
 - [`cefsharp.wpf`](https://www.nuget.org/packages/cefsharp.wpf)
-
 
 This example shows how to load them:
 
