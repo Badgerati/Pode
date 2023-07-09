@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a server, and start listening on port 8085
 Start-PodeServer -EnablePool Schedules {
 
-    Add-PodeEndpoint -Address * -Port 8081 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # create a new schdule via a route
     Add-PodeRoute -Method Get -Path '/api/schedule' -ScriptBlock {
