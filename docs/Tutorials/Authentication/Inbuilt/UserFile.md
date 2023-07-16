@@ -62,6 +62,7 @@ Start-PodeServer {
 Regardless of whether the password is a standard SHA256 hash or HMAC hash, the hashed output should be a base64 string. The following functions will return the hashed value in the expected format:
 
 **SHA256 HASH**:
+
 ```powershell
 function ConvertTo-SHA256([string]$String)
 {
@@ -73,6 +74,7 @@ function ConvertTo-SHA256([string]$String)
 ```
 
 **HMAC HASH:**
+
 ```powershell
 function ConvertTo-HMACSHA256([string]$String, [string]$Secret) {
     $HMACSHA256 = New-Object System.Security.Cryptography.HMACSHA256
