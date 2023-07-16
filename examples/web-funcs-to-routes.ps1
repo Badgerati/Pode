@@ -22,7 +22,7 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
-    # listen on localhost:8085
+    # listen on localhost:8090
     Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
