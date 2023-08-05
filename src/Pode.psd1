@@ -221,6 +221,7 @@
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',
+        'New-PodeAuthAccess',
 
         # logging
         'New-PodeLoggingMethod',

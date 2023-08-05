@@ -124,7 +124,24 @@ function Add-PodeRoute
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
         $IfExists = 'Default',
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string[]]
+        $Attribute,
 
         [switch]
         $AllowAnon,
@@ -171,6 +188,26 @@ function Add-PodeRoute
 
         if ($RouteGroup.AllowAnon) {
             $AllowAnon = $RouteGroup.AllowAnon
+        }
+
+        if ($RouteGroup.IfExists -ine 'default') {
+            $IfExists = $RouteGroup.IfExists
+        }
+
+        if ($null -ne $RouteGroup.Role) {
+            $Role = $RouteGroup.Role + $Role
+        }
+
+        if ($null -ne $RouteGroup.Group) {
+            $Group = $RouteGroup.Group + $Group
+        }
+
+        if ($null -ne $RouteGroup.Scope) {
+            $Scope = $RouteGroup.Scope + $Scope
+        }
+
+        if ($null -ne $RouteGroup.Attribute) {
+            $Attribute = $RouteGroup.Attribute + $Attribute
         }
     }
 
@@ -272,6 +309,12 @@ function Add-PodeRoute
                 UsingVariables = $usingVars
                 Middleware = $Middleware
                 Authentication = $Authentication
+                Access = @{
+                    Roles = $Role
+                    Groups = $Group
+                    Scopes = $Scope
+                    Attributes = $Attribute
+                }
                 Endpoint = @{
                     Protocol = $_endpoint.Protocol
                     Address = $_endpoint.Address.Trim()
@@ -418,6 +461,7 @@ function Add-PodeStaticRoute
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
         $IfExists = 'Default',
 
         [switch]
@@ -474,6 +518,10 @@ function Add-PodeStaticRoute
 
         if ($RouteGroup.DownloadOnly) {
             $DownloadOnly = $RouteGroup.DownloadOnly
+        }
+
+        if ($RouteGroup.IfExists -ine 'default') {
+            $IfExists = $RouteGroup.IfExists
         }
     }
 
@@ -671,6 +719,7 @@ function Add-PodeSignalRoute
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
         $IfExists = 'Default'
     )
 
@@ -682,6 +731,10 @@ function Add-PodeSignalRoute
 
         if ([string]::IsNullOrWhiteSpace($EndpointName)) {
             $EndpointName = $RouteGroup.EndpointName
+        }
+
+        if ($RouteGroup.IfExists -ine 'default') {
+            $IfExists = $RouteGroup.IfExists
         }
     }
 
@@ -845,7 +898,24 @@ function Add-PodeRouteGroup
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
         $IfExists = 'Default',
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string[]]
+        $Attribute,
 
         [switch]
         $AllowAnon
@@ -896,8 +966,24 @@ function Add-PodeRouteGroup
             $AllowAnon = $RouteGroup.AllowAnon
         }
 
-        if ($IfExists -ieq 'default') {
-            $IfExists = Get-PodeRouteIfExistsPreference
+        if ($RouteGroup.IfExists -ine 'default') {
+            $IfExists = $RouteGroup.IfExists
+        }
+
+        if ($null -ne $RouteGroup.Role) {
+            $Role = $RouteGroup.Role + $Role
+        }
+
+        if ($null -ne $RouteGroup.Group) {
+            $Group = $RouteGroup.Group + $Group
+        }
+
+        if ($null -ne $RouteGroup.Scope) {
+            $Scope = $RouteGroup.Scope + $Scope
+        }
+
+        if ($null -ne $RouteGroup.Attribute) {
+            $Attribute = $RouteGroup.Attribute + $Attribute
         }
     }
 
@@ -911,6 +997,12 @@ function Add-PodeRouteGroup
         Authentication = $Authentication
         AllowAnon = $AllowAnon
         IfExists = $IfExists
+        Access = @{
+            Roles = $Role
+            Groups = $Group
+            Scopes = $Scope
+            Attributes = $Attribute
+        }
     }
 
     # add routes
@@ -1015,6 +1107,7 @@ function Add-PodeStaticRouteGroup
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
         $IfExists = 'Default',
 
         [switch]
@@ -1081,8 +1174,8 @@ function Add-PodeStaticRouteGroup
             $DownloadOnly = $RouteGroup.DownloadOnly
         }
 
-        if ($IfExists -ieq 'default') {
-            $IfExists = Get-PodeRouteIfExistsPreference
+        if ($RouteGroup.IfExists -ine 'default') {
+            $IfExists = $RouteGroup.IfExists
         }
     }
 
@@ -1147,6 +1240,7 @@ function Add-PodeSignalRouteGroup
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
         $IfExists = 'Default'
     )
 
@@ -1171,8 +1265,8 @@ function Add-PodeSignalRouteGroup
             $EndpointName = $RouteGroup.EndpointName
         }
 
-        if ($IfExists -ieq 'default') {
-            $IfExists = Get-PodeRouteIfExistsPreference
+        if ($RouteGroup.IfExists -ine 'default') {
+            $IfExists = $RouteGroup.IfExists
         }
     }
 
@@ -2035,6 +2129,7 @@ function Use-PodeRoutes
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
         $IfExists = 'Default'
     )
 
@@ -2065,6 +2160,7 @@ function Set-PodeRouteIfExistsPreference
     param(
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
         $Value = 'Default'
     )
 

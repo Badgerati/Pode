@@ -672,6 +672,9 @@ A unique Name for the Authentication method.
 .PARAMETER Scheme
 The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
+.PARAMETER Access
+One or more optional Authorization objects to validate access to Routes (From New-PodeAuthAccess)
+
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that retrieves and verifys a user.
 
@@ -707,6 +710,10 @@ function Add-PodeAuth
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
         $Scheme,
+
+        [Parameter()]
+        [hashtable[]]
+        $Access,
 
         [Parameter(Mandatory=$true)]
         [ValidateScript({
@@ -749,7 +756,16 @@ function Add-PodeAuth
 
     # ensure the Scheme contains a scriptblock
     if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        throw "The supplied Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
+        throw "The supplied '$($Scheme.Name)' Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
+    }
+
+    # ensure the Access contains a Property as a minimum
+    if (!(Test-PodeIsEmpty $Access)) {
+        foreach ($acc in $Access) {
+            if ([string]::IsNullOrEmpty($acc.Property)) {
+                throw "The supplied '$($acc.Type)' Access for the '$($Name)' authentication validator requires a valid Property for lookup (or a Scriptblock if custom)"
+            }
+        }
     }
 
     # if we're using sessions, ensure sessions have been setup
@@ -763,6 +779,7 @@ function Add-PodeAuth
     # add auth method to server
     $PodeContext.Server.Authentications[$Name] = @{
         Scheme = $Scheme
+        Access = $Access
         ScriptBlock = $ScriptBlock
         UsingVariables = $usingVars
         Arguments = $ArgumentList
@@ -1938,4 +1955,47 @@ function Test-PodeAuthUser
         (($null -ne $WebEvent.Auth.User) -and $WebEvent.Auth.IsAuthenticated) -or
         (($null -ne $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated)
     )
+}
+
+function New-PodeAuthAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Role', 'Group', 'Scope', 'Attribute')]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter()]
+        [ValidateSet('All', 'One')]
+        [string]
+        $Match = 'One'
+    )
+
+    # parse using variables
+    $scriptObj = $null
+    if (!(Test-PodeIsEmpty $ScriptBlock)) {
+        $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $scriptObj = @{
+            Script = $ScriptBlock
+            UsingVariables = $usingScriptVars
+        }
+    }
+
+    # return access object
+    return @{
+        Type = $Type
+        ScriptBlock = $scriptObj
+        Arguments = $ArgumentList
+        Property = "$($Type)s"
+        Match = $Match
+    }
 }

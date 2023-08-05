@@ -1078,11 +1078,18 @@ function Get-PodeAuthMiddlewareScript
             Remove-PodeAuthSession
 
             if ($useHeaders) {
-                return (Set-PodeAuthStatus -StatusCode 401 -Sessionless:$sessionless -NoSuccessRedirect)
+                return (Set-PodeAuthStatus `
+                    -StatusCode 401 `
+                    -Sessionless:$sessionless `
+                    -NoSuccessRedirect)
             }
             else {
                 $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $WebEvent.Request.Url.AbsolutePath)
-                return (Set-PodeAuthStatus -StatusCode 302 -Failure $auth.Failure -Sessionless:$sessionless -NoSuccessRedirect)
+                return (Set-PodeAuthStatus `
+                    -StatusCode 302 `
+                    -Failure $auth.Failure `
+                    -Sessionless:$sessionless `
+                    -NoSuccessRedirect)
             }
         }
 
@@ -1091,7 +1098,13 @@ function Get-PodeAuthMiddlewareScript
             # existing session auth'd
             if (Test-PodeAuthUser) {
                 $WebEvent.Auth = $WebEvent.Session.Data.Auth
-                return (Set-PodeAuthStatus -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless -NoSuccessRedirect)
+                return (Set-PodeAuthStatus `
+                    -Success $auth.Success `
+                    -Failure $auth.Failure `
+                    -Access $auth.Access `
+                    -LoginRoute:$loginRoute `
+                    -Sessionless:$sessionless `
+                    -NoSuccessRedirect)
             }
 
             # if we're allowing anon access, and using sessions, then stop here - as a session will be created from a login route for auth'ing users
@@ -1174,7 +1187,11 @@ function Get-PodeAuthMiddlewareScript
         }
         catch {
             $_ | Write-PodeErrorLog
-            return (Set-PodeAuthStatus -StatusCode 500 -Description $_.Exception.Message -Failure $auth.Failure -Sessionless:$sessionless)
+            return (Set-PodeAuthStatus `
+                -StatusCode 500 `
+                -Description $_.Exception.Message `
+                -Failure $auth.Failure `
+                -Sessionless:$sessionless)
         }
 
         # did the auth force a redirect?
@@ -1205,6 +1222,7 @@ function Get-PodeAuthMiddlewareScript
                     -Headers $result.Headers `
                     -Failure $auth.Failure `
                     -Success $auth.Success `
+                    -Access $auth.Access `
                     -LoginRoute:$loginRoute `
                     -Sessionless:$sessionless `
                     -NoFailureRedirect:$isErrored)
@@ -1220,8 +1238,14 @@ function Get-PodeAuthMiddlewareScript
         $WebEvent.Auth.IsAuthenticated = $true
         $WebEvent.Auth.Store = !$sessionless
 
-        # continue
-        return (Set-PodeAuthStatus -Headers $result.Headers -Success $auth.Success -LoginRoute:$loginRoute -Sessionless:$sessionless)
+        # continue, but check access
+        return (Set-PodeAuthStatus `
+            -Headers $result.Headers `
+            -Success $auth.Success `
+            -Failure $auth.Failure `
+            -Access $auth.Access `
+            -LoginRoute:$loginRoute `
+            -Sessionless:$sessionless)
     }
 }
 
@@ -1294,6 +1318,10 @@ function Set-PodeAuthStatus
         [hashtable]
         $Success,
 
+        [Parameter()]
+        [hashtable[]]
+        $Access,
+
         [switch]
         $LoginRoute,
 
@@ -1353,6 +1381,23 @@ function Set-PodeAuthStatus
 
         Move-PodeResponseUrl -Url $url
         return $false
+    }
+
+    # check any access for authorization
+    if (($null -eq $Access) -or ($Access.Length -eq 0)) {
+        return $true
+    }
+
+    foreach ($acc in $Access) {
+        if (!(Test-PodeAuthAccess -Access $acc)) {
+            return (Set-PodeAuthStatus `
+                -StatusCode 403 `
+                -Description $Description `
+                -Failure $Failure `
+                -LoginRoute:$LoginRoute `
+                -Sessionless:$Sessionless `
+                -NoFailureRedirect:$NoFailureRedirect)
+        }
     }
 
     return $true
@@ -1907,4 +1952,51 @@ function Get-PodeAuthADProvider
 
     # ds
     return 'DirectoryServices'
+}
+
+function Test-PodeAuthAccess
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]
+        $Access
+    )
+
+    # get route access values - if none then skip
+    $routeAccess = $WebEvent.Route.Access.($Access.Property)
+    if (($null -eq $routeAccess) -or ($routeAccess.Length -eq 0)) {
+        return $true
+    }
+
+    # if there's no scriptblock, try the Property fallback
+    if ($null -eq $Access.Scriptblock) {
+        $userAccess = $WebEvent.Auth.User.($Access.Property)
+    }
+
+    # otherwise, invoke scriptblock
+    else {
+        $_args = @($WebEvent.Auth.User) + @($Access.Arguments)
+        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $Access.Scriptblock.UsingVariables)
+        $userAccess = Invoke-PodeScriptBlock -ScriptBlock $Access.Scriptblock.Script -Arguments $_args -Return -Splat
+    }
+
+    # one or all match?
+    if ($Access.Match -ieq 'one') {
+        foreach ($item in $userAccess) {
+            if ($item -iin $routeAccess) {
+                return $true
+            }
+        }
+
+        return $false
+    }
+    else {
+        foreach ($item in $routeAccess) {
+            if ($item -inotin $userAccess) {
+                return $false
+            }
+        }
+
+        return $true
+    }
 }
