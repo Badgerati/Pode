@@ -139,10 +139,6 @@ function Add-PodeRoute
         [string[]]
         $Scope,
 
-        [Parameter()]
-        [string[]]
-        $Attribute,
-
         [switch]
         $AllowAnon,
 
@@ -194,20 +190,20 @@ function Add-PodeRoute
             $IfExists = $RouteGroup.IfExists
         }
 
-        if ($null -ne $RouteGroup.Role) {
-            $Role = $RouteGroup.Role + $Role
+        if ($null -ne $RouteGroup.Access.Role) {
+            $Role = $RouteGroup.Access.Role + $Role
         }
 
-        if ($null -ne $RouteGroup.Group) {
-            $Group = $RouteGroup.Group + $Group
+        if ($null -ne $RouteGroup.Access.Group) {
+            $Group = $RouteGroup.Access.Group + $Group
         }
 
-        if ($null -ne $RouteGroup.Scope) {
-            $Scope = $RouteGroup.Scope + $Scope
+        if ($null -ne $RouteGroup.Access.Scope) {
+            $Scope = $RouteGroup.Access.Scope + $Scope
         }
 
-        if ($null -ne $RouteGroup.Attribute) {
-            $Attribute = $RouteGroup.Attribute + $Attribute
+        if ($null -ne $RouteGroup.Access.Custom) {
+            $CustomAccess = $RouteGroup.Access.Custom
         }
     }
 
@@ -272,6 +268,11 @@ function Add-PodeRoute
         $Middleware = (@(Get-PodeAuthMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
     }
 
+    # custom access
+    if ($null -eq $CustomAccess) {
+        $CustomAccess = @{}
+    }
+
     # workout a default content type for the route
     $ContentType = Find-PodeRouteContentType -Path $Path -ContentType $ContentType
 
@@ -310,10 +311,10 @@ function Add-PodeRoute
                 Middleware = $Middleware
                 Authentication = $Authentication
                 Access = @{
-                    Roles = $Role
-                    Groups = $Group
-                    Scopes = $Scope
-                    Attributes = $Attribute
+                    Role = $Role
+                    Group = $Group
+                    Scope = $Scope
+                    Custom = $CustomAccess
                 }
                 Endpoint = @{
                     Protocol = $_endpoint.Protocol
@@ -913,10 +914,6 @@ function Add-PodeRouteGroup
         [string[]]
         $Scope,
 
-        [Parameter()]
-        [string[]]
-        $Attribute,
-
         [switch]
         $AllowAnon
     )
@@ -970,20 +967,20 @@ function Add-PodeRouteGroup
             $IfExists = $RouteGroup.IfExists
         }
 
-        if ($null -ne $RouteGroup.Role) {
-            $Role = $RouteGroup.Role + $Role
+        if ($null -ne $RouteGroup.Access.Role) {
+            $Role = $RouteGroup.Access.Role + $Role
         }
 
-        if ($null -ne $RouteGroup.Group) {
-            $Group = $RouteGroup.Group + $Group
+        if ($null -ne $RouteGroup.Access.Group) {
+            $Group = $RouteGroup.Access.Group + $Group
         }
 
-        if ($null -ne $RouteGroup.Scope) {
-            $Scope = $RouteGroup.Scope + $Scope
+        if ($null -ne $RouteGroup.Access.Scope) {
+            $Scope = $RouteGroup.Access.Scope + $Scope
         }
 
-        if ($null -ne $RouteGroup.Attribute) {
-            $Attribute = $RouteGroup.Attribute + $Attribute
+        if ($null -ne $RouteGroup.Access.Custom) {
+            $CustomAccess = $RouteGroup.Access.Custom
         }
     }
 
@@ -998,10 +995,10 @@ function Add-PodeRouteGroup
         AllowAnon = $AllowAnon
         IfExists = $IfExists
         Access = @{
-            Roles = $Role
-            Groups = $Group
-            Scopes = $Scope
-            Attributes = $Attribute
+            Role = $Role
+            Group = $Group
+            Scope = $Scope
+            Custom = $CustomAccess
         }
     }
 

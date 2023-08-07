@@ -1963,14 +1963,21 @@ function Test-PodeAuthAccess
     )
 
     # get route access values - if none then skip
-    $routeAccess = $WebEvent.Route.Access.($Access.Property)
+    $routeAccess = $WebEvent.Route.Access[$Access.Type]
+    if ($Access.IsCustom) {
+        $routeAccess = $routeAccess[$Access.Name]
+    }
+
     if (($null -eq $routeAccess) -or ($routeAccess.Length -eq 0)) {
         return $true
     }
 
-    # if there's no scriptblock, try the Property fallback
+    # if there's no scriptblock, try the Path fallback
     if ($null -eq $Access.Scriptblock) {
-        $userAccess = $WebEvent.Auth.User.($Access.Property)
+        $userAccess = $WebEvent.Auth.User
+        foreach ($atom in $Access.Path.Split('.')) {
+            $userAccess = $userAccess.($atom)
+        }
     }
 
     # otherwise, invoke scriptblock
@@ -1980,23 +1987,32 @@ function Test-PodeAuthAccess
         $userAccess = Invoke-PodeScriptBlock -ScriptBlock $Access.Scriptblock.Script -Arguments $_args -Return -Splat
     }
 
-    # one or all match?
-    if ($Access.Match -ieq 'one') {
-        foreach ($item in $userAccess) {
-            if ($item -iin $routeAccess) {
-                return $true
-            }
-        }
-
-        return $false
+    # check for custom validator, or use default match logic
+    if ($null -ne $Access.Validator) {
+        $_args = @(,$userAccess) + @(,$routeAccess) + @($Access.Arguments)
+        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $Access.Validator.UsingVariables)
+        return (Invoke-PodeScriptBlock -ScriptBlock $Access.Validator.Script -Arguments $_args -Return -Splat)
     }
-    else {
-        foreach ($item in $routeAccess) {
-            if ($item -inotin $userAccess) {
-                return $false
-            }
-        }
 
-        return $true
+    # one or all match?
+    else {
+        if ($Access.Match -ieq 'one') {
+            foreach ($item in $userAccess) {
+                if ($item -iin $routeAccess) {
+                    return $true
+                }
+            }
+
+            return $false
+        }
+        else {
+            foreach ($item in $routeAccess) {
+                if ($item -inotin $userAccess) {
+                    return $false
+                }
+            }
+
+            return $true
+        }
     }
 }

@@ -762,8 +762,8 @@ function Add-PodeAuth
     # ensure the Access contains a Property as a minimum
     if (!(Test-PodeIsEmpty $Access)) {
         foreach ($acc in $Access) {
-            if ([string]::IsNullOrEmpty($acc.Property)) {
-                throw "The supplied '$($acc.Type)' Access for the '$($Name)' authentication validator requires a valid Property for lookup (or a Scriptblock if custom)"
+            if ([string]::IsNullOrEmpty($acc.Path)) {
+                throw "The supplied '$($acc.Type)' Access for the '$($Name)' authentication validator requires a valid Path for lookup (or a Scriptblock if custom)"
             }
         }
     }
@@ -1961,18 +1961,30 @@ function New-PodeAuthAccess
 {
     [CmdletBinding()]
     param(
+        [Parameter()]
+        [string]
+        $Name,
+
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Role', 'Group', 'Scope', 'Attribute')]
+        [ValidateSet('Role', 'Group', 'Scope', 'Custom')]
         [string]
         $Type,
 
         [Parameter()]
         [scriptblock]
-        $ScriptBlock,
+        $ScriptBlock = $null,
 
         [Parameter()]
         [object[]]
         $ArgumentList,
+
+        [Parameter()]
+        [scriptblock]
+        $Validator = $null,
+
+        [Parameter()]
+        [string]
+        $Path,
 
         [Parameter()]
         [ValidateSet('All', 'One')]
@@ -1980,7 +1992,18 @@ function New-PodeAuthAccess
         $Match = 'One'
     )
 
-    # parse using variables
+    # for custom a validator and name are mandatory
+    if ($Type -ieq 'custom') {
+        if ([string]::IsNullOrEmpty($Name)) {
+            throw "A Name is required for creating Custom Access objects"
+        }
+
+        if ($null -eq $Validator) {
+            throw "A Validator scriptblock is required for creating Custom Access objects"
+        }
+    }
+
+    # parse using variables in scriptblock
     $scriptObj = $null
     if (!(Test-PodeIsEmpty $ScriptBlock)) {
         $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
@@ -1990,12 +2013,66 @@ function New-PodeAuthAccess
         }
     }
 
+    # parse using variables in validator
+    $validObj = $null
+    if (!(Test-PodeIsEmpty $Validator)) {
+        $Validator, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $Validator -PSSession $PSCmdlet.SessionState
+        $validObj = @{
+            Script = $Validator
+            UsingVariables = $usingScriptVars
+        }
+    }
+
+    # default path
+    if ([string]::IsNullOrEmpty($Path)) {
+        $Path = "$($Type)s"
+    }
+
     # return access object
     return @{
+        Name = $Name
         Type = $Type
+        IsCustom = ($Type -ieq 'custom')
         ScriptBlock = $scriptObj
+        Validator = $validObj
         Arguments = $ArgumentList
-        Property = "$($Type)s"
+        Path = $Path
         Match = $Match
+    }
+}
+
+function Add-PodeAuthCustomAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable[]]
+        $Route,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [object]
+        $Value
+    )
+
+    begin {
+        $routes = @()
+    }
+
+    process {
+        $routes += $Route
+    }
+
+    end {
+        foreach ($r in $routes) {
+            if ($r.Access.Custom.ContainsKey($Name)) {
+                throw "Route '[$($r.Method)] $($r.Path)' already contains Custom Access with name '$($Name)'"
+            }
+
+            $r.Access.Custom[$Name] = $Value
+        }
     }
 }
