@@ -673,7 +673,7 @@ A unique Name for the Authentication method.
 The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER Access
-One or more optional Authorization objects to validate access to Routes (From New-PodeAuthAccess)
+One or more optional Access Names to validate access to Routes (From Add-PodeAuthAccess)
 
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that retrieves and verifys a user.
@@ -712,7 +712,7 @@ function Add-PodeAuth
         $Scheme,
 
         [Parameter()]
-        [hashtable[]]
+        [string[]]
         $Access,
 
         [Parameter(Mandatory=$true)]
@@ -759,11 +759,11 @@ function Add-PodeAuth
         throw "The supplied '$($Scheme.Name)' Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
     }
 
-    # ensure the Access contains a Property as a minimum
+    # ensure the Access methods exists
     if (!(Test-PodeIsEmpty $Access)) {
         foreach ($acc in $Access) {
-            if ([string]::IsNullOrEmpty($acc.Path)) {
-                throw "The supplied '$($acc.Type)' Access for the '$($Name)' authentication validator requires a valid Path for lookup (or a Scriptblock if custom)"
+            if (!(Test-PodeAuthAccess -Name $acc)) {
+                throw "Access method not found: $($acc)"
             }
         }
     }
@@ -777,7 +777,8 @@ function Add-PodeAuth
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add auth method to server
-    $PodeContext.Server.Authentications[$Name] = @{
+    $PodeContext.Server.Authentications.Methods[$Name] = @{
+        Name = $Name
         Scheme = $Scheme
         Access = $Access
         ScriptBlock = $ScriptBlock
@@ -830,7 +831,7 @@ function Get-PodeAuth
     }
 
     # get auth method
-    return $PodeContext.Server.Authentications[$Name]
+    return $PodeContext.Server.Authentications.Methods[$Name]
 }
 
 <#
@@ -1019,7 +1020,7 @@ function Add-PodeAuthWindowsAd
     }
 
     # add Windows AD auth method to server
-    $PodeContext.Server.Authentications[$Name] = @{
+    $PodeContext.Server.Authentications.Methods[$Name] = @{
         Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsADMethod)
         Arguments = @{
@@ -1071,7 +1072,7 @@ function Remove-PodeAuth
         $Name
     )
 
-    $null = $PodeContext.Server.Authentications.Remove($Name)
+    $null = $PodeContext.Server.Authentications.Methods.Remove($Name)
 }
 
 <#
@@ -1089,7 +1090,7 @@ function Clear-PodeAuth
     [CmdletBinding()]
     param()
 
-    $PodeContext.Server.Authentications.Clear()
+    $PodeContext.Server.Authentications.Methods.Clear()
 }
 
 <#
@@ -1456,7 +1457,7 @@ function Add-PodeAuthUserFile
     }
 
     # add Windows AD auth method to server
-    $PodeContext.Server.Authentications[$Name] = @{
+    $PodeContext.Server.Authentications.Methods[$Name] = @{
         Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthUserFileMethod)
         Arguments = @{
@@ -1603,7 +1604,7 @@ function Add-PodeAuthWindowsLocal
     }
 
     # add Windows Local auth method to server
-    $PodeContext.Server.Authentications[$Name] = @{
+    $PodeContext.Server.Authentications.Methods[$Name] = @{
         Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsLocalMethod)
         Arguments = @{
@@ -1957,11 +1958,11 @@ function Test-PodeAuthUser
     )
 }
 
-function New-PodeAuthAccess
+function Add-PodeAuthAccess
 {
     [CmdletBinding()]
     param(
-        [Parameter()]
+        [Parameter(Mandatory=$true)]
         [string]
         $Name,
 
@@ -1992,14 +1993,15 @@ function New-PodeAuthAccess
         $Match = 'One'
     )
 
-    # for custom a validator and name are mandatory
-    if ($Type -ieq 'custom') {
-        if ([string]::IsNullOrEmpty($Name)) {
-            throw "A Name is required for creating Custom Access objects"
-        }
+    # check name unique
+    if (Test-PodeAuthAccess -Name $Name) {
+        throw "Access method already defined: $($Name)"
+    }
 
+    # for custom access a validator is mandatory
+    if ($Type -ieq 'custom') {
         if ($null -eq $Validator) {
-            throw "A Validator scriptblock is required for creating Custom Access objects"
+            throw "A Validator scriptblock is required for creating Custom Access methods"
         }
     }
 
@@ -2029,7 +2031,7 @@ function New-PodeAuthAccess
     }
 
     # return access object
-    return @{
+    $PodeContext.Server.Authentications.Access[$Name] = @{
         Name = $Name
         Type = $Type
         IsCustom = ($Type -ieq 'custom')
@@ -2075,4 +2077,104 @@ function Add-PodeAuthCustomAccess
             $r.Access.Custom[$Name] = $Value
         }
     }
+}
+
+function Get-PodeAuthAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    # return all if no Name
+    if ([string]::IsNullOrEmpty($Name) -or ($Name.Length -eq 0)) {
+        return $PodeContext.Server.Authentications.Access.Values
+    }
+
+    # return filtered
+    return @(foreach ($n in $Name) {
+        $PodeContext.Server.Authentications.Access[$n]
+    })
+}
+
+function Test-PodeAuthAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.Authentications.Access.ContainsKey($Name)
+}
+
+function Test-PodeAuthUserAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [object[]]
+        $Value
+    )
+
+    # get the access method
+    $access = $PodeContext.Server.Authentications.Access[$Name]
+
+    # if there's no scriptblock, try the Path fallback
+    if ($null -eq $access.Scriptblock) {
+        $userAccess = $WebEvent.Auth.User
+        foreach ($atom in $access.Path.Split('.')) {
+            $userAccess = $userAccess.($atom)
+        }
+    }
+
+    # otherwise, invoke scriptblock
+    else {
+        $_args = @($WebEvent.Auth.User) + @($access.Arguments)
+        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scriptblock.UsingVariables)
+        $userAccess = Invoke-PodeScriptBlock -ScriptBlock $access.Scriptblock.Script -Arguments $_args -Return -Splat
+    }
+
+    # set access values on auth object
+    $WebEvent.Auth.Access = $userAccess
+    $WebEvent.Auth.IsAuthorised = $false
+
+    # check for custom validator, or use default match logic
+    if ($null -ne $access.Validator) {
+        $_args = @(,$userAccess) + @(,$Value) + @($access.Arguments)
+        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Validator.UsingVariables)
+        $WebEvent.Auth.IsAuthorised = [bool](Invoke-PodeScriptBlock -ScriptBlock $access.Validator.Script -Arguments $_args -Return -Splat)
+    }
+
+    # one or all match?
+    else {
+        if ($access.Match -ieq 'one') {
+            foreach ($item in $userAccess) {
+                if ($item -iin $Value) {
+                    $WebEvent.Auth.IsAuthorised = $true
+                    break
+                }
+            }
+        }
+        else {
+            $WebEvent.Auth.IsAuthorised = $true
+
+            foreach ($item in $Value) {
+                if ($item -inotin $userAccess) {
+                    $WebEvent.Auth.IsAuthorised = $false
+                    break
+                }
+            }
+        }
+    }
+
+    # authorised?
+    return $WebEvent.Auth.IsAuthorised
 }

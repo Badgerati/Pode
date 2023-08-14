@@ -26,10 +26,10 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # setup RBAC
-    $rbac = New-PodeAuthAccess -Type Role
+    Add-PodeAuthAccess -Type Role -Name 'TestRbac'
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Access $rbac -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Access 'TestRbac' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -45,6 +45,11 @@ Start-PodeServer -Threads 2 {
         }
 
         return @{ Message = 'Invalid details supplied' }
+    }
+
+    # Endware to output user auth state
+    Add-PodeEndware -ScriptBlock {
+        $WebEvent.Auth | Out-Default
     }
 
     # POST request to get list of users - there's no Roles, so any auth'd user can access

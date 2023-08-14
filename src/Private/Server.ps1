@@ -240,7 +240,8 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Sessions.Clear()
 
         # clear up authentication methods
-        $PodeContext.Server.Authentications.Clear()
+        $PodeContext.Server.Authentications.Methods.Clear()
+        $PodeContext.Server.Authentications.Access.Clear()
 
         # clear up shared state
         $PodeContext.Server.State.Clear()

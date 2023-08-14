@@ -221,7 +221,11 @@
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',
-        'New-PodeAuthAccess',
+        'Add-PodeAuthAccess',
+        'Add-PodeAuthCustomAccess',
+        'Get-PodeAuthAccess',
+        'Test-PodeAuthAccess',
+        'Test-PodeAuthUserAccess',
 
         # logging
         'New-PodeLoggingMethod',

@@ -267,12 +267,12 @@ function Get-PodeOpenApiDefinitionInternal
     $def['components'] = $PodeContext.Server.OpenAPI.components
 
     # auth/security components
-    if ($PodeContext.Server.Authentications.Count -gt 0) {
+    if ($PodeContext.Server.Authentications.Methods.Count -gt 0) {
         if ($null -eq $def.components.securitySchemes) {
             $def.components.securitySchemes = @{}
         }
 
-        foreach ($authName in $PodeContext.Server.Authentications.Keys) {
+        foreach ($authName in $PodeContext.Server.Authentications.Methods.Keys) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
             $_authName = ($authName -replace '\s+', '')
 

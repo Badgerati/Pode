@@ -1236,6 +1236,8 @@ function Get-PodeAuthMiddlewareScript
         $WebEvent.Auth = @{}
         $WebEvent.Auth.User = $result.User
         $WebEvent.Auth.IsAuthenticated = $true
+        $WebEvent.Auth.Access = $null
+        $WebEvent.Auth.IsAuthorised = $true
         $WebEvent.Auth.Store = !$sessionless
 
         # continue, but check access
@@ -1319,7 +1321,7 @@ function Set-PodeAuthStatus
         $Success,
 
         [Parameter()]
-        [hashtable[]]
+        [string[]]
         $Access,
 
         [switch]
@@ -1389,7 +1391,7 @@ function Set-PodeAuthStatus
     }
 
     foreach ($acc in $Access) {
-        if (!(Test-PodeAuthAccess -Access $acc)) {
+        if (!(Test-PodeAuthRouteAccess -Name $acc)) {
             return (Set-PodeAuthStatus `
                 -StatusCode 403 `
                 -Description $Description `
@@ -1901,7 +1903,7 @@ function Find-PodeAuth
         $Name
     )
 
-    return $PodeContext.Server.Authentications[$Name]
+    return $PodeContext.Server.Authentications.Methods[$Name]
 }
 
 function Test-PodeAuth
@@ -1913,7 +1915,7 @@ function Test-PodeAuth
         $Name
     )
 
-    return $PodeContext.Server.Authentications.ContainsKey($Name)
+    return $PodeContext.Server.Authentications.Methods.ContainsKey($Name)
 }
 
 function Import-PodeAuthADModule
@@ -1954,65 +1956,27 @@ function Get-PodeAuthADProvider
     return 'DirectoryServices'
 }
 
-function Test-PodeAuthAccess
+function Test-PodeAuthRouteAccess
 {
     param(
         [Parameter(Mandatory=$true)]
-        [hashtable]
-        $Access
+        [string]
+        $Name
     )
 
+    # get the access method
+    $access = $PodeContext.Server.Authentications.Access[$Name]
+
     # get route access values - if none then skip
-    $routeAccess = $WebEvent.Route.Access[$Access.Type]
-    if ($Access.IsCustom) {
-        $routeAccess = $routeAccess[$Access.Name]
+    $routeAccess = $WebEvent.Route.Access[$access.Type]
+    if ($access.IsCustom) {
+        $routeAccess = $routeAccess[$access.Name]
     }
 
     if (($null -eq $routeAccess) -or ($routeAccess.Length -eq 0)) {
         return $true
     }
 
-    # if there's no scriptblock, try the Path fallback
-    if ($null -eq $Access.Scriptblock) {
-        $userAccess = $WebEvent.Auth.User
-        foreach ($atom in $Access.Path.Split('.')) {
-            $userAccess = $userAccess.($atom)
-        }
-    }
-
-    # otherwise, invoke scriptblock
-    else {
-        $_args = @($WebEvent.Auth.User) + @($Access.Arguments)
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $Access.Scriptblock.UsingVariables)
-        $userAccess = Invoke-PodeScriptBlock -ScriptBlock $Access.Scriptblock.Script -Arguments $_args -Return -Splat
-    }
-
-    # check for custom validator, or use default match logic
-    if ($null -ne $Access.Validator) {
-        $_args = @(,$userAccess) + @(,$routeAccess) + @($Access.Arguments)
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $Access.Validator.UsingVariables)
-        return (Invoke-PodeScriptBlock -ScriptBlock $Access.Validator.Script -Arguments $_args -Return -Splat)
-    }
-
-    # one or all match?
-    else {
-        if ($Access.Match -ieq 'one') {
-            foreach ($item in $userAccess) {
-                if ($item -iin $routeAccess) {
-                    return $true
-                }
-            }
-
-            return $false
-        }
-        else {
-            foreach ($item in $routeAccess) {
-                if ($item -inotin $userAccess) {
-                    return $false
-                }
-            }
-
-            return $true
-        }
-    }
+    # now test the user's access against the route's access
+    return (Test-PodeAuthUserAccess -Name $Name -Value $routeAccess)
 }
