@@ -139,6 +139,10 @@ function Add-PodeRoute
         [string[]]
         $Scope,
 
+        [Parameter()]
+        [string[]]
+        $User,
+
         [switch]
         $AllowAnon,
 
@@ -200,6 +204,10 @@ function Add-PodeRoute
 
         if ($null -ne $RouteGroup.Access.Scope) {
             $Scope = $RouteGroup.Access.Scope + $Scope
+        }
+
+        if ($null -ne $RouteGroup.Access.User) {
+            $User = $RouteGroup.Access.User + $User
         }
 
         if ($null -ne $RouteGroup.Access.Custom) {
@@ -314,6 +322,7 @@ function Add-PodeRoute
                     Role = $Role
                     Group = $Group
                     Scope = $Scope
+                    User = $User
                     Custom = $CustomAccess
                 }
                 Endpoint = @{
@@ -914,6 +923,10 @@ function Add-PodeRouteGroup
         [string[]]
         $Scope,
 
+        [Parameter()]
+        [string[]]
+        $User,
+
         [switch]
         $AllowAnon
     )
@@ -979,6 +992,10 @@ function Add-PodeRouteGroup
             $Scope = $RouteGroup.Access.Scope + $Scope
         }
 
+        if ($null -ne $RouteGroup.Access.User) {
+            $User = $RouteGroup.Access.User + $User
+        }
+
         if ($null -ne $RouteGroup.Access.Custom) {
             $CustomAccess = $RouteGroup.Access.Custom
         }
@@ -998,6 +1015,7 @@ function Add-PodeRouteGroup
             Role = $Role
             Group = $Group
             Scope = $Scope
+            User = $User
             Custom = $CustomAccess
         }
     }

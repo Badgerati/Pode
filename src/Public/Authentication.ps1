@@ -1967,7 +1967,7 @@ function Add-PodeAuthAccess
         $Name,
 
         [Parameter(Mandatory=$true)]
-        [ValidateSet('Role', 'Group', 'Scope', 'Custom')]
+        [ValidateSet('Role', 'Group', 'Scope', 'User', 'Custom')]
         [string]
         $Type,
 
@@ -2027,7 +2027,12 @@ function Add-PodeAuthAccess
 
     # default path
     if ([string]::IsNullOrEmpty($Path)) {
-        $Path = "$($Type)s"
+        if ($Type -ieq 'user') {
+            $Path = 'Username'
+        }
+        else {
+            $Path = "$($Type)s"
+        }
     }
 
     # return access object

@@ -27,6 +27,10 @@ Start-PodeServer -Threads 2 {
 
     # setup RBAC
     Add-PodeAuthAccess -Type Role -Name 'TestRbac'
+    # Add-PodeAuthAccess -Type Custom -Name 'TestRbac' -Path 'CustomAccess' -Validator {
+    #     param($userRoles, $customValues)
+    #     return $userRoles.Example -iin $customValues.Example
+    # }
 
     # setup basic auth (base64> username:password in header)
     New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Access 'TestRbac' -Sessionless -ScriptBlock {
@@ -39,7 +43,9 @@ Start-PodeServer -Threads 2 {
                     ID ='M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
-                    Roles = @('Developer')
+                    Username = 'm.orty'
+                    Roles = @('Developer', 'Admin')
+                    CustomAccess = @{ Example = 'test-val-1' }
                 }
             }
         }
@@ -74,7 +80,7 @@ Start-PodeServer -Threads 2 {
                 }
             )
         }
-    }
+    } -PassThru | Add-PodeAuthCustomAccess -Name 'TestRbac' -Value @{ Example = 'test-val-1' }
 
     # POST request to get list of users - only Admin roles can access
     Add-PodeRoute -Method Post -Path '/users-admin' -Authentication 'Validate' -Role Admin -ScriptBlock {
@@ -86,6 +92,6 @@ Start-PodeServer -Threads 2 {
                 }
             )
         }
-    }
+    } -PassThru | Add-PodeAuthCustomAccess -Name 'TestRbac' -Value @{ Example = 'test-val-2' }
 
 }
