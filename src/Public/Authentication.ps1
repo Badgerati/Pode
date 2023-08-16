@@ -673,7 +673,7 @@ A unique Name for the Authentication method.
 The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER Access
-One or more optional Access Names to validate access to Routes (From Add-PodeAuthAccess)
+One or more optional Access method Names to validate authorisation to Routes (From Add-PodeAuthAccess)
 
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that retrieves and verifys a user.
@@ -1958,6 +1958,48 @@ function Test-PodeAuthUser
     )
 }
 
+<#
+.SYNOPSIS
+Add an authorisation Access method.
+
+.DESCRIPTION
+Add an authorisation Access method for use with Authentication methods, which will authorise access to Routes.
+
+.PARAMETER Name
+A unique Name for the Access method.
+
+.PARAMETER Type
+The Type of Access this method is for: Role, Group, Scope, User, Custom.
+
+.PARAMETER ScriptBlock
+An optional ScriptBlock for retrieving authorisation values for the authenticated user, useful if the values reside in an external data store.
+
+.PARAMETER ArgumentList
+An array of arguments to supply to the Access's ScriptBlock and Validator.
+
+.PARAMETER Validator
+An optional Validator scriptblock, which can be used to invoke custom validation logic to verify authorisation.
+
+.PARAMETER Path
+An optional property Path within the $WebEvent.Auth.User object to extract authorisation values.
+The default Path is based on the Access Type, either Roles; Groups; Scopes; Username; or Custom.<Name>
+
+.PARAMETER Match
+An optional inbuilt Match method to use when verifying access to a Route, this only applies when no custom Validator scriptblock is supplied.
+"One" will allow access if the User as at least one of the Route's access values, and with "All" the User must have all values. (Default: One)
+
+.EXAMPLE
+Add-PodeAuthAccess -Name 'Example' -Type Role
+
+.EXAMPLE
+Add-PodeAuthAccess -Name 'Example' -Type Group -Path 'Metadata.Groups' -Match All
+
+.EXAMPLE
+Add-PodeAuthAccess -Name 'Example' -Type Scope -Scriptblock { param($user) return @(Get-ExampleAccess -Username $user.Username) }
+
+.EXAMPLE
+Add-PodeAuthAccess -Name 'Example' -Type Custom -Validator { param($userAccess, $customAccess) return $userAccess.Country -ieq $customAccess.Country }
+#>
 function Add-PodeAuthAccess
 {
     [CmdletBinding()]
@@ -2048,6 +2090,25 @@ function Add-PodeAuthAccess
     }
 }
 
+<#
+.SYNOPSIS
+Assigns Custom Access value(s) to a Route.
+
+.DESCRIPTION
+Assigns Custom Access value(s) to a Route.
+
+.PARAMETER Route
+The Route to assign the Custom Access value(s).
+
+.PARAMETER Name
+The Name of the Access method the Custom Access value(s) are for.
+
+.PARAMETER Value
+The Custom Access Value(s)
+
+.EXAMPLE
+Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {} -PassThru | Add-PodeAuthCustomAccess -Name 'Example' -Value @{ Country = 'UK' }
+#>
 function Add-PodeAuthCustomAccess
 {
     [CmdletBinding()]
@@ -2061,7 +2122,7 @@ function Add-PodeAuthCustomAccess
         $Name,
 
         [Parameter(Mandatory=$true)]
-        [object]
+        [object[]]
         $Value
     )
 
@@ -2084,6 +2145,25 @@ function Add-PodeAuthCustomAccess
     }
 }
 
+<#
+.SYNOPSIS
+Get one or more Access methods.
+
+.DESCRIPTION
+Get one or more Access methods.
+
+.PARAMETER Name
+The Name of the Access method. If no name supplied, all methods will be returned.
+
+.EXAMPLE
+$methods = Get-PodeAuthAccess
+
+.EXAMPLE
+$methods = Get-PodeAuthAccess -Name 'Example'
+
+.EXAMPLE
+$methods = Get-PodeAuthAccess -Name 'Example1', 'Example2'
+#>
 function Get-PodeAuthAccess
 {
     [CmdletBinding()]
@@ -2104,6 +2184,19 @@ function Get-PodeAuthAccess
     })
 }
 
+<#
+.SYNOPSIS
+Test if an Access method exists.
+
+.DESCRIPTION
+Test if an Access method exists.
+
+.PARAMETER Name
+The Name of the Access method.
+
+.EXAMPLE
+if (Test-PodeAuthAccess -Name 'Example') { }
+#>
 function Test-PodeAuthAccess
 {
     [CmdletBinding()]
@@ -2116,6 +2209,22 @@ function Test-PodeAuthAccess
     return $PodeContext.Server.Authentications.Access.ContainsKey($Name)
 }
 
+<#
+.SYNOPSIS
+Test the currently authenticated User's access against the supplied values.
+
+.DESCRIPTION
+Test the currently authenticated User's access against the supplied values.
+
+.PARAMETER Name
+The Name of the Access method to use to verify the access.
+
+.PARAMETER Value
+An array of access values to pass to the Access method for verification against the User.
+
+.EXAMPLE
+if (Test-PodeAuthUserAccess -Name 'Example' -Value 'Developer', 'QA')
+#>
 function Test-PodeAuthUserAccess
 {
     [CmdletBinding()]

@@ -53,6 +53,18 @@ If supplied, the route created will be returned so it can be passed through a pi
 .PARAMETER IfExists
 Specifies what action to take when a Route already exists. (Default: Default)
 
+.PARAMETER Role
+One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
+
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
@@ -70,6 +82,9 @@ Add-PodeRoute -Method Get -Path '/api/cpu' -ErrorContentType 'application/json' 
 
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
+
+.EXAMPLE
+Add-PodeRoute -Method Get -Path '/' -Role 'Developer', 'QA' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeRoute
 {
@@ -861,6 +876,18 @@ The name of an Authentication method which should be used as middleware on the R
 
 .PARAMETER IfExists
 Specifies what action to take when a Route already exists. (Default: Default)
+
+.PARAMETER Role
+One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER AllowAnon
 If supplied, the Routes will allow anonymous access for non-authenticated users.
