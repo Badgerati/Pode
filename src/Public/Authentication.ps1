@@ -1976,7 +1976,7 @@ The Type of Access this method is for: Role, Group, Scope, User, Custom.
 An optional ScriptBlock for retrieving authorisation values for the authenticated user, useful if the values reside in an external data store.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Access's ScriptBlock and Validator.
+An optional array of arguments to supply to the Access's ScriptBlock and Validator.
 
 .PARAMETER Validator
 An optional Validator scriptblock, which can be used to invoke custom validation logic to verify authorisation.
@@ -2227,6 +2227,9 @@ An array of Source access values to pass to the Access method for verification a
 
 .PARAMETER Destination
 An array of Destination access values to pass to the Access method for verification. (ie: Route)
+
+.PARAMETER ArgumentList
+An optional array of arguments to supply to the Access's methods ScriptBlock for retrieving access values.
 
 .EXAMPLE
 if (Test-PodeAuthAccess -Name 'Example' -Source 'Developer' -Destination 'Admin') { }
