@@ -221,6 +221,13 @@
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',
+        'Add-PodeAuthAccess',
+        'Add-PodeAuthCustomAccess',
+        'Get-PodeAuthAccess',
+        'Test-PodeAuthAccessExists',
+        'Test-PodeAuthAccess',
+        'Test-PodeAuthAccessUser',
+        'Test-PodeAuthAccessRoute',
 
         # logging
         'New-PodeLoggingMethod',
@@ -389,7 +396,7 @@
             Tags = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
                 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform',
                 'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
-                'authentication', 'arm', 'raspberry-pi', 'aws-lambda',
+                'authentication', 'authorisation', 'arm', 'raspberry-pi', 'aws-lambda',
                 'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim')
 
             # A URL to the license for this module.

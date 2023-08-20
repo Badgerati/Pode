@@ -128,7 +128,10 @@ Describe 'Restart-PodeInternalServer' {
                 }
                 Cookies = @{}
                 Sessions = @{ 'key' = 'value' }
-                Authentications = @{ 'key' = 'value' }
+                Authentications = @{
+                    Methods = @{ 'key' = 'value' }
+                    Access = @{ 'key' = 'value' }
+                }
                 State = @{ 'key' = 'value' }
                 Output = @{
                     Variables = @{ 'key' = 'value' }
@@ -219,7 +222,7 @@ Describe 'Restart-PodeInternalServer' {
         $PodeContext.Server.Middleware.Count | Should Be 0
         $PodeContext.Server.Endware.Count | Should Be 0
         $PodeContext.Server.Sessions.Count | Should Be 0
-        $PodeContext.Server.Authentications.Count | Should Be 0
+        $PodeContext.Server.Authentications.Methods.Count | Should Be 0
         $PodeContext.Server.State.Count | Should Be 0
         $PodeContext.Server.Configuration | Should Be $null
 

@@ -672,6 +672,9 @@ A unique Name for the Authentication method.
 .PARAMETER Scheme
 The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
+.PARAMETER Access
+One or more optional Access method Names to validate authorisation to Routes (From Add-PodeAuthAccess)
+
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that retrieves and verifys a user.
 
@@ -707,6 +710,10 @@ function Add-PodeAuth
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
         $Scheme,
+
+        [Parameter()]
+        [string[]]
+        $Access,
 
         [Parameter(Mandatory=$true)]
         [ValidateScript({
@@ -749,7 +756,16 @@ function Add-PodeAuth
 
     # ensure the Scheme contains a scriptblock
     if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        throw "The supplied Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
+        throw "The supplied '$($Scheme.Name)' Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
+    }
+
+    # ensure the Access methods exists
+    if (!(Test-PodeIsEmpty $Access)) {
+        foreach ($acc in $Access) {
+            if (!(Test-PodeAuthAccessExists -Name $acc)) {
+                throw "Access method not found: $($acc)"
+            }
+        }
     }
 
     # if we're using sessions, ensure sessions have been setup
@@ -761,8 +777,10 @@ function Add-PodeAuth
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add auth method to server
-    $PodeContext.Server.Authentications[$Name] = @{
+    $PodeContext.Server.Authentications.Methods[$Name] = @{
+        Name = $Name
         Scheme = $Scheme
+        Access = $Access
         ScriptBlock = $ScriptBlock
         UsingVariables = $usingVars
         Arguments = $ArgumentList
@@ -813,7 +831,7 @@ function Get-PodeAuth
     }
 
     # get auth method
-    return $PodeContext.Server.Authentications[$Name]
+    return $PodeContext.Server.Authentications.Methods[$Name]
 }
 
 <#
@@ -1002,7 +1020,7 @@ function Add-PodeAuthWindowsAd
     }
 
     # add Windows AD auth method to server
-    $PodeContext.Server.Authentications[$Name] = @{
+    $PodeContext.Server.Authentications.Methods[$Name] = @{
         Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsADMethod)
         Arguments = @{
@@ -1054,7 +1072,7 @@ function Remove-PodeAuth
         $Name
     )
 
-    $null = $PodeContext.Server.Authentications.Remove($Name)
+    $null = $PodeContext.Server.Authentications.Methods.Remove($Name)
 }
 
 <#
@@ -1072,7 +1090,7 @@ function Clear-PodeAuth
     [CmdletBinding()]
     param()
 
-    $PodeContext.Server.Authentications.Clear()
+    $PodeContext.Server.Authentications.Methods.Clear()
 }
 
 <#
@@ -1439,7 +1457,7 @@ function Add-PodeAuthUserFile
     }
 
     # add Windows AD auth method to server
-    $PodeContext.Server.Authentications[$Name] = @{
+    $PodeContext.Server.Authentications.Methods[$Name] = @{
         Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthUserFileMethod)
         Arguments = @{
@@ -1586,7 +1604,7 @@ function Add-PodeAuthWindowsLocal
     }
 
     # add Windows Local auth method to server
-    $PodeContext.Server.Authentications[$Name] = @{
+    $PodeContext.Server.Authentications.Methods[$Name] = @{
         Scheme = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsLocalMethod)
         Arguments = @{
@@ -1938,4 +1956,460 @@ function Test-PodeAuthUser
         (($null -ne $WebEvent.Auth.User) -and $WebEvent.Auth.IsAuthenticated) -or
         (($null -ne $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated)
     )
+}
+
+<#
+.SYNOPSIS
+Add an authorisation Access method.
+
+.DESCRIPTION
+Add an authorisation Access method for use with Authentication methods, which will authorise access to Routes.
+Or they can be used independant of Authentication/Routes for custom scenarios.
+
+.PARAMETER Name
+A unique Name for the Access method.
+
+.PARAMETER Type
+The Type of Access this method is for: Role, Group, Scope, User, Custom.
+
+.PARAMETER ScriptBlock
+An optional ScriptBlock for retrieving authorisation values for the authenticated user, useful if the values reside in an external data store.
+
+.PARAMETER ArgumentList
+An optional array of arguments to supply to the Access's ScriptBlock and Validator.
+
+.PARAMETER Validator
+An optional Validator scriptblock, which can be used to invoke custom validation logic to verify authorisation.
+
+.PARAMETER Path
+An optional property Path within the $WebEvent.Auth.User object to extract authorisation values.
+The default Path is based on the Access Type, either Roles; Groups; Scopes; Username; or Custom.<Name>
+
+.PARAMETER Match
+An optional inbuilt Match method to use when verifying access to a Route, this only applies when no custom Validator scriptblock is supplied. (Default: One)
+"One" will allow access if the User has at least one of the Route's access values.
+"All" will allow access only if the User has all the values.
+"None" will allow access only if the User has none of the values.
+
+.EXAMPLE
+Add-PodeAuthAccess -Name 'Example' -Type Role
+
+.EXAMPLE
+Add-PodeAuthAccess -Name 'Example' -Type Group -Path 'Metadata.Groups' -Match All
+
+.EXAMPLE
+Add-PodeAuthAccess -Name 'Example' -Type Scope -Scriptblock { param($user) return @(Get-ExampleAccess -Username $user.Username) }
+
+.EXAMPLE
+Add-PodeAuthAccess -Name 'Example' -Type Custom -Validator { param($userAccess, $customAccess) return $userAccess.Country -ieq $customAccess.Country }
+#>
+function Add-PodeAuthAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Role', 'Group', 'Scope', 'User', 'Custom')]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock = $null,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter()]
+        [scriptblock]
+        $Validator = $null,
+
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [ValidateSet('All', 'One', 'None')]
+        [string]
+        $Match = 'One'
+    )
+
+    # check name unique
+    if (Test-PodeAuthAccessExists -Name $Name) {
+        throw "Access method already defined: $($Name)"
+    }
+
+    # for custom access a validator is mandatory
+    if ($Type -ieq 'custom') {
+        if ([string]::IsNullOrEmpty($Path) -and ($null -eq $ScriptBlock)) {
+            throw "A Path or ScriptBlock is required for sourcing the Custom access values, for the Custom Access method '$($Name)'"
+        }
+    }
+
+    # parse using variables in scriptblock
+    $scriptObj = $null
+    if (!(Test-PodeIsEmpty $ScriptBlock)) {
+        $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        $scriptObj = @{
+            Script = $ScriptBlock
+            UsingVariables = $usingScriptVars
+        }
+    }
+
+    # parse using variables in validator
+    $validObj = $null
+    if (!(Test-PodeIsEmpty $Validator)) {
+        $Validator, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $Validator -PSSession $PSCmdlet.SessionState
+        $validObj = @{
+            Script = $Validator
+            UsingVariables = $usingScriptVars
+        }
+    }
+
+    # default path
+    if ([string]::IsNullOrEmpty($Path)) {
+        if ($Type -ieq 'user') {
+            $Path = 'Username'
+        }
+        else {
+            $Path = "$($Type)s"
+        }
+    }
+
+    # return access object
+    $PodeContext.Server.Authentications.Access[$Name] = @{
+        Name = $Name
+        Type = $Type
+        IsCustom = ($Type -ieq 'custom')
+        ScriptBlock = $scriptObj
+        Validator = $validObj
+        Arguments = $ArgumentList
+        Path = $Path
+        Match = $Match.ToLowerInvariant()
+    }
+}
+
+<#
+.SYNOPSIS
+Assigns Custom Access value(s) to a Route.
+
+.DESCRIPTION
+Assigns Custom Access value(s) to a Route.
+
+.PARAMETER Route
+The Route to assign the Custom Access value(s).
+
+.PARAMETER Name
+The Name of the Access method the Custom Access value(s) are for.
+
+.PARAMETER Value
+The Custom Access Value(s)
+
+.EXAMPLE
+Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {} -PassThru | Add-PodeAuthCustomAccess -Name 'Example' -Value @{ Country = 'UK' }
+#>
+function Add-PodeAuthCustomAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [hashtable[]]
+        $Route,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [object[]]
+        $Value
+    )
+
+    begin {
+        $routes = @()
+    }
+
+    process {
+        $routes += $Route
+    }
+
+    end {
+        foreach ($r in $routes) {
+            if ($r.Access.Custom.ContainsKey($Name)) {
+                throw "Route '[$($r.Method)] $($r.Path)' already contains Custom Access with name '$($Name)'"
+            }
+
+            $r.Access.Custom[$Name] = $Value
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Get one or more Access methods.
+
+.DESCRIPTION
+Get one or more Access methods.
+
+.PARAMETER Name
+The Name of the Access method. If no name supplied, all methods will be returned.
+
+.EXAMPLE
+$methods = Get-PodeAuthAccess
+
+.EXAMPLE
+$methods = Get-PodeAuthAccess -Name 'Example'
+
+.EXAMPLE
+$methods = Get-PodeAuthAccess -Name 'Example1', 'Example2'
+#>
+function Get-PodeAuthAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name
+    )
+
+    # return all if no Name
+    if ([string]::IsNullOrEmpty($Name) -or ($Name.Length -eq 0)) {
+        return $PodeContext.Server.Authentications.Access.Values
+    }
+
+    # return filtered
+    return @(foreach ($n in $Name) {
+        $PodeContext.Server.Authentications.Access[$n]
+    })
+}
+
+<#
+.SYNOPSIS
+Test if an Access method exists.
+
+.DESCRIPTION
+Test if an Access method exists.
+
+.PARAMETER Name
+The Name of the Access method.
+
+.EXAMPLE
+if (Test-PodeAuthAccessExists -Name 'Example') { }
+#>
+function Test-PodeAuthAccessExists
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.Authentications.Access.ContainsKey($Name)
+}
+
+<#
+.SYNOPSIS
+Test access values for a Source/Destination against an Access method.
+
+.DESCRIPTION
+Test access values for a Source/Destination against an Access method.
+
+.PARAMETER Name
+The Name of the Access method to use to verify the access.
+
+.PARAMETER Source
+An array of Source access values to pass to the Access method for verification against the Destination access values. (ie: User)
+
+.PARAMETER Destination
+An array of Destination access values to pass to the Access method for verification. (ie: Route)
+
+.PARAMETER ArgumentList
+An optional array of arguments to supply to the Access's methods ScriptBlock for retrieving access values.
+
+.EXAMPLE
+if (Test-PodeAuthAccess -Name 'Example' -Source 'Developer' -Destination 'Admin') { }
+#>
+function Test-PodeAuthAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [object[]]
+        $Source = $null,
+
+        [Parameter()]
+        [object[]]
+        $Destination = $null,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList = $null
+    )
+
+    # get the access method
+    $access = $PodeContext.Server.Authentications.Access[$Name]
+
+    # authorised if no destination values
+    if (($null -eq $Destination) -or ($Destination.Length -eq 0)) {
+        return $true
+    }
+
+    # if we have no source values, invoke the scriptblock
+    if (($null -eq $Source) -or ($Source.Length -eq 0)) {
+        if ($null -ne $access.ScriptBlock) {
+            $_args = $ArgumentList + @($access.Arguments)
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scriptblock.UsingVariables)
+            $Source = Invoke-PodeScriptBlock -ScriptBlock $access.Scriptblock.Script -Arguments $_args -Return -Splat
+        }
+    }
+
+    # check for custom validator, or use default match logic
+    if ($null -ne $access.Validator) {
+        $_args = @(,$Source) + @(,$Destination) + @($access.Arguments)
+        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Validator.UsingVariables)
+        return [bool](Invoke-PodeScriptBlock -ScriptBlock $access.Validator.Script -Arguments $_args -Return -Splat)
+    }
+
+    # not authorised if no source values
+    if (($access.Match -ne 'none') -and (($null -eq $Source) -or ($Source.Length -eq 0))) {
+        return $false
+    }
+
+    # one or all match?
+    else {
+        switch ($access.Match) {
+            'one' {
+                foreach ($item in $Source) {
+                    if ($item -iin $Destination) {
+                        return $true
+                    }
+                }
+            }
+
+            'all' {
+                foreach ($item in $Destination) {
+                    if ($item -inotin $Source) {
+                        return $false
+                    }
+                }
+    
+                return $true
+            }
+
+            'none' {
+                foreach ($item in $Source) {
+                    if ($item -iin $Destination) {
+                        return $false
+                    }
+                }
+
+                return $true
+            }
+        }
+    }
+
+    # default is not authorised
+    return $false
+}
+
+<#
+.SYNOPSIS
+Test the currently authenticated User's access against the supplied values.
+
+.DESCRIPTION
+Test the currently authenticated User's access against the supplied values. This will be the user in a WebEvent object.
+
+.PARAMETER Name
+The Name of the Access method to use to verify the access.
+
+.PARAMETER Value
+An array of access values to pass to the Access method for verification against the User.
+
+.EXAMPLE
+if (Test-PodeAuthAccessUser -Name 'Example' -Value 'Developer', 'QA') { }
+#>
+function Test-PodeAuthAccessUser
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [object[]]
+        $Value
+    )
+
+    # get the access method
+    $access = $PodeContext.Server.Authentications.Access[$Name]
+
+    # if there's no scriptblock, try the Path fallback
+    if ($null -eq $access.Scriptblock) {
+        $userAccess = $WebEvent.Auth.User
+        foreach ($atom in $access.Path.Split('.')) {
+            $userAccess = $userAccess.($atom)
+        }
+    }
+
+    # otherwise, invoke scriptblock
+    else {
+        $_args = @($WebEvent.Auth.User) + @($access.Arguments)
+        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scriptblock.UsingVariables)
+        $userAccess = Invoke-PodeScriptBlock -ScriptBlock $access.Scriptblock.Script -Arguments $_args -Return -Splat
+    }
+
+    # set access values on auth object
+    $WebEvent.Auth.Access[$Name] = $userAccess
+
+    # is the user authorised?
+    $WebEvent.Auth.IsAuthorised = Test-PodeAuthAccess -Name $Name -Source $userAccess -Destination $Value
+    return $WebEvent.Auth.IsAuthorised
+}
+
+<#
+.SYNOPSIS
+Test the currently authenticated User's access against the access values supplied for the current Route.
+
+.DESCRIPTION
+Test the currently authenticated User's access against the access values supplied for the current Route.
+
+.PARAMETER Name
+The Name of the Access method to use to verify the access.
+
+.EXAMPLE
+if (Test-PodeAuthAccessRoute -Name 'Example') { }
+#>
+function Test-PodeAuthAccessRoute
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    # get the access method
+    $access = $PodeContext.Server.Authentications.Access[$Name]
+
+    # get route access values - if none then skip
+    $routeAccess = $WebEvent.Route.Access[$access.Type]
+    if ($access.IsCustom) {
+        $routeAccess = $routeAccess[$access.Name]
+    }
+
+    if (($null -eq $routeAccess) -or ($routeAccess.Length -eq 0)) {
+        return $true
+    }
+
+    # now test the user's access against the route's access
+    return (Test-PodeAuthAccessUser -Name $Name -Value $routeAccess)
 }

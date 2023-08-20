@@ -351,8 +351,11 @@ function New-PodeContext
         }
     }
 
-    # authnetication methods
-    $ctx.Server.Authentications = @{}
+    # authentication methods and access
+    $ctx.Server.Authentications = @{
+        Methods = @{}
+        Access = @{}
+    }
 
     # create new cancellation tokens
     $ctx.Tokens = @{
