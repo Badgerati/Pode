@@ -196,6 +196,51 @@ But calling the following will fail with a 403:
 Invoke-RestMethod -Uri http://localhost:8080/route2 -Method Get -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
 ```
 
+### Multiple Access Methods
+
+You can configure multiple Access methods on a single Authentication, and each of them will have to succeed for a user to be authorised for access to a Route.
+
+Using the same example above, we could add Group authorisation to this as well so the Developers have to be in a Software Group, and the Admins in a Operations Group:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    # create simple role and group access methods
+    Add-PodeAuthAccess -Name 'RoleExample' -Type Role
+    Add-PodeAuthAccess -Name 'GroupExample' -Type Group
+
+    # setup Basic authentication
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'AuthExample' -Sessionless -Access 'RoleExample', 'GroupExample' -ScriptBlock {
+        param($username, $password)
+
+        # here you'd check a real user storage, this is just for example
+        if (($username -eq 'morty') -and ($password -eq 'pickle')) {
+            return @{
+                User = @{
+                    Username = 'Morty'
+                    Roles = @('Developer')
+                    Groups = @('Software')
+                }
+            }
+        }
+
+        # authentication failed
+        return $null
+    }
+
+    # create a route which only developers can access
+    Add-PodeRoute -Method Get -Path '/route1' -Role 'Developer' -Group 'Software' -Authentication 'AuthExample' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'Value' = 'Hello!' }
+    }
+
+    # create a route which only admins can access
+    Add-PodeRoute -Method Get -Path '/route2' -Role 'Admin' -Group 'Operations' -Authentication 'AuthExample' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{ 'Value' = 'Hi!' }
+    }
+}
+```
+
 ## Custom Access
 
 Pode has inbuilt support for Roles, Groups, Scopes, and Users authorisation on Routes. However, if you need to setup a more Custom authorisation policy on Routes you can create an Access method with `-Type` "Custom", and add custom access values to a Route using [`Add-PodeAuthCustomAccess`](../../../Functions/Authentication/Add-PodeAuthCustomAccess).
