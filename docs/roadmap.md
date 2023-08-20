@@ -29,7 +29,7 @@ Sometimes there could be more, if patch releases are needed. But sometimes there
 - [ ] gRPC support
 - [ ] HTTP/2.0 support
 - [ ] HTTP/3.0 support
-- [ ] Inbuilt authorization support, on top the current authentications support [#992](https://github.com/Badgerati/Pode/issues/992)
+- [x] Inbuilt authorization support, on top the current authentications support [#992](https://github.com/Badgerati/Pode/issues/992)
 - [x] Secret management support [#980](https://github.com/Badgerati/Pode/issues/980)
 - [ ] Some way of being able to merge authentication types [588](https://github.com/Badgerati/Pode/issues/588)
 - [ ] Improved garbage collection in runspaces, to help free up memory

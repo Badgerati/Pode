@@ -1236,7 +1236,7 @@ function Get-PodeAuthMiddlewareScript
         $WebEvent.Auth = @{}
         $WebEvent.Auth.User = $result.User
         $WebEvent.Auth.IsAuthenticated = $true
-        $WebEvent.Auth.Access = $null
+        $WebEvent.Auth.Access = @{}
         $WebEvent.Auth.IsAuthorised = $true
         $WebEvent.Auth.Store = !$sessionless
 
@@ -1391,7 +1391,7 @@ function Set-PodeAuthStatus
     }
 
     foreach ($acc in $Access) {
-        if (!(Test-PodeAuthRouteAccess -Name $acc)) {
+        if (!(Test-PodeAuthAccessRoute -Name $acc)) {
             return (Set-PodeAuthStatus `
                 -StatusCode 403 `
                 -Description $Description `
@@ -1954,29 +1954,4 @@ function Get-PodeAuthADProvider
 
     # ds
     return 'DirectoryServices'
-}
-
-function Test-PodeAuthRouteAccess
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name
-    )
-
-    # get the access method
-    $access = $PodeContext.Server.Authentications.Access[$Name]
-
-    # get route access values - if none then skip
-    $routeAccess = $WebEvent.Route.Access[$access.Type]
-    if ($access.IsCustom) {
-        $routeAccess = $routeAccess[$access.Name]
-    }
-
-    if (($null -eq $routeAccess) -or ($routeAccess.Length -eq 0)) {
-        return $true
-    }
-
-    # now test the user's access against the route's access
-    return (Test-PodeAuthUserAccess -Name $Name -Value $routeAccess)
 }

@@ -762,7 +762,7 @@ function Add-PodeAuth
     # ensure the Access methods exists
     if (!(Test-PodeIsEmpty $Access)) {
         foreach ($acc in $Access) {
-            if (!(Test-PodeAuthAccess -Name $acc)) {
+            if (!(Test-PodeAuthAccessExists -Name $acc)) {
                 throw "Access method not found: $($acc)"
             }
         }
@@ -1964,6 +1964,7 @@ Add an authorisation Access method.
 
 .DESCRIPTION
 Add an authorisation Access method for use with Authentication methods, which will authorise access to Routes.
+Or they can be used independant of Authentication/Routes for custom scenarios.
 
 .PARAMETER Name
 A unique Name for the Access method.
@@ -1985,8 +1986,10 @@ An optional property Path within the $WebEvent.Auth.User object to extract autho
 The default Path is based on the Access Type, either Roles; Groups; Scopes; Username; or Custom.<Name>
 
 .PARAMETER Match
-An optional inbuilt Match method to use when verifying access to a Route, this only applies when no custom Validator scriptblock is supplied.
-"One" will allow access if the User as at least one of the Route's access values, and with "All" the User must have all values. (Default: One)
+An optional inbuilt Match method to use when verifying access to a Route, this only applies when no custom Validator scriptblock is supplied. (Default: One)
+"One" will allow access if the User has at least one of the Route's access values.
+"All" will allow access only if the User has all the values.
+"None" will allow access only if the User has none of the values.
 
 .EXAMPLE
 Add-PodeAuthAccess -Name 'Example' -Type Role
@@ -2030,20 +2033,20 @@ function Add-PodeAuthAccess
         $Path,
 
         [Parameter()]
-        [ValidateSet('All', 'One')]
+        [ValidateSet('All', 'One', 'None')]
         [string]
         $Match = 'One'
     )
 
     # check name unique
-    if (Test-PodeAuthAccess -Name $Name) {
+    if (Test-PodeAuthAccessExists -Name $Name) {
         throw "Access method already defined: $($Name)"
     }
 
     # for custom access a validator is mandatory
     if ($Type -ieq 'custom') {
-        if ($null -eq $Validator) {
-            throw "A Validator scriptblock is required for creating Custom Access methods"
+        if ([string]::IsNullOrEmpty($Path) -and ($null -eq $ScriptBlock)) {
+            throw "A Path or ScriptBlock is required for sourcing the Custom access values, for the Custom Access method '$($Name)'"
         }
     }
 
@@ -2086,7 +2089,7 @@ function Add-PodeAuthAccess
         Validator = $validObj
         Arguments = $ArgumentList
         Path = $Path
-        Match = $Match
+        Match = $Match.ToLowerInvariant()
     }
 }
 
@@ -2195,9 +2198,9 @@ Test if an Access method exists.
 The Name of the Access method.
 
 .EXAMPLE
-if (Test-PodeAuthAccess -Name 'Example') { }
+if (Test-PodeAuthAccessExists -Name 'Example') { }
 #>
-function Test-PodeAuthAccess
+function Test-PodeAuthAccessExists
 {
     [CmdletBinding()]
     param(
@@ -2211,10 +2214,116 @@ function Test-PodeAuthAccess
 
 <#
 .SYNOPSIS
+Test access values for a Source/Destination against an Access method.
+
+.DESCRIPTION
+Test access values for a Source/Destination against an Access method.
+
+.PARAMETER Name
+The Name of the Access method to use to verify the access.
+
+.PARAMETER Source
+An array of Source access values to pass to the Access method for verification against the Destination access values. (ie: User)
+
+.PARAMETER Destination
+An array of Destination access values to pass to the Access method for verification. (ie: Route)
+
+.EXAMPLE
+if (Test-PodeAuthAccess -Name 'Example' -Source 'Developer' -Destination 'Admin') { }
+#>
+function Test-PodeAuthAccess
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [object[]]
+        $Source = $null,
+
+        [Parameter()]
+        [object[]]
+        $Destination = $null,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList = $null
+    )
+
+    # get the access method
+    $access = $PodeContext.Server.Authentications.Access[$Name]
+
+    # authorised if no destination values
+    if (($null -eq $Destination) -or ($Destination.Length -eq 0)) {
+        return $true
+    }
+
+    # if we have no source values, invoke the scriptblock
+    if (($null -eq $Source) -or ($Source.Length -eq 0)) {
+        if ($null -ne $access.ScriptBlock) {
+            $_args = $ArgumentList + @($access.Arguments)
+            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scriptblock.UsingVariables)
+            $Source = Invoke-PodeScriptBlock -ScriptBlock $access.Scriptblock.Script -Arguments $_args -Return -Splat
+        }
+    }
+
+    # check for custom validator, or use default match logic
+    if ($null -ne $access.Validator) {
+        $_args = @(,$Source) + @(,$Destination) + @($access.Arguments)
+        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Validator.UsingVariables)
+        return [bool](Invoke-PodeScriptBlock -ScriptBlock $access.Validator.Script -Arguments $_args -Return -Splat)
+    }
+
+    # not authorised if no source values
+    if (($access.Match -ne 'none') -and (($null -eq $Source) -or ($Source.Length -eq 0))) {
+        return $false
+    }
+
+    # one or all match?
+    else {
+        switch ($access.Match) {
+            'one' {
+                foreach ($item in $Source) {
+                    if ($item -iin $Destination) {
+                        return $true
+                    }
+                }
+            }
+
+            'all' {
+                foreach ($item in $Destination) {
+                    if ($item -inotin $Source) {
+                        return $false
+                    }
+                }
+    
+                return $true
+            }
+
+            'none' {
+                foreach ($item in $Source) {
+                    if ($item -iin $Destination) {
+                        return $false
+                    }
+                }
+
+                return $true
+            }
+        }
+    }
+
+    # default is not authorised
+    return $false
+}
+
+<#
+.SYNOPSIS
 Test the currently authenticated User's access against the supplied values.
 
 .DESCRIPTION
-Test the currently authenticated User's access against the supplied values.
+Test the currently authenticated User's access against the supplied values. This will be the user in a WebEvent object.
 
 .PARAMETER Name
 The Name of the Access method to use to verify the access.
@@ -2223,9 +2332,9 @@ The Name of the Access method to use to verify the access.
 An array of access values to pass to the Access method for verification against the User.
 
 .EXAMPLE
-if (Test-PodeAuthUserAccess -Name 'Example' -Value 'Developer', 'QA')
+if (Test-PodeAuthAccessUser -Name 'Example' -Value 'Developer', 'QA') { }
 #>
-function Test-PodeAuthUserAccess
+function Test-PodeAuthAccessUser
 {
     [CmdletBinding()]
     param(
@@ -2257,38 +2366,47 @@ function Test-PodeAuthUserAccess
     }
 
     # set access values on auth object
-    $WebEvent.Auth.Access = $userAccess
-    $WebEvent.Auth.IsAuthorised = $false
+    $WebEvent.Auth.Access[$Name] = $userAccess
 
-    # check for custom validator, or use default match logic
-    if ($null -ne $access.Validator) {
-        $_args = @(,$userAccess) + @(,$Value) + @($access.Arguments)
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Validator.UsingVariables)
-        $WebEvent.Auth.IsAuthorised = [bool](Invoke-PodeScriptBlock -ScriptBlock $access.Validator.Script -Arguments $_args -Return -Splat)
-    }
-
-    # one or all match?
-    else {
-        if ($access.Match -ieq 'one') {
-            foreach ($item in $userAccess) {
-                if ($item -iin $Value) {
-                    $WebEvent.Auth.IsAuthorised = $true
-                    break
-                }
-            }
-        }
-        else {
-            $WebEvent.Auth.IsAuthorised = $true
-
-            foreach ($item in $Value) {
-                if ($item -inotin $userAccess) {
-                    $WebEvent.Auth.IsAuthorised = $false
-                    break
-                }
-            }
-        }
-    }
-
-    # authorised?
+    # is the user authorised?
+    $WebEvent.Auth.IsAuthorised = Test-PodeAuthAccess -Name $Name -Source $userAccess -Destination $Value
     return $WebEvent.Auth.IsAuthorised
+}
+
+<#
+.SYNOPSIS
+Test the currently authenticated User's access against the access values supplied for the current Route.
+
+.DESCRIPTION
+Test the currently authenticated User's access against the access values supplied for the current Route.
+
+.PARAMETER Name
+The Name of the Access method to use to verify the access.
+
+.EXAMPLE
+if (Test-PodeAuthAccessRoute -Name 'Example') { }
+#>
+function Test-PodeAuthAccessRoute
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    # get the access method
+    $access = $PodeContext.Server.Authentications.Access[$Name]
+
+    # get route access values - if none then skip
+    $routeAccess = $WebEvent.Route.Access[$access.Type]
+    if ($access.IsCustom) {
+        $routeAccess = $routeAccess[$access.Name]
+    }
+
+    if (($null -eq $routeAccess) -or ($routeAccess.Length -eq 0)) {
+        return $true
+    }
+
+    # now test the user's access against the route's access
+    return (Test-PodeAuthAccessUser -Name $Name -Value $routeAccess)
 }

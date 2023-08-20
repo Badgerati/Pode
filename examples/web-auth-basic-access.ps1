@@ -44,7 +44,7 @@ Start-PodeServer -Threads 2 {
                     Name = 'Morty'
                     Type = 'Human'
                     Username = 'm.orty'
-                    Roles = @('Developer', 'Admin')
+                    Roles = @('Developer')
                     CustomAccess = @{ Example = 'test-val-1' }
                 }
             }

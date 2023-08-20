@@ -7,6 +7,8 @@ Authentication can either be sessionless (requiring validation on every request)
 
 To setup and use authentication in Pode you need to use the [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) and [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) functions.
 
+You can also setup [Authorisation](../../Authorisation/Overview) for use with Authentication as well.
+
 ## Usage
 
 ### Schemes
@@ -161,6 +163,8 @@ The `Auth` object will also contain:
 | User | Details about the authenticated user |
 | IsAuthenticated | States if the request is for an authenticated user, can be `$true`, `$false` or `$null` |
 | Store | States whether the authentication is for a session, and will be stored as a cookie |
+| IsAuthorised | If using [Authorisation](../../Authorisation/Overview), this value will be `$true` or `$false` depending on whether or not the authenticated user is authorised to access the Route. If not using Authorisation this value will just be `$true` |
+| Access | If using [Authorisation](../../Authorisation/Overview), this property will contain the access values for the User per Access method. If not using Authorisation this value will just be an empty hashtable |
 
 The following example get the user's name from the `Auth` object:
 
