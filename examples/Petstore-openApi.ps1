@@ -15,19 +15,20 @@ function test
 }
 
 Start-PodeServer -Threads 2 -ScriptBlock {
-    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http 
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http  
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
     $InfoDescription = @'
-'This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
-    Swagger at [http://swagger.io](http://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
-    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
-    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io). 
+In the third iteration of the pet store, we've switched to the design first approach!
+You can now help us improve the API whether it's by making changes to the definition itself or to the code.
+That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
 
-    Some useful links:
-    - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
-    - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)'
+Some useful links:
+- [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
+- [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
 '@
 
-    $Info = @{  
+    $ExtraInfo = @{  
         'termsOfService' = 'http://swagger.io/terms/'
 
         'contact'        = @{
@@ -37,15 +38,15 @@ Start-PodeServer -Threads 2 -ScriptBlock {
         }
         'license'        = @{
             'name' = 'Apache 2.0'
-            'url'  = ' http://www.apache.org/licenses/LICENSE-2.0.html'
+            'url'  = 'http://www.apache.org/licenses/LICENSE-2.0.html'
         }
-        'externalDocs'   = @(@{
-                'description' = 'Find out more about Swagger'
-                'url'         = 'http://swagger.io'
-            } 
-        )
     }
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -Info $Info -RestrictRoutes -RouteFilter '/api/v3/*' 
+    $ExternalDocs = @{
+            'description' = 'Find out more about Swagger'
+            'url'         = 'http://swagger.io'
+        }  
+
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -RestrictRoutes -RouteFilter '/api/v3/*' -ExtraInfo $ExtraInfo -ExternalDocs $ExternalDocs
     Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger'  
     # or ReDoc at the default "/redoc"
     Enable-PodeOpenApiViewer -Type ReDoc  
@@ -296,7 +297,7 @@ Start-PodeServer -Threads 2 -ScriptBlock {
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value' 
  
         
-        Add-PodeRoute -PassThru -Method Get -Path '/pet/:petid' -ScriptBlock {
+        Add-PodeRoute -PassThru -Method Get -Path '/pet/:petId' -ScriptBlock {
             $Script = $WebEvent.data  
             Write-PodeJsonResponse -Value $script 
         } | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetById' -PassThru |
@@ -307,7 +308,7 @@ Start-PodeServer -Threads 2 -ScriptBlock {
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru | 
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'    
 
-        Add-PodeRoute -PassThru -Method post -Path '/pet/:petid' -ScriptBlock {
+        Add-PodeRoute -PassThru -Method post -Path '/pet/:petId' -ScriptBlock {
             $Script = $WebEvent.data  
             Write-PodeJsonResponse -Value $script 
         } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store' -Description 'Updates a pet in the store with form data' -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru |
@@ -321,7 +322,7 @@ Start-PodeServer -Threads 2 -ScriptBlock {
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'    
     
         
-        Add-PodeRoute -PassThru -Method Delete -Path '/pet/:petid' -ScriptBlock {
+        Add-PodeRoute -PassThru -Method Delete -Path '/pet/:petId' -ScriptBlock {
             $Script = $WebEvent.data  
             Write-PodeJsonResponse -Value $script 
         } | Set-PodeOARouteInfo -Summary 'Deletes a pet' -Description 'Deletes a pet.' -Tags 'pet' -OperationId 'deletePet' -PassThru |
@@ -332,17 +333,14 @@ Start-PodeServer -Threads 2 -ScriptBlock {
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru | 
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'    
 
-        Add-PodeRoute -PassThru -Method post -Path '/pet/:petid/uploadImage' -ScriptBlock {
+        Add-PodeRoute -PassThru -Method post -Path '/pet/:petId/uploadImage' -ScriptBlock {
             $Script = $WebEvent.data  
             Write-PodeJsonResponse -Value $script 
         } | Set-PodeOARouteInfo -Summary 'Uploads an image' -Description 'Updates a pet in the store with a new image' -Tags 'pet' -OperationId 'uploadFile' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                                 (  New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'ID of pet that needs to be updated' -Required | ConvertTo-PodeOAParameter -In Path ),
-                                (  New-PodeOAStringProperty -Name 'additionalMetadata' -Description 'Additional Metadata' | ConvertTo-PodeOAParameter -In Query ) ,    
-                                (New-PodeOARequestBody -required -ContentSchemas @{   'multipart/form-data' = 
-                    New-PodeOAObjectProperty -Properties @( (New-PodeOAStringProperty -Name 'image' -Format Binary  ))    
-                }) #missing simple properties
-            ) | 
+                                (  New-PodeOAStringProperty -Name 'additionalMetadata' -Description 'Additional Metadata' | ConvertTo-PodeOAParameter -In Query ) ) |    
+            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -required -ContentSchemas @{   'multipart/form-data' = New-PodeOAObjectProperty -Properties @( (New-PodeOAStringProperty -Name 'image' -Format Binary  )) } ) -PassThru | #missing simple properties             
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas @{'application/json' = 'ApiResponse' } -PassThru | 
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru | 
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'    

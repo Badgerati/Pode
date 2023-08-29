@@ -58,7 +58,10 @@ function Enable-PodeOpenApi
         $Description,
 
         [Parameter()]
-        $Info,
+        $ExtraInfo,
+
+        [Parameter()]
+        $ExternalDocs,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -83,6 +86,8 @@ function Enable-PodeOpenApi
         Description    = $Description
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes
+        ExternalDocs   = $ExternalDocs
+        ExtraInfo      = $ExtraInfo
     }
 
     # add the OpenAPI route
@@ -99,9 +104,10 @@ function Enable-PodeOpenApi
             -Protocol $WebEvent.Endpoint.Protocol `
             -Address $WebEvent.Endpoint.Address `
             -EndpointName $WebEvent.Endpoint.Name `
-            -RestrictRoutes:$strict
-
-        # write the openapi definition
+            -RestrictRoutes:$strict `
+            -ExtraInfo $meta.ExtraInfo `
+            -ExternalDocs $meta.ExternalDocs  
+        # write the openapi definition 
         Write-PodeJsonResponse -Value $def -Depth 20
     }
 }

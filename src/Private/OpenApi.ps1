@@ -227,8 +227,9 @@ function ConvertTo-PodeOASchemaProperty
         if ($Property.xml )
         { 
             $schema['xml'] = @{} 
-            foreach($key in $Property.xml.Keys){
-                $schema['xml'].$key=$Property.xml.$key
+            foreach ($key in $Property.xml.Keys)
+            {
+                $schema['xml'].$key = $Property.xml.$key
             } 
         }
     }
@@ -261,11 +262,11 @@ function Get-PodeOpenApiDefinitionInternal
         [string]
         $Title,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
         $Version,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
         $Description,
 
@@ -285,6 +286,12 @@ function Get-PodeOpenApiDefinitionInternal
         [string]
         $EndpointName,
 
+        [Parameter()]
+        $ExtraInfo,
+
+        [Parameter()]
+        $ExternalDocs,
+
         [switch]
         $RestrictRoutes
     )
@@ -297,10 +304,17 @@ function Get-PodeOpenApiDefinitionInternal
     # metadata
     $def['info'] = @{
         title       = $Title
-        version     = $Version
-        description = $Description
+        version     = $Version 
+        description = $Description      
+    } 
+    if ($ExtraInfo)
+    {
+        $def['info'] += $ExtraInfo
     }
-
+    if ($ExternalDocs)
+    {
+        $def['externalDocs'] = $ExternalDocs
+    } 
     # servers
     $def['servers'] = $null
     if (!$RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1))
@@ -312,6 +326,10 @@ function Get-PodeOpenApiDefinitionInternal
                     description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
                 }
             })
+    }
+    else
+    { 
+        $def['servers'] = @(@{'url' = $RouteFilter.TrimEnd('/', '*') })
     }
 
     # components
