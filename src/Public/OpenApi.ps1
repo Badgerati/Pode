@@ -58,6 +58,9 @@ function Enable-PodeOpenApi
         $Description,
 
         [Parameter()]
+        $Info,
+
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $RouteFilter = '/*',
@@ -67,7 +70,8 @@ function Enable-PodeOpenApi
         $Middleware,
 
         [switch]
-        $RestrictRoutes
+        $RestrictRoutes 
+
     )
 
     # initialise openapi info
@@ -573,7 +577,7 @@ function New-PodeOARequestBody
         'schema'
         {
             return @{
-                required    = $Required.IsPresent
+                required    = $Required.IsPresent -and $Required
                 description = $Description
                 content     = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
             }
@@ -592,6 +596,7 @@ function New-PodeOARequestBody
         }
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -625,6 +630,59 @@ function Add-PodeOAComponentSchema
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
 }
 
+
+<#
+.SYNOPSIS
+Validate a parameter with a provided schema.
+
+.DESCRIPTION
+Validate the parameter of a method against it's own schema 
+
+.PARAMETER Parameter
+The parameter to validate
+
+.PARAMETER SchemaReference
+The schema name to use to validate the property.
+
+.PARAMETER Depth
+Specifies how many levels of the parameter objects are included in the JSON representation.
+
+
+.OUTPUTS
+The Parameter Object
+
+.EXAMPLE
+$UserInfo = Test-PodeOARequestSchema -Parameter 'UserInfo' -SchemaReference 'UserIdSchema'}
+
+#>
+
+function Test-PodeOARequestSchema
+{
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Parameter,
+        [Parameter(Mandatory = $true)]
+        [string]
+        $SchemaReference 
+    )
+    if (!(Test-PodeOAComponentSchema -Name $SchemaReference))
+    {
+        throw "The OpenApi component schema doesn't exist: $SchemaReference"
+    }
+    $Schema = $PodeContext.Server.OpenAPI.components.schemas[$SchemaReference].properties
+    $Schema | Remove-PodeNullKeysFromHashtable 
+    $Schema = @{'properties' = $test ; 'type' = $PodeContext.Server.OpenAPI.components.schemas[$SchemaReference].type }
+    if ( Test-Json -Json $Parameter -Schema ($Schema | ConvertTo-Json -Compress -Depth 5 ))
+    {
+        return $Parameter | ConvertFrom-Json  
+    }
+    else
+    {
+        return $null
+    }
+    
+}
 <#
 .SYNOPSIS
 Adds a reusable component for a request body.
@@ -672,7 +730,7 @@ function Add-PodeOAComponentRequestBody
     )
 
     $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = @{
-        required    = $Required.IsPresent
+        required    = $Required.IsPresent -and $Required
         description = $Description
         content     = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
     }
@@ -710,9 +768,9 @@ function Add-PodeOAComponentParameter
     if ([string]::IsNullOrWhiteSpace($Name))
     {
         $Name = $Parameter.name
-    }
-
-    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
+    } 
+    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter 
+    #($Parameter | ConvertTo-PodeOASchemaProperty)  
 }
 
 <#
@@ -743,6 +801,9 @@ The integer must be in multiples of the supplied value.
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Example
+An example of a parameter value
+
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
@@ -750,20 +811,41 @@ An optional array of values that this property can only be set to.
 If supplied, the object will be treated as Required where supported.
 
 .PARAMETER Deprecated
-If supplied, the object will be treated as Deprecated where supported.
-
-.PARAMETER Array
-If supplied, the integer will be treated as an array of integers.
+If supplied, the object will be treated as Deprecated where supported. 
 
 .PARAMETER Object
 If supplied, the integer will be automatically wrapped in an object.
+
+.PARAMETER Nullable
+If supplied, the integer will be treated as Nullable.
+
+.PARAMETER ReadOnly
+If supplied, the integer will be included in a response but not in a request
+
+.PARAMETER WriteOnly
+If supplied, the integer will be included in a request but not in a response 
+
+.PARAMETER Array
+If supplied, the object will be treated as an array of objects.
+
+.PARAMETER UniqueItems
+If supplied, specify that all items in the array must be unique
+
+.PARAMETER Explode
+If supplied, controls how arrays are serialized in query parameters
+
+.PARAMETER MinItems
+If supplied, specify minimum length of an array 
+
+.PARAMETER MaxItems
+If supplied, specify maximum length of an array 
 
 .EXAMPLE
 New-PodeOANumberProperty -Name 'age' -Required
 #>
 function New-PodeOAIntProperty
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
         [Parameter()]
         [string]
@@ -793,6 +875,10 @@ function New-PodeOAIntProperty
         [Parameter()]
         [string]
         $Description,
+        
+        [Parameter()]
+        [String]
+        $Example,
 
         [Parameter()]
         [int[]]
@@ -805,19 +891,54 @@ function New-PodeOAIntProperty
         $Deprecated,
 
         [switch]
-        $Array,
+        $Object,
 
         [switch]
-        $Object
+        $Nullable,
+
+        [switch]
+        $ReadOnly,
+
+        [switch]
+        $WriteOnly, 
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $UniqueItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $Explode,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxItems
+
+
     )
 
     $param = @{
         name        = $Name
         type        = 'integer'
-        array       = $Array.IsPresent
-        object      = $Object.IsPresent
-        required    = $Required.IsPresent
-        deprecated  = $Deprecated.IsPresent
+        array       = $Array.IsPresent -and $Array
+        object      = $Object.IsPresent -and $Object
+        required    = $Required.IsPresent -and $Required
+        deprecated  = $Deprecated.IsPresent -and $Deprecated
+        nullable    = $Nullable.IsPresent -and $Nullable
+        writeOnly   = $WriteOnly.IsPresent -and $WriteOnly
+        readOnly    = $ReadOnly.IsPresent -and $ReadOnly
+        uniqueItems = $UniqueItems.IsPresent -and $UniqueItems 
+        explode     = $Explode.IsPresent -and $Explode 
+        minItems    = $MinItems  
+        maxItems    = $MaxItems
         description = $Description
         format      = $Format.ToLowerInvariant()
         default     = $Default
@@ -873,6 +994,9 @@ The number must be in multiples of the supplied value.
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Example
+An example of a parameter value
+
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
@@ -880,20 +1004,41 @@ An optional array of values that this property can only be set to.
 If supplied, the object will be treated as Required where supported.
 
 .PARAMETER Deprecated
-If supplied, the object will be treated as Deprecated where supported.
-
-.PARAMETER Array
-If supplied, the number will be treated as an array of numbers.
+If supplied, the object will be treated as Deprecated where supported. 
 
 .PARAMETER Object
 If supplied, the number will be automatically wrapped in an object.
+
+.PARAMETER Nullable
+If supplied, the number will be treated as Nullable.
+
+.PARAMETER ReadOnly
+If supplied, the number will be included in a response but not in a request
+
+.PARAMETER WriteOnly
+If supplied, the number will be included in a request but not in a response 
+
+.PARAMETER Array
+If supplied, the object will be treated as an array of objects.
+
+.PARAMETER UniqueItems
+If supplied, specify that all items in the array must be unique
+
+.PARAMETER Explode
+If supplied, controls how arrays are serialized in query parameters
+
+.PARAMETER MinItems
+If supplied, specify minimum length of an array 
+
+.PARAMETER MaxItems
+If supplied, specify maximum length of an array 
 
 .EXAMPLE
 New-PodeOANumberProperty -Name 'gravity' -Default 9.8
 #>
 function New-PodeOANumberProperty
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
         [Parameter()]
         [string]
@@ -925,6 +1070,10 @@ function New-PodeOANumberProperty
         $Description,
 
         [Parameter()]
+        [String]
+        $Example,
+
+        [Parameter()]
         [double[]]
         $Enum,
 
@@ -935,19 +1084,52 @@ function New-PodeOANumberProperty
         $Deprecated,
 
         [switch]
-        $Array,
+        $Object,
 
         [switch]
-        $Object
+        $Nullable,
+
+        [switch]
+        $ReadOnly,
+
+        [switch]
+        $WriteOnly,
+        
+        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $UniqueItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $Explode,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxItems
     )
 
     $param = @{
         name        = $Name
         type        = 'number'
-        array       = $Array.IsPresent
-        object      = $Object.IsPresent
-        required    = $Required.IsPresent
-        deprecated  = $Deprecated.IsPresent
+        array       = $Array.IsPresent -and $Array
+        object      = $Object.IsPresent -and $Object
+        required    = $Required.IsPresent -and $Required
+        deprecated  = $Deprecated.IsPresent -and $Deprecated
+        nullable    = $Nullable.IsPresent -and $Nullable
+        WriteOnly   = $WriteOnly.IsPresent -and $WriteOnly
+        ReadOnly    = $ReadOnly.IsPresent -and $ReadOnly
+        uniqueItems = $UniqueItems.IsPresent -and $UniqueItems 
+        explode     = $Explode.IsPresent -and $Explode 
+        minItems    = $MinItems  
+        maxItems    = $MaxItems
         description = $Description
         format      = $Format.ToLowerInvariant()
         default     = $Default
@@ -994,32 +1176,50 @@ The name of a custom OpenAPI Format of the string. (Default: None)
 .PARAMETER Default
 The default value of the property. (Default: $null)
 
-.PARAMETER MinLength
-The minimum length of the string. (Default: Int.Min)
-
-.PARAMETER MaxLength
-The maximum length of the string. (Default: Int.Max)
-
 .PARAMETER Pattern
 A Regex pattern that the string must match.
 
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Example
+An example of a parameter value
+
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
 .PARAMETER Required
-If supplied, the object will be treated as Required where supported.
+If supplied, the string will be treated as Required where supported.
 
 .PARAMETER Deprecated
-If supplied, the object will be treated as Deprecated where supported.
-
-.PARAMETER Array
-If supplied, the string will be treated as an array of strings.
+If supplied, the string will be treated as Deprecated where supported.
 
 .PARAMETER Object
 If supplied, the string will be automatically wrapped in an object.
+
+.PARAMETER Nullable
+If supplied, the string will be treated as Nullable.
+
+.PARAMETER ReadOnly
+If supplied, the string will be included in a response but not in a request
+
+.PARAMETER WriteOnly
+If supplied, the string will be included in a request but not in a response 
+
+.PARAMETER Array
+If supplied, the object will be treated as an array of objects.
+
+.PARAMETER UniqueItems
+If supplied, specify that all items in the array must be unique
+
+.PARAMETER Explode
+If supplied, controls how arrays are serialized in query parameters
+
+.PARAMETER MinItems
+If supplied, specify minimum length of an array 
+
+.PARAMETER MaxItems
+If supplied, specify maximum length of an array 
 
 .EXAMPLE
 New-PodeOAStringProperty -Name 'userType' -Default 'admin'
@@ -1035,26 +1235,20 @@ function New-PodeOAStringProperty
         [string]
         $Name,
 
+        [Parameter( ParameterSetName = 'Array')]
         [Parameter(ParameterSetName = 'Inbuilt')]
-        [ValidateSet('', 'Binary', 'Byte', 'Date', 'Date-Time', 'Password')]
+        [ValidateSet('', 'Binary', 'Byte', 'Date', 'Date-Time', 'Password', 'email', 'uuid', 'uri', 'hostname', 'ipv4', 'ipv6')]
         [string]
         $Format,
 
+        [Parameter( ParameterSetName = 'Array')]
         [Parameter(ParameterSetName = 'Custom')]
         [string]
         $CustomFormat,
 
         [Parameter()]
         [string]
-        $Default = $null,
-
-        [Parameter()]
-        [int]
-        $MinLength = [int]::MinValue,
-
-        [Parameter()]
-        [int]
-        $MaxLength = [int]::MaxValue,
+        $Default = $null, 
 
         [Parameter()]
         [string]
@@ -1063,6 +1257,10 @@ function New-PodeOAStringProperty
         [Parameter()]
         [string]
         $Description,
+        
+        [Parameter()]
+        [String]
+        $Example,
 
         [Parameter()]
         [string[]]
@@ -1075,10 +1273,36 @@ function New-PodeOAStringProperty
         $Deprecated,
 
         [switch]
-        $Array,
+        $Object,
 
         [switch]
-        $Object
+        $Nullable,
+
+        [switch]
+        $ReadOnly,
+
+        [switch]
+        $WriteOnly,
+        
+        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $UniqueItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $Explode,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxItems
     )
 
     $_format = $Format
@@ -1090,10 +1314,17 @@ function New-PodeOAStringProperty
     $param = @{
         name        = $Name
         type        = 'string'
-        array       = $Array.IsPresent
-        object      = $Object.IsPresent
-        required    = $Required.IsPresent
-        deprecated  = $Deprecated.IsPresent
+        array       = $Array.IsPresent -and $Array
+        object      = $Object.IsPresent -and $Object
+        required    = $Required.IsPresent -and $Required
+        deprecated  = $Deprecated.IsPresent -and $Deprecated
+        nullable    = $Nullable.IsPresent -and $Nullable
+        writeOnly   = $WriteOnly.IsPresent -and $WriteOnly
+        readOnly    = $ReadOnly.IsPresent -and $ReadOnly
+        uniqueItems = $UniqueItems.IsPresent -and $UniqueItems 
+        explode     = $Explode.IsPresent -and $Explode 
+        minItems    = $MinItems  
+        maxItems    = $MaxItems
         description = $Description
         format      = $_format.ToLowerInvariant()
         default     = $Default
@@ -1104,15 +1335,6 @@ function New-PodeOAStringProperty
         }
     }
 
-    if ($MinLength -ne [int]::MinValue)
-    {
-        $param.meta['minLength'] = $MinLength
-    }
-
-    if ($MaxLength -ne [int]::MaxValue)
-    {
-        $param.meta['maxLength'] = $MaxLength
-    }
 
     return $param
 }
@@ -1133,6 +1355,9 @@ The default value of the property. (Default: $false)
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Example
+An example of a parameter value
+
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
@@ -1142,18 +1367,39 @@ If supplied, the object will be treated as Required where supported.
 .PARAMETER Deprecated
 If supplied, the object will be treated as Deprecated where supported.
 
-.PARAMETER Array
-If supplied, the boolean will be treated as an array of booleans.
-
 .PARAMETER Object
 If supplied, the boolean will be automatically wrapped in an object.
+
+.PARAMETER Nullable
+If supplied, the boolean will be treated as Nullable.
+
+.PARAMETER ReadOnly
+If supplied, the boolean will be included in a response but not in a request
+
+.PARAMETER WriteOnly
+If supplied, the boolean will be included in a request but not in a response 
+
+.PARAMETER Array
+If supplied, the object will be treated as an array of objects.
+
+.PARAMETER UniqueItems
+If supplied, specify that all items in the array must be unique
+
+.PARAMETER Explode
+If supplied, controls how arrays are serialized in query parameters
+
+.PARAMETER MinItems
+If supplied, specify minimum length of an array 
+
+.PARAMETER MaxItems
+If supplied, specify maximum length of an array 
 
 .EXAMPLE
 New-PodeOABoolProperty -Name 'enabled' -Required
 #>
 function New-PodeOABoolProperty
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
         [Parameter()]
         [string]
@@ -1166,6 +1412,10 @@ function New-PodeOABoolProperty
         [Parameter()]
         [string]
         $Description,
+        
+        [Parameter()]
+        [String]
+        $Example,
 
         [Parameter()]
         [bool[]]
@@ -1178,19 +1428,52 @@ function New-PodeOABoolProperty
         $Deprecated,
 
         [switch]
-        $Array,
+        $Object,
 
         [switch]
-        $Object
+        $Nullable,
+
+        [switch]
+        $ReadOnly,
+
+        [switch]
+        $WriteOnly,
+        
+        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $UniqueItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $Explode,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxItems
     )
 
     $param = @{
         name        = $Name
         type        = 'boolean'
-        array       = $Array.IsPresent
-        object      = $Object.IsPresent
-        required    = $Required.IsPresent
-        deprecated  = $Deprecated.IsPresent
+        array       = $Array.IsPresent -and $Array
+        object      = $Object.IsPresent -and $Object
+        required    = $Required.IsPresent -and $Required
+        deprecated  = $Deprecated.IsPresent -and $Deprecated
+        nullable    = $Nullable.IsPresent -and $Nullable
+        writeOnly   = $WriteOnly.IsPresent -and $WriteOnly
+        readOnly    = $ReadOnly.IsPresent -and $ReadOnly
+        uniqueItems = $UniqueItems.IsPresent -and $UniqueItems 
+        explode     = $Explode.IsPresent -and $Explode 
+        minItems    = $MinItems  
+        maxItems    = $MaxItems
         description = $Description
         default     = $Default
 
@@ -1218,8 +1501,8 @@ An array of other int/string/etc properties wrap up as an object.
 .PARAMETER Description
 A Description of the property.
 
-.PARAMETER Required
-If supplied, the object will be treated as Required where supported.
+.PARAMETER Example
+An example of a parameter value
 
 .PARAMETER Deprecated
 If supplied, the object will be treated as Deprecated where supported.
@@ -1227,44 +1510,122 @@ If supplied, the object will be treated as Deprecated where supported.
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
 
+.PARAMETER Nullable
+If supplied, the object will be treated as Nullable.
+
+.PARAMETER ReadOnly
+If supplied, the object will be included in a response but not in a request
+
+.PARAMETER WriteOnly
+If supplied, the object will be included in a request but not in a response  
+
+.PARAMETER MinProperties
+If supplied, will restrict the minimun number of properties allowed in an object.
+
+.PARAMETER MaxProperties
+If supplied, will restrict the maximum number of properties allowed in an object.
+
+.PARAMETER Array
+If supplied, the object will be treated as an array of objects.
+
+.PARAMETER UniqueItems
+If supplied, specify that all items in the array must be unique
+
+.PARAMETER MinItems
+If supplied, specify minimum length of an array 
+
+.PARAMETER MaxItems
+If supplied, specify maximum length of an array 
+
+.PARAMETER Xml
+If supplied, controls the XML serialization behavior
+
+.PARAMETER Explode
+If supplied, controls how object is serialized in query parameters
+
 .EXAMPLE
 New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
 #>
 function New-PodeOAObjectProperty
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
         [Parameter()]
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [hashtable[]]
         $Properties,
 
         [Parameter()]
         [string]
         $Description,
+        
+        [Parameter()]
+        [String]
+        $Example,
 
         [switch]
-        $Required,
+        $Deprecated, 
 
         [switch]
-        $Deprecated,
+        $Nullable, 
 
         [switch]
-        $Array
+        $ReadOnly,
+
+        [switch]
+        $WriteOnly,
+        
+        [int]
+        $MinProperties,
+
+        [int]
+        $MaxProperties,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $UniqueItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxItems,
+
+        [switch] 
+        $Explode,
+
+        [hashtable[]]
+        $Xml
     )
 
     $param = @{
-        name        = $Name
-        type        = 'object'
-        array       = $Array.IsPresent
-        required    = $Required.IsPresent
-        deprecated  = $Deprecated.IsPresent
-        description = $Description
-        properties  = $Properties
-        default     = $Default
+        name          = $Name
+        type          = 'object'
+        array         = $Array.IsPresent -and $Array 
+        deprecated    = $Deprecated.IsPresent -and $Deprecated
+        nullable      = $Nullable.IsPresent -and $Nullable
+        writeOnly     = $WriteOnly.IsPresent -and $WriteOnly
+        readOnly      = $ReadOnly.IsPresent -and $ReadOnly
+        uniqueItems   = $UniqueItems.IsPresent -and $UniqueItems 
+        explode       = $Explode.IsPresent -and $Explode 
+        minItems      = $MinItems  
+        maxItems      = $MaxItems
+        minProperties = $MinProperties
+        maxProperties = $MaxProperties
+        description   = $Description
+        properties    = $Properties
+        default       = $Default
+        xml           = $Xml
     }
 
     return $param
@@ -1321,7 +1682,7 @@ function New-PodeOASchemaProperty
         name        = $Name
         type        = 'schema'
         schema      = $Reference
-        array       = $Array.IsPresent
+        array       = $Array.IsPresent -and $Array
         description = $Description
     }
 
@@ -1344,17 +1705,26 @@ The Property that need converting (such as from New-PodeOAIntProperty).
 .PARAMETER Reference
 The name of an existing component parameter to be reused.
 
+.PARAMETER ContentSchemas
+The content-types and the name of an existing component schema to be reused.
+
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query
 
 .EXAMPLE
 ConvertTo-PodeOAParameter -Reference 'UserIdParam'
+
+.EXAMPLE
+ConvertTo-PodeOAParameter  -In Header -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
+
 #>
 function ConvertTo-PodeOAParameter
 {
     [CmdletBinding(DefaultParameterSetName = 'Reference')]
     param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
         [string]
         $In,
@@ -1366,44 +1736,80 @@ function ConvertTo-PodeOAParameter
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [string]
-        $Reference
-    )
+        $Reference,
 
-    # return a reference
-    if ($PSCmdlet.ParameterSetName -ieq 'reference')
+        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
+        [hashtable]
+        $ContentSchemas 
+    )
+    if ($PSCmdlet.ParameterSetName -ieq 'ContentSchemas')
+    { 
+        if (Test-PodeIsEmpty $ContentSchemas)
+        {
+            return $null
+        }
+        # ensure all content types are valid
+        foreach ($type in $ContentSchemas.Keys)
+        {
+            if ($type -inotmatch '^\w+\/[\w\.\+-]+$')
+            {
+                throw "Invalid content-type found for schema: $($type)"
+            } 
+            if (!(Test-PodeOAComponentSchema -Name $ContentSchemas[$type]))
+            {
+                throw "The OpenApi component request parameter doesn't exist: $($ContentSchemas[$type])"
+            }
+            $Property = $PodeContext.Server.OpenAPI.components.schemas[$ContentSchemas[$type]]
+            $prop = @{
+                in          = $In.ToLowerInvariant()
+                name        = $ContentSchemas[$type]
+                description = $Property.description 
+                content     = @{
+                    $type = @{
+                        schema = @{
+                            '$ref' = "#/components/schemas/$($ContentSchemas[$type])"
+                        }
+                    }
+                }
+            }  
+        }
+    }
+    elseif ($PSCmdlet.ParameterSetName -ieq 'Reference')# return a reference
     {
         if (!(Test-PodeOAComponentParameter -Name $Reference))
         {
             throw "The OpenApi component request parameter doesn't exist: $($Reference)"
         }
 
-        return @{
+        $prop = @{
             '$ref' = "#/components/parameters/$($Reference)"
         }
     }
-
-    # non-object/array only
-    if (@('array', 'object') -icontains $Property.type)
+    else
     {
-        throw 'OpenApi request parameter cannot be an array of object'
-    }
-
-    # build the base parameter
-    $prop = @{
-        in          = $In.ToLowerInvariant()
-        name        = $Property.name
-        description = $Property.description
-        schema      = @{
-            type   = $Property.type
-            format = $Property.format
+        # non-object/array only
+        if (@('array', 'object') -icontains $Property.type)
+        { 
+            throw 'OpenApi request parameter cannot be an array of object'
         }
-    }
 
-    if ($null -ne $Property.meta)
-    {
-        foreach ($key in $Property.meta.Keys)
+        # build the base parameter
+        $prop = @{
+            in          = $In.ToLowerInvariant()
+            name        = $Property.name
+            description = $Property.description
+            schema      = @{
+                type   = $Property.type
+                format = $Property.format
+            }
+        }
+
+        if ($null -ne $Property.meta)
         {
-            $prop.schema[$key] = $Property.meta[$key]
+            foreach ($key in $Property.meta.Keys)
+            {
+                $prop.schema[$key] = $Property.meta[$key]
+            }
         }
     }
 
@@ -1421,11 +1827,13 @@ function ConvertTo-PodeOAParameter
         $prop['required'] = $true 
     }
     # remove default for required parameter
-    if (!$Property.required)
+    if (!$Property.required -and $PSCmdlet.ParameterSetName -ne 'ContentSchemas')
     {
-        $prop.schema['default'] = $Property.default
-    }
-
+        if ( $prop.ContainsKey('schema'))
+        {
+            $prop.schema['default'] = $Property.default
+        }
+    }  
     return $prop
 }
 
@@ -1498,7 +1906,7 @@ function Set-PodeOARouteInfo
         $r.OpenApi.Description = $Description
         $r.OpenApi.OperationId = $OperationId
         $r.OpenApi.Tags = $Tags
-        $r.OpenApi.Deprecated = $Deprecated.IsPresent
+        $r.OpenApi.Deprecated = $Deprecated.IsPresent -and $Deprecated
     }
 
     if ($PassThru)
