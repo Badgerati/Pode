@@ -164,6 +164,7 @@ function ConvertTo-PodeOASchemaProperty
             type = 'array'
             items = ($Property | ConvertTo-PodeOASchemaProperty)
         }
+        $Property.array = $true
     }
 
     # are we using an object?

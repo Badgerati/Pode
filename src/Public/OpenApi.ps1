@@ -44,7 +44,7 @@ function Enable-PodeOpenApi
         [string]
         $Path = '/openapi',
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Title,
 
@@ -75,9 +75,9 @@ function Enable-PodeOpenApi
     $PodeContext.Server.OpenAPI.Path = $Path
 
     $meta = @{
-        Version = $Version
-        Description = $Description
-        RouteFilter = $RouteFilter
+        Version        = $Version
+        Description    = $Description
+        RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes
     }
 
@@ -153,27 +153,29 @@ function Get-PodeOpenApiDefinition
     )
 
     $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
-    if ([string]::IsNullOrWhiteSpace($Title)) {
-        throw "No Title supplied for OpenAPI definition"
+    if ([string]::IsNullOrWhiteSpace($Title))
+    {
+        throw 'No Title supplied for OpenAPI definition'
     }
 
     $Version = Protect-PodeValue -Value $Version -Default $PodeContext.Server.OpenAPI.Version
-    if ([string]::IsNullOrWhiteSpace($Version)) {
-        throw "No Version supplied for OpenAPI definition"
+    if ([string]::IsNullOrWhiteSpace($Version))
+    {
+        throw 'No Version supplied for OpenAPI definition'
     }
 
     $Description = Protect-PodeValue -Value $Description -Default $PodeContext.Server.OpenAPI.Description
 
     # generate the openapi definition
     return (Get-PodeOpenApiDefinitionInternal `
-        -Title $Title `
-        -Version $Version `
-        -Description $Description `
-        -RouteFilter $RouteFilter `
-        -Protocol $WebEvent.Endpoint.Protocol `
-        -Address $WebEvent.Endpoint.Address `
-        -EndpointName $WebEvent.Endpoint.Name `
-        -RestrictRoutes:$RestrictRoutes)
+            -Title $Title `
+            -Version $Version `
+            -Description $Description `
+            -RouteFilter $RouteFilter `
+            -Protocol $WebEvent.Endpoint.Protocol `
+            -Address $WebEvent.Endpoint.Address `
+            -EndpointName $WebEvent.Endpoint.Name `
+            -RestrictRoutes:$RestrictRoutes)
 }
 
 <#
@@ -218,30 +220,30 @@ Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -Reference 'OKRespo
 #>
 function Add-PodeOAResponse
 {
-    [CmdletBinding(DefaultParameterSetName='Schema')]
+    [CmdletBinding(DefaultParameterSetName = 'Schema')]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
         $Route,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $StatusCode,
 
-        [Parameter(ParameterSetName='Schema')]
+        [Parameter(ParameterSetName = 'Schema')]
         [hashtable]
         $ContentSchemas,
 
-        [Parameter(ParameterSetName='Schema')]
+        [Parameter(ParameterSetName = 'Schema')]
         [hashtable]
         $HeaderSchemas,
 
-        [Parameter(ParameterSetName='Schema')]
+        [Parameter(ParameterSetName = 'Schema')]
         [string]
         $Description = $null,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Reference')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [string]
         $Reference,
 
@@ -253,51 +255,63 @@ function Add-PodeOAResponse
     )
 
     # set a general description for the status code
-    if (!$Default -and [string]::IsNullOrWhiteSpace($Description)) {
+    if (!$Default -and [string]::IsNullOrWhiteSpace($Description))
+    {
         $Description = Get-PodeStatusDescription -StatusCode $StatusCode
     }
 
     # override status code with default
     $code = "$($StatusCode)"
-    if ($Default) {
+    if ($Default)
+    {
         $code = 'default'
     }
 
     # schemas or component reference?
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'schema' {
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
+    {
+        'schema'
+        {
             # build any content-type schemas
             $content = $null
-            if ($null -ne $ContentSchemas) {
+            if ($null -ne $ContentSchemas)
+            {
                 $content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
             }
 
             # build any header schemas
             $headers = $null
-            if ($null -ne $HeaderSchemas) {
+            if ($null -ne $HeaderSchemas)
+            {
                 $headers = ($HeaderSchemas | ConvertTo-PodeOAHeaderSchema)
             }
         }
 
-        'reference' {
-            if (!(Test-PodeOAComponentResponse -Name $Reference)) {
+        'reference'
+        {
+            if (!(Test-PodeOAComponentResponse -Name $Reference))
+            {
                 throw "The OpenApi component response doesn't exist: $($Reference)"
             }
         }
     }
 
     # add the respones to the routes
-    foreach ($r in @($Route)) {
-        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-            'schema' {
+    foreach ($r in @($Route))
+    {
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
+        {
+            'schema'
+            {
                 $r.OpenApi.Responses[$code] = @{
                     description = $Description
-                    content = $content
-                    headers = $headers
+                    content     = $content
+                    headers     = $headers
                 }
             }
 
-            'reference' {
+            'reference'
+            {
                 $r.OpenApi.Responses[$code] = @{
                     '$ref' = "#/components/responses/$($Reference)"
                 }
@@ -305,7 +319,8 @@ function Add-PodeOAResponse
         }
     }
 
-    if ($PassThru) {
+    if ($PassThru)
+    {
         return $Route
     }
 }
@@ -339,12 +354,12 @@ function Remove-PodeOAResponse
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
         $Route,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $StatusCode,
 
@@ -357,18 +372,22 @@ function Remove-PodeOAResponse
 
     # override status code with default
     $code = "$($StatusCode)"
-    if ($Default) {
+    if ($Default)
+    {
         $code = 'default'
     }
 
     # remove the respones from the routes
-    foreach ($r in @($Route)) {
-        if ($r.OpenApi.Responses.ContainsKey($code)) {
+    foreach ($r in @($Route))
+    {
+        if ($r.OpenApi.Responses.ContainsKey($code))
+        {
             $null = $r.OpenApi.Responses.Remove($code)
         }
     }
 
-    if ($PassThru) {
+    if ($PassThru)
+    {
         return $Route
     }
 }
@@ -402,7 +421,7 @@ function Add-PodeOAComponentResponse
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -414,25 +433,27 @@ function Add-PodeOAComponentResponse
         [hashtable]
         $HeaderSchemas,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Description
     )
 
     $content = $null
-    if ($null -ne $ContentSchemas) {
+    if ($null -ne $ContentSchemas)
+    {
         $content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
     }
 
     $headers = $null
-    if ($null -ne $HeaderSchemas) {
+    if ($null -ne $HeaderSchemas)
+    {
         $headers = ($HeaderSchemas | ConvertTo-PodeOAHeaderSchema)
     }
 
     $PodeContext.Server.OpenAPI.components.responses[$Name] = @{
         description = $Description
-        content = $content
-        headers = $headers
+        content     = $content
+        headers     = $headers
     }
 }
 
@@ -462,7 +483,7 @@ function Set-PodeOARequest
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
         $Route,
@@ -479,17 +500,21 @@ function Set-PodeOARequest
         $PassThru
     )
 
-    foreach ($r in @($Route)) {
-        if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
+    foreach ($r in @($Route))
+    {
+        if (($null -ne $Parameters) -and ($Parameters.Length -gt 0))
+        {
             $r.OpenApi.Parameters = @($Parameters)
         }
 
-        if ($null -ne $RequestBody) {
+        if ($null -ne $RequestBody)
+        {
             $r.OpenApi.RequestBody = $RequestBody
         }
     }
 
-    if ($PassThru) {
+    if ($PassThru)
+    {
         return $Route
     }
 }
@@ -524,36 +549,40 @@ New-PodeOARequestBody -Reference 'UserIdBody'
 #>
 function New-PodeOARequestBody
 {
-    [CmdletBinding(DefaultParameterSetName='Schema')]
+    [CmdletBinding(DefaultParameterSetName = 'Schema')]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName='Reference')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [string]
         $Reference,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [hashtable]
         $ContentSchemas,
 
-        [Parameter(ParameterSetName='Schema')]
+        [Parameter(ParameterSetName = 'Schema')]
         [string]
         $Description = $null,
 
-        [Parameter(ParameterSetName='Schema')]
+        [Parameter(ParameterSetName = 'Schema')]
         [switch]
         $Required
     )
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'schema' {
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
+    {
+        'schema'
+        {
             return @{
-                required = $Required.IsPresent
+                required    = $Required.IsPresent
                 description = $Description
-                content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+                content     = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
             }
         }
 
-        'reference' {
-            if (!(Test-PodeOAComponentRequestBody -Name $Reference)) {
+        'reference'
+        {
+            if (!(Test-PodeOAComponentRequestBody -Name $Reference))
+            {
                 throw "The OpenApi component request body doesn't exist: $($Reference)"
             }
 
@@ -584,11 +613,11 @@ function Add-PodeOAComponentSchema
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Schema
     )
@@ -625,11 +654,11 @@ function Add-PodeOAComponentRequestBody
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $ContentSchemas,
 
@@ -643,9 +672,9 @@ function Add-PodeOAComponentRequestBody
     )
 
     $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = @{
-        required = $Required.IsPresent
+        required    = $Required.IsPresent
         description = $Description
-        content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+        content     = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
     }
 }
 
@@ -673,12 +702,13 @@ function Add-PodeOAComponentParameter
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Parameter
     )
 
-    if ([string]::IsNullOrWhiteSpace($Name)) {
+    if ([string]::IsNullOrWhiteSpace($Name))
+    {
         $Name = $Parameter.name
     }
 
@@ -782,30 +812,33 @@ function New-PodeOAIntProperty
     )
 
     $param = @{
-        name = $Name
-        type = 'integer'
-        array = $Array.IsPresent
-        object = $Object.IsPresent
-        required = $Required.IsPresent
-        deprecated = $Deprecated.IsPresent
+        name        = $Name
+        type        = 'integer'
+        array       = $Array.IsPresent
+        object      = $Object.IsPresent
+        required    = $Required.IsPresent
+        deprecated  = $Deprecated.IsPresent
         description = $Description
-        format = $Format.ToLowerInvariant()
-        default = $Default
+        format      = $Format.ToLowerInvariant()
+        default     = $Default
 
-        meta = @{
+        meta        = @{
             enum = $Enum
         }
     }
 
-    if ($Minimum -ne [int]::MinValue) {
+    if ($Minimum -ne [int]::MinValue)
+    {
         $param.meta['minimum'] = $Minimum
     }
 
-    if ($Maximum -ne [int]::MaxValue) {
+    if ($Maximum -ne [int]::MaxValue)
+    {
         $param.meta['maximum'] = $Maximum
     }
 
-    if ($MultiplesOf -ne 0) {
+    if ($MultiplesOf -ne 0)
+    {
         $param.meta['multipleOf'] = $MultiplesOf
     }
 
@@ -909,30 +942,33 @@ function New-PodeOANumberProperty
     )
 
     $param = @{
-        name = $Name
-        type = 'number'
-        array = $Array.IsPresent
-        object = $Object.IsPresent
-        required = $Required.IsPresent
-        deprecated = $Deprecated.IsPresent
+        name        = $Name
+        type        = 'number'
+        array       = $Array.IsPresent
+        object      = $Object.IsPresent
+        required    = $Required.IsPresent
+        deprecated  = $Deprecated.IsPresent
         description = $Description
-        format = $Format.ToLowerInvariant()
-        default = $Default
+        format      = $Format.ToLowerInvariant()
+        default     = $Default
 
-        meta = @{
+        meta        = @{
             enum = $Enum
         }
     }
 
-    if ($Minimum -ne [double]::MinValue) {
+    if ($Minimum -ne [double]::MinValue)
+    {
         $param.meta['minimum'] = $Minimum
     }
 
-    if ($Maximum -ne [double]::MaxValue) {
+    if ($Maximum -ne [double]::MaxValue)
+    {
         $param.meta['maximum'] = $Maximum
     }
 
-    if ($MultiplesOf -ne 0) {
+    if ($MultiplesOf -ne 0)
+    {
         $param.meta['multipleOf'] = $MultiplesOf
     }
 
@@ -993,18 +1029,18 @@ New-PodeOAStringProperty -Name 'password' -Format Password
 #>
 function New-PodeOAStringProperty
 {
-    [CmdletBinding(DefaultParameterSetName='Inbuilt')]
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
         [Parameter()]
         [string]
         $Name,
 
-        [Parameter(ParameterSetName='Inbuilt')]
+        [Parameter(ParameterSetName = 'Inbuilt')]
         [ValidateSet('', 'Binary', 'Byte', 'Date', 'Date-Time', 'Password')]
         [string]
         $Format,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [string]
         $CustomFormat,
 
@@ -1046,32 +1082,35 @@ function New-PodeOAStringProperty
     )
 
     $_format = $Format
-    if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
+    if (![string]::IsNullOrWhiteSpace($CustomFormat))
+    {
         $_format = $CustomFormat
     }
 
     $param = @{
-        name = $Name
-        type = 'string'
-        array = $Array.IsPresent
-        object = $Object.IsPresent
-        required = $Required.IsPresent
-        deprecated = $Deprecated.IsPresent
+        name        = $Name
+        type        = 'string'
+        array       = $Array.IsPresent
+        object      = $Object.IsPresent
+        required    = $Required.IsPresent
+        deprecated  = $Deprecated.IsPresent
         description = $Description
-        format = $_format.ToLowerInvariant()
-        default = $Default
+        format      = $_format.ToLowerInvariant()
+        default     = $Default
 
-        meta = @{
-            enum = $Enum
+        meta        = @{
+            enum    = $Enum
             pattern = $Pattern
         }
     }
 
-    if ($MinLength -ne [int]::MinValue) {
+    if ($MinLength -ne [int]::MinValue)
+    {
         $param.meta['minLength'] = $MinLength
     }
 
-    if ($MaxLength -ne [int]::MaxValue) {
+    if ($MaxLength -ne [int]::MaxValue)
+    {
         $param.meta['maxLength'] = $MaxLength
     }
 
@@ -1146,16 +1185,16 @@ function New-PodeOABoolProperty
     )
 
     $param = @{
-        name = $Name
-        type = 'boolean'
-        array = $Array.IsPresent
-        object = $Object.IsPresent
-        required = $Required.IsPresent
-        deprecated = $Deprecated.IsPresent
+        name        = $Name
+        type        = 'boolean'
+        array       = $Array.IsPresent
+        object      = $Object.IsPresent
+        required    = $Required.IsPresent
+        deprecated  = $Deprecated.IsPresent
         description = $Description
-        default = $Default
+        default     = $Default
 
-        meta = @{
+        meta        = @{
             enum = $Enum
         }
     }
@@ -1199,7 +1238,7 @@ function New-PodeOAObjectProperty
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [hashtable[]]
         $Properties,
 
@@ -1218,14 +1257,14 @@ function New-PodeOAObjectProperty
     )
 
     $param = @{
-        name = $Name
-        type = 'object'
-        array = $Array.IsPresent
-        required = $Required.IsPresent
-        deprecated = $Deprecated.IsPresent
+        name        = $Name
+        type        = 'object'
+        array       = $Array.IsPresent
+        required    = $Required.IsPresent
+        deprecated  = $Deprecated.IsPresent
         description = $Description
-        properties = $Properties
-        default = $Default
+        properties  = $Properties
+        default     = $Default
     }
 
     return $param
@@ -1261,7 +1300,7 @@ function New-PodeOASchemaProperty
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Reference,
 
@@ -1273,15 +1312,16 @@ function New-PodeOASchemaProperty
         $Array
     )
 
-    if(!(Test-PodeOAComponentSchema -Name $Reference)) {
+    if (!(Test-PodeOAComponentSchema -Name $Reference))
+    {
         throw "The OpenApi component schema doesn't exist: $($Reference)"
     }
 
     $param = @{
-        name = $Name
-        type = 'schema'
-        schema = $Reference
-        array = $Array.IsPresent
+        name        = $Name
+        type        = 'schema'
+        schema      = $Reference
+        array       = $Array.IsPresent
         description = $Description
     }
 
@@ -1312,26 +1352,28 @@ ConvertTo-PodeOAParameter -Reference 'UserIdParam'
 #>
 function ConvertTo-PodeOAParameter
 {
-    [CmdletBinding(DefaultParameterSetName='Reference')]
+    [CmdletBinding(DefaultParameterSetName = 'Reference')]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName='Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
         [string]
         $In,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName='Schema')]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Schema')]
         [ValidateNotNull()]
         [hashtable]
         $Property,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Reference')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [string]
         $Reference
     )
 
     # return a reference
-    if ($PSCmdlet.ParameterSetName -ieq 'reference') {
-        if (!(Test-PodeOAComponentParameter -Name $Reference)) {
+    if ($PSCmdlet.ParameterSetName -ieq 'reference')
+    {
+        if (!(Test-PodeOAComponentParameter -Name $Reference))
+        {
             throw "The OpenApi component request parameter doesn't exist: $($Reference)"
         }
 
@@ -1341,37 +1383,46 @@ function ConvertTo-PodeOAParameter
     }
 
     # non-object/array only
-    if (@('array', 'object') -icontains $Property.type) {
-        throw "OpenApi request parameter cannot be an array of object"
+    if (@('array', 'object') -icontains $Property.type)
+    {
+        throw 'OpenApi request parameter cannot be an array of object'
     }
 
     # build the base parameter
     $prop = @{
-        in = $In.ToLowerInvariant()
-        name = $Property.name
+        in          = $In.ToLowerInvariant()
+        name        = $Property.name
         description = $Property.description
-        schema = @{
-            type = $Property.type
+        schema      = @{
+            type   = $Property.type
             format = $Property.format
         }
     }
 
-    if ($null -ne $Property.meta) {
-        foreach ($key in $Property.meta.Keys) {
+    if ($null -ne $Property.meta)
+    {
+        foreach ($key in $Property.meta.Keys)
+        {
             $prop.schema[$key] = $Property.meta[$key]
         }
     }
 
-    if ($Property.deprecated) {
+    if ($Property.deprecated)
+    {
         $prop['deprecated'] = $Property.deprecated
     }
 
-    if ($Property.required) {
+    if ($Property.required)
+    {
         $prop['required'] = $Property.required
     }
-
+    elseif ($In -eq 'Path')
+    {
+        $prop['required'] = $true 
+    }
     # remove default for required parameter
-    if (!$Property.required) {
+    if (!$Property.required)
+    {
         $prop.schema['default'] = $Property.default
     }
 
@@ -1413,7 +1464,7 @@ function Set-PodeOARouteInfo
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
         $Route,
@@ -1441,7 +1492,8 @@ function Set-PodeOARouteInfo
         $PassThru
     )
 
-    foreach ($r in @($Route)) {
+    foreach ($r in @($Route))
+    {
         $r.OpenApi.Summary = $Summary
         $r.OpenApi.Description = $Description
         $r.OpenApi.OperationId = $OperationId
@@ -1449,7 +1501,8 @@ function Set-PodeOARouteInfo
         $r.OpenApi.Deprecated = $Deprecated.IsPresent
     }
 
-    if ($PassThru) {
+    if ($PassThru)
+    {
         return $Route
     }
 }
@@ -1489,7 +1542,7 @@ function Enable-PodeOpenApiViewer
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Swagger', 'ReDoc')]
         [string]
         $Type,
@@ -1516,28 +1569,31 @@ function Enable-PodeOpenApiViewer
 
     # error if there's no OpenAPI URL
     $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI.Path
-    if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
+    if ([string]::IsNullOrWhiteSpace($OpenApiUrl))
+    {
         throw "No OpenAPI URL supplied for $($Type)"
     }
 
     # fail if no title
     $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
     $Title = Protect-PodeValue -Value $Title -Default $Type
-    if ([string]::IsNullOrWhiteSpace($Title)) {
+    if ([string]::IsNullOrWhiteSpace($Title))
+    {
         throw "No title supplied for $($Type) page"
     }
 
     # set a default path
     $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())"
-    if ([string]::IsNullOrWhiteSpace($Title)) {
+    if ([string]::IsNullOrWhiteSpace($Title))
+    {
         throw "No route path supplied for $($Type) page"
     }
 
     # setup meta info
     $meta = @{
-        Type = $Type.ToLowerInvariant()
-        Title = $Title
-        OpenApi = $OpenApiUrl
+        Type     = $Type.ToLowerInvariant()
+        Title    = $Title
+        OpenApi  = $OpenApiUrl
         DarkMode = $DarkMode
     }
 
@@ -1546,8 +1602,8 @@ function Enable-PodeOpenApiViewer
         param($meta)
         $podeRoot = Get-PodeModuleMiscPath
         Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
-            Title = $meta.Title
-            OpenApi = $meta.OpenApi
+            Title    = $meta.Title
+            OpenApi  = $meta.OpenApi
             DarkMode = $meta.DarkMode
         }
     }
