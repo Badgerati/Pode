@@ -245,8 +245,8 @@ function Add-PodeOAResponse
         [hashtable]
         $ContentSchemas,
 
-        [Parameter(ParameterSetName = 'Schema')]
-        [hashtable]
+        [Parameter(ParameterSetName = 'Schema')] 
+        [string[]]
         $HeaderSchemas,
 
         [Parameter(ParameterSetName = 'Schema')]
@@ -626,14 +626,16 @@ function Add-PodeOAComponentSchema
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name,
+        $Name,   
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Schema
+
     )
 
-    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
+    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) 
+    
 }
 
 
@@ -864,7 +866,7 @@ function New-PodeOAIntProperty
 
         [Parameter()]
         [int]
-        $Default = 0,
+        $Default ,
 
         [Parameter()]
         [int]
@@ -933,26 +935,25 @@ function New-PodeOAIntProperty
 
     $param = @{
         name        = $Name
-        type        = 'integer'
-        array       = $Array.IsPresent -and $Array
-        object      = $Object.IsPresent -and $Object
-        required    = $Required.IsPresent -and $Required
-        deprecated  = $Deprecated.IsPresent -and $Deprecated
-        nullable    = $Nullable.IsPresent -and $Nullable
-        writeOnly   = $WriteOnly.IsPresent -and $WriteOnly
-        readOnly    = $ReadOnly.IsPresent -and $ReadOnly
-        uniqueItems = $UniqueItems.IsPresent -and $UniqueItems 
-        explode     = $Explode.IsPresent -and $Explode 
-        minItems    = $MinItems  
-        maxItems    = $MaxItems
+        type        = 'integer'     
         description = $Description
-        format      = $Format.ToLowerInvariant()
-        default     = $Default
-
         meta        = @{
             enum = $Enum
         }
     }
+    if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+    if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
+    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($Default) { $param.default = $Default }
+    if ($Format) { $param.format = $Format.ToLowerInvariant() }
+    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MinItems) { $param.minItems = $MinItems }
 
     if ($Minimum -ne [int]::MinValue)
     {
@@ -1125,25 +1126,25 @@ function New-PodeOANumberProperty
     $param = @{
         name        = $Name
         type        = 'number'
-        array       = $Array.IsPresent -and $Array
-        object      = $Object.IsPresent -and $Object
-        required    = $Required.IsPresent -and $Required
-        deprecated  = $Deprecated.IsPresent -and $Deprecated
-        nullable    = $Nullable.IsPresent -and $Nullable
-        WriteOnly   = $WriteOnly.IsPresent -and $WriteOnly
-        ReadOnly    = $ReadOnly.IsPresent -and $ReadOnly
-        uniqueItems = $UniqueItems.IsPresent -and $UniqueItems 
-        explode     = $Explode.IsPresent -and $Explode 
-        minItems    = $MinItems  
-        maxItems    = $MaxItems
-        description = $Description
-        format      = $Format.ToLowerInvariant()
-        default     = $Default
+        description = $Description 
 
         meta        = @{
             enum = $Enum
         }
     }
+    if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+    if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
+    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($Default) { $param.default = $Default }
+    if ($Format) { $param.format = $Format.ToLowerInvariant() }
+    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MinItems) { $param.minItems = $MinItems }
 
     if ($Minimum -ne [double]::MinValue)
     {
@@ -1319,28 +1320,29 @@ function New-PodeOAStringProperty
 
     $param = @{
         name        = $Name
-        type        = 'string'
-        array       = $Array.IsPresent -and $Array
-        object      = $Object.IsPresent -and $Object
-        required    = $Required.IsPresent -and $Required
-        deprecated  = $Deprecated.IsPresent -and $Deprecated
-        nullable    = $Nullable.IsPresent -and $Nullable
-        writeOnly   = $WriteOnly.IsPresent -and $WriteOnly
-        readOnly    = $ReadOnly.IsPresent -and $ReadOnly
-        uniqueItems = $UniqueItems.IsPresent -and $UniqueItems 
-        explode     = $Explode.IsPresent -and $Explode 
+        type        = 'string' 
         minItems    = $MinItems  
         maxItems    = $MaxItems
-        description = $Description
-        format      = $_format.ToLowerInvariant()
-        default     = $Default
+        description = $Description 
 
         meta        = @{
             enum    = $Enum
             pattern = $Pattern
         }
     }
-
+    if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+    if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
+    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($Default) { $param.default = $Default }
+    if ($Format -or $CustomFormat) { $param.format = $_format.ToLowerInvariant() }
+    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MinItems) { $param.minItems = $MinItems }
 
     return $param
 }
@@ -1468,26 +1470,25 @@ function New-PodeOABoolProperty
 
     $param = @{
         name        = $Name
-        type        = 'boolean'
-        array       = $Array.IsPresent -and $Array
-        object      = $Object.IsPresent -and $Object
-        required    = $Required.IsPresent -and $Required
-        deprecated  = $Deprecated.IsPresent -and $Deprecated
-        nullable    = $Nullable.IsPresent -and $Nullable
-        writeOnly   = $WriteOnly.IsPresent -and $WriteOnly
-        readOnly    = $ReadOnly.IsPresent -and $ReadOnly
-        uniqueItems = $UniqueItems.IsPresent -and $UniqueItems 
-        explode     = $Explode.IsPresent -and $Explode 
-        minItems    = $MinItems  
-        maxItems    = $MaxItems
-        description = $Description
-        default     = $Default
+        type        = 'boolean' 
+        description = $Description 
 
         meta        = @{
             enum = $Enum
         }
     }
-
+    if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+    if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
+    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnl.ToBool() }
+    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($Default) { $param.default = $Default } 
+    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MinItems) { $param.minItems = $MinItems }
     return $param
 }
 
@@ -1574,7 +1575,10 @@ function New-PodeOAObjectProperty
         $Example,
 
         [switch]
-        $Deprecated, 
+        $Deprecated,  
+        
+        [switch]
+        $Required,
 
         [switch]
         $Nullable, 
@@ -1615,25 +1619,25 @@ function New-PodeOAObjectProperty
     )
 
     $param = @{
-        name          = $Name
-        type          = 'object'
-        array         = $Array.IsPresent -and $Array 
-        deprecated    = $Deprecated.IsPresent -and $Deprecated
-        nullable      = $Nullable.IsPresent -and $Nullable
-        writeOnly     = $WriteOnly.IsPresent -and $WriteOnly
-        readOnly      = $ReadOnly.IsPresent -and $ReadOnly
-        uniqueItems   = $UniqueItems.IsPresent -and $UniqueItems 
-        explode       = $Explode.IsPresent -and $Explode 
-        minItems      = $MinItems  
-        maxItems      = $MaxItems
-        minProperties = $MinProperties
-        maxProperties = $MaxProperties
-        description   = $Description
-        properties    = $Properties
-        default       = $Default
-        xml           = $Xml
+        name        = $Name
+        type        = 'object'   
+        description = $Description
+        properties  = $Properties  
     }
-
+    if ($Array.IsPresent ) { $param.array = $Array.ToBool() } 
+    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
+    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($Default) { $param.default = $Default } 
+    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MinItems) { $param.minItems = $MinItems }
+    if ($MinProperties) { $param.minProperties = $MinProperties }
+    if ($MaxProperties) { $param.maxProperties = $MaxProperties }
+    if ($Xml) { $param.xml = $Xml }
     return $param
 }
 

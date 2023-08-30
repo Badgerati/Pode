@@ -27,18 +27,37 @@ function ConvertTo-PodeOAContentTypeSchema
 function ConvertTo-PodeOAHeaderSchema
 {
     param(
-        [Parameter(ValueFromPipeline = $true)]
-        [hashtable]
-        $Schemas
+        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [string[]]$Schemas
     )
-
-    if (Test-PodeIsEmpty $Schemas)
+    begin
     {
-        return $null
+        #  if (Test-PodeIsEmpty $Schemas)
+        # {
+        #     return $null
+        # } 
+        $obj = @{}
     }
-
-    # convert each schema to openapi format
-    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas)
+    process
+    {
+        # convert each schema to openapi format
+        #  return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas)
+        foreach ($schema in $Schemas)
+        {
+            if ( !(Test-PodeOAComponentSchema -Name $schema))
+            {
+                throw "The OpenApi component schema doesn't exist: $schema"
+            } 
+            $obj[$schema] = @{ 
+                'description' = $PodeContext.Server.OpenAPI.components.schemas[$schema].description
+                'schema'      = ($PodeContext.Server.OpenAPI.components.schemas[$schema] | ConvertTo-PodeOASchemaProperty -NoDescription ) 
+            }
+        }
+    }
+    end
+    {
+        return $obj
+    }
 }
 
 function ConvertTo-PodeOAObjectSchema
@@ -60,13 +79,22 @@ function ConvertTo-PodeOAObjectSchema
         # add a shared component schema reference
         if ($Schemas[$type] -is [string])
         {
-            if (!(Test-PodeOAComponentSchema -Name $Schemas[$type]))
+            if (@('string', 'integer' , 'number', 'boolean' ) -contains $Schemas[$type])
             {
-                throw "The OpenApi component schema doesn't exist: $($Schemas[$type])"
+                $obj[$type].schema = @{
+                    'type' = $Schemas[$type]
+                }
             }
+            else
+            {
+                if ( !(Test-PodeOAComponentSchema -Name $Schemas[$type]))
+                {
+                    throw "The OpenApi component schema doesn't exist: $($Schemas[$type])"
+                }
 
-            $obj[$type].schema = @{
-                '$ref' = "#/components/schemas/$($Schemas[$type])"
+                $obj[$type].schema = @{
+                    '$ref' = "#/components/schemas/$($Schemas[$type])"
+                }
             }
         }
 
@@ -132,15 +160,31 @@ function ConvertTo-PodeOASchemaProperty
         $Property,
 
         [switch]
-        $InObject
+        $InObject,
+
+        [switch]
+        $NoDescription
     )
 
     # base schema type
     $schema = @{
-        type        = $Property.type
-        format      = $Property.format
-        description = $Property.description
-        default     = $Property.default
+        type = $Property.type 
+    }
+
+
+    if (!$NoDescription)
+    {
+        $schema['description'] = $Property.description
+    }
+
+    if ($Property.format)
+    {
+        $schema['format'] = $Property.format
+    }
+
+    if ($Property.default)
+    {
+        $schema['default'] = $Property.default
     }
 
     if ($Property.deprecated)
