@@ -295,29 +295,30 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' 
 
-        Add-PodeRoute -PassThru -Method Post -Path '/pet' -ScriptBlock {
-           
-            $InPet = $WebEvent.data  
-            $JsonPet = ConvertTo-Json $inPet 
-            Write-PodeHost "inPet=$inPet"
-            Write-PodeHost "JsonPet=$JsonPet"
-            #Write-PodeHost   $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson['Pet']
-            if (Test-PodeOARequestSchema -Json $JsonPet -SchemaReference 'Pet')
-            {  
-                $Pet = $JsonPet | ConvertFrom-Json 
-                $Pet.tags.id = 100
+        Add-PodeRoute -PassThru -Method Post -Path '/pet' -ScriptBlock { 
 
-                Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json ) -StatusCode 200 
+            $JsonPet = ConvertTo-Json $WebEvent.data  
+            $Validate = Test-PodeOARequestSchema -Json $JsonPet -SchemaReference 'Pet' 
+            if ($Validate.result)
+            {  
+                $Pet = $WebEvent.data 
+                $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
+                Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200 
             }
             else
             {
-                Write-PodeJsonResponse -Value $false -StatusCode 405 
+                Write-PodeJsonResponse -StatusCode 405 -Value @{  
+                    result  = $Validate.result 
+                    message = $Validate.message -join ', '
+                }    
             } 
         } | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'addPet' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -required -ContentSchemas ([ordered]@{ 'application/json' = 'Pet'; 'application/xml' = 'Pet'; 'application/x-www-form-urlencoded' = 'Pet' }) ) -PassThru | # missing -description 'Create a new pet in the store' 
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas ([ordered]@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |  
-            Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' 
- 
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas ([ordered]@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |   
+            Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -ContentSchemas @{
+                'application/json' = (New-PodeOAObjectProperty -Properties @(    (New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')  ))
+            }
+
         Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -ScriptBlock {
             $Script = $WebEvent.data  
             Write-PodeJsonResponse -Value $script 
