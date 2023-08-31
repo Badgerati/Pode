@@ -271,23 +271,21 @@ Some useful links:
     Add-PodeRouteGroup -Path '/api/v3' -Routes {  
         #PUT
         Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
-            $InPet = $WebEvent.data  
-            $JsonPet = ConvertTo-Json $inPet 
-            Write-PodeHost "inPet=$inPet"
-            Write-PodeHost "JsonPet=$JsonPet"
-            #Write-PodeHost   $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson['Pet']
-            if (Test-PodeOARequestSchema -Json $JsonPet -SchemaReference 'Pet')
+            $JsonPet = ConvertTo-Json $WebEvent.data  
+            $Validate = Test-PodeOARequestSchema -Json $JsonPet -SchemaReference 'Pet' 
+            if ($Validate.result)
             {  
-                $Pet = $JsonPet | ConvertFrom-Json 
-                $Pet.tags.id = 100
-
-                Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json ) -StatusCode 200 
+                $Pet = $WebEvent.data 
+                $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
+                Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200 
             }
             else
             {
-                Write-PodeJsonResponse -Value $false -StatusCode 405 
-            } 
- 
+                Write-PodeJsonResponse -StatusCode 405 -Value @{  
+                    result  = $Validate.result 
+                    message = $Validate.message -join ', '
+                }    
+            }  
         } | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -required -ContentSchemas ([ordered]@{ 'application/json' = 'Pet'; 'application/xml' = 'Pet'; 'application/x-www-form-urlencoded' = 'Pet' }) ) -PassThru | # missing -description 'Update an existent pet in the store' 
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas ([ordered]@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |  
