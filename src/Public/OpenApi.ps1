@@ -57,7 +57,7 @@ function Enable-PodeOpenApi
         [string]
         $Description,
 
-        [Parameter()]
+        [Parameter(ValueFromPipeline = $true)]
         $ExtraInfo,
 
         [Parameter()]
@@ -85,28 +85,32 @@ function Enable-PodeOpenApi
         Version        = $Version
         Description    = $Description
         RouteFilter    = $RouteFilter
-        RestrictRoutes = $RestrictRoutes
-        ExternalDocs   = $ExternalDocs
-        ExtraInfo      = $ExtraInfo
+        RestrictRoutes = $RestrictRoutes  
     }
-
+    if ($ExtraInfo)
+    {
+        $meta.ExtraInfo = $ExtraInfo
+    }
+    if ($ExternalDocs)
+    {
+        if ( !(Test-PodeOAExternalDoc -Name $ExternalDocs))
+        {
+            throw "The ExternalDocs doesn't exist: $ExternalDocs"
+        }  
+        $meta.ExternalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDocs]
+    }
+    
     # add the OpenAPI route
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock {
         param($meta)
-        $strict = $meta.RestrictRoutes
 
         # generate the openapi definition
         $def = Get-PodeOpenApiDefinitionInternal `
             -Title $PodeContext.Server.OpenAPI.Title `
-            -Version $meta.Version `
-            -Description $meta.Description `
-            -RouteFilter $meta.RouteFilter `
             -Protocol $WebEvent.Endpoint.Protocol `
             -Address $WebEvent.Endpoint.Address `
             -EndpointName $WebEvent.Endpoint.Name `
-            -RestrictRoutes:$strict `
-            -ExtraInfo $meta.ExtraInfo `
-            -ExternalDocs $meta.ExternalDocs  
+            -MetaInfo $meta 
         # write the openapi definition 
         Write-PodeJsonResponse -Value $def -Depth 20
     }
@@ -286,7 +290,8 @@ function Add-PodeOAResponse
             $content = $null
             if ($null -ne $ContentSchemas)
             {
-                $content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+                $content = ConvertTo-PodeOAContentTypeSchema -Schema $ContentSchemas
+                #   $content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
             }
 
             # build any header schemas
@@ -582,11 +587,13 @@ function New-PodeOARequestBody
     {
         'schema'
         {
-            return @{
-                required    = $Required.IsPresent -and $Required
-                description = $Description
-                content     = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
-            }
+            $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas }
+
+            if ($Required.IsPresent) { $param['required'] = $Required.ToBool() }
+
+            if ( $Description) { $param['description'] = $Description } 
+
+            return $param
         }
 
         'reference'
@@ -634,10 +641,50 @@ function Add-PodeOAComponentSchema
 
     )
 
-    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) 
-    
+    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)  
+ 
+    $json = $PodeContext.Server.OpenAPI.components.schemas[$Name] | ConvertTo-Json -Depth 20 -Compress
+    $obj = ConvertFrom-Json $json -AsHashtable
+    Resolve-References -obj $obj -schemas $PodeContext.Server.OpenAPI.components.schemas
+
+    $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = $obj | ConvertTo-Json -Depth 20 
 }
 
+ 
+
+<#
+.SYNOPSIS
+Adds a reusable component for a request body.
+
+.DESCRIPTION
+Adds a reusable component for a request body.
+
+.PARAMETER Name
+The reference Name of the schema.
+
+.PARAMETER Schema
+The Schema definition (the schema is created using the Property functions).
+
+.EXAMPLE
+Add-PodeOAComponentHeaderSchema -Name 'UserIdSchema' -Schema (New-PodeOAIntProperty -Name 'userId' -Object)
+#>
+function Add-PodeOAComponentHeaderSchema
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,   
+
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [hashtable]
+        $Schema
+
+    )
+
+    $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) 
+    
+}
 
 <#
 .SYNOPSIS
@@ -657,7 +704,8 @@ Specifies how many levels of the parameter objects are included in the JSON repr
 
 
 .OUTPUTS
-The Parameter Object
+result: true if the object is validate positively
+message: any validation issue
 
 .EXAMPLE
 $UserInfo = Test-PodeOARequestSchema -Parameter 'UserInfo' -SchemaReference 'UserIdSchema'}
@@ -668,29 +716,23 @@ function Test-PodeOARequestSchema
 {
     param (
         [Parameter(Mandatory = $true)]
-        [string]
-        $Parameter,
+        [String]
+        $Json,
         [Parameter(Mandatory = $true)]
         [string]
         $SchemaReference 
-    )
-    if (!(Test-PodeOAComponentSchema -Name $SchemaReference))
-    {
-        throw "The OpenApi component schema doesn't exist: $SchemaReference"
-    }
-    $Schema = $PodeContext.Server.OpenAPI.components.schemas[$SchemaReference].properties
-    $Schema | Remove-PodeNullKeysFromHashtable 
-    $Schema = @{'properties' = $test ; 'type' = $PodeContext.Server.OpenAPI.components.schemas[$SchemaReference].type }
-    if ( Test-Json -Json $Parameter -Schema ($Schema | ConvertTo-Json -Compress -Depth 5 ))
-    {
-        return $Parameter | ConvertFrom-Json  
-    }
-    else
-    {
-        return $null
-    }
+    )  
     
+    if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference))
+    {
+        throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
+    } 
+
+    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$SchemaReference] -ErrorVariable jsonValidationErrors 
+
+    return @{result = $result; message = $jsonValidationErrors }
 }
+
 <#
 .SYNOPSIS
 Adds a reusable component for a request body.
@@ -730,18 +772,19 @@ function Add-PodeOAComponentRequestBody
 
         [Parameter()]
         [string]
-        $Description = $null,
+        $Description  ,
 
         [Parameter()]
         [switch]
         $Required
     )
+    $param = @{ content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema) }
 
-    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = @{
-        required    = $Required.IsPresent -and $Required
-        description = $Description
-        content     = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
-    }
+    if ($Required.IsPresent) { $param['required'] = $Required.ToBool() }
+
+    if ( $Description) { $param['description'] = $Description } 
+
+    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = $param
 }
 
 <#
@@ -934,26 +977,42 @@ function New-PodeOAIntProperty
     )
 
     $param = @{
-        name        = $Name
-        type        = 'integer'     
-        description = $Description
-        meta        = @{
-            enum = $Enum
-        }
+        name = $Name
+        type = 'integer'    
+        meta = @{}
     }
+
+    if ($Description ) { $param.description = $Sescription }
+
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+
     if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+
     if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+
     if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
-    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
-    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnly.ToBool() }
-    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+
+    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+
+    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+
+    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+
+    if ($Example ) { $param.meta['example'] = $Example }
+
     if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+
     if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+
     if ($Default) { $param.default = $Default }
+
     if ($Format) { $param.format = $Format.ToLowerInvariant() }
+
     if ($MaxItems) { $param.maxItems = $MaxItems }
+
     if ($MinItems) { $param.minItems = $MinItems }
+
+    if ($Enum) { $param.meta['enum'] = $Enum }  
 
     if ($Minimum -ne [int]::MinValue)
     {
@@ -1124,27 +1183,42 @@ function New-PodeOANumberProperty
     )
 
     $param = @{
-        name        = $Name
-        type        = 'number'
-        description = $Description 
-
-        meta        = @{
-            enum = $Enum
-        }
+        name = $Name
+        type = 'number'  
+        meta = @{}
     }
+    
+    if ($Description ) { $param.description = $Sescription }
+
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+
     if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+
     if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+
     if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
-    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
-    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnly.ToBool() }
-    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+
+    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+
+    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+
+    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+
+    if ($Example ) { $param.meta['example'] = $Example }
+
     if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+
     if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+
     if ($Default) { $param.default = $Default }
+
     if ($Format) { $param.format = $Format.ToLowerInvariant() }
+
     if ($MaxItems) { $param.maxItems = $MaxItems }
+
     if ($MinItems) { $param.minItems = $MinItems }
+
+    if ($Enum) { $param.meta['enum'] = $Enum } 
 
     if ($Minimum -ne [double]::MinValue)
     {
@@ -1319,30 +1393,47 @@ function New-PodeOAStringProperty
     }
 
     $param = @{
-        name        = $Name
-        type        = 'string' 
-        minItems    = $MinItems  
-        maxItems    = $MaxItems
-        description = $Description 
+        name     = $Name
+        type     = 'string' 
+        minItems = $MinItems  
+        maxItems = $MaxItems 
 
-        meta        = @{
-            enum    = $Enum
-            pattern = $Pattern
-        }
+        meta     = @{}
     }
+    
+    if ($Description ) { $param.description = $Sescription }
+    
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+
     if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+
     if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+
     if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
-    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
-    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnly.ToBool() }
-    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+
+    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+
+    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+
+    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+
+    if ($Example ) { $param.meta['example'] = $Example }
+
     if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+
     if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+
     if ($Default) { $param.default = $Default }
+
     if ($Format -or $CustomFormat) { $param.format = $_format.ToLowerInvariant() }
+
     if ($MaxItems) { $param.maxItems = $MaxItems }
+
     if ($MinItems) { $param.minItems = $MinItems }
+
+    if ($Enum) { $param.meta['enum'] = $Enum } 
+
+    if ($Pattern) { $param.meta['pattern'] = $Pattern } 
 
     return $param
 }
@@ -1469,26 +1560,41 @@ function New-PodeOABoolProperty
     )
 
     $param = @{
-        name        = $Name
-        type        = 'boolean' 
-        description = $Description 
-
-        meta        = @{
-            enum = $Enum
-        }
+        name = $Name
+        type = 'boolean'   
+        meta = @{}
     }
+
+    if ($Description ) { $param.description = $Sescription }
+
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+
     if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+
     if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+
     if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
-    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
-    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnl.ToBool() }
-    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+
+    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+
+    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+
+    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+
+    if ($Example ) { $param.meta['example'] = $Example }
+
     if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+
     if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+
     if ($Default) { $param.default = $Default } 
+
     if ($MaxItems) { $param.maxItems = $MaxItems }
+
     if ($MinItems) { $param.minItems = $MinItems }
+
+    if ($Enum) { $param.meta['enum'] = $Enum } 
+
     return $param
 }
 
@@ -1619,25 +1725,42 @@ function New-PodeOAObjectProperty
     )
 
     $param = @{
-        name        = $Name
-        type        = 'object'   
-        description = $Description
-        properties  = $Properties  
+        name       = $Name
+        type       = 'object'    
+        properties = $Properties  
     }
+    if ($Description ) { $param.description = $Sescription }
+
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() } 
+
     if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+
     if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
-    if ($Nullable.IsPresent ) { $param.nullable = $Nullable.ToBool() }
-    if ($WriteOnly.IsPresent ) { $param.writeOnly = $WriteOnly.ToBool() }
-    if ($ReadOnly.IsPresent ) { $param.readOnly = $ReadOnly.ToBool() }
+
+    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+
+    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+
+    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+
+    if ($Example ) { $param.meta['example'] = $Example }
+
     if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
+
     if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+
     if ($Default) { $param.default = $Default } 
+
     if ($MaxItems) { $param.maxItems = $MaxItems }
+
     if ($MinItems) { $param.minItems = $MinItems }
+
     if ($MinProperties) { $param.minProperties = $MinProperties }
+
     if ($MaxProperties) { $param.maxProperties = $MaxProperties }
+
     if ($Xml) { $param.xml = $Xml }
+    
     return $param
 }
 
@@ -2025,4 +2148,171 @@ function Enable-PodeOpenApiViewer
             DarkMode = $meta.DarkMode
         }
     }
+}
+
+
+
+<#
+.SYNOPSIS
+Adds an external docs reference. 
+
+.DESCRIPTION
+Creates a new  reference from another OpenAPI schema.
+
+.PARAMETER Name
+The Name of the reference.
+
+.PARAMETER url
+The link to the external documentation
+
+.PARAMETER Description
+A Description of the external documentation.
+
+.PARAMETER Array
+If supplied, the schema reference will be treated as an array.
+
+.EXAMPLE
+Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+#>
+function Add-PodeOAExternalDoc
+{ 
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateScript({ $_ -match '^https?://.+' })]
+        $Url,
+
+        [Parameter()]
+        [string]
+        $Description
+    )
+
+    $param = @{  
+        'url' = $Url
+    }
+
+    if ($Description)
+    {
+        $param.description = $Description
+    }
+
+    $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Name] = $param
+    
+    return $param
+}
+
+
+<#
+.SYNOPSIS
+Creates a OpenAPI Tag reference property.
+
+.DESCRIPTION
+Creates a new OpenAPI tag reference.
+
+.PARAMETER Name
+The Name of the tag. 
+
+.PARAMETER Description
+A Description of the tag.
+
+.PARAMETER ExternalDocs
+If supplied, the tag reference to an existing external documentation reference.
+
+.EXAMPLE
+Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDocs 'SwaggerDocs'
+#>
+function Add-PodeOATag
+{ 
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name, 
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [string]
+        $ExternalDocs
+    )
+    
+    $param = @{ 
+        'name' = $Name 
+    }
+
+    if ($Description)
+    {
+        $param.description = $Description
+    }
+
+    if ($ExternalDocs)
+    {
+        if ( !(Test-PodeOAExternalDoc -Name $ExternalDocs))
+        {
+            throw "The ExternalDocs doesn't exist: $ExternalDocs"
+        }  
+        $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDocs]
+    }
+
+    $PodeContext.Server.OpenAPI.tags[$Name] = $param
+
+}
+
+
+
+function New-PodeOAExtraInfo
+{
+    param(
+        [Parameter()]
+        [ValidateScript({ $_ -match '^https?://.+' })]
+        [string]$TermsOfService,
+
+        [Parameter(Mandatory = $true)] 
+        [string]$License,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateScript({ $_ -match '^https?://.+' })]
+        [string]$LicenseUrl,
+
+        [Parameter()]
+        [string]$ContactName,
+
+        [Parameter()]
+        [ValidateScript({ $_ -match '^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$' })]
+        [string]$ContactEmail,
+
+        [Parameter()]
+        [ValidateScript({ $_ -match '^https?://.+' })]
+        [string]$ContactUrl  
+    )
+
+    $ExtraInfo = @{   
+        'license' = @{
+            'name' = $License
+            'url'  = $LicenseUrl
+        }
+    }
+
+    if ($TermsOfService)
+    {
+        $ExtraInfo['termsOfService'] = $TermsOfService
+    }
+
+    if ($ContactName -or $ContactEmail -or $ContactUrl )
+    {
+        $ExtraInfo['contact'] = @{}
+        
+        if ($ContactName) { $ExtraInfo['contact'].name = $ContactName }
+
+        if ($ContactEmail) { $ExtraInfo['contact'].email = $ContactEmail }
+
+        if ($ContactUrl) { $ExtraInfo['contact'].url = $ContactUrl }
+    } 
+
+    return $ExtraInfo
+
 }
