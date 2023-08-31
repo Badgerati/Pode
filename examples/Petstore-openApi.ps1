@@ -291,7 +291,9 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas ([ordered]@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |  
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru | 
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
-            Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' 
+            Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -ContentSchemas @{
+                'application/json' = (New-PodeOAObjectProperty -Properties @(    (New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')  ))
+            }
 
         Add-PodeRoute -PassThru -Method Post -Path '/pet' -ScriptBlock { 
 
@@ -318,8 +320,7 @@ Some useful links:
             }
 
         Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma separated strings' -Tags 'pet' -OperationId 'findPetsByStatus' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                 (  New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query )
@@ -332,8 +333,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value' 
  
         Add-PodeRoute -PassThru -Method get -Path '/pet/findByTag' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Finds Pets by tags' -Description 'Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.' -Tags 'pet' -OperationId 'findPetsByTags' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                     (  New-PodeOAStringProperty -Name 'tag' -Description 'Tags to filter by' -Array -Explode | ConvertTo-PodeOAParameter -In Query )    
@@ -344,11 +344,10 @@ Some useful links:
             #  items:
             #     $ref: '#/components/schemas/Pet'
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value' 
- 
+
         
         Add-PodeRoute -PassThru -Method Get -Path '/pet/:petId' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetById' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                         (  New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'ID of pet to return' -Required | ConvertTo-PodeOAParameter -In Path )  
@@ -358,8 +357,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'    
 
         Add-PodeRoute -PassThru -Method post -Path '/pet/:petId' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store' -Description 'Updates a pet in the store with form data' -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                             (  New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'ID of pet that needs to be updated' -Required | ConvertTo-PodeOAParameter -In Path ),
@@ -372,8 +370,7 @@ Some useful links:
     
         
         Add-PodeRoute -PassThru -Method Delete -Path '/pet/:petId' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Deletes a pet' -Description 'Deletes a pet.' -Tags 'pet' -OperationId 'deletePet' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                             (  New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'Pet id to delete' -Required | ConvertTo-PodeOAParameter -In Path )  
@@ -383,8 +380,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'    
 
         Add-PodeRoute -PassThru -Method post -Path '/pet/:petId/uploadImage' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Uploads an image' -Description 'Updates a pet in the store with a new image' -Tags 'pet' -OperationId 'uploadFile' -PassThru |
             Set-PodeOARequest -Parameters @(
                                 (  New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'ID of pet that needs to be updated' -Required | ConvertTo-PodeOAParameter -In Path ),
@@ -395,23 +391,20 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'    
 
         Add-PodeRoute -PassThru -Method Get -Path '/store/inventory' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200 
         } | Set-PodeOARouteInfo -Summary 'Returns pet inventories by status' -Description 'Returns a map of status codes to quantities' -Tags 'store' -OperationId 'getInventory' -PassThru | 
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas @{  'application/json' = New-PodeOAObjectProperty -Properties @(New-PodeOAStringProperty -Name 'none'  ) }  #missing additionalProperties 
     
     
         Add-PodeRoute -PassThru -Method post -Path '/store/order' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200 
         } | Set-PodeOARouteInfo -Summary 'Place an order for a pet' -Description 'Place a new order in the store' -Tags 'store' -OperationId 'placeOrder' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -required -ContentSchemas ([ordered]@{ 'application/json' = 'Order'; 'application/xml' = 'Order'; 'application/x-www-form-urlencoded' = 'Order' } )) -PassThru |               
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas ([ordered]@{  'application/json' = 'Order' ; 'application/xml' = 'Order' }) -PassThru |   
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'    
 
         Add-PodeRoute -PassThru -Method Get -Path '/store/order/:orderId' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Find purchase order by ID' -Description 'For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.' -Tags 'store' -OperationId 'getOrderById' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                             (  New-PodeOAIntProperty -Name 'orderId' -format Int64 -Description 'ID of order that needs to be fetched' -Required | ConvertTo-PodeOAParameter -In Path )  
@@ -421,8 +414,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'    
 
         Add-PodeRoute -PassThru -Method Delete -Path '/store/order/:orderId' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Delete purchase order by ID' -Description 'For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors.' -Tags 'store' -OperationId 'deleteOrder' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                                 (  New-PodeOAIntProperty -Name 'orderId' -format Int64 -Description ' ID of the order that needs to be deleted' -Required | ConvertTo-PodeOAParameter -In Path )  
@@ -456,16 +448,14 @@ Some useful links:
             }
 
         Add-PodeRoute -PassThru -Method post -Path '/user/createWithList' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Creates list of users with given input array.' -Description 'Creates list of users with given input array.' -Tags 'user' -OperationId 'createUsersWithListInput' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -required -ContentSchemas ([ordered]@{ 'application/json' = 'User'; 'application/xml' = 'User'; 'application/x-www-form-urlencoded' = 'User' } )) -PassThru | #missing array   
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas ([ordered]@{'application/json' = 'User' ; 'application/xml' = 'User' }) -PassThru | #missing response default
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'    
 
         Add-PodeRoute -PassThru -Method Get -Path '/user/login' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200 
         } | Set-PodeOARouteInfo -Summary 'Logs user into the system.' -Description 'Logs user into the system.' -Tags 'user' -OperationId 'loginUser' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                             (  New-PodeOAStringProperty -Name 'username' -Description 'The user name for login' | ConvertTo-PodeOAParameter -In Query ) 
@@ -475,15 +465,13 @@ Some useful links:
                 -HeaderSchemas @('X-Rate-Limit', 'X-Expires-After') -PassThru |   
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'  
 
-        Add-PodeRoute -PassThru -Method Get -Path '/user/logout' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+        Add-PodeRoute -PassThru -Method Get -Path '/user/logout' -ScriptBlock { 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Logs out current logged in user session.' -Description 'Logs out current logged in user session.' -Tags 'user' -OperationId 'logoutUser' -PassThru | 
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  
 
         Add-PodeRoute -PassThru -Method Get -Path '/user/:username' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Get user by user name' -Description 'Get user by user name.' -Tags 'user' -OperationId 'getUserByName' -PassThru |
             Set-PodeOARequest -Parameters @(
                             (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be fetched. Use user1 for testing.' -Required | ConvertTo-PodeOAParameter -In Path )  
@@ -493,8 +481,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'    
 
         Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUser' -PassThru |
             Set-PodeOARequest -Parameters @(
             (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path )  
@@ -505,8 +492,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
     
         Add-PodeRoute -PassThru -Method Delete -Path '/user/:username' -ScriptBlock {
-            $Script = $WebEvent.data  
-            Write-PodeJsonResponse -Value $script 
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Delete user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'deleteUser' -PassThru |
             Set-PodeOARequest -Parameters @(
                                 (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be deleted.' -Required | ConvertTo-PodeOAParameter -In Path )  

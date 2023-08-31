@@ -693,8 +693,8 @@ Validate a parameter with a provided schema.
 .DESCRIPTION
 Validate the parameter of a method against it's own schema 
 
-.PARAMETER Parameter
-The parameter to validate
+.PARAMETER Json
+The object in Json format to validate
 
 .PARAMETER SchemaReference
 The schema name to use to validate the property.

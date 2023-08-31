@@ -273,6 +273,11 @@
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
         'Enable-PodeOpenApiViewer',
+        'Test-PodeOARequestSchema',
+        'New-PodeOAExtraInfo',
+        'Add-PodeOAExternalDoc',
+        'Add-PodeOATag',
+        'Add-PodeOAComponentHeaderSchema',
 
         # Metrics
         'Get-PodeServerUptime',
