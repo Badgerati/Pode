@@ -220,6 +220,12 @@ A Reference Name of an existing component response to use.
 .PARAMETER Default
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
 
+.PARAMETER ContentArray
+If supplied, the Content Schema will be considered an array
+
+.PARAMETER HeaderArray
+If supplied, the Header Schema will be considered an array
+
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
@@ -265,6 +271,12 @@ function Add-PodeOAResponse
         $Default,
 
         [switch]
+        $ContentArray,
+
+        [switch]
+        $HeaderArray,
+
+        [switch]
         $PassThru
     )
 
@@ -289,16 +301,15 @@ function Add-PodeOAResponse
             # build any content-type schemas
             $content = $null
             if ($null -ne $ContentSchemas)
-            {
-                $content = ConvertTo-PodeOAContentTypeSchema -Schema $ContentSchemas
-                #   $content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+            {  
+                $content =  ConvertTo-PodeOAContentTypeSchema  -Schemas $ContentSchemas -Array:$ContentArray 
             }
 
             # build any header schemas
             $headers = $null
             if ($null -ne $HeaderSchemas)
             {
-                $headers = ($HeaderSchemas | ConvertTo-PodeOAHeaderSchema)
+                $headers = ($HeaderSchemas | ConvertTo-PodeOAHeaderSchema -Array:$HeaderArray  ) 
             }
         }
 

@@ -3,7 +3,10 @@ function ConvertTo-PodeOAContentTypeSchema
     param(
         [Parameter(ValueFromPipeline = $true)] 
         [hashtable]
-        $Schemas
+        $Schemas,
+        [Parameter(ValueFromPipeline = $false)]
+        [switch]
+        $Array 
     )
 
     if (Test-PodeIsEmpty $Schemas)
@@ -21,14 +24,17 @@ function ConvertTo-PodeOAContentTypeSchema
     }
 
     # convert each schema to openapi format
-    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas)
+    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas -Array:$Array)
 }
 
 function ConvertTo-PodeOAHeaderSchema
 {
     param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
-        [string[]]$Schemas
+        [string[]]$Schemas,
+        [Parameter(ValueFromPipeline = $false)]
+        [switch]
+        $Array 
     )
     begin
     { 
@@ -43,11 +49,24 @@ function ConvertTo-PodeOAHeaderSchema
             if ( !(Test-PodeOAComponentHeaderSchema -Name $schema))
             {
                 throw "The OpenApi component schema doesn't exist: $schema"
-            } 
-            $obj[$schema] = @{ 
-                'description' = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$schema].description
-                'schema'      = ($PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$schema] | ConvertTo-PodeOASchemaProperty -NoDescription ) 
+            }  
+            if ($Array)
+            {
+                $obj[$schema] = @{ 
+                    'description' = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$schema].description
+                    'schema'      = @{
+                        'type'  = 'array'
+                        'items' = ($PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$schema] | ConvertTo-PodeOASchemaProperty -NoDescription )
+                    }
+                }      
             }
+            else
+            {
+                $obj[$schema] = @{ 
+                    'description' = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$schema].description
+                    'schema'      = ($PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$schema] | ConvertTo-PodeOASchemaProperty -NoDescription ) 
+                }            
+            } 
         }
     }
     end
@@ -61,7 +80,10 @@ function ConvertTo-PodeOAObjectSchema
     param(
         [Parameter(ValueFromPipeline = $true)]
         [hashtable]
-        $Schemas
+        $Schemas, 
+        [Parameter(ValueFromPipeline = $false)]
+        [switch]
+        $Array 
     )
 
     # convert each schema to openapi format
@@ -70,15 +92,30 @@ function ConvertTo-PodeOAObjectSchema
     {
         $obj[$type] = @{
             schema = $null
+        } 
+        if ($Array)
+        {
+            $obj[$type].schema = @{
+                'type'  = 'array'
+                'items' = $null
+            }
         }
-
         # add a shared component schema reference
         if ($Schemas[$type] -is [string])
         {
             if (@('string', 'integer' , 'number', 'boolean' ) -contains $Schemas[$type])
             {
-                $obj[$type].schema = @{
-                    'type' = $Schemas[$type]
+                if ($Array)
+                {
+                    $obj[$type].schema.items = @{
+                        'type' = $Schemas[$type]
+                    }
+                }
+                else
+                {
+                    $obj[$type].schema = @{
+                        'type' = $Schemas[$type]
+                    }
                 }
             }
             else
@@ -86,19 +123,26 @@ function ConvertTo-PodeOAObjectSchema
                 if ( !(Test-PodeOAComponentSchema -Name $Schemas[$type]))
                 {
                     throw "The OpenApi component schema doesn't exist: $($Schemas[$type])"
+                } 
+                if ($Array)
+                {
+                    $obj[$type].schema.items = @{
+                        '$ref' = "#/components/schemas/$($Schemas[$type])"
+                    }
                 }
-
-                $obj[$type].schema = @{
-                    '$ref' = "#/components/schemas/$($Schemas[$type])"
+                else
+                {
+                    $obj[$type].schema = @{
+                        '$ref' = "#/components/schemas/$($Schemas[$type])"
+                    }
                 }
             }
-        }
-
+        }  
         # add a set schema object
         else
         {
             $obj[$type].schema = ($Schemas[$type] | ConvertTo-PodeOASchemaProperty)
-        }
+        } 
     }
 
     return $obj
