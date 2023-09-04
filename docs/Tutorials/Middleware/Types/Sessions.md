@@ -12,7 +12,7 @@ The duration of the session cookie/header can be specified, as well as whether t
 
 ## Usage
 
-To initialise sessions in Pode you'll need to call [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware). This function will configure and automatically create the Middleware needed to enable sessions. By default sessions are set to use cookies, but support is also available for headers.
+To initialise sessions in Pode you'll need to call [`Enable-PodeSessionMiddleware`](../../../../Functions/Sessions/Enable-PodeSessionMiddleware). This function will configure and automatically create the Middleware needed to enable sessions. By default sessions are set to use cookies, but support is also available for headers.
 
 Sessions are automatically signed using a random GUID. For Pode running on a single server using the default in-memory storage this is OK, however if you're running Pode on multiple servers, or if you're defining a custom storage then a `-Secret` is required - this is so that sessions from different servers, or after a server restart, don't become corrupt and unusable.
 
@@ -46,7 +46,7 @@ The inbuilt SessionId generator used for sessions is a GUID, but you can supply 
 
 If supplied, the `-Generator` is a scriptblock that must return a valid string. The string itself should be a random unique value, that can be used as a unique session identifier.
 
-Within a route, or middleware, you can get the currently authenticated session'd ID using [`Get-PodeSessionId`](../../../../Functions/Middleware/Get-PodeSessionId). If there is no session, or the session is not authenticated, then `$null` is returned. This function can also returned the fully signed sessionId as well. If you want the sessionId even if it's not authenticated, then you can supply `-Force` to get the current SessionId back.
+Within a route, or middleware, you can get the currently authenticated session'd ID using [`Get-PodeSessionId`](../../../../Functions/Sessions/Get-PodeSessionId). If there is no session, or the session is not authenticated, then `$null` is returned. This function can also returned the fully signed sessionId as well. If you want the sessionId even if it's not authenticated, then you can supply `-Force` to get the current SessionId back.
 
 ### Strict
 

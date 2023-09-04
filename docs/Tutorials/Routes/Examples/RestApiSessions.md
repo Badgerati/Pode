@@ -23,7 +23,7 @@ Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
 ## Enabling Sessions
 
-To use sessions with headers for our authentication, we need to setup Session Middleware using the [`Enable-PodeSessionMiddleware`](../../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. Here our sessions will last for 2 minutes, and will be extended on each request:
+To use sessions with headers for our authentication, we need to setup Session Middleware using the [`Enable-PodeSessionMiddleware`](../../../../Functions/Sessions/Enable-PodeSessionMiddleware/) function. Here our sessions will last for 2 minutes, and will be extended on each request:
 
 ```powershell
 Enable-PodeSessionMiddleware -Duration 120 -Extend -UseHeaders
