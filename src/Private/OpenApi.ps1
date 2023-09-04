@@ -30,7 +30,7 @@ function ConvertTo-PodeOAContentTypeSchema
 function ConvertTo-PodeOAHeaderSchema
 {
     param(
-        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [Parameter(ValueFromPipeline = $true, Mandatory = $true, Position = 0)]
         [string[]]$Schemas,
         [Parameter(ValueFromPipeline = $false)]
         [switch]
@@ -422,10 +422,10 @@ function Get-PodeOpenApiDefinitionInternal
     {
         $def['externalDocs'] = $MetaInfo.ExternalDocs
     } 
-    # servers
-    $def['servers'] = $null
+    # servers 
     if (!$MetaInfo.RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1))
     {
+        $def['servers'] = $null
         $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints.Values)
             {
                 @{
@@ -439,13 +439,14 @@ function Get-PodeOpenApiDefinitionInternal
         #$def['servers'] = @(@{'url' = $MetaInfo.RouteFilter.TrimEnd('/', '*') })
     }
 
-    # components
-    $def['components'] = $PodeContext.Server.OpenAPI.components
-
+    
     if ($PodeContext.Server.OpenAPI.tags)
     {
         $def['tags'] = $PodeContext.Server.OpenAPI.tags.Values
     }
+    # components
+    $def['components'] = $PodeContext.Server.OpenAPI.components
+
     # auth/security components
     if ($PodeContext.Server.Authentications.Methods.Count -gt 0)
     {
@@ -529,13 +530,13 @@ function Get-PodeOpenApiDefinitionInternal
 
             # add path's http method to defintition
             $def.paths[$_route.OpenApi.Path][$method] = @{
+                tags        = @($_route.OpenApi.Tags)
                 summary     = $_route.OpenApi.Summary
                 description = $_route.OpenApi.Description
-                operationId = $_route.OpenApi.OperationId
-                tags        = @($_route.OpenApi.Tags)
-                responses   = $_route.OpenApi.Responses
-                parameters  = $_route.OpenApi.Parameters
+                operationId = $_route.OpenApi.OperationId 
                 requestBody = $_route.OpenApi.RequestBody
+                responses   = $_route.OpenApi.Responses
+                parameters  = $_route.OpenApi.Parameters 
                 servers     = $null
                 security    = @($_route.OpenApi.Authentication)
             }

@@ -242,37 +242,48 @@ function Add-PodeOAResponse
 {
     [CmdletBinding(DefaultParameterSetName = 'Schema')]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
         $Route,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [int]
         $StatusCode,
 
         [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
         [hashtable]
         $ContentSchemas,
 
         [Parameter(ParameterSetName = 'Schema')] 
+        [Parameter(ParameterSetName = 'SchemaDefault')]
         [string[]]
         $HeaderSchemas,
 
         [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
         [string]
         $Description = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [Parameter(ParameterSetName = 'ReferenceDefault')]
         [string]
         $Reference,
 
+        [Parameter(Mandatory = $true, ParameterSetName = 'ReferenceDefault')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
         [switch]
         $Default,
 
+        [Parameter(ParameterSetName = 'Schema')] 
+        [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
         $ContentArray,
-
+        
+        [Parameter(ParameterSetName = 'Schema')] 
+        [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
         $HeaderArray,
 
@@ -302,14 +313,14 @@ function Add-PodeOAResponse
             $content = $null
             if ($null -ne $ContentSchemas)
             {  
-                $content =  ConvertTo-PodeOAContentTypeSchema  -Schemas $ContentSchemas -Array:$ContentArray 
+                $content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray 
             }
 
             # build any header schemas
             $headers = $null
             if ($null -ne $HeaderSchemas)
             {
-                $headers = ($HeaderSchemas | ConvertTo-PodeOAHeaderSchema -Array:$HeaderArray  ) 
+                $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
             }
         }
 
@@ -437,6 +448,12 @@ The header name and schema the response returns (the schema is created using the
 .PARAMETER Description
 The Description of the response.
 
+.PARAMETER ContentArray
+If supplied, the Content Schema will be considered an array
+
+.PARAMETER HeaderArray
+If supplied, the Header Schema will be considered an array
+
 .EXAMPLE
 Add-PodeOAComponentResponse -Name 'OKResponse' -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
@@ -456,24 +473,32 @@ function Add-PodeOAComponentResponse
         $ContentSchemas,
 
         [Parameter()]
-        [hashtable]
+        [string[]]
         $HeaderSchemas,
 
         [Parameter(Mandatory = $true)]
         [string]
-        $Description
+        $Description,
+
+        [Parameter()]
+        [switch]
+        $ContentArray,
+
+        [Parameter()]
+        [switch]
+        $HeaderArray
     )
 
     $content = $null
     if ($null -ne $ContentSchemas)
     {
-        $content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+        $content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray 
     }
 
     $headers = $null
     if ($null -ne $HeaderSchemas)
     {
-        $headers = ($HeaderSchemas | ConvertTo-PodeOAHeaderSchema)
+        $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
     }
 
     $PodeContext.Server.OpenAPI.components.responses[$Name] = @{
@@ -2201,18 +2226,15 @@ function Add-PodeOAExternalDoc
         $Description
     )
 
-    $param = @{  
-        'url' = $Url
-    }
+    $param = @{}
 
     if ($Description)
     {
         $param.description = $Description
     }
-
+    $param['url'] = $Url
     $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Name] = $param
     
-    return $param
 }
 
 
