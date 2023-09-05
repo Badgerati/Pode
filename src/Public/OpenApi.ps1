@@ -26,6 +26,9 @@ Like normal Routes, an array of Middleware that will be applied to the route.
 .PARAMETER RestrictRoutes
 If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
 
+.PARAMETER ServerUrl
+If supplied, will be used as URL base to generate the OpenAPI definition.
+
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
 
@@ -73,7 +76,11 @@ function Enable-PodeOpenApi
         $Middleware,
 
         [switch]
-        $RestrictRoutes 
+        $RestrictRoutes,
+ 
+        [Parameter()]
+        [string]
+        $ServerUrl
 
     )
 
@@ -86,11 +93,19 @@ function Enable-PodeOpenApi
         Description    = $Description
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes  
+        
     }
+
+    if ($ServerUrl)
+    {
+        $meta.ServerUrl = $ServerUrl
+    } 
+
     if ($ExtraInfo)
     {
         $meta.ExtraInfo = $ExtraInfo
     }
+
     if ($ExternalDocs)
     {
         if ( !(Test-PodeOAExternalDoc -Name $ExternalDocs))
@@ -564,7 +579,7 @@ function Set-PodeOARequest
         {
             $r.OpenApi.RequestBody = $RequestBody
         }
-        
+
     }
 
     if ($PassThru)

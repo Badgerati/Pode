@@ -48,7 +48,7 @@ Some useful links:
 
     Add-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDocs 'SwaggerDocs' #-RouteFilter '/api/v3/*' -RestrictRoutes
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDocs 'SwaggerDocs' -ServerUrl '/api/v3' #-RouteFilter '/api/v3/*' -RestrictRoutes
     Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger'  
     # or ReDoc at the default "/redoc"
     Enable-PodeOpenApiViewer -Type ReDoc  

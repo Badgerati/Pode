@@ -423,9 +423,13 @@ function Get-PodeOpenApiDefinitionInternal
         $def['externalDocs'] = $MetaInfo.ExternalDocs
     } 
     # servers 
-    if (!$MetaInfo.RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1))
+    if ($MetaInfo.ServerUrl)
     {
-        $def['servers'] = $null
+        $def['servers'] = @(@{'url' = $MetaInfo.ServerUrl })
+    }
+    elseif (!$MetaInfo.RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1))
+    {
+        #  $def['servers'] = $null
         $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints.Values)
             {
                 @{
@@ -433,12 +437,7 @@ function Get-PodeOpenApiDefinitionInternal
                     description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
                 }
             })
-    }
-    else
-    { 
-        #$def['servers'] = @(@{'url' = $MetaInfo.RouteFilter.TrimEnd('/', '*') })
-    }
-
+    } 
     
     if ($PodeContext.Server.OpenAPI.tags)
     {
@@ -493,7 +492,7 @@ function Get-PodeOpenApiDefinitionInternal
     foreach ($method in $PodeContext.Server.Routes.Keys)
     {
         foreach ($path in ($PodeContext.Server.Routes[$method].Keys | Sort-Object))
-        {
+        { 
             # does it match the route?
             if ($path -inotmatch $filter)
             {
@@ -593,13 +592,21 @@ function Get-PodeOpenApiDefinitionInternal
                 if ($null -ne $serverDef)
                 {
                     $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
-                }
+                } 
+
             }
+            #remove the ServerUrl part
+            if ($MetaInfo.ServerUrl)
+            { 
+                $def.paths[$_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')] = $def.paths[$_route.OpenApi.Path] 
+                $def.paths[$_route.OpenApi.Path] = $null
+            } 
         }
     }
 
     # remove all null values (swagger hates them)
     $def | Remove-PodeNullKeysFromHashtable
+
     return $def
 }
 
