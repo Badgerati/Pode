@@ -523,6 +523,7 @@ The Parameter definitions the request uses (from ConvertTo-PodeOAParameter).
 
 .PARAMETER RequestBody
 The Request Body definition the request uses (from New-PodeOARequestBody).
+ 
 
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
@@ -552,7 +553,8 @@ function Set-PodeOARequest
     )
 
     foreach ($r in @($Route))
-    {
+    { 
+        
         if (($null -ne $Parameters) -and ($Parameters.Length -gt 0))
         {
             $r.OpenApi.Parameters = @($Parameters)
@@ -562,6 +564,7 @@ function Set-PodeOARequest
         {
             $r.OpenApi.RequestBody = $RequestBody
         }
+        
     }
 
     if ($PassThru)
@@ -841,9 +844,9 @@ New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add
 #>
 function Add-PodeOAComponentParameter
 {
-    [CmdletBinding()]
+    [CmdletBinding( )]
     param(
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -852,12 +855,7 @@ function Add-PodeOAComponentParameter
         $Parameter
     )
 
-    if ([string]::IsNullOrWhiteSpace($Name))
-    {
-        $Name = $Parameter.name
-    } 
-    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter 
-    #($Parameter | ConvertTo-PodeOASchemaProperty)  
+    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter  
 }
 
 <#
@@ -1891,7 +1889,7 @@ function ConvertTo-PodeOAParameter
 {
     [CmdletBinding(DefaultParameterSetName = 'Reference')]
     param(
-        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        # [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
@@ -1952,7 +1950,7 @@ function ConvertTo-PodeOAParameter
 
         $prop = @{
             '$ref' = "#/components/parameters/$($Reference)"
-        }
+        } 
     }
     else
     {
@@ -1981,28 +1979,30 @@ function ConvertTo-PodeOAParameter
             }
         }
     }
-
-    if ($Property.deprecated)
+    if ($Property)
     {
-        $prop['deprecated'] = $Property.deprecated
-    }
-
-    if ($Property.required)
-    {
-        $prop['required'] = $Property.required
-    }
-    elseif ($In -eq 'Path')
-    {
-        $prop['required'] = $true 
-    }
-    # remove default for required parameter
-    if (!$Property.required -and $PSCmdlet.ParameterSetName -ne 'ContentSchemas')
-    {
-        if ( $prop.ContainsKey('schema'))
+        if ($Property.deprecated)
         {
-            $prop.schema['default'] = $Property.default
+            $prop['deprecated'] = $Property.deprecated
         }
-    }  
+
+        if ($Property.required)
+        {
+            $prop['required'] = $Property.required
+        }
+        elseif ($In -eq 'Path')
+        {
+            $prop['required'] = $true 
+        }
+        # remove default for required parameter
+        if (!$Property.required -and $PSCmdlet.ParameterSetName -ne 'ContentSchemas')
+        {
+            if ( $prop.ContainsKey('schema'))
+            {
+                $prop.schema['default'] = $Property.default
+            }
+        }  
+    }
     return $prop
 }
 

@@ -48,7 +48,7 @@ Some useful links:
 
     Add-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription     -ExtraInfo $ExtraInfo -ExternalDocs 'SwaggerDocs' #-RouteFilter '/api/v3/*' -RestrictRoutes
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDocs 'SwaggerDocs' #-RouteFilter '/api/v3/*' -RestrictRoutes
     Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger'  
     # or ReDoc at the default "/redoc"
     Enable-PodeOpenApiViewer -Type ReDoc  
@@ -223,10 +223,14 @@ Some useful links:
     Add-PodeOAComponentHeaderSchema -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
     Add-PodeOAComponentHeaderSchema -Name 'X-Expires-After' -Schema (New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires'  )
 
-
+    #define '#/components/responses/'
     Add-PodeOAComponentResponse -name 'UserOpSuccess' -Description 'Successful operation' -ContentSchemas (@{'application/json' = 'User' ; 'application/xml' = 'User' })  
- 
-    Add-PodeOAComponentRequestBody -name "PetBodySchema" -required -description 'Pet in the store' -ContentSchemas (@{ 'application/json' = 'Pet'; 'application/xml' = 'Pet'; 'application/x-www-form-urlencoded' = 'Pet' })
+
+    Add-PodeOAComponentRequestBody -name 'PetBodySchema' -required -description 'Pet in the store' -ContentSchemas (@{ 'application/json' = 'Pet'; 'application/xml' = 'Pet'; 'application/x-www-form-urlencoded' = 'Pet' })
+
+
+    #define '#/components/parameters/'
+    Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Path )  
 
     # setup apikey authentication to validate a user
     New-PodeAuthScheme -ApiKey -LocationName 'api_key' | Add-PodeAuth -Name 'api_key' -Sessionless -ScriptBlock {
@@ -293,10 +297,7 @@ Some useful links:
                 }    
             }  
         } | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru |
-          #  Set-PodeOARequest -RequestBody (New-PodeOARequestBody -required -description 'Update an existent pet in the store' -ContentSchemas (@{ 'application/json' = 'Pet'; 'application/xml' = 'Pet'; 'application/x-www-form-urlencoded' = 'Pet' }) ) -PassThru |  
-
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
-             
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |  
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru | 
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
@@ -322,7 +323,6 @@ Some useful links:
                 }    
             } 
         } | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'addPet' -PassThru |
-            #Set-PodeOARequest -RequestBody (New-PodeOARequestBody -required -description 'Create a new pet in the store' -ContentSchemas (@{ 'application/json' = 'Pet'; 'application/xml' = 'Pet'; 'application/x-www-form-urlencoded' = 'Pet' }) ) -PassThru |  
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |   
             Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -ContentSchemas @{
@@ -353,15 +353,12 @@ Some useful links:
             #  type: array
             #  items:
             #     $ref: '#/components/schemas/Pet'
-            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value' 
+            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'   
 
-        
         Add-PodeRoute -PassThru -Method Get -Path '/pet/:petId' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
-        } | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetById' -PassThru |
-            Set-PodeOARequest -PassThru -Parameters @(
-                        (  New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'ID of pet to return' -Required | ConvertTo-PodeOAParameter -In Path )  
-            ) |
+        } | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetById' -PassThru | 
+            Set-PodeOARequest -PassThru -Parameters @( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ) | 
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru | 
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru | 
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'    
@@ -369,8 +366,7 @@ Some useful links:
         Add-PodeRoute -PassThru -Method post -Path '/pet/:petId' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store' -Description 'Updates a pet in the store with form data' -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru |
-            Set-PodeOARequest -PassThru -Parameters @(
-                            (  New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'ID of pet that needs to be updated' -Required | ConvertTo-PodeOAParameter -In Path ),
+            Set-PodeOARequest -PassThru -Parameters @(( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  )
                             (  New-PodeOAStringProperty -Name 'name' -Description 'Name of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query ) ,
                             (  New-PodeOAStringProperty -Name 'status' -Description 'Status of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query )    
             ) | 
@@ -382,9 +378,7 @@ Some useful links:
         Add-PodeRoute -PassThru -Method Delete -Path '/pet/:petId' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Deletes a pet' -Description 'Deletes a pet.' -Tags 'pet' -OperationId 'deletePet' -PassThru |
-            Set-PodeOARequest -PassThru -Parameters @(
-                            (  New-PodeOAIntProperty -Name 'petId' -format Int64 -Description 'Pet id to delete' -Required | ConvertTo-PodeOAParameter -In Path )  
-            ) |
+            Set-PodeOARequest -PassThru -Parameters @( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ) | 
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru | 
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru | 
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'    
