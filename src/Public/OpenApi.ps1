@@ -313,16 +313,19 @@ function Add-PodeOAResponse
     }
 
     # override status code with default
-    $code = "$($StatusCode)"
     if ($Default)
     {
         $code = 'default'
+    }
+    else
+    {
+        $code = "$($StatusCode)"
     }
 
     # schemas or component reference?
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
     {
-        'schema'
+        { $_ -in 'schema', 'schemadefault' }
         {
             # build any content-type schemas
             $content = $null
@@ -339,7 +342,7 @@ function Add-PodeOAResponse
             }
         }
 
-        'reference'
+        { $_ -in 'reference', 'referencedefault' }
         {
             if (!(Test-PodeOAComponentResponse -Name $Reference))
             {
@@ -353,7 +356,7 @@ function Add-PodeOAResponse
     {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
         {
-            'schema'
+            { $_ -in 'schema', 'schemadefault' }
             {
                 $r.OpenApi.Responses[$code] = @{
                     description = $Description
@@ -361,8 +364,8 @@ function Add-PodeOAResponse
                     headers     = $headers
                 }
             }
-
-            'reference'
+ 
+            { $_ -in 'reference', 'referencedefault' }
             {
                 $r.OpenApi.Responses[$code] = @{
                     '$ref' = "#/components/responses/$($Reference)"
@@ -784,7 +787,13 @@ function Test-PodeOARequestSchema
 
     $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$SchemaReference] -ErrorVariable jsonValidationErrors 
 
-    return @{result = $result; message = $jsonValidationErrors }
+    [string[]] $message = @()
+    if ($jsonValidationErrors)
+    {
+        foreach ($item in $jsonValidationErrors) { $message += $item }  
+    }
+
+    return @{result = $result; message = $message }
 }
 
 <#
@@ -1903,8 +1912,7 @@ ConvertTo-PodeOAParameter  -In Header -ContentSchemas @{ 'application/json' = 'U
 function ConvertTo-PodeOAParameter
 {
     [CmdletBinding(DefaultParameterSetName = 'Reference')]
-    param(
-        # [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+    param( 
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
