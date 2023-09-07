@@ -93,7 +93,7 @@ function Enable-PodeOpenApi
         Description    = $Description
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes  
-        ExcludedPaths=@($Path,'/redoc')
+        ExcludedPaths  = @($Path, '/redoc')
     }
 
     if ($ServerUrl)
@@ -938,10 +938,7 @@ If supplied, the integer will be included in a request but not in a response
 If supplied, the object will be treated as an array of objects.
 
 .PARAMETER UniqueItems
-If supplied, specify that all items in the array must be unique
-
-.PARAMETER Explode
-If supplied, controls how arrays are serialized in query parameters
+If supplied, specify that all items in the array must be unique  
 
 .PARAMETER MinItems
 If supplied, specify minimum length of an array 
@@ -1017,11 +1014,7 @@ function New-PodeOAIntProperty
 
         [Parameter(ParameterSetName = 'Array')]
         [switch] 
-        $UniqueItems,
-
-        [Parameter(ParameterSetName = 'Array')]
-        [switch] 
-        $Explode,
+        $UniqueItems, 
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
@@ -1058,9 +1051,7 @@ function New-PodeOAIntProperty
 
     if ($Example ) { $param.meta['example'] = $Example }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
-
-    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
 
     if ($Default) { $param.default = $Default }
 
@@ -1148,9 +1139,6 @@ If supplied, the object will be treated as an array of objects.
 .PARAMETER UniqueItems
 If supplied, specify that all items in the array must be unique
 
-.PARAMETER Explode
-If supplied, controls how arrays are serialized in query parameters
-
 .PARAMETER MinItems
 If supplied, specify minimum length of an array 
 
@@ -1225,11 +1213,7 @@ function New-PodeOANumberProperty
 
         [Parameter(ParameterSetName = 'Array')]
         [switch] 
-        $UniqueItems,
-
-        [Parameter(ParameterSetName = 'Array')]
-        [switch] 
-        $Explode,
+        $UniqueItems, 
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
@@ -1264,9 +1248,7 @@ function New-PodeOANumberProperty
 
     if ($Example ) { $param.meta['example'] = $Example }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
-
-    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
 
     if ($Default) { $param.default = $Default }
 
@@ -1351,9 +1333,6 @@ If supplied, the object will be treated as an array of objects.
 .PARAMETER UniqueItems
 If supplied, specify that all items in the array must be unique
 
-.PARAMETER Explode
-If supplied, controls how arrays are serialized in query parameters
-
 .PARAMETER MinItems
 If supplied, specify minimum length of an array 
 
@@ -1429,11 +1408,7 @@ function New-PodeOAStringProperty
 
         [Parameter(ParameterSetName = 'Array')]
         [switch] 
-        $UniqueItems,
-
-        [Parameter(ParameterSetName = 'Array')]
-        [switch] 
-        $Explode,
+        $UniqueItems, 
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
@@ -1451,9 +1426,9 @@ function New-PodeOAStringProperty
     }
 
     $param = @{
-        name     = $Name
-        type     = 'string' 
-        meta     = @{}
+        name = $Name
+        type = 'string' 
+        meta = @{}
     }
     
     if ($Description ) { $param.description = $Sescription }
@@ -1474,9 +1449,7 @@ function New-PodeOAStringProperty
 
     if ($Example ) { $param.meta['example'] = $Example }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
-
-    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
 
     if ($Default) { $param.default = $Default }
 
@@ -1539,9 +1512,6 @@ If supplied, the object will be treated as an array of objects.
 .PARAMETER UniqueItems
 If supplied, specify that all items in the array must be unique
 
-.PARAMETER Explode
-If supplied, controls how arrays are serialized in query parameters
-
 .PARAMETER MinItems
 If supplied, specify minimum length of an array 
 
@@ -1599,11 +1569,7 @@ function New-PodeOABoolProperty
 
         [Parameter(ParameterSetName = 'Array')]
         [switch] 
-        $UniqueItems,
-
-        [Parameter(ParameterSetName = 'Array')]
-        [switch] 
-        $Explode,
+        $UniqueItems, 
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
@@ -1638,9 +1604,7 @@ function New-PodeOABoolProperty
 
     if ($Example ) { $param.meta['example'] = $Example }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
-
-    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
 
     if ($Default) { $param.default = $Default } 
 
@@ -1708,9 +1672,6 @@ If supplied, specify maximum length of an array
 .PARAMETER Xml
 If supplied, controls the XML serialization behavior
 
-.PARAMETER Explode
-If supplied, controls how object is serialized in query parameters
-
 .EXAMPLE
 New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
 #>
@@ -1770,10 +1731,7 @@ function New-PodeOAObjectProperty
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
-        $MaxItems,
-
-        [switch] 
-        $Explode,
+        $MaxItems,  
 
         [hashtable[]]
         $Xml
@@ -1783,6 +1741,7 @@ function New-PodeOAObjectProperty
         name       = $Name
         type       = 'object'    
         properties = $Properties  
+        meta       = @{}
     }
     if ($Description ) { $param.description = $Sescription }
 
@@ -1800,9 +1759,7 @@ function New-PodeOAObjectProperty
 
     if ($Example ) { $param.meta['example'] = $Example }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() }
-
-    if ($Explode.IsPresent ) { $param.explode = $Explode.ToBool() }
+    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
 
     if ($Default) { $param.default = $Default } 
 
@@ -1818,6 +1775,8 @@ function New-PodeOAObjectProperty
     
     return $param
 }
+ 
+ 
 
 <#
 .SYNOPSIS
@@ -1835,47 +1794,164 @@ An component schema name.
 .PARAMETER Description
 A Description of the property.
 
+.PARAMETER Example
+An example of a parameter value
+
+.PARAMETER Deprecated
+If supplied, the schema will be treated as Deprecated where supported.
+
 .PARAMETER Array
-If supplied, the schema reference will be treated as an array.
+If supplied, the schema will be treated as an array of objects.
+
+.PARAMETER Nullable
+If supplied, the schema will be treated as Nullable.
+
+.PARAMETER ReadOnly
+If supplied, the schema will be included in a response but not in a request
+
+.PARAMETER WriteOnly
+If supplied, the schema will be included in a request but not in a response  
+
+.PARAMETER MinProperties
+If supplied, will restrict the minimun number of properties allowed in an schema.
+
+.PARAMETER MaxProperties
+If supplied, will restrict the maximum number of properties allowed in an schema.
+
+.PARAMETER Array
+If supplied, the schema will be treated as an array of objects.
+
+.PARAMETER UniqueItems
+If supplied, specify that all items in the array must be unique
+
+.PARAMETER MinItems
+If supplied, specify minimum length of an array 
+
+.PARAMETER MaxItems
+If supplied, specify maximum length of an array 
+
+.PARAMETER Xml
+If supplied, controls the XML serialization behavior
+
 
 .EXAMPLE
 New-PodeOASchemaProperty -Name 'Config' -ComponentSchema "MyConfigSchema"
 #>
 function New-PodeOASchemaProperty
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
         [Parameter(Mandatory = $true)]
         [string]
-        $Reference,
+        $ComponentSchema, 
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'Array')] 
         [string]
         $Description,
 
+        [Parameter(ParameterSetName = 'Array')] 
+        [String]
+        $Example,
+
+        [Parameter(ParameterSetName = 'Array')]
         [switch]
-        $Array
+        $Deprecated, 
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch]
+        $Required,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch]
+        $Nullable, 
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch]
+        $ReadOnly,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch]
+        $WriteOnly,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinProperties,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxProperties,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch] 
+        $UniqueItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxItems, 
+
+        [hashtable[]]
+        $Xml
     )
-
-    if (!(Test-PodeOAComponentSchema -Name $Reference))
+    if ( !(Test-PodeOAComponentSchema -Name $ComponentSchema))
     {
-        throw "The OpenApi component schema doesn't exist: $($Reference)"
-    }
-
+        throw "The OpenApi component schema doesn't exist: $ComponentSchema"
+    }  
     $param = @{
-        name        = $Name
-        type        = 'schema'
-        schema      = $Reference
-        array       = $Array.IsPresent -and $Array
-        description = $Description
+        name   = $Name
+        type   = 'schema' 
+        schema = $ComponentSchema 
+        meta   = @{}
     }
+    if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'array')
+    {   
+        if ($Description ) { $param.description = $Sescription }
 
+        if ($Array.IsPresent ) { $param.array = $Array.ToBool() } 
+
+        if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+
+        if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+
+        if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+
+        if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+
+        if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+
+        if ($Example ) { $param.meta['example'] = $Example }
+
+        if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
+
+        if ($Default) { $param.default = $Default } 
+
+        if ($MaxItems) { $param.maxItems = $MaxItems }
+
+        if ($MinItems) { $param.minItems = $MinItems }
+
+        if ($MinProperties) { $param.minProperties = $MinProperties }
+
+        if ($MaxProperties) { $param.maxProperties = $MaxProperties }
+
+        if ($Xml) { $param.xml = $Xml }
+    }
+    
     return $param
 }
+
+
+
 
 <#
 .SYNOPSIS
@@ -1895,6 +1971,9 @@ The name of an existing component parameter to be reused.
 
 .PARAMETER ContentSchemas
 The content-types and the name of an existing component schema to be reused.
+
+.PARAMETER Explode
+If supplied, controls how arrays are serialized in query parameters
 
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query
@@ -1927,7 +2006,16 @@ function ConvertTo-PodeOAParameter
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
         [hashtable]
-        $ContentSchemas 
+        $ContentSchemas,
+
+        [Parameter() ]
+        [Switch]
+        $Explode, 
+
+        [Parameter() ]
+        [ValidateSet('simple', 'label', 'matrix', 'query', 'form', 'spaceDelimited', 'pipeDelimited', 'deepObject' )]
+        [string]
+        $Style 
     )
     if ($PSCmdlet.ParameterSetName -ieq 'ContentSchemas')
     { 
@@ -2001,6 +2089,51 @@ function ConvertTo-PodeOAParameter
     }
     if ($Property)
     {
+        if ($Style)
+        {
+            switch ($in)
+            {
+                'Path'
+                {
+                    if (@('simple', 'label', 'matrix' ) -notcontains $Style)
+                    {
+                        throw "OpenApi request Style cannot be $Style for a $in parameter"
+                    } 
+                    break
+                }
+                'Query'
+                {
+                    if (@('form', 'spaceDelimited', 'pipeDelimited', 'deepObject' ) -notcontains $Style)
+                    {
+                        throw "OpenApi request Style cannot be $Style for a $in parameter"
+                    } 
+                    break
+                }
+                'Header'
+                {
+                    if (@('simple' ) -notcontains $Style)
+                    {
+                        throw "OpenApi request Style cannot be $Style for a $in parameter"
+                    } 
+                    break
+                }
+                'Cookie'
+                {
+                    if (@('form' ) -notcontains $Style)
+                    {
+                        throw "OpenApi request Style cannot be $Style for a $in parameter"
+                    } 
+                    break
+                } 
+            }
+            $prop['style'] = $Style
+        } 
+
+        if ($Explode.IsPresent )
+        {
+            $prop['explode'] = $Explode.ToBool() 
+        }
+
         if ($Property.deprecated)
         {
             $prop['deprecated'] = $Property.deprecated
@@ -2016,14 +2149,14 @@ function ConvertTo-PodeOAParameter
             $prop.schema['enum'] = $Property.enum
         }
 
-        if ($Property.required)
-        {
-            $prop['required'] = $Property.required
-        }
-        elseif ($In -eq 'Path')
+        if ($In -eq 'Path')
         {
             $prop['required'] = $true 
         }
+        elseif ($Property.required )
+        {
+            $prop['required'] = $Property.required
+        } 
         # remove default for required parameter
         if (!$Property.required -and $PSCmdlet.ParameterSetName -ne 'ContentSchemas')
         {

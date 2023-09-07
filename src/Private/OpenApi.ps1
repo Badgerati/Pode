@@ -262,14 +262,7 @@ function ConvertTo-PodeOASchemaProperty
     if ($Property.deprecated)
     {
         $schema['deprecated'] = $Property.deprecated
-    }
-
-    
-
-    if ($Property.required -and !$InObject)
-    {
-        $schema['required'] = $Property.required
-    }  
+    } 
 
     if ($null -ne $Property.meta)
     {
@@ -279,13 +272,7 @@ function ConvertTo-PodeOASchemaProperty
         }
     }
 
-    # schema refs
-    if ($Property.type -ieq 'schema')
-    {
-        $schema = @{
-            '$ref' = "#/components/schemas/$($Property['schema'])"
-        }
-    }
+    
 
     # are we using an array?
     if ($Property.array)
@@ -304,20 +291,29 @@ function ConvertTo-PodeOASchemaProperty
         {
             $schema['uniqueItems'] = $Property.uniqueItems
         } 
-
-        if ($Property.explode )
-        {
-            $schema['explode'] = $Property.explode
-        }
-
-        $Property.array = $false
+        
         $schema['type'] = 'array'
-        $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty)         
-        $Property.array = $true
+        if ($Property.type -ieq 'schema')
+        {
+            $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
+        }
+        else
+        {
+            $Property.array = $false
+            $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty) 
+            $Property.array = $true 
+        }       
         return $schema
     }
     else
     {
+        # schema refs
+        if ($Property.type -ieq 'schema')
+        {
+            $schema = @{
+                '$ref' = "#/components/schemas/$($Property['schema'])"
+            }
+        }
         #only if it's not an array
         if ($Property.enum )
         {
@@ -349,12 +345,7 @@ function ConvertTo-PodeOASchemaProperty
         if ( $RequiredList.Count -gt 0)
         {
             $schema['required'] = @($RequiredList.Name) 
-        }
-
-        if ($Property.explode )
-        {
-            $schema['explode'] = $Property.explode
-        }
+        } 
 
         if ($Property.xml )
         { 
