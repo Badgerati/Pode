@@ -316,6 +316,14 @@ function ConvertTo-PodeOASchemaProperty
         $Property.array = $true
         return $schema
     }
+    else
+    {
+        #only if it's not an array
+        if ($Property.enum )
+        {
+            $schema['enum'] = $Property.enum
+        } 
+    }
     
     if ($Property.object)
     {
@@ -514,7 +522,11 @@ function Get-PodeOpenApiDefinitionInternal
 
             # get the first route for base definition
             $_route = $_routes[0]
-
+            #remove the ServerUrl part 
+            if ($MetaInfo.ServerUrl)
+            {
+                $_route.OpenApi.Path = $_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')
+            }
             # do nothing if it has no responses set
             if ($_route.OpenApi.Responses.Count -eq 0)
             {
@@ -595,12 +607,7 @@ function Get-PodeOpenApiDefinitionInternal
                 } 
 
             }
-            #remove the ServerUrl part
-            if ($MetaInfo.ServerUrl)
-            { 
-                $def.paths[$_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')] = $def.paths[$_route.OpenApi.Path] 
-                $def.paths[$_route.OpenApi.Path] = $null
-            } 
+            
         }
     }
 

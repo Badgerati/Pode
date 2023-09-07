@@ -1070,7 +1070,7 @@ function New-PodeOAIntProperty
 
     if ($MinItems) { $param.minItems = $MinItems }
 
-    if ($Enum) { $param.meta['enum'] = $Enum }  
+    if ($Enum) { $param.enum = $Enum }  
 
     if ($Minimum -ne [int]::MinValue)
     {
@@ -1276,7 +1276,7 @@ function New-PodeOANumberProperty
 
     if ($MinItems) { $param.minItems = $MinItems }
 
-    if ($Enum) { $param.meta['enum'] = $Enum } 
+    if ($Enum) { $param.enum = $Enum } 
 
     if ($Minimum -ne [double]::MinValue)
     {
@@ -1489,7 +1489,7 @@ function New-PodeOAStringProperty
 
     if ($MinItems) { $param.minItems = $MinItems }
 
-    if ($Enum) { $param.meta['enum'] = $Enum } 
+    if ($Enum) { $param.enum = $Enum } 
 
     if ($Pattern) { $param.meta['pattern'] = $Pattern } 
 
@@ -1651,7 +1651,7 @@ function New-PodeOABoolProperty
 
     if ($MinItems) { $param.minItems = $MinItems }
 
-    if ($Enum) { $param.meta['enum'] = $Enum } 
+    if ($Enum) { $param.enum = $Enum } 
 
     return $param
 }
