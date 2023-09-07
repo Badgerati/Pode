@@ -494,7 +494,7 @@ function Get-PodeOpenApiDefinitionInternal
     }
 
     # paths
-    $def['paths'] = @{}
+    $def['paths'] = [ordered]@{}
     $filter = "^$($MetaInfo.RouteFilter)"
 
     foreach ($method in $PodeContext.Server.Routes.Keys)
@@ -506,7 +506,10 @@ function Get-PodeOpenApiDefinitionInternal
             {
                 continue
             }
-
+            if ($MetaInfo.ExcludedPaths -contains $path)
+            {
+                continue
+            }
             # the current route
             $_routes = @($PodeContext.Server.Routes[$method][$path])
             if ($MetaInfo.RestrictRoutes)

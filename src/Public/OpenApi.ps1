@@ -93,7 +93,7 @@ function Enable-PodeOpenApi
         Description    = $Description
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes  
-        
+        ExcludedPaths=@($Path,'/redoc')
     }
 
     if ($ServerUrl)
@@ -1453,9 +1453,6 @@ function New-PodeOAStringProperty
     $param = @{
         name     = $Name
         type     = 'string' 
-        minItems = $MinItems  
-        maxItems = $MaxItems 
-
         meta     = @{}
     }
     
@@ -2007,6 +2004,16 @@ function ConvertTo-PodeOAParameter
         if ($Property.deprecated)
         {
             $prop['deprecated'] = $Property.deprecated
+        }
+
+        if ($Property.default)
+        {
+            $prop.schema['default'] = $Property.default
+        }
+
+        if ($Property.enum)
+        {
+            $prop.schema['enum'] = $Property.enum
         }
 
         if ($Property.required)
