@@ -77,7 +77,7 @@ function Enable-PodeOpenApi
 
         [switch]
         $RestrictRoutes,
- 
+
         [Parameter()]
         [string]
         $ServerUrl
@@ -87,13 +87,12 @@ function Enable-PodeOpenApi
     # initialise openapi info
     $PodeContext.Server.OpenAPI.Title = $Title
     $PodeContext.Server.OpenAPI.Path = $Path
-
+    $PodeContext.Server.OpenAPI.hiddenComponents.excludedPaths += $Path
     $meta = @{
         Version        = $Version
         Description    = $Description
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes  
-        ExcludedPaths  = @($Path, '/redoc')
     }
 
     if ($ServerUrl)
@@ -2335,7 +2334,7 @@ function Enable-PodeOpenApiViewer
         OpenApi  = $OpenApiUrl
         DarkMode = $DarkMode
     }
-
+    $PodeContext.Server.OpenAPI.hiddenComponents.excludedPaths += $Path
     # add the viewer route
     Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
         param($meta)

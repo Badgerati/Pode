@@ -501,6 +501,10 @@ function Get-PodeOpenApiDefinitionInternal
             {
                 continue
             }
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.excludedPaths -contains $path)
+            {
+                continue
+            }
             # the current route
             $_routes = @($PodeContext.Server.Routes[$method][$path])
             if ($MetaInfo.RestrictRoutes)
@@ -659,6 +663,7 @@ function Get-PodeOABaseObject
             headerSchemas = @{}
             externalDocs  = @{}
             schemaJson    = @{}
+            excludedPaths = @()
         } 
     }
 }
@@ -748,7 +753,8 @@ function Resolve-References ($obj, $schemas)
                     $obj.properties[$key] = $schemas[$refName] 
                 }
             }
-        }elseif ($obj.properties[$key].items -and $obj.properties[$key].items.'$ref' )
+        }
+        elseif ($obj.properties[$key].items -and $obj.properties[$key].items.'$ref' )
         {  
             if (($obj.properties[$key].items.'$ref').StartsWith('#/components/schemas/'))
             {
