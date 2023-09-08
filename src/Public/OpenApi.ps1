@@ -699,7 +699,7 @@ function Add-PodeOAComponentSchema
     )
 
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)  
- 
+
     $json = $PodeContext.Server.OpenAPI.components.schemas[$Name] | ConvertTo-Json -Depth 20 -Compress
     $obj = ConvertFrom-Json $json -AsHashtable
     Resolve-References -obj $obj -schemas $PodeContext.Server.OpenAPI.components.schemas
@@ -707,7 +707,6 @@ function Add-PodeOAComponentSchema
     $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = $obj | ConvertTo-Json -Depth 20 
 }
 
- 
 
 <#
 .SYNOPSIS
@@ -1538,7 +1537,7 @@ function New-PodeOABoolProperty
         $Description,
         
         [Parameter()]
-        [String]
+        [bool]
         $Example,
 
         [Parameter()]

@@ -748,6 +748,16 @@ function Resolve-References ($obj, $schemas)
                     $obj.properties[$key] = $schemas[$refName] 
                 }
             }
+        }elseif ($obj.properties[$key].items -and $obj.properties[$key].items.'$ref' )
+        {  
+            if (($obj.properties[$key].items.'$ref').StartsWith('#/components/schemas/'))
+            {
+                $refName = ($obj.properties[$key].items.'$ref') -replace '#/components/schemas/', ''
+                if ($schemas.ContainsKey($refName))
+                {
+                    $obj.properties[$key].items = $schemas[$refName] 
+                }
+            }
         }
     } 
 } 
