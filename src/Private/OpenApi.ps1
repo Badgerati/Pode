@@ -247,12 +247,7 @@ function ConvertTo-PodeOASchemaProperty
     if (!$NoDescription -and $Property.description)
     {
         $schema['description'] = $Property.description
-    }
-
-    if ($Property.format)
-    {
-        $schema['format'] = $Property.format
-    }
+    } 
 
     if ($Property.default)
     {
@@ -307,6 +302,12 @@ function ConvertTo-PodeOASchemaProperty
     }
     else
     {
+        #format is not applicable to array
+        if ($Property.format)
+        {
+            $schema['format'] = $Property.format
+        }
+
         # schema refs
         if ($Property.type -ieq 'schema')
         {
