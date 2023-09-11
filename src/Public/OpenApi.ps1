@@ -23,7 +23,7 @@ The parameter is created by New-PodeOAExtraInfo
 
 .PARAMETER ExternalDoc
 Additional external documentation for this operation.
-The parameter is created by New-PodeOAExternalDoc
+The parameter is created by Add-PodeOAExternalDoc
 
 .PARAMETER RouteFilter
 An optional route filter for routes that should be included in the definition. (Default: /*)
@@ -69,9 +69,11 @@ function Enable-PodeOpenApi
         $Description,
 
         [Parameter(ValueFromPipeline = $true)]
+        [hashtable]
         $ExtraInfo,
 
         [Parameter()]
+        [string]
         $ExternalDoc,
 
         [Parameter()]
@@ -1042,7 +1044,7 @@ function New-PodeOAIntProperty
         meta = @{}
     }
 
-    if ($Description ) { $param.description = $Sescription }
+    if ($Description ) { $param.description = $Description }
 
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
 
@@ -1239,7 +1241,7 @@ function New-PodeOANumberProperty
         meta = @{}
     }
     
-    if ($Description ) { $param.description = $Sescription }
+    if ($Description ) { $param.description = $Description }
 
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
 
@@ -1364,7 +1366,7 @@ function New-PodeOAStringProperty
 
         [Parameter( ParameterSetName = 'Array')]
         [Parameter(ParameterSetName = 'Inbuilt')]
-        [ValidateSet('', 'Binary', 'Byte', 'Date', 'Date-Time', 'Password', 'email', 'uuid', 'uri', 'hostname', 'ipv4', 'ipv6')]
+        [ValidateSet('', 'Binary', 'Byte', 'Date', 'Date-Time', 'Password', 'Email', 'Uuid', 'Uri', 'Hostname', 'Ipv4', 'Ipv6')]
         [string]
         $Format,
 
@@ -1440,7 +1442,7 @@ function New-PodeOAStringProperty
         meta = @{}
     }
     
-    if ($Description ) { $param.description = $Sescription }
+    if ($Description ) { $param.description = $Description }
     
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
 
@@ -1595,7 +1597,7 @@ function New-PodeOABoolProperty
         meta = @{}
     }
 
-    if ($Description ) { $param.description = $Sescription }
+    if ($Description ) { $param.description = $Description }
 
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
 
@@ -1755,7 +1757,7 @@ function New-PodeOAObjectProperty
         properties = $Properties  
         meta       = @{}
     }
-    if ($Description ) { $param.description = $Sescription }
+    if ($Description ) { $param.description = $Description }
 
     if ($Array.IsPresent ) { $param.array = $Array.ToBool() } 
 
@@ -1861,7 +1863,6 @@ function New-PodeOASchemaProperty
         [string]
         $ComponentSchema, 
 
-        [Parameter(ParameterSetName = 'Array')] 
         [string]
         $Description,
 
@@ -1928,7 +1929,7 @@ function New-PodeOASchemaProperty
     }
     if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'array')
     {   
-        if ($Description ) { $param.description = $Sescription }
+        if ($Description ) { $param.description = $Description }
 
         if ($Array.IsPresent ) { $param.array = $Array.ToBool() } 
 
@@ -2033,7 +2034,7 @@ function ConvertTo-PodeOAParameter
         $AllowEmptyValue,
 
         [Parameter() ]
-        [ValidateSet('simple', 'label', 'matrix', 'query', 'form', 'spaceDelimited', 'pipeDelimited', 'deepObject' )]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
         [string]
         $Style 
     )
@@ -2115,7 +2116,7 @@ function ConvertTo-PodeOAParameter
             {
                 'Path'
                 {
-                    if (@('simple', 'label', 'matrix' ) -notcontains $Style)
+                    if (@('Simple', 'Label', 'Matrix' ) -notcontains $Style)
                     {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     } 
@@ -2123,7 +2124,7 @@ function ConvertTo-PodeOAParameter
                 }
                 'Query'
                 {
-                    if (@('form', 'spaceDelimited', 'pipeDelimited', 'deepObject' ) -notcontains $Style)
+                    if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -notcontains $Style)
                     {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     } 
@@ -2131,7 +2132,7 @@ function ConvertTo-PodeOAParameter
                 }
                 'Header'
                 {
-                    if (@('simple' ) -notcontains $Style)
+                    if (@('Simple' ) -notcontains $Style)
                     {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     } 
@@ -2139,14 +2140,14 @@ function ConvertTo-PodeOAParameter
                 }
                 'Cookie'
                 {
-                    if (@('form' ) -notcontains $Style)
+                    if (@('Form' ) -notcontains $Style)
                     {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     } 
                     break
                 } 
             }
-            $prop['style'] = $Style
+            $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
         } 
 
         if ($Explode.IsPresent )
@@ -2154,7 +2155,7 @@ function ConvertTo-PodeOAParameter
             $prop['explode'] = $Explode.ToBool() 
         } 
 
-        if($AllowEmptyValue.IsPresent )
+        if ($AllowEmptyValue.IsPresent )
         {
             $prop['allowEmptyValue'] = $AllowEmptyValue.ToBool() 
         }
@@ -2264,7 +2265,10 @@ function Set-PodeOARouteInfo
         $r.OpenApi.Description = $Description
         $r.OpenApi.OperationId = $OperationId
         $r.OpenApi.Tags = $Tags
-        $r.OpenApi.Deprecated = $Deprecated.IsPresent -and $Deprecated
+        if ($Deprecated.IsPresent)
+        {
+            $r.OpenApi.Deprecated = $Deprecated.ToBool()
+        }
     }
 
     if ($PassThru)
@@ -2442,6 +2446,7 @@ A Description of the tag.
 
 .PARAMETER ExternalDoc
 If supplied, the tag reference to an existing external documentation reference.
+The parameter is created by Add-PodeOAExternalDoc
 
 .EXAMPLE
 Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
@@ -2520,25 +2525,31 @@ function New-PodeOAExtraInfo
     param(
         [Parameter()]
         [ValidateScript({ $_ -match '^https?://.+' })]
-        [string]$TermsOfService,
+        [string]
+        $TermsOfService,
 
         [Parameter(Mandatory = $true)] 
-        [string]$License,
+        [string]
+        $License,
 
         [Parameter(Mandatory = $true)]
         [ValidateScript({ $_ -match '^https?://.+' })]
-        [string]$LicenseUrl,
+        [string]
+        $LicenseUrl,
 
         [Parameter()]
-        [string]$ContactName,
+        [string]
+        $ContactName,
 
         [Parameter()]
         [ValidateScript({ $_ -match '^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$' })]
-        [string]$ContactEmail,
+        [string]
+        $ContactEmail,
 
         [Parameter()]
         [ValidateScript({ $_ -match '^https?://.+' })]
-        [string]$ContactUrl  
+        [string]
+        $ContactUrl  
     )
 
     $ExtraInfo = @{   
