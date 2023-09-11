@@ -17,6 +17,14 @@ The Version of the API. (Default: 0.0.0)
 .PARAMETER Description
 A Description of the API.
 
+.PARAMETER ExtraInfo
+The non-essential metadata about the API. The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
+The parameter is created by New-PodeOAExtraInfo  
+
+.PARAMETER ExternalDoc
+Additional external documentation for this operation.
+The parameter is created by New-PodeOAExternalDoc
+
 .PARAMETER RouteFilter
 An optional route filter for routes that should be included in the definition. (Default: /*)
 
@@ -64,7 +72,7 @@ function Enable-PodeOpenApi
         $ExtraInfo,
 
         [Parameter()]
-        $ExternalDocs,
+        $ExternalDoc,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -105,13 +113,13 @@ function Enable-PodeOpenApi
         $meta.ExtraInfo = $ExtraInfo
     }
 
-    if ($ExternalDocs)
+    if ($ExternalDoc)
     {
-        if ( !(Test-PodeOAExternalDoc -Name $ExternalDocs))
+        if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc))
         {
-            throw "The ExternalDocs doesn't exist: $ExternalDocs"
+            throw "The ExternalDoc doesn't exist: $ExternalDoc"
         }  
-        $meta.ExternalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDocs]
+        $meta.ExternalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
     }
     
     # add the OpenAPI route
@@ -874,7 +882,10 @@ function Add-PodeOAComponentParameter
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
-        $Parameter
+        $Parameter,
+
+        [switch]
+        $AllowEmptyValue
     )
 
     $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter  
@@ -1637,6 +1648,9 @@ An example of a parameter value
 .PARAMETER Deprecated
 If supplied, the object will be treated as Deprecated where supported.
 
+.PARAMETER Required
+If supplied, the object will be treated as Required where supported.
+
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
 
@@ -1781,12 +1795,12 @@ function New-PodeOAObjectProperty
 Creates a OpenAPI schema reference property.
 
 .DESCRIPTION
-Creates a new OpenAPI schema reference from another OpenAPI schema.
+Creates a new OpenAPI component schema reference from another OpenAPI schema.
 
 .PARAMETER Name
 The Name of the property.
 
-.PARAMETER Reference
+.PARAMETER ComponentSchema
 An component schema name.
 
 .PARAMETER Description
@@ -1973,6 +1987,10 @@ The content-types and the name of an existing component schema to be reused.
 .PARAMETER Explode
 If supplied, controls how arrays are serialized in query parameters
 
+.PARAMETER Style
+If supplied,  defines how multiple values are delimited. Possible styles depend on the parameter location: path, query, header or cookie.
+
+
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query
 
@@ -2009,6 +2027,10 @@ function ConvertTo-PodeOAParameter
         [Parameter() ]
         [Switch]
         $Explode, 
+
+        [Parameter() ]
+        [Switch]
+        $AllowEmptyValue,
 
         [Parameter() ]
         [ValidateSet('simple', 'label', 'matrix', 'query', 'form', 'spaceDelimited', 'pipeDelimited', 'deepObject' )]
@@ -2130,7 +2152,13 @@ function ConvertTo-PodeOAParameter
         if ($Explode.IsPresent )
         {
             $prop['explode'] = $Explode.ToBool() 
+        } 
+
+        if($AllowEmptyValue.IsPresent )
+        {
+            $prop['allowEmptyValue'] = $AllowEmptyValue.ToBool() 
         }
+
 
         if ($Property.deprecated)
         {
@@ -2412,11 +2440,11 @@ The Name of the tag.
 .PARAMETER Description
 A Description of the tag.
 
-.PARAMETER ExternalDocs
+.PARAMETER ExternalDoc
 If supplied, the tag reference to an existing external documentation reference.
 
 .EXAMPLE
-Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDocs 'SwaggerDocs'
+Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
 #>
 function Add-PodeOATag
 { 
@@ -2431,7 +2459,7 @@ function Add-PodeOATag
 
         [Parameter()]
         [string]
-        $ExternalDocs
+        $ExternalDoc
     )
     
     $param = @{ 
@@ -2443,13 +2471,13 @@ function Add-PodeOATag
         $param.description = $Description
     }
 
-    if ($ExternalDocs)
+    if ($ExternalDoc)
     {
-        if ( !(Test-PodeOAExternalDoc -Name $ExternalDocs))
+        if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc))
         {
-            throw "The ExternalDocs doesn't exist: $ExternalDocs"
+            throw "The ExternalDoc doesn't exist: $ExternalDoc"
         }  
-        $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDocs]
+        $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
     }
 
     $PodeContext.Server.OpenAPI.tags[$Name] = $param
@@ -2457,6 +2485,35 @@ function Add-PodeOATag
 }
 
 
+<#
+.SYNOPSIS
+Creates an OpenAPI non-essential metadata.
+
+.DESCRIPTION
+Creates an OpenAPI non-essential metadata like TermOfService, license and so on.
+The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
+
+.PARAMETER TermsOfService
+A URL to the Terms of Service for the API. MUST be in the format of a URL.
+
+.PARAMETER License
+The license name used for the API.
+
+.PARAMETER LicenseUrl
+A URL to the license used for the API. MUST be in the format of a URL.
+
+.PARAMETER ContactName
+The identifying name of the contact person/organization.
+
+.PARAMETER ContactEmail 
+The email address of the contact person/organization. MUST be in the format of an email address.
+
+.PARAMETER ContactUrl
+The URL pointing to the contact information. MUST be in the format of a URL.
+
+.EXAMPLE
+New-PodeOAExtraInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+#>
 
 function New-PodeOAExtraInfo
 {

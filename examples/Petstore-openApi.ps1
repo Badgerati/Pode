@@ -1,18 +1,13 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
-
-
-function test
+$path = Split-Path -Parent -Path (Split-Path -Parent -Path  Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf)
 {
-    param (
-        [Switch]$test
-    )
-    
-    if ($test.IsPresent)
-    {
-        Write-Host 'is a test'
-    }
+    Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 }
+else
+{
+    Import-Module -Name 'Pode'
+}
+ 
 
 Start-PodeServer -Threads 2 -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http  
@@ -48,18 +43,18 @@ Some useful links:
 
     Add-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDocs 'SwaggerDocs' -ServerUrl '/api/v3' #-RouteFilter '/api/v3/*' -RestrictRoutes
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs' -ServerUrl '/api/v3' #-RouteFilter '/api/v3/*' -RestrictRoutes
     Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger'  
     # or ReDoc at the default "/redoc"
     Enable-PodeOpenApiViewer -Type ReDoc  
 
 
-    Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDocs 'SwaggerDocs'
-    Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDocs 'SwaggerDocs'
-    Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDocs 'SwaggerDocs' 
+    Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'SwaggerDocs'
+    Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
+    Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc 'SwaggerDocs' 
 
     Add-PodeOAComponentSchema -Name 'Address' -Schema (
-        New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Properties @(
+        New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Description 'Shipping Address' -Properties @(
                 (New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required),
                 (New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required),  
                 (New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required),  
@@ -74,7 +69,7 @@ Some useful links:
             (New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time ),
             (New-PodeOAStringProperty -Name 'status' -description 'Order Status' -example 'approved' -Enum @('placed', 'approved', 'delivered')),
             (New-PodeOABoolProperty -Name 'complete') 
-            New-PodeOASchemaProperty -Name 'Address' -Reference 'Address' -Description 'Shipping Address'
+            New-PodeOASchemaProperty -Name 'Address' -ComponentSchema 'Address'  
         ))  
 
 
@@ -193,9 +188,9 @@ Some useful links:
         New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties @(
                     (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly),
                         (New-PodeOAStringProperty -Name 'name' -Example 'doggie'),
-                        (New-PodeOASchemaProperty -Name 'category' -Reference 'Category') 
+                        (New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category') 
                         (New-PodeOAStringProperty -Name 'photoUrls' -Array),
-                        (New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag') 
+                        (New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag') 
                         (New-PodeOAStringProperty -Name 'status' -description 'pet status in the store' -Enum @('available', 'pending', 'sold')) 
         )) 
     
@@ -346,7 +341,7 @@ Some useful links:
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Finds Pets by tags' -Description 'Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.' -Tags 'pet' -OperationId 'findPetsByTags' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
-                    (  New-PodeOAStringProperty -Name 'tag' -Description 'Tags to filter by' -Array -Explode | ConvertTo-PodeOAParameter -In Query )    
+                    (  New-PodeOAStringProperty -Name 'tag' -Description 'Tags to filter by' -Array   | ConvertTo-PodeOAParameter -In Query -Explode)    
             ) |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru | #missing array   application/json:
             # schema:
