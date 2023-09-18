@@ -228,6 +228,7 @@
         'Test-PodeAuthAccess',
         'Test-PodeAuthAccessUser',
         'Test-PodeAuthAccessRoute',
+        'Merge-PodeAuth',
 
         # logging
         'New-PodeLoggingMethod',
