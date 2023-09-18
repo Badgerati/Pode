@@ -96,8 +96,7 @@ function Enable-PodeOpenApi
 
     # initialise openapi info
     $PodeContext.Server.OpenAPI.Title = $Title
-    $PodeContext.Server.OpenAPI.Path = $Path
-    $PodeContext.Server.OpenAPI.hiddenComponents.excludedPaths += $Path
+    $PodeContext.Server.OpenAPI.Path = $Path 
     $meta = @{
         Version        = $Version
         Description    = $Description
@@ -2291,6 +2290,7 @@ function Set-PodeOARouteInfo
         $r.OpenApi.Description = $Description
         $r.OpenApi.OperationId = $OperationId
         $r.OpenApi.Tags = $Tags
+        $r.OpenApi.Swagger = $true 
         if ($Deprecated.IsPresent)
         {
             $r.OpenApi.Deprecated = $Deprecated.ToBool()
@@ -2392,7 +2392,7 @@ function Enable-PodeOpenApiViewer
         OpenApi  = $OpenApiUrl
         DarkMode = $DarkMode
     }
-    $PodeContext.Server.OpenAPI.hiddenComponents.excludedPaths += $Path
+    
     # add the viewer route
     Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
         param($meta)

@@ -497,15 +497,7 @@ function Get-PodeOpenApiDefinitionInternal
             if ($path -inotmatch $filter)
             {
                 continue
-            }
-            if ($MetaInfo.ExcludedPaths -contains $path)
-            {
-                continue
-            }
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.excludedPaths -contains $path)
-            {
-                continue
-            }
+            }  
             # the current route
             $_routes = @($PodeContext.Server.Routes[$method][$path])
             if ($MetaInfo.RestrictRoutes)
@@ -520,93 +512,96 @@ function Get-PodeOpenApiDefinitionInternal
             }
 
             # get the first route for base definition
-            $_route = $_routes[0]
-            #remove the ServerUrl part 
-            if ($MetaInfo.ServerUrl)
+            $_route = $_routes[0] 
+            # check if the route has to be published 
+            if ($_route.OpenApi.Swagger)
             {
-                $_route.OpenApi.Path = $_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')
-            }
-            # do nothing if it has no responses set
-            if ($_route.OpenApi.Responses.Count -eq 0)
-            {
-                continue
-            }
-
-            # add path to defintion
-            if ($null -eq $def.paths[$_route.OpenApi.Path])
-            {
-                $def.paths[$_route.OpenApi.Path] = @{}
-            }
-
-            # add path's http method to defintition
-            $def.paths[$_route.OpenApi.Path][$method] = @{
-                tags        = @($_route.OpenApi.Tags)
-                summary     = $_route.OpenApi.Summary
-                description = $_route.OpenApi.Description
-                operationId = $_route.OpenApi.OperationId 
-                requestBody = $_route.OpenApi.RequestBody
-                responses   = $_route.OpenApi.Responses
-                parameters  = $_route.OpenApi.Parameters 
-                servers     = $null
-                security    = @($_route.OpenApi.Authentication)
-            }
-
-            if ($_route.OpenApi.Deprecated)
-            {
-                $def.paths[$_route.OpenApi.Path][$method]['deprecated'] = $_route.OpenApi.Deprecated
-            }
-
-            # add global authentication for route
-            if (($null -ne $def['security']) -and ($def['security'].Length -gt 0))
-            {
-                foreach ($sec in $PodeContext.Server.OpenAPI.Security)
+                #remove the ServerUrl part 
+                if ($MetaInfo.ServerUrl)
                 {
-                    if ([string]::IsNullOrWhiteSpace($sec.Route) -or ($sec.Route -ieq '/') -or ($sec.Route -ieq $_route.OpenApi.Path) -or ($_route.OpenApi.Path -imatch "^$($sec.Route)$"))
-                    {
-                        $def.paths[$_route.OpenApi.Path][$method].security += $sec.Definition
-                    }
+                    $_route.OpenApi.Path = $_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')
                 }
-            }
-
-            if ($def.paths[$_route.OpenApi.Path][$method].security.Length -eq 0)
-            {
-                $def.paths[$_route.OpenApi.Path][$method].Remove('security')
-            }
-
-            # add any custom server endpoints for route
-            foreach ($_route in $_routes)
-            {
-                if ([string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -or ($_route.Endpoint.Address -ieq '*:*'))
+                # do nothing if it has no responses set
+                if ($_route.OpenApi.Responses.Count -eq 0)
                 {
                     continue
                 }
 
-                if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers)
+                # add path to defintion
+                if ($null -eq $def.paths[$_route.OpenApi.Path])
                 {
-                    $def.paths[$_route.OpenApi.Path][$method].servers = @()
+                    $def.paths[$_route.OpenApi.Path] = @{}
                 }
 
-                $serverDef = $null
-                if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Name))
+                # add path's http method to defintition
+                $def.paths[$_route.OpenApi.Path][$method] = @{
+                    tags        = @($_route.OpenApi.Tags)
+                    summary     = $_route.OpenApi.Summary
+                    description = $_route.OpenApi.Description
+                    operationId = $_route.OpenApi.OperationId 
+                    requestBody = $_route.OpenApi.RequestBody
+                    responses   = $_route.OpenApi.Responses
+                    parameters  = $_route.OpenApi.Parameters 
+                    servers     = $null
+                    security    = @($_route.OpenApi.Authentication)
+                }
+
+                if ($_route.OpenApi.Deprecated)
                 {
-                    $serverDef = @{
-                        url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
+                    $def.paths[$_route.OpenApi.Path][$method]['deprecated'] = $_route.OpenApi.Deprecated
+                }
+
+                # add global authentication for route
+                if (($null -ne $def['security']) -and ($def['security'].Length -gt 0))
+                {
+                    foreach ($sec in $PodeContext.Server.OpenAPI.Security)
+                    {
+                        if ([string]::IsNullOrWhiteSpace($sec.Route) -or ($sec.Route -ieq '/') -or ($sec.Route -ieq $_route.OpenApi.Path) -or ($_route.OpenApi.Path -imatch "^$($sec.Route)$"))
+                        {
+                            $def.paths[$_route.OpenApi.Path][$method].security += $sec.Definition
+                        }
                     }
                 }
-                else
+
+                if ($def.paths[$_route.OpenApi.Path][$method].security.Length -eq 0)
                 {
-                    $serverDef = @{
-                        url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
-                    }
+                    $def.paths[$_route.OpenApi.Path][$method].Remove('security')
                 }
 
-                if ($null -ne $serverDef)
+                # add any custom server endpoints for route
+                foreach ($_route in $_routes)
                 {
-                    $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
-                } 
+                    if ([string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -or ($_route.Endpoint.Address -ieq '*:*'))
+                    {
+                        continue
+                    }
 
+                    if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers)
+                    {
+                        $def.paths[$_route.OpenApi.Path][$method].servers = @()
+                    }
+
+                    $serverDef = $null
+                    if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Name))
+                    {
+                        $serverDef = @{
+                            url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
+                        }
+                    }
+                    else
+                    {
+                        $serverDef = @{
+                            url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
+                        }
+                    }
+
+                    if ($null -ne $serverDef)
+                    {
+                        $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
+                    } 
+
+                }
             }
-            
         }
     }
 
@@ -663,8 +658,7 @@ function Get-PodeOABaseObject
         hiddenComponents = @{
             headerSchemas = @{}
             externalDocs  = @{}
-            schemaJson    = @{}
-            excludedPaths = @()
+            schemaJson    = @{} 
         } 
     }
 }
