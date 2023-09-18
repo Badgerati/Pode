@@ -1,4 +1,4 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path  Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+$path = Split-Path -Parent -Path (Split-Path -Parent -Path  (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
 if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf)
 {
     Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop

@@ -2088,23 +2088,42 @@ function ConvertTo-PodeOAParameter
         { 
             throw 'OpenApi request parameter cannot be an array of object'
         }
-
+ 
         # build the base parameter
         $prop = @{
             in          = $In.ToLowerInvariant()
             name        = $Property.name
-            description = $Property.description
-            schema      = @{
+            description = $Property.description 
+        }
+        if ($Property.Array)
+        {
+            $prop.schema = @{
+                type  = 'array'
+                items = @{
+                    type   = $Property.type
+                    format = $Property.format
+                }
+            }
+        }
+        else
+        {
+            $prop.schema = @{
                 type   = $Property.type
                 format = $Property.format
             }
         }
-
         if ($null -ne $Property.meta)
         {
             foreach ($key in $Property.meta.Keys)
             {
-                $prop.schema[$key] = $Property.meta[$key]
+                if ($Property.Array)
+                {
+                    $prop.schema.items[$key] = $Property.meta[$key]
+                }
+                else
+                {
+                    $prop.schema[$key] = $Property.meta[$key]
+                }
             }
         }
     }
@@ -2173,7 +2192,14 @@ function ConvertTo-PodeOAParameter
 
         if ($Property.enum)
         {
-            $prop.schema['enum'] = $Property.enum
+            if ($Property.Array)
+            {
+                $prop.schema.items['enum'] = $Property.enum
+            }
+            else
+            {
+                $prop.schema['enum'] = $Property.enum
+            }
         }
 
         if ($In -eq 'Path')
