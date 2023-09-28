@@ -686,6 +686,14 @@ function Test-PodeIsMacOS
     return ([bool]$IsMacOS)
 }
 
+function Test-PodeInRunspace
+{
+    [CmdletBinding()]
+    param()
+
+    return ([bool]$PODE_SCOPE_RUNSPACE)
+}
+
 <#
 .SYNOPSIS
 Outputs an object to the main Host.

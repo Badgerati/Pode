@@ -702,7 +702,7 @@ New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ 
 function Add-PodeAuth
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [string]
         $Name,
@@ -712,7 +712,7 @@ function Add-PodeAuth
         $Scheme,
 
         [Parameter()]
-        [string[]]
+        [string]
         $Access,
 
         [Parameter(Mandatory=$true)]
@@ -750,7 +750,7 @@ function Add-PodeAuth
     )
 
     # ensure the name doesn't already exist
-    if (Test-PodeAuth -Name $Name) {
+    if (Test-PodeAuthExists -Name $Name) {
         throw "Authentication method already defined: $($Name)"
     }
 
@@ -759,13 +759,9 @@ function Add-PodeAuth
         throw "The supplied '$($Scheme.Name)' Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
     }
 
-    # ensure the Access methods exists
-    if (!(Test-PodeIsEmpty $Access)) {
-        foreach ($acc in $Access) {
-            if (!(Test-PodeAuthAccessExists -Name $acc)) {
-                throw "Access method not found: $($acc)"
-            }
-        }
+    # ensure the Access method exists
+    if (!(Test-PodeIsEmpty $Access) -and !(Test-PodeAuthAccessExists -Name $Access)) {
+        throw "Access method not found: $($Access)"
     }
 
     # if we're using sessions, ensure sessions have been setup
@@ -822,14 +818,14 @@ function Merge-PodeAuth
         [Parameter()]
         [ValidateSet('One', 'All')]
         [string]
-        $PassCount = 'One',
+        $Valid = 'One',
 
         [Parameter()]
         [string]
         $Default,
 
         [Parameter()]
-        [string[]]
+        [string]
         $Access,
 
         [Parameter()]
@@ -852,13 +848,13 @@ function Merge-PodeAuth
     )
 
     # ensure the name doesn't already exist
-    if (Test-PodeAuth -Name $Name) {
+    if (Test-PodeAuthExists -Name $Name) {
         throw "Authentication method already defined: $($Name)"
     }
 
     # ensure all the auth methods exist
     foreach ($authName in $Authentication) {
-        if (!(Test-PodeAuth -Name $authName)) {
+        if (!(Test-PodeAuthExists -Name $authName)) {
             throw "Authentication method does not exist for merging: $($authName)"
         }
     }
@@ -869,12 +865,8 @@ function Merge-PodeAuth
     }
 
     # ensure the Access methods exists
-    if (!(Test-PodeIsEmpty $Access)) {
-        foreach ($acc in $Access) {
-            if (!(Test-PodeAuthAccessExists -Name $acc)) {
-                throw "Access method not found: $($acc)"
-            }
-        }
+    if (!(Test-PodeIsEmpty $Access) -and !(Test-PodeAuthAccessExists -Name $Access)) {
+        throw "Access method not found: $($Access)"
     }
 
     # if we're using sessions, ensure sessions have been setup
@@ -929,7 +921,7 @@ function Merge-PodeAuth
     $PodeContext.Server.Authentications.Methods[$Name] = @{
         Name = $Name
         Authentications = @($Authentication)
-        PassOne = ($PassCount -ieq 'one')
+        PassOne = ($Valid -ieq 'one')
         Default = $Default
         Access = $Access
         Sessionless = $Sessionless.IsPresent
@@ -946,10 +938,6 @@ function Merge-PodeAuth
         Parent = $null
     }
 }
-
-#TODO:
-# Update-PodeAuth - clear cache
-# Update-PodeAuthAccess
 
 <#
 .SYNOPSIS
@@ -974,12 +962,166 @@ function Get-PodeAuth
     )
 
     # ensure the name exists
-    if (!(Test-PodeAuth -Name $Name)) {
+    if (!(Test-PodeAuthExists -Name $Name)) {
         throw "Authentication method not defined: $($Name)"
     }
 
     # get auth method
     return $PodeContext.Server.Authentications.Methods[$Name]
+}
+
+function Test-PodeAuthExists
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.Authentications.Methods.ContainsKey($Name)
+}
+
+function Test-PodeAuth
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [switch]
+        $Login,
+
+        [switch]
+        $Logout,
+
+        [switch]
+        $AllowAnon
+    )
+
+    # get the auth method
+    $auth = $PodeContext.Server.Authentications.Methods[$Name]
+
+    # check for logout command
+    if ($Logout) {
+        Remove-PodeAuthSession
+
+        if ($PodeContext.Server.Sessions.Info.UseHeaders) {
+            return (Set-PodeAuthStatus `
+                -StatusCode 401 `
+                -Name $Name `
+                -NoSuccessRedirect)
+        }
+        else {
+            $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $WebEvent.Request.Url.AbsolutePath)
+            return (Set-PodeAuthStatus `
+                -StatusCode 302 `
+                -Name $Name `
+                -NoSuccessRedirect)
+        }
+    }
+
+    # if the session already has a user/isAuth'd, then skip auth - or allow anon
+    if (Test-PodeSessionsInUse) {
+        # existing session auth'd
+        if (Test-PodeAuthUser) {
+            $WebEvent.Auth = $WebEvent.Session.Data.Auth
+            return (Set-PodeAuthStatus `
+                -Name $Name `
+                -LoginRoute:($Login) `
+                -NoSuccessRedirect)
+        }
+
+        # if we're allowing anon access, and using sessions, then stop here - as a session will be created from a login route for auth'ing users
+        if ($AllowAnon) {
+            if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
+                Revoke-PodeSession
+            }
+
+            return $true
+        }
+    }
+
+    # check if the login flag is set, in which case just return and load a login get-page (allowing anon access)
+    if ($Login -and !$PodeContext.Server.Sessions.Info.UseHeaders -and ($WebEvent.Method -ieq 'get')) {
+        if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
+            Revoke-PodeSession
+        }
+
+        return $true
+    }
+
+    try {
+        $result = Invoke-PodeAuthValidation -Name $Name
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+        return (Set-PodeAuthStatus `
+            -StatusCode 500 `
+            -Description $_.Exception.Message `
+            -Name $Name)
+    }
+
+    # did the auth force a redirect?
+    if ($result.Redirected) {
+        return $false
+    }
+
+    # if auth failed, are we allowing anon access?
+    if (!$result.Success -and $AllowAnon) {
+        return $true
+    }
+
+    # if auth failed, set appropriate response headers/redirects
+    if (!$result.Success) {
+        return (Set-PodeAuthStatus `
+            -StatusCode $result.StatusCode `
+            -Description $result.Description `
+            -Headers $result.Headers `
+            -Name $Name `
+            -LoginRoute:$Login `
+            -NoFailureRedirect:($result.FailureRedirect))
+    }
+
+    # if auth passed, assign the user(s) to the session
+    $user = $result.User
+    if ($result.Aggregated) {
+        $user = [ordered]@{}
+        foreach ($r in $result.Results) {
+            $user[$r.Auth] = $r.User
+        }
+    }
+
+    $WebEvent.Auth = [ordered]@{
+        User = $user
+        IsAuthenticated = $true
+        IsAuthorised = $true
+        Store = !$auth.Sessionless
+        Name = $result.Auth
+        Multiple = [bool]$result.Aggregated
+    }
+
+    # check access
+    foreach ($authName in $result.Auth) {
+        $WebEvent.Auth.IsAuthorised = Test-PodeAuthValidationAccess -Name $authName
+
+        if (!$WebEvent.Auth.IsAuthorised) {
+            return (Set-PodeAuthStatus `
+                -StatusCode 403 `
+                -Description $result.Description `
+                -Headers $result.Headers `
+                -Name $authName `
+                -LoginRoute:$Login `
+                -NoFailureRedirect:($result.FailureRedirect))
+        }
+    }
+
+    # successful auth
+    return (Set-PodeAuthStatus `
+        -Headers $result.Headers `
+        -Name @($result.Auth)[0] `
+        -LoginRoute:$Login)
 }
 
 <#
@@ -1129,7 +1271,7 @@ function Add-PodeAuthWindowsAd
     )
 
     # ensure the name doesn't already exist
-    if (Test-PodeAuth -Name $Name) {
+    if (Test-PodeAuthExists -Name $Name) {
         throw "Windows AD Authentication method already defined: $($Name)"
     }
 
@@ -1281,7 +1423,7 @@ function Add-PodeAuthMiddleware
         $Route
     )
 
-    if (!(Test-PodeAuth -Name $Authentication)) {
+    if (!(Test-PodeAuthExists -Name $Authentication)) {
         throw "Authentication method does not exist: $($Authentication)"
     }
 
@@ -1413,7 +1555,7 @@ function Add-PodeAuthIIS
     }
 
     # ensure the name doesn't already exist
-    if (Test-PodeAuth -Name $Name) {
+    if (Test-PodeAuthExists -Name $Name) {
         throw "IIS Authentication method already defined: $($Name)"
     }
 
@@ -1572,7 +1714,7 @@ function Add-PodeAuthUserFile
     )
 
     # ensure the name doesn't already exist
-    if (Test-PodeAuth -Name $Name) {
+    if (Test-PodeAuthExists -Name $Name) {
         throw "User File Authentication method already defined: $($Name)"
     }
 
@@ -1732,7 +1874,7 @@ function Add-PodeAuthWindowsLocal
     }
 
     # ensure the name doesn't already exist
-    if (Test-PodeAuth -Name $Name) {
+    if (Test-PodeAuthExists -Name $Name) {
         throw "Windows Local Authentication method already defined: $($Name)"
     }
 
@@ -2098,12 +2240,43 @@ if (Test-PodeAuthUser) { ... }
 function Test-PodeAuthUser
 {
     [CmdletBinding()]
-    param()
-
-    return (
-        (($null -ne $WebEvent.Auth.User) -and $WebEvent.Auth.IsAuthenticated) -or
-        (($null -ne $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated)
+    param(
+        [switch]
+        $IgnoreSession
     )
+
+    # auth middleware
+    if (($null -ne $WebEvent.Auth.User) -and $WebEvent.Auth.IsAuthenticated) {
+        return $true
+    }
+
+    # session?
+    if (!$IgnoreSession -and ($null -ne $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
+        return $true
+    }
+
+    return $false
+}
+
+function Get-PodeAuthUser
+{
+    [CmdletBinding()]
+    param(
+        [switch]
+        $IgnoreSession
+    )
+
+    # auth middleware
+    if (($null -ne $WebEvent.Auth.User) -and $WebEvent.Auth.IsAuthenticated) {
+        return $WebEvent.Auth.User
+    }
+
+    # session?
+    if (!$IgnoreSession -and ($null -ne $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
+        return $WebEvent.Session.Data.Auth.User
+    }
+
+    return $null
 }
 
 <#
@@ -2238,11 +2411,12 @@ function Add-PodeAuthAccess
         Arguments = $ArgumentList
         Path = $Path
         Match = $Match.ToLowerInvariant()
+        Cache = @{}
         Merged = $false
+        Parent = $null
     }
 }
 
-#TODO:
 function Merge-PodeAuthAccess
 {
     [CmdletBinding()]
@@ -2258,7 +2432,7 @@ function Merge-PodeAuthAccess
         [Parameter()]
         [ValidateSet('One', 'All')]
         [string]
-        $Succeed = 'One'
+        $Valid = 'One'
     )
 
     # ensure the name doesn't already exist
@@ -2266,19 +2440,26 @@ function Merge-PodeAuthAccess
         throw "Access method already defined: $($Name)"
     }
 
-    # ensure all the auth methods exist
+    # ensure all the access methods exist
     foreach ($accName in $Access) {
-        if (Test-PodeAuthAccessExists -Name $accName) {
+        if (!(Test-PodeAuthAccessExists -Name $accName)) {
             throw "Access method does not exist for merging: $($accName)"
         }
+    }
+
+    # set parent access
+    foreach ($accName in $Access) {
+        $PodeContext.Server.Authentications.Access[$accName].Parent = $Name
     }
 
     # add auth method to server
     $PodeContext.Server.Authentications.Access[$Name] = @{
         Name = $Name
         Access = @($Access)
-        Succeed = $Succeed
+        PassOne = ($Valid -ieq 'one')
+        Cache = @{}
         Merged = $true
+        Parent = $null
     }
 }
 
@@ -2572,21 +2753,8 @@ function Test-PodeAuthAccessUser
         $userAccess = Invoke-PodeScriptBlock -ScriptBlock $access.Scriptblock.Script -Arguments $_args -Return -Splat
     }
 
-    # set access values on auth object
-    if ($WebEvent.Auth.Multiple) {
-        if (!$WebEvent.Auth.Access.ContainsKey($Authentication)) {
-            $WebEvent.Auth.Access[$Authentication] = @{}
-        }
-
-        $WebEvent.Auth.Access[$Name] = $userAccess
-    }
-    else {
-        $WebEvent.Auth.Access[$Name] = $userAccess
-    }
-
     # is the user authorised?
-    $WebEvent.Auth.IsAuthorised = Test-PodeAuthAccess -Name $Name -Source $userAccess -Destination $Value
-    return $WebEvent.Auth.IsAuthorised
+    return (Test-PodeAuthAccess -Name $Name -Source $userAccess -Destination $Value)
 }
 
 <#

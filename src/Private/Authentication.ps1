@@ -1273,7 +1273,7 @@ function Test-PodeAuthValidationAccess
 
     # get auth method
     $auth = $PodeContext.Server.Authentications.Methods[$Name]
-    $access = @()
+    $access = $null
 
     # cached access?
     if ($null -ne $auth.Cache.Access) {
@@ -1283,12 +1283,12 @@ function Test-PodeAuthValidationAccess
     # recursively find access
     else {
         # have access and/or parent?
-        $hasAccess = (($null -ne $auth.Access) -and ($auth.Access.Length -gt 0))
+        $hasAccess = ![string]::IsNullOrEmpty($auth.Access)
         $hasParent = ![string]::IsNullOrEmpty($auth.Parent)
 
         # no access
         if (!$hasAccess) {
-            $PodeContext.Server.Authentications.Methods[$Name].Cache.Access = @()
+            $PodeContext.Server.Authentications.Methods[$Name].Cache.Access = [string]::Empty
 
             # skip if no parent
             if (!$hasParent) {
@@ -1306,15 +1306,53 @@ function Test-PodeAuthValidationAccess
         $PodeContext.Server.Authentications.Methods[$BaseName].Cache.Access = $access
     }
 
-    # if we have access methods, check them
-    foreach ($acc in $access) {
-        if (!(Test-PodeAuthAccessRoute -Name $acc)) {
+    # check access
+    return ([string]::IsNullOrEmpty($access) -or (Invoke-PodeAuthValidationAccess -Name $access))
+}
+
+function Invoke-PodeAuthValidationAccess
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    # get the access method
+    $access = $PodeContext.Server.Authentications.Access[$Name]
+
+    # if it's a merged access, re-call this function and check against "succeed" value
+    if ($access.Merged) {
+        foreach ($accName in $access.Access) {
+            $result = Invoke-PodeAuthValidationAccess -Name $accName
+
+            # if the access passed, and we only need one access to pass, return true
+            if ($result -and $access.PassOne) {
+                return $true
+            }
+
+            # if the access failed, but we need all to pass, return false
+            if (!$result -and !$access.PassOne) {
+                return $false
+            }
+        }
+
+        # if the last access failed, and we only need one access to pass, return false
+        if (!$result -and $access.PassOne) {
             return $false
         }
+
+        # if the last access succeeded, and we need all to pass, return true
+        if ($result -and !$access.PassOne) {
+            return $true
+        }
+
+        # default failure
+        return $false
     }
 
-    # access allowed!
-    return $true
+    # main access validation logic
+    return (Test-PodeAuthAccessRoute -Name $Name)
 }
 
 function Get-PodeAuthMiddlewareScript
@@ -1322,127 +1360,11 @@ function Get-PodeAuthMiddlewareScript
     return {
         param($opts)
 
-        # get the auth method
-        $auth = $PodeContext.Server.Authentications.Methods[$opts.Name]
-
-        # check for logout command
-        if ($opts.Logout) {
-            Remove-PodeAuthSession
-
-            if ($PodeContext.Server.Sessions.Info.UseHeaders) {
-                return (Set-PodeAuthStatus `
-                    -StatusCode 401 `
-                    -Name $opts.Name `
-                    -NoSuccessRedirect)
-            }
-            else {
-                $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $WebEvent.Request.Url.AbsolutePath)
-                return (Set-PodeAuthStatus `
-                    -StatusCode 302 `
-                    -Name $opts.Name `
-                    -NoSuccessRedirect)
-            }
-        }
-
-        # if the session already has a user/isAuth'd, then skip auth - or allow anon
-        if (Test-PodeSessionsInUse) {
-            # existing session auth'd
-            if (Test-PodeAuthUser) {
-                $WebEvent.Auth = $WebEvent.Session.Data.Auth
-                return (Set-PodeAuthStatus `
-                    -Name $opts.Name `
-                    -LoginRoute:($opts.Login) `
-                    -NoSuccessRedirect)
-            }
-
-            # if we're allowing anon access, and using sessions, then stop here - as a session will be created from a login route for auth'ing users
-            if ($opts.Anon) {
-                if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
-                    Revoke-PodeSession
-                }
-
-                return $true
-            }
-        }
-
-        # check if the login flag is set, in which case just return and load a login get-page (allowing anon access)
-        if ($opts.Login -and !$PodeContext.Server.Sessions.Info.UseHeaders -and ($WebEvent.Method -ieq 'get')) {
-            if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
-                Revoke-PodeSession
-            }
-
-            return $true
-        }
-
-        try {
-            $result = Invoke-PodeAuthValidation -Name $opts.Name
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-            return (Set-PodeAuthStatus `
-                -StatusCode 500 `
-                -Description $_.Exception.Message `
-                -Name $opts.Name)
-        }
-
-        # did the auth force a redirect?
-        if ($result.Redirected) {
-            return $false
-        }
-
-        # if auth failed, are we allowing anon access?
-        if (!$result.Success -and $opts.Anon) {
-            return $true
-        }
-
-        # if auth failed, set appropriate response headers/redirects
-        if (!$result.Success) {
-            return (Set-PodeAuthStatus `
-                -StatusCode $result.StatusCode `
-                -Description $result.Description `
-                -Headers $result.Headers `
-                -Name $opts.Name `
-                -LoginRoute:($opts.Login) `
-                -NoFailureRedirect:($result.FailureRedirect))
-        }
-
-        # if auth passed, assign the user(s) to the session
-        $user = $result.User
-        if ($result.Aggregated) {
-            $user = @{}
-            foreach ($r in $result.Results) {
-                $user[$r.Auth] = $r.User
-            }
-        }
-
-        $WebEvent.Auth = @{
-            User = $user
-            IsAuthenticated = $true
-            Access = @{}
-            IsAuthorised = $true
-            Store = !$auth.Sessionless
-            Name = $result.Auth
-            Multiple = $result.Aggregated
-        }
-
-        # check access
-        foreach ($authName in $result.Auth) {
-            if (!(Test-PodeAuthValidationAccess -Name $authName)) {
-                return (Set-PodeAuthStatus `
-                    -StatusCode 403 `
-                    -Description $result.Description `
-                    -Headers $result.Headers `
-                    -Name $authName `
-                    -LoginRoute:($opts.Login) `
-                    -NoFailureRedirect:($result.FailureRedirect))
-            }
-        }
-
-        # successful auth
-        return (Set-PodeAuthStatus `
-            -Headers $result.Headers `
-            -Name @($result.Auth)[0] `
-            -LoginRoute:($opts.Login))
+        return (Test-PodeAuth `
+            -Name $opts.Name `
+            -Login:($opts.Login) `
+            -Logout:($opts.Logout) `
+            -AllowAnon:($opts.Anon))
     }
 }
 
@@ -2190,18 +2112,6 @@ function Find-PodeAuth
     )
 
     return $PodeContext.Server.Authentications.Methods[$Name]
-}
-
-function Test-PodeAuth
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Name
-    )
-
-    return $PodeContext.Server.Authentications.Methods.ContainsKey($Name)
 }
 
 function Import-PodeAuthADModule
