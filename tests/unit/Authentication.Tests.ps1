@@ -111,3 +111,19 @@ Describe 'Remove-PodeAuthSession' {
         Assert-MockCalled Revoke-PodeSession -Times 1 -Scope It
     }
 }
+
+Describe 'Test-PodeJwt' {
+    It 'No exception - sucessful validation' {
+        (Test-PodeJwt @{}) | Should Be $null
+    }
+
+    It 'Throws exception - the JWT has expired' {
+        # "exp" (Expiration Time) Claim
+        { Test-PodeJwt @{exp = 1 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage 'The JWT has expired'
+    }
+
+    It 'Throws exception - the JWT is not yet valid for use' {
+        # "nbf" (Not Before) Claim
+        { Test-PodeJwt @{nbf = 99999999999 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage 'The JWT is not yet valid for use'
+    }
+}
