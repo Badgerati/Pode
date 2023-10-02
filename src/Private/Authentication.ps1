@@ -1360,12 +1360,154 @@ function Get-PodeAuthMiddlewareScript
     return {
         param($opts)
 
-        return (Test-PodeAuth `
+        return (Test-PodeAuthInternal `
             -Name $opts.Name `
             -Login:($opts.Login) `
             -Logout:($opts.Logout) `
             -AllowAnon:($opts.Anon))
     }
+}
+
+function Test-PodeAuthInternal
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [switch]
+        $Login,
+
+        [switch]
+        $Logout,
+
+        [switch]
+        $AllowAnon
+    )
+
+    # get the auth method
+    $auth = $PodeContext.Server.Authentications.Methods[$Name]
+
+    # check for logout command
+    if ($Logout) {
+        Remove-PodeAuthSession
+
+        if ($PodeContext.Server.Sessions.Info.UseHeaders) {
+            return (Set-PodeAuthStatus `
+                -StatusCode 401 `
+                -Name $Name `
+                -NoSuccessRedirect)
+        }
+        else {
+            $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $WebEvent.Request.Url.AbsolutePath)
+            return (Set-PodeAuthStatus `
+                -StatusCode 302 `
+                -Name $Name `
+                -NoSuccessRedirect)
+        }
+    }
+
+    # if the session already has a user/isAuth'd, then skip auth - or allow anon
+    if (Test-PodeSessionsInUse) {
+        # existing session auth'd
+        if (Test-PodeAuthUser) {
+            $WebEvent.Auth = $WebEvent.Session.Data.Auth
+            return (Set-PodeAuthStatus `
+                -Name $Name `
+                -LoginRoute:($Login) `
+                -NoSuccessRedirect)
+        }
+
+        # if we're allowing anon access, and using sessions, then stop here - as a session will be created from a login route for auth'ing users
+        if ($AllowAnon) {
+            if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
+                Revoke-PodeSession
+            }
+
+            return $true
+        }
+    }
+
+    # check if the login flag is set, in which case just return and load a login get-page (allowing anon access)
+    if ($Login -and !$PodeContext.Server.Sessions.Info.UseHeaders -and ($WebEvent.Method -ieq 'get')) {
+        if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
+            Revoke-PodeSession
+        }
+
+        return $true
+    }
+
+    try {
+        $result = Invoke-PodeAuthValidation -Name $Name
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+        return (Set-PodeAuthStatus `
+            -StatusCode 500 `
+            -Description $_.Exception.Message `
+            -Name $Name)
+    }
+
+    # did the auth force a redirect?
+    if ($result.Redirected) {
+        return $false
+    }
+
+    # if auth failed, are we allowing anon access?
+    if (!$result.Success -and $AllowAnon) {
+        return $true
+    }
+
+    # if auth failed, set appropriate response headers/redirects
+    if (!$result.Success) {
+        return (Set-PodeAuthStatus `
+            -StatusCode $result.StatusCode `
+            -Description $result.Description `
+            -Headers $result.Headers `
+            -Name $Name `
+            -LoginRoute:$Login `
+            -NoFailureRedirect:($result.FailureRedirect))
+    }
+
+    # if auth passed, assign the user(s) to the session
+    $user = $result.User
+    if ($result.Aggregated) {
+        $user = [ordered]@{}
+        foreach ($r in $result.Results) {
+            $user[$r.Auth] = $r.User
+        }
+    }
+
+    $WebEvent.Auth = [ordered]@{
+        User = $user
+        IsAuthenticated = $true
+        IsAuthorised = $true
+        Store = !$auth.Sessionless
+        Name = $result.Auth
+        Multiple = [bool]$result.Aggregated
+    }
+
+    # check access
+    foreach ($authName in $result.Auth) {
+        $WebEvent.Auth.IsAuthorised = Test-PodeAuthValidationAccess -Name $authName
+
+        if (!$WebEvent.Auth.IsAuthorised) {
+            return (Set-PodeAuthStatus `
+                -StatusCode 403 `
+                -Description $result.Description `
+                -Headers $result.Headers `
+                -Name $authName `
+                -LoginRoute:$Login `
+                -NoFailureRedirect:($result.FailureRedirect))
+        }
+    }
+
+    # successful auth
+    return (Set-PodeAuthStatus `
+        -Headers $result.Headers `
+        -Name @($result.Auth)[0] `
+        -LoginRoute:$Login)
 }
 
 function Get-PodeAuthWwwHeaderValue

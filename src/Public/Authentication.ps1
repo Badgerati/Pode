@@ -673,7 +673,7 @@ A unique Name for the Authentication method.
 The Scheme to use for retrieving credentials (From New-PodeAuthScheme).
 
 .PARAMETER Access
-One or more optional Access method Names to validate authorisation to Routes (From Add-PodeAuthAccess)
+An optional Access method Name to validate authorisation to Routes (From Add-PodeAuthAccess)
 
 .PARAMETER ScriptBlock
 The ScriptBlock defining logic that retrieves and verifys a user.
@@ -802,6 +802,57 @@ function Add-PodeAuth
     }
 }
 
+<#
+.SYNOPSIS
+Lets you merge multiple Authentication methods together, into a "single" Authentication method.
+
+.DESCRIPTION
+Lets you merge multiple Authentication methods together, into a "single" Authentication method.
+You can specify if only One or All of the methods need to pass to allow access, and you can also
+merge other merged Authentication methods for more advanced scenarios.
+
+.PARAMETER Name
+A unique Name for the Authentication method.
+
+.PARAMETER Authentication
+Multiple Autentication method Names to be merged.
+
+.PARAMETER Valid
+How many of the Authentication methods are required to be valid, One or All. (Default: One)
+
+.PARAMETER Default
+The Default Authentication method to use as a fallback for Failure URLs and other settings.
+
+.PARAMETER Access
+An optional Access method Name to validate authorisation to Routes.
+This will be used as fallback for the merged Authentication methods if not set on them.
+
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+This will be used as fallback for the merged Authentication methods if not set on them.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+This will be used as fallback for the merged Authentication methods if not set on them.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+This will be used as fallback for the merged Authentication methods if not set on them.
+
+.PARAMETER Sessionless
+If supplied, authenticated users will not be stored in sessions, and sessions will not be used.
+This will be used as fallback for the merged Authentication methods if not set on them.
+
+.PARAMETER SuccessUseOrigin
+If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
+This will be used as fallback for the merged Authentication methods if not set on them.
+
+.EXAMPLE
+Merge-PodeAuth -Name MergedAuth -Authentication ApiTokenAuth, BasicAuth -Valid All
+
+.EXAMPLE
+Merge-PodeAuth -Name MergedAuth -Authentication ApiTokenAuth, BasicAuth -FailureUrl 'http://localhost:8080/login'
+#>
 function Merge-PodeAuth
 {
     [CmdletBinding()]
@@ -970,6 +1021,19 @@ function Get-PodeAuth
     return $PodeContext.Server.Authentications.Methods[$Name]
 }
 
+<#
+.SYNOPSIS
+Test if an Authentication method exists.
+
+.DESCRIPTION
+Test if an Authentication method exists.
+
+.PARAMETER Name
+The Name of the Authentication method.
+
+.EXAMPLE
+if (Test-PodeAuthExists -Name BasicAuth) { ... }
+#>
 function Test-PodeAuthExists
 {
     [CmdletBinding()]
@@ -982,6 +1046,32 @@ function Test-PodeAuthExists
     return $PodeContext.Server.Authentications.Methods.ContainsKey($Name)
 }
 
+<#
+.SYNOPSIS
+Test and invoke an Authentication method to verify a user.
+
+.DESCRIPTION
+Test and invoke an Authentication method to verify a user. This will verify a user's credentials on the request.
+When testing OAuth2 methods, the first attempt will trigger a redirect to the provider and $false will be returned.
+
+.PARAMETER Name
+The Name of the Authentication method.
+
+.PARAMETER IgnoreSession
+If supplied, authentication will be re-verified on each call even if a valid session exists on the request.
+
+.PARAMETER CheckAccess
+If supplied, an Authentication method's Access method will also be verified.
+
+.EXAMPLE
+if (Test-PodeAuth -Name 'BasicAuth') { ... }
+
+.EXAMPLE
+if (Test-PodeAuth -Name 'FormAuth' -IgnoreSession) { ... }
+
+.EXAMPLE
+if (Test-PodeAuth -Name 'BasicAuth' -CheckAccess) { ... }
+#>
 function Test-PodeAuth
 {
     [CmdletBinding()]
@@ -991,65 +1081,15 @@ function Test-PodeAuth
         $Name,
 
         [switch]
-        $Login,
+        $IgnoreSession,
 
         [switch]
-        $Logout,
-
-        [switch]
-        $AllowAnon
+        $CheckAccess
     )
 
-    # get the auth method
-    $auth = $PodeContext.Server.Authentications.Methods[$Name]
-
-    # check for logout command
-    if ($Logout) {
-        Remove-PodeAuthSession
-
-        if ($PodeContext.Server.Sessions.Info.UseHeaders) {
-            return (Set-PodeAuthStatus `
-                -StatusCode 401 `
-                -Name $Name `
-                -NoSuccessRedirect)
-        }
-        else {
-            $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $WebEvent.Request.Url.AbsolutePath)
-            return (Set-PodeAuthStatus `
-                -StatusCode 302 `
-                -Name $Name `
-                -NoSuccessRedirect)
-        }
-    }
-
     # if the session already has a user/isAuth'd, then skip auth - or allow anon
-    if (Test-PodeSessionsInUse) {
-        # existing session auth'd
-        if (Test-PodeAuthUser) {
-            $WebEvent.Auth = $WebEvent.Session.Data.Auth
-            return (Set-PodeAuthStatus `
-                -Name $Name `
-                -LoginRoute:($Login) `
-                -NoSuccessRedirect)
-        }
-
-        # if we're allowing anon access, and using sessions, then stop here - as a session will be created from a login route for auth'ing users
-        if ($AllowAnon) {
-            if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
-                Revoke-PodeSession
-            }
-
-            return $true
-        }
-    }
-
-    # check if the login flag is set, in which case just return and load a login get-page (allowing anon access)
-    if ($Login -and !$PodeContext.Server.Sessions.Info.UseHeaders -and ($WebEvent.Method -ieq 'get')) {
-        if (!(Test-PodeIsEmpty $WebEvent.Session.Data.Auth)) {
-            Revoke-PodeSession
-        }
-
-        return $true
+    if (!$IgnoreSession -and (Test-PodeSessionsInUse)) {
+        return (Test-PodeAuthUser)
     }
 
     try {
@@ -1057,10 +1097,7 @@ function Test-PodeAuth
     }
     catch {
         $_ | Write-PodeErrorLog
-        return (Set-PodeAuthStatus `
-            -StatusCode 500 `
-            -Description $_.Exception.Message `
-            -Name $Name)
+        return $false
     }
 
     # did the auth force a redirect?
@@ -1068,60 +1105,22 @@ function Test-PodeAuth
         return $false
     }
 
-    # if auth failed, are we allowing anon access?
-    if (!$result.Success -and $AllowAnon) {
-        return $true
-    }
-
     # if auth failed, set appropriate response headers/redirects
     if (!$result.Success) {
-        return (Set-PodeAuthStatus `
-            -StatusCode $result.StatusCode `
-            -Description $result.Description `
-            -Headers $result.Headers `
-            -Name $Name `
-            -LoginRoute:$Login `
-            -NoFailureRedirect:($result.FailureRedirect))
-    }
-
-    # if auth passed, assign the user(s) to the session
-    $user = $result.User
-    if ($result.Aggregated) {
-        $user = [ordered]@{}
-        foreach ($r in $result.Results) {
-            $user[$r.Auth] = $r.User
-        }
-    }
-
-    $WebEvent.Auth = [ordered]@{
-        User = $user
-        IsAuthenticated = $true
-        IsAuthorised = $true
-        Store = !$auth.Sessionless
-        Name = $result.Auth
-        Multiple = [bool]$result.Aggregated
+        return $false
     }
 
     # check access
-    foreach ($authName in $result.Auth) {
-        $WebEvent.Auth.IsAuthorised = Test-PodeAuthValidationAccess -Name $authName
-
-        if (!$WebEvent.Auth.IsAuthorised) {
-            return (Set-PodeAuthStatus `
-                -StatusCode 403 `
-                -Description $result.Description `
-                -Headers $result.Headers `
-                -Name $authName `
-                -LoginRoute:$Login `
-                -NoFailureRedirect:($result.FailureRedirect))
+    if ($CheckAccess) {
+        foreach ($authName in $result.Auth) {
+            if (!(Test-PodeAuthValidationAccess -Name $authName)) {
+                return $false
+            }
         }
     }
 
     # successful auth
-    return (Set-PodeAuthStatus `
-        -Headers $result.Headers `
-        -Name @($result.Auth)[0] `
-        -LoginRoute:$Login)
+    return $true
 }
 
 <#
@@ -2234,6 +2233,9 @@ Test whether the current WebEvent or Session has an authenticated user.
 .DESCRIPTION
 Test whether the current WebEvent or Session has an authenticated user. Returns true if there is an authenticated user.
 
+.PARAMETER IgnoreSession
+If supplied, only the Auth object in the WebEvent will be checked and the Session will be skipped.
+
 .EXAMPLE
 if (Test-PodeAuthUser) { ... }
 #>
@@ -2258,6 +2260,19 @@ function Test-PodeAuthUser
     return $false
 }
 
+<#
+.SYNOPSIS
+Get the authenticated user from the WebEvent or Session.
+
+.DESCRIPTION
+Get the authenticated user from the WebEvent or Session. This is similar to calling $Webevent.Auth.User.
+
+.PARAMETER IgnoreSession
+If supplied, only the Auth object in the WebEvent will be used and the Session will be skipped.
+
+.EXAMPLE
+$user = Get-PodeAuthUser
+#>
 function Get-PodeAuthUser
 {
     [CmdletBinding()]
@@ -2417,6 +2432,27 @@ function Add-PodeAuthAccess
     }
 }
 
+<#
+.SYNOPSIS
+Let's you merge multiple Access methods together, into a "single" Access method.
+
+.DESCRIPTION
+Let's you merge multiple Access methods together, into a "single" Access method.
+You can specify if only One or All of the methods need to pass to allow access, and you can also
+merge other merged Access methods for more advanced scenarios.
+
+.PARAMETER Name
+A unique Name for the Access method.
+
+.PARAMETER Access
+Mutliple Access method Names to be merged.
+
+.PARAMETER Valid
+How many of the Access methods are required to be valid, One or All. (Default: One)
+
+.EXAMPLE
+Merge-PodeAuthAccess -Name MergedAccess -Access RbacAccess, GbacAccess -Valid All
+#>
 function Merge-PodeAuthAccess
 {
     [CmdletBinding()]
@@ -2704,8 +2740,15 @@ The Name of the Access method to use to verify the access.
 .PARAMETER Value
 An array of access values to pass to the Access method for verification against the User.
 
+.PARAMETER Authentication
+Only if multiple merged Authentication methods are being used, supply the Name of the Authentication method's Access methods to use,
+and where the User object should be retrieved.
+
 .EXAMPLE
 if (Test-PodeAuthAccessUser -Name 'Example' -Value 'Developer', 'QA') { }
+
+.EXAMPLE
+if (Test-PodeAuthAccessUser -Name 'Example' -Value 'Developer', 'QA' -Authentication 'BasicAuth') { }
 #>
 function Test-PodeAuthAccessUser
 {
