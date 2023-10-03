@@ -1212,11 +1212,6 @@ function Test-PodeAuthValidation
             }
         }
 
-        # headers
-        if ($null -eq $result.Headers) {
-            $result.Headers = @{}
-        }
-
         # if there's no result, or no user, then the auth failed - but allow auth if anon enabled
         if (($null -eq $result) -or ($result.Count -eq 0) -or (Test-PodeIsEmpty $result.User)) {
             $code = (Protect-PodeValue -Value $result.Code -Default 401)
@@ -1224,9 +1219,19 @@ function Test-PodeAuthValidation
             # set the www-auth header
             $validCode = (($code -eq 401) -or ![string]::IsNullOrEmpty($result.Challenge))
 
-            if ($validCode -and !$result.Headers.ContainsKey('WWW-Authenticate')) {
-                $authHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Scheme.Name -Realm $auth.Scheme.Realm -Challenge $result.Challenge
-                $result.Headers['WWW-Authenticate'] = $authHeader
+            if ($validCode) {
+                if ($null -eq $result) {
+                    $result = @{}
+                }
+
+                if ($null -eq $result.Headers) {
+                    $result.Headers = @{}
+                }
+
+                if (!$result.Headers.ContainsKey('WWW-Authenticate')) {
+                    $authHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Scheme.Name -Realm $auth.Scheme.Realm -Challenge $result.Challenge
+                    $result.Headers['WWW-Authenticate'] = $authHeader
+                }
             }
 
             return @{
@@ -1246,6 +1251,7 @@ function Test-PodeAuthValidation
         }
     }
     catch {
+        $_ | Write-PodeErrorLog
         return @{
             Success = $false
             StatusCode = 500
