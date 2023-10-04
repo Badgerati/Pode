@@ -1313,7 +1313,7 @@ function Test-PodeAuthValidationAccess
     }
 
     # check access
-    return ([string]::IsNullOrEmpty($access) -or (Invoke-PodeAuthValidationAccess -Name $access))
+    return ([string]::IsNullOrEmpty($access) -or (Invoke-PodeAuthValidationAccess -Name $access -Authentication $BaseName))
 }
 
 function Invoke-PodeAuthValidationAccess
@@ -1321,7 +1321,11 @@ function Invoke-PodeAuthValidationAccess
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Name
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Authentication
     )
 
     # get the access method
@@ -1330,7 +1334,7 @@ function Invoke-PodeAuthValidationAccess
     # if it's a merged access, re-call this function and check against "succeed" value
     if ($access.Merged) {
         foreach ($accName in $access.Access) {
-            $result = Invoke-PodeAuthValidationAccess -Name $accName
+            $result = Invoke-PodeAuthValidationAccess -Name $accName -Authentication $Authentication
 
             # if the access passed, and we only need one access to pass, return true
             if ($result -and $access.PassOne) {
@@ -1358,7 +1362,7 @@ function Invoke-PodeAuthValidationAccess
     }
 
     # main access validation logic
-    return (Test-PodeAuthAccessRoute -Name $Name)
+    return (Test-PodeAuthAccessRoute -Name $Name -Authentication $Authentication)
 }
 
 function Get-PodeAuthMiddlewareScript

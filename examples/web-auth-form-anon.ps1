@@ -50,7 +50,7 @@ Start-PodeServer -Threads 2 {
 
     # home page:
     # redirects to login page if not authenticated
-    Add-PodeRoute -Method Get -Path '/' -Authentication Login -Anon -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/' -Authentication Login -AllowAnon -ScriptBlock {
         if (Test-PodeAuthUser) {
             $session:Views++
 

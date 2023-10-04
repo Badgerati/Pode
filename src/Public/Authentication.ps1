@@ -920,11 +920,6 @@ function Merge-PodeAuth
         throw "Access method not found: $($Access)"
     }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
-        throw 'Sessions are required to use session persistent authentication'
-    }
-
     # set default
     if ([string]::IsNullOrEmpty($Default)) {
         $Default = $Authentication[0]
@@ -936,6 +931,11 @@ function Merge-PodeAuth
     # check sessionless from default
     if (!$Sessionless) {
         $Sessionless = $tmpAuth.Sessionless
+    }
+
+    # if we're using sessions, ensure sessions have been setup
+    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+        throw 'Sessions are required to use session persistent authentication'
     }
 
     # check access from default
@@ -2741,7 +2741,7 @@ The Name of the Access method to use to verify the access.
 An array of access values to pass to the Access method for verification against the User.
 
 .PARAMETER Authentication
-Only if multiple merged Authentication methods are being used, supply the Name of the Authentication method's Access methods to use,
+Only if multiple merged Authentication methods are being used, supply the Name of the Authentication method the Access being checked is for,
 and where the User object should be retrieved.
 
 .EXAMPLE
@@ -2810,6 +2810,10 @@ Test the currently authenticated User's access against the access values supplie
 .PARAMETER Name
 The Name of the Access method to use to verify the access.
 
+.PARAMETER Authentication
+Only if multiple merged Authentication methods are being used, supply the Name of the Authentication method the Access being checked is for,
+and where the User object should be retrieved.
+
 .EXAMPLE
 if (Test-PodeAuthAccessRoute -Name 'Example') { }
 #>
@@ -2818,8 +2822,17 @@ function Test-PodeAuthAccessRoute
     param(
         [Parameter(Mandatory=$true)]
         [string]
-        $Name
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Authentication
     )
+
+    # check if an auth name was passed for mutliple auths
+    if ($WebEvent.Auth.Multiple -and [string]::IsNullOrEmpty($Authentication)) {
+        throw "No Authentication name supplied to select User for Access testing, when mutliple authentications were used"
+    }
 
     # get the access method
     $access = $PodeContext.Server.Authentications.Access[$Name]
@@ -2835,5 +2848,9 @@ function Test-PodeAuthAccessRoute
     }
 
     # now test the user's access against the route's access
-    return (Test-PodeAuthAccessUser -Name $Name -Value $routeAccess -Authentication $WebEvent.Route.Authentication)
+    if ([string]::IsNullOrEmpty($Authentication)) {
+        $Authentication = $WebEvent.Route.Authentication
+    }
+
+    return (Test-PodeAuthAccessUser -Name $Name -Value $routeAccess -Authentication $Authentication)
 }
