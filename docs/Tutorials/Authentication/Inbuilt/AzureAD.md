@@ -41,6 +41,8 @@ To setup and start using Azure AD authentication in Pode you use `New-PodeAuthAz
 
 ```powershell
 Start-PodeServer {
+    Enable-PodeSessionMiddleware -Duration 120 -Extend
+
     $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>'
 
     $scheme | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
@@ -63,6 +65,8 @@ To setup Azure AD authentcation, but using your own Form login, then you can use
 
 ```powershell
 Start-PodeServer {
+    Enable-PodeSessionMiddleware -Duration 120 -Extend
+
     $form  = New-PodeAuthScheme -Form
 
     $scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $form
@@ -97,7 +101,7 @@ The Pode side needs to be configured to allow basic authentication as well. This
 $form  = New-PodeAuthScheme -Form
 $schemeForm = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $form
 
-$basic = New-PodeAuthSceme -Basic
+$basic = New-PodeAuthScheme -Basic
 $schemeBasic = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $basic
 
 $authLogin = {

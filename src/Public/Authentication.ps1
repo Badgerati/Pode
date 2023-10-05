@@ -2233,6 +2233,10 @@ Test whether the current WebEvent or Session has an authenticated user.
 .DESCRIPTION
 Test whether the current WebEvent or Session has an authenticated user. Returns true if there is an authenticated user.
 
+.PARAMETER Authentication
+Only if multiple merged Authentication methods are being used, supply the Name of the Authentication method where the User object should be checked.
+If not supplied, and using mutliple Authentication methods, true will be returned if there is a User object for any Authentication method.
+
 .PARAMETER IgnoreSession
 If supplied, only the Auth object in the WebEvent will be checked and the Session will be skipped.
 
@@ -2243,21 +2247,36 @@ function Test-PodeAuthUser
 {
     [CmdletBinding()]
     param(
+        [Parameter()]
+        [string]
+        $Authentication,
+
         [switch]
         $IgnoreSession
     )
 
     # auth middleware
-    if (($null -ne $WebEvent.Auth.User) -and $WebEvent.Auth.IsAuthenticated) {
-        return $true
+    if (($null -ne $WebEvent.Auth) -and $WebEvent.Auth.IsAuthenticated) {
+        $auth = $WebEvent.Auth
     }
 
     # session?
-    if (!$IgnoreSession -and ($null -ne $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
-        return $true
+    elseif (!$IgnoreSession -and ($null -ne $WebEvent.Session.Data.Auth) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
+        $auth = $WebEvent.Session.Data.Auth
     }
 
-    return $false
+    # null?
+    if (($null -eq $auth) -or ($null -eq $auth.User)) {
+        return $false
+    }
+
+    # embedded auth
+    $user = $auth.User
+    if ($auth.Multiple -and ![string]::IsNullOrEmpty($Authentication)) {
+        $user = $user[$Authentication]
+    }
+
+    return ($null -ne $user)
 }
 
 <#
@@ -2266,6 +2285,10 @@ Get the authenticated user from the WebEvent or Session.
 
 .DESCRIPTION
 Get the authenticated user from the WebEvent or Session. This is similar to calling $Webevent.Auth.User.
+
+.PARAMETER Authentication
+Only if multiple merged Authentication methods are being used, supply the Name of the Authentication method where the User object should be retrieved.
+If not supplied, and using mutliple Authentication methods, all User objects will be returned.
 
 .PARAMETER IgnoreSession
 If supplied, only the Auth object in the WebEvent will be used and the Session will be skipped.
@@ -2277,21 +2300,36 @@ function Get-PodeAuthUser
 {
     [CmdletBinding()]
     param(
+        [Parameter()]
+        [string]
+        $Authentication,
+
         [switch]
         $IgnoreSession
     )
 
     # auth middleware
-    if (($null -ne $WebEvent.Auth.User) -and $WebEvent.Auth.IsAuthenticated) {
-        return $WebEvent.Auth.User
+    if (($null -ne $WebEvent.Auth) -and $WebEvent.Auth.IsAuthenticated) {
+        $auth = $WebEvent.Auth
     }
 
     # session?
-    if (!$IgnoreSession -and ($null -ne $WebEvent.Session.Data.Auth.User) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
-        return $WebEvent.Session.Data.Auth.User
+    elseif (!$IgnoreSession -and ($null -ne $WebEvent.Session.Data.Auth) -and $WebEvent.Session.Data.Auth.IsAuthenticated) {
+        $auth = $WebEvent.Session.Data.Auth
     }
 
-    return $null
+    # null?
+    if (($null -eq $auth) -or ($null -eq $auth.User)) {
+        return $null
+    }
+
+    # embedded auth
+    $user = $auth.User
+    if ($auth.Multiple -and ![string]::IsNullOrEmpty($Authentication)) {
+        $user = $user[$Authentication]
+    }
+
+    return $user
 }
 
 <#

@@ -9,9 +9,7 @@ To setup and use authentication in Pode you need to use the [`New-PodeAuthScheme
 
 You can also setup [Authorisation](../../Authorisation/Overview) for use with Authentication as well.
 
-## Usage
-
-### Schemes
+## Schemes
 
 The [`New-PodeAuthScheme`](../../../Functions/Authentication/New-PodeAuthScheme) function allows you to create and configure authentication schemes, or you can create your own Custom authentication schemes. These schemes can then be piped into [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). The role of a scheme is to parse the request for any user credentials, or other information, that is required for a user to be authenticated.
 
@@ -31,7 +29,7 @@ Or you can define a custom scheme:
 
 * [Custom](../Methods/Custom)
 
-### Validators
+## Validators
 
 The [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) function allows you to add authentication validators to your server. You can have many methods configured, defining which one to validate against using the `-Authentication` parameter on Routes. Their job is to validate the information parsed from the supplied scheme to ensure a user is valid.
 
@@ -51,7 +49,7 @@ The `-Name` of the authentication method must be unique. The `-Scheme` comes fro
 
 The `-ScriptBlock` is used to validate a user, checking if they exist and the password is correct (or checking if they exist in some data store). If the ScriptBlock succeeds, then a `User` object needs to be returned from the script as `@{ User = $user }`. If `$null`, or a null user, is returned then the script is assumed to have failed - meaning the user will have failed authentication, and a 401 response is returned.
 
-#### Custom Status and Headers
+### Custom Status and Headers
 
 When authenticating a user in Pode, any failures will return a 401 response with a generic message. You can inform Pode to return a custom message/status from [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) by returning the relevant hashtable values.
 
@@ -95,7 +93,7 @@ return @{
 }
 ```
 
-#### Authenticate Type/Realm
+### Authenticate Type/Realm
 
 When authentication fails, and a 401 response is returned, then Pode will also attempt to Response back to the client with a `WWW-Authenticate` header (if you've manually set this header using the custom headers from above, then the custom header will be used instead). For the inbuilt types, such as Basic, this Header will always be returned on a 401 response.
 
@@ -116,7 +114,7 @@ WWW-Authenticate: Basic realm="Enter creds to access site"
 !!! note
     If no Realm was set then it would just look as follows: `WWW-Authenticate: Basic`
 
-#### Redirecting
+### Redirecting
 
 When building custom authenticators, it might be required that you have to redirect mid-auth and stop processing the current request. To achieve this you can return the following from the scriptblock of `New-PodeAuthScheme` or `Add-PodeAuth`:
 
@@ -124,7 +122,9 @@ When building custom authenticators, it might be required that you have to redir
 return @{ IsRedirected = $true }
 ```
 
-### Routes/Middleware
+An example of this could be OAuth2, where the authentication needs to redirect to the Provider.
+
+## Routes/Middleware
 
 To use an authentication on a specific route, you can use the `-Authentication` parameter on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function; this takes the Name supplied to the `-Name` parameter on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). This will set the authentication up to run before other route middleware.
 
@@ -175,6 +175,141 @@ Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -Login -ScriptBlock 
     }
 }
 ```
+
+## Merging
+
+For advanced authentication scenarios, you can merge multiple authentication methods together using [`Merge-PodeAuth`](../../../Functions/Authentication/Merge-PodeAuth). This allows you to have an authentication strategy where multiple authentications are required to pass for a user to be fully authenticated, or you could have fallback authentications should the primary authentication fail.
+
+When you merge authentication methods together, it becomes a new authentication method which you can supply to `-Authentication` on Routes. By default the merged authentications expect just one to pass, but you can state that you require all to pass via the `-Valid` parameter on [`Merge-PodeAuth`](../../../Functions/Authentication/Merge-PodeAuth).
+
+### All
+
+For example, you might require an API Key and Basic authentication for a user to view a Route, in which case you would set something up as follows:
+
+```powershell
+# setup apikey auth
+New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
+    param($key)
+
+    # here you'd check a real user storage, this is just for example
+    if ($key -ieq 'test-api-key') {
+        return @{ User = @{ Name = 'Morty' } }
+    }
+
+    return $null
+}
+
+# setup basic auth
+New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
+    param($username, $password)
+
+    # here you'd check a real user storage, this is just for example
+    if ($username -eq 'morty' -and $password -eq 'pickle') {
+        return @{ User = @{ Name = 'Morty' } }
+    }
+
+    return @{ Message = 'Invalid details supplied' }
+}
+
+# merge the authentications together, and require all to pass
+Merge-PodeAuth -Name 'MergedAuth' -Authentication 'ApiKey', 'Basic' -Valid All
+
+# use the merged auth in a route
+Add-PodeRoute -Method Get -Path '/users' -Authentication 'MergedAuth' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{
+        Users = $WebEvent.Auth.User
+    }
+}
+```
+
+### One
+
+Or, you might want to check for a JWT Bearer token, but if one isn't present default to Azure AD authentication so we can store the returned access token and utilise the first Bearer auth later on:
+
+```powershell
+# setup jwt bearer auth
+New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Bearer' -Sessionless -ScriptBlock {
+    param($payload)
+    # check payload
+    return @{ User = @{ Name = 'Morty' } }
+}
+
+# setup basic azure-ad auth
+$basic = New-PodeAuthScheme -Basic
+$scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $basic
+$scheme | Add-PodeAuth -Name 'AzureAD' -Sessionless -ScriptBlock {
+    param($user, $accessToken, $refreshToken, $response)
+    # check if the user is valid
+    return @{ User = $user }
+}
+
+# merge the authentications together, and require just one to pass
+Merge-PodeAuth -Name 'MergedAuth' -Authentication 'Bearer', 'AzureAD' -Valid One
+
+# use the merged auth in a route
+Add-PodeRoute -Method Get -Path '/users' -Authentication 'MergedAuth' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{
+        Users = $WebEvent.Auth.User
+    }
+}
+```
+
+### Advanced
+
+You can also merge together other merged authentication methods. This lets you build scenarios where you require an API key, and then need either a JWT Bearer token or OAuth2 to pass. As a very brief example:
+
+```powershell
+# setup apikey auth
+New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
+    param($key)
+
+    # here you'd check a real user storage, this is just for example
+    if ($key -ieq 'test-api-key') {
+        return @{ User = @{ Name = 'Morty' } }
+    }
+
+    return $null
+}
+
+# setup jwt bearer auth
+New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Bearer' -Sessionless -ScriptBlock {
+    param($payload)
+    # check payload
+    return @{ User = @{ Name = 'Morty' } }
+}
+
+# setup basic azure-ad auth
+$basic = New-PodeAuthScheme -Basic
+$scheme = New-PodeAuthAzureADScheme -ClientID '<clientId>' -ClientSecret '<clientSecret>' -Tenant '<tenant>' -InnerScheme $basic
+$scheme | Add-PodeAuth -Name 'AzureAD' -Sessionless -ScriptBlock {
+    param($user, $accessToken, $refreshToken, $response)
+    # check if the user is valid
+    return @{ User = $user }
+}
+
+# merge the authentications together, and require just one to pass
+Merge-PodeAuth -Name 'JwtMergedAuth' -Authentication 'Bearer', 'AzureAD' -Valid One
+
+# merge the above merged auth with the apikey auth, and require both to pass
+Merge-PodeAuth -Name 'ApiMergedAuth' -Authentication 'ApiKey', 'JwtMergedAuth' -Valid All
+
+# use the merged auth in a route
+Add-PodeRoute -Method Get -Path '/users' -Authentication 'ApiMergedAuth' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{
+        Users = $WebEvent.Auth.User
+    }
+}
+```
+
+### Users
+
+When using a single authentication method, the authenticated user's details will be accessible at `$WebEvent.Auth.User`. However, when you're using a merged authentication method you could end up with 2 or more user objects being returned from each authentication method.
+
+Because of this, when using a merged authentication, the user object will instead be found at `$WebEvent.Auth.User[<AuthName>]`. For example, if you have a authentication method with name "BearerAuth", then the user's details would be at `$WebEvent.Auth.User['BearerAuth']` - not `$WebEvent.Auth.User`.
+
+### Parameters
+
+Similar to [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) the [`Merge-PodeAuth`](../../../Functions/Authentication/Merge-PodeAuth) function also supports the `-FailureUrl`, `-SuccessUrl`, etc. parameters. When set on the merged authentication method, these fails will be used as a fallback if the initial authentication methods don't have them set. This means you can setup 2 authentication methods without Failure URLs, and then merge them together with a default one of `/login` on the merged authentication.
 
 ## Inbuilt Authenticators
 
