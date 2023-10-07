@@ -79,6 +79,13 @@ The below example will create a local self-signed HTTPS endpoint:
 Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
 ```
 
+### SSL Protocols
+
+By default Pode will use the SSL3 or TLS12 protocols - or just TLS12 if on MacOS. You can override this default in one of two ways:
+
+1. Update the global default in Pode's configuration file, as [described here](../../Certificates#ssl-protocols).
+2. Specify specific SSL Protocols to use per Endpoints using the `-SslProtocol` parameter on [`Add-PodeEndpoint`](../../../Functions/Core/Add-PodeEndpoint).
+
 ## Endpoint Names
 
 You can give endpoints unique names by supplying the `-EndpointName` parameter. This name can then be passed to [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) or [`Add-PodeStaticRoute`](../../../Functions/Routes/Add-PodeStaticRoute) to bind these routes to that endpoint only.
@@ -128,7 +135,8 @@ The following is the structure of the Endpoint object internally, as well as the
 | Hostname | string | The hostname of the Endpoint |
 | FriendlyName | string | A user friendly hostname to use when generating internal URLs |
 | Url | string | The full base URL of the Endpoint |
-| Ssl | bool | Whether or not this Endpoint support support SSL |
+| Ssl.Enabled | bool | Whether or not this Endpoint uses SSL |
+| Ssl.Protocols | SslProtocols | An aggregated integer which specifies the SSL protocols this endpoints supports |
 | Protocol | string | The protocol of the Endpoint. Such as: HTTP, HTTPS, WS, etc. |
 | Type | string | The type of the Endpoint. Such as: HTTP, WS, SMTP, TCP |
 | Certificate | hashtable | Details about the certificate that will be used for SSL Endpoints |

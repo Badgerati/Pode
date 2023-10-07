@@ -31,6 +31,7 @@ function Start-PodeSmtpServer
             Type = $_.Type
             Pool = $_.Runspace.PoolName
             Acknowledge = $_.Tcp.Acknowledge
+            SslProtocols = $_.Ssl.Protocols
         }
 
         # add endpoint to list
@@ -48,7 +49,7 @@ function Start-PodeSmtpServer
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, [PodeProtocolType]::Smtp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
+            $socket = [PodeSocket]::new($_.Address, $_.Port, $_.SslProtocols, [PodeProtocolType]::Smtp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $socket.AcknowledgeMessage = $_.Acknowledge
 

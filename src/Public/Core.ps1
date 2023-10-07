@@ -722,6 +722,9 @@ A quick description of the Endpoint - normally used in OpenAPI.
 .PARAMETER Acknowledge
 An optional Acknowledge message to send to clients when they first connect, for TCP and SMTP endpoints only.
 
+.PARAMETER SslProtocol
+One or more optional SSL Protocols this endpoints supports. (Default: SSL3/TLS12 - Just TLS12 on MacOS).
+
 .PARAMETER CRLFMessageEnd
 If supplied, TCP endpoints will expect incoming data to end with CRLF.
 
@@ -838,6 +841,11 @@ function Add-PodeEndpoint
         [string]
         $Acknowledge,
 
+        [Parameter()]
+        [ValidateSet('Ssl2', 'Ssl3', 'Tls', 'Tls11', 'Tls12', 'Tls13')]
+        [string[]]
+        $SslProtocol = $null,
+
         [switch]
         $CRLFMessageEnd,
 
@@ -946,7 +954,10 @@ function Add-PodeEndpoint
         HostName = $Hostname
         FriendlyName = $Hostname
         Url = $null
-        Ssl = (@('https', 'wss', 'smtps', 'tcps') -icontains $Protocol)
+        Ssl = @{
+            Enabled = (@('https', 'wss', 'smtps', 'tcps') -icontains $Protocol)
+            Protocols = $PodeContext.Server.Sockets.Ssl.Protocols
+        }
         Protocol = $Protocol.ToLowerInvariant()
         Type = $type.ToLowerInvariant()
         Runspace = @{
@@ -963,6 +974,11 @@ function Add-PodeEndpoint
             Acknowledge = $Acknowledge
             CRLFMessageEnd = $CRLFMessageEnd
         }
+    }
+
+    # set ssl protocols
+    if (!(Test-PodeIsEmpty $SslProtocol)) {
+        $obj.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $SslProtocol)
     }
 
     # set the ip for the context (force to localhost for IIS)
@@ -999,7 +1015,7 @@ function Add-PodeEndpoint
 
     # has this endpoint been added before? (for http/https we can just not add it again)
     $exists = ($PodeContext.Server.Endpoints.Values | Where-Object {
-        ($_.FriendlyName -ieq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl) -and ($_.Type -ieq $obj.Type)
+        ($_.FriendlyName -ieq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl.Enabled -eq $obj.Ssl.Enabled) -and ($_.Type -ieq $obj.Type)
     } | Measure-Object).Count
 
     # if we're dealing with a certificate, attempt to import it
