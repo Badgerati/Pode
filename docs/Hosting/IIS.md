@@ -129,6 +129,10 @@ This allows you to write a Pode server that works locally, but will also automat
 !!! note
     This does mean that Pode will force all endpoints to `127.0.0.1:PORT`. So if you had two different IPs before, they'll be merged into one. Something to be aware of if you assign routes to specific endpoints, as under IIS this won't work.
 
+### Maximum Worker Processes
+
+Unless you're using an external data store for sessions, ensure the Maximum Worker Processes is 1. Each worker process will spawn a new instance of your Pode server, and if using Pode's inbuilt session storage you'll face authenticated/session timeout issues when one instance doesn't contain the right session.
+
 ### Advanced/Domain/Kerberos
 
 The above IIS site setup works, but only for simple sites. If you require the use of the Active Directory module, or your site to be running as a different user then follow the steps below.
