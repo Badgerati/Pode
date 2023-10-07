@@ -787,7 +787,7 @@ function Set-PodeServerConfiguration
     }
 
     # auto-import
-    $Context.Server.AutoImport = Read-PodeAutoImportConfiguration
+    $Context.Server.AutoImport = Read-PodeAutoImportConfiguration -Configuration $Configuration
 
     # request
     if ([int]$Configuration.Request.Timeout -gt 0) {
