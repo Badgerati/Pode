@@ -79,6 +79,13 @@ The below example will create a local self-signed HTTPS endpoint:
 Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
 ```
 
+### SSL Protocols
+
+By default Pode will use the SSL3 or TLS12 protocols - or just TLS12 if on MacOS. You can override this default in one of two ways:
+
+1. Update the global default in Pode's configuration file, as [described here](../../Certificates#ssl-protocols).
+2. Specify specific SSL Protocols to use per Endpoints using the `-SslProtocol` parameter on [`Add-PodeEndpoint`](../../../Functions/Core/Add-PodeEndpoint).
+
 ## Endpoint Names
 
 You can give endpoints unique names by supplying the `-EndpointName` parameter. This name can then be passed to [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) or [`Add-PodeStaticRoute`](../../../Functions/Routes/Add-PodeStaticRoute) to bind these routes to that endpoint only.
