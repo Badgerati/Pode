@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <title>$($data.Title)</title>
         <meta charset="utf-8"/>
@@ -13,8 +13,7 @@
             }
         </style>
     </head>
-    <body>
-        <redoc spec-url='$($data.OpenApi)'></redoc>
-        <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js" theme="dark"></script>
+    <redoc spec-url='$($data.OpenApi)'></redoc>
+        <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js" theme="$($data.Theme)"></script>
     </body>
-</html>
+</html>  

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>$($data.Title)</title>
+    <meta charset="utf-8"> <!-- Important: rapi-doc uses utf8 characters -->
+    <script type="module" src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"></script>
+
+</head>
+
+<body>
+    <rapi-doc spec-url='$($data.OpenApi)' theme="'$($data.Theme)'" show-info="true" show-header="false"
+        show-method-in-nav-bar="as-colored-block"></rapi-doc>
+</body>
+
+</html>

@@ -435,8 +435,7 @@ function Get-PodeAuthBearerType
                 if ($_.Exception.Message -ilike '*jwt*') {
                     return @{
                         Message = $_.Exception.Message
-                        #https://www.rfc-editor.org/rfc/rfc6750 Bearer token should return 401
-                        Challenge = (New-PodeAuthBearerChallenge -Scopes $options.Scopes -ErrorType invalid_token) 
+                        #https://www.rfc-editor.org/rfc/rfc6750 Bearer token should return 401 
                         Code = 401
                     }
                 }

@@ -164,47 +164,15 @@ function Get-PodeOpenApiDefinition {
     param(
         [Parameter()]
         [string]
-        $Title,
-
-        [Parameter()]
-        [string]
-        $Version,
-
-        [Parameter()]
-        [string]
-        $Description,
-
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $RouteFilter = '/*',
-
-        [switch]
-        $RestrictRoutes
+        $Title 
     )
 
     $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw 'No Title supplied for OpenAPI definition'
-    }
+    } 
 
-    $Version = Protect-PodeValue -Value $Version -Default $PodeContext.Server.OpenAPI.Version
-    if ([string]::IsNullOrWhiteSpace($Version)) {
-        throw 'No Version supplied for OpenAPI definition'
-    }
-
-    $Description = Protect-PodeValue -Value $Description -Default $PodeContext.Server.OpenAPI.Description
-
-    # generate the openapi definition
-    return (Get-PodeOpenApiDefinitionInternal `
-            -Title $Title `
-            -Version $Version `
-            -Description $Description `
-            -RouteFilter $RouteFilter `
-            -Protocol $WebEvent.Endpoint.Protocol `
-            -Address $WebEvent.Endpoint.Address `
-            -EndpointName $WebEvent.Endpoint.Name `
-            -RestrictRoutes:$RestrictRoutes)
+    return Get-PodeOpenApiDefinitionInternal -Title $Title 
 }
 
 <#
@@ -1998,7 +1966,8 @@ function ConvertTo-PodeOAParameter {
                 }
             }  
         }
-    } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') { # return a reference
+    } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
+        # return a reference
         if (!(Test-PodeOAComponentParameter -Name $Reference)) {
             throw "The OpenApi component request parameter doesn't exist: $($Reference)"
         }
@@ -2226,7 +2195,7 @@ function Enable-PodeOpenApiViewer {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Swagger', 'ReDoc')]
+        [ValidateSet('Swagger', 'ReDoc', 'RapiDoc', 'StopLight', 'Explorer', 'RapiPdf')]
         [string]
         $Type,
 
@@ -2271,10 +2240,11 @@ function Enable-PodeOpenApiViewer {
 
     # setup meta info
     $meta = @{
-        Type     = $Type.ToLowerInvariant()
-        Title    = $Title
-        OpenApi  = $OpenApiUrl
-        DarkMode = $DarkMode
+        Type       = $Type.ToLowerInvariant()
+        Title      = $Title
+        OpenApi    = $OpenApiUrl
+        DarkMode   = $DarkMode
+        OpenApiDoc = $true
     }
     
     # add the viewer route
@@ -2284,8 +2254,86 @@ function Enable-PodeOpenApiViewer {
         Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
             Title    = $meta.Title
             OpenApi  = $meta.OpenApi
-            DarkMode = $meta.DarkMode
+            DarkMode = (($meta.DarkMode)?'true':'false')
+            Theme    = (($meta.DarkMode)?'dark':'light')
         }
+    }
+}
+
+
+
+function Enable-PodeOpenApiDocBookmarks {
+    [CmdletBinding()]
+    param( 
+        [Parameter()]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [string]
+        $OpenApiUrl,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter()]
+        [string]
+        $Title,
+
+        [switch]
+        $DarkMode
+    )
+
+    # error if there's no OpenAPI URL
+    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI.Path
+    if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
+        throw "No OpenAPI URL supplied for $($Type)"
+    }
+
+    # fail if no title
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
+    $Title = Protect-PodeValue -Value $Title -Default $Type
+    if ([string]::IsNullOrWhiteSpace($Title)) {
+        throw "No title supplied for $($Type) page"
+    }
+
+    # set a default path
+    $Path = Protect-PodeValue -Value $Path -Default '/doc'
+    if ([string]::IsNullOrWhiteSpace($Title)) {
+        throw "No route path supplied for $($Type) page"
+    }
+
+    # setup meta info
+    $meta = @{ 
+        Title             = $Title
+        OpenApi           = $OpenApiUrl
+        DarkMode          = $DarkMode  
+    }
+    
+    # add the viewer route
+    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
+        param($meta)  
+        $Data = @{ Title      = $meta.Title
+            OpenApi           = $meta.OpenApi
+            DarkMode          = (($meta.DarkMode)?'true':'false')
+            Theme             = (($meta.DarkMode)?'dark':'light')
+            OpenApiDefinition = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 10
+        }  
+        foreach ($path in ($PodeContext.Server.Routes['GET'].Keys  )) {  
+            # the current route 
+            $_routes = @($PodeContext.Server.Routes['GET'][$path])
+            # get the first route for base definition
+            $_route = $_routes[0] 
+            # check if the route has to be published  
+            if ($_route.Arguments -and $_route.Arguments.OpenApiDoc   ) {
+                
+                $Data[$_route.Arguments.Type] = 'true'
+                $Data["$($_route.Arguments.Type)_path"] = $_route.Path 
+            }
+        } 
+        $podeRoot = Get-PodeModuleMiscPath
+        Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
     }
 }
 
