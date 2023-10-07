@@ -1088,8 +1088,8 @@ function Test-PodeAuth
     )
 
     # if the session already has a user/isAuth'd, then skip auth - or allow anon
-    if (!$IgnoreSession -and (Test-PodeSessionsInUse)) {
-        return (Test-PodeAuthUser)
+    if (!$IgnoreSession -and (Test-PodeSessionsInUse) -and (Test-PodeAuthUser)) {
+        return $true
     }
 
     try {

@@ -686,6 +686,16 @@ function Test-PodeIsMacOS
     return ([bool]$IsMacOS)
 }
 
+<#
+.SYNOPSIS
+Tests if the scope you're in is currently within a Pode runspace.
+
+.DESCRIPTION
+Tests if the scope you're in is currently within a Pode runspace.
+
+.EXAMPLE
+If (Test-PodeInRunspace) { ... }
+#>
 function Test-PodeInRunspace
 {
     [CmdletBinding()]

@@ -6,10 +6,10 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 <#
 This example shows how to use sessionless authentication, which will mostly be for
-REST APIs. The example used here is Basic authentication.
+REST APIs. The example used here is adhoc Basic authentication.
 
 Calling the '[POST] http://localhost:8085/users' endpoint, with an Authorization
-header of 'Basic bW9ydHk6cGlja2xl' will display the uesrs. Anything else and
+header of 'Basic bW9ydHk6cGlja2xl' will display the users. Anything else and
 you'll get a 401 status code back.
 
 Success:
@@ -43,10 +43,24 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
-    # POST request to get current user (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Post -Path '/users' -Authentication 'Validate' -ScriptBlock {
+    # POST request to get list of users (authentication is done adhoc, and not directly using -Authentication on the Route)
+    Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
+        if (!(Test-PodeAuth -Name Validate)) {
+            Set-PodeResponseStatus -Code 401
+            return
+        }
+
         Write-PodeJsonResponse -Value @{
-            User = (Get-PodeAuthUser)
+            User = @(
+                @{
+                    Name = 'Deep Thought'
+                    Age = 42
+                },
+                @{
+                    Name = 'Leeroy Jenkins'
+                    Age = 1337
+                }
+            )
         }
     }
 
