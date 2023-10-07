@@ -219,6 +219,7 @@
         'Add-PodeAuthUserFile',
         'ConvertTo-PodeJwt',
         'ConvertFrom-PodeJwt',
+        'Test-PodeJwt'
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',

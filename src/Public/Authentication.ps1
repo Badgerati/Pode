@@ -2078,6 +2078,50 @@ function ConvertFrom-PodeJwt
 
 <#
 .SYNOPSIS
+Validates JSON Web Tokens (JWT) claims.
+
+.DESCRIPTION
+Validates JSON Web Tokens (JWT) claims. Checks time related claims: 'exp' and 'nbf'.
+
+.PARAMETER Payload
+Object containing JWT claims. Some of them are:
+    - exp (expiration time)
+    - nbf (not before)
+
+.EXAMPLE
+Test-PodeJwt @{exp = 2696258821 }
+
+.EXAMPLE
+Test-PodeJwt -Payload @{nbf = 1696258821 }
+#>
+function Test-PodeJwt {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]
+        $Payload
+    )
+
+    $now = [datetime]::UtcNow
+    $unixStart = [datetime]::new(1970, 1, 1, 0, 0, [DateTimeKind]::Utc)
+
+    # validate expiry
+    if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
+        if ($now -gt $unixStart.AddSeconds($Payload.exp)) {
+            throw "The JWT has expired"
+        }
+    }
+
+    # validate not-before
+    if (![string]::IsNullOrWhiteSpace($Payload.nbf)) {
+        if ($now -lt $unixStart.AddSeconds($Payload.nbf)) {
+            throw "The JWT is not yet valid for use"
+        }
+    }
+}
+
+<#
+.SYNOPSIS
 Automatically loads auth ps1 files
 
 .DESCRIPTION
@@ -2745,7 +2789,7 @@ function Test-PodeAuthAccess
                         return $false
                     }
                 }
-    
+
                 return $true
             }
 
