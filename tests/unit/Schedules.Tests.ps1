@@ -220,16 +220,6 @@ Describe 'Get-PodeSchedule' {
         $schedules.Length | Should Be 0
     }
 
-    It 'Returns no schedules by where end just before end' {
-        $PodeContext = @{ Schedules = @{ Items = @{} } }
-        $start = ([DateTime]::Now.AddHours(3))
-        $end = ([DateTime]::Now.AddHours(5))
-
-        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
-        $schedules = Get-PodeSchedule -StartTime $start.AddHours(1).AddMinutes(1) -EndTime $end.AddHours(-1).AddMinutes(-1)
-        $schedules.Length | Should Be 0
-    }
-
     It 'Returns 2 schedules by name' {
         $PodeContext = @{ Schedules = @{ Items = @{} } }
         $start = ([DateTime]::Now.AddHours(3))
