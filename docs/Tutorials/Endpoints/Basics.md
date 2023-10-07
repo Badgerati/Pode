@@ -128,7 +128,8 @@ The following is the structure of the Endpoint object internally, as well as the
 | Hostname | string | The hostname of the Endpoint |
 | FriendlyName | string | A user friendly hostname to use when generating internal URLs |
 | Url | string | The full base URL of the Endpoint |
-| Ssl | bool | Whether or not this Endpoint support support SSL |
+| Ssl.Enabled | bool | Whether or not this Endpoint uses SSL |
+| Ssl.Protocols | SslProtocols | An aggregated integer which specifies the SSL protocols this endpoints supports |
 | Protocol | string | The protocol of the Endpoint. Such as: HTTP, HTTPS, WS, etc. |
 | Type | string | The type of the Endpoint. Such as: HTTP, WS, SMTP, TCP |
 | Certificate | hashtable | Details about the certificate that will be used for SSL Endpoints |
