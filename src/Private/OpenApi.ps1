@@ -453,7 +453,7 @@ function Set-PodeOAAuth
     )
 
     foreach ($n in @($Name)) {
-        if (!(Test-PodeAuth -Name $n)) {
+        if (!(Test-PodeAuthExists -Name $n)) {
             throw "Authentication method does not exist: $($n)"
         }
     }
@@ -479,7 +479,7 @@ function Set-PodeOAGlobalAuth
         $Route
     )
 
-    if (!(Test-PodeAuth -Name $Name)) {
+    if (!(Test-PodeAuthExists -Name $Name)) {
         throw "Authentication method does not exist: $($Name)"
     }
 

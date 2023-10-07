@@ -6,17 +6,17 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 <#
 This example shows how to use sessionless authentication, which will mostly be for
-REST APIs. The example used here is Basic authentication.
+REST APIs. The example used here is adhoc Basic authentication.
 
 Calling the '[POST] http://localhost:8085/users' endpoint, with an Authorization
-header of 'Basic bW9ydHk6cGlja2xl' will display the uesrs. Anything else and
+header of 'Basic bW9ydHk6cGlja2xl' will display the users. Anything else and
 you'll get a 401 status code back.
 
 Success:
-Invoke-RestMethod -Uri http://localhost:8085/users -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
 
 Failure:
-Invoke-RestMethod -Uri http://localhost:8085/users -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
+Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
 #>
 
 # create a server, and start listening on port 8085
@@ -43,31 +43,24 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
-    # GET request to get list of users (since there's no session, authentication will always happen, but, we're allowing anon access)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -AllowAnon -ScriptBlock {
-        if (Test-PodeAuthUser) {
-            Write-PodeJsonResponse -Value @{
-                Users = @(
-                    @{
-                        Name = 'Deep Thought'
-                        Age = 42
-                    },
-                    @{
-                        Name = 'Leeroy Jenkins'
-                        Age = 1337
-                    }
-                )
-            }
+    # POST request to get list of users (authentication is done adhoc, and not directly using -Authentication on the Route)
+    Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
+        if (!(Test-PodeAuth -Name Validate)) {
+            Set-PodeResponseStatus -Code 401
+            return
         }
-        else {
-            Write-PodeJsonResponse -Value @{
-                Users = @(
-                    @{
-                        Name = 'John Smith'
-                        Age = 21
-                    }
-                )
-            }
+
+        Write-PodeJsonResponse -Value @{
+            User = @(
+                @{
+                    Name = 'Deep Thought'
+                    Age = 42
+                },
+                @{
+                    Name = 'Leeroy Jenkins'
+                    Age = 1337
+                }
+            )
         }
     }
 

@@ -83,7 +83,7 @@ And Pode will retrieve the appropriate data for you.
 
 #### Lookup ScriptBlock
 
-If the access values you require are not stored in the `$WebEvent.Auth.User` object but else where (ie: external source), then you can supply a `-ScriptBlock` on [`Add-PodeAuthAccess`](../../../Functions/Authentication/Add-PodeAuthAccess). When Pode attempts to retrieve access values for the User, or another Source, this scriptblock will be invoked.
+If the source access values you require are not stored in the `$WebEvent.Auth.User` object but else where (ie: external source), then you can supply a `-ScriptBlock` on [`Add-PodeAuthAccess`](../../../Functions/Authentication/Add-PodeAuthAccess). When Pode attempts to retrieve access values for the User, or another Source, this scriptblock will be invoked.
 
 !!! note
     When using this scriptblock with Authentication the currently authenticated User will be supplied as the first parameter, followed by the `-ArgumentList` values. When using the Access methods in a more adhoc manner via [`Test-PodeAuthAccess`](../../../Functions/Authentication/Test-PodeAuthAccess), just the `-ArgumentList` values are supplied.
@@ -139,13 +139,13 @@ Add-PodeAuthAccess -Name 'ScopeExample' -Type Scope -ScriptBlock {
 
 ## Using with Authentication
 
-The Access methods will mostly commonly be used in conjunction with [Authentication](../../Authentication/Overview) and [Routes](../../Routes/Overview). When used together, Pode will automatically validate Route authorised for you as a part of the Authentication flow. If authorisation fails, an HTTP 403 status code will be returned.
+The Access methods will mostly commonly be used in conjunction with [Authentication](../../Authentication/Overview) and [Routes](../../Routes/Overview). When used together, Pode will automatically validate Route authorisation for you as a part of the Authentication flow. If authorisation fails, an HTTP 403 status code will be returned.
 
-After creating an Access method as outlined above, you can supply one or more Access method Names to [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) using the `-Access` property. This allows you to check authorisation based on multiple types of Access methods - ie, Roles and Groups, etc.
+After creating an Access method as outlined above, you can supply the Access method Name to [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth) using the `-Access` property.
 
 On [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) and [`Add-PodeRouteGroup`](../../../Functions/Routes/Add-PodeRouteGroup) there are the following parameters: `-Role`, `-Group`, `-Scope`, and `-User`. You can supply one ore more string values to these parameters, depending on which Access method type you're using.
 
-For example, to verify access to a Route to authorise only Developer accounts:
+For example, to verify access to a Route to authorise only Developer role accounts:
 
 ```powershell
 Start-PodeServer {
@@ -196,9 +196,11 @@ But calling the following will fail with a 403:
 Invoke-RestMethod -Uri http://localhost:8080/route2 -Method Get -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
 ```
 
-### Multiple Access Methods
+## Merging
 
-You can configure multiple Access methods on a single Authentication, and each of them will have to succeed for a user to be authorised for access to a Route.
+Similar to Authentication methods, you can also merge Access methods using [`Merge-PodeAuthAccess`](../../../Functions/Authentication/Merge-PodeAuthAccess). This allows you to have an access strategy where multiple authorisations are required to pass for a user to be fully authorised, or just one of several possible methods.
+
+When you merge access methods together, it becomes a new access method which you can supply to `-Access` on [`Add-PodeAuth`](../../../Functions/Authentication/Add-PodeAuth). By default the merged access method expects just one to pass, but you can state that you require all to pass via the `-Valid` parameter on [`Merge-PodeAuthAccess`](../../../Functions/Authentication/Merge-PodeAuthAccess).
 
 Using the same example above, we could add Group authorisation to this as well so the Developers have to be in a Software Group, and the Admins in a Operations Group:
 
@@ -210,8 +212,11 @@ Start-PodeServer {
     Add-PodeAuthAccess -Name 'RoleExample' -Type Role
     Add-PodeAuthAccess -Name 'GroupExample' -Type Group
 
+    # setup a merged access
+    Merge-PodeAuthAccess -Name 'MergedExample' -Access 'RoleExample', 'GroupExample' -Valid All
+
     # setup Basic authentication
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'AuthExample' -Sessionless -Access 'RoleExample', 'GroupExample' -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'AuthExample' -Sessionless -Access 'MergedExample' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

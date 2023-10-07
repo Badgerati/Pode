@@ -116,6 +116,7 @@
         'Out-PodeVariable',
         'Test-PodeIsHosted',
         'New-PodeCron',
+        'Test-PodeInRunspace',
 
         # routes
         'Add-PodeRoute',
@@ -228,6 +229,11 @@
         'Test-PodeAuthAccess',
         'Test-PodeAuthAccessUser',
         'Test-PodeAuthAccessRoute',
+        'Merge-PodeAuth',
+        'Test-PodeAuth',
+        'Test-PodeAuthExists',
+        'Merge-PodeAuthAccess',
+        'Get-PodeAuthUser',
 
         # logging
         'New-PodeLoggingMethod',

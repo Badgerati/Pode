@@ -43,35 +43,10 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
-    # POST request to get list of users (since there's no session, authentication will always happen)
+    # POST request to get current user (since there's no session, authentication will always happen)
     Add-PodeRoute -Method Post -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
-            Users = @(
-                @{
-                    Name = 'Deep Thought'
-                    Age = 42
-                },
-                @{
-                    Name = 'Leeroy Jenkins'
-                    Age = 1337
-                }
-            )
-        }
-    }
-
-    # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{
-            Users = @(
-                @{
-                    Name = 'Deep Thought'
-                    Age = 42
-                },
-                @{
-                    Name = 'Leeroy Jenkins'
-                    Age = 1337
-                }
-            )
+            User = (Get-PodeAuthUser)
         }
     }
 
