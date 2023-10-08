@@ -203,7 +203,7 @@ function ConvertTo-PodeOASchemaProperty {
     )
 
     # base schema type
-    $schema = @{
+    $schema = [ordered]@{
         type = $Property.type 
     }
 
@@ -342,7 +342,7 @@ function Get-PodeOpenApiDefinitionInternal {
 
     # set the openapi version
     $def = [ordered]@{
-        openapi = '3.0.2'
+        openapi = '3.0.3'
     }
 
     if ($PodeContext.Server.OpenAPI.info) {
@@ -441,21 +441,12 @@ function Get-PodeOpenApiDefinitionInternal {
                     $def.paths[$_route.OpenApi.Path] = @{}
                 } 
                 
-                $pm = @{ 
-                    responses = $_route.OpenApi.Responses 
-                    #servers     = $null
-                    security  = @($_route.OpenApi.Authentication)
+                $pm = [ordered]@{}
+                if ($_route.OpenApi.Deprecated) {
+                    $pm.deprecated = $_route.OpenApi.Deprecated
                 }
-
                 if ($_route.OpenApi.Tags  ) {
                     $pm.tags = $_route.OpenApi.Tags  
-                }
-                if ($_route.OpenApi.OperationId  ) {
-                    $pm.operationId = $_route.OpenApi.OperationId  
-                }
-
-                if ($_route.OpenApi.Parameters) {
-                    $pm.parameters = $_route.OpenApi.Parameters
                 }
                 if ($_route.OpenApi.Summary) {
                     $pm.summary = $_route.OpenApi.Summary
@@ -463,14 +454,21 @@ function Get-PodeOpenApiDefinitionInternal {
                 if ($_route.OpenApi.Description) {
                     $pm.description = $_route.OpenApi.Description
                 }
+                if ($_route.OpenApi.OperationId  ) {
+                    $pm.operationId = $_route.OpenApi.OperationId  
+                }
 
+                if ($_route.OpenApi.Parameters) {
+                    $pm.parameters = $_route.OpenApi.Parameters
+                } 
                 if ($_route.OpenApi.RequestBody) {
                     $pm.requestBody = $_route.OpenApi.RequestBody
+                } 
+                if ($_route.OpenApi.Authentication.Count -gt 0) {
+                    $pm.security = @($_route.OpenApi.Authentication)
                 }
-
-                if ($_route.OpenApi.Deprecated) {
-                    $pm.deprecated = $_route.OpenApi.Deprecated
-                }
+                $pm.responses = $_route.OpenApi.Responses 
+                #servers     = $null 
                 # add path's http method to defintition 
                 $def.paths[$_route.OpenApi.Path][$method] = $pm
                 # add global authentication for route
