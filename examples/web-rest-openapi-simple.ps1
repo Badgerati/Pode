@@ -8,7 +8,7 @@ Start-PodeServer {
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
     Enable-PodeOpenApiViewer -Type Swagger -DarkMode
     Enable-PodeOpenApiViewer -Type ReDoc
-
+    Enable-PodeOpenApiDocBookmarks  -Path '/docs' 
 
     Add-PodeRoute -Method Get -Path "/api/resources" -EndpointName 'user' -ScriptBlock {
         Set-PodeResponseStatus -Code 200
@@ -42,7 +42,7 @@ Start-PodeServer {
         Set-PodeOARequest -RequestBody (
             New-PodeOARequestBody -Required -ContentSchemas @{
                 'application/json' = (New-PodeOAObjectProperty -Properties @(
-                    (New-PodeOAStringProperty -Name 'Name' -MaxLength 5 -Pattern '[a-zA-Z]+'),
+                    (New-PodeOAStringProperty -Name 'Name'    -Pattern '[a-zA-Z]+'),
                     (New-PodeOAIntProperty -Name 'UserId')
                 ))
             }

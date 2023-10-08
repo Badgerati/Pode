@@ -355,7 +355,7 @@ Some useful links:
         Add-PodeRoute -PassThru -Method post -Path '/pet/:petId' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store' -Description 'Updates a pet in the store with form data' -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru |
-        Set-PodeOARequest -PassThru -Parameters @(( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  )
+        Set-PodeOARequest -PassThru -Parameters @(( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ),
                             (  New-PodeOAStringProperty -Name 'name' -Description 'Name of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query ) ,
                             (  New-PodeOAStringProperty -Name 'status' -Description 'Status of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query )    
         ) | 

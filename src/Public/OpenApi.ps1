@@ -93,38 +93,39 @@ function Enable-PodeOpenApi {
 
     )
 
-    # initialise openapi info
-    $PodeContext.Server.OpenAPI.Title = $Title
+    # initialise openapi info 
     $PodeContext.Server.OpenAPI.Path = $Path 
-    $meta = @{
-        Version        = $Version
-        Description    = $Description
+    $meta = @{ 
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes  
+    } 
+    $PodeContext.Server.OpenAPI.info = @{
+        title       = $Title
+        version     = $Version 
+        description = $Description      
+    } 
+    if ($ExtraInfo) {
+        $PodeContext.Server.OpenAPI.info += $ExtraInfo 
     }
 
     if ($ServerUrl) {
-        $meta.ServerUrl = $ServerUrl
-    } 
-
-    if ($ExtraInfo) {
-        $meta.ExtraInfo = $ExtraInfo
-    }
-
+        $PodeContext.Server.OpenAPI.servers = @(@{'url' = $ServerUrl })
+    }  
     if ($ExternalDoc) {
         if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
             throw "The ExternalDoc doesn't exist: $ExternalDoc"
-        }  
-        $meta.ExternalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
-    }
-    
+        }   
+        $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
+    }  
+
+
+
     # add the OpenAPI route
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock {
         param($meta)
 
         # generate the openapi definition
         $def = Get-PodeOpenApiDefinitionInternal `
-            -Title $PodeContext.Server.OpenAPI.Title `
             -Protocol $WebEvent.Endpoint.Protocol `
             -Address $WebEvent.Endpoint.Address `
             -EndpointName $WebEvent.Endpoint.Name `
@@ -141,38 +142,25 @@ Gets the OpenAPI definition.
 .DESCRIPTION
 Gets the OpenAPI definition for custom use in routes, or other functions.
 
-.PARAMETER Title
-The Title of the API. (Default: the title supplied in Enable-PodeOpenApi)
-
-.PARAMETER Version
-The Version of the API. (Default: the version supplied in Enable-PodeOpenApi)
-
-.PARAMETER Description
-A Description of the API. (Default: the description supplied into Enable-PodeOpenApi)
-
-.PARAMETER RouteFilter
-An optional route filter for routes that should be included in the definition. (Default: /*)
-
-.PARAMETER RestrictRoutes
-If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
+.PARAMETER Json
+Return the definition in JSON format
 
 .EXAMPLE
-$def = Get-PodeOpenApiDefinition -RouteFilter '/api/*'
+$defInJson = Get-PodeOpenApiDefinition -Json  
 #>
 function Get-PodeOpenApiDefinition {
     [CmdletBinding()]
     param(
         [Parameter()]
-        [string]
-        $Title 
-    )
-
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
-    if ([string]::IsNullOrWhiteSpace($Title)) {
-        throw 'No Title supplied for OpenAPI definition'
-    } 
-
-    return Get-PodeOpenApiDefinitionInternal -Title $Title 
+        [switch]
+        $Json
+    ) 
+    $oApi = Get-PodeOpenApiDefinitionInternal  
+    if ($Json) {
+        return ConvertTo-Json -InputObject $oApi -Depth 10
+    } else {
+        return $oApi
+    }
 }
 
 <#
@@ -312,11 +300,17 @@ function Add-PodeOAResponse {
     foreach ($r in @($Route)) {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             { $_ -in 'schema', 'schemadefault' } {
-                $r.OpenApi.Responses[$code] = @{
-                    description = $Description
-                    content     = $content
-                    headers     = $headers
+                $response = @{}
+                if ($description) {
+                    $response.description = $description 
                 }
+                if ($headers) {
+                    $response.headers = $headers
+                }
+                if ($content) {
+                    $response.content = $content 
+                }
+                $r.OpenApi.Responses[$code] = $response
             }
  
             { $_ -in 'reference', 'referencedefault' } {
@@ -453,21 +447,17 @@ function Add-PodeOAComponentResponse {
         $HeaderArray
     )
 
-    $content = $null
+    $r = @{ description = $Description }
     if ($null -ne $ContentSchemas) {
-        $content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray 
+        $r.content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray 
     }
 
-    $headers = $null
     if ($null -ne $HeaderSchemas) {
-        $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
-    }
+        $r.headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
+    }  
 
-    $PodeContext.Server.OpenAPI.components.responses[$Name] = @{
-        description = $Description
-        content     = $content
-        headers     = $headers
-    }
+    $PodeContext.Server.OpenAPI.components.responses[$Name] = $r
+
 }
 
 <#
@@ -1339,9 +1329,10 @@ function New-PodeOAStringProperty {
         $MaxItems
     )
 
-    $_format = $Format
     if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
         $_format = $CustomFormat
+    } elseif ($Format) {
+        $_format = $Format
     }
 
     $param = @{
@@ -1955,8 +1946,7 @@ function ConvertTo-PodeOAParameter {
             $Property = $PodeContext.Server.OpenAPI.components.schemas[$ContentSchemas[$type]]
             $prop = @{
                 in          = $In.ToLowerInvariant()
-                name        = $ContentSchemas[$type]
-                description = $Property.description 
+                name        = $ContentSchemas[$type] 
                 content     = @{
                     $type = @{
                         schema = @{
@@ -1965,6 +1955,9 @@ function ConvertTo-PodeOAParameter {
                     }
                 }
             }  
+            if ($Property.description ){
+                $prop.description = $Property.description
+            }
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
@@ -1983,22 +1976,29 @@ function ConvertTo-PodeOAParameter {
 
         # build the base parameter
         $prop = @{
-            in          = $In.ToLowerInvariant()
-            name        = $Property.name
-            description = $Property.description 
+            in   = $In.ToLowerInvariant()
+            name = $Property.name
         }
+        if ($Property.description ) {
+            $prop.description = $Property.description 
+        }
+        
         if ($Property.Array) {
             $prop.schema = @{
                 type  = 'array'
                 items = @{
-                    type   = $Property.type
-                    format = $Property.format
+                    type = $Property.type 
                 }
+            }
+            if ($Property.format) {
+                $prop.schema.items.format = $Property.format 
             }
         } else {
             $prop.schema = @{
-                type   = $Property.type
-                format = $Property.format
+                type = $Property.type 
+            }
+            if ($Property.format) {
+                $prop.schema.format = $Property.format 
             }
         }
         if ($null -ne $Property.meta) {
@@ -2074,7 +2074,7 @@ function ConvertTo-PodeOAParameter {
         } 
         # remove default for required parameter
         if (!$Property.required -and $PSCmdlet.ParameterSetName -ne 'ContentSchemas') {
-            if ( $prop.ContainsKey('schema')) {
+            if ( $prop.ContainsKey('schema') -and $Property.default) {
                 $prop.schema['default'] = $Property.default
             }
         }  
@@ -2145,8 +2145,12 @@ function Set-PodeOARouteInfo {
     )
 
     foreach ($r in @($Route)) {
-        $r.OpenApi.Summary = $Summary
-        $r.OpenApi.Description = $Description
+        if ($Summary) {
+            $r.OpenApi.Summary = $Summary
+        }
+        if ($Description) {
+            $r.OpenApi.Description = $Description
+        }
         $r.OpenApi.OperationId = $OperationId
         $r.OpenApi.Tags = $Tags
         $r.OpenApi.Swagger = $true 
@@ -2162,10 +2166,10 @@ function Set-PodeOARouteInfo {
 
 <#
 .SYNOPSIS
-Adds a route that enables a viewer to display OpenAPI docs, such as Swagger or ReDoc.
+Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReDoc, RapiDoc, StopLight, Explorer or RapiPdf.
 
 .DESCRIPTION
-Adds a route that enables a viewer to display OpenAPI docs, such as Swagger or ReDoc.
+Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReDoc, RapiDoc, StopLight, Explorer or RapiPdf.
 
 .PARAMETER Type
 The Type of OpenAPI viewer to use.
@@ -2180,7 +2184,7 @@ The URL where the OpenAPI definition can be retrieved. (Default is the OpenAPI p
 Like normal Routes, an array of Middleware that will be applied.
 
 .PARAMETER Title
-The title of the web page.
+The title of the web page. (Default is the OpenAPI title from Enable-PodeOpenApi)
 
 .PARAMETER DarkMode
 If supplied, the page will be rendered using a dark theme (this is not supported for all viewers).
@@ -2226,8 +2230,7 @@ function Enable-PodeOpenApiViewer {
     }
 
     # fail if no title
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
-    $Title = Protect-PodeValue -Value $Title -Default $Type
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.info.Title 
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No title supplied for $($Type) page"
     }
@@ -2262,6 +2265,31 @@ function Enable-PodeOpenApiViewer {
 
 
 
+<#
+.SYNOPSIS
+Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
+
+.DESCRIPTION
+Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
+
+.PARAMETER Path
+The route Path where the docs can be accessed. (Default: "/doc")
+
+.PARAMETER OpenApiUrl
+The URL where the OpenAPI definition can be retrieved. (Default is the OpenAPI path from Enable-PodeOpenApi)
+
+.PARAMETER Middleware
+Like normal Routes, an array of Middleware that will be applied.
+
+.PARAMETER Title
+The title of the web page. (Default is the OpenAPI title from Enable-PodeOpenApi) 
+
+.EXAMPLE
+Enable-PodeOpenApiViewer -Type Swagger -DarkMode
+
+.EXAMPLE
+Enable-PodeOpenApiViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
+#>
 function Enable-PodeOpenApiDocBookmarks {
     [CmdletBinding()]
     param( 
@@ -2279,10 +2307,7 @@ function Enable-PodeOpenApiDocBookmarks {
 
         [Parameter()]
         [string]
-        $Title,
-
-        [switch]
-        $DarkMode
+        $Title 
     )
 
     # error if there's no OpenAPI URL
@@ -2292,8 +2317,7 @@ function Enable-PodeOpenApiDocBookmarks {
     }
 
     # fail if no title
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Title
-    $Title = Protect-PodeValue -Value $Title -Default $Type
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.info.title 
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No title supplied for $($Type) page"
     }
@@ -2306,18 +2330,16 @@ function Enable-PodeOpenApiDocBookmarks {
 
     # setup meta info
     $meta = @{ 
-        Title             = $Title
-        OpenApi           = $OpenApiUrl
-        DarkMode          = $DarkMode  
+        Title   = $Title
+        OpenApi = $OpenApiUrl 
     }
     
     # add the viewer route
     Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
         param($meta)  
+
         $Data = @{ Title      = $meta.Title
-            OpenApi           = $meta.OpenApi
-            DarkMode          = (($meta.DarkMode)?'true':'false')
-            Theme             = (($meta.DarkMode)?'dark':'light')
+            OpenApi           = $meta.OpenApi 
             OpenApiDefinition = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 10
         }  
         foreach ($path in ($PodeContext.Server.Routes['GET'].Keys  )) {  

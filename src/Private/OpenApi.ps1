@@ -222,7 +222,9 @@ function ConvertTo-PodeOASchemaProperty {
 
     if ($null -ne $Property.meta) {
         foreach ($key in $Property.meta.Keys) {
-            $schema[$key] = $Property.meta[$key]
+            if ($Property.meta.$key) {
+                $schema[$key] = $Property.meta[$key]
+            }
         }
     }
 
@@ -319,10 +321,7 @@ function ConvertTo-PodeOASchemaObjectProperty {
 }
 
 function Get-PodeOpenApiDefinitionInternal {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Title,     
+    param(   
 
         [Parameter()]
         [string]
@@ -346,21 +345,15 @@ function Get-PodeOpenApiDefinitionInternal {
         openapi = '3.0.2'
     }
 
-    # metadata
-    $def['info'] = @{
-        title       = $Title
-        version     = $MetaInfo.Version 
-        description = $MetaInfo.Description      
-    } 
-    if ($MetaInfo.ExtraInfo) {
-        $def['info'] += $MetaInfo.ExtraInfo
+    if ($PodeContext.Server.OpenAPI.info) {
+        $def['info'] = $PodeContext.Server.OpenAPI.info
     }
-    if ($MetaInfo.ExternalDocs) {
-        $def['externalDocs'] = $MetaInfo.ExternalDocs
-    } 
-    # servers 
-    if ($MetaInfo.ServerUrl) {
-        $def['servers'] = @(@{'url' = $MetaInfo.ServerUrl })
+    if ($PodeContext.Server.OpenAPI.externalDocs) {
+        $def['externalDocs'] = $PodeContext.Server.OpenAPI.externalDocs
+    }
+
+    if ($PodeContext.Server.OpenAPI.servers) {
+        $def['servers'] = $PodeContext.Server.OpenAPI.servers
     } elseif (!$MetaInfo.RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1)) {
         #  $def['servers'] = $null
         $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints.Values) {
@@ -369,8 +362,7 @@ function Get-PodeOpenApiDefinitionInternal {
                     description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
                 }
             })
-    } 
-    
+    }    
     if ($PodeContext.Server.OpenAPI.tags) {
         $def['tags'] = $PodeContext.Server.OpenAPI.tags.Values
     }
@@ -410,8 +402,8 @@ function Get-PodeOpenApiDefinitionInternal {
     }
 
     # paths
-    $def['paths'] = [ordered]@{}
-    $filter = "^$($MetaInfo.RouteFilter)"
+    $def['paths'] = [ordered]@{} 
+    $filter = ($MetaInfo)?"^$($MetaInfo.RouteFilter)":''
 
     foreach ($method in $PodeContext.Server.Routes.Keys) {
         foreach ($path in ($PodeContext.Server.Routes[$method].Keys | Sort-Object)) { 
@@ -421,7 +413,7 @@ function Get-PodeOpenApiDefinitionInternal {
             }  
             # the current route
             $_routes = @($PodeContext.Server.Routes[$method][$path])
-            if ($MetaInfo.RestrictRoutes) {
+            if ( $MetaInfo -and $MetaInfo.RestrictRoutes) {
                 $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -EndpointName $EndpointName)
             }
 
@@ -435,7 +427,7 @@ function Get-PodeOpenApiDefinitionInternal {
             # check if the route has to be published 
             if ($_route.OpenApi.Swagger) {
                 #remove the ServerUrl part 
-                if ($MetaInfo.ServerUrl) {
+                if ($MetaInfo -and $MetaInfo.ServerUrl) {
                     $_route.OpenApi.Path = $_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')
                 }
                 # do nothing if it has no responses set
@@ -446,25 +438,34 @@ function Get-PodeOpenApiDefinitionInternal {
                 # add path to defintion
                 if ($null -eq $def.paths[$_route.OpenApi.Path]) {
                     $def.paths[$_route.OpenApi.Path] = @{}
+                } 
+                
+                $pm = @{
+                    tags        = @($_route.OpenApi.Tags) 
+                    operationId = $_route.OpenApi.OperationId  
+                    responses   = $_route.OpenApi.Responses 
+                    #servers     = $null
+                    security    = @($_route.OpenApi.Authentication)
+                }
+                if ($_route.OpenApi.Parameters) {
+                    $pm.parameters = $_route.OpenApi.Parameters
+                }
+                if ($_route.OpenApi.Summary) {
+                    $pm.summary = $_route.OpenApi.Summary
+                }
+                if ($_route.OpenApi.Description) {
+                    $pm.description = $_route.OpenApi.Description
                 }
 
-                # add path's http method to defintition
-                $def.paths[$_route.OpenApi.Path][$method] = @{
-                    tags        = @($_route.OpenApi.Tags)
-                    summary     = $_route.OpenApi.Summary
-                    description = $_route.OpenApi.Description
-                    operationId = $_route.OpenApi.OperationId 
-                    requestBody = $_route.OpenApi.RequestBody
-                    responses   = $_route.OpenApi.Responses
-                    parameters  = $_route.OpenApi.Parameters 
-                    servers     = $null
-                    security    = @($_route.OpenApi.Authentication)
+                if ($_route.OpenApi.RequestBody) {
+                    $pm.requestBody = $_route.OpenApi.RequestBody
                 }
 
                 if ($_route.OpenApi.Deprecated) {
-                    $def.paths[$_route.OpenApi.Path][$method]['deprecated'] = $_route.OpenApi.Deprecated
+                    $pm.deprecated = $_route.OpenApi.Deprecated
                 }
-
+                # add path's http method to defintition 
+                $def.paths[$_route.OpenApi.Path][$method] = $pm
                 # add global authentication for route
                 if (($null -ne $def['security']) -and ($def['security'].Length -gt 0)) {
                     foreach ($sec in $PodeContext.Server.OpenAPI.Security) {

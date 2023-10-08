@@ -67,7 +67,7 @@
         </li>
     </ul>
     <h3>OpenAPI Definition <button id="copyButton" class="copy-button" onclick="copyToClipboard()">Copy</button></h3>
-    <pre><code class="json">$($data.OpenApiDefinition)</code></pre>
+    <pre><code id="jsonCode" class="json">$($data.OpenApiDefinition)</code></pre>
     <footer style='text-align: center;
         width: 100%;
         font-size: 0.9em;
