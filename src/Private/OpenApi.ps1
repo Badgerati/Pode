@@ -274,6 +274,7 @@ function Get-PodeOpenApiDefinitionInternal
 
         foreach ($authName in $PodeContext.Server.Authentications.Methods.Keys) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
+            #TODO: SUPPORT MUTLI-AUTH HERE, IF NO SCHEME SKIP
             $_authName = ($authName -replace '\s+', '')
 
             $_authObj = @{}

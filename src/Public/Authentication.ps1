@@ -898,6 +898,11 @@ function Merge-PodeAuth
         $SuccessUseOrigin
     )
 
+    #TODO: NEW SCRIPTBLOCK TO MERGE ALL USERS INTO ONE OBJECT
+    # WAY SIMPLER!!
+    # ScriptBlock should get @{users} hashtable, and @(authNames) array for the users/auths that passed
+    # This would remove the ".Multiple" nonsense property in WE.Auth.User
+
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         throw "Authentication method already defined: $($Name)"
@@ -1337,6 +1342,139 @@ function Add-PodeAuthWindowsAd
             UseOrigin = $SuccessUseOrigin
         }
     }
+}
+
+<#
+.SYNOPSIS
+Adds the inbuilt Session Authentication method for verifying an authenticated session is present on Requests.
+
+.DESCRIPTION
+Adds the inbuilt Session Authentication method for verifying an authenticated session is present on Requests.
+
+.PARAMETER Name
+A unique Name for the Authentication method.
+
+.PARAMETER FailureUrl
+The URL to redirect to when authentication fails.
+
+.PARAMETER FailureMessage
+An override Message to throw when authentication fails.
+
+.PARAMETER SuccessUrl
+The URL to redirect to when authentication succeeds when logging in.
+
+.PARAMETER ScriptBlock
+Optional ScriptBlock that is passed the found user object for further validation.
+
+.PARAMETER Middleware
+An array of ScriptBlocks for optional Middleware to run before the Scheme's scriptblock.
+
+.PARAMETER SuccessUseOrigin
+If supplied, successful authentication from a login page will redirect back to the originating page instead of the FailureUrl.
+
+.EXAMPLE
+Add-PodeAuthSession -Name 'SessionAuth' -FailureUrl '/login'
+#>
+function Add-PodeAuthSession
+{
+    [CmdletBinding(DefaultParameterSetName='Groups')]
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $FailureUrl,
+
+        [Parameter()]
+        [string]
+        $FailureMessage,
+
+        [Parameter()]
+        [string]
+        $SuccessUrl,
+
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [switch]
+        $SuccessUseOrigin
+    )
+
+    # if sessions haven't been setup, error
+    if (!(Test-PodeSessionsConfigured)) {
+        throw 'Sessions have not been configured'
+    }
+
+    # ensure the name doesn't already exist
+    if (Test-PodeAuthExists -Name $Name) {
+        throw "Authentication method already defined: $($Name)"
+    }
+
+    # if we have a scriptblock, deal with using vars
+    if ($null -ne $ScriptBlock) {
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+
+    # create the auth scheme for getting the session
+    $scheme = New-PodeAuthScheme -Custom -Middleware $Middleware -ScriptBlock {
+        param($options)
+
+        # 401 if sessions not used
+        if (!(Test-PodeSessionsInUse)) {
+            Revoke-PodeSession
+            return @{
+                Message = "Sessions are not being used"
+                Code = 401
+            }
+        }
+
+        # 401 if no authenticated user
+        if (!(Test-PodeAuthUser)) {
+            Revoke-PodeSession
+            return @{
+                Message = "Session not authenticated"
+                Code = 401
+            }
+        }
+
+        # return user
+        return @($WebEvent.Session.Data.Auth)
+    }
+
+    # add a custom auth method to return user back
+    $method = {
+        param($user, $options)
+        $result = @{ User = $user }
+
+        # call additional scriptblock if supplied
+        if ($null -ne $options.ScriptBlock.Script) {
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
+        }
+
+        # return user back
+        return $result
+    }
+
+    $scheme | Add-PodeAuth `
+        -Name $Name `
+        -ScriptBlock $method `
+        -FailureUrl $FailureUrl `
+        -FailureMessage $FailureMessage `
+        -SuccessUrl $SuccessUrl `
+        -SuccessUseOrigin:$SuccessUseOrigin `
+        -ArgumentList @{
+            ScriptBlock = @{
+                Script = $ScriptBlock
+                UsingVariables = $usingVars
+            }
+        }
 }
 
 <#
@@ -2455,6 +2593,10 @@ function Add-PodeAuthAccess
         [string]
         $Match = 'One'
     )
+
+    #TODO: MOVE ALL THESE INTO AN ACCESS.PS1 FILE
+    # RENAME TO Add-PodeAccess
+    # THEY SHOULD BE SEPARATE MIDDLEWARE, NOT TIED TO AUTHENTICATION
 
     # check name unique
     if (Test-PodeAuthAccessExists -Name $Name) {

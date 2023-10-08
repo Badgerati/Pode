@@ -235,6 +235,7 @@
         'Test-PodeAuthExists',
         'Merge-PodeAuthAccess',
         'Get-PodeAuthUser',
+        'Add-PodeAuthSession',
 
         # logging
         'New-PodeLoggingMethod',

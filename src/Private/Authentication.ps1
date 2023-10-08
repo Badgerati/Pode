@@ -1228,7 +1228,7 @@ function Test-PodeAuthValidation
                     $result.Headers = @{}
                 }
 
-                if (!$result.Headers.ContainsKey('WWW-Authenticate')) {
+                if (![string]::IsNullOrWhiteSpace($auth.Scheme.Name) -and !$result.Headers.ContainsKey('WWW-Authenticate')) {
                     $authHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Scheme.Name -Realm $auth.Scheme.Realm -Challenge $result.Challenge
                     $result.Headers['WWW-Authenticate'] = $authHeader
                 }
@@ -1423,6 +1423,7 @@ function Test-PodeAuthInternal
         # existing session auth'd
         if (Test-PodeAuthUser) {
             $WebEvent.Auth = $WebEvent.Session.Data.Auth
+            #TODO: ACCESS CHECK HERE
             return (Set-PodeAuthStatus `
                 -Name $Name `
                 -LoginRoute:($Login) `
