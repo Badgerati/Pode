@@ -17,6 +17,9 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
+    # request logging
+    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
+
     # setup access
     Add-PodeAuthAccess -Type Role -Name 'Rbac'
     Add-PodeAuthAccess -Type Group -Name 'Gbac'
@@ -51,6 +54,7 @@ Start-PodeServer -Threads 2 {
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
                 User = @{
+                    Username = 'morty'
                     ID ='M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'

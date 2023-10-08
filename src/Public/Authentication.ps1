@@ -2489,7 +2489,7 @@ function Add-PodeAuthAccess
     }
 
     # default path
-    if ([string]::IsNullOrEmpty($Path)) {
+    if ([string]::IsNullOrWhiteSpace($Path)) {
         if ($Type -ieq 'user') {
             $Path = 'Username'
         }

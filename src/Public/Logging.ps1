@@ -231,6 +231,9 @@ Enables Request Logging using a supplied output method.
 .PARAMETER Method
 The Method to use for output the log entry (From New-PodeLoggingMethod).
 
+.PARAMETER UsernameProperty
+An optional property path within the $WebEvent.Auth.User object for the user's Username. (Default: Username).
+
 .PARAMETER Raw
 If supplied, the log item returned will be the raw Request item as a hashtable and not a string (for Custom methods).
 
@@ -244,6 +247,10 @@ function Enable-PodeRequestLogging
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [hashtable]
         $Method,
+
+        [Parameter()]
+        [string]
+        $UsernameProperty,
 
         [switch]
         $Raw
@@ -263,10 +270,18 @@ function Enable-PodeRequestLogging
         throw "The supplied output Method for Request Logging requires a valid ScriptBlock"
     }
 
+    # username property
+    if ([string]::IsNullOrWhiteSpace($UsernameProperty)) {
+        $UsernameProperty = 'Username'
+    }
+
     # add the request logger
     $PodeContext.Server.Logging.Types[$name] = @{
         Method = $Method
         ScriptBlock = (Get-PodeLoggingInbuiltType -Type Requests)
+        Properties = @{
+            Username = $UsernameProperty
+        }
         Arguments = @{
             Raw = $Raw
         }
