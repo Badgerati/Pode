@@ -8,43 +8,43 @@ Start-PodeServer {
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
     Enable-PodeOpenApiViewer -Type Swagger -DarkMode
     Enable-PodeOpenApiViewer -Type ReDoc
-    Enable-PodeOpenApiDocBookmarks  -Path '/docs' 
+    Enable-PodeOpenApiViewer -Type Bookmarks -Path '/docs' 
 
-    Add-PodeRoute -Method Get -Path "/api/resources" -EndpointName 'user' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/api/resources' -EndpointName 'user' -ScriptBlock {
         Set-PodeResponseStatus -Code 200
     }
 
 
-    Add-PodeRoute -Method Post -Path "/api/resources" -ScriptBlock {
+    Add-PodeRoute -Method Post -Path '/api/resources' -ScriptBlock {
         Set-PodeResponseStatus -Code 200
     }
 
 
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Parameters['userId'] }
-    } -PassThru |
-        Set-PodeOARequest -Parameters @(
-            (New-PodeOAIntProperty -Name 'userId' -Enum @(100,300,999) -Required | ConvertTo-PodeOAParameter -In Path)
-        )
+    } -PassThru | Set-PodeOARouteInfo -PassThru |
+    Set-PodeOARequest -Parameters @(
+            (New-PodeOAIntProperty -Name 'userId' -Enum @(100, 300, 999) -Required | ConvertTo-PodeOAParameter -In Path)
+    )
 
 
     Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Query['userId'] }
-    } -PassThru |
-        Set-PodeOARequest -Parameters @(
+    } -PassThru | Set-PodeOARouteInfo -PassThru |
+    Set-PodeOARequest -Parameters @(
             (New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In Query)
-        )
+    )
 
 
     Add-PodeRoute -Method Post -Path '/api/users' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Name = $WebEvent.Data.Name; UserId = $WebEvent.Data.UserId }
-    } -PassThru |
-        Set-PodeOARequest -RequestBody (
-            New-PodeOARequestBody -Required -ContentSchemas @{
-                'application/json' = (New-PodeOAObjectProperty -Properties @(
-                    (New-PodeOAStringProperty -Name 'Name'    -Pattern '[a-zA-Z]+'),
+    } -PassThru | Set-PodeOARouteInfo -PassThru |
+    Set-PodeOARequest -RequestBody (
+        New-PodeOARequestBody -Required -ContentSchemas @{
+            'application/json' = (New-PodeOAObjectProperty -Properties @(
+                    (New-PodeOAStringProperty -Name 'Name' -MaxLength 5 -Pattern '[a-zA-Z]+'),
                     (New-PodeOAIntProperty -Name 'UserId')
                 ))
-            }
-        )
+        }
+    )
 }

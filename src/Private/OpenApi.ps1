@@ -341,7 +341,7 @@ function Get-PodeOpenApiDefinitionInternal {
     ) 
 
     # set the openapi version
-    $def = @{
+    $def = [ordered]@{
         openapi = '3.0.2'
     }
 
@@ -365,10 +365,12 @@ function Get-PodeOpenApiDefinitionInternal {
     }    
     if ($PodeContext.Server.OpenAPI.tags) {
         $def['tags'] = $PodeContext.Server.OpenAPI.tags.Values
-    }
+    } 
+
+    # paths
+    $def['paths'] = [ordered]@{} 
     # components
     $def['components'] = $PodeContext.Server.OpenAPI.components
-
     # auth/security components
     if ($PodeContext.Server.Authentications.Methods.Count -gt 0) {
         if ($null -eq $def.components.securitySchemes) {
@@ -401,8 +403,7 @@ function Get-PodeOpenApiDefinitionInternal {
         }
     }
 
-    # paths
-    $def['paths'] = [ordered]@{} 
+
     $filter = ($MetaInfo)?"^$($MetaInfo.RouteFilter)":''
 
     foreach ($method in $PodeContext.Server.Routes.Keys) {
@@ -440,13 +441,19 @@ function Get-PodeOpenApiDefinitionInternal {
                     $def.paths[$_route.OpenApi.Path] = @{}
                 } 
                 
-                $pm = @{
-                    tags        = @($_route.OpenApi.Tags) 
-                    operationId = $_route.OpenApi.OperationId  
-                    responses   = $_route.OpenApi.Responses 
+                $pm = @{ 
+                    responses = $_route.OpenApi.Responses 
                     #servers     = $null
-                    security    = @($_route.OpenApi.Authentication)
+                    security  = @($_route.OpenApi.Authentication)
                 }
+
+                if ($_route.OpenApi.Tags  ) {
+                    $pm.tags = $_route.OpenApi.Tags  
+                }
+                if ($_route.OpenApi.OperationId  ) {
+                    $pm.operationId = $_route.OpenApi.OperationId  
+                }
+
                 if ($_route.OpenApi.Parameters) {
                     $pm.parameters = $_route.OpenApi.Parameters
                 }
@@ -507,7 +514,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
             }
         }
-    }
+    } 
 
     # remove all null values (swagger hates them)
     $def | Remove-PodeNullKeysFromHashtable

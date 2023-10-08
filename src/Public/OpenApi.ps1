@@ -100,10 +100,13 @@ function Enable-PodeOpenApi {
         RestrictRoutes = $RestrictRoutes  
     } 
     $PodeContext.Server.OpenAPI.info = @{
-        title       = $Title
-        version     = $Version 
-        description = $Description      
+        title   = $Title
+        version = $Version     
     } 
+    if ($Description ) {
+        $PodeContext.Server.OpenAPI.info.description = $Description   
+    }
+
     if ($ExtraInfo) {
         $PodeContext.Server.OpenAPI.info += $ExtraInfo 
     }
@@ -1238,6 +1241,12 @@ If supplied, the string will be included in a response but not in a request
 .PARAMETER WriteOnly
 If supplied, the string will be included in a request but not in a response 
 
+.PARAMETER MinLength
+If supplied, the string will be restricted to minimal length of characters. 
+
+.PARAMETER  MaxLength
+If supplied, the string will be restricted to maximal length of characters. 
+
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
 
@@ -1311,7 +1320,15 @@ function New-PodeOAStringProperty {
 
         [switch]
         $WriteOnly,
-        
+
+        [Parameter()]
+        [int]
+        $MinLength,
+
+        [Parameter()]
+        [int]
+        $MaxLength,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
         $Array,
@@ -1372,6 +1389,10 @@ function New-PodeOAStringProperty {
     if ($Enum) { $param.enum = $Enum } 
 
     if ($Pattern) { $param.meta['pattern'] = $Pattern } 
+
+    if ($MinLength) { $param.meta['minLength'] = $MinLength } 
+    
+    if ($MaxLength) { $param.meta['maxLength'] = $MaxLength }
 
     return $param
 }
@@ -1945,9 +1966,9 @@ function ConvertTo-PodeOAParameter {
             }
             $Property = $PodeContext.Server.OpenAPI.components.schemas[$ContentSchemas[$type]]
             $prop = @{
-                in          = $In.ToLowerInvariant()
-                name        = $ContentSchemas[$type] 
-                content     = @{
+                in      = $In.ToLowerInvariant()
+                name    = $ContentSchemas[$type] 
+                content = @{
                     $type = @{
                         schema = @{
                             '$ref' = "#/components/schemas/$($ContentSchemas[$type])"
@@ -1955,7 +1976,7 @@ function ConvertTo-PodeOAParameter {
                     }
                 }
             }  
-            if ($Property.description ){
+            if ($Property.description ) {
                 $prop.description = $Property.description
             }
         }
@@ -2151,8 +2172,12 @@ function Set-PodeOARouteInfo {
         if ($Description) {
             $r.OpenApi.Description = $Description
         }
-        $r.OpenApi.OperationId = $OperationId
-        $r.OpenApi.Tags = $Tags
+        if ($OperationId) {
+            $r.OpenApi.OperationId = $OperationId 
+        }
+        if ($Tags) {
+            $r.OpenApi.Tags = $Tags
+        }
         $r.OpenApi.Swagger = $true 
         if ($Deprecated.IsPresent) {
             $r.OpenApi.Deprecated = $Deprecated.ToBool()
@@ -2166,10 +2191,10 @@ function Set-PodeOARouteInfo {
 
 <#
 .SYNOPSIS
-Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReDoc, RapiDoc, StopLight, Explorer or RapiPdf.
+Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReDoc, RapiDoc, StopLight, Explorer, RapiPdf or Bookmarks.
 
 .DESCRIPTION
-Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReDoc, RapiDoc, StopLight, Explorer or RapiPdf.
+Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReDoc, RapiDoc, StopLight, Explorer, RapiPdf  or Bookmarks.
 
 .PARAMETER Type
 The Type of OpenAPI viewer to use.
@@ -2194,12 +2219,17 @@ Enable-PodeOpenApiViewer -Type Swagger -DarkMode
 
 .EXAMPLE
 Enable-PodeOpenApiViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
+
+.EXAMPLE
+Enable-PodeOpenApiViewer -Type Bookmarks  
+
+Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
 #>
 function Enable-PodeOpenApiViewer {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Swagger', 'ReDoc', 'RapiDoc', 'StopLight', 'Explorer', 'RapiPdf')]
+        [ValidateSet('Swagger', 'ReDoc', 'RapiDoc', 'StopLight', 'Explorer', 'RapiPdf', 'Bookmarks')]
         [string]
         $Type,
 
@@ -2240,127 +2270,62 @@ function Enable-PodeOpenApiViewer {
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No route path supplied for $($Type) page"
     }
+ 
+    if ($Type -eq 'Bookmarks') { 
+        # add the viewer route
+        Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
+            param($meta)  
 
-    # setup meta info
-    $meta = @{
-        Type       = $Type.ToLowerInvariant()
-        Title      = $Title
-        OpenApi    = $OpenApiUrl
-        DarkMode   = $DarkMode
-        OpenApiDoc = $true
-    }
+            $Data = @{ Title      = $meta.Title
+                OpenApi           = $meta.OpenApi 
+                OpenApiDefinition = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 90
+                Swagger           = 'false'
+                ReDoc             = 'false'
+                RapiDoc           = 'false'
+                StopLight         = 'false'
+                Explorer          = 'false'
+                RapiPdf           = 'false'
+            }  
+            foreach ($path in ($PodeContext.Server.Routes['GET'].Keys  )) {  
+                # the current route 
+                $_routes = @($PodeContext.Server.Routes['GET'][$path])
+                # get the first route for base definition
+                $_route = $_routes[0] 
+                # check if the route has to be published   
+                if ($_route.Arguments -and $_route.Arguments.OpenApiDoc   ) { 
+                    $Data[$_route.Arguments.Type] = 'true'
+                    $Data["$($_route.Arguments.Type)_path"] = $_route.Path 
+                }
+            } 
+            $podeRoot = Get-PodeModuleMiscPath
+            Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
+        } 
+    } else { 
+        # setup meta info
+        $meta = @{
+            Type       = $Type.ToLowerInvariant()
+            Title      = $Title
+            OpenApi    = $OpenApiUrl
+            DarkMode   = $DarkMode
+            OpenApiDoc = $true
+        }
     
-    # add the viewer route
-    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
-        param($meta)
-        $podeRoot = Get-PodeModuleMiscPath
-        Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
-            Title    = $meta.Title
-            OpenApi  = $meta.OpenApi
-            DarkMode = (($meta.DarkMode)?'true':'false')
-            Theme    = (($meta.DarkMode)?'dark':'light')
+        # add the viewer route
+        Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
+            param($meta)
+            $podeRoot = Get-PodeModuleMiscPath
+            Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
+                Title    = $meta.Title
+                OpenApi  = $meta.OpenApi
+                DarkMode = $meta.DarkMode 
+                Theme    = (($meta.DarkMode)?'dark':'light')
+            }
         }
     }
+
 }
 
-
-
-<#
-.SYNOPSIS
-Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
-
-.DESCRIPTION
-Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
-
-.PARAMETER Path
-The route Path where the docs can be accessed. (Default: "/doc")
-
-.PARAMETER OpenApiUrl
-The URL where the OpenAPI definition can be retrieved. (Default is the OpenAPI path from Enable-PodeOpenApi)
-
-.PARAMETER Middleware
-Like normal Routes, an array of Middleware that will be applied.
-
-.PARAMETER Title
-The title of the web page. (Default is the OpenAPI title from Enable-PodeOpenApi) 
-
-.EXAMPLE
-Enable-PodeOpenApiViewer -Type Swagger -DarkMode
-
-.EXAMPLE
-Enable-PodeOpenApiViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
-#>
-function Enable-PodeOpenApiDocBookmarks {
-    [CmdletBinding()]
-    param( 
-        [Parameter()]
-        [string]
-        $Path,
-
-        [Parameter()]
-        [string]
-        $OpenApiUrl,
-
-        [Parameter()]
-        [object[]]
-        $Middleware,
-
-        [Parameter()]
-        [string]
-        $Title 
-    )
-
-    # error if there's no OpenAPI URL
-    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI.Path
-    if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
-        throw "No OpenAPI URL supplied for $($Type)"
-    }
-
-    # fail if no title
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.info.title 
-    if ([string]::IsNullOrWhiteSpace($Title)) {
-        throw "No title supplied for $($Type) page"
-    }
-
-    # set a default path
-    $Path = Protect-PodeValue -Value $Path -Default '/doc'
-    if ([string]::IsNullOrWhiteSpace($Title)) {
-        throw "No route path supplied for $($Type) page"
-    }
-
-    # setup meta info
-    $meta = @{ 
-        Title   = $Title
-        OpenApi = $OpenApiUrl 
-    }
-    
-    # add the viewer route
-    Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
-        param($meta)  
-
-        $Data = @{ Title      = $meta.Title
-            OpenApi           = $meta.OpenApi 
-            OpenApiDefinition = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 10
-        }  
-        foreach ($path in ($PodeContext.Server.Routes['GET'].Keys  )) {  
-            # the current route 
-            $_routes = @($PodeContext.Server.Routes['GET'][$path])
-            # get the first route for base definition
-            $_route = $_routes[0] 
-            # check if the route has to be published  
-            if ($_route.Arguments -and $_route.Arguments.OpenApiDoc   ) {
-                
-                $Data[$_route.Arguments.Type] = 'true'
-                $Data["$($_route.Arguments.Type)_path"] = $_route.Path 
-            }
-        } 
-        $podeRoot = Get-PodeModuleMiscPath
-        Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
-    }
-}
-
-
-
+ 
 <#
 .SYNOPSIS
 Adds an external docs reference. 
@@ -2381,7 +2346,7 @@ A Description of the external documentation.
 If supplied, the schema reference will be treated as an array.
 
 .EXAMPLE
-Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http: / / swagger.io'
 #>
 function Add-PodeOAExternalDoc { 
     param(

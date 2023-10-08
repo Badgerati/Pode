@@ -49,7 +49,7 @@ Some useful links:
     Enable-PodeOpenApiViewer -Type Explorer  -Path '/docs/explorer' -DarkMode
     Enable-PodeOpenApiViewer -Type RapiPdf  -Path '/docs/rapipdf' -DarkMode
 
-    Enable-PodeOpenApiDocBookmarks  -Path '/docs' 
+    Enable-PodeOpenApiViewer -Type Bookmarks -Path '/docs' 
     
     
     
