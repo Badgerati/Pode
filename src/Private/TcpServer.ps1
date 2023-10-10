@@ -27,6 +27,7 @@ function Start-PodeTcpServer
             Pool = $_.Runspace.PoolName
             Acknowledge = $_.Tcp.Acknowledge
             CRLFMessageEnd = $_.Tcp.CRLFMessageEnd
+            SslProtocols = $_.Ssl.Protocols
         }
 
         # add endpoint to list
@@ -44,7 +45,7 @@ function Start-PodeTcpServer
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = [PodeSocket]::new($_.Address, $_.Port, $PodeContext.Server.Sockets.Ssl.Protocols, [PodeProtocolType]::Tcp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
+            $socket = [PodeSocket]::new($_.Address, $_.Port, $_.SslProtocols, [PodeProtocolType]::Tcp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $socket.AcknowledgeMessage = $_.Acknowledge
             $socket.CRLFMessageEnd = $_.CRLFMessageEnd

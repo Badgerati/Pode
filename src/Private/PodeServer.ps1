@@ -44,6 +44,7 @@ function Start-PodeWebServer
             Protocol = $_.Protocol
             Type = $_.Type
             Pool = $_.Runspace.PoolName
+            SslProtocols = $_.Ssl.Protocols
         }
 
         # add endpoint to list
@@ -72,7 +73,7 @@ function Start-PodeWebServer
     {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Address `$_.Address -Port `$_.Port -SslProtocols `$PodeContext.Server.Sockets.Ssl.Protocols -Type `$endpointsMap[`$_.Key].Type -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate")))
+            $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Address `$_.Address -Port `$_.Port -SslProtocols `$_.SslProtocols -Type `$endpointsMap[`$_.Key].Type -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate")))
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
 
             if (!$_.IsIPAddress) {

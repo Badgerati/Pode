@@ -117,6 +117,7 @@
         'Test-PodeIsHosted',
         'New-PodeCron',
         'ConvertTo-PodeYaml',
+        'Test-PodeInRunspace',
 
         # routes
         'Add-PodeRoute',
@@ -219,6 +220,7 @@
         'Add-PodeAuthUserFile',
         'ConvertTo-PodeJwt',
         'ConvertFrom-PodeJwt',
+        'Test-PodeJwt'
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',
@@ -229,6 +231,11 @@
         'Test-PodeAuthAccess',
         'Test-PodeAuthAccessUser',
         'Test-PodeAuthAccessRoute',
+        'Merge-PodeAuth',
+        'Test-PodeAuth',
+        'Test-PodeAuthExists',
+        'Merge-PodeAuthAccess',
+        'Get-PodeAuthUser',
 
         # logging
         'New-PodeLoggingMethod',

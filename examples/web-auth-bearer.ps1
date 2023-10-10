@@ -4,6 +4,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+# Invoke-RestMethod -Method Get -Uri 'http://localhost:8085/users' -Headers @{ Authorization = 'Bearer test-token' }
+
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 

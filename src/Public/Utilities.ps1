@@ -660,6 +660,24 @@ function Test-PodeIsMacOS {
 
 <#
 .SYNOPSIS
+Tests if the scope you're in is currently within a Pode runspace.
+
+.DESCRIPTION
+Tests if the scope you're in is currently within a Pode runspace.
+
+.EXAMPLE
+If (Test-PodeInRunspace) { ... }
+#>
+function Test-PodeInRunspace
+{
+    [CmdletBinding()]
+    param()
+
+    return ([bool]$PODE_SCOPE_RUNSPACE)
+}
+
+<#
+.SYNOPSIS
 Outputs an object to the main Host.
 
 .DESCRIPTION

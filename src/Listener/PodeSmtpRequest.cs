@@ -320,14 +320,34 @@ namespace Pode
                 if (match.Success)
                 {
                     previousHeader = match.Groups["name"].Value;
-                    headers.Add(match.Groups["name"].Value, match.Groups["value"].Value);
+                    if (headers.ContainsKey(previousHeader))
+                    {
+                        if (!(headers[previousHeader] is List<object>))
+                        {
+                            headers[previousHeader] = new List<object>() { headers[previousHeader] };
+                        }
+
+                        ((List<object>)headers[previousHeader]).Add(match.Groups["value"].Value);
+                    }
+                    else
+                    {
+                        headers.Add(previousHeader, match.Groups["value"].Value);
+                    }
                 }
                 else
                 {
                     match = Regex.Match(line, "^(?<name>.*?)\\:\\s+");
                     if (!match.Success)
                     {
-                        headers[previousHeader] += line;
+                        if (headers[previousHeader] is List<object>)
+                        {
+                            var values = (List<object>)headers[previousHeader];
+                            values[values.Count - 1] += line;
+                        }
+                        else
+                        {
+                            headers[previousHeader] += line;
+                        }
                     }
                 }
 

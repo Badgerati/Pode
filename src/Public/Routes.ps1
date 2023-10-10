@@ -296,10 +296,8 @@ function Add-PodeRoute
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
     # if an auth name was supplied, setup the auth as the first middleware
-    if (![string]::IsNullOrWhiteSpace($Authentication))
-    {
-        if (!(Test-PodeAuth -Name $Authentication))
-        {
+    if (![string]::IsNullOrWhiteSpace($Authentication)) {
+        if (!(Test-PodeAuthExists -Name $Authentication)) {
             throw "Authentication method does not exist: $($Authentication)"
         }
 
@@ -675,10 +673,8 @@ function Add-PodeStaticRoute
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
     # if an auth name was supplied, setup the auth as the first middleware
-    if (![string]::IsNullOrWhiteSpace($Authentication))
-    {
-        if (!(Test-PodeAuth -Name $Authentication))
-        {
+    if (![string]::IsNullOrWhiteSpace($Authentication)) {
+        if (!(Test-PodeAuthExists -Name $Authentication)) { 
             throw "Authentication method does not exist: $($Authentication)"
         }
 

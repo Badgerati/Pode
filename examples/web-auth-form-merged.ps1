@@ -30,7 +30,7 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form auth (<form> in HTML)
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login1' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -47,22 +47,35 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
+    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login2' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+        param($username, $password)
+
+        # here you'd check a real user storage, this is just for example
+        if ($username -eq 'morty' -and $password -eq 'bob') {
+            return @{
+                User = @{
+                    ID ='M0R7Y302'
+                    Name = 'Morty'
+                    Type = 'Human'
+                }
+            }
+        }
+
+        return @{ Message = 'Invalid details supplied' }
+    }
+
+    Merge-PodeAuth -Name 'Login' -Authentication Login1, Login2
+
 
     # home page:
     # redirects to login page if not authenticated
-    Add-PodeRoute -Method Get -Path '/' -Authentication Login -AllowAnon -ScriptBlock {
-        if (Test-PodeAuthUser) {
-            $session:Views++
+    Add-PodeRoute -Method Get -Path '/' -Authentication Login -ScriptBlock {
+        $session:Views++
 
-            Write-PodeViewResponse -Path 'auth-home' -Data @{
-                Username = $WebEvent.Auth.User.Name
-                Views = $session:Views
-            }
-        }
-        else {
-            Write-PodeViewResponse -Path 'auth-home-anon' -Data @{
-                Views = $session:Views
-            }
+        Write-PodeViewResponse -Path 'auth-home' -Data @{
+            Username = $WebEvent.Auth.User.Name
+            Views = $session:Views
+            Expiry = Get-PodeSessionExpiry
         }
     }
 

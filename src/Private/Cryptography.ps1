@@ -253,32 +253,6 @@ function Invoke-PodeValueUnsign
     return $raw
 }
 
-function Test-PodeJwt
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [pscustomobject]
-        $Payload
-    )
-
-    $now = [datetime]::UtcNow
-    $unixStart = [datetime]::new(1970, 1, 1, 0, 0, [DateTimeKind]::Utc)
-
-    # validate expiry
-    if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
-        if ($now -gt $unixStart.AddSeconds($Payload.exp)) {
-            throw "The JWT has expired"
-        }
-    }
-
-    # validate not-before
-    if (![string]::IsNullOrWhiteSpace($Payload.nbf)) {
-        if ($now -lt $unixStart.AddSeconds($Payload.nbf)) {
-            throw "The JWT is not yet valid for use"
-        }
-    }
-}
-
 function New-PodeJwtSignature
 {
     param(

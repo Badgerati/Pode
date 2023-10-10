@@ -253,7 +253,7 @@ function Test-PodeRequestLoggingEnabled
 
 function Write-PodeRequestLog
 {
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         $Request,
 
@@ -291,8 +291,38 @@ function Write-PodeRequestLog
         }
     }
 
+    # set size if >0
     if ($Response.ContentLength64 -gt 0) {
         $item.Response.Size = $Response.ContentLength64
+    }
+
+    # set username - dot spaces
+    if (Test-PodeAuthUser -IgnoreSession) {
+        $userProps = (Get-PodeLogger -Name $name).Properties.Username.Split('.')
+        $user = $null
+
+        if (!$WebEvent.Auth.Multiple) {
+            $user = $WebEvent.Auth.User
+            foreach ($atom in $userProps) {
+                $user = $user.($atom)
+            }
+        }
+        else {
+            foreach ($u in $WebEvent.Auth.User.Values) {
+                $user = $u
+                foreach ($atom in $userProps) {
+                    $user = $user.($atom)
+                }
+
+                if (![string]::IsNullOrWhiteSpace($user)) {
+                    break
+                }
+            }
+        }
+
+        if (![string]::IsNullOrWhiteSpace($user)) {
+            $item.User = $user -ireplace '\s+', '.'
+        }
     }
 
     # add the item to be processed

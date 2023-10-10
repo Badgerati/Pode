@@ -4,13 +4,13 @@ Most things in Pode run in isolated runspaces: routes, middleware, schedules - t
 
 You also have the option of saving the current state to a file, and then restoring the state back on server start. This way you won't lose state between server restarts.
 
-You can also use the State in combination with [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject) to ensure thread safety - if needed.
+You can also use the State in combination with [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject) to ensure thread safety - if needed.
 
 !!! tip
-    It's wise to use the State in conjunction with [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), to ensure thread safety between runspaces.
+    It's wise to use the State in conjunction with [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject), to ensure thread safety between runspaces.
 
 !!! warning
-    If you omit the use of [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject), you might run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
+    If you omit the use of [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject), you might run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
 
 ## Usage
 
@@ -98,7 +98,7 @@ Start-PodeServer {
 
 ### Save
 
-The [`Save-PodeState`](../../Functions/State/Save-PodeState) function will save the current state, as JSON, to the specified file. The file path can either be relative, or literal. When saving the state, it's recommended to wrap the function within [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject).
+The [`Save-PodeState`](../../Functions/State/Save-PodeState) function will save the current state, as JSON, to the specified file. The file path can either be relative, or literal. When saving the state, it's recommended to wrap the function within [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject).
 
 An example of saving the current state every hour is as follows:
 
@@ -120,7 +120,7 @@ By default the JSON will be saved expanded, but you can saved the JSON as compre
 
 ### Restore
 
-The [`Restore-PodeState`](../../Functions/State/Restore-PodeState) function will restore the current state from the specified file. The file path can either be relative, or a literal path. if you're restoring the state immediately on server start, you don't need to use [`Lock-PodeObject`](../../Functions/Utilities/Lock-PodeObject).
+The [`Restore-PodeState`](../../Functions/State/Restore-PodeState) function will restore the current state from the specified file. The file path can either be relative, or a literal path. if you're restoring the state immediately on server start, you don't need to use [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject).
 
 An example of restore the current state on server start is as follows:
 

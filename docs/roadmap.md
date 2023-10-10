@@ -31,15 +31,15 @@ Sometimes there could be more, if patch releases are needed. But sometimes there
 - [ ] HTTP/3.0 support
 - [x] Inbuilt authorization support, on top the current authentications support [#992](https://github.com/Badgerati/Pode/issues/992)
 - [x] Secret management support [#980](https://github.com/Badgerati/Pode/issues/980)
-- [ ] Some way of being able to merge authentication types [588](https://github.com/Badgerati/Pode/issues/588)
+- [x] Some way of being able to merge authentication types [588](https://github.com/Badgerati/Pode/issues/588)
 - [ ] Improved garbage collection in runspaces, to help free up memory
 - [ ] A Session Pool that can be used to port/re-use PSSessions in Pode more easily
 - [ ] Further improvements to OIDC, such as HMAC and refresh token support
 - [ ] Implement an inbuilt FTP(S) server
 - [ ] Is it possible to implement an inbuilt SFTP server?
 - [ ] Inbuilt connectors for connecting to message brokers, like Kafka, RabbitMQ, etc.
-- [ ] Would is be possible to create an inbuilt pub/sub server?
-- [x] An inbuilt FIM server, so we can fun logic on FIM events
+- [ ] Would it be possible to create an inbuilt pub/sub server?
+- [x] An inbuilt FIM server, so we can run logic on FIM events
 
 ### Misc
 

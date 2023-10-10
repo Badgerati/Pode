@@ -11,6 +11,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # or just:
 # Import-Module Pode
 
+# Invoke-RestMethod -Method Get -Uri 'http://localhost:8085/users' -Headers @{ 'X-API-KEY' = 'test-api-key' }
+
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 

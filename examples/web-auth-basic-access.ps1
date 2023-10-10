@@ -8,15 +8,15 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 This example shows how to use sessionless authentication, which will mostly be for
 REST APIs. The example used here is Basic authentication.
 
-Calling the '[POST] http://localhost:8085/users' endpoint, with an Authorization
+Calling the '[POST] http://localhost:8085/users-all' endpoint, with an Authorization
 header of 'Basic bW9ydHk6cGlja2xl' will display the uesrs. Anything else and
 you'll get a 401 status code back.
 
 Success:
-Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+Invoke-RestMethod -Uri http://localhost:8085/users-all -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
 
 Failure:
-Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
+Invoke-RestMethod -Uri http://localhost:8085/users-all -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
 #>
 
 # create a server, and start listening on port 8085
@@ -33,8 +33,10 @@ Start-PodeServer -Threads 2 {
     #     return $userRoles.Example -iin $customValues.Example
     # }
 
+    Merge-PodeAuthAccess -Name 'TestMerged' -Access 'TestRbac', 'TestGbac' -Valid All
+
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Access 'TestRbac', 'TestGbac' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Access 'TestMerged' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example

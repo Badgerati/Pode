@@ -31,6 +31,22 @@ $method = New-PodeLoggingMethod -Custom -ScriptBlock {
 $method | Enable-PodeRequestLogging -Raw
 ```
 
+### Username
+
+If you're not using any Authentication then the "user" field in the log will always be "-". However, if you're using Authentication, and it passes, then the Username of the user accessing the Route will attempt to be retrieved from `$WebEvent.Auth.User`. The property within the authenticated user object by default is `Username`, but you can customise this using `-UsernameProperty`.
+
+For example, if the username was actually user "ID":
+
+```powershell
+Enable-PodeRequestLogging -UsernameProperty 'ID'
+```
+
+Or if the username was inside another "Meta" property, and then within a "Username" property inside the Meta object:
+
+```powershell
+Enable-PodeRequestLogging -UsernameProperty 'Meta.Username'
+```
+
 ## Raw Request
 
 The raw Request hashtable that will be supplied to any Custom logging methods will look as follows:
