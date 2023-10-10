@@ -116,6 +116,7 @@
         'Out-PodeVariable',
         'Test-PodeIsHosted',
         'New-PodeCron',
+        'ConvertTo-PodeYaml',
 
         # routes
         'Add-PodeRoute',

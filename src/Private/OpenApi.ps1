@@ -129,6 +129,7 @@ function Test-PodeOAExternalDoc {
 
     return $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs.ContainsKey($Name)
 }
+
 function Test-PodeOAComponentHeaderSchema {
     param(
         [Parameter(Mandatory = $true)]
@@ -342,7 +343,7 @@ function Get-PodeOpenApiDefinitionInternal {
 
     # set the openapi version
     $def = [ordered]@{
-        openapi = '3.0.3'
+        openapi = $PodeContext.Server.OpenAPI.Version
     }
 
     if ($PodeContext.Server.OpenAPI.info) {
@@ -363,8 +364,11 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
             })
     }    
-    if ($PodeContext.Server.OpenAPI.tags) {
-        $def['tags'] = $PodeContext.Server.OpenAPI.tags.Values
+    if ($PodeContext.Server.OpenAPI.tags.Count -gt 0) {
+        $def['tags'] = @()
+        foreach ($tag in $PodeContext.Server.OpenAPI.tags.Values) { 
+            $def['tags'] += $tag
+        }
     } 
 
     # paths
@@ -398,7 +402,7 @@ function Get-PodeOpenApiDefinitionInternal {
             $def.components.securitySchemes[$_authName] = $_authObj
         }
 
-        if ($PodeContext.Server.OpenAPI.Security.Length -gt 0) {
+        if ($PodeContext.Server.OpenAPI.Security.Definition -and $PodeContext.Server.OpenAPI.Security.Definition.Length -gt 0) {
             $def['security'] = @($PodeContext.Server.OpenAPI.Security.Definition)
         }
     }
@@ -457,7 +461,6 @@ function Get-PodeOpenApiDefinitionInternal {
                 if ($_route.OpenApi.OperationId  ) {
                     $pm.operationId = $_route.OpenApi.OperationId  
                 }
-
                 if ($_route.OpenApi.Parameters) {
                     $pm.parameters = $_route.OpenApi.Parameters
                 } 
@@ -475,14 +478,14 @@ function Get-PodeOpenApiDefinitionInternal {
                 if (($null -ne $def['security']) -and ($def['security'].Length -gt 0)) {
                     foreach ($sec in $PodeContext.Server.OpenAPI.Security) {
                         if ([string]::IsNullOrWhiteSpace($sec.Route) -or ($sec.Route -ieq '/') -or ($sec.Route -ieq $_route.OpenApi.Path) -or ($_route.OpenApi.Path -imatch "^$($sec.Route)$")) {
-                            $def.paths[$_route.OpenApi.Path][$method].security += $sec.Definition
+                            if (!$def.paths[$_route.OpenApi.Path][$method].security) {
+                                $def.paths[$_route.OpenApi.Path][$method].security = @($sec.Definition)
+                            } else {
+                                $def.paths[$_route.OpenApi.Path][$method].security += $sec.Definition
+                            }
                         }
                     }
-                }
-
-                if ($def.paths[$_route.OpenApi.Path][$method].security.Length -eq 0) {
-                    $def.paths[$_route.OpenApi.Path][$method].Remove('security')
-                }
+                } 
 
                 # add any custom server endpoints for route
                 foreach ($_route in $_routes) {
@@ -515,7 +518,7 @@ function Get-PodeOpenApiDefinitionInternal {
     } 
 
     # remove all null values (swagger hates them)
-    $def | Remove-PodeNullKeysFromHashtable
+    #$def | Remove-PodeNullKeysFromHashtable
 
     return $def
 }
@@ -555,7 +558,7 @@ function Get-PodeOABaseObject {
             parameters    = @{}  
         }
         Security         = @() 
-        tags             = @{}
+        tags             = [ordered]@{}
         hiddenComponents = @{
             headerSchemas = @{}
             externalDocs  = @{}

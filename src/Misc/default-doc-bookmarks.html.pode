@@ -24,9 +24,47 @@
 
         /* Style for the responsive code block */
         .json {
-            position: relative;
-            max-width: 1200px;
-            max-height: 600px; 
+            position: relative; 
+            max-height: 600px;
+        }
+
+        .yaml {
+            position: relative; 
+             max-height: 600px;
+        }
+
+        /* Style the tab */
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+
+        /* Style the buttons that are used to open the tab content */
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+            background-color: #ccc;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+            display: none; 
+            border-top: none;
         }
     </style>
 </head>
@@ -37,7 +75,7 @@
     <ul>
         <li id="swagger-link" style="display: none;">
             <a href="$($data.swagger_path)" target="_blank">
-                    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANrSURBVDhPjZXZTxNRFMa/uTPTTlu0pWURl0SxWFATXyyCMXFH3yQiGv8K3F/0xSXGFdf45rvinriCS9SYuKAPRlEUxCWAYAu12m1m2vHeO1OoSBN/L5N+p3PuOed+946AcZg9u9EWKog2wMBawAiKslHG9LQm9ANCO9UuF8XcFzs6Lqj8hRz+SVgaXLVeIEazf1FySmBxAqWzVLi8GR6LDRMMdNrw4ZEDHx8rvUYaWwfaW8/zoEVuQlIarGsuqdCbVjRFUDRDs+TxCX2Wce+EB98/SicHn9duBnbzVUUepZRU1x0vr0411e8dQoEvban5cXoyqFqeQPiLvEDNfPfF+rpvMZ0nZG2W+PUja/YMQbIZTEI8QiAQWvbIkiZ0jtBVAaJsxsprkvj6SqkW7P7OWN+nN6Lfv9quunC9fveQu6DIrOzx2Ym4ud8L71Sdtq5zLUvnQwdathQjQ/86bZ7Kk5ZVqnhzx1UzaW7FGRItzKybWZucljuznmcKVm6OILA0YSmjVC1L8Nj7B05LAXzTdcxcmJwaDaGR9oU1lUvjVsgk+YvA4c4/RzZjLf63QSrZ4oJRT6jXgqzkLGw+qRjhQ8+HiyZMxQm01GhSnkNAkBAJk52F5stqQsCVnT4Ul2twl6XRdsyD32ERHXed6Ghzch+2Nnu4L0v8Kq7u8kGliRkOdwaSZEwmY53Nhi1wke62FWQPw9x8GGlTpIXwbrI6h4ZIWkdfnK7MsDkMNBwI48cnGZFeCSs3Rfi8qlbEMacuDhftZNX2YUQHRPS/s6HxUAh2l9ldIkqga0IfzSS87H9v4yKD+VBWMtSHYwyYA9s0WTEg2UfLYwvQetuJIeBargUYNqfB55WPxE8CZcLfm9b5wAGqXCPuIaGl+6nyLdRDrW8RWJLA/VMefgmM5QM19u1DhWAXR5bwZwldT5RepyPVwifMjl6xXzvfeDg0cvSSv822RCl36uZG6NQu2QrT9PeFHUUY7BY3DjxrO8cHRQ/2WzgrvOEeeYF/YZIfJ5aYjNM1j1mzY+f61sFCfHttPz34vPUw00YmH+vtbtWMgOfLS6VmUkBD1pv5YNfXjX1emkw+NfiidhPwkK9iOW2U0vl1GwQRR//rgoWxjbXJgxb/JGTkfAIaqJXnj/cJmDhMLnV13U7xF0YA/gCa7mvJsf2BXQAAAABJRU5ErkJggg=="
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANrSURBVDhPjZXZTxNRFMa/uTPTTlu0pWURl0SxWFATXyyCMXFH3yQiGv8K3F/0xSXGFdf45rvinriCS9SYuKAPRlEUxCWAYAu12m1m2vHeO1OoSBN/L5N+p3PuOed+946AcZg9u9EWKog2wMBawAiKslHG9LQm9ANCO9UuF8XcFzs6Lqj8hRz+SVgaXLVeIEazf1FySmBxAqWzVLi8GR6LDRMMdNrw4ZEDHx8rvUYaWwfaW8/zoEVuQlIarGsuqdCbVjRFUDRDs+TxCX2Wce+EB98/SicHn9duBnbzVUUepZRU1x0vr0411e8dQoEvban5cXoyqFqeQPiLvEDNfPfF+rpvMZ0nZG2W+PUja/YMQbIZTEI8QiAQWvbIkiZ0jtBVAaJsxsprkvj6SqkW7P7OWN+nN6Lfv9quunC9fveQu6DIrOzx2Ym4ud8L71Sdtq5zLUvnQwdathQjQ/86bZ7Kk5ZVqnhzx1UzaW7FGRItzKybWZucljuznmcKVm6OILA0YSmjVC1L8Nj7B05LAXzTdcxcmJwaDaGR9oU1lUvjVsgk+YvA4c4/RzZjLf63QSrZ4oJRT6jXgqzkLGw+qRjhQ8+HiyZMxQm01GhSnkNAkBAJk52F5stqQsCVnT4Ul2twl6XRdsyD32ERHXed6Ghzch+2Nnu4L0v8Kq7u8kGliRkOdwaSZEwmY53Nhi1wke62FWQPw9x8GGlTpIXwbrI6h4ZIWkdfnK7MsDkMNBwI48cnGZFeCSs3Rfi8qlbEMacuDhftZNX2YUQHRPS/s6HxUAh2l9ldIkqga0IfzSS87H9v4yKD+VBWMtSHYwyYA9s0WTEg2UfLYwvQetuJIeBargUYNqfB55WPxE8CZcLfm9b5wAGqXCPuIaGl+6nyLdRDrW8RWJLA/VMefgmM5QM19u1DhWAXR5bwZwldT5RepyPVwifMjl6xXzvfeDg0cvSSv822RCl36uZG6NQu2QrT9PeFHUUY7BY3DjxrO8cHRQ/2WzgrvOEeeYF/YZIfJ5aYjNM1j1mzY+f61sFCfHttPz34vPUw00YmH+vtbtWMgOfLS6VmUkBD1pv5YNfXjX1emkw+NfiidhPwkK9iOW2U0vl1GwQRR//rgoWxjbXJgxb/JGTkfAIaqJXnj/cJmDhMLnV13U7xF0YA/gCa7mvJsf2BXQAAAABJRU5ErkJggg=="
                     alt="Swagger Icon" width="20" height="20">Swagger</a>
         </li>
         <li id="redoc-link" style="display: none;">
@@ -67,7 +105,17 @@
         </li>
     </ul>
     <h3>OpenAPI Definition <button id="copyButton" class="copy-button" onclick="copyToClipboard()">Copy</button></h3>
-    <pre><code id="jsonCode" class="json">$($data.OpenApiDefinition)</code></pre>
+    <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'JSON')">JSON</button>
+        <button class="tablinks" onclick="openTab(event, 'YAML')">YAML</button>
+    </div>
+    <!-- Tab content -->
+    <div id="JSON" class="tabcontent">
+        <pre><code id="jsonCode" class="json">$($data.OpenApiDefinition)</code></pre>
+    </div>
+    <div id="YAML" class="tabcontent" style="display:none">
+        <pre><code id="yamlCode" class="yaml"   >$($data.OpenApiYamlDefinition)</code></pre>
+    </div>
     <footer style='text-align: center;
         width: 100%;
         font-size: 0.9em;
@@ -98,7 +146,13 @@
 
         // Function to copy text to clipboard
         function copyToClipboard() {
-            var textToCopy = document.getElementById("jsonCode").textContent;
+            let codeId;
+            if (document.getElementById('JSON').style.display == "none") {
+                codeId = "yamlCode";
+            } else {
+                codeId = "jsonCode";
+            }
+            var textToCopy = document.getElementById(codeId).textContent;
 
             // Create a textarea element to temporarily hold the text
             var textArea = document.createElement("textarea");
@@ -117,7 +171,7 @@
             document.body.removeChild(textArea);
 
             // Provide user feedback (optional)
-            alert("Copied to clipboard");
+           // alert("Copied to clipboard");
         }
 
 
@@ -125,6 +179,28 @@
             // Add a click event listener to the copy button
             document.getElementById("copyButton").addEventListener("click", copyToClipboard);
         })
+
+
+        function openTab(evt, tabName) {
+            // Declare all variables
+            var i, tabcontent, tablinks;
+
+            // Get all elements with class="tabcontent" and hide them
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Get all elements with class="tablinks" and remove the class "active"
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
     </script>
 </body>
 

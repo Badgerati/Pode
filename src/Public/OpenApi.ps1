@@ -13,9 +13,12 @@ The Title of the API.
 
 .PARAMETER Version
 The Version of the API. (Default: 0.0.0)
+The OpenAPI Specification is versioned using Semantic Versioning 2.0.0 (semver) and follows the semver specification.
+https://semver.org/spec/v2.0.0.html
 
-.PARAMETER Description
-A Description of the API.
+.PARAMETER Description 
+A short description of the API. CommonMark syntax MAY be used for rich text representation.
+https://spec.commonmark.org/
 
 .PARAMETER ExtraInfo
 The non-essential metadata about the API. The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
@@ -34,8 +37,15 @@ Like normal Routes, an array of Middleware that will be applied to the route.
 .PARAMETER RestrictRoutes
 If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
 
-.PARAMETER ServerUrl
+.PARAMETER ServerEndpoint
 If supplied, will be used as URL base to generate the OpenAPI definition.
+The parameter is created by New-PodeOpenApiServerEndpoint
+
+.PARAMETER Mode
+Define the way the OpenAPI definition file is accessed, the value can be View or Download. (Default: View)
+
+.PARAMETER NoCompress
+If supplied, generate the OpenApi Json version in human readible form.
 
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
@@ -44,7 +54,7 @@ Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*' -RestrictRoutes
 
 .EXAMPLE
-Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My API' -Version '1.0.0'
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My API' -Version '1.0.beta' -NoCompress -Mode 'Donwload'
 #>
 function Enable-PodeOpenApi {
     [CmdletBinding()]
@@ -58,15 +68,20 @@ function Enable-PodeOpenApi {
         [string]
         $Title,
 
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string]
+        [Parameter()] 
+        [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$')] 
+        [string] 
         $Version = '0.0.0',
 
         [Parameter()]
         [string]
         $Description,
 
+        [Parameter()]
+        [ValidateSet('3.0.3')]
+        [string]
+        $OpenApiVersion = '3.0.3',
+        
         [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $ExtraInfo,
@@ -85,24 +100,32 @@ function Enable-PodeOpenApi {
         $Middleware,
 
         [switch]
-        $RestrictRoutes,
+        $RestrictRoutes, 
 
         [Parameter()]
-        [string]
-        $ServerUrl
+        [ValidateSet('view', 'download')]
+        [String]
+        $Mode = 'view',
 
+        [Parameter()]
+        [switch]
+        $NoCompress
     )
 
     # initialise openapi info 
+    $PodeContext.Server.OpenAPI.Version = $OpenApiVersion
     $PodeContext.Server.OpenAPI.Path = $Path 
     $meta = @{ 
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes  
+        NoCompress     = $NoCompress
+        Mode           = $Mode
     } 
     $PodeContext.Server.OpenAPI.info = @{
         title   = $Title
         version = $Version     
     } 
+
     if ($Description ) {
         $PodeContext.Server.OpenAPI.info.description = $Description   
     }
@@ -111,9 +134,6 @@ function Enable-PodeOpenApi {
         $PodeContext.Server.OpenAPI.info += $ExtraInfo 
     }
 
-    if ($ServerUrl) {
-        $PodeContext.Server.OpenAPI.servers = @(@{'url' = $ServerUrl })
-    }  
     if ($ExternalDoc) {
         if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
             throw "The ExternalDoc doesn't exist: $ExternalDoc"
@@ -121,22 +141,106 @@ function Enable-PodeOpenApi {
         $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
     }  
 
+    $openApiCreationScript = @'   
+    param($meta)
+    $format = $WebEvent.Query['format'] 
+    $mode = $WebEvent.Query['mode'] 
+    
+    if (!$mode) {
+        $mode = $meta.Mode 
+    } elseif (@('download', 'view') -notcontains $mode) { 
+        Write-PodeHtmlResponse -Value "Mode $mode not valid" -StatusCode 400 
+    }  
+    if (($mode -eq 'download')  ) {
+        #      Add-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=openapi.$format"  
+        Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "attachment; filename=openapi.$format"  
+    } 
+        
+    Write-Host $mode 
+    # generate the openapi definition
+    $def = Get-PodeOpenApiDefinitionInternal `
+        -Protocol $WebEvent.Endpoint.Protocol `
+        -Address $WebEvent.Endpoint.Address `
+        -EndpointName $WebEvent.Endpoint.Name `
+        -MetaInfo $meta  
+            
+    Write-Host $def  
+    if ($WebEvent.path.EndsWith('.json')) {
+        if($format){
+            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"  
+            return
+        }
+        $format = 'json' 
+    } elseif ($WebEvent.path.EndsWith('.yaml')) {
+        if($format){
+            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"  
+            return
+        }
+        $format = 'yaml' 
+    } elseif (!$format) {
+        $format = ($meta.Yaml)?'yaml':'json'  
+    } elseif (@('yaml', 'json') -notcontains $format) { 
+        Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"  
+        #  Write-PodeHtmlResponse -Value "Format $format not valid" -StatusCode 400
+        return
+    }  
+    Write-Host $format
+    # write the openapi definition
+    if ($format -eq 'yaml') {  
+        Write-PodeYamlResponse -Value $def
+    } else {  
+        Write-PodeJsonResponse -Value $def -Depth 20 -NoCompress:$meta.NoCompress
+    } 
+'@
 
-
+    $openApiCreationScriptBlock = [ScriptBlock]::Create( $openApiCreationScript )
+ 
     # add the OpenAPI route
-    Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock {
-        param($meta)
+    Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
+    Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
+    Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
 
-        # generate the openapi definition
-        $def = Get-PodeOpenApiDefinitionInternal `
-            -Protocol $WebEvent.Endpoint.Protocol `
-            -Address $WebEvent.Endpoint.Address `
-            -EndpointName $WebEvent.Endpoint.Name `
-            -MetaInfo $meta 
-        # write the openapi definition 
-        Write-PodeJsonResponse -Value $def -Depth 20
-    }
 }
+
+<#
+.SYNOPSIS
+Creates an OpenAPI Server property.
+
+.DESCRIPTION
+Creates an OpenAPI Server property. 
+
+.PARAMETER Url
+Server or path to local server.
+
+.PARAMETER Description
+Description of the server. 
+
+.EXAMPLE
+Add-PodeOpenApiServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server' 
+
+.EXAMPLE
+Add-PodeOpenApiServerEndpoint -Url '/api' -Description 'My local server' 
+#>
+function Add-PodeOpenApiServerEndpoint {
+    param ( 
+        [Parameter(Mandatory)]
+        [ValidatePattern('^(https?://|/).+')] 
+        [string]            
+        $Url,
+        [string]
+        $Description
+    ) 
+
+    if (! $PodeContext.Server.OpenAPI.servers) {
+        $PodeContext.Server.OpenAPI.servers = @()
+    } 
+    $lUrl = [ordered]@{url = $Url }
+    if ($Description) { $lUrl.description = $Description } 
+    $PodeContext.Server.OpenAPI.servers+= $lUrl 
+}
+
+
+
 
 <#
 .SYNOPSIS
@@ -155,14 +259,16 @@ function Get-PodeOpenApiDefinition {
     [CmdletBinding()]
     param(
         [Parameter()]
-        [switch]
-        $Json
+        [ValidateSet('Json', 'Json-Compress','Yaml','HashTable')]
+        [string]
+        $format
     ) 
     $oApi = Get-PodeOpenApiDefinitionInternal  
-    if ($Json) {
-        return ConvertTo-Json -InputObject $oApi -Depth 10
-    } else {
-        return $oApi
+    switch ($Format) {
+        'Json' { return ConvertTo-Json -InputObject $oApi -Depth 10 }
+        'Json-Compress' { return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress }
+        'Yaml'{ return ConvertTo-PodeYamlInternal -InputObject $oApi -Depth 10  }
+        Default {return $oApi}
     }
 }
 
@@ -315,7 +421,7 @@ function Add-PodeOAResponse {
                 }
                 $r.OpenApi.Responses[$code] = $response
             }
- 
+
             { $_ -in 'reference', 'referencedefault' } {
                 $r.OpenApi.Responses[$code] = @{
                     '$ref' = "#/components/responses/$($Reference)"
@@ -2276,15 +2382,16 @@ function Enable-PodeOpenApiViewer {
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)  
 
-            $Data = @{ Title      = $meta.Title
-                OpenApi           = $meta.OpenApi 
-                OpenApiDefinition = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 90
-                Swagger           = 'false'
-                ReDoc             = 'false'
-                RapiDoc           = 'false'
-                StopLight         = 'false'
-                Explorer          = 'false'
-                RapiPdf           = 'false'
+            $Data = @{ Title          = $meta.Title
+                OpenApi               = $meta.OpenApi 
+                OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 90
+                OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 90
+                Swagger               = 'false'
+                ReDoc                 = 'false'
+                RapiDoc               = 'false'
+                StopLight             = 'false'
+                Explorer              = 'false'
+                RapiPdf               = 'false'
             }  
             foreach ($path in ($PodeContext.Server.Routes['GET'].Keys  )) {  
                 # the current route 
