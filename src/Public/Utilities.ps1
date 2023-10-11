@@ -1121,5 +1121,5 @@ function ConvertTo-PodeYaml {
         [parameter() ]
         [int]$Depth = 16)
 
-    return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth
+    return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
 }

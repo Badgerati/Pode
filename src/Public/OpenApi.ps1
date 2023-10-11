@@ -47,6 +47,8 @@ Define the way the OpenAPI definition file is accessed, the value can be View or
 .PARAMETER NoCompress
 If supplied, generate the OpenApi Json version in human readible form.
 
+.PARAMETER MarkupLanguage
+
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
 
@@ -103,13 +105,14 @@ function Enable-PodeOpenApi {
         $RestrictRoutes, 
 
         [Parameter()]
-        [ValidateSet('view', 'download')]
+        [ValidateSet('View', 'Download')]
         [String]
-        $Mode = 'view',
+        $Mode = 'view', 
 
         [Parameter()]
-        [switch]
-        $NoCompress
+        [ValidateSet('Json', 'Json-Compress', 'Yaml')]
+        [String]
+        $MarkupLanguage = 'Json'
     )
 
     # initialise openapi info 
@@ -118,8 +121,9 @@ function Enable-PodeOpenApi {
     $meta = @{ 
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes  
-        NoCompress     = $NoCompress
-        Mode           = $Mode
+        NoCompress     = ($MarkupLanguage -eq 'Json')
+        Mode           = (($Mode -eq 'Json-Compress')?'Json':$Mode)
+        MarkupLanguage = $MarkupLanguage
     } 
     $PodeContext.Server.OpenAPI.info = @{
         title   = $Title
@@ -155,16 +159,14 @@ function Enable-PodeOpenApi {
         #      Add-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=openapi.$format"  
         Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "attachment; filename=openapi.$format"  
     } 
-        
-    Write-Host $mode 
+
     # generate the openapi definition
     $def = Get-PodeOpenApiDefinitionInternal `
         -Protocol $WebEvent.Endpoint.Protocol `
         -Address $WebEvent.Endpoint.Address `
         -EndpointName $WebEvent.Endpoint.Name `
         -MetaInfo $meta  
-            
-    Write-Host $def  
+
     if ($WebEvent.path.EndsWith('.json')) {
         if($format){
             Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"  
@@ -178,13 +180,12 @@ function Enable-PodeOpenApi {
         }
         $format = 'yaml' 
     } elseif (!$format) {
-        $format = ($meta.Yaml)?'yaml':'json'  
+        $format =  $meta.MarkupLanguage.ToLower() 
     } elseif (@('yaml', 'json') -notcontains $format) { 
         Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"  
         #  Write-PodeHtmlResponse -Value "Format $format not valid" -StatusCode 400
         return
-    }  
-    Write-Host $format
+    }   
     # write the openapi definition
     if ($format -eq 'yaml') {  
         Write-PodeYamlResponse -Value $def
@@ -236,7 +237,7 @@ function Add-PodeOpenApiServerEndpoint {
     } 
     $lUrl = [ordered]@{url = $Url }
     if ($Description) { $lUrl.description = $Description } 
-    $PodeContext.Server.OpenAPI.servers+= $lUrl 
+    $PodeContext.Server.OpenAPI.servers += $lUrl 
 }
 
 
@@ -259,7 +260,7 @@ function Get-PodeOpenApiDefinition {
     [CmdletBinding()]
     param(
         [Parameter()]
-        [ValidateSet('Json', 'Json-Compress','Yaml','HashTable')]
+        [ValidateSet('Json', 'Json-Compress', 'Yaml', 'HashTable')]
         [string]
         $format
     ) 
@@ -267,8 +268,8 @@ function Get-PodeOpenApiDefinition {
     switch ($Format) {
         'Json' { return ConvertTo-Json -InputObject $oApi -Depth 10 }
         'Json-Compress' { return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress }
-        'Yaml'{ return ConvertTo-PodeYamlInternal -InputObject $oApi -Depth 10  }
-        Default {return $oApi}
+        'Yaml' { return ConvertTo-PodeYamlInternal -InputObject $oApi -Depth 10 -NoNewLine }
+        Default { return $oApi }
     }
 }
 
@@ -2385,7 +2386,7 @@ function Enable-PodeOpenApiViewer {
             $Data = @{ Title          = $meta.Title
                 OpenApi               = $meta.OpenApi 
                 OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 90
-                OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 90
+                OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 90 -NoNewLine
                 Swagger               = 'false'
                 ReDoc                 = 'false'
                 RapiDoc               = 'false'

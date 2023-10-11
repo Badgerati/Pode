@@ -3226,33 +3226,47 @@ function ConvertTo-PodeYamlInternal {
         Write-Verbose "$($padding)Type:='$Type', Object type:=$($InputObject.GetType().Name), BaseName:=$($InputObject.GetType().BaseType.Name) "
             
         $output += switch ($Type) {
-            'ScriptBlock' { "{$($InputObject.ToString())}" }
-            'InnerXML' { "|`r`n" + ($InputObject.OuterXMl.Split("`r`n") | ForEach-Object { "$padding$_`r`n" }) }
-            'DateTime' { $InputObject.ToString('s') } # s=SortableDateTimePattern (based on ISO 8601) using local time
+            'Array' {
+                "$($InputObject | ForEach-Object {
+                    "`n$padding- $(ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine)" })" 
+                break
+            }
+            'HashTable' {
+                if ($InputObject.Count -gt 0 ) {
+                    $index = 0
+                    ("$($InputObject.GetEnumerator() | ForEach-Object {
+                        if ($_.Value.GetType().Name -eq 'String'){$increment=2} else {$Increment=1}  
+                        if ($NoNewLine -and $index++ -eq 0){$NewPadding=''} else {$NewPadding="`n$padding"}  
+                        "$NewPadding$($_.Name): " +
+                            (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + $increment))
+                            })")
+                } else { '{}' }
+                break
+            } 
             'Byte[]' {
                 $string = [System.Convert]::ToBase64String($InputObject)
                 if ($string.Length -gt 100) {
                     # right, we have to format it to YAML spec.
-                    '!!binary "\' + "`r`n" # signal that we are going to use the readable Base64 string format
+                    '!!binary "\' + "`n" # signal that we are going to use the readable Base64 string format
                     #$bits = @()
                     $length = $string.Length
                     $IndexIntoString = 0
                     $wrap = 100
                     while ($length -gt $IndexIntoString + $Wrap) {
-                        $padding + $string.Substring($IndexIntoString, $wrap).Trim() + "`r`n"
+                        $padding + $string.Substring($IndexIntoString, $wrap).Trim() + "`n"
                         $IndexIntoString += $wrap
                     }
                     if ($IndexIntoString -lt $length) {
-                        $padding + $string.Substring($IndexIntoString).Trim() + "`r`n"
+                        $padding + $string.Substring($IndexIntoString).Trim() + "`n"
                     } else {
-                        "`r`n" 
+                        "`n" 
                     }
                 }
                     
                 else {
                     '!!binary "' + $($string -replace '''', '''''') + '"'
                 }
-                    
+                break
             }
             'Boolean' {
                 "$(&{
@@ -3264,7 +3278,7 @@ function ConvertTo-PodeYamlInternal {
                 $String = "$InputObject"
                 if (($string -match '[\r\n]' -or $string.Length -gt 80) -and !$string.StartsWith('http')) {
                     # right, we have to format it to YAML spec.
-                    $folded = ">`r`n" # signal that we are going to use the readable 'newlines-folded' format
+                    $folded = ">`n" # signal that we are going to use the readable 'newlines-folded' format
                     $string.Split("`n") | ForEach-Object {
                         $_ = $_ -replace '\r$'
                         $length = $_.Length
@@ -3286,19 +3300,20 @@ function ConvertTo-PodeYamlInternal {
                                 $BreakPoint = $wrap # in case it is a string without spaces
                             } 
                                 
-                            $folded += $padding + $_.Substring($IndexIntoString, $BreakPoint).Trim() + "`r`n"
+                            $folded += $padding + $_.Substring($IndexIntoString, $BreakPoint).Trim() + "`n"
                             $IndexIntoString += $BreakPoint
                         } 
                         if ($IndexIntoString -lt $length) {
-                            $folded += $padding + $_.Substring($IndexIntoString).Trim() + "`r`n"
+                            $folded += $padding + $_.Substring($IndexIntoString).Trim() + "`n"
                         } else {
-                            $folded += "`r`n"
+                            $folded += "`n"
                         }
                     }
                     $folded
                 } else {
                         ($string.StartsWith('#'))?"'$($string -replace '''', '''''')'":$string 
                 }
+                break
             }
             'Char' { "([int]$InputObject)" }
             {
@@ -3307,37 +3322,26 @@ function ConvertTo-PodeYamlInternal {
             }
             { "$InputObject" } # rendered as is without single quotes
             'PSNoteProperty' { "$(ConvertTo-PodeYamlInternal -inputObject $InputObject.Value -depth $Depth -NestingLevel ($NestingLevel + 1))" }
-            'Array' {
-                "$($InputObject | ForEach-Object {
-                    "`r`n$padding- $(ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine)" })" 
-            }
-            'HashTable' {
-                if ($InputObject.Count -gt 0 ) {
-                    $index = 0
-                    ("$($InputObject.GetEnumerator() | ForEach-Object {
-                        if ($_.Value.GetType().Name -eq 'String'){$increment=2} else {$Increment=1}  
-                        if ($NoNewLine -and $index++ -eq 0){$NewPadding=''} else {$NewPadding="`r`n$padding"}  
-                        "$NewPadding$($_.Name): " +
-                            (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + $increment))
-                            })")
-                } else { '{}' }
-            }
+            
             'Dictionary`2' {
                     ("$($InputObject.GetEnumerator() | ForEach-Object {
-                                "`r`n$padding  $($_.Key): " +
+                                "`n$padding  $($_.Key): " +
                                 (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + 1))
                             })")
             }
-            'PSObject' { ("$($InputObject.PSObject.Properties | ForEach-Object { "`r`n$padding $($_.Name): " + (ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1)) })") }
-            'generic' { "$($InputObject.Keys | ForEach-Object { "`r`n$padding  $($_):  $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$_ -depth $Depth -NestingLevel ($NestingLevel + 1))" })" }
-            'Object' { ("$($InputObject | Get-Member -MemberType properties | Select-Object name | ForEach-Object { "`r`n$padding $($_.name):   $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $NestingLevel -NestingLevel ($NestingLevel + 1))" })") }
-            'XML' { ("$($InputObject | Get-Member -MemberType properties | Where-Object { @('xml', 'schema') -notcontains $_.name } | Select-Object name | ForEach-Object { "`r`n$padding $($_.name):   $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $Depth -NestingLevel ($NestingLevel + 1))" })") }
-            'DataRow' { ("$($InputObject | Get-Member -MemberType properties | Select-Object name | ForEach-Object { "`r`n$padding $($_.name):  $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $Depth -NestingLevel ($NestingLevel + 1))" })") }
+            'PSObject' { ("$($InputObject.PSObject.Properties | ForEach-Object { "`n$padding $($_.Name): " + (ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1)) })") }
+            'generic' { "$($InputObject.Keys | ForEach-Object { "`n$padding  $($_):  $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$_ -depth $Depth -NestingLevel ($NestingLevel + 1))" })" }
+            'Object' { ("$($InputObject | Get-Member -MemberType properties | Select-Object name | ForEach-Object { "`n$padding $($_.name):   $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $NestingLevel -NestingLevel ($NestingLevel + 1))" })") }
+            'XML' { ("$($InputObject | Get-Member -MemberType properties | Where-Object { @('xml', 'schema') -notcontains $_.name } | Select-Object name | ForEach-Object { "`n$padding $($_.name):   $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $Depth -NestingLevel ($NestingLevel + 1))" })") }
+            'DataRow' { ("$($InputObject | Get-Member -MemberType properties | Select-Object name | ForEach-Object { "`n$padding $($_.name):  $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $Depth -NestingLevel ($NestingLevel + 1))" })") }
             <# 
                 'SqlDataReader'{ $all = $InputObject.FieldCount
                     while ($InputObject.Read()) {for ($i = 0; $i -lt $all; $i++)
-                    {"`r`n$padding $($Reader.GetName($i)): $(ConvertTo-PodeYamlInternal -inputObject $($Reader.GetValue($i)) -depth $Depth -NestingLevel ($NestingLevel+1))"}}
+                    {"`n$padding $($Reader.GetName($i)): $(ConvertTo-PodeYamlInternal -inputObject $($Reader.GetValue($i)) -depth $Depth -NestingLevel ($NestingLevel+1))"}}
                 #>
+            'ScriptBlock' { "{$($InputObject.ToString())}" }
+            'InnerXML' { "|`n" + ($InputObject.OuterXMl.Split("`n") | ForEach-Object { "$padding$_`n" }) }
+            'DateTime' { $InputObject.ToString('s') } # s=SortableDateTimePattern (based on ISO 8601) using local time
             default { "'$InputObject'" }
         }
         return $Output
