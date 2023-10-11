@@ -1,3 +1,11 @@
 body {
     background-color: rebeccapurple;
 }
+
+a {
+    color: white;
+}
+
+a:visited {
+    color: yellow;
+}

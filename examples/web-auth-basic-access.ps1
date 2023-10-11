@@ -26,17 +26,20 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # setup RBAC
-    Add-PodeAuthAccess -Type Role -Name 'TestRbac'
-    Add-PodeAuthAccess -Type Group -Name 'TestGbac'
-    # Add-PodeAuthAccess -Type Custom -Name 'TestRbac' -Path 'CustomAccess' -Validator {
+    # Add-PodeAccess -Type Role -Name 'TestRbac'
+    # Add-PodeAccess -Type Group -Name 'TestGbac'
+    New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'TestRbac'
+    New-PodeAccessScheme -Type Group | Add-PodeAccess -Name 'TestGbac'
+    # Add-PodeAccess -Type Custom -Name 'TestRbac' -Path 'CustomAccess' -Validator {
     #     param($userRoles, $customValues)
     #     return $userRoles.Example -iin $customValues.Example
     # }
 
-    Merge-PodeAuthAccess -Name 'TestMerged' -Access 'TestRbac', 'TestGbac' -Valid All
+    Merge-PodeAccess -Name 'TestMergedAll' -Access 'TestRbac', 'TestGbac' -Valid All
+    Merge-PodeAccess -Name 'TestMergedOne' -Access 'TestRbac', 'TestGbac' -Valid One
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Access 'TestMerged' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -48,7 +51,7 @@ Start-PodeServer -Threads 2 {
                     Type = 'Human'
                     Username = 'm.orty'
                     Roles = @('Developer')
-                    Groups = @('Software')
+                    Groups = @('Software', 'Admins')
                     CustomAccess = @{ Example = 'test-val-1' }
                 }
             }
@@ -62,40 +65,81 @@ Start-PodeServer -Threads 2 {
         $WebEvent.Auth | Out-Default
     }
 
-    # POST request to get list of users - there's no Roles, so any auth'd user can access
-    Add-PodeRoute -Method Post -Path '/users-all' -Authentication 'Validate' -Group 'Ops' -ScriptBlock {
+    # POST request to get list of users - there's no Access, so any auth'd user can access
+    Add-PodeRoute -Method Post -Path '/users-all' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{
                     Name = 'Deep Thought'
-                    Age = 42
                 }
             )
         }
     }
 
     # POST request to get list of users - only Developer roles can access
-    Add-PodeRoute -Method Post -Path '/users-dev' -Authentication 'Validate' -Role Developer -Group Software -ScriptBlock {
+    Add-PodeRoute -Method Post -Path '/users-dev' -Authentication 'Validate' -Access 'TestRbac' -Role Developer -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{
                     Name = 'Leeroy Jenkins'
-                    Age = 1337
                 }
             )
         }
-    } -PassThru | Add-PodeAuthCustomAccess -Name 'TestRbac' -Value @{ Example = 'test-val-1' }
+    }
 
-    # POST request to get list of users - only Admin roles can access
-    Add-PodeRoute -Method Post -Path '/users-admin' -Authentication 'Validate' -Role Admin -ScriptBlock {
+    # POST request to get list of users - only QA roles can access
+    Add-PodeRoute -Method Post -Path '/users-qa' -Authentication 'Validate' -Access 'TestRbac' -Role QA -ScriptBlock {
+        Write-PodeJsonResponse -Value @{
+            Users = @(
+                @{
+                    Name = 'Nikola Tesla'
+                }
+            )
+        }
+    }
+
+    # POST request to get list of users - only users in the SOftware group can access
+    Add-PodeRoute -Method Post -Path '/users-soft' -Authentication 'Validate' -Access 'TestGbac' -Group Software -ScriptBlock {
+        Write-PodeJsonResponse -Value @{
+            Users = @(
+                @{
+                    Name = 'Smooth McGroove'
+                }
+            )
+        }
+    }
+
+    # POST request to get list of users - only Developer role in the Admins group can access
+    Add-PodeRoute -Method Post -Path '/users-dev-admin' -Authentication 'Validate' -Access 'TestMergedAll' -Role Developer -Group Admins -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = @(
                 @{
                     Name = 'Arthur Dent'
-                    Age = 30
                 }
             )
         }
-    } -PassThru | Add-PodeAuthCustomAccess -Name 'TestRbac' -Value @{ Example = 'test-val-2' }
+    }
+
+    # POST request to get list of users - either DevOps role or Admins group can access
+    Add-PodeRoute -Method Post -Path '/users-devop-admin' -Authentication 'Validate' -Access 'TestMergedOne' -Role DevOps -Group Admins -ScriptBlock {
+        Write-PodeJsonResponse -Value @{
+            Users = @(
+                @{
+                    Name = 'Monkey D. Luffy'
+                }
+            )
+        }
+    }
+
+    # POST request to get list of users - either QA role or Support group can access
+    Add-PodeRoute -Method Post -Path '/users-qa-support' -Authentication 'Validate' -Access 'TestMergedOne' -Role QA -Group Support -ScriptBlock {
+        Write-PodeJsonResponse -Value @{
+            Users = @(
+                @{
+                    Name = 'Donald Duck'
+                }
+            )
+        }
+    }
 
 }

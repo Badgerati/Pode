@@ -130,7 +130,9 @@ Describe 'Restart-PodeInternalServer' {
                 Sessions = @{ 'key' = 'value' }
                 Authentications = @{
                     Methods = @{ 'key' = 'value' }
-                    Access = @{ 'key' = 'value' }
+                }
+                Authorisations = @{
+                    Methods = @{ 'key' = 'value' }
                 }
                 State = @{ 'key' = 'value' }
                 Output = @{
