@@ -1307,6 +1307,9 @@ function Add-PodeAuthWindowsAd
             Url = $SuccessUrl
             UseOrigin = $SuccessUseOrigin
         }
+        Cache = @{}
+        Merged = $false
+        Parent = $null
     }
 }
 
@@ -1872,6 +1875,9 @@ function Add-PodeAuthUserFile
             Url = $SuccessUrl
             UseOrigin = $SuccessUseOrigin
         }
+        Cache = @{}
+        Merged = $false
+        Parent = $null
     }
 }
 
@@ -2018,6 +2024,9 @@ function Add-PodeAuthWindowsLocal
             Url = $SuccessUrl
             UseOrigin = $SuccessUseOrigin
         }
+        Cache = @{}
+        Merged = $false
+        Parent = $null
     }
 }
 

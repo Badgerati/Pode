@@ -705,12 +705,24 @@ function Get-PodeAuthUserFileMethod
     return {
         param($username, $password, $options)
 
+        # using pscreds?
+        if (($null -eq $options) -and ($username -is [pscredential])) {
+            $_username = ([pscredential]$username).UserName
+            $_password = ([pscredential]$username).GetNetworkCredential().Password
+            $_options = [hashtable]$password
+        }
+        else {
+            $_username = $username
+            $_password = $password
+            $_options = $options
+        }
+
         # load the file
-        $users = (Get-Content -Path $options.FilePath -Raw | ConvertFrom-Json)
+        $users = (Get-Content -Path $_options.FilePath -Raw | ConvertFrom-Json)
 
         # find the user by username - only use the first one
         $user = @(foreach ($_user in $users) {
-            if ($_user.Username -ieq $username) {
+            if ($_user.Username -ieq $_username) {
                 $_user
                 break
             }
@@ -722,11 +734,11 @@ function Get-PodeAuthUserFileMethod
         }
 
         # check the user's password
-        if (![string]::IsNullOrWhiteSpace($options.HmacSecret)) {
-            $hash = Invoke-PodeHMACSHA256Hash -Value $password -Secret $options.HmacSecret
+        if (![string]::IsNullOrWhiteSpace($_options.HmacSecret)) {
+            $hash = Invoke-PodeHMACSHA256Hash -Value $_password -Secret $_options.HmacSecret
         }
         else {
-            $hash = Invoke-PodeSHA256Hash -Value $password
+            $hash = Invoke-PodeSHA256Hash -Value $_password
         }
 
         if ($user.Password -ne $hash) {
@@ -743,15 +755,15 @@ function Get-PodeAuthUserFileMethod
         }
 
         # is the user valid for any users/groups?
-        if (!(Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups)) {
+        if (!(Test-PodeAuthUserGroups -User $user -Users $_options.Users -Groups $_options.Groups)) {
             return @{ Message = 'You are not authorised to access this website' }
         }
 
         $result = @{ User = $user }
 
         # call additional scriptblock if supplied
-        if ($null -ne $options.ScriptBlock.Script) {
-            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
+        if ($null -ne $_options.ScriptBlock.Script) {
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $_options.ScriptBlock.Script -UsingVariables $_options.ScriptBlock.UsingVariables
         }
 
         # return final result, this could contain a user obj, or an error message from custom scriptblock
@@ -764,21 +776,33 @@ function Get-PodeAuthWindowsADMethod
     return {
         param($username, $password, $options)
 
+        # using pscreds?
+        if (($null -eq $options) -and ($username -is [pscredential])) {
+            $_username = ([pscredential]$username).UserName
+            $_password = ([pscredential]$username).GetNetworkCredential().Password
+            $_options = [hashtable]$password
+        }
+        else {
+            $_username = $username
+            $_password = $password
+            $_options = $options
+        }
+
         # parse username to remove domains
-        $username = (($username -split '@')[0] -split '\\')[-1]
+        $_username = (($_username -split '@')[0] -split '\\')[-1]
 
         # validate and retrieve the AD user
-        $noGroups = $options.NoGroups
-        $directGroups = $options.DirectGroups
-        $keepCredential = $options.KeepCredential
+        $noGroups = $_options.NoGroups
+        $directGroups = $_options.DirectGroups
+        $keepCredential = $_options.KeepCredential
 
         $result = Get-PodeAuthADResult `
-            -Server $options.Server `
-            -Domain $options.Domain `
-            -SearchBase $options.SearchBase `
-            -Username $username `
-            -Password $password `
-            -Provider $options.Provider `
+            -Server $_options.Server `
+            -Domain $_options.Domain `
+            -SearchBase $_options.SearchBase `
+            -Username $_username `
+            -Password $_password `
+            -Provider $_options.Provider `
             -NoGroups:$noGroups `
             -DirectGroups:$directGroups `
             -KeepCredential:$keepCredential
@@ -794,13 +818,13 @@ function Get-PodeAuthWindowsADMethod
         }
 
         # is the user valid for any users/groups - if not, error!
-        if (!(Test-PodeAuthUserGroups -User $result.User -Users $options.Users -Groups $options.Groups)) {
+        if (!(Test-PodeAuthUserGroups -User $result.User -Users $_options.Users -Groups $_options.Groups)) {
             return @{ Message = 'You are not authorised to access this website' }
         }
 
         # call additional scriptblock if supplied
-        if ($null -ne $options.ScriptBlock.Script) {
-            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
+        if ($null -ne $_options.ScriptBlock.Script) {
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $_options.ScriptBlock.Script -UsingVariables $_options.ScriptBlock.UsingVariables
         }
 
         # return final result, this could contain a user obj, or an error message from custom scriptblock
@@ -832,10 +856,22 @@ function Get-PodeAuthWindowsLocalMethod
     return {
         param($username, $password, $options)
 
+        # using pscreds?
+        if (($null -eq $options) -and ($username -is [pscredential])) {
+            $_username = ([pscredential]$username).UserName
+            $_password = ([pscredential]$username).GetNetworkCredential().Password
+            $_options = [hashtable]$password
+        }
+        else {
+            $_username = $username
+            $_password = $password
+            $_options = $options
+        }
+
         $user = @{
             UserType = 'Local'
             AuthenticationType = 'WinNT'
-            Username = $username
+            Username = $_username
             Name = [string]::Empty
             Fqdn = $PodeContext.Server.ComputerName
             Domain = 'localhost'
@@ -844,22 +880,22 @@ function Get-PodeAuthWindowsLocalMethod
 
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement -ErrorAction Stop
         $context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Machine', $PodeContext.Server.ComputerName)
-        $valid = $context.ValidateCredentials($username, $password)
+        $valid = $context.ValidateCredentials($_username, $_password)
 
         if (!$valid) {
             return @{ Message = 'Invalid credentials supplied' }
         }
 
         try {
-            $tmpUsername = $username -replace '\\', '/'
-            if ($username -inotlike "$($PodeContext.Server.ComputerName)*") {
-                $tmpUsername = "$($PodeContext.Server.ComputerName)/$($username)"
+            $tmpUsername = $_username -replace '\\', '/'
+            if ($_username -inotlike "$($PodeContext.Server.ComputerName)*") {
+                $tmpUsername = "$($PodeContext.Server.ComputerName)/$($_username)"
             }
 
             $ad = [adsi]"WinNT://$($tmpUsername)"
             $user.Name = @($ad.FullName)[0]
 
-            if (!$options.NoGroups) {
+            if (!$_options.NoGroups) {
                 $cmd = "`$ad = [adsi]'WinNT://$($tmpUsername)'; @(`$ad.Groups() | Foreach-Object { `$_.GetType().InvokeMember('Name', 'GetProperty', `$null, `$_, `$null) })"
                 $user.Groups = [string[]](powershell -c $cmd)
             }
@@ -869,15 +905,15 @@ function Get-PodeAuthWindowsLocalMethod
         }
 
         # is the user valid for any users/groups - if not, error!
-        if (!(Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups)) {
+        if (!(Test-PodeAuthUserGroups -User $user -Users $_options.Users -Groups $_options.Groups)) {
             return @{ Message = 'You are not authorised to access this website' }
         }
 
         $result = @{ User = $user }
 
         # call additional scriptblock if supplied
-        if ($null -ne $options.ScriptBlock.Script) {
-            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $options.ScriptBlock.Script -UsingVariables $options.ScriptBlock.UsingVariables
+        if ($null -ne $_options.ScriptBlock.Script) {
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $result.User -ScriptBlock $_options.ScriptBlock.Script -UsingVariables $_options.ScriptBlock.UsingVariables
         }
 
         # return final result, this could contain a user obj, or an error message from custom scriptblock
