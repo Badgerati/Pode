@@ -274,6 +274,10 @@ function Get-PodeOpenApiDefinitionInternal
 
         foreach ($authName in $PodeContext.Server.Authentications.Methods.Keys) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
+            if ([string]::IsNullOrWhiteSpace($authType)) {
+                continue
+            }
+
             $_authName = ($authName -replace '\s+', '')
 
             $_authObj = @{}

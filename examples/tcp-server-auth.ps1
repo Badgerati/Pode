@@ -14,7 +14,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # create a role access method get retrieves roles from a database
-    Add-PodeAuthAccess -Name 'RoleExample' -Type Role -ScriptBlock {
+    Add-PodeAccess -Name 'RoleExample' -Type Role -ScriptBlock {
         param($username)
         if ($username -ieq 'morty') {
             return @('Developer')
@@ -25,7 +25,7 @@ Start-PodeServer -Threads 2 {
 
     # setup a Verb that only allows Developers
     Add-PodeVerb -Verb 'EXAMPLE :username' -ScriptBlock {
-        if (!(Test-PodeAuthAccess -Name 'RoleExample' -Destination 'Developer' -ArgumentList $TcpEvent.Parameters.username)) {
+        if (!(Test-PodeAccess -Name 'RoleExample' -Destination 'Developer' -ArgumentList $TcpEvent.Parameters.username)) {
             Write-PodeTcpClient -Message "Forbidden Access"
             'Forbidden!' | Out-Default
             return

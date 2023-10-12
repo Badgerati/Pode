@@ -1072,7 +1072,7 @@ function Invoke-PodeAuthValidation
 
     # if it's a merged auth, re-call this function and check against "succeed" value
     if ($auth.Merged) {
-        $results = @()
+        $results = @{}
 
         foreach ($authName in $auth.Authentications) {
             $result = Invoke-PodeAuthValidation -Name $authName
@@ -1094,12 +1094,7 @@ function Invoke-PodeAuthValidation
 
             # remember result if we need all to pass
             if (!$auth.PassOne) {
-                if ($result.Aggregated) {
-                    $results += $result.Results
-                }
-                else {
-                    $results += $result
-                }
+                $results[$authName] = $result
             }
         }
 
@@ -1108,14 +1103,15 @@ function Invoke-PodeAuthValidation
             return $result
         }
 
-        # if the last auth succeeded, and we need all to pass, return aggregated results
+        # if the last auth succeeded, and we need all to pass, merge users/headers and return result
         if ($result.Success -and !$auth.PassOne) {
-            return @{
-                Success = $true
-                Aggregated = $true
-                Results = $results
-                Auth = $results.Auth
-            }
+            # invoke scriptblock
+            $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables
+
+            # reset default properties and return
+            $result.Success = $true
+            $result.Auth = $results.Keys
+            return $result
         }
 
         # default failure
@@ -1228,7 +1224,7 @@ function Test-PodeAuthValidation
                     $result.Headers = @{}
                 }
 
-                if (!$result.Headers.ContainsKey('WWW-Authenticate')) {
+                if (![string]::IsNullOrWhiteSpace($auth.Scheme.Name) -and !$result.Headers.ContainsKey('WWW-Authenticate')) {
                     $authHeader = Get-PodeAuthWwwHeaderValue -Name $auth.Scheme.Name -Realm $auth.Scheme.Realm -Challenge $result.Challenge
                     $result.Headers['WWW-Authenticate'] = $authHeader
                 }
@@ -1258,111 +1254,6 @@ function Test-PodeAuthValidation
             Exception = $_
         }
     }
-}
-
-function Test-PodeAuthValidationAccess
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name,
-
-        [Parameter()]
-        [string]
-        $BaseName
-    )
-
-    # base name
-    if ([string]::IsNullOrEmpty($BaseName)) {
-        $BaseName = $Name
-    }
-
-    # get auth method
-    $auth = $PodeContext.Server.Authentications.Methods[$Name]
-    $access = $null
-
-    # cached access?
-    if ($null -ne $auth.Cache.Access) {
-        $access = $auth.Cache.Access
-    }
-
-    # recursively find access
-    else {
-        # have access and/or parent?
-        $hasAccess = ![string]::IsNullOrEmpty($auth.Access)
-        $hasParent = ![string]::IsNullOrEmpty($auth.Parent)
-
-        # no access
-        if (!$hasAccess) {
-            $PodeContext.Server.Authentications.Methods[$Name].Cache.Access = [string]::Empty
-
-            # skip if no parent
-            if (!$hasParent) {
-                return $true
-            }
-
-            # re-call on parent
-            else {
-                return (Test-PodeAuthValidationAccess -Name $auth.Parent -BaseName $BaseName)
-            }
-        }
-
-        # set access
-        $access = $auth.Access
-        $PodeContext.Server.Authentications.Methods[$BaseName].Cache.Access = $access
-    }
-
-    # check access
-    return ([string]::IsNullOrEmpty($access) -or (Invoke-PodeAuthValidationAccess -Name $access -Authentication $BaseName))
-}
-
-function Invoke-PodeAuthValidationAccess
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name,
-
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Authentication
-    )
-
-    # get the access method
-    $access = $PodeContext.Server.Authentications.Access[$Name]
-
-    # if it's a merged access, re-call this function and check against "succeed" value
-    if ($access.Merged) {
-        foreach ($accName in $access.Access) {
-            $result = Invoke-PodeAuthValidationAccess -Name $accName -Authentication $Authentication
-
-            # if the access passed, and we only need one access to pass, return true
-            if ($result -and $access.PassOne) {
-                return $true
-            }
-
-            # if the access failed, but we need all to pass, return false
-            if (!$result -and !$access.PassOne) {
-                return $false
-            }
-        }
-
-        # if the last access failed, and we only need one access to pass, return false
-        if (!$result -and $access.PassOne) {
-            return $false
-        }
-
-        # if the last access succeeded, and we need all to pass, return true
-        if ($result -and !$access.PassOne) {
-            return $true
-        }
-
-        # default failure
-        return $false
-    }
-
-    # main access validation logic
-    return (Test-PodeAuthAccessRoute -Name $Name -Authentication $Authentication)
 }
 
 function Get-PodeAuthMiddlewareScript
@@ -1480,43 +1371,27 @@ function Test-PodeAuthInternal
             -NoFailureRedirect:($result.FailureRedirect))
     }
 
-    # if auth passed, assign the user(s) to the session
-    $user = $result.User
-    if ($result.Aggregated) {
-        $user = [ordered]@{}
-        foreach ($r in $result.Results) {
-            $user[$r.Auth] = $r.User
-        }
-    }
-
+    # if auth passed, assign the user to the session
     $WebEvent.Auth = [ordered]@{
-        User = $user
+        User = $result.User
         IsAuthenticated = $true
         IsAuthorised = $true
         Store = !$auth.Sessionless
         Name = $result.Auth
-        Multiple = [bool]$result.Aggregated
-    }
-
-    # check access
-    foreach ($authName in $result.Auth) {
-        $WebEvent.Auth.IsAuthorised = Test-PodeAuthValidationAccess -Name $authName
-
-        if (!$WebEvent.Auth.IsAuthorised) {
-            return (Set-PodeAuthStatus `
-                -StatusCode 403 `
-                -Description $result.Description `
-                -Headers $result.Headers `
-                -Name $authName `
-                -LoginRoute:$Login `
-                -NoFailureRedirect:($result.FailureRedirect))
-        }
     }
 
     # successful auth
+    $authName = $null
+    if ($auth.Merged -and !$auth.PassOne) {
+        $authName = $Name
+    }
+    else {
+        $authName = @($result.Auth)[0]
+    }
+
     return (Set-PodeAuthStatus `
         -Headers $result.Headers `
-        -Name @($result.Auth)[0] `
+        -Name $authName `
         -LoginRoute:$Login)
 }
 

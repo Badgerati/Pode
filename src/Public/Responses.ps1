@@ -938,7 +938,7 @@ Set-PodeResponseStatus -Code 500 -Exception $_.Exception -ContentType 'applicati
 function Set-PodeResponseStatus
 {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory=$true)]
         [int]
         $Code,

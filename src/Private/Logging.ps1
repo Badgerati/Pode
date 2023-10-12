@@ -299,25 +299,10 @@ function Write-PodeRequestLog
     # set username - dot spaces
     if (Test-PodeAuthUser -IgnoreSession) {
         $userProps = (Get-PodeLogger -Name $name).Properties.Username.Split('.')
-        $user = $null
 
-        if (!$WebEvent.Auth.Multiple) {
-            $user = $WebEvent.Auth.User
-            foreach ($atom in $userProps) {
-                $user = $user.($atom)
-            }
-        }
-        else {
-            foreach ($u in $WebEvent.Auth.User.Values) {
-                $user = $u
-                foreach ($atom in $userProps) {
-                    $user = $user.($atom)
-                }
-
-                if (![string]::IsNullOrWhiteSpace($user)) {
-                    break
-                }
-            }
+        $user = $WebEvent.Auth.User
+        foreach ($atom in $userProps) {
+            $user = $user.($atom)
         }
 
         if (![string]::IsNullOrWhiteSpace($user)) {

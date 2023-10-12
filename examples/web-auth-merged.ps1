@@ -21,11 +21,11 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
 
     # setup access
-    Add-PodeAuthAccess -Type Role -Name 'Rbac'
-    Add-PodeAuthAccess -Type Group -Name 'Gbac'
+    Add-PodeAccess -Type Role -Name 'Rbac'
+    Add-PodeAccess -Type Group -Name 'Gbac'
 
     # setup a merged access
-    Merge-PodeAuthAccess -Name 'MergedAccess' -Access 'Rbac', 'Gbac' -Valid All
+    Merge-PodeAccess -Name 'MergedAccess' -Access 'Rbac', 'Gbac' -Valid All
 
     # setup apikey auth
     New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Access 'Gbac' -Sessionless -ScriptBlock {
