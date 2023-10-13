@@ -202,13 +202,16 @@ function ConvertTo-PodeOASchemaProperty {
         [switch]
         $NoDescription
     )
-    if ( @('allOf','oneOf','anyOf') -contains $Property.type  ) {
+    if ( @('allOf', 'oneOf', 'anyOf') -contains $Property.type  ) {
         $schema = [ordered]@{
-            $Property.type  = @()
+            $Property.type = @()
         }
         if ($Property.schemas ) {
             foreach ($prop in $Property.schemas ) {
                 if ($prop -is [string]) {
+                    if ( !(Test-PodeOAComponentSchema -Name $prop)) {
+                        throw "The OpenApi component schema doesn't exist: $prop"
+                    }  
                     $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
                 } else {
                     $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty
@@ -236,6 +239,9 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.deprecated) {
             $schema['deprecated'] = $Property.deprecated
         } 
+        if ($param.xlmName ) {
+            $schema['xlm'] = @{ 'name' = $param.xlmName }
+        }
 
         if ($null -ne $Property.meta) {
             foreach ($key in $Property.meta.Keys) {
@@ -263,6 +269,9 @@ function ConvertTo-PodeOASchemaProperty {
         
             $schema['type'] = 'array'
             if ($Property.type -ieq 'schema') {
+                if ( !(Test-PodeOAComponentSchema -Name $Property['schema'])) {
+                    throw "The OpenApi component schema doesn't exist: $($Property['schema'])"
+                }  
                 $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
             } else {
                 $Property.array = $false
@@ -278,6 +287,9 @@ function ConvertTo-PodeOASchemaProperty {
 
             # schema refs
             if ($Property.type -ieq 'schema') {
+                if ( !(Test-PodeOAComponentSchema -Name $Property['schema'])) {
+                    throw "The OpenApi component schema doesn't exist: $($Property['schema'])"
+                } 
                 $schema = @{
                     '$ref' = "#/components/schemas/$($Property['schema'])"
                 }

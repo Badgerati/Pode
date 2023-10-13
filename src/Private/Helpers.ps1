@@ -3140,7 +3140,7 @@ function Test-PodePlaceholders {
 
 <#
 .SYNOPSIS
-creates a YAML description of the data in the object
+creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
 .DESCRIPTION
 This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects 
 .PARAMETER Object 

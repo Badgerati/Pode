@@ -945,6 +945,9 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
+.PARAMETER XlmName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
+
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
 
@@ -1017,6 +1020,10 @@ function New-PodeOAIntProperty {
         [Parameter()]
         [int[]]
         $Enum,
+
+        [Parameter()]
+        [string]
+        $XlmName,
 
         [switch]
         $Required,
@@ -1091,6 +1098,8 @@ function New-PodeOAIntProperty {
 
     if ($Enum) { $param.enum = $Enum }  
 
+    if ($XlmName) { $param.xlmName = $XlmName }  
+
     if ($Minimum -ne [int]::MinValue) {
         $param.meta['minimum'] = $Minimum
     }
@@ -1139,6 +1148,9 @@ An example of a parameter value
 
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
+
+.PARAMETER XlmName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -1213,6 +1225,10 @@ function New-PodeOANumberProperty {
         [double[]]
         $Enum,
 
+        [Parameter()]
+        [string]
+        $XlmName,
+
         [switch]
         $Required,
 
@@ -1284,6 +1300,8 @@ function New-PodeOANumberProperty {
 
     if ($Enum) { $param.enum = $Enum } 
 
+    if ($XlmName) { $param.xlmName = $XlmName }  
+
     if ($Minimum -ne [double]::MinValue) {
         $param.meta['minimum'] = $Minimum
     }
@@ -1329,6 +1347,9 @@ An example of a parameter value
 
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
+
+.PARAMETER XlmName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
 
 .PARAMETER Required
 If supplied, the string will be treated as Required where supported.
@@ -1409,6 +1430,10 @@ function New-PodeOAStringProperty {
         [Parameter()]
         [string[]]
         $Enum,
+
+        [Parameter()]
+        [string]
+        $XlmName,
 
         [switch]
         $Required,
@@ -1495,6 +1520,8 @@ function New-PodeOAStringProperty {
 
     if ($Enum) { $param.enum = $Enum } 
 
+    if ($XlmName) { $param.xlmName = $XlmName }  
+
     if ($Pattern) { $param.meta['pattern'] = $Pattern } 
 
     if ($MinLength) { $param.meta['minLength'] = $MinLength } 
@@ -1525,6 +1552,9 @@ An example of a parameter value
 
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
+
+.PARAMETER XlmName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
 
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
@@ -1581,6 +1611,10 @@ function New-PodeOABoolProperty {
         [Parameter()]
         [bool[]]
         $Enum,
+
+        [Parameter()]
+        [string]
+        $XlmName,
 
         [switch]
         $Required,
@@ -1650,6 +1684,8 @@ function New-PodeOABoolProperty {
     if ($MinItems) { $param.minItems = $MinItems }
 
     if ($Enum) { $param.enum = $Enum } 
+
+    if ($XlmName) { $param.xlmName = $XlmName }  
 
     return $param
 }
