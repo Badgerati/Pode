@@ -199,7 +199,7 @@ Some useful links:
                         (New-PodeOAStringProperty -Name 'photoUrls' -Array),
                         (New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag') 
                         (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')) 
-        )) 
+        ))  
     
     Add-PodeOAComponentSchema -Name 'Cat' -Schema (  
         New-PodeOAOf  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(

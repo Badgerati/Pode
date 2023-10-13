@@ -3149,10 +3149,11 @@ the object that you want scripted out
 The depth that you want your object scripted to
 .PARAMETER Nesting Level
 internal use only. required for formatting
+.PARAMETER NoNewLine
+avoid to create a new line
+
 .EXAMPLE
-$array=@()
-$array+=Get-Process wi* |  Select-Object Handles,NPM,PM,WS,VM,CPU,Id,ProcessName 
-ConvertTo-PodeYamlInternal $array
+Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
 #>
 function ConvertTo-PodeYamlInternal {
     
@@ -3192,37 +3193,19 @@ function ConvertTo-PodeYamlInternal {
         #report the leaves in terms of object type
         if ($Depth -ilt $NestingLevel) {
             $Type = 'OutOfDepth' 
-        } elseif ($Type -ieq 'XmlDocument' -or $Type -ieq 'XmlElement') {
-            if ($XMLAsInnerXML -ne 0) {
-                $Type = 'InnerXML' 
-            } else { 
-                $Type = 'XML'
-            }
-        } # convert to PS Alias 
-        # prevent these values being identified as an object
-        if (@('boolean', 'byte', 'byte[]', 'char', 'datetime', 'decimal', 'double', 'float', 'single', 'guid', 'int', 'int32',
-                'int16', 'long', 'int64', 'OutOfDepth', 'RuntimeType', 'PSNoteProperty', 'regex', 'sbyte', 'string',
-                'timespan', 'uint16', 'uint32', 'uint64', 'uri', 'version', 'void', 'xml', 'datatable', 'Dictionary`2',
-                'SqlDataReader', 'datarow', 'ScriptBlock', 'type') -notcontains $type) {
-            if ($Type -ieq 'OrderedDictionary') {
-                $Type = 'HashTable' 
-            } elseif ($Type -ieq 'PSCustomObject') {
-                $Type = 'PSObject'
-            } elseif ($Type -ieq 'List`1') {
-                $Type = 'Array'
-            } elseif ($InputObject -is 'Array') {
-                $Type = 'Array'
-            } # whatever it thinks it is called
-            elseif ($InputObject -is 'HashTable') {
-                $Type = 'HashTable'
-            } # for our purposes it is a hashtable
-            elseif (!($InputObject | Get-Member -MemberType Properties | Select-Object name | Where-Object name -Like 'Keys')) {
-                $Type = 'generic'
-            } #use dot notation
-            elseif (($InputObject | Get-Member -MemberType Properties | Select-Object name).count -gt 1) {
-                $Type = 'Object'
-            }
-        }
+        }  
+        # prevent these values being identified as an object 
+        if ($InputObject -is 'System.Collections.Specialized.OrderedDictionary') {
+            $Type = 'HashTable' 
+        } elseif ($Type -ieq 'List`1') {
+            $Type = 'Array'
+        } elseif ($InputObject -is 'Array') {
+            $Type = 'Array'
+        } # whatever it thinks it is called
+        elseif ($InputObject -is 'HashTable') {
+            $Type = 'HashTable'
+        } # for our purposes it is a hashtable 
+        
         Write-Verbose "$($padding)Type:='$Type', Object type:=$($InputObject.GetType().Name), BaseName:=$($InputObject.GetType().BaseType.Name) "
             
         $output += switch ($Type) {
@@ -3242,38 +3225,7 @@ function ConvertTo-PodeYamlInternal {
                             })")
                 } else { '{}' }
                 break
-            } 
-            'Byte[]' {
-                $string = [System.Convert]::ToBase64String($InputObject)
-                if ($string.Length -gt 100) {
-                    # right, we have to format it to YAML spec.
-                    '!!binary "\' + "`n" # signal that we are going to use the readable Base64 string format
-                    #$bits = @()
-                    $length = $string.Length
-                    $IndexIntoString = 0
-                    $wrap = 100
-                    while ($length -gt $IndexIntoString + $Wrap) {
-                        $padding + $string.Substring($IndexIntoString, $wrap).Trim() + "`n"
-                        $IndexIntoString += $wrap
-                    }
-                    if ($IndexIntoString -lt $length) {
-                        $padding + $string.Substring($IndexIntoString).Trim() + "`n"
-                    } else {
-                        "`n" 
-                    }
-                }
-                    
-                else {
-                    '!!binary "' + $($string -replace '''', '''''') + '"'
-                }
-                break
-            }
-            'Boolean' {
-                "$(&{
-                            if ($InputObject -eq $true) { 'true' }
-                            else { 'false' }
-                        })"
-            }
+            }  
             'string' {
                 $String = "$InputObject"
                 if (($string -match '[\r\n]' -or $string.Length -gt 80) -and !$string.StartsWith('http')) {
@@ -3315,33 +3267,13 @@ function ConvertTo-PodeYamlInternal {
                 }
                 break
             }
-            'Char' { "([int]$InputObject)" }
-            {
-                @('byte', 'decimal', 'double', 'float', 'single', 'int', 'int32', 'int16', `
-                        'long', 'int64', 'sbyte', 'uint16', 'uint32', 'uint64') -contains $_
-            }
-            { "$InputObject" } # rendered as is without single quotes
-            'PSNoteProperty' { "$(ConvertTo-PodeYamlInternal -inputObject $InputObject.Value -depth $Depth -NestingLevel ($NestingLevel + 1))" }
             
             'Dictionary`2' {
                     ("$($InputObject.GetEnumerator() | ForEach-Object {
                                 "`n$padding  $($_.Key): " +
                                 (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + 1))
                             })")
-            }
-            'PSObject' { ("$($InputObject.PSObject.Properties | ForEach-Object { "`n$padding $($_.Name): " + (ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1)) })") }
-            'generic' { "$($InputObject.Keys | ForEach-Object { "`n$padding  $($_):  $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$_ -depth $Depth -NestingLevel ($NestingLevel + 1))" })" }
-            'Object' { ("$($InputObject | Get-Member -MemberType properties | Select-Object name | ForEach-Object { "`n$padding $($_.name):   $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $NestingLevel -NestingLevel ($NestingLevel + 1))" })") }
-            'XML' { ("$($InputObject | Get-Member -MemberType properties | Where-Object { @('xml', 'schema') -notcontains $_.name } | Select-Object name | ForEach-Object { "`n$padding $($_.name):   $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $Depth -NestingLevel ($NestingLevel + 1))" })") }
-            'DataRow' { ("$($InputObject | Get-Member -MemberType properties | Select-Object name | ForEach-Object { "`n$padding $($_.name):  $(ConvertTo-PodeYamlInternal -InputObject $InputObject.$($_.name) -depth $Depth -NestingLevel ($NestingLevel + 1))" })") }
-            <# 
-                'SqlDataReader'{ $all = $InputObject.FieldCount
-                    while ($InputObject.Read()) {for ($i = 0; $i -lt $all; $i++)
-                    {"`n$padding $($Reader.GetName($i)): $(ConvertTo-PodeYamlInternal -inputObject $($Reader.GetValue($i)) -depth $Depth -NestingLevel ($NestingLevel+1))"}}
-                #>
-            'ScriptBlock' { "{$($InputObject.ToString())}" }
-            'InnerXML' { "|`n" + ($InputObject.OuterXMl.Split("`n") | ForEach-Object { "$padding$_`n" }) }
-            'DateTime' { $InputObject.ToString('s') } # s=SortableDateTimePattern (based on ISO 8601) using local time
+            } 
             default { "'$InputObject'" }
         }
         return $Output
