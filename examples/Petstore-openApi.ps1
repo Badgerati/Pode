@@ -40,14 +40,16 @@ Some useful links:
 
     Add-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs' -ServerUrl '/api/v3' #-RouteFilter '/api/v3/*' -RestrictRoutes
-    Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger'  -DarkMode
+    Add-PodeOpenApiServerEndpoint -url '/api/v3' -Description 'default endpoint'  
+
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs'  
+    Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger' -DarkMode
     # or ReDoc at the default "/redoc"
-    Enable-PodeOpenApiViewer -Type ReDoc  -Path '/docs/redoc' -DarkMode 
-    Enable-PodeOpenApiViewer -Type RapiDoc  -Path '/docs/rapidoc' -DarkMode
-    Enable-PodeOpenApiViewer -Type StopLight  -Path '/docs/stoplight' -DarkMode
-    Enable-PodeOpenApiViewer -Type Explorer  -Path '/docs/explorer' -DarkMode
-    Enable-PodeOpenApiViewer -Type RapiPdf  -Path '/docs/rapipdf' -DarkMode
+    Enable-PodeOpenApiViewer -Type ReDoc -Path '/docs/redoc' -DarkMode 
+    Enable-PodeOpenApiViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
+    Enable-PodeOpenApiViewer -Type StopLight -Path '/docs/stoplight' -DarkMode
+    Enable-PodeOpenApiViewer -Type Explorer -Path '/docs/explorer' -DarkMode
+    Enable-PodeOpenApiViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
 
     Enable-PodeOpenApiViewer -Type Bookmarks -Path '/docs' 
     
@@ -191,14 +193,30 @@ Some useful links:
     Add-PodeOAComponentSchema -Name 'Pet' -Schema (
         New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties @(
                     (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly),
-                        (New-PodeOAStringProperty -Name 'name' -Example 'doggie'),
-                        (New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category') 
+                        (New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required),
+                        (New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category'), 
+                        (New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required),
                         (New-PodeOAStringProperty -Name 'photoUrls' -Array),
                         (New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag') 
                         (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')) 
         )) 
     
-    
+    Add-PodeOAComponentSchema -Name 'Cat' -Schema (  
+        New-PodeOAOf  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
+                (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive'))
+                ))        
+        )) 
+
+        Add-PodeOAComponentSchema -Name 'Dog' -Schema (  
+            New-PodeOAOf  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
+                    (New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Dingo', 'Husky', 'Retriever', 'Shepherd')),
+                    (New-PodeOABoolProperty -Name 'bark')
+                    ))        
+            )) 
+
+
+        Add-PodeOAComponentSchema -Name 'Pets' -Schema (  
+            New-PodeOAOf  -Type OneOf -Schema @( 'Cat','Dog') -Discriminator "petType")
     <#
         ApiResponse:
             type: object
@@ -225,7 +243,7 @@ Some useful links:
     #define '#/components/responses/'
     Add-PodeOAComponentResponse -Name 'UserOpSuccess' -Description 'Successful operation' -ContentSchemas (@{'application/json' = 'User' ; 'application/xml' = 'User' })  
 
-    Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -ContentSchemas (@{ 'application/json' = 'Pet'; 'application/xml' = 'Pet'; 'application/x-www-form-urlencoded' = 'Pet' })
+    Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -ContentSchemas (@{ 'application/json' = 'Pets'; 'application/xml' = 'Pets'; 'application/x-www-form-urlencoded' = 'Pets' })
 
 
     #define '#/components/parameters/'
@@ -296,6 +314,7 @@ Some useful links:
         Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -ContentSchemas @{
             'application/json' = (New-PodeOAObjectProperty -Properties @(    (New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')  ))
         }
+       
 
         Add-PodeRoute -PassThru -Method Post -Path '/pet' -ScriptBlock { 
 

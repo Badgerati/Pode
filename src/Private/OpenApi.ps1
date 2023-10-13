@@ -202,103 +202,120 @@ function ConvertTo-PodeOASchemaProperty {
         [switch]
         $NoDescription
     )
-
-    # base schema type
-    $schema = [ordered]@{
-        type = $Property.type 
-    }
-
-
-    if (!$NoDescription -and $Property.description) {
-        $schema['description'] = $Property.description
-    } 
-
-    if ($Property.default) {
-        $schema['default'] = $Property.default
-    }
-
-    if ($Property.deprecated) {
-        $schema['deprecated'] = $Property.deprecated
-    } 
-
-    if ($null -ne $Property.meta) {
-        foreach ($key in $Property.meta.Keys) {
-            if ($Property.meta.$key) {
-                $schema[$key] = $Property.meta[$key]
-            }
+    if ( @('allOf','oneOf','anyOf') -contains $Property.type  ) {
+        $schema = [ordered]@{
+            $Property.type  = @()
         }
-    }
-
-    
-
-    # are we using an array?
-    if ($Property.array) {
-        if ($Property.maxItems ) {
-            $schema['maxItems'] = $Property.maxItems
+        if ($Property.schemas ) {
+            foreach ($prop in $Property.schemas ) {
+                if ($prop -is [string]) {
+                    $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
+                } else {
+                    $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty
+                }
+            }  
         }
-    
-        if ($Property.minItems ) {
-            $schema['minItems'] = $Property.minItems
+        if ($Property.discriminator) {
+            $schema['discriminator'] = @{'propertyName' = $Property.discriminator }
         }
-    
-        if ($Property.uniqueItems ) {
-            $schema['uniqueItems'] = $Property.uniqueItems
-        } 
-        
-        $schema['type'] = 'array'
-        if ($Property.type -ieq 'schema') {
-            $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
-        } else {
-            $Property.array = $false
-            $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty) 
-            $Property.array = $true 
-        }       
-        return $schema
     } else {
-        #format is not applicable to array
-        if ($Property.format) {
-            $schema['format'] = $Property.format
+        # base schema type
+        $schema = [ordered]@{
+            type = $Property.type 
         }
 
-        # schema refs
-        if ($Property.type -ieq 'schema') {
-            $schema = @{
-                '$ref' = "#/components/schemas/$($Property['schema'])"
+
+        if (!$NoDescription -and $Property.description) {
+            $schema['description'] = $Property.description
+        } 
+
+        if ($Property.default) {
+            $schema['default'] = $Property.default
+        }
+
+        if ($Property.deprecated) {
+            $schema['deprecated'] = $Property.deprecated
+        } 
+
+        if ($null -ne $Property.meta) {
+            foreach ($key in $Property.meta.Keys) {
+                if ($Property.meta.$key) {
+                    $schema[$key] = $Property.meta[$key]
+                }
             }
         }
-        #only if it's not an array
-        if ($Property.enum ) {
-            $schema['enum'] = $Property.enum
-        } 
-    }
-    
-    if ($Property.object) {
-        # are we using an object?
-        $Property.object = $false
 
-        $schema = @{
-            type       = 'object'
-            properties = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property)
+    
+
+        # are we using an array?
+        if ($Property.array) {
+            if ($Property.maxItems ) {
+                $schema['maxItems'] = $Property.maxItems
+            }
+    
+            if ($Property.minItems ) {
+                $schema['minItems'] = $Property.minItems
+            }
+    
+            if ($Property.uniqueItems ) {
+                $schema['uniqueItems'] = $Property.uniqueItems
+            } 
+        
+            $schema['type'] = 'array'
+            if ($Property.type -ieq 'schema') {
+                $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
+            } else {
+                $Property.array = $false
+                $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty) 
+                $Property.array = $true 
+            }       
+            return $schema
+        } else {
+            #format is not applicable to array
+            if ($Property.format) {
+                $schema['format'] = $Property.format
+            }
+
+            # schema refs
+            if ($Property.type -ieq 'schema') {
+                $schema = @{
+                    '$ref' = "#/components/schemas/$($Property['schema'])"
+                }
+            }
+            #only if it's not an array
+            if ($Property.enum ) {
+                $schema['enum'] = $Property.enum
+            } 
+        }
+    
+        if ($Property.object) {
+            # are we using an object?
+            $Property.object = $false
+
+            $schema = @{
+                type       = 'object'
+                properties = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property)
+            }
+
+            if ($Property.required) {
+                $schema['required'] = @($Property.name)
+            } 
         }
 
-        if ($Property.required) {
-            $schema['required'] = @($Property.name)
-        } 
-    }
+        if ($Property.type -ieq 'object') {
+            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
 
-    if ($Property.type -ieq 'object') {
-        $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
-
-        $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
-        if ( $RequiredList.Count -gt 0) {
-            $schema['required'] = @($RequiredList.Name) 
-        } 
-
-        if ($Property.xml ) { 
-            $schema['xml'] = @{} 
-            foreach ($key in $Property.xml.Keys) {
-                $schema['xml'].$key = $Property.xml.$key
+            $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
+            if ( $RequiredList.Count -gt 0) {
+                $schema['required'] = @($RequiredList.Name) 
             } 
+
+            if ($Property.xml ) { 
+                $schema['xml'] = @{} 
+                foreach ($key in $Property.xml.Keys) {
+                    $schema['xml'].$key = $Property.xml.$key
+                } 
+            }
         }
     }
 

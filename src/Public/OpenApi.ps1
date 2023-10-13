@@ -1814,8 +1814,69 @@ function New-PodeOAObjectProperty {
     
     return $param
 }
- 
- 
+
+
+
+<#
+.SYNOPSIS
+Creates a new OpenAPI object combining schemas and properties.
+
+.DESCRIPTION
+Creates a new OpenAPI object combining schemas and properties.
+
+.PARAMETER Type
+Define the type of validation between the objects
+oneOf – validates the value against exactly one of the subschemas
+allOf – validates the value against all the subschemas
+anyOf – validates the value against any (one or more) of the subschemas
+
+.PARAMETER Schemas
+An array of schemas or properties 
+
+.PARAMETER Discriminator
+When request bodies or response payloads may be one of a number of different schemas, a discriminator object can be used to aid in serialization, deserialization, and validation. 
+The discriminator is a specific object in a schema which is used to inform the consumer of the specification of an alternative schema based on the value associated with it.
+
+.EXAMPLE
+Add-PodeOAComponentSchema -Name 'Pets' -Schema (  New-PodeOAOf  -Type OneOf -Schema @( 'Cat','Dog') -Discriminator "petType")
+
+
+.EXAMPLE
+Add-PodeOAComponentSchema -Name 'Cat' -Schema (  
+        New-PodeOAOf  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
+                (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive'))
+                ))        
+        ))  
+#>
+function New-PodeOAOf {
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
+    param(  
+        [Parameter(Mandatory)]
+        [ValidateSet('OneOf', 'AnyOf', 'AllOf')]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [System.Object[]]
+        $Schemas,
+
+        [Parameter()]
+        [string]
+        $Discriminator 
+    )
+
+    $param = @{      } 
+    switch ($type) {
+        'OneOf' {    $param.type='oneOf'}
+        'AnyOf' {    $param.type='anyOf'}
+        'AllOf' {    $param.type='allOf'} 
+    }
+    if ($Properties) { $param.properties = $Properties }
+    if ($Schemas) { $param.schemas = $Schemas } 
+    if ($Discriminator ) { $param.discriminator = $Discriminator } 
+    
+    return $param
+}
 
 <#
 .SYNOPSIS
