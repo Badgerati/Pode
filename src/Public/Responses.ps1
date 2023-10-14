@@ -847,7 +847,7 @@ function Write-PodeYamlResponse {
 
         'value' {
             if ($Value -isnot [string]) {   
-                $Value = ConvertTo-PodeYamlInternal -InputObject $Value -Depth $Depth  -NoNewLine
+                $Value = ConvertTo-PodeYamlInternal -InputObject $Value -Depth $Depth -NoNewLine
             }
         }
     }
