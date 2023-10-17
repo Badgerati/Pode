@@ -2692,7 +2692,6 @@ If supplied, the route passed in will be returned for further chaining.
 Add-PodeRoute -PassThru | Set-PodeOARouteInfo -Summary 'A quick summary' -Tags 'Admin'
 #>
 function Set-PodeOARouteInfo {
-function Set-PodeOARouteInfo {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -2783,8 +2782,7 @@ Enable-PodeOpenApiViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-u
 Enable-PodeOpenApiViewer -Type Bookmarks
 
 Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
-#>
-function Enable-PodeOpenApiViewer {
+#> 
 function Enable-PodeOpenApiViewer {
     [CmdletBinding()]
     param(

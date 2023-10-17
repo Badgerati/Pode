@@ -339,22 +339,12 @@ function Add-PodeRoute {
                     if ($IfExists -ieq 'Overwrite') {
                         Remove-PodeRoute -Method $_method -Path $origPath -EndpointName $_endpoint.Name
                     }
-                if ($found) {
-                    if ($IfExists -ieq 'Overwrite') {
-                        Remove-PodeRoute -Method $_method -Path $origPath -EndpointName $_endpoint.Name
-                    }
 
                     if ($IfExists -ieq 'Skip') {
                         continue
                     }
                 }
-                    if ($IfExists -ieq 'Skip') {
-                        continue
-                    }
-                }
 
-                $_endpoint
-            })
                 $_endpoint
             })
 
@@ -1420,10 +1410,18 @@ function Add-PodeStaticRouteGroup {
         TransferEncoding = $TransferEncoding
         Defaults         = $Defaults
         ErrorContentType = $ErrorContentType
-        Authentication = $Authentication
-        AllowAnon = $AllowAnon
-        DownloadOnly = $DownloadOnly
-        IfExists = $IfExists
+        Authentication   = $Authentication
+        Access           = $Access
+        AllowAnon        = $AllowAnon
+        DownloadOnly     = $DownloadOnly
+        IfExists         = $IfExists
+        AccessMeta       = @{
+            Role   = $Role
+            Group  = $Group
+            Scope  = $Scope
+            User   = $User
+            Custom = $CustomAccess
+        }
     }
 
     # add routes
@@ -1702,7 +1700,8 @@ function Clear-PodeRoutes {
 
     if (![string]::IsNullOrWhiteSpace($Method)) {
         $PodeContext.Server.Routes[$Method].Clear()
-    } else {
+    }
+    else {
         $PodeContext.Server.Routes.Keys.Clone() | ForEach-Object {
             $PodeContext.Server.Routes[$_].Clear()
         }
@@ -1874,7 +1873,8 @@ function ConvertTo-PodeRoute {
         if (Test-PodeIsEmpty $Commands) {
             Write-Verbose "Using all commands in $($Module) for converting to routes"
             $Commands = $ModuleCommands
-        } else {
+        }
+        else {
             Write-Verbose "Validating supplied commands against module's exported commands"
             foreach ($cmd in $Commands) {
                 if ($ModuleCommands -inotcontains $cmd) {
@@ -1901,7 +1901,8 @@ function ConvertTo-PodeRoute {
         if ($split.Length -ge 2) {
             $verb = $split[0]
             $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
-        } else {
+        }
+        else {
             $verb = [string]::Empty
             $noun = $split[0]
         }
@@ -1940,21 +1941,22 @@ function ConvertTo-PodeRoute {
         $route = Add-PodeRoute @params -ScriptBlock {
             param($cmd)
 
-                # either get params from the QueryString or Payload
-                if ($WebEvent.Method -ieq 'get') {
-                    $parameters = $WebEvent.Query
-                } else {
-                    $parameters = $WebEvent.Data
-                }
+            # either get params from the QueryString or Payload
+            if ($WebEvent.Method -ieq 'get') {
+                $parameters = $WebEvent.Query
+            }
+            else {
+                $parameters = $WebEvent.Data
+            }
 
-                # invoke the function
-                $result = (. $cmd @parameters)
+            # invoke the function
+            $result = (. $cmd @parameters)
 
             # if we have a result, convert it to json
             if (!(Test-PodeIsEmpty $result)) {
                 Write-PodeJsonResponse -Value $result -Depth 1
             }
-        } -PassThru)
+        }
 
         # set the openapi metadata of the function, unless told to skip
         if ($NoOpenApi) {
@@ -2139,7 +2141,8 @@ function Add-PodePage {
                 # invoke the function (optional splat data)
                 if (Test-PodeIsEmpty $data) {
                     $result = (. $script)
-                } else {
+                }
+                else {
                     $result = (. $script @data)
                 }
 

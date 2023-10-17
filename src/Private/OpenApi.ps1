@@ -161,7 +161,6 @@ function Test-PodeOAComponentSchema {
 }
 
 function Test-PodeOAComponentResponse {
-function Test-PodeOAComponentResponse {
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -345,7 +344,6 @@ function ConvertTo-PodeOASchemaProperty {
 }
 
 function ConvertTo-PodeOASchemaObjectProperty {
-function ConvertTo-PodeOASchemaObjectProperty {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable[]]
@@ -433,13 +431,11 @@ function Get-PodeOpenApiDefinitionInternal {
                 $_authObj = @{
                     type = $authType.Scheme
                     in   = $authType.Arguments.Location.ToLowerInvariant()
-                    in   = $authType.Arguments.Location.ToLowerInvariant()
                     name = $authType.Arguments.LocationName
                 }
             } else {
                 $_authObj = @{
-                    type   = $authType.Scheme.ToLowerInvariant()
-                    type   = $authType.Scheme.ToLowerInvariant()
+                    type   = $authType.Scheme.ToLowerInvariant() 
                     scheme = $authType.Name.ToLowerInvariant()
                 }
             }
