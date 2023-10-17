@@ -3228,7 +3228,13 @@ function ConvertTo-PodeYamlInternal {
                     '{}' 
                 }
                 break
-            }  
+            }   
+            'Boolean' {
+                "$(&{
+                            if ($InputObject -eq $true) { 'true' }
+                            else { 'false' }
+                        })"
+            }
             'string' {
                 $String = "$InputObject"
                 if (($string -match '[\r\n]' -or $string.Length -gt 80) -and !$string.StartsWith('http')) {

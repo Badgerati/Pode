@@ -185,22 +185,15 @@ function Test-PodeOAComponentParameter {
         [Parameter(Mandatory = $true)]
         [string]
         $Name
-    )
-
+    ) 
     return $PodeContext.Server.OpenAPI.components.parameters.ContainsKey($Name)
 }
 
-function ConvertTo-PodeOASchemaProperty {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+
+function ConvertTo-PodeOAofProperty {
+    param (
         [hashtable]
-        $Property,
-
-        [switch]
-        $InObject,
-
-        [switch]
-        $NoDescription
+        $Property
     )
     if ( @('allOf', 'oneOf', 'anyOf') -contains $Property.type  ) {
         $schema = [ordered]@{
@@ -221,12 +214,26 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.discriminator) {
             $schema['discriminator'] = @{'propertyName' = $Property.discriminator }
         }
+        return  $schema
+    }
+    return  @{}
+}
+
+function ConvertTo-PodeOASchemaProperty {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [hashtable]
+        $Property,
+        [switch]
+        $NoDescription
+    )
+    if ( @('allOf', 'oneOf', 'anyOf') -contains $Property.type  ) { 
+        $schema = ConvertTo-PodeOAofProperty -Property $Property 
     } else {
         # base schema type
         $schema = [ordered]@{
             type = $Property.type 
         }
-
 
         if (!$NoDescription -and $Property.description) {
             $schema['description'] = $Property.description
@@ -250,8 +257,6 @@ function ConvertTo-PodeOASchemaProperty {
                 }
             }
         }
-
-    
 
         # are we using an array?
         if ($Property.array) {
@@ -315,6 +320,11 @@ function ConvertTo-PodeOASchemaProperty {
         }
 
         if ($Property.type -ieq 'object') {
+            foreach ($prop in $Property.properties) {
+                if ( @('allOf', 'oneOf', 'anyOf') -contains $prop.type  ) { 
+                    $schema += ConvertTo-PodeOAofProperty -Property $prop  
+                }
+            } 
             $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
 
             $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
@@ -329,8 +339,7 @@ function ConvertTo-PodeOASchemaProperty {
                 } 
             }
         }
-    }
-
+    } 
     return $schema
 }
 
@@ -339,14 +348,13 @@ function ConvertTo-PodeOASchemaObjectProperty {
         [Parameter(Mandatory = $true)]
         [hashtable[]]
         $Properties
-    )
-
-    $schema = @{}
-
-    foreach ($prop in $Properties) {
-        $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty -InObject)
-    }
-
+    ) 
+    $schema = @{}  
+    foreach ($prop in $Properties) { 
+        if ( @('allOf', 'oneOf', 'anyOf') -notcontains $prop.type  ) {  
+            $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty  )
+        }
+    } 
     return $schema
 }
 

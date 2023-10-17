@@ -286,6 +286,7 @@
         'Add-PodeOAExternalDoc',
         'Add-PodeOATag',
         'Add-PodeOAComponentHeaderSchema',
+        'New-PodeOAOfProperty'
 
         # Metrics
         'Get-PodeServerUptime',

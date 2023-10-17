@@ -1015,6 +1015,10 @@ New-PodeOANumberProperty -Name 'age' -Required
 function New-PodeOAIntProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
+        [Parameter(ValueFromPipeline = $true )]
+        [hashtable[]]
+        $ParamsList,
+
         [Parameter()]
         [string]
         $Name,
@@ -1092,90 +1096,104 @@ function New-PodeOAIntProperty {
 
 
     )
+    begin {
+        $param = @{
+            name = $Name
+            type = 'integer'    
+            meta = @{}
+        }
 
-    $param = @{
-        name = $Name
-        type = 'integer'    
-        meta = @{}
+        if ($Description ) {
+            $param.description = $Description 
+        }
+
+        if ($Array.IsPresent ) {
+            $param.array = $Array.ToBool() 
+        }
+
+        if ($Object.IsPresent ) {
+            $param.object = $Object.ToBool() 
+        }
+
+        if ($Required.IsPresent ) {
+            $param.required = $Required.ToBool() 
+        }
+
+        if ($Deprecated.IsPresent ) {
+            $param.deprecated = $Deprecated.ToBool() 
+        }
+
+        if ($Nullable.IsPresent ) {
+            $param.meta['nullable'] = $Nullable.ToBool() 
+        }
+
+        if ($WriteOnly.IsPresent ) {
+            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+        }
+
+        if ($ReadOnly.IsPresent ) {
+            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+        }
+
+        if ($Example ) {
+            $param.meta['example'] = $Example 
+        }
+
+        if ($UniqueItems.IsPresent ) {
+            $param.uniqueItems = $UniqueItems.ToBool() 
+        } 
+
+        if ($Default) {
+            $param.default = $Default 
+        }
+
+        if ($Format) {
+            $param.format = $Format.ToLowerInvariant() 
+        }
+
+        if ($MaxItems) {
+            $param.maxItems = $MaxItems 
+        }
+
+        if ($MinItems) {
+            $param.minItems = $MinItems 
+        }
+
+        if ($Enum) {
+            $param.enum = $Enum 
+        }  
+
+        if ($XlmName) {
+            $param.xlmName = $XlmName 
+        }  
+
+        if ($Minimum -ne [int]::MinValue) {
+            $param.meta['minimum'] = $Minimum
+        }
+
+        if ($Maximum -ne [int]::MaxValue) {
+            $param.meta['maximum'] = $Maximum
+        }
+
+        if ($MultiplesOf -ne 0) {
+            $param.meta['multipleOf'] = $MultiplesOf
+        }
+
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+    }
+    process {
+        if ($ParamsList) {
+            $collectedInput.AddRange($ParamsList)
+        }
     }
 
-    if ($Description ) {
-        $param.description = $Description 
-    }
-
-    if ($Array.IsPresent ) {
-        $param.array = $Array.ToBool() 
-    }
-
-    if ($Object.IsPresent ) {
-        $param.object = $Object.ToBool() 
-    }
-
-    if ($Required.IsPresent ) {
-        $param.required = $Required.ToBool() 
-    }
-
-    if ($Deprecated.IsPresent ) {
-        $param.deprecated = $Deprecated.ToBool() 
-    }
-
-    if ($Nullable.IsPresent ) {
-        $param.meta['nullable'] = $Nullable.ToBool() 
-    }
-
-    if ($WriteOnly.IsPresent ) {
-        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
-    }
-
-    if ($ReadOnly.IsPresent ) {
-        $param.meta['readOnly'] = $ReadOnly.ToBool() 
-    }
-
-    if ($Example ) {
-        $param.meta['example'] = $Example 
-    }
-
-    if ($UniqueItems.IsPresent ) {
-        $param.uniqueItems = $UniqueItems.ToBool() 
+    end {
+        if ($collectedInput) {  
+            $collectedInput + $param 
+        } else {
+            return $param
+        }
     } 
-
-    if ($Default) {
-        $param.default = $Default 
-    }
-
-    if ($Format) {
-        $param.format = $Format.ToLowerInvariant() 
-    }
-
-    if ($MaxItems) {
-        $param.maxItems = $MaxItems 
-    }
-
-    if ($MinItems) {
-        $param.minItems = $MinItems 
-    }
-
-    if ($Enum) {
-        $param.enum = $Enum 
-    }  
-
-    if ($XlmName) {
-        $param.xlmName = $XlmName 
-    }  
-
-    if ($Minimum -ne [int]::MinValue) {
-        $param.meta['minimum'] = $Minimum
-    }
-
-    if ($Maximum -ne [int]::MaxValue) {
-        $param.meta['maximum'] = $Maximum
-    }
-
-    if ($MultiplesOf -ne 0) {
-        $param.meta['multipleOf'] = $MultiplesOf
-    }
-
-    return $param
 }
 
 <#
@@ -1251,6 +1269,10 @@ New-PodeOANumberProperty -Name 'gravity' -Default 9.8
 function New-PodeOANumberProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
+        [Parameter(ValueFromPipeline = $true )]
+        [hashtable[]]
+        $ParamsList,
+
         [Parameter()]
         [string]
         $Name,
@@ -1326,90 +1348,104 @@ function New-PodeOANumberProperty {
         [int]
         $MaxItems
     )
-
-    $param = @{
-        name = $Name
-        type = 'number'  
-        meta = @{}
-    }
+    begin {  
+        $param = @{
+            name = $Name
+            type = 'number'  
+            meta = @{}
+        }
     
-    if ($Description ) {
-        $param.description = $Description 
+        if ($Description ) {
+            $param.description = $Description 
+        }
+
+        if ($Array.IsPresent ) {
+            $param.array = $Array.ToBool() 
+        }
+
+        if ($Object.IsPresent ) {
+            $param.object = $Object.ToBool() 
+        }
+
+        if ($Required.IsPresent ) {
+            $param.required = $Required.ToBool() 
+        }
+
+        if ($Deprecated.IsPresent ) {
+            $param.deprecated = $Deprecated.ToBool() 
+        }
+
+        if ($Nullable.IsPresent ) {
+            $param.meta['nullable'] = $Nullable.ToBool() 
+        }
+
+        if ($WriteOnly.IsPresent ) {
+            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+        }
+
+        if ($ReadOnly.IsPresent ) {
+            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+        }
+
+        if ($Example ) {
+            $param.meta['example'] = $Example 
+        }
+
+        if ($UniqueItems.IsPresent ) {
+            $param.uniqueItems = $UniqueItems.ToBool() 
+        } 
+
+        if ($Default) {
+            $param.default = $Default 
+        }
+
+        if ($Format) {
+            $param.format = $Format.ToLowerInvariant() 
+        }
+
+        if ($MaxItems) {
+            $param.maxItems = $MaxItems 
+        }
+
+        if ($MinItems) {
+            $param.minItems = $MinItems 
+        }
+
+        if ($Enum) {
+            $param.enum = $Enum 
+        } 
+
+        if ($XlmName) {
+            $param.xlmName = $XlmName 
+        }  
+
+        if ($Minimum -ne [double]::MinValue) {
+            $param.meta['minimum'] = $Minimum
+        }
+
+        if ($Maximum -ne [double]::MaxValue) {
+            $param.meta['maximum'] = $Maximum
+        }
+
+        if ($MultiplesOf -ne 0) {
+            $param.meta['multipleOf'] = $MultiplesOf
+        }
+
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+    }
+    process {
+        if ($ParamsList) {
+            $collectedInput.AddRange($ParamsList)
+        }
     }
 
-    if ($Array.IsPresent ) {
-        $param.array = $Array.ToBool() 
-    }
-
-    if ($Object.IsPresent ) {
-        $param.object = $Object.ToBool() 
-    }
-
-    if ($Required.IsPresent ) {
-        $param.required = $Required.ToBool() 
-    }
-
-    if ($Deprecated.IsPresent ) {
-        $param.deprecated = $Deprecated.ToBool() 
-    }
-
-    if ($Nullable.IsPresent ) {
-        $param.meta['nullable'] = $Nullable.ToBool() 
-    }
-
-    if ($WriteOnly.IsPresent ) {
-        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
-    }
-
-    if ($ReadOnly.IsPresent ) {
-        $param.meta['readOnly'] = $ReadOnly.ToBool() 
-    }
-
-    if ($Example ) {
-        $param.meta['example'] = $Example 
-    }
-
-    if ($UniqueItems.IsPresent ) {
-        $param.uniqueItems = $UniqueItems.ToBool() 
+    end {
+        if ($collectedInput) {  
+            $collectedInput + $param 
+        } else {
+            return $param
+        }
     } 
-
-    if ($Default) {
-        $param.default = $Default 
-    }
-
-    if ($Format) {
-        $param.format = $Format.ToLowerInvariant() 
-    }
-
-    if ($MaxItems) {
-        $param.maxItems = $MaxItems 
-    }
-
-    if ($MinItems) {
-        $param.minItems = $MinItems 
-    }
-
-    if ($Enum) {
-        $param.enum = $Enum 
-    } 
-
-    if ($XlmName) {
-        $param.xlmName = $XlmName 
-    }  
-
-    if ($Minimum -ne [double]::MinValue) {
-        $param.meta['minimum'] = $Minimum
-    }
-
-    if ($Maximum -ne [double]::MaxValue) {
-        $param.meta['maximum'] = $Maximum
-    }
-
-    if ($MultiplesOf -ne 0) {
-        $param.meta['multipleOf'] = $MultiplesOf
-    }
-
-    return $param
 }
 
 <#
@@ -1491,6 +1527,10 @@ New-PodeOAStringProperty -Name 'password' -Format Password
 function New-PodeOAStringProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
+        [Parameter(ValueFromPipeline = $true )]
+        [hashtable[]]
+        $ParamsList,
+
         [Parameter()]
         [string]
         $Name,
@@ -1572,96 +1612,109 @@ function New-PodeOAStringProperty {
         [int]
         $MaxItems
     )
+    begin {  
+        if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
+            $_format = $CustomFormat
+        } elseif ($Format) {
+            $_format = $Format
+        }
 
-    if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
-        $_format = $CustomFormat
-    } elseif ($Format) {
-        $_format = $Format
-    }
-
-    $param = @{
-        name = $Name
-        type = 'string' 
-        meta = @{}
-    }
+        $param = @{
+            name = $Name
+            type = 'string' 
+            meta = @{}
+        }
     
-    if ($Description ) {
-        $param.description = $Description 
-    }
+        if ($Description ) {
+            $param.description = $Description 
+        }
     
-    if ($Array.IsPresent ) {
-        $param.array = $Array.ToBool() 
-    }
+        if ($Array.IsPresent ) {
+            $param.array = $Array.ToBool() 
+        }
 
-    if ($Object.IsPresent ) {
-        $param.object = $Object.ToBool() 
-    }
+        if ($Object.IsPresent ) {
+            $param.object = $Object.ToBool() 
+        }
 
-    if ($Required.IsPresent ) {
-        $param.required = $Required.ToBool() 
-    }
+        if ($Required.IsPresent ) {
+            $param.required = $Required.ToBool() 
+        }
 
-    if ($Deprecated.IsPresent ) {
-        $param.deprecated = $Deprecated.ToBool() 
-    }
+        if ($Deprecated.IsPresent ) {
+            $param.deprecated = $Deprecated.ToBool() 
+        }
 
-    if ($Nullable.IsPresent ) {
-        $param.meta['nullable'] = $Nullable.ToBool() 
-    }
+        if ($Nullable.IsPresent ) {
+            $param.meta['nullable'] = $Nullable.ToBool() 
+        }
 
-    if ($WriteOnly.IsPresent ) {
-        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
-    }
+        if ($WriteOnly.IsPresent ) {
+            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+        }
 
-    if ($ReadOnly.IsPresent ) {
-        $param.meta['readOnly'] = $ReadOnly.ToBool() 
-    }
+        if ($ReadOnly.IsPresent ) {
+            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+        }
 
-    if ($Example ) {
-        $param.meta['example'] = $Example 
-    }
+        if ($Example ) {
+            $param.meta['example'] = $Example 
+        }
 
-    if ($UniqueItems.IsPresent ) {
-        $param.uniqueItems = $UniqueItems.ToBool() 
-    } 
+        if ($UniqueItems.IsPresent ) {
+            $param.uniqueItems = $UniqueItems.ToBool() 
+        } 
 
-    if ($Default) {
-        $param.default = $Default 
-    }
+        if ($Default) {
+            $param.default = $Default 
+        }
 
-    if ($Format -or $CustomFormat) {
-        $param.format = $_format.ToLowerInvariant() 
-    }
+        if ($Format -or $CustomFormat) {
+            $param.format = $_format.ToLowerInvariant() 
+        }
 
-    if ($MaxItems) {
-        $param.maxItems = $MaxItems 
-    }
+        if ($MaxItems) {
+            $param.maxItems = $MaxItems 
+        }
 
-    if ($MinItems) {
-        $param.minItems = $MinItems 
-    }
+        if ($MinItems) {
+            $param.minItems = $MinItems 
+        }
 
-    if ($Enum) {
-        $param.enum = $Enum 
-    } 
+        if ($Enum) {
+            $param.enum = $Enum 
+        } 
 
-    if ($XlmName) {
-        $param.xlmName = $XlmName 
-    }  
+        if ($XlmName) {
+            $param.xlmName = $XlmName 
+        }  
 
-    if ($Pattern) {
-        $param.meta['pattern'] = $Pattern 
-    } 
+        if ($Pattern) {
+            $param.meta['pattern'] = $Pattern 
+        } 
 
-    if ($MinLength) {
-        $param.meta['minLength'] = $MinLength 
-    } 
+        if ($MinLength) {
+            $param.meta['minLength'] = $MinLength 
+        } 
     
-    if ($MaxLength) {
-        $param.meta['maxLength'] = $MaxLength 
+        if ($MaxLength) {
+            $param.meta['maxLength'] = $MaxLength 
+        } 
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+    }
+    process {
+        if ($ParamsList) {
+            $collectedInput.AddRange($ParamsList)
+        }
     }
 
-    return $param
+    end {
+        if ($collectedInput) {  
+            $collectedInput + $param 
+        } else {
+            return $param
+        }
+    } 
 }
 
 <#
@@ -1725,6 +1778,11 @@ New-PodeOABoolProperty -Name 'enabled' -Required
 function New-PodeOABoolProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
+        
+        [Parameter(ValueFromPipeline = $true )]
+        [hashtable[]]
+        $ParamsList,
+
         [Parameter()]
         [string]
         $Name,
@@ -1783,74 +1841,87 @@ function New-PodeOABoolProperty {
         [int]
         $MaxItems
     )
+    begin {
+        $param = @{
+            name = $Name
+            type = 'boolean'   
+            meta = @{}
+        }
 
-    $param = @{
-        name = $Name
-        type = 'boolean'   
-        meta = @{}
+        if ($Description ) {
+            $param.description = $Description 
+        }
+
+        if ($Array.IsPresent ) {
+            $param.array = $Array.ToBool() 
+        }
+
+        if ($Object.IsPresent ) {
+            $param.object = $Object.ToBool() 
+        }
+
+        if ($Required.IsPresent ) {
+            $param.required = $Required.ToBool() 
+        }
+
+        if ($Deprecated.IsPresent ) {
+            $param.deprecated = $Deprecated.ToBool() 
+        }
+
+        if ($Nullable.IsPresent ) {
+            $param.meta['nullable'] = $Nullable.ToBool() 
+        }
+
+        if ($WriteOnly.IsPresent ) {
+            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+        }
+
+        if ($ReadOnly.IsPresent ) {
+            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+        }
+
+        if ($Example ) {
+            $param.meta['example'] = $Example 
+        }
+
+        if ($UniqueItems.IsPresent ) {
+            $param.uniqueItems = $UniqueItems.ToBool() 
+        } 
+
+        if ($Default) {
+            $param.default = $Default 
+        } 
+
+        if ($MaxItems) {
+            $param.maxItems = $MaxItems 
+        }
+
+        if ($MinItems) {
+            $param.minItems = $MinItems 
+        }
+
+        if ($Enum) {
+            $param.enum = $Enum 
+        } 
+
+        if ($XlmName) {
+            $param.xlmName = $XlmName 
+        }   
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+    }
+    process {
+        if ($ParamsList) {
+            $collectedInput.AddRange($ParamsList)
+        }
     }
 
-    if ($Description ) {
-        $param.description = $Description 
-    }
-
-    if ($Array.IsPresent ) {
-        $param.array = $Array.ToBool() 
-    }
-
-    if ($Object.IsPresent ) {
-        $param.object = $Object.ToBool() 
-    }
-
-    if ($Required.IsPresent ) {
-        $param.required = $Required.ToBool() 
-    }
-
-    if ($Deprecated.IsPresent ) {
-        $param.deprecated = $Deprecated.ToBool() 
-    }
-
-    if ($Nullable.IsPresent ) {
-        $param.meta['nullable'] = $Nullable.ToBool() 
-    }
-
-    if ($WriteOnly.IsPresent ) {
-        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
-    }
-
-    if ($ReadOnly.IsPresent ) {
-        $param.meta['readOnly'] = $ReadOnly.ToBool() 
-    }
-
-    if ($Example ) {
-        $param.meta['example'] = $Example 
-    }
-
-    if ($UniqueItems.IsPresent ) {
-        $param.uniqueItems = $UniqueItems.ToBool() 
+    end {
+        if ($collectedInput) {  
+            $collectedInput + $param 
+        } else {
+            return $param
+        }
     } 
-
-    if ($Default) {
-        $param.default = $Default 
-    } 
-
-    if ($MaxItems) {
-        $param.maxItems = $MaxItems 
-    }
-
-    if ($MinItems) {
-        $param.minItems = $MinItems 
-    }
-
-    if ($Enum) {
-        $param.enum = $Enum 
-    } 
-
-    if ($XlmName) {
-        $param.xlmName = $XlmName 
-    }  
-
-    return $param
 }
 
 <#
@@ -1917,6 +1988,11 @@ New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
 function New-PodeOAObjectProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
+        
+        [Parameter(ValueFromPipeline = $true )]
+        [hashtable[]]
+        $ParamsList,
+
         [Parameter()]
         [string]
         $Name,
@@ -1974,78 +2050,91 @@ function New-PodeOAObjectProperty {
         [hashtable[]]
         $Xml
     )
+    begin {
+        $param = @{
+            name       = $Name
+            type       = 'object'    
+            properties = $Properties  
+            meta       = @{}
+        }
+        if ($Description ) {
+            $param.description = $Description 
+        }
 
-    $param = @{
-        name       = $Name
-        type       = 'object'    
-        properties = $Properties  
-        meta       = @{}
+        if ($Array.IsPresent ) {
+            $param.array = $Array.ToBool() 
+        } 
+
+        if ($Required.IsPresent ) {
+            $param.required = $Required.ToBool() 
+        }
+
+        if ($Deprecated.IsPresent ) {
+            $param.deprecated = $Deprecated.ToBool() 
+        }
+
+        if ($Nullable.IsPresent ) {
+            $param.meta['nullable'] = $Nullable.ToBool() 
+        }
+
+        if ($WriteOnly.IsPresent ) {
+            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+        }
+
+        if ($ReadOnly.IsPresent ) {
+            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+        }
+
+        if ($Example ) {
+            $param.meta['example'] = $Example 
+        }
+
+        if ($UniqueItems.IsPresent ) {
+            $param.uniqueItems = $UniqueItems.ToBool() 
+        } 
+
+        if ($Default) {
+            $param.default = $Default 
+        } 
+
+        if ($MaxItems) {
+            $param.maxItems = $MaxItems 
+        }
+
+        if ($MinItems) {
+            $param.minItems = $MinItems 
+        }
+
+        if ($MinProperties) {
+            $param.minProperties = $MinProperties 
+        }
+
+        if ($MaxProperties) {
+            $param.maxProperties = $MaxProperties 
+        }
+
+        if ($Xml) {
+            $param.xml = $Xml 
+        }
+     
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
     }
-    if ($Description ) {
-        $param.description = $Description 
+    process {
+        if ($ParamsList) {
+            $collectedInput.AddRange($ParamsList)
+        }
     }
 
-    if ($Array.IsPresent ) {
-        $param.array = $Array.ToBool() 
+    end {
+        if ($collectedInput) {  
+            $collectedInput + $param 
+        } else {
+            return $param
+        }
     } 
-
-    if ($Required.IsPresent ) {
-        $param.required = $Required.ToBool() 
-    }
-
-    if ($Deprecated.IsPresent ) {
-        $param.deprecated = $Deprecated.ToBool() 
-    }
-
-    if ($Nullable.IsPresent ) {
-        $param.meta['nullable'] = $Nullable.ToBool() 
-    }
-
-    if ($WriteOnly.IsPresent ) {
-        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
-    }
-
-    if ($ReadOnly.IsPresent ) {
-        $param.meta['readOnly'] = $ReadOnly.ToBool() 
-    }
-
-    if ($Example ) {
-        $param.meta['example'] = $Example 
-    }
-
-    if ($UniqueItems.IsPresent ) {
-        $param.uniqueItems = $UniqueItems.ToBool() 
-    } 
-
-    if ($Default) {
-        $param.default = $Default 
-    } 
-
-    if ($MaxItems) {
-        $param.maxItems = $MaxItems 
-    }
-
-    if ($MinItems) {
-        $param.minItems = $MinItems 
-    }
-
-    if ($MinProperties) {
-        $param.minProperties = $MinProperties 
-    }
-
-    if ($MaxProperties) {
-        $param.maxProperties = $MaxProperties 
-    }
-
-    if ($Xml) {
-        $param.xml = $Xml 
-    }
-    
-    return $param
 }
 
-
-
+ 
 <#
 .SYNOPSIS
 Creates a new OpenAPI object combining schemas and properties.
@@ -2077,9 +2166,14 @@ Add-PodeOAComponentSchema -Name 'Cat' -Schema (
                 ))        
         ))  
 #>
-function New-PodeOAOf {
+function New-PodeOAOfProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
-    param(  
+    param(   
+        
+        [Parameter(ValueFromPipeline = $true )]
+        [hashtable[]]
+        $ParamsList,
+
         [Parameter(Mandatory)]
         [ValidateSet('OneOf', 'AnyOf', 'AllOf')]
         [string]
@@ -2093,31 +2187,46 @@ function New-PodeOAOf {
         [string]
         $Discriminator 
     )
-
-    $param = @{      } 
-    switch ($type) {
-        'OneOf' {
-            $param.type = 'oneOf'
+    begin {  
+        $param = @{} 
+        switch ($type) {
+            'OneOf' {
+                $param.type = 'oneOf'
+            }
+            'AnyOf' {
+                $param.type = 'anyOf'
+            }
+            'AllOf' {
+                $param.type = 'allOf'
+            } 
         }
-        'AnyOf' {
-            $param.type = 'anyOf'
+        if ($Properties) {
+            $param.properties = $Properties 
         }
-        'AllOf' {
-            $param.type = 'allOf'
+        if ($Schemas) {
+            $param.schemas = $Schemas 
         } 
-    }
-    if ($Properties) {
-        $param.properties = $Properties 
-    }
-    if ($Schemas) {
-        $param.schemas = $Schemas 
-    } 
-    if ($Discriminator ) {
-        $param.discriminator = $Discriminator 
-    } 
+        if ($Discriminator ) {
+            $param.discriminator = $Discriminator 
+        } 
     
-    return $param
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+    }
+    process {
+        if ($ParamsList) {
+            $collectedInput.AddRange($ParamsList)
+        }
+    }
+
+    end {
+        if ($collectedInput) {  
+            $collectedInput + $param 
+        } else {
+            return $param
+        }
+    } 
 }
+ 
 
 <#
 .SYNOPSIS
@@ -2181,6 +2290,11 @@ New-PodeOASchemaProperty -Name 'Config' -ComponentSchema "MyConfigSchema"
 function New-PodeOASchemaProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
+        
+        [Parameter(ValueFromPipeline = $true )]
+        [hashtable[]]
+        $ParamsList,
+
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
@@ -2243,78 +2357,91 @@ function New-PodeOASchemaProperty {
         [hashtable[]]
         $Xml
     )
-    if ( !(Test-PodeOAComponentSchema -Name $ComponentSchema)) {
-        throw "The OpenApi component schema doesn't exist: $ComponentSchema"
-    }  
-    $param = @{
-        name   = $Name
-        type   = 'schema' 
-        schema = $ComponentSchema 
-        meta   = @{}
+    begin {
+        if ( !(Test-PodeOAComponentSchema -Name $ComponentSchema)) {
+            throw "The OpenApi component schema doesn't exist: $ComponentSchema"
+        }  
+        $param = @{
+            name   = $Name
+            type   = 'schema' 
+            schema = $ComponentSchema 
+            meta   = @{}
+        }
+        if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'array') {   
+            if ($Description ) {
+                $param.description = $Description 
+            }
+
+            if ($Array.IsPresent ) {
+                $param.array = $Array.ToBool() 
+            } 
+
+            if ($Required.IsPresent ) {
+                $param.required = $Required.ToBool() 
+            }
+
+            if ($Deprecated.IsPresent ) {
+                $param.deprecated = $Deprecated.ToBool() 
+            }
+
+            if ($Nullable.IsPresent ) {
+                $param.meta['nullable'] = $Nullable.ToBool() 
+            }
+
+            if ($WriteOnly.IsPresent ) {
+                $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+            }
+
+            if ($ReadOnly.IsPresent ) {
+                $param.meta['readOnly'] = $ReadOnly.ToBool() 
+            }
+
+            if ($Example ) {
+                $param.meta['example'] = $Example 
+            }
+
+            if ($UniqueItems.IsPresent ) {
+                $param.uniqueItems = $UniqueItems.ToBool() 
+            } 
+
+            if ($Default) {
+                $param.default = $Default 
+            } 
+
+            if ($MaxItems) {
+                $param.maxItems = $MaxItems 
+            }
+
+            if ($MinItems) {
+                $param.minItems = $MinItems 
+            }
+
+            if ($MinProperties) {
+                $param.minProperties = $MinProperties 
+            }
+
+            if ($MaxProperties) {
+                $param.maxProperties = $MaxProperties 
+            }
+
+            if ($Xml) {
+                $param.xml = $Xml 
+            }
+        }
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
     }
-    if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'array') {   
-        if ($Description ) {
-            $param.description = $Description 
-        }
-
-        if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool() 
-        } 
-
-        if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool() 
-        }
-
-        if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool() 
-        }
-
-        if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool() 
-        }
-
-        if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
-        }
-
-        if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool() 
-        }
-
-        if ($Example ) {
-            $param.meta['example'] = $Example 
-        }
-
-        if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool() 
-        } 
-
-        if ($Default) {
-            $param.default = $Default 
-        } 
-
-        if ($MaxItems) {
-            $param.maxItems = $MaxItems 
-        }
-
-        if ($MinItems) {
-            $param.minItems = $MinItems 
-        }
-
-        if ($MinProperties) {
-            $param.minProperties = $MinProperties 
-        }
-
-        if ($MaxProperties) {
-            $param.maxProperties = $MaxProperties 
-        }
-
-        if ($Xml) {
-            $param.xml = $Xml 
+    process {
+        if ($ParamsList) {
+            $collectedInput.AddRange($ParamsList)
         }
     }
-    
-    return $param
+    end {
+        if ($collectedInput) {  
+            $collectedInput + $param 
+        } else {
+            return $param
+        }
+    } 
 }
 
 
