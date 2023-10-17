@@ -3241,14 +3241,14 @@ function ConvertTo-PodeYamlInternal {
                     # right, we have to format it to YAML spec.
                     $folded = ">`n" # signal that we are going to use the readable 'newlines-folded' format
                     $string.Split("`n") | ForEach-Object {
-                        $_ = $_ -replace '\r$'
+                        $workingString = $_ -replace '\r$'
                         $length = $_.Length
                         $IndexIntoString = 0
                         $wrap = 80
                         while ($length -gt $IndexIntoString + $Wrap) {
                             $BreakPoint = $wrap
-                            $earliest = $_.Substring($IndexIntoString, $wrap).LastIndexOf(' ')
-                            $latest = $_.Substring($IndexIntoString + $wrap).IndexOf(' ')
+                            $earliest = $workingString.Substring($IndexIntoString, $wrap).LastIndexOf(' ')
+                            $latest = $workingString.Substring($IndexIntoString + $wrap).IndexOf(' ')
                             if (($earliest -eq -1) -or ($latest -eq -1)) {
                                 $BreakPoint = $wrap
                             } elseif ($wrap - $earliest -lt ($latest)) {
@@ -3261,11 +3261,11 @@ function ConvertTo-PodeYamlInternal {
                                 $BreakPoint = $wrap # in case it is a string without spaces
                             } 
                                 
-                            $folded += $padding + $_.Substring($IndexIntoString, $BreakPoint).Trim() + "`n"
+                            $folded += $padding + $workingString.Substring($IndexIntoString, $BreakPoint).Trim() + "`n"
                             $IndexIntoString += $BreakPoint
                         } 
                         if ($IndexIntoString -lt $length) {
-                            $folded += $padding + $_.Substring($IndexIntoString).Trim() + "`n"
+                            $folded += $padding + $workingString.Substring($IndexIntoString).Trim() + "`n"
                         } else {
                             $folded += "`n"
                         }

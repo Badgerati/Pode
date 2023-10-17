@@ -11,7 +11,6 @@ examples/issues/
 pkg/
 .vs/
 
-
 # Code Runner
 tempCodeRunnerFile.ps1
 
@@ -189,7 +188,6 @@ ClientBin/
 *.publishsettings
 node_modules/
 
-
 # RIA/Silverlight projects
 Generated_Code/
 
@@ -259,5 +257,4 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
-.vscode/settings.json
 .vscode/launch.json

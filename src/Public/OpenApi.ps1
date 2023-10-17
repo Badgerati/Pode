@@ -2116,7 +2116,7 @@ function New-PodeOAObjectProperty {
         if ($Xml) {
             $param.xml = $Xml 
         }
-     
+
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
     }
     process {
@@ -2134,7 +2134,7 @@ function New-PodeOAObjectProperty {
     } 
 }
 
- 
+
 <#
 .SYNOPSIS
 Creates a new OpenAPI object combining schemas and properties.
