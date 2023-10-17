@@ -38,12 +38,11 @@ Set-PodeCookie -Name 'Views' -Value 2 -Secret 'hunter2'
 .EXAMPLE
 Set-PodeCookie -Name 'Views' -Value 2 -Duration 3600
 #>
-function Set-PodeCookie
-{
-    [CmdletBinding(DefaultParameterSetName='Duration')]
+function Set-PodeCookie {
+    [CmdletBinding(DefaultParameterSetName = 'Duration')]
     [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -55,11 +54,11 @@ function Set-PodeCookie
         [string]
         $Secret,
 
-        [Parameter(ParameterSetName='Duration')]
+        [Parameter(ParameterSetName = 'Duration')]
         [int]
         $Duration = 0,
 
-        [Parameter(ParameterSetName='ExpiryDate')]
+        [Parameter(ParameterSetName = 'ExpiryDate')]
         [datetime]
         $ExpiryDate,
 
@@ -124,12 +123,11 @@ Get-PodeCookie -Name 'Views'
 .EXAMPLE
 Get-PodeCookie -Name 'Views' -Secret 'hunter2'
 #>
-function Get-PodeCookie
-{
+function Get-PodeCookie {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -181,11 +179,10 @@ Get-PodeCookieValue -Name 'Views'
 .EXAMPLE
 Get-PodeCookieValue -Name 'Views' -Secret 'hunter2'
 #>
-function Get-PodeCookieValue
-{
+function Get-PodeCookieValue {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -215,12 +212,11 @@ The name of the cookie to test for on the Request.
 .EXAMPLE
 Test-PodeCookie -Name 'Views'
 #>
-function Test-PodeCookie
-{
+function Test-PodeCookie {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -242,11 +238,10 @@ The name of the cookie to be removed.
 .EXAMPLE
 Remove-PodeCookie -Name 'Views'
 #>
-function Remove-PodeCookie
-{
+function Remove-PodeCookie {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -283,12 +278,11 @@ A secret to use for attempting to unsign the cookie's value.
 .EXAMPLE
 Test-PodeCookieSigned -Name 'Views' -Secret 'hunter2'
 #>
-function Test-PodeCookieSigned
-{
+function Test-PodeCookieSigned {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -328,20 +322,19 @@ Update-PodeCookieExpiry -Name  'Views' -Duration 1800
 .EXAMPLE
 Update-PodeCookieExpiry -Name  'Views' -ExpiryDate ([datetime]::UtcNow.AddSeconds(1800))
 #>
-function Update-PodeCookieExpiry
-{
-    [CmdletBinding(DefaultParameterSetName='Duration')]
+function Update-PodeCookieExpiry {
+    [CmdletBinding(DefaultParameterSetName = 'Duration')]
     [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(ParameterSetName='Duration')]
+        [Parameter(ParameterSetName = 'Duration')]
         [int]
         $Duration = 0,
 
-        [Parameter(ParameterSetName='ExpiryDate')]
+        [Parameter(ParameterSetName = 'ExpiryDate')]
         [datetime]
         $ExpiryDate
     )
@@ -394,19 +387,18 @@ Set-PodeCookieSecret -Name 'my-secret' -Value 'shhhh!'
 .EXAMPLE
 Set-PodeCookieSecret -Value 'hunter2' -Global
 #>
-function Set-PodeCookieSecret
-{
+function Set-PodeCookieSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName='General')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'General')]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value,
 
-        [Parameter(ParameterSetName='Global')]
+        [Parameter(ParameterSetName = 'Global')]
         [switch]
         $Global
     )
@@ -437,16 +429,15 @@ Get-PodeCookieSecret -Name 'my-secret'
 .EXAMPLE
 Get-PodeCookieSecret -Global
 #>
-function Get-PodeCookieSecret
-{
+function Get-PodeCookieSecret {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName='General')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'General')]
         [string]
         $Name,
 
-        [Parameter(ParameterSetName='Global')]
+        [Parameter(ParameterSetName = 'Global')]
         [switch]
         $Global
     )

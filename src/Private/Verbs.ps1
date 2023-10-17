@@ -1,7 +1,6 @@
-function Find-PodeVerb
-{
+function Find-PodeVerb {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Verb,
@@ -19,11 +18,11 @@ function Find-PodeVerb
 
     # otherwise, match regex on the verbs (first match only)
     $valid = @(foreach ($key in $PodeContext.Server.Verbs.Keys) {
-        if (($key -ine '*') -and ($Verb -imatch "^$($key)$")) {
-            $key
-            break
-        }
-    })[0]
+            if (($key -ine '*') -and ($Verb -imatch "^$($key)$")) {
+                $key
+                break
+            }
+        })[0]
 
     if ($null -eq $valid) {
         return $null
@@ -38,8 +37,7 @@ function Find-PodeVerb
     return $found
 }
 
-function Get-PodeVerbByLiteral
-{
+function Get-PodeVerbByLiteral {
     param(
         [Parameter()]
         [hashtable[]]
@@ -59,8 +57,7 @@ function Get-PodeVerbByLiteral
     return (Get-PodeVerbsByLiteral -Verbs $Verbs -EndpointName $EndpointName)
 }
 
-function Get-PodeVerbsByLiteral
-{
+function Get-PodeVerbsByLiteral {
     param(
         [Parameter()]
         [hashtable[]]
@@ -90,10 +87,9 @@ function Get-PodeVerbsByLiteral
     return $null
 }
 
-function Test-PodeVerbAndError
-{
+function Test-PodeVerbAndError {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Verb,
 

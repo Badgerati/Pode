@@ -1,7 +1,6 @@
-function ConvertTo-PodeOAContentTypeSchema
-{
+function ConvertTo-PodeOAContentTypeSchema {
     param(
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $Schemas
     )
@@ -21,10 +20,9 @@ function ConvertTo-PodeOAContentTypeSchema
     return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas)
 }
 
-function ConvertTo-PodeOAHeaderSchema
-{
+function ConvertTo-PodeOAHeaderSchema {
     param(
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $Schemas
     )
@@ -37,10 +35,9 @@ function ConvertTo-PodeOAHeaderSchema
     return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas)
 }
 
-function ConvertTo-PodeOAObjectSchema
-{
+function ConvertTo-PodeOAObjectSchema {
     param(
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $Schemas
     )
@@ -72,10 +69,9 @@ function ConvertTo-PodeOAObjectSchema
     return $obj
 }
 
-function Test-PodeOAComponentSchema
-{
+function Test-PodeOAComponentSchema {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -83,10 +79,9 @@ function Test-PodeOAComponentSchema
     return $PodeContext.Server.OpenAPI.components.schemas.ContainsKey($Name)
 }
 
-function Test-PodeOAComponentResponse
-{
+function Test-PodeOAComponentResponse {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -94,10 +89,9 @@ function Test-PodeOAComponentResponse
     return $PodeContext.Server.OpenAPI.components.responses.ContainsKey($Name)
 }
 
-function Test-PodeOAComponentRequestBody
-{
+function Test-PodeOAComponentRequestBody {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -105,10 +99,9 @@ function Test-PodeOAComponentRequestBody
     return $PodeContext.Server.OpenAPI.components.requestBodies.ContainsKey($Name)
 }
 
-function Test-PodeOAComponentParameter
-{
+function Test-PodeOAComponentParameter {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -116,10 +109,9 @@ function Test-PodeOAComponentParameter
     return $PodeContext.Server.OpenAPI.components.parameters.ContainsKey($Name)
 }
 
-function ConvertTo-PodeOASchemaProperty
-{
+function ConvertTo-PodeOASchemaProperty {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Property,
 
@@ -129,10 +121,10 @@ function ConvertTo-PodeOASchemaProperty
 
     # base schema type
     $schema = @{
-        type = $Property.type
-        format = $Property.format
+        type        = $Property.type
+        format      = $Property.format
         description = $Property.description
-        default = $Property.default
+        default     = $Property.default
     }
 
     if ($Property.deprecated) {
@@ -161,7 +153,7 @@ function ConvertTo-PodeOASchemaProperty
         $Property.array = $false
 
         $schema = @{
-            type = 'array'
+            type  = 'array'
             items = ($Property | ConvertTo-PodeOASchemaProperty)
         }
     }
@@ -171,7 +163,7 @@ function ConvertTo-PodeOASchemaProperty
         $Property.object = $false
 
         $schema = @{
-            type = 'object'
+            type       = 'object'
             properties = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property)
         }
 
@@ -188,10 +180,9 @@ function ConvertTo-PodeOASchemaProperty
     return $schema
 }
 
-function ConvertTo-PodeOASchemaObjectProperty
-{
+function ConvertTo-PodeOASchemaObjectProperty {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [hashtable[]]
         $Properties
     )
@@ -205,10 +196,9 @@ function ConvertTo-PodeOASchemaObjectProperty
     return $schema
 }
 
-function Get-PodeOpenApiDefinitionInternal
-{
+function Get-PodeOpenApiDefinitionInternal {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Title,
 
@@ -247,8 +237,8 @@ function Get-PodeOpenApiDefinitionInternal
 
     # metadata
     $def['info'] = @{
-        title = $Title
-        version = $Version
+        title       = $Title
+        version     = $Version
         description = $Description
     }
 
@@ -256,11 +246,11 @@ function Get-PodeOpenApiDefinitionInternal
     $def['servers'] = $null
     if (!$RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1)) {
         $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints.Values) {
-            @{
-                url = $endpoint.Url
-                description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
-            }
-        })
+                @{
+                    url         = $endpoint.Url
+                    description = (Protect-PodeValue -Value $endpoint.Description -Default $endpoint.Name)
+                }
+            })
     }
 
     # components
@@ -284,13 +274,13 @@ function Get-PodeOpenApiDefinitionInternal
             if ($authType.Scheme -ieq 'apikey') {
                 $_authObj = @{
                     type = $authType.Scheme
-                    in = $authType.Arguments.Location.ToLowerInvariant()
+                    in   = $authType.Arguments.Location.ToLowerInvariant()
                     name = $authType.Arguments.LocationName
                 }
             }
             else {
                 $_authObj = @{
-                    type = $authType.Scheme.ToLowerInvariant()
+                    type   = $authType.Scheme.ToLowerInvariant()
                     scheme = $authType.Name.ToLowerInvariant()
                 }
             }
@@ -340,15 +330,15 @@ function Get-PodeOpenApiDefinitionInternal
 
             # add path's http method to defintition
             $def.paths[$_route.OpenApi.Path][$method] = @{
-                summary = $_route.OpenApi.Summary
+                summary     = $_route.OpenApi.Summary
                 description = $_route.OpenApi.Description
                 operationId = $_route.OpenApi.OperationId
-                tags = @($_route.OpenApi.Tags)
-                responses = $_route.OpenApi.Responses
-                parameters = $_route.OpenApi.Parameters
+                tags        = @($_route.OpenApi.Tags)
+                responses   = $_route.OpenApi.Responses
+                parameters  = $_route.OpenApi.Parameters
                 requestBody = $_route.OpenApi.RequestBody
-                servers = $null
-                security = @($_route.OpenApi.Authentication)
+                servers     = $null
+                security    = @($_route.OpenApi.Authentication)
             }
 
             if ($_route.OpenApi.Deprecated) {
@@ -402,10 +392,9 @@ function Get-PodeOpenApiDefinitionInternal
     return $def
 }
 
-function ConvertTo-PodeOAPropertyFromCmdletParameter
-{
+function ConvertTo-PodeOAPropertyFromCmdletParameter {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [System.Management.Automation.ParameterMetadata]
         $Parameter
     )
@@ -428,25 +417,23 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter
     New-PodeOAStringProperty -Name $Parameter.Name
 }
 
-function Get-PodeOABaseObject
-{
+function Get-PodeOABaseObject {
     return @{
-        Path = $null
-        Title = $null
+        Path       = $null
+        Title      = $null
         components = @{
-            schemas = @{}
-            responses = @{}
+            schemas       = @{}
+            responses     = @{}
             requestBodies = @{}
-            parameters = @{}
+            parameters    = @{}
         }
-        Security = @()
+        Security   = @()
     }
 }
 
-function Set-PodeOAAuth
-{
+function Set-PodeOAAuth {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
         $Route,
@@ -464,15 +451,14 @@ function Set-PodeOAAuth
 
     foreach ($r in @($Route)) {
         $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
-            @{
-                "$($n -replace '\s+', '')" = @()
-            }
-        })
+                @{
+                    "$($n -replace '\s+', '')" = @()
+                }
+            })
     }
 }
 
-function Set-PodeOAGlobalAuth
-{
+function Set-PodeOAGlobalAuth {
     param(
         [Parameter()]
         [string]
@@ -495,6 +481,6 @@ function Set-PodeOAGlobalAuth
         Definition = @{
             "$($Name -replace '\s+', '')" = @()
         }
-        Route = (ConvertTo-PodeRouteRegex -Path $Route)
+        Route      = (ConvertTo-PodeRouteRegex -Path $Route)
     }
 }

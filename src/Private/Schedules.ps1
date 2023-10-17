@@ -1,7 +1,6 @@
-function Find-PodeSchedule
-{
+function Find-PodeSchedule {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name
@@ -10,13 +9,11 @@ function Find-PodeSchedule
     return $PodeContext.Schedules.Items[$Name]
 }
 
-function Test-PodeSchedulesExist
-{
+function Test-PodeSchedulesExist {
     return (($null -ne $PodeContext.Schedules) -and (($PodeContext.Schedules.Enabled) -or ($PodeContext.Schedules.Items.Count -gt 0)))
 }
 
-function Start-PodeScheduleRunspace
-{
+function Start-PodeScheduleRunspace {
     if (!(Test-PodeSchedulesExist)) {
         return
     }
@@ -58,8 +55,7 @@ function Start-PodeScheduleRunspace
         # first, sleep for a period of time to get to 00 seconds (start of minute)
         Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
 
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-        {
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             $_now = [DateTime]::Now
 
             # select the schedules that need triggering
@@ -84,8 +80,7 @@ function Start-PodeScheduleRunspace
     Add-PodeRunspace -Type Main -ScriptBlock $script -NoProfile
 }
 
-function Close-PodeScheduleInternal
-{
+function Close-PodeScheduleInternal {
     param(
         [Parameter()]
         [hashtable]
@@ -100,17 +95,16 @@ function Close-PodeScheduleInternal
     $null = $PodeContext.Schedules.Processes.Remove($Process.ID)
 }
 
-function Complete-PodeInternalSchedules
-{
+function Complete-PodeInternalSchedules {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [datetime]
         $Now
     )
 
     # add any schedules to remove that have exceeded their end time
     $Schedules = @($PodeContext.Schedules.Items.Values |
-        Where-Object { (($null -ne $_.EndTime) -and ($_.EndTime -lt $Now)) })
+            Where-Object { (($null -ne $_.EndTime) -and ($_.EndTime -lt $Now)) })
 
     if (($null -eq $Schedules) -or ($Schedules.Length -eq 0)) {
         return
@@ -122,10 +116,9 @@ function Complete-PodeInternalSchedules
     }
 }
 
-function Invoke-PodeInternalSchedule
-{
+function Invoke-PodeInternalSchedule {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         $Schedule
     )
 
@@ -160,10 +153,9 @@ function Invoke-PodeInternalSchedule
     Invoke-PodeInternalScheduleLogic -Schedule $Schedule
 }
 
-function Invoke-PodeInternalScheduleLogic
-{
+function Invoke-PodeInternalScheduleLogic {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         $Schedule,
 
         [Parameter()]
@@ -176,7 +168,7 @@ function Invoke-PodeInternalScheduleLogic
         $parameters = @{
             Event = @{
                 Lockable = $PodeContext.Threading.Lockables.Global
-                Sender = $Schedule
+                Sender   = $Schedule
             }
         }
 
@@ -203,7 +195,7 @@ function Invoke-PodeInternalScheduleLogic
         $runspace = Add-PodeRunspace -Type Schedules -ScriptBlock (($Schedule.Script).GetNewClosure()) -Parameters $parameters -PassThru
 
         $PodeContext.Schedules.Processes[$name] = @{
-            ID = $name
+            ID       = $name
             Schedule = $Schedule.Name
             Runspace = $runspace
         }

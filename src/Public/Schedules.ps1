@@ -44,19 +44,18 @@ Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime [DateTime]::
 .EXAMPLE
 Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -ArgumentList @{ Arg1 = 'value' }
 #>
-function Add-PodeSchedule
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
+function Add-PodeSchedule {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Cron,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
@@ -72,7 +71,7 @@ function Add-PodeSchedule
         [DateTime]
         $EndTime,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath,
 
@@ -120,20 +119,20 @@ function Add-PodeSchedule
 
     $PodeContext.Schedules.Enabled = $true
     $PodeContext.Schedules.Items[$Name] = @{
-        Name = $Name
-        StartTime = $StartTime
-        EndTime = $EndTime
-        Crons = $parsedCrons
-        CronsRaw = @($Cron)
-        Limit = $Limit
-        Count = 0
+        Name            = $Name
+        StartTime       = $StartTime
+        EndTime         = $EndTime
+        Crons           = $parsedCrons
+        CronsRaw        = @($Cron)
+        Limit           = $Limit
+        Count           = 0
         NextTriggerTime = $nextTrigger
         LastTriggerTime = $null
-        Script = $ScriptBlock
-        UsingVariables = $usingVars
-        Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
-        OnStart = $OnStart
-        Completed = ($null -eq $nextTrigger)
+        Script          = $ScriptBlock
+        UsingVariables  = $usingVars
+        Arguments       = (Protect-PodeValue -Value $ArgumentList -Default @{})
+        OnStart         = $OnStart
+        Completed       = ($null -eq $nextTrigger)
     }
 }
 
@@ -150,11 +149,10 @@ The Maximum number of schedules to run.
 .EXAMPLE
 Set-PodeScheduleConcurrency -Maximum 25
 #>
-function Set-PodeScheduleConcurrency
-{
+function Set-PodeScheduleConcurrency {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Maximum
     )
@@ -197,11 +195,10 @@ A hashtable of arguments to supply to the Schedule's ScriptBlock.
 .EXAMPLE
 Invoke-PodeSchedule -Name 'schedule-name'
 #>
-function Invoke-PodeSchedule
-{
+function Invoke-PodeSchedule {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -232,11 +229,10 @@ The Name of the Schedule to be removed.
 .EXAMPLE
 Remove-PodeSchedule -Name 'RenewToken'
 #>
-function Remove-PodeSchedule
-{
+function Remove-PodeSchedule {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name
     )
@@ -254,8 +250,7 @@ Removes all Schedules.
 .EXAMPLE
 Clear-PodeSchedules
 #>
-function Clear-PodeSchedules
-{
+function Clear-PodeSchedules {
     [CmdletBinding()]
     param()
 
@@ -287,11 +282,10 @@ Edit-PodeSchedule -Name 'Hello' -Cron '@minutely'
 .EXAMPLE
 Edit-PodeSchedule -Name 'Hello' -Cron @('@hourly', '0 0 * * TUE')
 #>
-function Edit-PodeSchedule
-{
+function Edit-PodeSchedule {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -360,8 +354,7 @@ Get-PodeSchedule -Name Name1, Name2
 .EXAMPLE
 Get-PodeSchedule -Name Name1, Name2 -StartTime [datetime]::new(2020, 3, 1) -EndTime [datetime]::new(2020, 3, 31)
 #>
-function Get-PodeSchedule
-{
+function Get-PodeSchedule {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -380,58 +373,58 @@ function Get-PodeSchedule
     # further filter by schedule names
     if (($null -ne $Name) -and ($Name.Length -gt 0)) {
         $schedules = @(foreach ($_name in $Name) {
-            foreach ($schedule in $schedules) {
-                if ($schedule.Name -ine $_name) {
-                    continue
-                }
+                foreach ($schedule in $schedules) {
+                    if ($schedule.Name -ine $_name) {
+                        continue
+                    }
 
-                $schedule
-            }
-        })
+                    $schedule
+                }
+            })
     }
 
     # filter by some start time
     if ($null -ne $StartTime) {
         $schedules = @(foreach ($schedule in $schedules) {
-            if (($null -ne $schedule.StartTime) -and ($StartTime -lt $schedule.StartTime)) {
-                continue
-            }
+                if (($null -ne $schedule.StartTime) -and ($StartTime -lt $schedule.StartTime)) {
+                    continue
+                }
 
-            $_end = $EndTime
-            if ($null -eq $_end) {
-                $_end = $schedule.EndTime
-            }
+                $_end = $EndTime
+                if ($null -eq $_end) {
+                    $_end = $schedule.EndTime
+                }
 
-            if (($null -ne $schedule.EndTime) -and
+                if (($null -ne $schedule.EndTime) -and
                 (($StartTime -gt $schedule.EndTime) -or
                     ((Get-PodeScheduleNextTrigger -Name $schedule.Name -DateTime $StartTime) -gt $_end))) {
-                continue
-            }
+                    continue
+                }
 
-            $schedule
-        })
+                $schedule
+            })
     }
 
     # filter by some end time
     if ($null -ne $EndTime) {
         $schedules = @(foreach ($schedule in $schedules) {
-            if (($null -ne $schedule.EndTime) -and ($EndTime -gt $schedule.EndTime)) {
-                continue
-            }
+                if (($null -ne $schedule.EndTime) -and ($EndTime -gt $schedule.EndTime)) {
+                    continue
+                }
 
-            $_start = $StartTime
-            if ($null -eq $_start) {
-                $_start = $schedule.StartTime
-            }
+                $_start = $StartTime
+                if ($null -eq $_start) {
+                    $_start = $schedule.StartTime
+                }
 
-            if (($null -ne $schedule.StartTime) -and
+                if (($null -ne $schedule.StartTime) -and
                 (($EndTime -lt $schedule.StartTime) -or
                     ((Get-PodeScheduleNextTrigger -Name $schedule.Name -DateTime $_start) -gt $EndTime))) {
-                continue
-            }
+                    continue
+                }
 
-            $schedule
-        })
+                $schedule
+            })
     }
 
     # return
@@ -451,11 +444,10 @@ The Name of the Schedule.
 .EXAMPLE
 if (Test-PodeSchedule -Name ScheduleName) { }
 #>
-function Test-PodeSchedule
-{
+function Test-PodeSchedule {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -482,11 +474,10 @@ Get-PodeScheduleNextTrigger -Name Schedule1
 .EXAMPLE
 Get-PodeScheduleNextTrigger -Name Schedule1 -DateTime [datetime]::new(2020, 3, 10)
 #>
-function Get-PodeScheduleNextTrigger
-{
+function Get-PodeScheduleNextTrigger {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -534,8 +525,7 @@ Use-PodeSchedules
 .EXAMPLE
 Use-PodeSchedules -Path './my-schedules'
 #>
-function Use-PodeSchedules
-{
+function Use-PodeSchedules {
     [CmdletBinding()]
     param(
         [Parameter()]

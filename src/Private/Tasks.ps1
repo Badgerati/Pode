@@ -1,10 +1,8 @@
-function Test-PodeTasksExist
-{
+function Test-PodeTasksExist {
     return (($null -ne $PodeContext.Tasks) -and (($PodeContext.Tasks.Enabled) -or ($PodeContext.Tasks.Items.Count -gt 0)))
 }
 
-function Start-PodeTaskHousekeeper
-{
+function Start-PodeTaskHousekeeper {
     if (!(Test-PodeTasksExist)) {
         return
     }
@@ -46,8 +44,7 @@ function Start-PodeTaskHousekeeper
     }
 }
 
-function Close-PodeTaskInternal
-{
+function Close-PodeTaskInternal {
     param(
         [Parameter()]
         [hashtable]
@@ -63,10 +60,9 @@ function Close-PodeTaskInternal
     $null = $PodeContext.Tasks.Results.Remove($Result.ID)
 }
 
-function Invoke-PodeInternalTask
-{
+function Invoke-PodeInternalTask {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         $Task,
 
         [Parameter()]
@@ -83,7 +79,7 @@ function Invoke-PodeInternalTask
         $parameters = @{
             Event = @{
                 Lockable = $PodeContext.Threading.Lockables.Global
-                Sender = $Task
+                Sender   = $Task
             }
         }
 
@@ -118,13 +114,13 @@ function Invoke-PodeInternalTask
         }
 
         $PodeContext.Tasks.Results[$name] = @{
-            ID = $name
-            Task = $Task.Name
-            Runspace = $runspace
-            Result = $result
+            ID            = $name
+            Task          = $Task.Name
+            Runspace      = $runspace
+            Result        = $result
             CompletedTime = $null
-            ExpireTime = $expireTime
-            Timeout = $Timeout
+            ExpireTime    = $expireTime
+            Timeout       = $Timeout
         }
 
         return $PodeContext.Tasks.Results[$name]
@@ -134,12 +130,11 @@ function Invoke-PodeInternalTask
     }
 }
 
-function Wait-PodeNetTaskInternal
-{
+function Wait-PodeNetTaskInternal {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [System.Threading.Tasks.Task]
         $Task,
 
@@ -181,12 +176,11 @@ function Wait-PodeNetTaskInternal
     }
 }
 
-function Wait-PodeTaskInternal
-{
+function Wait-PodeTaskInternal {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [hashtable]
         $Task,
 

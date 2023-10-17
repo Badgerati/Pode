@@ -1,6 +1,5 @@
-function Start-PodeInternalServer
-{
-    param (
+function Start-PodeInternalServer {
+    param(
         [Parameter()]
         $Request,
 
@@ -8,8 +7,7 @@ function Start-PodeInternalServer
         $Browse
     )
 
-    try
-    {
+    try {
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 
@@ -50,8 +48,7 @@ function Start-PodeInternalServer
         New-PodeRunspacePools
         Open-PodeRunspacePools
 
-        if (!$PodeContext.Server.IsServerless)
-        {
+        if (!$PodeContext.Server.IsServerless) {
             # start runspace for loggers
             Start-PodeLoggingRunspace
 
@@ -81,8 +78,7 @@ function Start-PodeInternalServer
 
         # - serverless
         elseif ($PodeContext.Server.IsServerless) {
-            switch ($PodeContext.Server.ServerlessType.ToUpperInvariant())
-            {
+            switch ($PodeContext.Server.ServerlessType.ToUpperInvariant()) {
                 'AZUREFUNCTIONS' {
                     Start-PodeAzFuncServer -Data $Request
                 }
@@ -97,8 +93,7 @@ function Start-PodeInternalServer
         else {
             # start each server type
             foreach ($_type in $PodeContext.Server.Types) {
-                switch ($_type.ToUpperInvariant())
-                {
+                switch ($_type.ToUpperInvariant()) {
                     'SMTP' {
                         $endpoints += (Start-PodeSmtpServer)
                     }
@@ -151,10 +146,8 @@ function Start-PodeInternalServer
     }
 }
 
-function Restart-PodeInternalServer
-{
-    try
-    {
+function Restart-PodeInternalServer {
+    try {
         # inform restart
         Write-PodeHost 'Restarting server...' -NoNewline -ForegroundColor Cyan
 
@@ -232,11 +225,11 @@ function Restart-PodeInternalServer
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
-            Type = 'html'
-            Extension = 'html'
-            ScriptBlock = $null
+            Type           = 'html'
+            Extension      = 'html'
+            ScriptBlock    = $null
             UsingVariables = $null
-            IsDynamic = $false
+            IsDynamic      = $false
         }
 
         # clear up cookie sessions
@@ -276,7 +269,7 @@ function Restart-PodeInternalServer
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
         # done message
-        Write-PodeHost " Done" -ForegroundColor Green
+        Write-PodeHost ' Done' -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
@@ -288,8 +281,7 @@ function Restart-PodeInternalServer
     }
 }
 
-function Test-PodeServerKeepOpen
-{
+function Test-PodeServerKeepOpen {
     # if we have any timers/schedules/fim - keep open
     if ((Test-PodeTimersExist) -or (Test-PodeSchedulesExist) -or (Test-PodeFileWatchersExist)) {
         return $true

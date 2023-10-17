@@ -1,5 +1,4 @@
-function Start-PodeServiceServer
-{
+function Start-PodeServiceServer {
     # ensure we have service handlers
     if (Test-PodeIsEmpty (Get-PodeHandler -Type Service)) {
         throw 'No Service handlers have been defined'
@@ -10,10 +9,8 @@ function Start-PodeServiceServer
 
     # script for the looping server
     $serverScript = {
-        try
-        {
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-            {
+        try {
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # the event object
                 $ServiceEvent = @{
                     Lockable = $PodeContext.Threading.Lockables.Global

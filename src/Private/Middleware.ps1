@@ -1,8 +1,7 @@
 using namespace System.Security.Cryptography
 
-function Invoke-PodeMiddleware
-{
-    param (
+function Invoke-PodeMiddleware {
+    param(
         [Parameter()]
         $Middleware,
 
@@ -17,25 +16,23 @@ function Invoke-PodeMiddleware
     }
 
     # filter the middleware down by route (retaining order)
-    if (![string]::IsNullOrWhiteSpace($Route))
-    {
+    if (![string]::IsNullOrWhiteSpace($Route)) {
         $Middleware = @(foreach ($mware in $Middleware) {
-            if ($null -eq $mware) {
-                continue
-            }
+                if ($null -eq $mware) {
+                    continue
+                }
 
-            if ([string]::IsNullOrWhiteSpace($mware.Route) -or ($mware.Route -ieq '/') -or ($mware.Route -ieq $Route) -or ($Route -imatch "^$($mware.Route)$")) {
-                $mware
-            }
-        })
+                if ([string]::IsNullOrWhiteSpace($mware.Route) -or ($mware.Route -ieq '/') -or ($mware.Route -ieq $Route) -or ($Route -imatch "^$($mware.Route)$")) {
+                    $mware
+                }
+            })
     }
 
     # continue or halt?
     $continue = $true
 
     # loop through each of the middleware, invoking the next if it returns true
-    foreach ($midware in @($Middleware))
-    {
+    foreach ($midware in @($Middleware)) {
         if (($null -eq $midware) -or ($null -eq $midware.Logic)) {
             continue
         }
@@ -61,11 +58,10 @@ function Invoke-PodeMiddleware
     return $continue
 }
 
-function New-PodeMiddlewareInternal
-{
+function New-PodeMiddlewareInternal {
     [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -77,13 +73,13 @@ function New-PodeMiddlewareInternal
         [object[]]
         $ArgumentList,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [System.Management.Automation.SessionState]
         $PSSession
     )
 
     if (Test-PodeIsEmpty $ScriptBlock) {
-        throw "[Middleware]: No ScriptBlock supplied"
+        throw '[Middleware]: No ScriptBlock supplied'
     }
 
     # if route is empty, set it to root
@@ -94,9 +90,9 @@ function New-PodeMiddlewareInternal
 
     # create the middleware hashtable from a scriptblock
     $HashTable = @{
-        Route = $Route
-        Logic = $ScriptBlock
-        Arguments = $ArgumentList
+        Route          = $Route
+        Logic          = $ScriptBlock
+        Arguments      = $ArgumentList
         UsingVariables = $usingVars
     }
 
@@ -104,15 +100,14 @@ function New-PodeMiddlewareInternal
     return $HashTable
 }
 
-function Get-PodeInbuiltMiddleware
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Get-PodeInbuiltMiddleware {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [scriptblock]
         $ScriptBlock
@@ -129,85 +124,81 @@ function Get-PodeInbuiltMiddleware
 
     # return the script
     return @{
-        Name = $Name
+        Name  = $Name
         Logic = $ScriptBlock
     }
 }
 
-function Get-PodeAccessMiddleware
-{
+function Get-PodeAccessMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_access__' -ScriptBlock {
-        # are there any rules?
-        if (($PodeContext.Server.Access.Allow.Count -eq 0) -and ($PodeContext.Server.Access.Deny.Count -eq 0)) {
+            # are there any rules?
+            if (($PodeContext.Server.Access.Allow.Count -eq 0) -and ($PodeContext.Server.Access.Deny.Count -eq 0)) {
+                return $true
+            }
+
+            # ensure the request IP address is allowed
+            if (!(Test-PodeIPAccess -IP $WebEvent.Request.RemoteEndPoint.Address)) {
+                Set-PodeResponseStatus -Code 403
+                return $false
+            }
+
+            # request is allowed
             return $true
-        }
-
-        # ensure the request IP address is allowed
-        if (!(Test-PodeIPAccess -IP $WebEvent.Request.RemoteEndPoint.Address)) {
-            Set-PodeResponseStatus -Code 403
-            return $false
-        }
-
-        # request is allowed
-        return $true
-    })
+        })
 }
 
-function Get-PodeLimitMiddleware
-{
+function Get-PodeLimitMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
-        # are there any rules?
-        if ($PodeContext.Server.Limits.Rules.Count -eq 0) {
+            # are there any rules?
+            if ($PodeContext.Server.Limits.Rules.Count -eq 0) {
+                return $true
+            }
+
+            # check the request IP address has not hit a rate limit
+            if (!(Test-PodeIPLimit -IP $WebEvent.Request.RemoteEndPoint.Address)) {
+                Set-PodeResponseStatus -Code 429
+                return $false
+            }
+
+            # check the route
+            if (!(Test-PodeRouteLimit -Path $WebEvent.Path)) {
+                Set-PodeResponseStatus -Code 429
+                return $false
+            }
+
+            # check the endpoint
+            if (!(Test-PodeEndpointLimit -EndpointName $WebEvent.Endpoint.Name)) {
+                Set-PodeResponseStatus -Code 429
+                return $false
+            }
+
+            # request is allowed
             return $true
-        }
-
-        # check the request IP address has not hit a rate limit
-        if (!(Test-PodeIPLimit -IP $WebEvent.Request.RemoteEndPoint.Address)) {
-            Set-PodeResponseStatus -Code 429
-            return $false
-        }
-
-        # check the route
-        if (!(Test-PodeRouteLimit -Path $WebEvent.Path)) {
-            Set-PodeResponseStatus -Code 429
-            return $false
-        }
-
-        # check the endpoint
-        if (!(Test-PodeEndpointLimit -EndpointName $WebEvent.Endpoint.Name)) {
-            Set-PodeResponseStatus -Code 429
-            return $false
-        }
-
-        # request is allowed
-        return $true
-    })
+        })
 }
 
-function Get-PodePublicMiddleware
-{
+function Get-PodePublicMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {
-        # only find public static content here
-        $path = Find-PodePublicRoute -Path $WebEvent.Path
-        if ([string]::IsNullOrWhiteSpace($path)) {
-            return $true
-        }
+            # only find public static content here
+            $path = Find-PodePublicRoute -Path $WebEvent.Path
+            if ([string]::IsNullOrWhiteSpace($path)) {
+                return $true
+            }
 
-        # check current state of caching
-        $cachable = Test-PodeRouteValidForCaching -Path $WebEvent.Path
+            # check current state of caching
+            $cachable = Test-PodeRouteValidForCaching -Path $WebEvent.Path
 
-        # write the file to the response
-        Write-PodeFileResponse -Path $path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+            # write the file to the response
+            Write-PodeFileResponse -Path $path -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
 
-        # public static content found, stop
-        return $false
-    })
+            # public static content found, stop
+            return $false
+        })
 }
 
-function Get-PodeRouteValidateMiddleware
-{
+function Get-PodeRouteValidateMiddleware {
     return @{
-        Name = '__pode_mw_route_validation__'
+        Name  = '__pode_mw_route_validation__'
         Logic = {
             # check if the path is static route first, then check the main routes
             $route = Find-PodeStaticRoute -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
@@ -220,12 +211,12 @@ function Get-PodeRouteValidateMiddleware
                 # check if a route exists for another method
                 $methods = @('CONNECT', 'DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE')
                 $diff_route = @(foreach ($method in $methods) {
-                    $r = Find-PodeRoute -Method $method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
-                    if ($null -ne $r) {
-                        $r
-                        break
-                    }
-                })[0]
+                        $r = Find-PodeRoute -Method $method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
+                        if ($null -ne $r) {
+                            $r
+                            break
+                        }
+                    })[0]
 
                 if ($null -ne $diff_route) {
                     Set-PodeResponseStatus -Code 405
@@ -271,95 +262,90 @@ function Get-PodeRouteValidateMiddleware
     }
 }
 
-function Get-PodeBodyMiddleware
-{
+function Get-PodeBodyMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_body_parsing__' -ScriptBlock {
-        try {
-            # attempt to parse that data
-            $result = ConvertFrom-PodeRequestContent -Request $WebEvent.Request -ContentType $WebEvent.ContentType -TransferEncoding $WebEvent.TransferEncoding
+            try {
+                # attempt to parse that data
+                $result = ConvertFrom-PodeRequestContent -Request $WebEvent.Request -ContentType $WebEvent.ContentType -TransferEncoding $WebEvent.TransferEncoding
 
-            # set session data
-            $WebEvent.Data = $result.Data
-            $WebEvent.Files = $result.Files
+                # set session data
+                $WebEvent.Data = $result.Data
+                $WebEvent.Files = $result.Files
 
-            # payload parsed
-            return $true
-        }
-        catch {
-            Set-PodeResponseStatus -Code 400 -Exception $_
-            return $false
-        }
-    })
+                # payload parsed
+                return $true
+            }
+            catch {
+                Set-PodeResponseStatus -Code 400 -Exception $_
+                return $false
+            }
+        })
 }
 
-function Get-PodeQueryMiddleware
-{
+function Get-PodeQueryMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_query_parsing__' -ScriptBlock {
-        try {
-            # set the query string from the request
-            $WebEvent.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $WebEvent.Request.QueryString)
-            return $true
-        }
-        catch {
-            Set-PodeResponseStatus -Code 400 -Exception $_
-            return $false
-        }
-    })
+            try {
+                # set the query string from the request
+                $WebEvent.Query = (ConvertFrom-PodeNameValueToHashTable -Collection $WebEvent.Request.QueryString)
+                return $true
+            }
+            catch {
+                Set-PodeResponseStatus -Code 400 -Exception $_
+                return $false
+            }
+        })
 }
 
-function Get-PodeCookieMiddleware
-{
+function Get-PodeCookieMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_cookie_parsing__' -ScriptBlock {
-        # if cookies already set, return
-        if ($WebEvent.Cookies.Count -gt 0) {
-            return $true
-        }
-
-        # if the request's header has no cookies, return
-        $h_cookie = (Get-PodeHeader -Name 'Cookie')
-        if ([string]::IsNullOrWhiteSpace($h_cookie)) {
-            return $true
-        }
-
-        # parse the cookies from the header
-        $cookies = @($h_cookie -split '; ')
-        $WebEvent.Cookies = @{}
-
-        foreach ($cookie in $cookies) {
-            $atoms = $cookie.Split('=', 2)
-
-            $value = [string]::Empty
-            if ($atoms.Length -gt 1) {
-                foreach ($atom in $atoms[1..($atoms.Length - 1)]) {
-                    $value += $atom
-                }
+            # if cookies already set, return
+            if ($WebEvent.Cookies.Count -gt 0) {
+                return $true
             }
 
-            $WebEvent.Cookies[$atoms[0]] = [System.Net.Cookie]::new($atoms[0], $value)
-        }
+            # if the request's header has no cookies, return
+            $h_cookie = (Get-PodeHeader -Name 'Cookie')
+            if ([string]::IsNullOrWhiteSpace($h_cookie)) {
+                return $true
+            }
 
-        return $true
-    })
-}
+            # parse the cookies from the header
+            $cookies = @($h_cookie -split '; ')
+            $WebEvent.Cookies = @{}
 
-function Get-PodeSecurityMiddleware
-{
-    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_security__' -ScriptBlock {
-        # are there any security headers setup?
-        if ($PodeContext.Server.Security.Headers.Count -eq 0) {
+            foreach ($cookie in $cookies) {
+                $atoms = $cookie.Split('=', 2)
+
+                $value = [string]::Empty
+                if ($atoms.Length -gt 1) {
+                    foreach ($atom in $atoms[1..($atoms.Length - 1)]) {
+                        $value += $atom
+                    }
+                }
+
+                $WebEvent.Cookies[$atoms[0]] = [System.Net.Cookie]::new($atoms[0], $value)
+            }
+
             return $true
-        }
-
-        # add security headers
-        Set-PodeHeaderBulk -Value $PodeContext.Server.Security.Headers
-
-        # continue to next middleware/route
-        return $true
-    })
+        })
 }
 
-function Initialize-PodeIISMiddleware
-{
+function Get-PodeSecurityMiddleware {
+    return (Get-PodeInbuiltMiddleware -Name '__pode_mw_security__' -ScriptBlock {
+            # are there any security headers setup?
+            if ($PodeContext.Server.Security.Headers.Count -eq 0) {
+                return $true
+            }
+
+            # add security headers
+            Set-PodeHeaderBulk -Value $PodeContext.Server.Security.Headers
+
+            # continue to next middleware/route
+            return $true
+        })
+}
+
+function Initialize-PodeIISMiddleware {
     # do nothing if not iis
     if (!$PodeContext.Server.IsIIS) {
         return
@@ -367,7 +353,7 @@ function Initialize-PodeIISMiddleware
 
     # fail if no iis token - because there should be!
     if ([string]::IsNullOrWhiteSpace($PodeContext.Server.IIS.Token)) {
-        throw "IIS ASPNETCORE_TOKEN is missing"
+        throw 'IIS ASPNETCORE_TOKEN is missing'
     }
 
     # add middleware to check every request has the token

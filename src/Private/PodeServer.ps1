@@ -1,8 +1,7 @@
 using namespace Pode
 
-function Start-PodeWebServer
-{
-    param (
+function Start-PodeWebServer {
+    param(
         [switch]
         $Browse
     )
@@ -33,18 +32,18 @@ function Start-PodeWebServer
 
         # the endpoint
         $_endpoint = @{
-            Key = "$($_ip):$($_.Port)"
-            Address = $_ip
-            Hostname = $_.HostName
-            IsIPAddress = $_.IsIPAddress
-            Port = $_.Port
-            Certificate = $_.Certificate.Raw
+            Key                    = "$($_ip):$($_.Port)"
+            Address                = $_ip
+            Hostname               = $_.HostName
+            IsIPAddress            = $_.IsIPAddress
+            Port                   = $_.Port
+            Certificate            = $_.Certificate.Raw
             AllowClientCertificate = $_.Certificate.AllowClientCertificate
-            Url = $_.Url
-            Protocol = $_.Protocol
-            Type = $_.Type
-            Pool = $_.Runspace.PoolName
-            SslProtocols = $_.Ssl.Protocols
+            Url                    = $_.Url
+            Protocol               = $_.Protocol
+            Type                   = $_.Type
+            Pool                   = $_.Runspace.PoolName
+            SslProtocols           = $_.Ssl.Protocols
         }
 
         # add endpoint to list
@@ -69,8 +68,7 @@ function Start-PodeWebServer
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
     $listener.ShowServerDetails = [bool]$PodeContext.Server.Security.ServerDetails
 
-    try
-    {
+    try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
             $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Address `$_.Address -Port `$_.Port -SslProtocols `$_.SslProtocols -Type `$endpointsMap[`$_.Key].Type -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate")))
@@ -100,57 +98,53 @@ function Start-PodeWebServer
         # script for listening out for incoming requests
         $listenScript = {
             param(
-                [Parameter(Mandatory=$true)]
+                [Parameter(Mandatory = $true)]
                 $Listener,
 
-                [Parameter(Mandatory=$true)]
+                [Parameter(Mandatory = $true)]
                 [int]
                 $ThreadId
             )
 
-            try
-            {
-                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-                {
+            try {
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     # get request and response
                     $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
-                    try
-                    {
-                        try
-                        {
+                    try {
+                        try {
                             $Request = $context.Request
                             $Response = $context.Response
 
                             # reset with basic event data
                             $WebEvent = @{
-                                OnEnd = @()
-                                Auth = @{}
-                                Response = $Response
-                                Request = $Request
-                                Lockable = $PodeContext.Threading.Lockables.Global
-                                Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
-                                Method = $Request.HttpMethod.ToLowerInvariant()
-                                Query = $null
-                                Endpoint = @{
+                                OnEnd            = @()
+                                Auth             = @{}
+                                Response         = $Response
+                                Request          = $Request
+                                Lockable         = $PodeContext.Threading.Lockables.Global
+                                Path             = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
+                                Method           = $Request.HttpMethod.ToLowerInvariant()
+                                Query            = $null
+                                Endpoint         = @{
                                     Protocol = $Request.Url.Scheme
-                                    Address = $Request.Host
-                                    Name = $null
+                                    Address  = $Request.Host
+                                    Name     = $null
                                 }
-                                ContentType = $Request.ContentType
-                                ErrorType = $null
-                                Cookies = @{}
-                                PendingCookies = @{}
-                                Parameters = $null
-                                Data = $null
-                                Files = $null
-                                Streamed = $true
-                                Route = $null
-                                StaticContent = $null
-                                Timestamp = [datetime]::UtcNow
+                                ContentType      = $Request.ContentType
+                                ErrorType        = $null
+                                Cookies          = @{}
+                                PendingCookies   = @{}
+                                Parameters       = $null
+                                Data             = $null
+                                Files            = $null
+                                Streamed         = $true
+                                Route            = $null
+                                StaticContent    = $null
+                                Timestamp        = [datetime]::UtcNow
                                 TransferEncoding = $null
-                                AcceptEncoding = $null
-                                Ranges = $null
+                                AcceptEncoding   = $null
+                                Ranges           = $null
                             }
 
                             # if iis, and we have an app path, alter it
@@ -184,8 +178,7 @@ function Start-PodeWebServer
                                     throw $Request.Error
                                 }
 
-                                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware))
-                                {
+                                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                                     # has the request been aborted
                                     if ($Request.IsAborted) {
                                         throw $Request.Error
@@ -259,17 +252,15 @@ function Start-PodeWebServer
         # script to write messages back to the client(s)
         $signalScript = {
             param(
-                [Parameter(Mandatory=$true)]
+                [Parameter(Mandatory = $true)]
                 $Listener
             )
 
             try {
-                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-                {
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
-                    try
-                    {
+                    try {
                         # get the sockets for the message
                         $sockets = @()
 
@@ -283,11 +274,11 @@ function Start-PodeWebServer
                             # by path
                             if (![string]::IsNullOrWhiteSpace($message.Path)) {
                                 $sockets = @(foreach ($socket in $sockets) {
-                                    if ($socket.Path -ieq $message.Path) {
-                                        $socket
-                                        break
-                                    }
-                                })
+                                        if ($socket.Path -ieq $message.Path) {
+                                            $socket
+                                            break
+                                        }
+                                    })
                             }
                         }
 
@@ -332,45 +323,43 @@ function Start-PodeWebServer
         # script to queue messages from clients to send back to other clients from the server
         $clientScript = {
             param(
-                [Parameter(Mandatory=$true)]
+                [Parameter(Mandatory = $true)]
                 $Listener,
 
-                [Parameter(Mandatory=$true)]
+                [Parameter(Mandatory = $true)]
                 [int]
                 $ThreadId
             )
 
             try {
-                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-                {
+                while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
 
-                    try
-                    {
+                    try {
                         $payload = ($context.Message | ConvertFrom-Json)
                         $Request = $context.Signal.Context.Request
                         $Response = $context.Signal.Context.Response
 
                         $SignalEvent = @{
-                            Response = $Response
-                            Request = $Request
-                            Lockable = $PodeContext.Threading.Lockables.Global
-                            Path = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
-                            Data = @{
-                                Path = [System.Web.HttpUtility]::UrlDecode($payload.path)
-                                Message = $payload.message
+                            Response  = $Response
+                            Request   = $Request
+                            Lockable  = $PodeContext.Threading.Lockables.Global
+                            Path      = [System.Web.HttpUtility]::UrlDecode($Request.Url.AbsolutePath)
+                            Data      = @{
+                                Path     = [System.Web.HttpUtility]::UrlDecode($payload.path)
+                                Message  = $payload.message
                                 ClientId = $payload.clientId
-                                Direct = [bool]$payload.direct
+                                Direct   = [bool]$payload.direct
                             }
-                            Endpoint = @{
+                            Endpoint  = @{
                                 Protocol = $Request.Url.Scheme
-                                Address = $Request.Host
-                                Name = $null
+                                Address  = $Request.Host
+                                Name     = $null
                             }
-                            Route = $null
-                            ClientId = $context.Signal.ClientId
+                            Route     = $null
+                            ClientId  = $context.Signal.ClientId
                             Timestamp = $context.Timestamp
-                            Streamed = $true
+                            Streamed  = $true
                         }
 
                         # endpoint name
@@ -415,7 +404,7 @@ function Start-PodeWebServer
     # script to keep web server listening until cancelled
     $waitScript = {
         param(
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
             $Listener
         )
@@ -449,18 +438,17 @@ function Start-PodeWebServer
     }
 
     return @(foreach ($endpoint in $endpoints) {
-        @{
-            Url  = $endpoint.Url
-            Pool = $endpoint.Pool
-        }
-    })
+            @{
+                Url  = $endpoint.Url
+                Pool = $endpoint.Pool
+            }
+        })
 }
 
-function New-PodeListener
-{
+function New-PodeListener {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [System.Threading.CancellationToken]
         $CancellationToken
     )
@@ -468,15 +456,14 @@ function New-PodeListener
     return [PodeListener]::new($CancellationToken)
 }
 
-function New-PodeListenerSocket
-{
+function New-PodeListenerSocket {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ipaddress]
         $Address,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Port,
 
@@ -484,7 +471,7 @@ function New-PodeListenerSocket
         [System.Security.Authentication.SslProtocols]
         $SslProtocols,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [PodeProtocolType]
         $Type,
 

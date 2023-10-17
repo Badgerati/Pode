@@ -20,20 +20,19 @@ An array of arguments to supply to the ScriptBlock.
 .EXAMPLE
 Register-PodeEvent -Type Start -Name 'Event1' -ScriptBlock { }
 #>
-function Register-PodeEvent
-{
+function Register-PodeEvent {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -52,10 +51,10 @@ function Register-PodeEvent
 
     # add event
     $PodeContext.Server.Events[$Type][$Name] = @{
-        Name = $Name
-        ScriptBlock = $ScriptBlock
+        Name           = $Name
+        ScriptBlock    = $ScriptBlock
         UsingVariables = $usingVars
-        Arguments = $ArgumentList
+        Arguments      = $ArgumentList
     }
 }
 
@@ -75,16 +74,15 @@ The Name of the event to unregister.
 .EXAMPLE
 Unregister-PodeEvent -Type Start -Name 'Event1'
 #>
-function Unregister-PodeEvent
-{
+function Unregister-PodeEvent {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -114,16 +112,15 @@ The Name of the event to test.
 .EXAMPLE
 Test-PodeEvent -Type Start -Name 'Event1'
 #>
-function Test-PodeEvent
-{
+function Test-PodeEvent {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -147,16 +144,15 @@ The Name of the event to retrieve.
 .EXAMPLE
 Get-PodeEvent -Type Start -Name 'Event1'
 #>
-function Get-PodeEvent
-{
+function Get-PodeEvent {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -177,11 +173,10 @@ The Type of event to clear.
 .EXAMPLE
 Clear-PodeEvent -Type Start
 #>
-function Clear-PodeEvent
-{
+function Clear-PodeEvent {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
         [string]
         $Type
@@ -206,8 +201,7 @@ Use-PodeEvents
 .EXAMPLE
 Use-PodeEvents -Path './my-events'
 #>
-function Use-PodeEvents
-{
+function Use-PodeEvents {
     [CmdletBinding()]
     param(
         [Parameter()]

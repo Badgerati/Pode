@@ -119,57 +119,56 @@ $form_auth = New-PodeAuthScheme -Form -UsernameField 'Email'
 .EXAMPLE
 $custom_auth = New-PodeAuthScheme -Custom -ScriptBlock { /* logic */ }
 #>
-function New-PodeAuthScheme
-{
-    [CmdletBinding(DefaultParameterSetName='Basic')]
+function New-PodeAuthScheme {
+    [CmdletBinding(DefaultParameterSetName = 'Basic')]
     [OutputType([hashtable])]
     param(
-        [Parameter(ParameterSetName='Basic')]
+        [Parameter(ParameterSetName = 'Basic')]
         [switch]
         $Basic,
 
-        [Parameter(ParameterSetName='Basic')]
+        [Parameter(ParameterSetName = 'Basic')]
         [string]
         $Encoding = 'ISO-8859-1',
 
-        [Parameter(ParameterSetName='Basic')]
-        [Parameter(ParameterSetName='Bearer')]
-        [Parameter(ParameterSetName='Digest')]
+        [Parameter(ParameterSetName = 'Basic')]
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'Digest')]
         [string]
         $HeaderTag,
 
-        [Parameter(ParameterSetName='Form')]
+        [Parameter(ParameterSetName = 'Form')]
         [switch]
         $Form,
 
-        [Parameter(ParameterSetName='Form')]
+        [Parameter(ParameterSetName = 'Form')]
         [string]
         $UsernameField = 'username',
 
-        [Parameter(ParameterSetName='Form')]
+        [Parameter(ParameterSetName = 'Form')]
         [string]
         $PasswordField = 'password',
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [switch]
         $Custom,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Custom')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
         [ValidateScript({
-            if (Test-PodeIsEmpty $_) {
-                throw "A non-empty ScriptBlock is required for the Custom authentication scheme"
-            }
+                if (Test-PodeIsEmpty $_) {
+                    throw 'A non-empty ScriptBlock is required for the Custom authentication scheme'
+                }
 
-            return $true
-        })]
+                return $true
+            })]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [hashtable]
         $ArgumentList,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [string]
         $Name,
 
@@ -177,7 +176,7 @@ function New-PodeAuthScheme
         [string]
         $Realm,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [ValidateSet('ApiKey', 'Http', 'OAuth2', 'OpenIdConnect')]
         [string]
         $Type = 'Http',
@@ -186,98 +185,98 @@ function New-PodeAuthScheme
         [object[]]
         $Middleware,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [scriptblock]
         $PostValidator = $null,
 
-        [Parameter(ParameterSetName='Digest')]
+        [Parameter(ParameterSetName = 'Digest')]
         [switch]
         $Digest,
 
-        [Parameter(ParameterSetName='Bearer')]
+        [Parameter(ParameterSetName = 'Bearer')]
         [switch]
         $Bearer,
 
-        [Parameter(ParameterSetName='ClientCertificate')]
+        [Parameter(ParameterSetName = 'ClientCertificate')]
         [switch]
         $ClientCertificate,
 
-        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [Parameter(ParameterSetName = 'OAuth2', Mandatory = $true)]
         [string]
         $ClientId,
 
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [string]
         $ClientSecret,
 
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [string]
         $RedirectUrl,
 
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [string]
         $AuthoriseUrl,
 
-        [Parameter(ParameterSetName='OAuth2', Mandatory=$true)]
+        [Parameter(ParameterSetName = 'OAuth2', Mandatory = $true)]
         [string]
         $TokenUrl,
 
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [string]
         $UserUrl,
 
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [ValidateSet('Get', 'Post')]
         [string]
         $UserUrlMethod = 'Post',
 
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [ValidateSet('plain', 'S256')]
         [string]
         $CodeChallengeMethod = 'S256',
 
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [switch]
         $UsePKCE,
 
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [switch]
         $OAuth2,
 
-        [Parameter(ParameterSetName='ApiKey')]
+        [Parameter(ParameterSetName = 'ApiKey')]
         [switch]
         $ApiKey,
 
-        [Parameter(ParameterSetName='ApiKey')]
+        [Parameter(ParameterSetName = 'ApiKey')]
         [ValidateSet('Header', 'Query', 'Cookie')]
         [string]
         $Location = 'Header',
 
-        [Parameter(ParameterSetName='ApiKey')]
+        [Parameter(ParameterSetName = 'ApiKey')]
         [string]
         $LocationName,
 
-        [Parameter(ParameterSetName='Bearer')]
-        [Parameter(ParameterSetName='OAuth2')]
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'OAuth2')]
         [string[]]
         $Scope,
 
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $InnerScheme,
 
-        [Parameter(ParameterSetName='Basic')]
-        [Parameter(ParameterSetName='Form')]
+        [Parameter(ParameterSetName = 'Basic')]
+        [Parameter(ParameterSetName = 'Form')]
         [switch]
         $AsCredential,
 
-        [Parameter(ParameterSetName='Bearer')]
-        [Parameter(ParameterSetName='ApiKey')]
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'ApiKey')]
         [switch]
         $AsJWT,
 
-        [Parameter(ParameterSetName='Bearer')]
-        [Parameter(ParameterSetName='ApiKey')]
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'ApiKey')]
         [string]
         $Secret
     )
@@ -292,19 +291,19 @@ function New-PodeAuthScheme
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'basic' {
             return @{
-                Name = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
-                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = @{
-                    Script = (Get-PodeAuthBasicType)
+                Name          = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
+                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock   = @{
+                    Script         = (Get-PodeAuthBasicType)
                     UsingVariables = $null
                 }
                 PostValidator = $null
-                Middleware = $Middleware
-                InnerScheme = $InnerScheme
-                Scheme = 'http'
-                Arguments = @{
-                    HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
-                    Encoding = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
+                Middleware    = $Middleware
+                InnerScheme   = $InnerScheme
+                Scheme        = 'http'
+                Arguments     = @{
+                    HeaderTag    = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
+                    Encoding     = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
                     AsCredential = $AsCredential
                 }
             }
@@ -312,36 +311,36 @@ function New-PodeAuthScheme
 
         'clientcertificate' {
             return @{
-                Name = 'Mutual'
-                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = @{
-                    Script = (Get-PodeAuthClientCertificateType)
+                Name          = 'Mutual'
+                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock   = @{
+                    Script         = (Get-PodeAuthClientCertificateType)
                     UsingVariables = $null
                 }
                 PostValidator = $null
-                Middleware = $Middleware
-                InnerScheme = $InnerScheme
-                Scheme = 'http'
-                Arguments = @{}
+                Middleware    = $Middleware
+                InnerScheme   = $InnerScheme
+                Scheme        = 'http'
+                Arguments     = @{}
             }
         }
 
         'digest' {
             return @{
-                Name = 'Digest'
-                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = @{
-                    Script = (Get-PodeAuthDigestType)
+                Name          = 'Digest'
+                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock   = @{
+                    Script         = (Get-PodeAuthDigestType)
                     UsingVariables = $null
                 }
                 PostValidator = @{
-                    Script = (Get-PodeAuthDigestPostValidator)
+                    Script         = (Get-PodeAuthDigestPostValidator)
                     UsingVariables = $null
                 }
-                Middleware = $Middleware
-                InnerScheme = $InnerScheme
-                Scheme = 'http'
-                Arguments = @{
+                Middleware    = $Middleware
+                InnerScheme   = $InnerScheme
+                Scheme        = 'http'
+                Arguments     = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
                 }
             }
@@ -354,42 +353,42 @@ function New-PodeAuthScheme
             }
 
             return @{
-                Name = 'Bearer'
-                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = @{
-                    Script = (Get-PodeAuthBearerType)
+                Name          = 'Bearer'
+                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock   = @{
+                    Script         = (Get-PodeAuthBearerType)
                     UsingVariables = $null
                 }
                 PostValidator = @{
-                    Script = (Get-PodeAuthBearerPostValidator)
+                    Script         = (Get-PodeAuthBearerPostValidator)
                     UsingVariables = $null
                 }
-                Middleware = $Middleware
-                Scheme = 'http'
-                InnerScheme = $InnerScheme
-                Arguments = @{
+                Middleware    = $Middleware
+                Scheme        = 'http'
+                InnerScheme   = $InnerScheme
+                Arguments     = @{
                     HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
-                    Scopes = $Scope
-                    AsJWT = $AsJWT
-                    Secret = $secretBytes
+                    Scopes    = $Scope
+                    AsJWT     = $AsJWT
+                    Secret    = $secretBytes
                 }
             }
         }
 
         'form' {
             return @{
-                Name = 'Form'
-                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = @{
-                    Script = (Get-PodeAuthFormType)
+                Name          = 'Form'
+                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock   = @{
+                    Script         = (Get-PodeAuthFormType)
                     UsingVariables = $null
                 }
                 PostValidator = $null
-                Middleware = $Middleware
-                InnerScheme = $InnerScheme
-                Scheme = 'http'
-                Arguments = @{
-                    Fields = @{
+                Middleware    = $Middleware
+                InnerScheme   = $InnerScheme
+                Scheme        = 'http'
+                Arguments     = @{
+                    Fields       = @{
                         Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
                         Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
                     }
@@ -404,7 +403,7 @@ function New-PodeAuthScheme
             }
 
             if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
-                throw "OAuth2 requires an Authorise URL to be supplied"
+                throw 'OAuth2 requires an Authorise URL to be supplied'
             }
 
             if ($UsePKCE -and !(Test-PodeSessionsConfigured)) {
@@ -412,38 +411,38 @@ function New-PodeAuthScheme
             }
 
             if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
-                throw "OAuth2 requires a Client Secret when not using PKCE"
+                throw 'OAuth2 requires a Client Secret when not using PKCE'
             }
 
             return @{
-                Name = 'OAuth2'
-                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = @{
-                    Script = (Get-PodeAuthOAuth2Type)
+                Name          = 'OAuth2'
+                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock   = @{
+                    Script         = (Get-PodeAuthOAuth2Type)
                     UsingVariables = $null
                 }
                 PostValidator = $null
-                Middleware = $Middleware
-                Scheme = 'oauth2'
-                InnerScheme = $InnerScheme
-                Arguments = @{
+                Middleware    = $Middleware
+                Scheme        = 'oauth2'
+                InnerScheme   = $InnerScheme
+                Arguments     = @{
                     Scopes = $Scope
-                    PKCE = @{
-                        Enabled = $UsePKCE
+                    PKCE   = @{
+                        Enabled       = $UsePKCE
                         CodeChallenge = @{
                             Method = $CodeChallengeMethod
                         }
                     }
                     Client = @{
-                        ID = $ClientId
+                        ID     = $ClientId
                         Secret = $ClientSecret
                     }
-                    Urls = @{
-                        Redirect = $RedirectUrl
+                    Urls   = @{
+                        Redirect  = $RedirectUrl
                         Authorise = $AuthoriseUrl
-                        Token = $TokenUrl
-                        User = @{
-                            Url = $UserUrl
+                        Token     = $TokenUrl
+                        User      = @{
+                            Url    = $UserUrl
                             Method = (Protect-PodeValue -Value $UserUrlMethod -Default 'Post')
                         }
                     }
@@ -455,10 +454,10 @@ function New-PodeAuthScheme
             # set default location name
             if ([string]::IsNullOrWhiteSpace($LocationName)) {
                 $LocationName = (@{
-                    Header = 'X-API-KEY'
-                    Query  = 'api_key'
-                    Cookie = 'X-API-KEY'
-                })[$Location]
+                        Header = 'X-API-KEY'
+                        Query  = 'api_key'
+                        Cookie = 'X-API-KEY'
+                    })[$Location]
             }
 
             $secretBytes = $null
@@ -467,21 +466,21 @@ function New-PodeAuthScheme
             }
 
             return @{
-                Name = 'ApiKey'
-                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock = @{
-                    Script = (Get-PodeAuthApiKeyType)
+                Name          = 'ApiKey'
+                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                ScriptBlock   = @{
+                    Script         = (Get-PodeAuthApiKeyType)
                     UsingVariables = $null
                 }
                 PostValidator = $null
-                Middleware = $Middleware
-                InnerScheme = $InnerScheme
-                Scheme = 'apiKey'
-                Arguments = @{
-                    Location = $Location
+                Middleware    = $Middleware
+                InnerScheme   = $InnerScheme
+                Scheme        = 'apiKey'
+                Arguments     = @{
+                    Location     = $Location
                     LocationName = $LocationName
-                    AsJWT = $AsJWT
-                    Secret = $secretBytes
+                    AsJWT        = $AsJWT
+                    Secret       = $secretBytes
                 }
             }
         }
@@ -494,20 +493,20 @@ function New-PodeAuthScheme
             }
 
             return @{
-                Name = $Name
-                Realm = (Protect-PodeValue -Value $Realm -Default $_realm)
-                InnerScheme = $InnerScheme
-                Scheme = $Type.ToLowerInvariant()
-                ScriptBlock = @{
-                    Script = $ScriptBlock
+                Name          = $Name
+                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                InnerScheme   = $InnerScheme
+                Scheme        = $Type.ToLowerInvariant()
+                ScriptBlock   = @{
+                    Script         = $ScriptBlock
                     UsingVariables = $usingScriptVars
                 }
                 PostValidator = @{
-                    Script = $PostValidator
+                    Script         = $PostValidator
                     UsingVariables = $usingPostVars
                 }
-                Middleware = $Middleware
-                Arguments = $ArgumentList
+                Middleware    = $Middleware
+                Arguments     = $ArgumentList
             }
         }
     }
@@ -547,8 +546,7 @@ New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId some_id -ClientSecret 12
 .EXAMPLE
 New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId some_id -UsePKCE
 #>
-function New-PodeAuthAzureADScheme
-{
+function New-PodeAuthAzureADScheme {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -556,7 +554,7 @@ function New-PodeAuthAzureADScheme
         [string]
         $Tenant = 'common',
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ClientId,
 
@@ -568,7 +566,7 @@ function New-PodeAuthAzureADScheme
         [string]
         $RedirectUrl,
 
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $InnerScheme,
 
@@ -580,17 +578,17 @@ function New-PodeAuthAzureADScheme
         $UsePKCE
     )
 
-    return (New-PodeAuthScheme `
+    return New-PodeAuthScheme `
         -OAuth2 `
         -ClientId $ClientId `
         -ClientSecret $ClientSecret `
         -AuthoriseUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/authorize" `
         -TokenUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/token" `
-        -UserUrl "https://graph.microsoft.com/oidc/userinfo" `
+        -UserUrl 'https://graph.microsoft.com/oidc/userinfo' `
         -RedirectUrl $RedirectUrl `
         -InnerScheme $InnerScheme `
         -Middleware $Middleware `
-        -UsePKCE:$UsePKCE)
+        -UsePKCE:$UsePKCE
 }
 
 <#
@@ -621,11 +619,10 @@ New-PodeAuthTwitterScheme -ClientId some_id -ClientSecret 1234.abc
 .EXAMPLE
 New-PodeAuthTwitterScheme -ClientId some_id -UsePKCE
 #>
-function New-PodeAuthTwitterScheme
-{
+function New-PodeAuthTwitterScheme {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ClientId,
 
@@ -645,18 +642,18 @@ function New-PodeAuthTwitterScheme
         $UsePKCE
     )
 
-    return (New-PodeAuthScheme `
+    return New-PodeAuthScheme `
         -OAuth2 `
         -ClientId $ClientId `
         -ClientSecret $ClientSecret `
-        -AuthoriseUrl "https://twitter.com/i/oauth2/authorize" `
-        -TokenUrl "https://api.twitter.com/2/oauth2/token" `
-        -UserUrl "https://api.twitter.com/2/users/me" `
+        -AuthoriseUrl 'https://twitter.com/i/oauth2/authorize' `
+        -TokenUrl 'https://api.twitter.com/2/oauth2/token' `
+        -UserUrl 'https://api.twitter.com/2/users/me' `
         -UserUrlMethod 'Get' `
         -RedirectUrl $RedirectUrl `
         -Middleware $Middleware `
         -Scope 'tweet.read', 'users.read' `
-        -UsePKCE:$UsePKCE)
+        -UsePKCE:$UsePKCE
 }
 
 <#
@@ -696,26 +693,25 @@ If supplied, successful authentication from a login page will redirect back to t
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Main' -ScriptBlock { /* logic */ }
 #>
-function Add-PodeAuth
-{
+function Add-PodeAuth {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Scheme,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({
-            if (Test-PodeIsEmpty $_) {
-                throw "A non-empty ScriptBlock is required for the authentication method"
-            }
+                if (Test-PodeIsEmpty $_) {
+                    throw 'A non-empty ScriptBlock is required for the authentication method'
+                }
 
-            return $true
-        })]
+                return $true
+            })]
         [scriptblock]
         $ScriptBlock,
 
@@ -762,27 +758,27 @@ function Add-PodeAuth
 
     # add auth method to server
     $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Name = $Name
-        Scheme = $Scheme
-        ScriptBlock = $ScriptBlock
+        Name           = $Name
+        Scheme         = $Scheme
+        ScriptBlock    = $ScriptBlock
         UsingVariables = $usingVars
-        Arguments = $ArgumentList
-        Sessionless = $Sessionless.IsPresent
-        Failure = @{
-            Url = $FailureUrl
+        Arguments      = $ArgumentList
+        Sessionless    = $Sessionless.IsPresent
+        Failure        = @{
+            Url     = $FailureUrl
             Message = $FailureMessage
         }
-        Success = @{
-            Url = $SuccessUrl
+        Success        = @{
+            Url       = $SuccessUrl
             UseOrigin = $SuccessUseOrigin.IsPresent
         }
-        Cache = @{}
-        Merged = $false
-        Parent = $null
+        Cache          = @{}
+        Merged         = $false
+        Parent         = $null
     }
 
     # if the scheme is oauth2, and there's no redirect, set up a default one
-    if (($Scheme.Name -ieq 'oauth2') -and ($null -eq $Scheme.InnerScheme)  -and [string]::IsNullOrWhiteSpace($Scheme.Arguments.Urls.Redirect)) {
+    if (($Scheme.Name -ieq 'oauth2') -and ($null -eq $Scheme.InnerScheme) -and [string]::IsNullOrWhiteSpace($Scheme.Arguments.Urls.Redirect)) {
         $path = '/oauth2/callback'
         $Scheme.Arguments.Urls.Redirect = $path
         Add-PodeRoute -Method Get -Path $path -Authentication $Name
@@ -840,15 +836,14 @@ Merge-PodeAuth -Name MergedAuth -Authentication ApiTokenAuth, BasicAuth -Valid A
 .EXAMPLE
 Merge-PodeAuth -Name MergedAuth -Authentication ApiTokenAuth, BasicAuth -FailureUrl 'http://localhost:8080/login'
 #>
-function Merge-PodeAuth
-{
+function Merge-PodeAuth {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [Alias('Auth')]
         [string[]]
         $Authentication,
@@ -943,7 +938,7 @@ function Merge-PodeAuth
     # deal with using vars in scriptblock
     if ($Valid -ieq 'all') {
         if ($null -eq $ScriptBlock) {
-            throw "A Scriptblock for merging multiple authenticated users into 1 object is required When Valid is All"
+            throw 'A Scriptblock for merging multiple authenticated users into 1 object is required When Valid is All'
         }
 
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
@@ -956,26 +951,26 @@ function Merge-PodeAuth
 
     # add auth method to server
     $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Name = $Name
+        Name            = $Name
         Authentications = @($Authentication)
-        PassOne = ($Valid -ieq 'one')
-        ScriptBlock = @{
-            Script = $ScriptBlock
+        PassOne         = ($Valid -ieq 'one')
+        ScriptBlock     = @{
+            Script         = $ScriptBlock
             UsingVariables = $usingVars
         }
-        Default = $Default
-        Sessionless = $Sessionless.IsPresent
-        Failure = @{
-            Url = $FailureUrl
+        Default         = $Default
+        Sessionless     = $Sessionless.IsPresent
+        Failure         = @{
+            Url     = $FailureUrl
             Message = $FailureMessage
         }
-        Success = @{
-            Url = $SuccessUrl
+        Success         = @{
+            Url       = $SuccessUrl
             UseOrigin = $SuccessUseOrigin.IsPresent
         }
-        Cache = @{}
-        Merged = $true
-        Parent = $null
+        Cache           = @{}
+        Merged          = $true
+        Parent          = $null
     }
 }
 
@@ -992,11 +987,10 @@ The Name of an Authentication method.
 .EXAMPLE
 Get-PodeAuth -Name 'Main'
 #>
-function Get-PodeAuth
-{
+function Get-PodeAuth {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -1023,11 +1017,10 @@ The Name of the Authentication method.
 .EXAMPLE
 if (Test-PodeAuthExists -Name BasicAuth) { ... }
 #>
-function Test-PodeAuthExists
-{
+function Test-PodeAuthExists {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -1055,11 +1048,10 @@ if (Test-PodeAuth -Name 'BasicAuth') { ... }
 .EXAMPLE
 if (Test-PodeAuth -Name 'FormAuth' -IgnoreSession) { ... }
 #>
-function Test-PodeAuth
-{
+function Test-PodeAuth {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -1167,15 +1159,14 @@ New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'WinAuth' -NoGroups
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'UnixAuth' -Server 'testdomain.company.com' -Domain 'testdomain'
 #>
-function Add-PodeAuthWindowsAd
-{
-    [CmdletBinding(DefaultParameterSetName='Groups')]
+function Add-PodeAuthWindowsAd {
+    [CmdletBinding(DefaultParameterSetName = 'Groups')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Scheme,
 
@@ -1192,7 +1183,7 @@ function Add-PodeAuthWindowsAd
         [string]
         $SearchBase,
 
-        [Parameter(ParameterSetName='Groups')]
+        [Parameter(ParameterSetName = 'Groups')]
         [string[]]
         $Groups,
 
@@ -1219,11 +1210,11 @@ function Add-PodeAuthWindowsAd
         [switch]
         $Sessionless,
 
-        [Parameter(ParameterSetName='NoGroups')]
+        [Parameter(ParameterSetName = 'NoGroups')]
         [switch]
         $NoGroups,
 
-        [Parameter(ParameterSetName='Groups')]
+        [Parameter(ParameterSetName = 'Groups')]
         [switch]
         $DirectGroups,
 
@@ -1281,35 +1272,35 @@ function Add-PodeAuthWindowsAd
 
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Scheme = $Scheme
+        Scheme      = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsADMethod)
-        Arguments = @{
-            Server = $Fqdn
-            Domain = $Domain
-            SearchBase = $SearchBase
-            Users = $Users
-            Groups = $Groups
-            NoGroups = $NoGroups
-            DirectGroups = $DirectGroups
+        Arguments   = @{
+            Server         = $Fqdn
+            Domain         = $Domain
+            SearchBase     = $SearchBase
+            Users          = $Users
+            Groups         = $Groups
+            NoGroups       = $NoGroups
+            DirectGroups   = $DirectGroups
             KeepCredential = $KeepCredential
-            Provider = (Get-PodeAuthADProvider -OpenLDAP:$OpenLDAP -ADModule:$ADModule)
-            ScriptBlock = @{
-                Script = $ScriptBlock
+            Provider       = (Get-PodeAuthADProvider -OpenLDAP:$OpenLDAP -ADModule:$ADModule)
+            ScriptBlock    = @{
+                Script         = $ScriptBlock
                 UsingVariables = $usingVars
             }
         }
         Sessionless = $Sessionless
-        Failure = @{
-            Url = $FailureUrl
+        Failure     = @{
+            Url     = $FailureUrl
             Message = $FailureMessage
         }
-        Success = @{
-            Url = $SuccessUrl
+        Success     = @{
+            Url       = $SuccessUrl
             UseOrigin = $SuccessUseOrigin
         }
-        Cache = @{}
-        Merged = $false
-        Parent = $null
+        Cache       = @{}
+        Merged      = $false
+        Parent      = $null
     }
 }
 
@@ -1344,11 +1335,10 @@ If supplied, successful authentication from a login page will redirect back to t
 .EXAMPLE
 Add-PodeAuthSession -Name 'SessionAuth' -FailureUrl '/login'
 #>
-function Add-PodeAuthSession
-{
-    [CmdletBinding(DefaultParameterSetName='Groups')]
+function Add-PodeAuthSession {
+    [CmdletBinding(DefaultParameterSetName = 'Groups')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -1399,8 +1389,8 @@ function Add-PodeAuthSession
         if (!(Test-PodeSessionsInUse)) {
             Revoke-PodeSession
             return @{
-                Message = "Sessions are not being used"
-                Code = 401
+                Message = 'Sessions are not being used'
+                Code    = 401
             }
         }
 
@@ -1408,8 +1398,8 @@ function Add-PodeAuthSession
         if (!(Test-PodeAuthUser)) {
             Revoke-PodeSession
             return @{
-                Message = "Session not authenticated"
-                Code = 401
+                Message = 'Session not authenticated'
+                Code    = 401
             }
         }
 
@@ -1439,11 +1429,11 @@ function Add-PodeAuthSession
         -SuccessUrl $SuccessUrl `
         -SuccessUseOrigin:$SuccessUseOrigin `
         -ArgumentList @{
-            ScriptBlock = @{
-                Script = $ScriptBlock
-                UsingVariables = $usingVars
-            }
+        ScriptBlock = @{
+            Script         = $ScriptBlock
+            UsingVariables = $usingVars
         }
+    }
 }
 
 <#
@@ -1459,11 +1449,10 @@ The Name of the Authentication method.
 .EXAMPLE
 Remove-PodeAuth -Name 'Login'
 #>
-function Remove-PodeAuth
-{
+function Remove-PodeAuth {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name
     )
@@ -1481,8 +1470,7 @@ Clear all defined Authentication methods.
 .EXAMPLE
 Clear-PodeAuth
 #>
-function Clear-PodeAuth
-{
+function Clear-PodeAuth {
     [CmdletBinding()]
     param()
 
@@ -1511,15 +1499,14 @@ Add-PodeAuthMiddleware -Name 'GlobalAuth' -Authentication AuthName
 .EXAMPLE
 Add-PodeAuthMiddleware -Name 'GlobalAuth' -Authentication AuthName -Route '/api/*'
 #>
-function Add-PodeAuthMiddleware
-{
+function Add-PodeAuthMiddleware {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [Alias('Auth')]
         [string]
         $Authentication,
@@ -1598,15 +1585,14 @@ Add-PodeAuthIIS -Name 'IISAuth' -Groups @('Developers')
 .EXAMPLE
 Add-PodeAuthIIS -Name 'IISAuth' -NoGroups
 #>
-function Add-PodeAuthIIS
-{
-    [CmdletBinding(DefaultParameterSetName='Groups')]
+function Add-PodeAuthIIS {
+    [CmdletBinding(DefaultParameterSetName = 'Groups')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(ParameterSetName='Groups')]
+        [Parameter(ParameterSetName = 'Groups')]
         [string[]]
         $Groups,
 
@@ -1637,11 +1623,11 @@ function Add-PodeAuthIIS
         [switch]
         $Sessionless,
 
-        [Parameter(ParameterSetName='NoGroups')]
+        [Parameter(ParameterSetName = 'NoGroups')]
         [switch]
         $NoGroups,
 
-        [Parameter(ParameterSetName='Groups')]
+        [Parameter(ParameterSetName = 'Groups')]
         [switch]
         $DirectGroups,
 
@@ -1657,7 +1643,7 @@ function Add-PodeAuthIIS
 
     # ensure we're on Windows!
     if (!(Test-PodeIsWindows)) {
-        throw "IIS Authentication support is for Windows only"
+        throw 'IIS Authentication support is for Windows only'
     }
 
     # ensure the name doesn't already exist
@@ -1685,7 +1671,7 @@ function Add-PodeAuthIIS
         if (!(Test-PodeHeader -Name $header)) {
             return @{
                 Message = "No $($header) header found"
-                Code = 401
+                Code    = 401
             }
         }
 
@@ -1706,17 +1692,17 @@ function Add-PodeAuthIIS
         -Sessionless:$Sessionless `
         -SuccessUseOrigin:$SuccessUseOrigin `
         -ArgumentList @{
-            Users = $Users
-            Groups = $Groups
-            NoGroups = $NoGroups
-            DirectGroups = $DirectGroups
-            Provider = (Get-PodeAuthADProvider -ADModule:$ADModule)
-            NoLocalCheck = $NoLocalCheck
-            ScriptBlock = @{
-                Script = $ScriptBlock
-                UsingVariables = $usingVars
-            }
+        Users        = $Users
+        Groups       = $Groups
+        NoGroups     = $NoGroups
+        DirectGroups = $DirectGroups
+        Provider     = (Get-PodeAuthADProvider -ADModule:$ADModule)
+        NoLocalCheck = $NoLocalCheck
+        ScriptBlock  = @{
+            Script         = $ScriptBlock
+            UsingVariables = $usingVars
         }
+    }
 }
 
 <#
@@ -1768,15 +1754,14 @@ New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login'
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './custom/path/users.json'
 #>
-function Add-PodeAuthUserFile
-{
+function Add-PodeAuthUserFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Scheme,
 
@@ -1792,7 +1777,7 @@ function Add-PodeAuthUserFile
         [string[]]
         $Users,
 
-        [Parameter(ParameterSetName='Hmac')]
+        [Parameter(ParameterSetName = 'Hmac')]
         [string]
         $HmacSecret,
 
@@ -1854,30 +1839,30 @@ function Add-PodeAuthUserFile
 
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Scheme = $Scheme
+        Scheme      = $Scheme
         ScriptBlock = (Get-PodeAuthUserFileMethod)
-        Arguments = @{
-            FilePath = $FilePath
-            Users = $Users
-            Groups = $Groups
-            HmacSecret = $HmacSecret
+        Arguments   = @{
+            FilePath    = $FilePath
+            Users       = $Users
+            Groups      = $Groups
+            HmacSecret  = $HmacSecret
             ScriptBlock = @{
-                Script = $ScriptBlock
+                Script         = $ScriptBlock
                 UsingVariables = $usingVars
             }
         }
         Sessionless = $Sessionless
-        Failure = @{
-            Url = $FailureUrl
+        Failure     = @{
+            Url     = $FailureUrl
             Message = $FailureMessage
         }
-        Success = @{
-            Url = $SuccessUrl
+        Success     = @{
+            Url       = $SuccessUrl
             UseOrigin = $SuccessUseOrigin
         }
-        Cache = @{}
-        Merged = $false
-        Parent = $null
+        Cache       = @{}
+        Merged      = $false
+        Parent      = $null
     }
 }
 
@@ -1930,19 +1915,18 @@ New-PodeAuthScheme -Basic | Add-PodeAuthWindowsLocal -Name 'WinAuth' -Groups @('
 .EXAMPLE
 New-PodeAuthScheme -Form | Add-PodeAuthWindowsLocal -Name 'WinAuth' -NoGroups
 #>
-function Add-PodeAuthWindowsLocal
-{
-    [CmdletBinding(DefaultParameterSetName='Groups')]
+function Add-PodeAuthWindowsLocal {
+    [CmdletBinding(DefaultParameterSetName = 'Groups')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Scheme,
 
-        [Parameter(ParameterSetName='Groups')]
+        [Parameter(ParameterSetName = 'Groups')]
         [string[]]
         $Groups,
 
@@ -1969,7 +1953,7 @@ function Add-PodeAuthWindowsLocal
         [switch]
         $Sessionless,
 
-        [Parameter(ParameterSetName='NoGroups')]
+        [Parameter(ParameterSetName = 'NoGroups')]
         [switch]
         $NoGroups,
 
@@ -1979,7 +1963,7 @@ function Add-PodeAuthWindowsLocal
 
     # ensure we're on Windows!
     if (!(Test-PodeIsWindows)) {
-        throw "Windows Local Authentication support is for Windows only"
+        throw 'Windows Local Authentication support is for Windows only'
     }
 
     # ensure the name doesn't already exist
@@ -2004,29 +1988,29 @@ function Add-PodeAuthWindowsLocal
 
     # add Windows Local auth method to server
     $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Scheme = $Scheme
+        Scheme      = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsLocalMethod)
-        Arguments = @{
-            Users = $Users
-            Groups = $Groups
-            NoGroups = $NoGroups
+        Arguments   = @{
+            Users       = $Users
+            Groups      = $Groups
+            NoGroups    = $NoGroups
             ScriptBlock = @{
-                Script = $ScriptBlock
+                Script         = $ScriptBlock
                 UsingVariables = $usingVars
             }
         }
         Sessionless = $Sessionless
-        Failure = @{
-            Url = $FailureUrl
+        Failure     = @{
+            Url     = $FailureUrl
             Message = $FailureMessage
         }
-        Success = @{
-            Url = $SuccessUrl
+        Success     = @{
+            Url       = $SuccessUrl
             UseOrigin = $SuccessUseOrigin
         }
-        Cache = @{}
-        Merged = $false
-        Parent = $null
+        Cache       = @{}
+        Merged      = $false
+        Parent      = $null
     }
 }
 
@@ -2052,15 +2036,14 @@ ConvertTo-PodeJwt -Header @{ alg = 'none' } -Payload @{ sub = '123'; name = 'Joh
 .EXAMPLE
 ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'John' } -Secret 'abc'
 #>
-function ConvertTo-PodeJwt
-{
+function ConvertTo-PodeJwt {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [hashtable]
         $Header,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [hashtable]
         $Payload,
 
@@ -2070,7 +2053,7 @@ function ConvertTo-PodeJwt
 
     # validate header
     if ([string]::IsNullOrWhiteSpace($Header.alg)) {
-        throw "No algorithm supplied in JWT Header"
+        throw 'No algorithm supplied in JWT Header'
     }
 
     # convert the header
@@ -2114,18 +2097,17 @@ Skip signature verification, and return the decoded payload.
 .EXAMPLE
 ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI1NTMyMTQsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMyJ9.LP-O8OKwix91a-SZwVK35gEClLZQmsORbW0un2Z4RkY"
 #>
-function ConvertFrom-PodeJwt
-{
-    [CmdletBinding(DefaultParameterSetName='Secret')]
+function ConvertFrom-PodeJwt {
+    [CmdletBinding(DefaultParameterSetName = 'Secret')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Token,
 
-        [Parameter(ParameterSetName='Signed')]
+        [Parameter(ParameterSetName = 'Signed')]
         $Secret = $null,
 
-        [Parameter(ParameterSetName='Ignore')]
+        [Parameter(ParameterSetName = 'Ignore')]
         [switch]
         $IgnoreSignature
     )
@@ -2135,13 +2117,13 @@ function ConvertFrom-PodeJwt
 
     # check number of parts (should be 3)
     if ($parts.Length -ne 3) {
-        throw "Invalid JWT supplied"
+        throw 'Invalid JWT supplied'
     }
 
     # convert to header
     $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
     if ([string]::IsNullOrWhiteSpace($header.alg)) {
-        throw "Invalid JWT header algorithm supplied"
+        throw 'Invalid JWT header algorithm supplied'
     }
 
     # convert to payload
@@ -2162,7 +2144,7 @@ function ConvertFrom-PodeJwt
     }
 
     if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
-        throw "Expected no JWT signature to be supplied"
+        throw 'Expected no JWT signature to be supplied'
     }
 
     if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
@@ -2182,7 +2164,7 @@ function ConvertFrom-PodeJwt
     $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
 
     if ($sig -ne $parts[2]) {
-        throw "Invalid JWT signature supplied"
+        throw 'Invalid JWT signature supplied'
     }
 
     # it's valid return the payload!
@@ -2221,14 +2203,14 @@ function Test-PodeJwt {
     # validate expiry
     if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
         if ($now -gt $unixStart.AddSeconds($Payload.exp)) {
-            throw "The JWT has expired"
+            throw 'The JWT has expired'
         }
     }
 
     # validate not-before
     if (![string]::IsNullOrWhiteSpace($Payload.nbf)) {
         if ($now -lt $unixStart.AddSeconds($Payload.nbf)) {
-            throw "The JWT is not yet valid for use"
+            throw 'The JWT is not yet valid for use'
         }
     }
 }
@@ -2249,8 +2231,7 @@ Use-PodeAuth
 .EXAMPLE
 Use-PodeAuth -Path './my-auth'
 #>
-function Use-PodeAuth
-{
+function Use-PodeAuth {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -2298,11 +2279,10 @@ ConvertFrom-PodeOIDCDiscovery -Url 'https://accounts.google.com/.well-known/open
 .EXAMPLE
 ConvertFrom-PodeOIDCDiscovery -Url 'https://accounts.google.com' -ClientId some_id -UsePKCE
 #>
-function ConvertFrom-PodeOIDCDiscovery
-{
+function ConvertFrom-PodeOIDCDiscovery {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Url,
 
@@ -2310,7 +2290,7 @@ function ConvertFrom-PodeOIDCDiscovery
         [string[]]
         $Scope,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ClientId,
 
@@ -2322,7 +2302,7 @@ function ConvertFrom-PodeOIDCDiscovery
         [string]
         $RedirectUrl,
 
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $InnerScheme,
 
@@ -2356,10 +2336,10 @@ function ConvertFrom-PodeOIDCDiscovery
 
     if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
         $scopes = @(foreach ($s in $Scope) {
-            if ($s -iin $config.scopes_supported) {
-                $s
-            }
-        })
+                if ($s -iin $config.scopes_supported) {
+                    $s
+                }
+            })
     }
 
     # pkce code challenge method
@@ -2368,7 +2348,7 @@ function ConvertFrom-PodeOIDCDiscovery
         $codeMethod = 'plain'
     }
 
-    return (New-PodeAuthScheme `
+    return New-PodeAuthScheme `
         -OAuth2 `
         -ClientId $ClientId `
         -ClientSecret $ClientSecret `
@@ -2380,7 +2360,7 @@ function ConvertFrom-PodeOIDCDiscovery
         -InnerScheme $InnerScheme `
         -Middleware $Middleware `
         -CodeChallengeMethod $codeMethod `
-        -UsePKCE:$UsePKCE)
+        -UsePKCE:$UsePKCE
 }
 
 <#
@@ -2396,8 +2376,7 @@ If supplied, only the Auth object in the WebEvent will be checked and the Sessio
 .EXAMPLE
 if (Test-PodeAuthUser) { ... }
 #>
-function Test-PodeAuthUser
-{
+function Test-PodeAuthUser {
     [CmdletBinding()]
     param(
         [switch]
@@ -2435,8 +2414,7 @@ If supplied, only the Auth object in the WebEvent will be used and the Session w
 .EXAMPLE
 $user = Get-PodeAuthUser
 #>
-function Get-PodeAuthUser
-{
+function Get-PodeAuthUser {
     [CmdletBinding()]
     param(
         [switch]

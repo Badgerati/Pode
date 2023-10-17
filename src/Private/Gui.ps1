@@ -1,5 +1,4 @@
-function Test-PodeGuiEnabled
-{
+function Test-PodeGuiEnabled {
     return ($PodeContext.Server.Gui.Enabled -and
         !$PodeContext.Server.IsServerless -and
         !$PodeContext.Server.IsIIS -and
@@ -17,7 +16,7 @@ function Start-PodeGuiRunspace {
             # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
             if ($null -eq $PodeContext.Server.Gui.Endpoint) {
                 if ($PodeContext.Server.Endpoints.Values.Count -gt 1) {
-                    Write-PodeHost "Multiple endpoints defined, only the first will be used for the GUI" -ForegroundColor Yellow
+                    Write-PodeHost 'Multiple endpoints defined, only the first will be used for the GUI' -ForegroundColor Yellow
                 }
             }
 
@@ -52,7 +51,7 @@ function Start-PodeGuiRunspace {
             $null = [System.Reflection.Assembly]::LoadWithPartialName('PresentationCore')
 
             # Check for CefSharp
-            $loadCef = [bool]([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName.StartsWith("CefSharp.Wpf,") })
+            $loadCef = [bool]([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName.StartsWith('CefSharp.Wpf,') })
 
             # setup the WPF XAML for the server
             # Check for CefSharp and used Chromium based WPF if Modules exists
@@ -117,11 +116,11 @@ function Start-PodeGuiRunspace {
 
             # get the browser object from XAML and navigate to base page if Cef is not loaded
             if (!$loadCef) {
-                $form.FindName("WebBrowser").Navigate($uri)
+                $form.FindName('WebBrowser').Navigate($uri)
             }
 
             # display the form
-            Write-PodeHost "Opening GUI" -ForegroundColor Yellow
+            Write-PodeHost 'Opening GUI' -ForegroundColor Yellow
             $null = $form.ShowDialog()
             Start-Sleep -Seconds 1
         }

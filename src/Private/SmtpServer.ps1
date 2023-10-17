@@ -1,7 +1,6 @@
 using namespace Pode
 
-function Start-PodeSmtpServer
-{
+function Start-PodeSmtpServer {
     # ensure we have smtp handlers
     if (Test-PodeIsEmpty (Get-PodeHandler -Type Smtp)) {
         throw 'No SMTP handlers have been defined'
@@ -18,20 +17,20 @@ function Start-PodeSmtpServer
 
         # the endpoint
         $_endpoint = @{
-            Key = "$($_ip):$($_.Port)"
-            Address = $_ip
-            Hostname = $_.HostName
-            IsIPAddress = $_.IsIPAddress
-            Port = $_.Port
-            Certificate = $_.Certificate.Raw
+            Key                    = "$($_ip):$($_.Port)"
+            Address                = $_ip
+            Hostname               = $_.HostName
+            IsIPAddress            = $_.IsIPAddress
+            Port                   = $_.Port
+            Certificate            = $_.Certificate.Raw
             AllowClientCertificate = $_.Certificate.AllowClientCertificate
-            TlsMode = $_.Certificate.TlsMode
-            Url = $_.Url
-            Protocol = $_.Protocol
-            Type = $_.Type
-            Pool = $_.Runspace.PoolName
-            Acknowledge = $_.Tcp.Acknowledge
-            SslProtocols = $_.Ssl.Protocols
+            TlsMode                = $_.Certificate.TlsMode
+            Url                    = $_.Url
+            Protocol               = $_.Protocol
+            Type                   = $_.Type
+            Pool                   = $_.Runspace.PoolName
+            Acknowledge            = $_.Tcp.Acknowledge
+            SslProtocols           = $_.Ssl.Protocols
         }
 
         # add endpoint to list
@@ -45,8 +44,7 @@ function Start-PodeSmtpServer
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
-    try
-    {
+    try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
             $socket = [PodeSocket]::new($_.Address, $_.Port, $_.SslProtocols, [PodeProtocolType]::Smtp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
@@ -72,50 +70,46 @@ function Start-PodeSmtpServer
 
     # script for listening out of for incoming requests
     $listenScript = {
-        param (
-            [Parameter(Mandatory=$true)]
+        param(
+            [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
             $Listener,
 
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             [int]
             $ThreadId
         )
 
-        try
-        {
-            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-            {
+        try {
+            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # get email
                 $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
-                try
-                {
-                    try
-                    {
+                try {
+                    try {
                         $Request = $context.Request
                         $Response = $context.Response
 
                         $SmtpEvent = @{
-                            Response = $Response
-                            Request = $Request
-                            Lockable = $PodeContext.Threading.Lockables.Global
-                            Email = @{
-                                From = $Request.From
-                                To = $Request.To
-                                Data = $Request.RawBody
-                                Headers = $Request.Headers
-                                Subject = $Request.Subject
-                                IsUrgent = $Request.IsUrgent
-                                ContentType = $Request.ContentType
+                            Response  = $Response
+                            Request   = $Request
+                            Lockable  = $PodeContext.Threading.Lockables.Global
+                            Email     = @{
+                                From            = $Request.From
+                                To              = $Request.To
+                                Data            = $Request.RawBody
+                                Headers         = $Request.Headers
+                                Subject         = $Request.Subject
+                                IsUrgent        = $Request.IsUrgent
+                                ContentType     = $Request.ContentType
                                 ContentEncoding = $Request.ContentEncoding
-                                Attachments = $Request.Attachments
-                                Body = $Request.Body
+                                Attachments     = $Request.Attachments
+                                Body            = $Request.Body
                             }
-                            Endpoint = @{
+                            Endpoint  = @{
                                 Protocol = $Request.Scheme
-                                Address = $Request.Address
-                                Name = $null
+                                Address  = $Request.Address
+                                Name     = $null
                             }
                             Timestamp = [datetime]::UtcNow
                         }
@@ -178,8 +172,8 @@ function Start-PodeSmtpServer
 
     # script to keep smtp server listening until cancelled
     $waitScript = {
-        param (
-            [Parameter(Mandatory=$true)]
+        param(
+            [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
             $Listener
         )
@@ -204,9 +198,9 @@ function Start-PodeSmtpServer
 
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {
-        @{
-            Url  = $endpoint.Url
-            Pool = $endpoint.Pool
-        }
-    })
+            @{
+                Url  = $endpoint.Url
+                Pool = $endpoint.Pool
+            }
+        })
 }

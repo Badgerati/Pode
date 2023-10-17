@@ -17,8 +17,7 @@ If an error is thrown, check the reason - if it's network related ignore the err
 .EXAMPLE
 Close-PodeDisposable -Disposable $stream -Close
 #>
-function Close-PodeDisposable
-{
+function Close-PodeDisposable {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -64,8 +63,7 @@ Returns the literal path of the server.
 .EXAMPLE
 $path = Get-PodeServerPath
 #>
-function Get-PodeServerPath
-{
+function Get-PodeServerPath {
     [CmdletBinding()]
     [OutputType([string])]
     param()
@@ -89,15 +87,14 @@ The ScriptBlock to time.
 .EXAMPLE
 Start-PodeStopwatch -Name 'ReadFile' -ScriptBlock { $content = Get-Content './file.txt' }
 #>
-function Start-PodeStopwatch
-{
+function Start-PodeStopwatch {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock
     )
@@ -132,16 +129,15 @@ The ScriptBlock to invoke. It will be supplied the Stream.
 .EXAMPLE
 $content = (Use-PodeStream -Stream $stream -ScriptBlock { return $args[0].ReadToEnd() })
 #>
-function Use-PodeStream
-{
+function Use-PodeStream {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [System.IDisposable]
         $Stream,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock
     )
@@ -171,11 +167,10 @@ The path, literal or relative to the server, to some script.
 .EXAMPLE
 Use-PodeScript -Path './scripts/tools.ps1'
 #>
-function Use-PodeScript
-{
+function Use-PodeScript {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path
     )
@@ -217,8 +212,7 @@ Returns the loaded configuration of the server.
 .EXAMPLE
 $s = Get-PodeConfig
 #>
-function Get-PodeConfig
-{
+function Get-PodeConfig {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param()
@@ -242,11 +236,10 @@ An array of arguments to supply to the Endware's ScriptBlock.
 .EXAMPLE
 Add-PodeEndware -ScriptBlock { /* logic */ }
 #>
-function Add-PodeEndware
-{
+function Add-PodeEndware {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -260,9 +253,9 @@ function Add-PodeEndware
 
     # add the scriptblock to array of endware that needs to be run
     $PodeContext.Server.Endware += @{
-        Logic = $ScriptBlock
+        Logic          = $ScriptBlock
         UsingVariables = $usingVars
-        Arguments = $ArgumentList
+        Arguments      = $ArgumentList
     }
 }
 
@@ -282,8 +275,7 @@ Use-PodeEndware
 .EXAMPLE
 Use-PodeEndware -Path './endware'
 #>
-function Use-PodeEndware
-{
+function Use-PodeEndware {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -313,15 +305,14 @@ Import-PodeModule -Name IISManager
 .EXAMPLE
 Import-PodeModule -Path './modules/utilities.psm1'
 #>
-function Import-PodeModule
-{
-    [CmdletBinding(DefaultParameterSetName='Name')]
+function Import-PodeModule {
+    [CmdletBinding(DefaultParameterSetName = 'Name')]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName='Name')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Path')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Path')]
         [string]
         $Path
     )
@@ -383,11 +374,10 @@ The name of a Snapin to import.
 .EXAMPLE
 Import-PodeSnapin -Name 'WDeploySnapin3.0'
 #>
-function Import-PodeSnapin
-{
+function Import-PodeSnapin {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -417,8 +407,7 @@ A default value to return should the main value be null/empty.
 .EXAMPLE
 $Name = Protect-PodeValue -Value $Name -Default 'Rick'
 #>
-function Protect-PodeValue
-{
+function Protect-PodeValue {
     [CmdletBinding()]
     [OutputType([object])]
     param(
@@ -451,12 +440,11 @@ The value to use if evaluated to False.
 .EXAMPLE
 $Port = Resolve-PodeValue -Check $AllowSsl -TrueValue 443 -FalseValue -80
 #>
-function Resolve-PodeValue
-{
+function Resolve-PodeValue {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [bool]
         $Check,
 
@@ -505,12 +493,11 @@ Invoke-PodeScriptBlock -ScriptBlock { Write-Host 'Hello!' }
 .EXAMPLE
 Invoke-PodeScriptBlock -Arguments 'Morty' -ScriptBlock { /* logic */ }
 #>
-function Invoke-PodeScriptBlock
-{
+function Invoke-PodeScriptBlock {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -573,8 +560,7 @@ The value to test.
 .EXAMPLE
 if (Test-PodeIsEmpty @{}) { /* logic */ }
 #>
-function Test-PodeIsEmpty
-{
+function Test-PodeIsEmpty {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
@@ -619,8 +605,7 @@ Tests if the the current session is running in PowerShell Core.
 .EXAMPLE
 if (Test-PodeIsPSCore) { /* logic */ }
 #>
-function Test-PodeIsPSCore
-{
+function Test-PodeIsPSCore {
     [CmdletBinding()]
     [OutputType([bool])]
     param()
@@ -638,8 +623,7 @@ Tests if the current OS is Unix.
 .EXAMPLE
 if (Test-PodeIsUnix) { /* logic */ }
 #>
-function Test-PodeIsUnix
-{
+function Test-PodeIsUnix {
     [CmdletBinding()]
     [OutputType([bool])]
     param()
@@ -657,8 +641,7 @@ Tests if the current OS is Windows.
 .EXAMPLE
 if (Test-PodeIsWindows) { /* logic */ }
 #>
-function Test-PodeIsWindows
-{
+function Test-PodeIsWindows {
     [CmdletBinding()]
     [OutputType([bool])]
     param()
@@ -677,8 +660,7 @@ Tests if the current OS is MacOS.
 .EXAMPLE
 if (Test-PodeIsMacOS) { /* logic */ }
 #>
-function Test-PodeIsMacOS
-{
+function Test-PodeIsMacOS {
     [CmdletBinding()]
     [OutputType([bool])]
     param()
@@ -696,8 +678,7 @@ Tests if the scope you're in is currently within a Pode runspace.
 .EXAMPLE
 If (Test-PodeInRunspace) { ... }
 #>
-function Test-PodeInRunspace
-{
+function Test-PodeInRunspace {
     [CmdletBinding()]
     param()
 
@@ -721,11 +702,10 @@ The object to output.
 .EXAMPLE
 @{ Name = 'Rick' } | Out-PodeHost
 #>
-function Out-PodeHost
-{
+function Out-PodeHost {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]
         $InputObject
     )
@@ -755,11 +735,10 @@ Whether or not to write a new line.
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
-function Write-PodeHost
-{
+function Write-PodeHost {
     [CmdletBinding()]
     param(
-        [Parameter(Position=0, ValueFromPipeline=$true)]
+        [Parameter(Position = 0, ValueFromPipeline = $true)]
         [object]
         $Object,
 
@@ -793,8 +772,7 @@ Returns whether or not the server is running via IIS.
 .EXAMPLE
 if (Test-PodeIsIIS) { }
 #>
-function Test-PodeIsIIS
-{
+function Test-PodeIsIIS {
     [CmdletBinding()]
     param()
 
@@ -811,8 +789,7 @@ Returns the IIS application path, or null if not using IIS.
 .EXAMPLE
 $path = Get-PodeIISApplicationPath
 #>
-function Get-PodeIISApplicationPath
-{
+function Get-PodeIISApplicationPath {
     [CmdletBinding()]
     param()
 
@@ -833,8 +810,7 @@ Returns whether or not the server is running via Heroku.
 .EXAMPLE
 if (Test-PodeIsHeroku) { }
 #>
-function Test-PodeIsHeroku
-{
+function Test-PodeIsHeroku {
     [CmdletBinding()]
     param()
 
@@ -851,8 +827,7 @@ Returns whether or not the server is being hosted behind another application, su
 .EXAMPLE
 if (Test-PodeIsHosted) { }
 #>
-function Test-PodeIsHosted
-{
+function Test-PodeIsHosted {
     [CmdletBinding()]
     param()
 
@@ -875,15 +850,14 @@ The Value of the variable to be set
 .EXAMPLE
 Out-PodeVariable -Name ExampleVar -Value @{ Name = 'Bob' }
 #>
-function Out-PodeVariable
-{
+function Out-PodeVariable {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [object]
         $Value
     )
@@ -949,8 +923,7 @@ New-PodeCron -Every Hour -Day Monday                                # every hour
 .EXAMPLE
 New-PodeCron -Every Quarter                                         # every 1st jan, apr, jul, oct, at 00:00
 #>
-function New-PodeCron
-{
+function New-PodeCron {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -990,50 +963,50 @@ function New-PodeCron
 
     # cant have None and Interval
     if (($Every -ieq 'none') -and ($Interval -gt 0)) {
-        throw "Cannot supply an interval when -Every is set to None"
+        throw 'Cannot supply an interval when -Every is set to None'
     }
 
     # base cron
     $cron = @{
         Minute = '*'
-        Hour = '*'
-        Date = '*'
-        Month = '*'
-        Day = '*'
+        Hour   = '*'
+        Date   = '*'
+        Month  = '*'
+        Day    = '*'
     }
 
     # convert month/day to numbers
     if ($Month.Length -gt 0) {
         $MonthInts = @(foreach ($item in $Month) {
             (@{
-                January   = 1
-                February  = 2
-                March     = 3
-                April     = 4
-                May       = 5
-                June      = 6
-                July      = 7
-                August    = 8
-                September = 9
-                October   = 10
-                November  = 11
-                December  = 12
-            })[$item]
-        })
+                    January   = 1
+                    February  = 2
+                    March     = 3
+                    April     = 4
+                    May       = 5
+                    June      = 6
+                    July      = 7
+                    August    = 8
+                    September = 9
+                    October   = 10
+                    November  = 11
+                    December  = 12
+                })[$item]
+            })
     }
 
     if ($Day.Length -gt 0) {
         $DayInts = @(foreach ($item in $Day) {
             (@{
-                Sunday    = 0
-                Monday    = 1
-                Tuesday   = 2
-                Wednesday = 3
-                Thursday  = 4
-                Friday    = 5
-                Saturday  = 6
-            })[$item]
-        })
+                    Sunday    = 0
+                    Monday    = 1
+                    Tuesday   = 2
+                    Wednesday = 3
+                    Thursday  = 4
+                    Friday    = 5
+                    Saturday  = 6
+                })[$item]
+            })
     }
 
     # set "every" defaults
@@ -1090,7 +1063,7 @@ function New-PodeCron
             $cron.Month = '1,4,7,10'
 
             if ($Interval -gt 0) {
-                throw "Cannot supply interval value for every quarter"
+                throw 'Cannot supply interval value for every quarter'
             }
         }
 
@@ -1101,7 +1074,7 @@ function New-PodeCron
             $cron.Month = '1'
 
             if ($Interval -gt 0) {
-                throw "Cannot supply interval value for every year"
+                throw 'Cannot supply interval value for every year'
             }
         }
     }
