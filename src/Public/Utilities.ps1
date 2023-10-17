@@ -668,8 +668,7 @@ Tests if the scope you're in is currently within a Pode runspace.
 .EXAMPLE
 If (Test-PodeInRunspace) { ... }
 #>
-function Test-PodeInRunspace
-{
+function Test-PodeInRunspace {
     [CmdletBinding()]
     param()
 

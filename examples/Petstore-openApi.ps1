@@ -472,7 +472,8 @@ Some useful links:
         ) |
         Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas (@{'application/json' = 'string'; 'application/xml' = 'string' })  `
             -HeaderSchemas @('X-Rate-Limit', 'X-Expires-After') -PassThru |    
-        Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'  
+        Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'   
+
 
         Add-PodeRoute -PassThru -Method Get -Path '/user/logout' -ScriptBlock { 
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
@@ -510,7 +511,6 @@ Some useful links:
         Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru | 
         Add-PodeOAResponse -StatusCode 404 -Description 'User not found'  
 
-    }
-ConvertTo-PodeYaml
+    } 
     
 }

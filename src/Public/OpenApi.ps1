@@ -236,7 +236,9 @@ function Add-PodeOpenApiServerEndpoint {
         $PodeContext.Server.OpenAPI.servers = @()
     } 
     $lUrl = [ordered]@{url = $Url }
-    if ($Description) { $lUrl.description = $Description } 
+    if ($Description) {
+        $lUrl.description = $Description 
+    } 
     $PodeContext.Server.OpenAPI.servers += $lUrl 
 }
 
@@ -266,10 +268,18 @@ function Get-PodeOpenApiDefinition {
     ) 
     $oApi = Get-PodeOpenApiDefinitionInternal  
     switch ($Format) {
-        'Json' { return ConvertTo-Json -InputObject $oApi -Depth 10 }
-        'Json-Compress' { return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress }
-        'Yaml' { return ConvertTo-PodeYamlInternal -InputObject $oApi -Depth 10 -NoNewLine }
-        Default { return $oApi }
+        'Json' {
+            return ConvertTo-Json -InputObject $oApi -Depth 10 
+        }
+        'Json-Compress' {
+            return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress 
+        }
+        'Yaml' {
+            return ConvertTo-PodeYamlInternal -InputObject $oApi -Depth 10 -NoNewLine 
+        }
+        Default {
+            return $oApi 
+        }
     }
 }
 
@@ -290,7 +300,7 @@ The HTTP StatusCode for the response.
 The content-types and schema the response returns (the schema is created using the Property functions).
 
 .PARAMETER HeaderSchemas
-The header name and schema the response returns (the schema is created using the Property functions).
+The header name and schema the response returns (the schema is created using Add-PodeOAComponentHeaderSchema cmd-let).
 
 .PARAMETER Description
 A Description of the response. (Default: the HTTP StatusCode description)
@@ -337,9 +347,10 @@ function Add-PodeOAResponse {
         [hashtable]
         $ContentSchemas,
 
-        [Parameter(ParameterSetName = 'Schema')] 
-        [Parameter(ParameterSetName = 'SchemaDefault')]
-        [string[]]
+        [Parameter()]
+        [AllowEmptyString()]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({ $_ -is [string] -or $_ -is [hashtable] })]
         $HeaderSchemas,
 
         [Parameter(ParameterSetName = 'Schema')]
@@ -393,10 +404,14 @@ function Add-PodeOAResponse {
             }
 
             # build any header schemas
-            $headers = $null
-            if ($null -ne $HeaderSchemas) {
-                $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
-            }
+            $headers = $null 
+            if ($HeaderSchemas -is [System.Object[]]) {
+                if ($null -ne $HeaderSchemas) {
+                    $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
+                }  
+            } elseif ($HeaderSchemas -is [hashtable]) {
+                $headers = ConvertTo-PodeOAObjectSchema -Schemas  $HeaderSchemas 
+            }  
         }
 
         { $_ -in 'reference', 'referencedefault' } {
@@ -512,7 +527,7 @@ The reference Name of the response.
 The content-types and schema the response returns (the schema is created using the Property functions).
 
 .PARAMETER HeaderSchemas
-The header name and schema the response returns (the schema is created using the Property functions).
+The header name and schema the response returns (the schema is created using the Add-PodeOAComponentHeaderSchema cmdlet).
 
 .PARAMETER Description
 The Description of the response.
@@ -538,10 +553,12 @@ function Add-PodeOAComponentResponse {
 
         [Parameter()]
         [hashtable]
-        $ContentSchemas,
+        $ContentSchemas, 
 
         [Parameter()]
-        [string[]]
+        [AllowEmptyString()]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({ $_ -is [string] -or $_ -is [hashtable] })]
         $HeaderSchemas,
 
         [Parameter(Mandatory = $true)]
@@ -562,9 +579,13 @@ function Add-PodeOAComponentResponse {
         $r.content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray 
     }
 
-    if ($null -ne $HeaderSchemas) {
-        $r.headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
-    }  
+    if ($HeaderSchemas -is [System.Object[]]) {
+        if ($null -ne $HeaderSchemas) {
+            $r.headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
+        }  
+    } elseif ($HeaderSchemas -is [hashtable]) {
+        $r.headers = ConvertTo-PodeOAObjectSchema -Schemas  $HeaderSchemas 
+    } 
 
     $PodeContext.Server.OpenAPI.components.responses[$Name] = $r
 
@@ -682,9 +703,13 @@ function New-PodeOARequestBody {
         'schema' {
             $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas }
 
-            if ($Required.IsPresent) { $param['required'] = $Required.ToBool() }
+            if ($Required.IsPresent) {
+                $param['required'] = $Required.ToBool() 
+            }
 
-            if ( $Description) { $param['description'] = $Description } 
+            if ( $Description) {
+                $param['description'] = $Description 
+            } 
 
             return $param
         }
@@ -818,7 +843,9 @@ function Test-PodeOARequestSchema {
 
     [string[]] $message = @()
     if ($jsonValidationErrors) {
-        foreach ($item in $jsonValidationErrors) { $message += $item }  
+        foreach ($item in $jsonValidationErrors) {
+            $message += $item 
+        }  
     }
 
     return @{result = $result; message = $message }
@@ -870,9 +897,13 @@ function Add-PodeOAComponentRequestBody {
     )
     $param = @{ content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema) }
 
-    if ($Required.IsPresent) { $param['required'] = $Required.ToBool() }
+    if ($Required.IsPresent) {
+        $param['required'] = $Required.ToBool() 
+    }
 
-    if ( $Description) { $param['description'] = $Description } 
+    if ( $Description) {
+        $param['description'] = $Description 
+    } 
 
     $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = $param
 }
@@ -1068,37 +1099,69 @@ function New-PodeOAIntProperty {
         meta = @{}
     }
 
-    if ($Description ) { $param.description = $Description }
+    if ($Description ) {
+        $param.description = $Description 
+    }
 
-    if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+    if ($Array.IsPresent ) {
+        $param.array = $Array.ToBool() 
+    }
 
-    if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+    if ($Object.IsPresent ) {
+        $param.object = $Object.ToBool() 
+    }
 
-    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Required.IsPresent ) {
+        $param.required = $Required.ToBool() 
+    }
 
-    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Deprecated.IsPresent ) {
+        $param.deprecated = $Deprecated.ToBool() 
+    }
 
-    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+    if ($Nullable.IsPresent ) {
+        $param.meta['nullable'] = $Nullable.ToBool() 
+    }
 
-    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+    if ($WriteOnly.IsPresent ) {
+        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+    }
 
-    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) {
+        $param.meta['readOnly'] = $ReadOnly.ToBool() 
+    }
 
-    if ($Example ) { $param.meta['example'] = $Example }
+    if ($Example ) {
+        $param.meta['example'] = $Example 
+    }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
+    if ($UniqueItems.IsPresent ) {
+        $param.uniqueItems = $UniqueItems.ToBool() 
+    } 
 
-    if ($Default) { $param.default = $Default }
+    if ($Default) {
+        $param.default = $Default 
+    }
 
-    if ($Format) { $param.format = $Format.ToLowerInvariant() }
+    if ($Format) {
+        $param.format = $Format.ToLowerInvariant() 
+    }
 
-    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MaxItems) {
+        $param.maxItems = $MaxItems 
+    }
 
-    if ($MinItems) { $param.minItems = $MinItems }
+    if ($MinItems) {
+        $param.minItems = $MinItems 
+    }
 
-    if ($Enum) { $param.enum = $Enum }  
+    if ($Enum) {
+        $param.enum = $Enum 
+    }  
 
-    if ($XlmName) { $param.xlmName = $XlmName }  
+    if ($XlmName) {
+        $param.xlmName = $XlmName 
+    }  
 
     if ($Minimum -ne [int]::MinValue) {
         $param.meta['minimum'] = $Minimum
@@ -1270,37 +1333,69 @@ function New-PodeOANumberProperty {
         meta = @{}
     }
     
-    if ($Description ) { $param.description = $Description }
+    if ($Description ) {
+        $param.description = $Description 
+    }
 
-    if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+    if ($Array.IsPresent ) {
+        $param.array = $Array.ToBool() 
+    }
 
-    if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+    if ($Object.IsPresent ) {
+        $param.object = $Object.ToBool() 
+    }
 
-    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Required.IsPresent ) {
+        $param.required = $Required.ToBool() 
+    }
 
-    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Deprecated.IsPresent ) {
+        $param.deprecated = $Deprecated.ToBool() 
+    }
 
-    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+    if ($Nullable.IsPresent ) {
+        $param.meta['nullable'] = $Nullable.ToBool() 
+    }
 
-    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+    if ($WriteOnly.IsPresent ) {
+        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+    }
 
-    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) {
+        $param.meta['readOnly'] = $ReadOnly.ToBool() 
+    }
 
-    if ($Example ) { $param.meta['example'] = $Example }
+    if ($Example ) {
+        $param.meta['example'] = $Example 
+    }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
+    if ($UniqueItems.IsPresent ) {
+        $param.uniqueItems = $UniqueItems.ToBool() 
+    } 
 
-    if ($Default) { $param.default = $Default }
+    if ($Default) {
+        $param.default = $Default 
+    }
 
-    if ($Format) { $param.format = $Format.ToLowerInvariant() }
+    if ($Format) {
+        $param.format = $Format.ToLowerInvariant() 
+    }
 
-    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MaxItems) {
+        $param.maxItems = $MaxItems 
+    }
 
-    if ($MinItems) { $param.minItems = $MinItems }
+    if ($MinItems) {
+        $param.minItems = $MinItems 
+    }
 
-    if ($Enum) { $param.enum = $Enum } 
+    if ($Enum) {
+        $param.enum = $Enum 
+    } 
 
-    if ($XlmName) { $param.xlmName = $XlmName }  
+    if ($XlmName) {
+        $param.xlmName = $XlmName 
+    }  
 
     if ($Minimum -ne [double]::MinValue) {
         $param.meta['minimum'] = $Minimum
@@ -1490,43 +1585,81 @@ function New-PodeOAStringProperty {
         meta = @{}
     }
     
-    if ($Description ) { $param.description = $Description }
+    if ($Description ) {
+        $param.description = $Description 
+    }
     
-    if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+    if ($Array.IsPresent ) {
+        $param.array = $Array.ToBool() 
+    }
 
-    if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+    if ($Object.IsPresent ) {
+        $param.object = $Object.ToBool() 
+    }
 
-    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Required.IsPresent ) {
+        $param.required = $Required.ToBool() 
+    }
 
-    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Deprecated.IsPresent ) {
+        $param.deprecated = $Deprecated.ToBool() 
+    }
 
-    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+    if ($Nullable.IsPresent ) {
+        $param.meta['nullable'] = $Nullable.ToBool() 
+    }
 
-    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+    if ($WriteOnly.IsPresent ) {
+        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+    }
 
-    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) {
+        $param.meta['readOnly'] = $ReadOnly.ToBool() 
+    }
 
-    if ($Example ) { $param.meta['example'] = $Example }
+    if ($Example ) {
+        $param.meta['example'] = $Example 
+    }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
+    if ($UniqueItems.IsPresent ) {
+        $param.uniqueItems = $UniqueItems.ToBool() 
+    } 
 
-    if ($Default) { $param.default = $Default }
+    if ($Default) {
+        $param.default = $Default 
+    }
 
-    if ($Format -or $CustomFormat) { $param.format = $_format.ToLowerInvariant() }
+    if ($Format -or $CustomFormat) {
+        $param.format = $_format.ToLowerInvariant() 
+    }
 
-    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MaxItems) {
+        $param.maxItems = $MaxItems 
+    }
 
-    if ($MinItems) { $param.minItems = $MinItems }
+    if ($MinItems) {
+        $param.minItems = $MinItems 
+    }
 
-    if ($Enum) { $param.enum = $Enum } 
+    if ($Enum) {
+        $param.enum = $Enum 
+    } 
 
-    if ($XlmName) { $param.xlmName = $XlmName }  
+    if ($XlmName) {
+        $param.xlmName = $XlmName 
+    }  
 
-    if ($Pattern) { $param.meta['pattern'] = $Pattern } 
+    if ($Pattern) {
+        $param.meta['pattern'] = $Pattern 
+    } 
 
-    if ($MinLength) { $param.meta['minLength'] = $MinLength } 
+    if ($MinLength) {
+        $param.meta['minLength'] = $MinLength 
+    } 
     
-    if ($MaxLength) { $param.meta['maxLength'] = $MaxLength }
+    if ($MaxLength) {
+        $param.meta['maxLength'] = $MaxLength 
+    }
 
     return $param
 }
@@ -1657,35 +1790,65 @@ function New-PodeOABoolProperty {
         meta = @{}
     }
 
-    if ($Description ) { $param.description = $Description }
+    if ($Description ) {
+        $param.description = $Description 
+    }
 
-    if ($Array.IsPresent ) { $param.array = $Array.ToBool() }
+    if ($Array.IsPresent ) {
+        $param.array = $Array.ToBool() 
+    }
 
-    if ($Object.IsPresent ) { $param.object = $Object.ToBool() }
+    if ($Object.IsPresent ) {
+        $param.object = $Object.ToBool() 
+    }
 
-    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Required.IsPresent ) {
+        $param.required = $Required.ToBool() 
+    }
 
-    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Deprecated.IsPresent ) {
+        $param.deprecated = $Deprecated.ToBool() 
+    }
 
-    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+    if ($Nullable.IsPresent ) {
+        $param.meta['nullable'] = $Nullable.ToBool() 
+    }
 
-    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+    if ($WriteOnly.IsPresent ) {
+        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+    }
 
-    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) {
+        $param.meta['readOnly'] = $ReadOnly.ToBool() 
+    }
 
-    if ($Example ) { $param.meta['example'] = $Example }
+    if ($Example ) {
+        $param.meta['example'] = $Example 
+    }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
+    if ($UniqueItems.IsPresent ) {
+        $param.uniqueItems = $UniqueItems.ToBool() 
+    } 
 
-    if ($Default) { $param.default = $Default } 
+    if ($Default) {
+        $param.default = $Default 
+    } 
 
-    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MaxItems) {
+        $param.maxItems = $MaxItems 
+    }
 
-    if ($MinItems) { $param.minItems = $MinItems }
+    if ($MinItems) {
+        $param.minItems = $MinItems 
+    }
 
-    if ($Enum) { $param.enum = $Enum } 
+    if ($Enum) {
+        $param.enum = $Enum 
+    } 
 
-    if ($XlmName) { $param.xlmName = $XlmName }  
+    if ($XlmName) {
+        $param.xlmName = $XlmName 
+    }  
 
     return $param
 }
@@ -1818,35 +1981,65 @@ function New-PodeOAObjectProperty {
         properties = $Properties  
         meta       = @{}
     }
-    if ($Description ) { $param.description = $Description }
+    if ($Description ) {
+        $param.description = $Description 
+    }
 
-    if ($Array.IsPresent ) { $param.array = $Array.ToBool() } 
+    if ($Array.IsPresent ) {
+        $param.array = $Array.ToBool() 
+    } 
 
-    if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+    if ($Required.IsPresent ) {
+        $param.required = $Required.ToBool() 
+    }
 
-    if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+    if ($Deprecated.IsPresent ) {
+        $param.deprecated = $Deprecated.ToBool() 
+    }
 
-    if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+    if ($Nullable.IsPresent ) {
+        $param.meta['nullable'] = $Nullable.ToBool() 
+    }
 
-    if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+    if ($WriteOnly.IsPresent ) {
+        $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+    }
 
-    if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+    if ($ReadOnly.IsPresent ) {
+        $param.meta['readOnly'] = $ReadOnly.ToBool() 
+    }
 
-    if ($Example ) { $param.meta['example'] = $Example }
+    if ($Example ) {
+        $param.meta['example'] = $Example 
+    }
 
-    if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
+    if ($UniqueItems.IsPresent ) {
+        $param.uniqueItems = $UniqueItems.ToBool() 
+    } 
 
-    if ($Default) { $param.default = $Default } 
+    if ($Default) {
+        $param.default = $Default 
+    } 
 
-    if ($MaxItems) { $param.maxItems = $MaxItems }
+    if ($MaxItems) {
+        $param.maxItems = $MaxItems 
+    }
 
-    if ($MinItems) { $param.minItems = $MinItems }
+    if ($MinItems) {
+        $param.minItems = $MinItems 
+    }
 
-    if ($MinProperties) { $param.minProperties = $MinProperties }
+    if ($MinProperties) {
+        $param.minProperties = $MinProperties 
+    }
 
-    if ($MaxProperties) { $param.maxProperties = $MaxProperties }
+    if ($MaxProperties) {
+        $param.maxProperties = $MaxProperties 
+    }
 
-    if ($Xml) { $param.xml = $Xml }
+    if ($Xml) {
+        $param.xml = $Xml 
+    }
     
     return $param
 }
@@ -1903,13 +2096,25 @@ function New-PodeOAOf {
 
     $param = @{      } 
     switch ($type) {
-        'OneOf' {    $param.type='oneOf'}
-        'AnyOf' {    $param.type='anyOf'}
-        'AllOf' {    $param.type='allOf'} 
+        'OneOf' {
+            $param.type = 'oneOf'
+        }
+        'AnyOf' {
+            $param.type = 'anyOf'
+        }
+        'AllOf' {
+            $param.type = 'allOf'
+        } 
     }
-    if ($Properties) { $param.properties = $Properties }
-    if ($Schemas) { $param.schemas = $Schemas } 
-    if ($Discriminator ) { $param.discriminator = $Discriminator } 
+    if ($Properties) {
+        $param.properties = $Properties 
+    }
+    if ($Schemas) {
+        $param.schemas = $Schemas 
+    } 
+    if ($Discriminator ) {
+        $param.discriminator = $Discriminator 
+    } 
     
     return $param
 }
@@ -2048,35 +2253,65 @@ function New-PodeOASchemaProperty {
         meta   = @{}
     }
     if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'array') {   
-        if ($Description ) { $param.description = $Description }
+        if ($Description ) {
+            $param.description = $Description 
+        }
 
-        if ($Array.IsPresent ) { $param.array = $Array.ToBool() } 
+        if ($Array.IsPresent ) {
+            $param.array = $Array.ToBool() 
+        } 
 
-        if ($Required.IsPresent ) { $param.required = $Required.ToBool() }
+        if ($Required.IsPresent ) {
+            $param.required = $Required.ToBool() 
+        }
 
-        if ($Deprecated.IsPresent ) { $param.deprecated = $Deprecated.ToBool() }
+        if ($Deprecated.IsPresent ) {
+            $param.deprecated = $Deprecated.ToBool() 
+        }
 
-        if ($Nullable.IsPresent ) { $param.meta['nullable'] = $Nullable.ToBool() }
+        if ($Nullable.IsPresent ) {
+            $param.meta['nullable'] = $Nullable.ToBool() 
+        }
 
-        if ($WriteOnly.IsPresent ) { $param.meta['writeOnly'] = $WriteOnly.ToBool() }
+        if ($WriteOnly.IsPresent ) {
+            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+        }
 
-        if ($ReadOnly.IsPresent ) { $param.meta['readOnly'] = $ReadOnly.ToBool() }
+        if ($ReadOnly.IsPresent ) {
+            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+        }
 
-        if ($Example ) { $param.meta['example'] = $Example }
+        if ($Example ) {
+            $param.meta['example'] = $Example 
+        }
 
-        if ($UniqueItems.IsPresent ) { $param.uniqueItems = $UniqueItems.ToBool() } 
+        if ($UniqueItems.IsPresent ) {
+            $param.uniqueItems = $UniqueItems.ToBool() 
+        } 
 
-        if ($Default) { $param.default = $Default } 
+        if ($Default) {
+            $param.default = $Default 
+        } 
 
-        if ($MaxItems) { $param.maxItems = $MaxItems }
+        if ($MaxItems) {
+            $param.maxItems = $MaxItems 
+        }
 
-        if ($MinItems) { $param.minItems = $MinItems }
+        if ($MinItems) {
+            $param.minItems = $MinItems 
+        }
 
-        if ($MinProperties) { $param.minProperties = $MinProperties }
+        if ($MinProperties) {
+            $param.minProperties = $MinProperties 
+        }
 
-        if ($MaxProperties) { $param.maxProperties = $MaxProperties }
+        if ($MaxProperties) {
+            $param.maxProperties = $MaxProperties 
+        }
 
-        if ($Xml) { $param.xml = $Xml }
+        if ($Xml) {
+            $param.xml = $Xml 
+        }
     }
     
     return $param
@@ -2709,11 +2944,17 @@ function New-PodeOAExtraInfo {
     if ($ContactName -or $ContactEmail -or $ContactUrl ) {
         $ExtraInfo['contact'] = @{}
         
-        if ($ContactName) { $ExtraInfo['contact'].name = $ContactName }
+        if ($ContactName) {
+            $ExtraInfo['contact'].name = $ContactName 
+        }
 
-        if ($ContactEmail) { $ExtraInfo['contact'].email = $ContactEmail }
+        if ($ContactEmail) {
+            $ExtraInfo['contact'].email = $ContactEmail 
+        }
 
-        if ($ContactUrl) { $ExtraInfo['contact'].url = $ContactUrl }
+        if ($ContactUrl) {
+            $ExtraInfo['contact'].url = $ContactUrl 
+        }
     } 
 
     return $ExtraInfo

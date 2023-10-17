@@ -1833,7 +1833,8 @@ function Get-PodeModuleDetails {
         if (($usedModule | Measure-Object).Count -eq 1) {
             return (Convert-PodeModuleDetails -Module $usedModule)
         }
-    } catch {}
+    } catch {
+    }
 
     # if there were multiple to begin with, use the newest version
     if (($importedModule | Measure-Object).Count -gt 1) {
@@ -3223,7 +3224,9 @@ function ConvertTo-PodeYamlInternal {
                         "$NewPadding$($_.Name): " +
                             (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + $increment))
                             })")
-                } else { '{}' }
+                } else {
+                    '{}' 
+                }
                 break
             }  
             'string' {
@@ -3274,7 +3277,9 @@ function ConvertTo-PodeYamlInternal {
                                 (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + 1))
                             })")
             } 
-            default { "'$InputObject'" }
+            default {
+                "'$InputObject'" 
+            }
         }
         return $Output
     } catch {
