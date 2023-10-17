@@ -36,7 +36,7 @@ Set-PodeResponseAttachment -Path '/assets/data.txt' -EndpointName 'Example'
 function Set-PodeResponseAttachment {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Path,
 
@@ -154,10 +154,11 @@ Write-PodeTextResponse -Bytes (Get-Content -Path ./some/image.png -Raw -AsByteSt
 .EXAMPLE
 Write-PodeTextResponse -Value 'Untitled Text Response' -StatusCode 418
 #>
-function Write-PodeTextResponse {
-    [CmdletBinding(DefaultParameterSetName = 'String')]
+function Write-PodeTextResponse
+{
+    [CmdletBinding(DefaultParameterSetName='String')]
     param (
-        [Parameter(ParameterSetName = 'String', ValueFromPipeline = $true, Position = 0)]
+        [Parameter(ParameterSetName='String', ValueFromPipeline=$true, Position=0)]
         [string]
         $Value,
 
@@ -259,13 +260,14 @@ function Write-PodeTextResponse {
                             $range.End = $size
                         }
 
-                        if ([int]$range.End -gt 0) {
-                            $Bytes[$($size - $range.End)..($size - 1)]
-                            $lengths += "$($size - $range.End)-$($size - 1)/$($size)"
-                        } else {
-                            $lengths += "0-0/$($size)"
-                        }
+                    if ([int]$range.End -gt 0) {
+                        $Bytes[$($size - $range.End)..($size - 1)]
+                        $lengths += "$($size - $range.End)-$($size - 1)/$($size)"
                     }
+                    else {
+                        $lengths += "0-0/$($size)"
+                    }
+                }
 
                     # normal range
                     else {
@@ -371,10 +373,11 @@ Write-PodeFileResponse -Path 'C:/Views/Index.pode' -Data @{ Counter = 2 }
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/Stuff.txt' -StatusCode 201
 #>
-function Write-PodeFileResponse {
+function Write-PodeFileResponse
+{
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [ValidateNotNull()]
         [string]
         $Path,
@@ -413,7 +416,7 @@ function Write-PodeFileResponse {
     if (![string]::IsNullOrWhiteSpace($mainExt) -and (
         ($mainExt -ieq 'pode') -or
         ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
-        )) {
+    )) {
         $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
 
         # get the sub-file extension, if empty, use original
@@ -462,13 +465,14 @@ Write-PodeCsvResponse -Value @{ Name = 'Rick' }
 .EXAMPLE
 Write-PodeCsvResponse -Path 'E:/Files/Names.csv'
 #>
-function Write-PodeCsvResponse {
-    [CmdletBinding(DefaultParameterSetName = 'Value')]
+function Write-PodeCsvResponse
+{
+    [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
+        [Parameter(Mandatory=$true, ParameterSetName='File')]
         [string]
         $Path,
 
@@ -487,8 +491,8 @@ function Write-PodeCsvResponse {
         'value' {
             if ($Value -isnot [string]) {
                 $Value = @(foreach ($v in $Value) {
-                        New-Object psobject -Property $v
-                    })
+                    New-Object psobject -Property $v
+                })
 
                 if (Test-PodeIsPSCore) {
                     $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
@@ -533,10 +537,11 @@ Write-PodeHtmlResponse -Value @{ Message = 'Hello, all!' }
 .EXAMPLE
 Write-PodeHtmlResponse -Path 'E:/Site/About.html'
 #>
-function Write-PodeHtmlResponse {
-    [CmdletBinding(DefaultParameterSetName = 'Value')]
+function Write-PodeHtmlResponse
+{
+    [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
@@ -595,10 +600,11 @@ Write-PodeMarkdownResponse -Value '# Hello, world!' -AsHtml
 .EXAMPLE
 Write-PodeMarkdownResponse -Path 'E:/Site/About.md'
 #>
-function Write-PodeMarkdownResponse {
-    [CmdletBinding(DefaultParameterSetName = 'Value')]
+function Write-PodeMarkdownResponse
+{
+    [CmdletBinding(DefaultParameterSetName='Value')]
     param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [Parameter(Mandatory=$true, ParameterSetName='Value', ValueFromPipeline=$true, Position=0)]
         $Value,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
@@ -685,7 +691,7 @@ function Write-PodeJsonResponse {
 
         [Parameter(ParameterSetName = 'Value')]
         [switch]
-        $NoCompress  
+        $NoCompress
 
     )
 
@@ -698,7 +704,7 @@ function Write-PodeJsonResponse {
 
         'value' {
             # Determine whether to use compression
-            $compress = -not $NoCompress  
+            $compress = -not $NoCompress
             if ($Value -isnot [string]) {
                 if ($Depth -le 0) {
                     $Value = (ConvertTo-Json -InputObject $Value -Compress:$compress)
@@ -846,14 +852,14 @@ function Write-PodeYamlResponse {
         }
 
         'value' {
-            if ($Value -isnot [string]) {   
+            if ($Value -isnot [string]) {
                 $Value = ConvertTo-PodeYamlInternal -InputObject $Value -Depth $Depth -NoNewLine
             }
         }
     }
 
     Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
-} 
+}
 
 
 
@@ -891,7 +897,7 @@ Write-PodeViewResponse -Path 'login' -FlashMessages
 function Write-PodeViewResponse {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Path,
 
@@ -1403,7 +1409,7 @@ Set-PodeViewEngine -Type PSHTML -Extension PS1 -ScriptBlock { param($path, $data
 #>
 function Set-PodeViewEngine {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter()]
         [string]
         $Type,
@@ -1463,7 +1469,7 @@ function Use-PodePartialView {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Path,
 
@@ -1622,7 +1628,7 @@ Add-PodeViewFolder -Name 'assets' -Source './assets'
 function Add-PodeViewFolder {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory=$true)]
         [string]
         $Name,
 

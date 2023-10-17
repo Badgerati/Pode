@@ -1,9 +1,8 @@
 using namespace System.Security.Cryptography
 
-function Test-PodeIPLimit
-{
+function Test-PodeIPLimit {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $IP
     )
@@ -23,7 +22,7 @@ function Test-PodeIPLimit
     $IP = @{
         String = $IP.IPAddressToString
         Family = $IP.AddressFamily
-        Bytes = $IP.GetAddressBytes()
+        Bytes  = $IP.GetAddressBytes()
     }
 
     # now
@@ -33,17 +32,17 @@ function Test-PodeIPLimit
     $_active_ip = $active[$IP.String]
     if ($null -eq $_active_ip) {
         $_groups = @(foreach ($key in $active.Keys) {
-            if ($active[$key].Rule.Grouped) {
-                $active[$key]
-            }
-        })
+                if ($active[$key].Rule.Grouped) {
+                    $active[$key]
+                }
+            })
 
         $_active_ip = @(foreach ($_group in $_groups) {
-            if (Test-PodeIPAddressInRange -IP $IP -LowerIP $_group.Rule.Lower -UpperIP $_group.Rule.Upper) {
-                $_group
-                break
-            }
-        })[0]
+                if (Test-PodeIPAddressInRange -IP $IP -LowerIP $_group.Rule.Lower -UpperIP $_group.Rule.Upper) {
+                    $_group
+                    break
+                }
+            })[0]
     }
 
     # the ip is active, or part of a grouped subnet
@@ -73,11 +72,11 @@ function Test-PodeIPLimit
     else {
         # get the ip's rule
         $_rule_ip = @(foreach ($rule in $rules.Values) {
-            if (Test-PodeIPAddressInRange -IP $IP -LowerIP $rule.Lower -UpperIP $rule.Upper) {
-                $rule
-                break
-            }
-        })[0]
+                if (Test-PodeIPAddressInRange -IP $IP -LowerIP $rule.Lower -UpperIP $rule.Upper) {
+                    $rule
+                    break
+                }
+            })[0]
 
         # if ip not in rules, it's valid
         # (add to active list as always allowed - saves running where search everytime)
@@ -95,8 +94,8 @@ function Test-PodeIPLimit
         $_ip = (Resolve-PodeValue -Check $_rule_ip.Grouped -TrueValue $_rule_ip.IP -FalseValue $IP.String)
 
         $active[$_ip] = @{
-            Rule = $_rule_ip
-            Rate = 1
+            Rule   = $_rule_ip
+            Rate   = 1
             Expire = $now.AddSeconds($_rule_ip.Seconds)
         }
 
@@ -105,10 +104,9 @@ function Test-PodeIPLimit
     }
 }
 
-function Test-PodeRouteLimit
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Test-PodeRouteLimit {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
         $Path
@@ -172,8 +170,8 @@ function Test-PodeRouteLimit
 
         # add route to active list
         $active[$Path] = @{
-            Rule = $_rule_route
-            Rate = 1
+            Rule   = $_rule_route
+            Rate   = 1
             Expire = $now.AddSeconds($_rule_route.Seconds)
         }
 
@@ -182,9 +180,8 @@ function Test-PodeRouteLimit
     }
 }
 
-function Test-PodeEndpointLimit
-{
-    param (
+function Test-PodeEndpointLimit {
+    param(
         [Parameter()]
         [string]
         $EndpointName
@@ -252,8 +249,8 @@ function Test-PodeEndpointLimit
 
         # add endpoint to active list
         $active[$EndpointName] = @{
-            Rule = $_rule_endpoint
-            Rate = 1
+            Rule   = $_rule_endpoint
+            Rate   = 1
             Expire = $now.AddSeconds($_rule_endpoint.Seconds)
         }
 
@@ -262,10 +259,9 @@ function Test-PodeEndpointLimit
     }
 }
 
-function Test-PodeIPAccess
-{
+function Test-PodeIPAccess {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $IP
     )
@@ -288,17 +284,17 @@ function Test-PodeIPAccess
     # get the ip address in bytes
     $IP = @{
         Family = $IP.AddressFamily
-        Bytes = $IP.GetAddressBytes()
+        Bytes  = $IP.GetAddressBytes()
     }
 
     # if value in allow, it's allowed
     if (!$alEmpty) {
         $match = @(foreach ($value in $allow.Values) {
-            if (Test-PodeIPAddressInRange -IP $IP -LowerIP $value.Lower -UpperIP $value.Upper) {
-                $value
-                break
-            }
-        })[0]
+                if (Test-PodeIPAddressInRange -IP $IP -LowerIP $value.Lower -UpperIP $value.Upper) {
+                    $value
+                    break
+                }
+            })[0]
 
         if ($null -ne $match) {
             return $true
@@ -308,11 +304,11 @@ function Test-PodeIPAccess
     # if value in deny, it's disallowed
     if (!$dnEmpty) {
         $match = @(foreach ($value in $deny.Values) {
-            if (Test-PodeIPAddressInRange -IP $IP -LowerIP $value.Lower -UpperIP $value.Upper) {
-                $value
-                break
-            }
-        })[0]
+                if (Test-PodeIPAddressInRange -IP $IP -LowerIP $value.Lower -UpperIP $value.Upper) {
+                    $value
+                    break
+                }
+            })[0]
 
         if ($null -ne $match) {
             return $false
@@ -328,19 +324,18 @@ function Test-PodeIPAccess
     return $true
 }
 
-function Add-PodeIPLimit
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Add-PodeIPLimit {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
         $IP,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Limit,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Seconds,
 
@@ -392,34 +387,33 @@ function Add-PodeIPLimit
 
     # add limit rule for ip
     $rules.Add($IP, @{
-        Limit = $Limit
-        Seconds = $Seconds
-        Grouped = [bool]$Group
-        IP = $IP
-        Lower = @{
-            Family = $_tmpLo.AddressFamily
-            Bytes = $_tmpLo.GetAddressBytes()
-        }
-        Upper = @{
-            Family = $_tmpHi.AddressFamily
-            Bytes = $_tmpHi.GetAddressBytes()
-        }
-    })
+            Limit   = $Limit
+            Seconds = $Seconds
+            Grouped = [bool]$Group
+            IP      = $IP
+            Lower   = @{
+                Family = $_tmpLo.AddressFamily
+                Bytes  = $_tmpLo.GetAddressBytes()
+            }
+            Upper   = @{
+                Family = $_tmpHi.AddressFamily
+                Bytes  = $_tmpHi.GetAddressBytes()
+            }
+        })
 }
 
-function Add-PodeRouteLimit
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Add-PodeRouteLimit {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
         $Path,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Limit,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Seconds,
 
@@ -456,26 +450,25 @@ function Add-PodeRouteLimit
 
     # add limit rule for the route
     $rules.Add($Path, @{
-        Limit = $Limit
-        Seconds = $Seconds
-        Grouped = [bool]$Group
-        Path = $Path
-    })
+            Limit   = $Limit
+            Seconds = $Seconds
+            Grouped = [bool]$Group
+            Path    = $Path
+        })
 }
 
-function Add-PodeEndpointLimit
-{
+function Add-PodeEndpointLimit {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
         $EndpointName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Limit,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Seconds,
 
@@ -537,22 +530,21 @@ function Add-PodeEndpointLimit
 
     # add limit rule for the endpoint
     $rules.Add($EndpointName, @{
-        Limit = $Limit
-        Seconds = $Seconds
-        Grouped = [bool]$Group
-        EndpointName = $EndpointName
-    })
+            Limit        = $Limit
+            Seconds      = $Seconds
+            Grouped      = [bool]$Group
+            EndpointName = $EndpointName
+        })
 }
 
-function Add-PodeIPAccess
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Add-PodeIPAccess {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Allow', 'Deny')]
         [string]
         $Access,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $IP
     )
@@ -600,19 +592,18 @@ function Add-PodeIPAccess
 
     # add access rule for ip
     $permType.Add($IP, @{
-        Lower = @{
-            Family = $_tmpLo.AddressFamily
-            Bytes = $_tmpLo.GetAddressBytes()
-        }
-        Upper = @{
-            Family = $_tmpHi.AddressFamily
-            Bytes = $_tmpHi.GetAddressBytes()
-        }
-    })
+            Lower = @{
+                Family = $_tmpLo.AddressFamily
+                Bytes  = $_tmpLo.GetAddressBytes()
+            }
+            Upper = @{
+                Family = $_tmpHi.AddressFamily
+                Bytes  = $_tmpHi.GetAddressBytes()
+            }
+        })
 }
 
-function Get-PodeCsrfToken
-{
+function Get-PodeCsrfToken {
     # key name to search
     $key = $PodeContext.Server.Cookies.Csrf.Name
 
@@ -635,9 +626,8 @@ function Get-PodeCsrfToken
     return $null
 }
 
-function Test-PodeCsrfToken
-{
-    param (
+function Test-PodeCsrfToken {
+    param(
         [Parameter()]
         [string]
         $Secret,
@@ -674,8 +664,7 @@ function Test-PodeCsrfToken
     return $true
 }
 
-function New-PodeCsrfSecret
-{
+function New-PodeCsrfSecret {
     # see if there's already a secret in session/cookie
     $secret = (Get-PodeCsrfSecret)
     if (!(Test-PodeIsEmpty $secret)) {
@@ -688,16 +677,16 @@ function New-PodeCsrfSecret
     return $secret
 }
 
-function Get-PodeCsrfSecret
-{
+function Get-PodeCsrfSecret {
     # key name to get secret
     $key = $PodeContext.Server.Cookies.Csrf.Name
 
     # are we getting it from a cookie, or session?
     if ($PodeContext.Server.Cookies.Csrf.UseCookies) {
-        return (Get-PodeCookie `
+        $cookie = Get-PodeCookie `
             -Name $PodeContext.Server.Cookies.Csrf.Name `
-            -Secret $PodeContext.Server.Cookies.Csrf.Secret).Value
+            -Secret $PodeContext.Server.Cookies.Csrf.Secret
+        return $cookie.Value
     }
 
     # on session
@@ -706,10 +695,9 @@ function Get-PodeCsrfSecret
     }
 }
 
-function Set-PodeCsrfSecret
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Set-PodeCsrfSecret {
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Secret
     )
@@ -731,14 +719,13 @@ function Set-PodeCsrfSecret
     }
 }
 
-function Restore-PodeCsrfToken
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Restore-PodeCsrfToken {
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Secret,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Salt
     )
@@ -746,15 +733,13 @@ function Restore-PodeCsrfToken
     return "t:$($Salt).$(Invoke-PodeSHA256Hash -Value "$($Salt)-$($Secret)")"
 }
 
-function Test-PodeCsrfConfigured
-{
+function Test-PodeCsrfConfigured {
     return (!(Test-PodeIsEmpty $PodeContext.Server.Cookies.Csrf))
 }
 
-function Get-PodeCertificateByFile
-{
+function Get-PodeCertificateByFile {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Certificate,
 
@@ -783,10 +768,9 @@ function Get-PodeCertificateByFile
     return [X509Certificates.X509Certificate2]::new($path)
 }
 
-function Get-PodeCertificateByPemFile
-{
+function Get-PodeCertificateByPemFile {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Certificate,
 
@@ -864,29 +848,28 @@ function Get-PodeCertificateByPemFile
     return $cert
 }
 
-function Find-PodeCertificateInCertStore
-{
+function Find-PodeCertificateInCertStore {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [X509Certificates.X509FindType]
         $FindType,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Query,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [X509Certificates.StoreName]
         $StoreName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [X509Certificates.StoreLocation]
         $StoreLocation
     )
 
     # fail if not windows
     if (!(Test-PodeIsWindows)) {
-        throw "Certificate Thumbprints/Name are only supported on Windows"
+        throw 'Certificate Thumbprints/Name are only supported on Windows'
     }
 
     # open the currentuser\my store
@@ -912,54 +895,51 @@ function Find-PodeCertificateInCertStore
     return ([X509Certificates.X509Certificate2]($x509certs[0]))
 }
 
-function Get-PodeCertificateByThumbprint
-{
+function Get-PodeCertificateByThumbprint {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Thumbprint,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [X509Certificates.StoreName]
         $StoreName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [X509Certificates.StoreLocation]
         $StoreLocation
     )
 
-    return (Find-PodeCertificateInCertStore `
+    return Find-PodeCertificateInCertStore `
         -FindType ([X509Certificates.X509FindType]::FindByThumbprint) `
         -Query $Thumbprint `
         -StoreName $StoreName `
-        -StoreLocation $StoreLocation)
+        -StoreLocation $StoreLocation
 }
 
-function Get-PodeCertificateByName
-{
+function Get-PodeCertificateByName {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [X509Certificates.StoreName]
         $StoreName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [X509Certificates.StoreLocation]
         $StoreLocation
     )
 
-    return (Find-PodeCertificateInCertStore `
+    return Find-PodeCertificateInCertStore `
         -FindType ([X509Certificates.X509FindType]::FindBySubjectName) `
         -Query $Name `
         -StoreName $StoreName `
-        -StoreLocation $StoreLocation)
+        -StoreLocation $StoreLocation
 }
 
-function New-PodeSelfSignedCertificate
-{
+function New-PodeSelfSignedCertificate {
     $sanBuilder = [X509Certificates.SubjectAlternativeNameBuilder]::new()
     $null = $sanBuilder.AddIpAddress([ipaddress]::Loopback)
     $null = $sanBuilder.AddIpAddress([ipaddress]::IPv6Loopback)
@@ -970,7 +950,7 @@ function New-PodeSelfSignedCertificate
     }
 
     $rsa = [RSA]::Create(2048)
-    $distinguishedName = [X500DistinguishedName]::new("CN=localhost")
+    $distinguishedName = [X500DistinguishedName]::new('CN=localhost')
 
     $req = [X509Certificates.CertificateRequest]::new(
         $distinguishedName,
@@ -1021,10 +1001,9 @@ function New-PodeSelfSignedCertificate
     return $cert
 }
 
-function Protect-PodeContentSecurityKeyword
-{
+function Protect-PodeContentSecurityKeyword {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -1069,26 +1048,25 @@ function Protect-PodeContentSecurityKeyword
 
     # build the value
     $values = @(foreach ($v in $Value) {
-        if ($keywords -icontains $v) {
-            "'$($v.ToLowerInvariant())'"
-            continue
-        }
+            if ($keywords -icontains $v) {
+                "'$($v.ToLowerInvariant())'"
+                continue
+            }
 
-        if ($schemes -icontains $v) {
-            "$($v.ToLowerInvariant()):"
-            continue
-        }
+            if ($schemes -icontains $v) {
+                "$($v.ToLowerInvariant()):"
+                continue
+            }
 
-        $v
-    })
+            $v
+        })
 
     return "$($Name) $($values -join ' ')"
 }
 
-function Protect-PodePermissionsPolicyKeyword
-{
+function Protect-PodePermissionsPolicyKeyword {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -1126,13 +1104,13 @@ function Protect-PodePermissionsPolicyKeyword
     )
 
     $values = @(foreach ($v in $Value) {
-        if ($keywords -icontains $v) {
-            $v
-            continue
-        }
+            if ($keywords -icontains $v) {
+                $v
+                continue
+            }
 
-        "`"$($v)`""
-    })
+            "`"$($v)`""
+        })
 
     return "$($Name)=($($values -join ' '))"
 }

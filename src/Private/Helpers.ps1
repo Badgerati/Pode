@@ -438,9 +438,10 @@ function Get-PodeSubnetRange {
             $count++
 
             if ($count -le $bits) {
-                $network[$i] += '1'
-            } else {
-                $network[$i] += '0'
+                $network[$i] += "1"
+            }
+            else {
+                $network[$i] += "0"
             }
         }
     }
@@ -638,14 +639,15 @@ function Close-PodeRunspaces {
                         continue
                     }
 
-                    try {
-                        # only do this, if the pool is in error
-                        if ($PodeContext.RunspacePools[$item.Pool].State -ieq 'error') {
-                            $item.Pipeline.EndInvoke($item.Handler)
-                        }
-                    } catch {
-                        "$($item.Pool) runspace failed to load: $($_.Exception.InnerException.Message)"
+                try {
+                    # only do this, if the pool is in error
+                    if ($PodeContext.RunspacePools[$item.Pool].State -ieq 'error') {
+                        $item.Pipeline.EndInvoke($item.Handler)
                     }
+                }
+                catch {
+                    "$($item.Pool) runspace failed to load: $($_.Exception.InnerException.Message)"
+                }
 
                     Close-PodeDisposable -Disposable $item.Pipeline
                     $item.Stopped = $true
@@ -932,9 +934,10 @@ function Join-PodeServerRoot {
     return [System.IO.Path]::Combine($Root, $Folder, $FilePath)
 }
 
-function Remove-PodeEmptyItemsFromArray {
+function Remove-PodeEmptyItemsFromArray
+{
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline=$true)]
         $Array
     )
 
@@ -945,9 +948,10 @@ function Remove-PodeEmptyItemsFromArray {
     return @(@($Array -ne ([string]::Empty)) -ne $null)
 }
 
-function Remove-PodeNullKeysFromHashtable {
+function Remove-PodeNullKeysFromHashtable
+{
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline=$true)]
         [hashtable]
         $Hashtable
     )
@@ -1485,8 +1489,8 @@ function ConvertFrom-PodeRequestContent {
             }
         }
 
-        { $_ -ilike '*/yaml' } { 
-            $Result.Data = ($Content | ConvertFrom-PodeYamlInternal) 
+        { $_ -ilike '*/yaml' } {
+            $Result.Data = ($Content | ConvertFrom-PodeYamlInternal)
         }
 
         { $_ -ilike '*/xml' } {
@@ -3143,8 +3147,8 @@ function Test-PodePlaceholders {
 .SYNOPSIS
 creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
 .DESCRIPTION
-This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects 
-.PARAMETER Object 
+This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
+.PARAMETER Object
 the object that you want scripted out
 .PARAMETER Depth
 The depth that you want your object scripted to
@@ -3157,9 +3161,9 @@ avoid to create a new line
 Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
 #>
 function ConvertTo-PodeYamlInternal {
-    
+
     [OutputType('System.String')]
-    
+
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
@@ -3172,32 +3176,32 @@ function ConvertTo-PodeYamlInternal {
         [parameter(Position = 3, Mandatory = $false, ValueFromPipeline = $false)]
         [int]$XMLAsInnerXML = 0,
         [parameter(Position = 4, Mandatory = $false, ValueFromPipeline = $false)]
-        [switch] $NoNewLine  
-    ) 
+        [switch] $NoNewLine
+    )
     # if it is null return null
     If ( !($InputObject) ) {
         if ($InputObject -is [Object[]]) {
-            return '[]' 
+            return '[]'
         } else {
             return ''
         }
-    }  
-        
+    }
+
     $padding = [string]'  ' * $NestingLevel # lets just create our left-padding for the block
     try {
         $Type = $InputObject.GetType().Name # we start by getting the object's type
-        if ($Type -ieq 'Object[]') { 
+        if ($Type -ieq 'Object[]') {
             #what it really is
-            $Type = "$($InputObject.GetType().BaseType.Name)" 
+            $Type = "$($InputObject.GetType().BaseType.Name)"
         }
 
         #report the leaves in terms of object type
         if ($Depth -ilt $NestingLevel) {
-            $Type = 'OutOfDepth' 
-        }  
-        # prevent these values being identified as an object 
+            $Type = 'OutOfDepth'
+        }
+        # prevent these values being identified as an object
         if ($InputObject -is 'System.Collections.Specialized.OrderedDictionary') {
-            $Type = 'HashTable' 
+            $Type = 'HashTable'
         } elseif ($Type -ieq 'List`1') {
             $Type = 'Array'
         } elseif ($InputObject -is 'Array') {
@@ -3205,30 +3209,30 @@ function ConvertTo-PodeYamlInternal {
         } # whatever it thinks it is called
         elseif ($InputObject -is 'HashTable') {
             $Type = 'HashTable'
-        } # for our purposes it is a hashtable 
-        
+        } # for our purposes it is a hashtable
+
         Write-Verbose "$($padding)Type:='$Type', Object type:=$($InputObject.GetType().Name), BaseName:=$($InputObject.GetType().BaseType.Name) "
-            
+
         $output += switch ($Type) {
             'Array' {
                 "$($InputObject | ForEach-Object {
-                    "`n$padding- $(ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine)" })" 
+                    "`n$padding- $(ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine)" })"
                 break
             }
             'HashTable' {
                 if ($InputObject.Count -gt 0 ) {
                     $index = 0
                     ("$($InputObject.GetEnumerator() | ForEach-Object {
-                        if ($_.Value.GetType().Name -eq 'String'){$increment=2} else {$Increment=1}  
-                        if ($NoNewLine -and $index++ -eq 0){$NewPadding=''} else {$NewPadding="`n$padding"}  
+                        if ($_.Value.GetType().Name -eq 'String'){$increment=2} else {$Increment=1}
+                        if ($NoNewLine -and $index++ -eq 0){$NewPadding=''} else {$NewPadding="`n$padding"}
                         "$NewPadding$($_.Name): " +
                             (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + $increment))
                             })")
                 } else {
-                    '{}' 
+                    '{}'
                 }
                 break
-            }   
+            }
             'Boolean' {
                 "$(&{
                             if ($InputObject -eq $true) { 'true' }
@@ -3256,14 +3260,14 @@ function ConvertTo-PodeYamlInternal {
                             } else {
                                 $BreakPoint = $wrap + $latest
                             }
-                                
+
                             if (($wrap - $earliest) + $latest -gt 30) {
                                 $BreakPoint = $wrap # in case it is a string without spaces
-                            } 
-                                
+                            }
+
                             $folded += $padding + $workingString.Substring($IndexIntoString, $BreakPoint).Trim() + "`n"
                             $IndexIntoString += $BreakPoint
-                        } 
+                        }
                         if ($IndexIntoString -lt $length) {
                             $folded += $padding + $workingString.Substring($IndexIntoString).Trim() + "`n"
                         } else {
@@ -3272,23 +3276,23 @@ function ConvertTo-PodeYamlInternal {
                     }
                     $folded
                 } else {
-                        ($string.StartsWith('#'))?"'$($string -replace '''', '''''')'":$string 
+                        ($string.StartsWith('#'))?"'$($string -replace '''', '''''')'":$string
                 }
                 break
             }
-            
+
             'Dictionary`2' {
                     ("$($InputObject.GetEnumerator() | ForEach-Object {
                                 "`n$padding  $($_.Key): " +
                                 (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + 1))
                             })")
-            } 
+            }
             default {
-                "'$InputObject'" 
+                "'$InputObject'"
             }
         }
         return $Output
     } catch {
         Write-Error "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
-    }  
+    }
 }

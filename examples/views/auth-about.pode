@@ -1,17 +1,15 @@
 <html>
     <head>
-        <title>Auth Home</title>
+        <title>Auth About</title>
         <link rel="stylesheet" type="text/css" href="/styles/simple.css">
     </head>
     <body>
 
-        Hello, $($data.Username)! You have view this page $($data.Views) times!
-        <br /><br />
-        Your session will expire on $($data.Expiry)
+        Hello, this is an about page!
         <br />
 
         <p>
-            <a href='/about'>About</a>
+            <a href='/'>Home</a>
             <a href='/register'>Register</a>
         </p>
 

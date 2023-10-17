@@ -17,15 +17,14 @@ If supplied, the secret with which to sign the header's value.
 .EXAMPLE
 Add-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 #>
-function Add-PodeHeader
-{
+function Add-PodeHeader {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value,
 
@@ -64,11 +63,10 @@ If supplied, the secret with which to sign the header values.
 .EXAMPLE
 Add-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
 #>
-function Add-PodeHeaderBulk
-{
+function Add-PodeHeaderBulk {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [hashtable]
         $Values,
 
@@ -108,12 +106,11 @@ The name of the header to test.
 .EXAMPLE
 Test-PodeHeader -Name 'X-AuthToken'
 #>
-function Test-PodeHeader
-{
+function Test-PodeHeader {
     [CmdletBinding()]
     [OutputType([bool])]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -138,12 +135,11 @@ The secret used to unsign the header's value.
 .EXAMPLE
 Get-PodeHeader -Name 'X-AuthToken'
 #>
-function Get-PodeHeader
-{
+function Get-PodeHeader {
     [CmdletBinding()]
     [OutputType([string])]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -182,15 +178,14 @@ If supplied, the secret with which to sign the header's value.
 .EXAMPLE
 Set-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 #>
-function Set-PodeHeader
-{
+function Set-PodeHeader {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value,
 
@@ -229,11 +224,10 @@ If supplied, the secret with which to sign the header values.
 .EXAMPLE
 Set-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
 #>
-function Set-PodeHeaderBulk
-{
+function Set-PodeHeaderBulk {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [hashtable]
         $Values,
 
@@ -276,12 +270,11 @@ A secret to use for attempting to unsign the header's value.
 .EXAMPLE
 Test-PodeHeaderSigned -Name 'X-Header-Name' -Secret 'hunter2'
 #>
-function Test-PodeHeaderSigned
-{
+function Test-PodeHeaderSigned {
     [CmdletBinding()]
     [OutputType([bool])]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 

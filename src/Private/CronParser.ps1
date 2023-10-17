@@ -1,5 +1,4 @@
-function Get-PodeCronFields
-{
+function Get-PodeCronFields {
     return @(
         'Minute',
         'Hour',
@@ -9,10 +8,9 @@ function Get-PodeCronFields
     )
 }
 
-function Get-PodeCronFieldConstraints
-{
+function Get-PodeCronFieldConstraints {
     return @{
-        MinMax = @(
+        MinMax       = @(
             @(0, 59),
             @(0, 23),
             @(1, 31),
@@ -22,40 +20,38 @@ function Get-PodeCronFieldConstraints
         DaysInMonths = @(
             31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
         )
-        Months = @(
+        Months       = @(
             'January', 'February', 'March', 'April', 'May', 'June', 'July',
             'August', 'September', 'October', 'November', 'December'
         )
     }
 }
 
-function Get-PodeCronPredefined
-{
+function Get-PodeCronPredefined {
     return @{
         # normal
-        '@minutely' = '* * * * *';
-        '@hourly' = '0 * * * *';
-        '@daily' = '0 0 * * *';
-        '@weekly' = '0 0 * * 0';
-        '@monthly' = '0 0 1 * *';
-        '@quarterly' = '0 0 1 1,4,7,10 *';
-        '@yearly' = '0 0 1 1 *';
-        '@annually' = '0 0 1 1 *';
+        '@minutely'       = '* * * * *'
+        '@hourly'         = '0 * * * *'
+        '@daily'          = '0 0 * * *'
+        '@weekly'         = '0 0 * * 0'
+        '@monthly'        = '0 0 1 * *'
+        '@quarterly'      = '0 0 1 1,4,7,10 *'
+        '@yearly'         = '0 0 1 1 *'
+        '@annually'       = '0 0 1 1 *'
 
         # twice
-        '@twice-hourly' = '0,30 * * * *';
-        '@twice-daily' = '0 0,12 * * *';
-        '@twice-weekly' = '0 0 * * 0,4';
-        '@twice-monthly' = '0 0 1,15 * *';
-        '@twice-yearly' = '0 0 1 1,6 *';
-        '@twice-annually' = '0 0 1 1,6 *';
+        '@twice-hourly'   = '0,30 * * * *'
+        '@twice-daily'    = '0 0,12 * * *'
+        '@twice-weekly'   = '0 0 * * 0,4'
+        '@twice-monthly'  = '0 0 1,15 * *'
+        '@twice-yearly'   = '0 0 1 1,6 *'
+        '@twice-annually' = '0 0 1 1,6 *'
     }
 }
 
-function Get-PodeCronFieldAliases
-{
+function Get-PodeCronFieldAliases {
     return @{
-        Month = @{
+        Month     = @{
             Jan = 1
             Feb = 2
             Mar = 3
@@ -81,24 +77,22 @@ function Get-PodeCronFieldAliases
     }
 }
 
-function ConvertFrom-PodeCronExpressions
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function ConvertFrom-PodeCronExpressions {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Expressions
     )
 
     return @(@($Expressions) | ForEach-Object {
-        ConvertFrom-PodeCronExpression -Expression $_
-    })
+            ConvertFrom-PodeCronExpression -Expression $_
+        })
 }
 
-function ConvertFrom-PodeCronExpression
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function ConvertFrom-PodeCronExpression {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Expression
@@ -127,14 +121,13 @@ function ConvertFrom-PodeCronExpression
     $aliases = Get-PodeCronFieldAliases
     $cron = @{}
 
-    for ($i = 0; $i -lt $atoms.Length; $i++)
-    {
+    for ($i = 0; $i -lt $atoms.Length; $i++) {
         $_cronExp = @{
-            Range = $null
-            Values = $null
+            Range       = $null
+            Values      = $null
             Constraints = $null
-            Random = $false
-            WildCard = $false
+            Random      = $false
+            WildCard    = $false
         }
 
         $_atom = $atoms[$i]
@@ -253,8 +246,7 @@ function ConvertFrom-PodeCronExpression
     }
 
     # post validation for month/days in month
-    if (($null -ne $cron['Month'].Values) -and ($null -ne $cron['DayOfMonth'].Values))
-    {
+    if (($null -ne $cron['Month'].Values) -and ($null -ne $cron['DayOfMonth'].Values)) {
         foreach ($mon in $cron['Month'].Values) {
             foreach ($day in $cron['DayOfMonth'].Values) {
                 if ($day -gt $constraints.DaysInMonths[$mon - 1]) {
@@ -271,23 +263,21 @@ function ConvertFrom-PodeCronExpression
     return $cron
 }
 
-function Reset-PodeRandomCronExpressions
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Reset-PodeRandomCronExpressions {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $Expressions
     )
 
     return @(@($Expressions) | ForEach-Object {
-        Reset-PodeRandomCronExpression -Expression $_
-    })
+            Reset-PodeRandomCronExpression -Expression $_
+        })
 }
 
-function Reset-PodeRandomCronExpression
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Reset-PodeRandomCronExpression {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $Expression
     )
@@ -317,10 +307,9 @@ function Reset-PodeRandomCronExpression
     return $Expression
 }
 
-function Test-PodeCronExpressions
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Test-PodeCronExpressions {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $Expressions,
 
@@ -329,14 +318,13 @@ function Test-PodeCronExpressions
     )
 
     return ((@($Expressions) | Where-Object {
-        Test-PodeCronExpression -Expression $_ -DateTime $DateTime
-    } | Measure-Object).Count -gt 0)
+                Test-PodeCronExpression -Expression $_ -DateTime $DateTime
+            } | Measure-Object).Count -gt 0)
 }
 
-function Test-PodeCronExpression
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Test-PodeCronExpression {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $Expression,
 
@@ -386,10 +374,9 @@ function Test-PodeCronExpression
     return $true
 }
 
-function Get-PodeCronNextEarliestTrigger
-{
+function Get-PodeCronNextEarliestTrigger {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $Expressions,
 
@@ -401,14 +388,13 @@ function Get-PodeCronNextEarliestTrigger
     )
 
     return (@($Expressions) | Foreach-Object {
-        Get-PodeCronNextTrigger -Expression $_ -StartTime $StartTime -EndTime $EndTime
-    } | Where-Object { $null -ne $_ } | Sort-Object | Select-Object -First 1)
+            Get-PodeCronNextTrigger -Expression $_ -StartTime $StartTime -EndTime $EndTime
+        } | Where-Object { $null -ne $_ } | Sort-Object | Select-Object -First 1)
 }
 
-function Get-PodeCronNextTrigger
-{
+function Get-PodeCronNextTrigger {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $Expression,
 
@@ -448,8 +434,7 @@ function Get-PodeCronNextTrigger
     }
 
     # loop until we get a date
-    while ($true)
-    {
+    while ($true) {
         # check the minute
         if (!$Expression.Minute.WildCard) {
             $minute = Get-ClosestValue -AtomContraint $Expression.Minute -NowValue $NextTime.Minute

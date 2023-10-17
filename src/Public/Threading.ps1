@@ -35,20 +35,19 @@ Lock-PodeObject -Name 'LockName' -Timeout 5000 -ScriptBlock { /* logic */ }
 .EXAMPLE
 $result = (Lock-PodeObject -Return -Object $SomeArray -ScriptBlock { /* logic */ })
 #>
-function Lock-PodeObject
-{
-    [CmdletBinding(DefaultParameterSetName='Object')]
+function Lock-PodeObject {
+    [CmdletBinding(DefaultParameterSetName = 'Object')]
     [OutputType([object])]
     param(
-        [Parameter(ValueFromPipeline=$true, ParameterSetName='Object')]
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
         [object]
         $Object,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Name')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -102,11 +101,10 @@ The Name of the Lockable object.
 .EXAMPLE
 New-PodeLockable -Name 'Lock1'
 #>
-function New-PodeLockable
-{
+function New-PodeLockable {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -131,11 +129,10 @@ The Name of the Lockable object to remove.
 .EXAMPLE
 Remove-PodeLockable -Name 'Lock1'
 #>
-function Remove-PodeLockable
-{
+function Remove-PodeLockable {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -158,11 +155,10 @@ The Name of the Lockable object.
 .EXAMPLE
 Get-PodeLockable -Name 'Lock1' | Lock-PodeObject -ScriptBlock {}
 #>
-function Get-PodeLockable
-{
+function Get-PodeLockable {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -183,11 +179,10 @@ The Name of the Lockable object.
 .EXAMPLE
 Test-PodeLockable -Name 'Lock1'
 #>
-function Test-PodeLockable
-{
+function Test-PodeLockable {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -220,15 +215,14 @@ Enter-PodeLockable -Object $SomeArray
 .EXAMPLE
 Enter-PodeLockable -Name 'LockName' -Timeout 5000
 #>
-function Enter-PodeLockable
-{
-    [CmdletBinding(DefaultParameterSetName='Object')]
+function Enter-PodeLockable {
+    [CmdletBinding(DefaultParameterSetName = 'Object')]
     param(
-        [Parameter(ValueFromPipeline=$true, ParameterSetName='Object')]
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
         [object]
         $Object,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Name')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
         [string]
         $Name,
 
@@ -269,7 +263,7 @@ function Enter-PodeLockable
     $locked = $false
     [System.Threading.Monitor]::TryEnter($Object.SyncRoot, $Timeout, [ref]$locked)
     if (!$locked) {
-        throw "Failed to acquire lock on object"
+        throw 'Failed to acquire lock on object'
     }
 }
 
@@ -292,15 +286,14 @@ Exit-PodeLockable -Object $SomeArray
 .EXAMPLE
 Exit-PodeLockable -Name 'LockName'
 #>
-function Exit-PodeLockable
-{
-    [CmdletBinding(DefaultParameterSetName='Object')]
+function Exit-PodeLockable {
+    [CmdletBinding(DefaultParameterSetName = 'Object')]
     param(
-        [Parameter(ValueFromPipeline=$true, ParameterSetName='Object')]
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
         [object]
         $Object,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Name')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
         [string]
         $Name
     )
@@ -341,8 +334,7 @@ Remove all Lockables.
 .EXAMPLE
 Clear-PodeLockables
 #>
-function Clear-PodeLockables
-{
+function Clear-PodeLockables {
     [CmdletBinding()]
     param()
 
@@ -380,11 +372,10 @@ New-PodeMutex -Name 'LocalMutex' -Scope Local
 .EXAMPLE
 New-PodeMutex -Name 'GlobalMutex' -Scope Global
 #>
-function New-PodeMutex
-{
+function New-PodeMutex {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -430,11 +421,10 @@ The Name of the Mutex.
 .EXAMPLE
 Test-PodeMutex -Name 'LocalMutex'
 #>
-function Test-PodeMutex
-{
+function Test-PodeMutex {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -455,11 +445,10 @@ The Name of the Mutex.
 .EXAMPLE
 $mutex = Get-PodeMutex -Name 'SelfMutex'
 #>
-function Get-PodeMutex
-{
+function Get-PodeMutex {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -480,11 +469,10 @@ The Name of the Mutex.
 .EXAMPLE
 Remove-PodeMutex -Name 'GlobalMutex'
 #>
-function Remove-PodeMutex
-{
+function Remove-PodeMutex {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -520,15 +508,14 @@ Use-PodeMutex -Name 'SelfMutex' -Timeout 5000 -ScriptBlock {}
 .EXAMPLE
 $result = Use-PodeMutex -Name 'LocalMutex' -Return -ScriptBlock {}
 #>
-function Use-PodeMutex
-{
+function Use-PodeMutex {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -573,11 +560,10 @@ If supplied, a number of milliseconds to timeout after if a hold cannot be acqui
 .EXAMPLE
 Enter-PodeMutex -Name 'SelfMutex' -Timeout 5000
 #>
-function Enter-PodeMutex
-{
+function Enter-PodeMutex {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -609,11 +595,10 @@ The Name of the Mutex.
 .EXAMPLE
 Exit-PodeMutex -Name 'SelfMutex'
 #>
-function Exit-PodeMutex
-{
+function Exit-PodeMutex {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -636,8 +621,7 @@ Removes all Mutexes.
 .EXAMPLE
 Clear-PodeMutexes
 #>
-function Clear-PodeMutexes
-{
+function Clear-PodeMutexes {
     [CmdletBinding()]
     param()
 
@@ -678,11 +662,10 @@ New-PodeSemaphore -Name 'LocalSemaphore' -Scope Local
 .EXAMPLE
 New-PodeSemaphore -Name 'GlobalSemaphore' -Count 3 -Scope Global
 #>
-function New-PodeSemaphore
-{
+function New-PodeSemaphore {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -736,11 +719,10 @@ The Name of the Semaphore.
 .EXAMPLE
 Test-PodeSemaphore -Name 'LocalSemaphore'
 #>
-function Test-PodeSemaphore
-{
+function Test-PodeSemaphore {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -761,11 +743,10 @@ The Name of the Semaphore.
 .EXAMPLE
 $semaphore = Get-PodeSemaphore -Name 'SelfSemaphore'
 #>
-function Get-PodeSemaphore
-{
+function Get-PodeSemaphore {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -786,11 +767,10 @@ The Name of the Semaphore.
 .EXAMPLE
 Remove-PodeSemaphore -Name 'GlobalSemaphore'
 #>
-function Remove-PodeSemaphore
-{
+function Remove-PodeSemaphore {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -826,15 +806,14 @@ Use-PodeSemaphore -Name 'SelfSemaphore' -Timeout 5000 -ScriptBlock {}
 .EXAMPLE
 $result = Use-PodeSemaphore -Name 'LocalSemaphore' -Return -ScriptBlock {}
 #>
-function Use-PodeSemaphore
-{
+function Use-PodeSemaphore {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -879,11 +858,10 @@ If supplied, a number of milliseconds to timeout after if a hold cannot be acqui
 .EXAMPLE
 Enter-PodeSemaphore -Name 'SelfSemaphore' -Timeout 5000
 #>
-function Enter-PodeSemaphore
-{
+function Enter-PodeSemaphore {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -918,11 +896,10 @@ The number of releases to release in one go. (Default: 1)
 .EXAMPLE
 Exit-PodeSemaphore -Name 'SelfSemaphore'
 #>
-function Exit-PodeSemaphore
-{
+function Exit-PodeSemaphore {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -953,8 +930,7 @@ Removes all Semaphores.
 .EXAMPLE
 Clear-PodeSemaphores
 #>
-function Clear-PodeSemaphores
-{
+function Clear-PodeSemaphores {
     [CmdletBinding()]
     param()
 

@@ -16,13 +16,13 @@ The Version of the API. (Default: 0.0.0)
 The OpenAPI Specification is versioned using Semantic Versioning 2.0.0 (semver) and follows the semver specification.
 https://semver.org/spec/v2.0.0.html
 
-.PARAMETER Description 
+.PARAMETER Description
 A short description of the API. CommonMark syntax MAY be used for rich text representation.
 https://spec.commonmark.org/
 
 .PARAMETER ExtraInfo
 The non-essential metadata about the API. The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
-The parameter is created by New-PodeOAExtraInfo  
+The parameter is created by New-PodeOAExtraInfo
 
 .PARAMETER ExternalDoc
 Additional external documentation for this operation.
@@ -70,9 +70,9 @@ function Enable-PodeOpenApi {
         [string]
         $Title,
 
-        [Parameter()] 
-        [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$')] 
-        [string] 
+        [Parameter()]
+        [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$')]
+        [string]
         $Version = '0.0.0',
 
         [Parameter()]
@@ -83,7 +83,7 @@ function Enable-PodeOpenApi {
         [ValidateSet('3.0.3')]
         [string]
         $OpenApiVersion = '3.0.3',
-        
+
         [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $ExtraInfo,
@@ -102,12 +102,12 @@ function Enable-PodeOpenApi {
         $Middleware,
 
         [switch]
-        $RestrictRoutes, 
+        $RestrictRoutes,
 
         [Parameter()]
         [ValidateSet('View', 'Download')]
         [String]
-        $Mode = 'view', 
+        $Mode = 'view',
 
         [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml')]
@@ -115,87 +115,87 @@ function Enable-PodeOpenApi {
         $MarkupLanguage = 'Json'
     )
 
-    # initialise openapi info 
+    # initialise openapi info
     $PodeContext.Server.OpenAPI.Version = $OpenApiVersion
-    $PodeContext.Server.OpenAPI.Path = $Path 
-    $meta = @{ 
+    $PodeContext.Server.OpenAPI.Path = $Path
+    $meta = @{
         RouteFilter    = $RouteFilter
-        RestrictRoutes = $RestrictRoutes  
+        RestrictRoutes = $RestrictRoutes
         NoCompress     = ($MarkupLanguage -eq 'Json')
         Mode           = (($Mode -eq 'Json-Compress')?'Json':$Mode)
         MarkupLanguage = $MarkupLanguage
-    } 
+    }
     $PodeContext.Server.OpenAPI.info = @{
         title   = $Title
-        version = $Version     
-    } 
+        version = $Version
+    }
 
     if ($Description ) {
-        $PodeContext.Server.OpenAPI.info.description = $Description   
+        $PodeContext.Server.OpenAPI.info.description = $Description
     }
 
     if ($ExtraInfo) {
-        $PodeContext.Server.OpenAPI.info += $ExtraInfo 
+        $PodeContext.Server.OpenAPI.info += $ExtraInfo
     }
 
     if ($ExternalDoc) {
         if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
             throw "The ExternalDoc doesn't exist: $ExternalDoc"
-        }   
+        }
         $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
-    }  
+    }
 
-    $openApiCreationScript = @'   
+    $openApiCreationScript = @'
     param($meta)
-    $format = $WebEvent.Query['format'] 
-    $mode = $WebEvent.Query['mode'] 
-    
+    $format = $WebEvent.Query['format']
+    $mode = $WebEvent.Query['mode']
+
     if (!$mode) {
-        $mode = $meta.Mode 
-    } elseif (@('download', 'view') -notcontains $mode) { 
-        Write-PodeHtmlResponse -Value "Mode $mode not valid" -StatusCode 400 
-    }  
+        $mode = $meta.Mode
+    } elseif (@('download', 'view') -notcontains $mode) {
+        Write-PodeHtmlResponse -Value "Mode $mode not valid" -StatusCode 400
+    }
     if (($mode -eq 'download')  ) {
-        #      Add-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=openapi.$format"  
-        Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "attachment; filename=openapi.$format"  
-    } 
+        #      Add-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=openapi.$format"
+        Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "attachment; filename=openapi.$format"
+    }
 
     # generate the openapi definition
     $def = Get-PodeOpenApiDefinitionInternal `
         -Protocol $WebEvent.Endpoint.Protocol `
         -Address $WebEvent.Endpoint.Address `
         -EndpointName $WebEvent.Endpoint.Name `
-        -MetaInfo $meta  
+        -MetaInfo $meta
 
     if ($WebEvent.path.EndsWith('.json')) {
         if($format){
-            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"  
+            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"
             return
         }
-        $format = 'json' 
+        $format = 'json'
     } elseif ($WebEvent.path.EndsWith('.yaml')) {
         if($format){
-            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"  
+            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"
             return
         }
-        $format = 'yaml' 
+        $format = 'yaml'
     } elseif (!$format) {
-        $format =  $meta.MarkupLanguage.ToLower() 
-    } elseif (@('yaml', 'json') -notcontains $format) { 
-        Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"  
+        $format =  $meta.MarkupLanguage.ToLower()
+    } elseif (@('yaml', 'json') -notcontains $format) {
+        Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"
         #  Write-PodeHtmlResponse -Value "Format $format not valid" -StatusCode 400
         return
-    }   
+    }
     # write the openapi definition
-    if ($format -eq 'yaml') {  
+    if ($format -eq 'yaml') {
         Write-PodeYamlResponse -Value $def
-    } else {  
+    } else {
         Write-PodeJsonResponse -Value $def -Depth 20 -NoCompress:$meta.NoCompress
-    } 
+    }
 '@
 
     $openApiCreationScriptBlock = [ScriptBlock]::Create( $openApiCreationScript )
- 
+
     # add the OpenAPI route
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
     Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
@@ -208,38 +208,38 @@ function Enable-PodeOpenApi {
 Creates an OpenAPI Server property.
 
 .DESCRIPTION
-Creates an OpenAPI Server property. 
+Creates an OpenAPI Server property.
 
 .PARAMETER Url
 Server or path to local server.
 
 .PARAMETER Description
-Description of the server. 
+Description of the server.
 
 .EXAMPLE
-Add-PodeOpenApiServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server' 
+Add-PodeOpenApiServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server'
 
 .EXAMPLE
-Add-PodeOpenApiServerEndpoint -Url '/api' -Description 'My local server' 
+Add-PodeOpenApiServerEndpoint -Url '/api' -Description 'My local server'
 #>
 function Add-PodeOpenApiServerEndpoint {
-    param ( 
+    param (
         [Parameter(Mandatory)]
-        [ValidatePattern('^(https?://|/).+')] 
-        [string]            
+        [ValidatePattern('^(https?://|/).+')]
+        [string]
         $Url,
         [string]
         $Description
-    ) 
+    )
 
     if (! $PodeContext.Server.OpenAPI.servers) {
         $PodeContext.Server.OpenAPI.servers = @()
-    } 
+    }
     $lUrl = [ordered]@{url = $Url }
     if ($Description) {
-        $lUrl.description = $Description 
-    } 
-    $PodeContext.Server.OpenAPI.servers += $lUrl 
+        $lUrl.description = $Description
+    }
+    $PodeContext.Server.OpenAPI.servers += $lUrl
 }
 
 
@@ -256,7 +256,7 @@ Gets the OpenAPI definition for custom use in routes, or other functions.
 Return the definition in JSON format
 
 .EXAMPLE
-$defInJson = Get-PodeOpenApiDefinition -Json  
+$defInJson = Get-PodeOpenApiDefinition -Json
 #>
 function Get-PodeOpenApiDefinition {
     [CmdletBinding()]
@@ -265,20 +265,20 @@ function Get-PodeOpenApiDefinition {
         [ValidateSet('Json', 'Json-Compress', 'Yaml', 'HashTable')]
         [string]
         $format
-    ) 
-    $oApi = Get-PodeOpenApiDefinitionInternal  
+    )
+    $oApi = Get-PodeOpenApiDefinitionInternal
     switch ($Format) {
         'Json' {
-            return ConvertTo-Json -InputObject $oApi -Depth 10 
+            return ConvertTo-Json -InputObject $oApi -Depth 10
         }
         'Json-Compress' {
-            return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress 
+            return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress
         }
         'Yaml' {
-            return ConvertTo-PodeYamlInternal -InputObject $oApi -Depth 10 -NoNewLine 
+            return ConvertTo-PodeYamlInternal -InputObject $oApi -Depth 10 -NoNewLine
         }
         Default {
-            return $oApi 
+            return $oApi
         }
     }
 }
@@ -368,12 +368,12 @@ function Add-PodeOAResponse {
         [switch]
         $Default,
 
-        [Parameter(ParameterSetName = 'Schema')] 
+        [Parameter(ParameterSetName = 'Schema')]
         [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
         $ContentArray,
-        
-        [Parameter(ParameterSetName = 'Schema')] 
+
+        [Parameter(ParameterSetName = 'Schema')]
         [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
         $HeaderArray,
@@ -399,19 +399,19 @@ function Add-PodeOAResponse {
         { $_ -in 'schema', 'schemadefault' } {
             # build any content-type schemas
             $content = $null
-            if ($null -ne $ContentSchemas) {  
-                $content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray 
+            if ($null -ne $ContentSchemas) {
+                $content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray
             }
 
             # build any header schemas
-            $headers = $null 
+            $headers = $null
             if ($HeaderSchemas -is [System.Object[]]) {
                 if ($null -ne $HeaderSchemas) {
-                    $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
-                }  
+                    $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray
+                }
             } elseif ($HeaderSchemas -is [hashtable]) {
-                $headers = ConvertTo-PodeOAObjectSchema -Schemas  $HeaderSchemas 
-            }  
+                $headers = ConvertTo-PodeOAObjectSchema -Schemas  $HeaderSchemas
+            }
         }
 
         { $_ -in 'reference', 'referencedefault' } {
@@ -427,13 +427,13 @@ function Add-PodeOAResponse {
             { $_ -in 'schema', 'schemadefault' } {
                 $response = @{}
                 if ($description) {
-                    $response.description = $description 
+                    $response.description = $description
                 }
                 if ($headers) {
                     $response.headers = $headers
                 }
                 if ($content) {
-                    $response.content = $content 
+                    $response.content = $content
                 }
                 $r.OpenApi.Responses[$code] = $response
             }
@@ -553,7 +553,7 @@ function Add-PodeOAComponentResponse {
 
         [Parameter()]
         [hashtable]
-        $ContentSchemas, 
+        $ContentSchemas,
 
         [Parameter()]
         [AllowEmptyString()]
@@ -576,16 +576,16 @@ function Add-PodeOAComponentResponse {
 
     $r = @{ description = $Description }
     if ($null -ne $ContentSchemas) {
-        $r.content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray 
+        $r.content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray
     }
 
     if ($HeaderSchemas -is [System.Object[]]) {
         if ($null -ne $HeaderSchemas) {
-            $r.headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray 
-        }  
+            $r.headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray
+        }
     } elseif ($HeaderSchemas -is [hashtable]) {
-        $r.headers = ConvertTo-PodeOAObjectSchema -Schemas  $HeaderSchemas 
-    } 
+        $r.headers = ConvertTo-PodeOAObjectSchema -Schemas  $HeaderSchemas
+    }
 
     $PodeContext.Server.OpenAPI.components.responses[$Name] = $r
 
@@ -606,7 +606,7 @@ The Parameter definitions the request uses (from ConvertTo-PodeOAParameter).
 
 .PARAMETER RequestBody
 The Request Body definition the request uses (from New-PodeOARequestBody).
- 
+
 
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
@@ -634,8 +634,8 @@ function Set-PodeOARequest {
         $PassThru
     )
 
-    foreach ($r in @($Route)) { 
-        
+    foreach ($r in @($Route)) {
+
         if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
             $r.OpenApi.Parameters = @($Parameters)
         }
@@ -701,17 +701,11 @@ function New-PodeOARequestBody {
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'schema' {
-            $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas }
-
-            if ($Required.IsPresent) {
-                $param['required'] = $Required.ToBool() 
+            return @{
+                required = $Required.IsPresent
+                description = $Description
+                content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
             }
-
-            if ( $Description) {
-                $param['description'] = $Description 
-            } 
-
-            return $param
         }
 
         'reference' {
@@ -748,7 +742,7 @@ function Add-PodeOAComponentSchema {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name,   
+        $Name,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
@@ -756,13 +750,13 @@ function Add-PodeOAComponentSchema {
 
     )
 
-    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)  
+    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
 
     $json = $PodeContext.Server.OpenAPI.components.schemas[$Name] | ConvertTo-Json -Depth 20 -Compress
     $obj = ConvertFrom-Json $json -AsHashtable
     Resolve-References -obj $obj -schemas $PodeContext.Server.OpenAPI.components.schemas
 
-    $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = $obj | ConvertTo-Json -Depth 20 
+    $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = $obj | ConvertTo-Json -Depth 20
 }
 
 
@@ -787,7 +781,7 @@ function Add-PodeOAComponentHeaderSchema {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name,   
+        $Name,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
@@ -795,8 +789,8 @@ function Add-PodeOAComponentHeaderSchema {
 
     )
 
-    $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) 
-    
+    $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
+
 }
 
 <#
@@ -804,7 +798,7 @@ function Add-PodeOAComponentHeaderSchema {
 Validate a parameter with a provided schema.
 
 .DESCRIPTION
-Validate the parameter of a method against it's own schema 
+Validate the parameter of a method against it's own schema
 
 .PARAMETER Json
 The object in Json format to validate
@@ -832,20 +826,20 @@ function Test-PodeOARequestSchema {
         $Json,
         [Parameter(Mandatory = $true)]
         [string]
-        $SchemaReference 
-    )  
-    
+        $SchemaReference
+    )
+
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
-    } 
+    }
 
-    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$SchemaReference] -ErrorVariable jsonValidationErrors 
+    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$SchemaReference] -ErrorVariable jsonValidationErrors
 
     [string[]] $message = @()
     if ($jsonValidationErrors) {
         foreach ($item in $jsonValidationErrors) {
-            $message += $item 
-        }  
+            $message += $item
+        }
     }
 
     return @{result = $result; message = $message }
@@ -895,17 +889,12 @@ function Add-PodeOAComponentRequestBody {
         [switch]
         $Required
     )
-    $param = @{ content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema) }
 
-    if ($Required.IsPresent) {
-        $param['required'] = $Required.ToBool() 
+    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = @{
+        required = $Required.IsPresent
+        description = $Description
+        content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
     }
-
-    if ( $Description) {
-        $param['description'] = $Description 
-    } 
-
-    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = $param
 }
 
 <#
@@ -924,8 +913,9 @@ The Parameter to use for the component (from ConvertTo-PodeOAParameter)
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add-PodeOAComponentParameter -Name 'UserIdParam'
 #>
-function Add-PodeOAComponentParameter {
-    [CmdletBinding( )]
+function Add-PodeOAComponentParameter
+{
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -939,7 +929,7 @@ function Add-PodeOAComponentParameter {
         $AllowEmptyValue
     )
 
-    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter  
+    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
 }
 
 <#
@@ -983,7 +973,7 @@ By default, XML elements get the same names that fields in the API declaration h
 If supplied, the object will be treated as Required where supported.
 
 .PARAMETER Deprecated
-If supplied, the object will be treated as Deprecated where supported. 
+If supplied, the object will be treated as Deprecated where supported.
 
 .PARAMETER Object
 If supplied, the integer will be automatically wrapped in an object.
@@ -995,19 +985,19 @@ If supplied, the integer will be treated as Nullable.
 If supplied, the integer will be included in a response but not in a request
 
 .PARAMETER WriteOnly
-If supplied, the integer will be included in a request but not in a response 
+If supplied, the integer will be included in a request but not in a response
 
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
 
 .PARAMETER UniqueItems
-If supplied, specify that all items in the array must be unique  
+If supplied, specify that all items in the array must be unique
 
 .PARAMETER MinItems
-If supplied, specify minimum length of an array 
+If supplied, specify minimum length of an array
 
 .PARAMETER MaxItems
-If supplied, specify maximum length of an array 
+If supplied, specify maximum length of an array
 
 .EXAMPLE
 New-PodeOANumberProperty -Name 'age' -Required
@@ -1047,7 +1037,7 @@ function New-PodeOAIntProperty {
         [Parameter()]
         [string]
         $Description,
-        
+
         [Parameter()]
         [String]
         $Example,
@@ -1076,15 +1066,15 @@ function New-PodeOAIntProperty {
         $ReadOnly,
 
         [switch]
-        $WriteOnly, 
+        $WriteOnly,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
-        [switch] 
-        $UniqueItems, 
+        [switch]
+        $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
@@ -1099,73 +1089,73 @@ function New-PodeOAIntProperty {
     begin {
         $param = @{
             name = $Name
-            type = 'integer'    
+            type = 'integer'
             meta = @{}
         }
 
         if ($Description ) {
-            $param.description = $Description 
+            $param.description = $Description
         }
 
         if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool() 
+            $param.array = $Array.ToBool()
         }
 
         if ($Object.IsPresent ) {
-            $param.object = $Object.ToBool() 
+            $param.object = $Object.ToBool()
         }
 
         if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool() 
+            $param.required = $Required.ToBool()
         }
 
         if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool() 
+            $param.deprecated = $Deprecated.ToBool()
         }
 
         if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool() 
+            $param.meta['nullable'] = $Nullable.ToBool()
         }
 
         if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+            $param.meta['writeOnly'] = $WriteOnly.ToBool()
         }
 
         if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+            $param.meta['readOnly'] = $ReadOnly.ToBool()
         }
 
         if ($Example ) {
-            $param.meta['example'] = $Example 
+            $param.meta['example'] = $Example
         }
 
         if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool() 
-        } 
+            $param.uniqueItems = $UniqueItems.ToBool()
+        }
 
         if ($Default) {
-            $param.default = $Default 
+            $param.default = $Default
         }
 
         if ($Format) {
-            $param.format = $Format.ToLowerInvariant() 
+            $param.format = $Format.ToLowerInvariant()
         }
 
         if ($MaxItems) {
-            $param.maxItems = $MaxItems 
+            $param.maxItems = $MaxItems
         }
 
         if ($MinItems) {
-            $param.minItems = $MinItems 
+            $param.minItems = $MinItems
         }
 
         if ($Enum) {
-            $param.enum = $Enum 
-        }  
+            $param.enum = $Enum
+        }
 
         if ($XlmName) {
-            $param.xlmName = $XlmName 
-        }  
+            $param.xlmName = $XlmName
+        }
 
         if ($Minimum -ne [int]::MinValue) {
             $param.meta['minimum'] = $Minimum
@@ -1179,7 +1169,7 @@ function New-PodeOAIntProperty {
             $param.meta['multipleOf'] = $MultiplesOf
         }
 
-        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
@@ -1188,12 +1178,12 @@ function New-PodeOAIntProperty {
     }
 
     end {
-        if ($collectedInput) {  
-            $collectedInput + $param 
+        if ($collectedInput) {
+            $collectedInput + $param
         } else {
             return $param
         }
-    } 
+    }
 }
 
 <#
@@ -1237,7 +1227,7 @@ By default, XML elements get the same names that fields in the API declaration h
 If supplied, the object will be treated as Required where supported.
 
 .PARAMETER Deprecated
-If supplied, the object will be treated as Deprecated where supported. 
+If supplied, the object will be treated as Deprecated where supported.
 
 .PARAMETER Object
 If supplied, the number will be automatically wrapped in an object.
@@ -1249,7 +1239,7 @@ If supplied, the number will be treated as Nullable.
 If supplied, the number will be included in a response but not in a request
 
 .PARAMETER WriteOnly
-If supplied, the number will be included in a request but not in a response 
+If supplied, the number will be included in a request but not in a response
 
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
@@ -1258,10 +1248,10 @@ If supplied, the object will be treated as an array of objects.
 If supplied, specify that all items in the array must be unique
 
 .PARAMETER MinItems
-If supplied, specify minimum length of an array 
+If supplied, specify minimum length of an array
 
 .PARAMETER MaxItems
-If supplied, specify maximum length of an array 
+If supplied, specify maximum length of an array
 
 .EXAMPLE
 New-PodeOANumberProperty -Name 'gravity' -Default 9.8
@@ -1331,14 +1321,14 @@ function New-PodeOANumberProperty {
 
         [switch]
         $WriteOnly,
-        
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
-        [switch] 
-        $UniqueItems, 
+        [switch]
+        $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
@@ -1348,76 +1338,76 @@ function New-PodeOANumberProperty {
         [int]
         $MaxItems
     )
-    begin {  
+    begin {
         $param = @{
             name = $Name
-            type = 'number'  
+            type = 'number'
             meta = @{}
         }
-    
+
         if ($Description ) {
-            $param.description = $Description 
+            $param.description = $Description
         }
 
         if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool() 
+            $param.array = $Array.ToBool()
         }
 
         if ($Object.IsPresent ) {
-            $param.object = $Object.ToBool() 
+            $param.object = $Object.ToBool()
         }
 
         if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool() 
+            $param.required = $Required.ToBool()
         }
 
         if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool() 
+            $param.deprecated = $Deprecated.ToBool()
         }
 
         if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool() 
+            $param.meta['nullable'] = $Nullable.ToBool()
         }
 
         if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+            $param.meta['writeOnly'] = $WriteOnly.ToBool()
         }
 
         if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+            $param.meta['readOnly'] = $ReadOnly.ToBool()
         }
 
         if ($Example ) {
-            $param.meta['example'] = $Example 
+            $param.meta['example'] = $Example
         }
 
         if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool() 
-        } 
+            $param.uniqueItems = $UniqueItems.ToBool()
+        }
 
         if ($Default) {
-            $param.default = $Default 
+            $param.default = $Default
         }
 
         if ($Format) {
-            $param.format = $Format.ToLowerInvariant() 
+            $param.format = $Format.ToLowerInvariant()
         }
 
         if ($MaxItems) {
-            $param.maxItems = $MaxItems 
+            $param.maxItems = $MaxItems
         }
 
         if ($MinItems) {
-            $param.minItems = $MinItems 
+            $param.minItems = $MinItems
         }
 
         if ($Enum) {
-            $param.enum = $Enum 
-        } 
+            $param.enum = $Enum
+        }
 
         if ($XlmName) {
-            $param.xlmName = $XlmName 
-        }  
+            $param.xlmName = $XlmName
+        }
 
         if ($Minimum -ne [double]::MinValue) {
             $param.meta['minimum'] = $Minimum
@@ -1431,7 +1421,7 @@ function New-PodeOANumberProperty {
             $param.meta['multipleOf'] = $MultiplesOf
         }
 
-        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
@@ -1440,12 +1430,12 @@ function New-PodeOANumberProperty {
     }
 
     end {
-        if ($collectedInput) {  
-            $collectedInput + $param 
+        if ($collectedInput) {
+            $collectedInput + $param
         } else {
             return $param
         }
-    } 
+    }
 }
 
 <#
@@ -1498,13 +1488,13 @@ If supplied, the string will be treated as Nullable.
 If supplied, the string will be included in a response but not in a request
 
 .PARAMETER WriteOnly
-If supplied, the string will be included in a request but not in a response 
+If supplied, the string will be included in a request but not in a response
 
 .PARAMETER MinLength
-If supplied, the string will be restricted to minimal length of characters. 
+If supplied, the string will be restricted to minimal length of characters.
 
 .PARAMETER  MaxLength
-If supplied, the string will be restricted to maximal length of characters. 
+If supplied, the string will be restricted to maximal length of characters.
 
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
@@ -1513,10 +1503,10 @@ If supplied, the object will be treated as an array of objects.
 If supplied, specify that all items in the array must be unique
 
 .PARAMETER MinItems
-If supplied, specify minimum length of an array 
+If supplied, specify minimum length of an array
 
 .PARAMETER MaxItems
-If supplied, specify maximum length of an array 
+If supplied, specify maximum length of an array
 
 .EXAMPLE
 New-PodeOAStringProperty -Name 'userType' -Default 'admin'
@@ -1548,7 +1538,7 @@ function New-PodeOAStringProperty {
 
         [Parameter()]
         [string]
-        $Default = $null, 
+        $Default = $null,
 
         [Parameter()]
         [string]
@@ -1557,7 +1547,7 @@ function New-PodeOAStringProperty {
         [Parameter()]
         [string]
         $Description,
-        
+
         [Parameter()]
         [String]
         $Example,
@@ -1601,8 +1591,8 @@ function New-PodeOAStringProperty {
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
-        [switch] 
-        $UniqueItems, 
+        [switch]
+        $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
@@ -1612,7 +1602,7 @@ function New-PodeOAStringProperty {
         [int]
         $MaxItems
     )
-    begin {  
+    begin {
         if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
             $_format = $CustomFormat
         } elseif ($Format) {
@@ -1621,86 +1611,86 @@ function New-PodeOAStringProperty {
 
         $param = @{
             name = $Name
-            type = 'string' 
+            type = 'string'
             meta = @{}
         }
-    
+
         if ($Description ) {
-            $param.description = $Description 
+            $param.description = $Description
         }
-    
+
         if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool() 
+            $param.array = $Array.ToBool()
         }
 
         if ($Object.IsPresent ) {
-            $param.object = $Object.ToBool() 
+            $param.object = $Object.ToBool()
         }
 
         if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool() 
+            $param.required = $Required.ToBool()
         }
 
         if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool() 
+            $param.deprecated = $Deprecated.ToBool()
         }
 
         if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool() 
+            $param.meta['nullable'] = $Nullable.ToBool()
         }
 
         if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+            $param.meta['writeOnly'] = $WriteOnly.ToBool()
         }
 
         if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+            $param.meta['readOnly'] = $ReadOnly.ToBool()
         }
 
         if ($Example ) {
-            $param.meta['example'] = $Example 
+            $param.meta['example'] = $Example
         }
 
         if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool() 
-        } 
+            $param.uniqueItems = $UniqueItems.ToBool()
+        }
 
         if ($Default) {
-            $param.default = $Default 
+            $param.default = $Default
         }
 
         if ($Format -or $CustomFormat) {
-            $param.format = $_format.ToLowerInvariant() 
+            $param.format = $_format.ToLowerInvariant()
         }
 
         if ($MaxItems) {
-            $param.maxItems = $MaxItems 
+            $param.maxItems = $MaxItems
         }
 
         if ($MinItems) {
-            $param.minItems = $MinItems 
+            $param.minItems = $MinItems
         }
 
         if ($Enum) {
-            $param.enum = $Enum 
-        } 
+            $param.enum = $Enum
+        }
 
         if ($XlmName) {
-            $param.xlmName = $XlmName 
-        }  
+            $param.xlmName = $XlmName
+        }
 
         if ($Pattern) {
-            $param.meta['pattern'] = $Pattern 
-        } 
+            $param.meta['pattern'] = $Pattern
+        }
 
         if ($MinLength) {
-            $param.meta['minLength'] = $MinLength 
-        } 
-    
+            $param.meta['minLength'] = $MinLength
+        }
+
         if ($MaxLength) {
-            $param.meta['maxLength'] = $MaxLength 
-        } 
-        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+            $param.meta['maxLength'] = $MaxLength
+        }
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
@@ -1709,12 +1699,12 @@ function New-PodeOAStringProperty {
     }
 
     end {
-        if ($collectedInput) {  
-            $collectedInput + $param 
+        if ($collectedInput) {
+            $collectedInput + $param
         } else {
             return $param
         }
-    } 
+    }
 }
 
 <#
@@ -1758,7 +1748,7 @@ If supplied, the boolean will be treated as Nullable.
 If supplied, the boolean will be included in a response but not in a request
 
 .PARAMETER WriteOnly
-If supplied, the boolean will be included in a request but not in a response 
+If supplied, the boolean will be included in a request but not in a response
 
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
@@ -1767,10 +1757,10 @@ If supplied, the object will be treated as an array of objects.
 If supplied, specify that all items in the array must be unique
 
 .PARAMETER MinItems
-If supplied, specify minimum length of an array 
+If supplied, specify minimum length of an array
 
 .PARAMETER MaxItems
-If supplied, specify maximum length of an array 
+If supplied, specify maximum length of an array
 
 .EXAMPLE
 New-PodeOABoolProperty -Name 'enabled' -Required
@@ -1778,7 +1768,7 @@ New-PodeOABoolProperty -Name 'enabled' -Required
 function New-PodeOABoolProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        
+
         [Parameter(ValueFromPipeline = $true )]
         [hashtable[]]
         $ParamsList,
@@ -1794,7 +1784,7 @@ function New-PodeOABoolProperty {
         [Parameter()]
         [string]
         $Description,
-        
+
         [Parameter()]
         [bool]
         $Example,
@@ -1824,14 +1814,14 @@ function New-PodeOABoolProperty {
 
         [switch]
         $WriteOnly,
-        
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
-        [switch] 
-        $UniqueItems, 
+        [switch]
+        $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
@@ -1844,70 +1834,70 @@ function New-PodeOABoolProperty {
     begin {
         $param = @{
             name = $Name
-            type = 'boolean'   
+            type = 'boolean'
             meta = @{}
         }
 
         if ($Description ) {
-            $param.description = $Description 
+            $param.description = $Description
         }
 
         if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool() 
+            $param.array = $Array.ToBool()
         }
 
         if ($Object.IsPresent ) {
-            $param.object = $Object.ToBool() 
+            $param.object = $Object.ToBool()
         }
 
         if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool() 
+            $param.required = $Required.ToBool()
         }
 
         if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool() 
+            $param.deprecated = $Deprecated.ToBool()
         }
 
         if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool() 
+            $param.meta['nullable'] = $Nullable.ToBool()
         }
 
         if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+            $param.meta['writeOnly'] = $WriteOnly.ToBool()
         }
 
         if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+            $param.meta['readOnly'] = $ReadOnly.ToBool()
         }
 
         if ($Example ) {
-            $param.meta['example'] = $Example 
+            $param.meta['example'] = $Example
         }
 
         if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool() 
-        } 
+            $param.uniqueItems = $UniqueItems.ToBool()
+        }
 
         if ($Default) {
-            $param.default = $Default 
-        } 
+            $param.default = $Default
+        }
 
         if ($MaxItems) {
-            $param.maxItems = $MaxItems 
+            $param.maxItems = $MaxItems
         }
 
         if ($MinItems) {
-            $param.minItems = $MinItems 
+            $param.minItems = $MinItems
         }
 
         if ($Enum) {
-            $param.enum = $Enum 
-        } 
+            $param.enum = $Enum
+        }
 
         if ($XlmName) {
-            $param.xlmName = $XlmName 
-        }   
-        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+            $param.xlmName = $XlmName
+        }
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
@@ -1916,12 +1906,12 @@ function New-PodeOABoolProperty {
     }
 
     end {
-        if ($collectedInput) {  
-            $collectedInput + $param 
+        if ($collectedInput) {
+            $collectedInput + $param
         } else {
             return $param
         }
-    } 
+    }
 }
 
 <#
@@ -1959,7 +1949,7 @@ If supplied, the object will be treated as Nullable.
 If supplied, the object will be included in a response but not in a request
 
 .PARAMETER WriteOnly
-If supplied, the object will be included in a request but not in a response  
+If supplied, the object will be included in a request but not in a response
 
 .PARAMETER MinProperties
 If supplied, will restrict the minimun number of properties allowed in an object.
@@ -1974,10 +1964,10 @@ If supplied, the object will be treated as an array of objects.
 If supplied, specify that all items in the array must be unique
 
 .PARAMETER MinItems
-If supplied, specify minimum length of an array 
+If supplied, specify minimum length of an array
 
 .PARAMETER MaxItems
-If supplied, specify maximum length of an array 
+If supplied, specify maximum length of an array
 
 .PARAMETER Xml
 If supplied, controls the XML serialization behavior
@@ -1988,7 +1978,7 @@ New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
 function New-PodeOAObjectProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        
+
         [Parameter(ValueFromPipeline = $true )]
         [hashtable[]]
         $ParamsList,
@@ -2005,26 +1995,26 @@ function New-PodeOAObjectProperty {
         [Parameter()]
         [string]
         $Description,
-        
+
         [Parameter()]
         [String]
         $Example,
 
         [switch]
-        $Deprecated,  
-        
+        $Deprecated,
+
         [switch]
         $Required,
 
         [switch]
-        $Nullable, 
+        $Nullable,
 
         [switch]
         $ReadOnly,
 
         [switch]
         $WriteOnly,
-        
+
         [int]
         $MinProperties,
 
@@ -2036,7 +2026,7 @@ function New-PodeOAObjectProperty {
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
-        [switch] 
+        [switch]
         $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
@@ -2045,7 +2035,7 @@ function New-PodeOAObjectProperty {
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
-        $MaxItems,  
+        $MaxItems,
 
         [hashtable[]]
         $Xml
@@ -2053,71 +2043,71 @@ function New-PodeOAObjectProperty {
     begin {
         $param = @{
             name       = $Name
-            type       = 'object'    
-            properties = $Properties  
+            type       = 'object'
+            properties = $Properties
             meta       = @{}
         }
         if ($Description ) {
-            $param.description = $Description 
+            $param.description = $Description
         }
 
         if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool() 
-        } 
+            $param.array = $Array.ToBool()
+        }
 
         if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool() 
+            $param.required = $Required.ToBool()
         }
 
         if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool() 
+            $param.deprecated = $Deprecated.ToBool()
         }
 
         if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool() 
+            $param.meta['nullable'] = $Nullable.ToBool()
         }
 
         if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+            $param.meta['writeOnly'] = $WriteOnly.ToBool()
         }
 
         if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool() 
+            $param.meta['readOnly'] = $ReadOnly.ToBool()
         }
 
         if ($Example ) {
-            $param.meta['example'] = $Example 
+            $param.meta['example'] = $Example
         }
 
         if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool() 
-        } 
+            $param.uniqueItems = $UniqueItems.ToBool()
+        }
 
         if ($Default) {
-            $param.default = $Default 
-        } 
+            $param.default = $Default
+        }
 
         if ($MaxItems) {
-            $param.maxItems = $MaxItems 
+            $param.maxItems = $MaxItems
         }
 
         if ($MinItems) {
-            $param.minItems = $MinItems 
+            $param.minItems = $MinItems
         }
 
         if ($MinProperties) {
-            $param.minProperties = $MinProperties 
+            $param.minProperties = $MinProperties
         }
 
         if ($MaxProperties) {
-            $param.maxProperties = $MaxProperties 
+            $param.maxProperties = $MaxProperties
         }
 
         if ($Xml) {
-            $param.xml = $Xml 
+            $param.xml = $Xml
         }
 
-        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
@@ -2126,12 +2116,12 @@ function New-PodeOAObjectProperty {
     }
 
     end {
-        if ($collectedInput) {  
-            $collectedInput + $param 
+        if ($collectedInput) {
+            $collectedInput + $param
         } else {
             return $param
         }
-    } 
+    }
 }
 
 
@@ -2149,10 +2139,10 @@ allOf – validates the value against all the subschemas
 anyOf – validates the value against any (one or more) of the subschemas
 
 .PARAMETER Schemas
-An array of schemas or properties 
+An array of schemas or properties
 
 .PARAMETER Discriminator
-When request bodies or response payloads may be one of a number of different schemas, a discriminator object can be used to aid in serialization, deserialization, and validation. 
+When request bodies or response payloads may be one of a number of different schemas, a discriminator object can be used to aid in serialization, deserialization, and validation.
 The discriminator is a specific object in a schema which is used to inform the consumer of the specification of an alternative schema based on the value associated with it.
 
 .EXAMPLE
@@ -2160,16 +2150,16 @@ Add-PodeOAComponentSchema -Name 'Pets' -Schema (  New-PodeOAOf  -Type OneOf -Sch
 
 
 .EXAMPLE
-Add-PodeOAComponentSchema -Name 'Cat' -Schema (  
+Add-PodeOAComponentSchema -Name 'Cat' -Schema (
         New-PodeOAOf  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive'))
-                ))        
-        ))  
+                ))
+        ))
 #>
 function New-PodeOAOfProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
-    param(   
-        
+    param(
+
         [Parameter(ValueFromPipeline = $true )]
         [hashtable[]]
         $ParamsList,
@@ -2185,10 +2175,10 @@ function New-PodeOAOfProperty {
 
         [Parameter()]
         [string]
-        $Discriminator 
+        $Discriminator
     )
-    begin {  
-        $param = @{} 
+    begin {
+        $param = @{}
         switch ($type) {
             'OneOf' {
                 $param.type = 'oneOf'
@@ -2198,19 +2188,19 @@ function New-PodeOAOfProperty {
             }
             'AllOf' {
                 $param.type = 'allOf'
-            } 
+            }
         }
         if ($Properties) {
-            $param.properties = $Properties 
+            $param.properties = $Properties
         }
         if ($Schemas) {
-            $param.schemas = $Schemas 
-        } 
+            $param.schemas = $Schemas
+        }
         if ($Discriminator ) {
-            $param.discriminator = $Discriminator 
-        } 
-    
-        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+            $param.discriminator = $Discriminator
+        }
+
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
@@ -2219,14 +2209,14 @@ function New-PodeOAOfProperty {
     }
 
     end {
-        if ($collectedInput) {  
-            $collectedInput + $param 
+        if ($collectedInput) {
+            $collectedInput + $param
         } else {
             return $param
         }
-    } 
+    }
 }
- 
+
 
 <#
 .SYNOPSIS
@@ -2260,7 +2250,7 @@ If supplied, the schema will be treated as Nullable.
 If supplied, the schema will be included in a response but not in a request
 
 .PARAMETER WriteOnly
-If supplied, the schema will be included in a request but not in a response  
+If supplied, the schema will be included in a request but not in a response
 
 .PARAMETER MinProperties
 If supplied, will restrict the minimun number of properties allowed in an schema.
@@ -2275,10 +2265,10 @@ If supplied, the schema will be treated as an array of objects.
 If supplied, specify that all items in the array must be unique
 
 .PARAMETER MinItems
-If supplied, specify minimum length of an array 
+If supplied, specify minimum length of an array
 
 .PARAMETER MaxItems
-If supplied, specify maximum length of an array 
+If supplied, specify maximum length of an array
 
 .PARAMETER Xml
 If supplied, controls the XML serialization behavior
@@ -2287,10 +2277,11 @@ If supplied, controls the XML serialization behavior
 .EXAMPLE
 New-PodeOASchemaProperty -Name 'Config' -ComponentSchema "MyConfigSchema"
 #>
-function New-PodeOASchemaProperty {
-    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
+function New-PodeOASchemaProperty
+{
+    [CmdletBinding()]
     param(
-        
+
         [Parameter(ValueFromPipeline = $true )]
         [hashtable[]]
         $ParamsList,
@@ -2301,18 +2292,18 @@ function New-PodeOASchemaProperty {
 
         [Parameter(Mandatory = $true)]
         [string]
-        $ComponentSchema, 
+        $ComponentSchema,
 
         [string]
         $Description,
 
-        [Parameter(ParameterSetName = 'Array')] 
+        [Parameter(ParameterSetName = 'Array')]
         [String]
         $Example,
 
         [Parameter(ParameterSetName = 'Array')]
         [switch]
-        $Deprecated, 
+        $Deprecated,
 
         [Parameter(ParameterSetName = 'Array')]
         [switch]
@@ -2320,7 +2311,7 @@ function New-PodeOASchemaProperty {
 
         [Parameter(ParameterSetName = 'Array')]
         [switch]
-        $Nullable, 
+        $Nullable,
 
         [Parameter(ParameterSetName = 'Array')]
         [switch]
@@ -2343,7 +2334,7 @@ function New-PodeOASchemaProperty {
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
-        [switch] 
+        [switch]
         $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
@@ -2352,7 +2343,7 @@ function New-PodeOASchemaProperty {
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
-        $MaxItems, 
+        $MaxItems,
 
         [hashtable[]]
         $Xml
@@ -2360,75 +2351,75 @@ function New-PodeOASchemaProperty {
     begin {
         if ( !(Test-PodeOAComponentSchema -Name $ComponentSchema)) {
             throw "The OpenApi component schema doesn't exist: $ComponentSchema"
-        }  
+        }
         $param = @{
             name   = $Name
-            type   = 'schema' 
-            schema = $ComponentSchema 
+            type   = 'schema'
+            schema = $ComponentSchema
             meta   = @{}
         }
-        if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'array') {   
+        if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'array') {
             if ($Description ) {
-                $param.description = $Description 
+                $param.description = $Description
             }
 
             if ($Array.IsPresent ) {
-                $param.array = $Array.ToBool() 
-            } 
+                $param.array = $Array.ToBool()
+            }
 
             if ($Required.IsPresent ) {
-                $param.required = $Required.ToBool() 
+                $param.required = $Required.ToBool()
             }
 
             if ($Deprecated.IsPresent ) {
-                $param.deprecated = $Deprecated.ToBool() 
+                $param.deprecated = $Deprecated.ToBool()
             }
 
             if ($Nullable.IsPresent ) {
-                $param.meta['nullable'] = $Nullable.ToBool() 
+                $param.meta['nullable'] = $Nullable.ToBool()
             }
 
             if ($WriteOnly.IsPresent ) {
-                $param.meta['writeOnly'] = $WriteOnly.ToBool() 
+                $param.meta['writeOnly'] = $WriteOnly.ToBool()
             }
 
             if ($ReadOnly.IsPresent ) {
-                $param.meta['readOnly'] = $ReadOnly.ToBool() 
+                $param.meta['readOnly'] = $ReadOnly.ToBool()
             }
 
             if ($Example ) {
-                $param.meta['example'] = $Example 
+                $param.meta['example'] = $Example
             }
 
             if ($UniqueItems.IsPresent ) {
-                $param.uniqueItems = $UniqueItems.ToBool() 
-            } 
+                $param.uniqueItems = $UniqueItems.ToBool()
+            }
 
             if ($Default) {
-                $param.default = $Default 
-            } 
+                $param.default = $Default
+            }
 
             if ($MaxItems) {
-                $param.maxItems = $MaxItems 
+                $param.maxItems = $MaxItems
             }
 
             if ($MinItems) {
-                $param.minItems = $MinItems 
+                $param.minItems = $MinItems
             }
 
             if ($MinProperties) {
-                $param.minProperties = $MinProperties 
+                $param.minProperties = $MinProperties
             }
 
             if ($MaxProperties) {
-                $param.maxProperties = $MaxProperties 
+                $param.maxProperties = $MaxProperties
             }
 
             if ($Xml) {
-                $param.xml = $Xml 
+                $param.xml = $Xml
             }
         }
-        $collectedInput = [System.Collections.Generic.List[hashtable]]::new() 
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
@@ -2436,12 +2427,12 @@ function New-PodeOASchemaProperty {
         }
     }
     end {
-        if ($collectedInput) {  
-            $collectedInput + $param 
+        if ($collectedInput) {
+            $collectedInput + $param
         } else {
             return $param
         }
-    } 
+    }
 }
 
 
@@ -2483,11 +2474,11 @@ ConvertTo-PodeOAParameter -Reference 'UserIdParam'
 ConvertTo-PodeOAParameter  -In Header -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
 
 #>
-function ConvertTo-PodeOAParameter {
-    [CmdletBinding(DefaultParameterSetName = 'Reference')]
-    param( 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
+function ConvertTo-PodeOAParameter
+{
+    [CmdletBinding(DefaultParameterSetName='Reference')]
+    param(
+        [Parameter(Mandatory=$true, ParameterSetName='Schema')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
         [string]
         $In,
@@ -2507,7 +2498,7 @@ function ConvertTo-PodeOAParameter {
 
         [Parameter() ]
         [Switch]
-        $Explode, 
+        $Explode,
 
         [Parameter() ]
         [Switch]
@@ -2516,9 +2507,9 @@ function ConvertTo-PodeOAParameter {
         [Parameter() ]
         [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
         [string]
-        $Style 
+        $Style
     )
-    if ($PSCmdlet.ParameterSetName -ieq 'ContentSchemas') { 
+    if ($PSCmdlet.ParameterSetName -ieq 'ContentSchemas') {
         if (Test-PodeIsEmpty $ContentSchemas) {
             return $null
         }
@@ -2526,14 +2517,14 @@ function ConvertTo-PodeOAParameter {
         foreach ($type in $ContentSchemas.Keys) {
             if ($type -inotmatch '^\w+\/[\w\.\+-]+$') {
                 throw "Invalid content-type found for schema: $($type)"
-            } 
+            }
             if (!(Test-PodeOAComponentSchema -Name $ContentSchemas[$type])) {
                 throw "The OpenApi component request parameter doesn't exist: $($ContentSchemas[$type])"
             }
             $Property = $PodeContext.Server.OpenAPI.components.schemas[$ContentSchemas[$type]]
             $prop = @{
                 in      = $In.ToLowerInvariant()
-                name    = $ContentSchemas[$type] 
+                name    = $ContentSchemas[$type]
                 content = @{
                     $type = @{
                         schema = @{
@@ -2541,7 +2532,7 @@ function ConvertTo-PodeOAParameter {
                         }
                     }
                 }
-            }  
+            }
             if ($Property.description ) {
                 $prop.description = $Property.description
             }
@@ -2554,10 +2545,10 @@ function ConvertTo-PodeOAParameter {
 
         $prop = @{
             '$ref' = "#/components/parameters/$($Reference)"
-        } 
+        }
     } else {
         # non-object/array only
-        if (@('array', 'object') -icontains $Property.type) { 
+        if (@('array', 'object') -icontains $Property.type) {
             throw 'OpenApi request parameter cannot be an array of object'
         }
 
@@ -2567,25 +2558,25 @@ function ConvertTo-PodeOAParameter {
             name = $Property.name
         }
         if ($Property.description ) {
-            $prop.description = $Property.description 
+            $prop.description = $Property.description
         }
-        
+
         if ($Property.Array) {
             $prop.schema = @{
                 type  = 'array'
                 items = @{
-                    type = $Property.type 
+                    type = $Property.type
                 }
             }
             if ($Property.format) {
-                $prop.schema.items.format = $Property.format 
+                $prop.schema.items.format = $Property.format
             }
         } else {
             $prop.schema = @{
-                type = $Property.type 
+                type = $Property.type
             }
             if ($Property.format) {
-                $prop.schema.format = $Property.format 
+                $prop.schema.format = $Property.format
             }
         }
         if ($null -ne $Property.meta) {
@@ -2604,37 +2595,37 @@ function ConvertTo-PodeOAParameter {
                 'Path' {
                     if (@('Simple', 'Label', 'Matrix' ) -notcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
-                    } 
+                    }
                     break
                 }
                 'Query' {
                     if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -notcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
-                    } 
+                    }
                     break
                 }
                 'Header' {
                     if (@('Simple' ) -notcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
-                    } 
+                    }
                     break
                 }
                 'Cookie' {
                     if (@('Form' ) -notcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
-                    } 
+                    }
                     break
-                } 
+                }
             }
             $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
-        } 
+        }
 
         if ($Explode.IsPresent ) {
-            $prop['explode'] = $Explode.ToBool() 
-        } 
+            $prop['explode'] = $Explode.ToBool()
+        }
 
         if ($AllowEmptyValue.IsPresent ) {
-            $prop['allowEmptyValue'] = $AllowEmptyValue.ToBool() 
+            $prop['allowEmptyValue'] = $AllowEmptyValue.ToBool()
         }
 
 
@@ -2655,16 +2646,16 @@ function ConvertTo-PodeOAParameter {
         }
 
         if ($In -eq 'Path') {
-            $prop['required'] = $true 
+            $prop['required'] = $true
         } elseif ($Property.required ) {
             $prop['required'] = $Property.required
-        } 
+        }
         # remove default for required parameter
         if (!$Property.required -and $PSCmdlet.ParameterSetName -ne 'ContentSchemas') {
             if ( $prop.ContainsKey('schema') -and $Property.default) {
                 $prop.schema['default'] = $Property.default
             }
-        }  
+        }
     }
     return $prop
 }
@@ -2701,8 +2692,10 @@ If supplied, the route passed in will be returned for further chaining.
 Add-PodeRoute -PassThru | Set-PodeOARouteInfo -Summary 'A quick summary' -Tags 'Admin'
 #>
 function Set-PodeOARouteInfo {
+function Set-PodeOARouteInfo {
     [CmdletBinding()]
     param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
@@ -2739,12 +2732,12 @@ function Set-PodeOARouteInfo {
             $r.OpenApi.Description = $Description
         }
         if ($OperationId) {
-            $r.OpenApi.OperationId = $OperationId 
+            $r.OpenApi.OperationId = $OperationId
         }
         if ($Tags) {
             $r.OpenApi.Tags = $Tags
         }
-        $r.OpenApi.Swagger = $true 
+        $r.OpenApi.Swagger = $true
         if ($Deprecated.IsPresent) {
             $r.OpenApi.Deprecated = $Deprecated.ToBool()
         }
@@ -2787,15 +2780,16 @@ Enable-PodeOpenApiViewer -Type Swagger -DarkMode
 Enable-PodeOpenApiViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
 
 .EXAMPLE
-Enable-PodeOpenApiViewer -Type Bookmarks  
+Enable-PodeOpenApiViewer -Type Bookmarks
 
 Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
 #>
 function Enable-PodeOpenApiViewer {
+function Enable-PodeOpenApiViewer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Swagger', 'ReDoc', 'RapiDoc', 'StopLight', 'Explorer', 'RapiPdf', 'Bookmarks')]
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Swagger', 'ReDoc')]
         [string]
         $Type,
 
@@ -2826,7 +2820,7 @@ function Enable-PodeOpenApiViewer {
     }
 
     # fail if no title
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.info.Title 
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.info.Title
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No title supplied for $($Type) page"
     }
@@ -2836,14 +2830,14 @@ function Enable-PodeOpenApiViewer {
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No route path supplied for $($Type) page"
     }
- 
-    if ($Type -eq 'Bookmarks') { 
+
+    if ($Type -eq 'Bookmarks') {
         # add the viewer route
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
-            param($meta)  
+            param($meta)
 
             $Data = @{ Title          = $meta.Title
-                OpenApi               = $meta.OpenApi 
+                OpenApi               = $meta.OpenApi
                 OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 90
                 OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 90 -NoNewLine
                 Swagger               = 'false'
@@ -2852,22 +2846,22 @@ function Enable-PodeOpenApiViewer {
                 StopLight             = 'false'
                 Explorer              = 'false'
                 RapiPdf               = 'false'
-            }  
-            foreach ($path in ($PodeContext.Server.Routes['GET'].Keys  )) {  
-                # the current route 
+            }
+            foreach ($path in ($PodeContext.Server.Routes['GET'].Keys  )) {
+                # the current route
                 $_routes = @($PodeContext.Server.Routes['GET'][$path])
                 # get the first route for base definition
-                $_route = $_routes[0] 
-                # check if the route has to be published   
-                if ($_route.Arguments -and $_route.Arguments.OpenApiDoc   ) { 
+                $_route = $_routes[0]
+                # check if the route has to be published
+                if ($_route.Arguments -and $_route.Arguments.OpenApiDoc   ) {
                     $Data[$_route.Arguments.Type] = 'true'
-                    $Data["$($_route.Arguments.Type)_path"] = $_route.Path 
+                    $Data["$($_route.Arguments.Type)_path"] = $_route.Path
                 }
-            } 
+            }
             $podeRoot = Get-PodeModuleMiscPath
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
-        } 
-    } else { 
+        }
+    } else {
         # setup meta info
         $meta = @{
             Type       = $Type.ToLowerInvariant()
@@ -2876,7 +2870,7 @@ function Enable-PodeOpenApiViewer {
             DarkMode   = $DarkMode
             OpenApiDoc = $true
         }
-    
+
         # add the viewer route
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
@@ -2884,7 +2878,7 @@ function Enable-PodeOpenApiViewer {
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
                 Title    = $meta.Title
                 OpenApi  = $meta.OpenApi
-                DarkMode = $meta.DarkMode 
+                DarkMode = $meta.DarkMode
                 Theme    = (($meta.DarkMode)?'dark':'light')
             }
         }
@@ -2892,10 +2886,10 @@ function Enable-PodeOpenApiViewer {
 
 }
 
- 
+
 <#
 .SYNOPSIS
-Adds an external docs reference. 
+Adds an external docs reference.
 
 .DESCRIPTION
 Creates a new  reference from another OpenAPI schema.
@@ -2915,7 +2909,7 @@ If supplied, the schema reference will be treated as an array.
 .EXAMPLE
 Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http: / / swagger.io'
 #>
-function Add-PodeOAExternalDoc { 
+function Add-PodeOAExternalDoc {
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2937,7 +2931,7 @@ function Add-PodeOAExternalDoc {
     }
     $param['url'] = $Url
     $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Name] = $param
-    
+
 }
 
 
@@ -2949,7 +2943,7 @@ Creates a OpenAPI Tag reference property.
 Creates a new OpenAPI tag reference.
 
 .PARAMETER Name
-The Name of the tag. 
+The Name of the tag.
 
 .PARAMETER Description
 A Description of the tag.
@@ -2961,11 +2955,11 @@ The parameter is created by Add-PodeOAExternalDoc
 .EXAMPLE
 Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
 #>
-function Add-PodeOATag { 
+function Add-PodeOATag {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name, 
+        $Name,
 
         [Parameter()]
         [string]
@@ -2975,9 +2969,9 @@ function Add-PodeOATag {
         [string]
         $ExternalDoc
     )
-    
-    $param = @{ 
-        'name' = $Name 
+
+    $param = @{
+        'name' = $Name
     }
 
     if ($Description) {
@@ -2987,7 +2981,7 @@ function Add-PodeOATag {
     if ($ExternalDoc) {
         if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
             throw "The ExternalDoc doesn't exist: $ExternalDoc"
-        }  
+        }
         $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
     }
 
@@ -3016,7 +3010,7 @@ A URL to the license used for the API. MUST be in the format of a URL.
 .PARAMETER ContactName
 The identifying name of the contact person/organization.
 
-.PARAMETER ContactEmail 
+.PARAMETER ContactEmail
 The email address of the contact person/organization. MUST be in the format of an email address.
 
 .PARAMETER ContactUrl
@@ -3033,7 +3027,7 @@ function New-PodeOAExtraInfo {
         [string]
         $TermsOfService,
 
-        [Parameter(Mandatory = $true)] 
+        [Parameter(Mandatory = $true)]
         [string]
         $License,
 
@@ -3054,10 +3048,10 @@ function New-PodeOAExtraInfo {
         [Parameter()]
         [ValidateScript({ $_ -match '^https?://.+' })]
         [string]
-        $ContactUrl  
+        $ContactUrl
     )
 
-    $ExtraInfo = @{   
+    $ExtraInfo = @{
         'license' = @{
             'name' = $License
             'url'  = $LicenseUrl
@@ -3070,19 +3064,19 @@ function New-PodeOAExtraInfo {
 
     if ($ContactName -or $ContactEmail -or $ContactUrl ) {
         $ExtraInfo['contact'] = @{}
-        
+
         if ($ContactName) {
-            $ExtraInfo['contact'].name = $ContactName 
+            $ExtraInfo['contact'].name = $ContactName
         }
 
         if ($ContactEmail) {
-            $ExtraInfo['contact'].email = $ContactEmail 
+            $ExtraInfo['contact'].email = $ContactEmail
         }
 
         if ($ContactUrl) {
-            $ExtraInfo['contact'].url = $ContactUrl 
+            $ExtraInfo['contact'].url = $ContactUrl
         }
-    } 
+    }
 
     return $ExtraInfo
 

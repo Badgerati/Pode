@@ -38,6 +38,9 @@ An array of arguments to supply to the Route's ScriptBlock.
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
+.PARAMETER Access
+The name of an Access method which should be used as middleware on this Route.
+
 .PARAMETER AllowAnon
 If supplied, the Route will allow anonymous access for non-authenticated users.
 
@@ -137,6 +140,10 @@ function Add-PodeRoute {
         $Authentication,
 
         [Parameter()]
+        [string]
+        $Access,
+
+        [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
         [string]
         $IfExists = 'Default',
@@ -200,6 +207,10 @@ function Add-PodeRoute {
             $Authentication = $RouteGroup.Authentication
         }
 
+        if ([string]::IsNullOrWhiteSpace($Access)) {
+            $Access = $RouteGroup.Access
+        }
+
         if ($RouteGroup.AllowAnon) {
             $AllowAnon = $RouteGroup.AllowAnon
         }
@@ -208,24 +219,24 @@ function Add-PodeRoute {
             $IfExists = $RouteGroup.IfExists
         }
 
-        if ($null -ne $RouteGroup.Access.Role) {
-            $Role = $RouteGroup.Access.Role + $Role
+        if ($null -ne $RouteGroup.AccessMeta.Role) {
+            $Role = $RouteGroup.AccessMeta.Role + $Role
         }
 
-        if ($null -ne $RouteGroup.Access.Group) {
-            $Group = $RouteGroup.Access.Group + $Group
+        if ($null -ne $RouteGroup.AccessMeta.Group) {
+            $Group = $RouteGroup.AccessMeta.Group + $Group
         }
 
-        if ($null -ne $RouteGroup.Access.Scope) {
-            $Scope = $RouteGroup.Access.Scope + $Scope
+        if ($null -ne $RouteGroup.AccessMeta.Scope) {
+            $Scope = $RouteGroup.AccessMeta.Scope + $Scope
         }
 
-        if ($null -ne $RouteGroup.Access.User) {
-            $User = $RouteGroup.Access.User + $User
+        if ($null -ne $RouteGroup.AccessMeta.User) {
+            $User = $RouteGroup.AccessMeta.User + $User
         }
 
-        if ($null -ne $RouteGroup.Access.Custom) {
-            $CustomAccess = $RouteGroup.Access.Custom
+        if ($null -ne $RouteGroup.AccessMeta.Custom) {
+            $CustomAccess = $RouteGroup.AccessMeta.Custom
         }
     }
 
@@ -274,6 +285,23 @@ function Add-PodeRoute {
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
+    # if an access name was supplied, setup access as middleware first to it's after auth middleware
+    if (![string]::IsNullOrWhiteSpace($Access)) {
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            throw 'Access requires Authentication to be supplied on Routes'
+        }
+
+        if (!(Test-PodeAccessExists -Name $Access)) {
+            throw "Access method does not exist: $($Access)"
+        }
+
+        $options = @{
+            Name = $Access
+        }
+
+        $Middleware = (@(Get-PodeAccessMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
+    }
+
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
         if (!(Test-PodeAuthExists -Name $Authentication)) {
@@ -311,12 +339,22 @@ function Add-PodeRoute {
                     if ($IfExists -ieq 'Overwrite') {
                         Remove-PodeRoute -Method $_method -Path $origPath -EndpointName $_endpoint.Name
                     }
+                if ($found) {
+                    if ($IfExists -ieq 'Overwrite') {
+                        Remove-PodeRoute -Method $_method -Path $origPath -EndpointName $_endpoint.Name
+                    }
 
                     if ($IfExists -ieq 'Skip') {
                         continue
                     }
                 }
+                    if ($IfExists -ieq 'Skip') {
+                        continue
+                    }
+                }
 
+                $_endpoint
+            })
                 $_endpoint
             })
 
@@ -332,7 +370,8 @@ function Add-PodeRoute {
                     UsingVariables   = $usingVars
                     Middleware       = $Middleware
                     Authentication   = $Authentication
-                    Access           = @{
+                    Access           = $Access
+                    AccessMeta       = @{
                         Role   = $Role
                         Group  = $Group
                         Scope  = $Scope
@@ -359,7 +398,6 @@ function Add-PodeRoute {
                         Parameters     = $null
                         RequestBody    = $null
                         Authentication = @()
-                        Swagger        = $false
                     }
                     IsStatic         = $false
                     Metrics          = @{
@@ -421,6 +459,9 @@ The content type of any error pages that may get returned.
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
+.PARAMETER Access
+The name of an Access method which should be used as middleware on this Route.
+
 .PARAMETER AllowAnon
 If supplied, the static route will allow anonymous access for non-authenticated users.
 
@@ -432,6 +473,18 @@ If supplied, the static route created will be returned so it can be passed throu
 
 .PARAMETER IfExists
 Specifies what action to take when a Static Route already exists. (Default: Default)
+
+.PARAMETER Role
+One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .EXAMPLE
 Add-PodeStaticRoute -Path '/assets' -Source './assets'
@@ -484,9 +537,29 @@ function Add-PodeStaticRoute {
         $Authentication,
 
         [Parameter()]
+        [string]
+        $Access,
+
+        [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
         [string]
         $IfExists = 'Default',
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string[]]
+        $User,
 
         [switch]
         $AllowAnon,
@@ -532,6 +605,10 @@ function Add-PodeStaticRoute {
             $Authentication = $RouteGroup.Authentication
         }
 
+        if ([string]::IsNullOrWhiteSpace($Access)) {
+            $Access = $RouteGroup.Access
+        }
+
         if (Test-PodeIsEmpty $Defaults) {
             $Defaults = $RouteGroup.Defaults
         }
@@ -546,6 +623,26 @@ function Add-PodeStaticRoute {
 
         if ($RouteGroup.IfExists -ine 'default') {
             $IfExists = $RouteGroup.IfExists
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.Role) {
+            $Role = $RouteGroup.AccessMeta.Role + $Role
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.Group) {
+            $Group = $RouteGroup.AccessMeta.Group + $Group
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.Scope) {
+            $Scope = $RouteGroup.AccessMeta.Scope + $Scope
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.User) {
+            $User = $RouteGroup.AccessMeta.User + $User
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.Custom) {
+            $CustomAccess = $RouteGroup.AccessMeta.Custom
         }
     }
 
@@ -616,9 +713,26 @@ function Add-PodeStaticRoute {
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
+    # if an access name was supplied, setup access as middleware first to it's after auth middleware
+    if (![string]::IsNullOrWhiteSpace($Access)) {
+        if ([string]::IsNullOrWhiteSpace($Authentication)) {
+            throw 'Access requires Authentication to be supplied on Static Routes'
+        }
+
+        if (!(Test-PodeAccessExists -Name $Access)) {
+            throw "Access method does not exist: $($Access)"
+        }
+
+        $options = @{
+            Name = $Access
+        }
+
+        $Middleware = (@(Get-PodeAccessMiddlewareScript | New-PodeMiddleware -ArgumentList $options) + $Middleware)
+    }
+
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
-        if (!(Test-PodeAuthExists -Name $Authentication)) { 
+        if (!(Test-PodeAuthExists -Name $Authentication)) {
             throw "Authentication method does not exist: $($Authentication)"
         }
 
@@ -645,6 +759,15 @@ function Add-PodeStaticRoute {
                 Method           = $Method
                 Defaults         = $Defaults
                 Middleware       = $Middleware
+                Authentication   = $Authentication
+                Access           = $Access
+                AccessMeta       = @{
+                    Role   = $Role
+                    Group  = $Group
+                    Scope  = $Scope
+                    User   = $User
+                    Custom = $CustomAccess
+                }
                 Endpoint         = @{
                     Protocol = $_endpoint.Protocol
                     Address  = $_endpoint.Address.Trim()
@@ -872,6 +995,9 @@ The content type of any error pages that may get returned.
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on the Routes.
 
+.PARAMETER Access
+The name of an Access method which should be used as middleware on this Route.
+
 .PARAMETER IfExists
 Specifies what action to take when a Route already exists. (Default: Default)
 
@@ -929,6 +1055,10 @@ function Add-PodeRouteGroup {
         [Alias('Auth')]
         [string]
         $Authentication,
+
+        [Parameter()]
+        [string]
+        $Access,
 
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
@@ -996,6 +1126,10 @@ function Add-PodeRouteGroup {
             $Authentication = $RouteGroup.Authentication
         }
 
+        if ([string]::IsNullOrWhiteSpace($Access)) {
+            $Access = $RouteGroup.Access
+        }
+
         if ($RouteGroup.AllowAnon) {
             $AllowAnon = $RouteGroup.AllowAnon
         }
@@ -1004,24 +1138,24 @@ function Add-PodeRouteGroup {
             $IfExists = $RouteGroup.IfExists
         }
 
-        if ($null -ne $RouteGroup.Access.Role) {
-            $Role = $RouteGroup.Access.Role + $Role
+        if ($null -ne $RouteGroup.AccessMeta.Role) {
+            $Role = $RouteGroup.AccessMeta.Role + $Role
         }
 
-        if ($null -ne $RouteGroup.Access.Group) {
-            $Group = $RouteGroup.Access.Group + $Group
+        if ($null -ne $RouteGroup.AccessMeta.Group) {
+            $Group = $RouteGroup.AccessMeta.Group + $Group
         }
 
-        if ($null -ne $RouteGroup.Access.Scope) {
-            $Scope = $RouteGroup.Access.Scope + $Scope
+        if ($null -ne $RouteGroup.AccessMeta.Scope) {
+            $Scope = $RouteGroup.AccessMeta.Scope + $Scope
         }
 
-        if ($null -ne $RouteGroup.Access.User) {
-            $User = $RouteGroup.Access.User + $User
+        if ($null -ne $RouteGroup.AccessMeta.User) {
+            $User = $RouteGroup.AccessMeta.User + $User
         }
 
-        if ($null -ne $RouteGroup.Access.Custom) {
-            $CustomAccess = $RouteGroup.Access.Custom
+        if ($null -ne $RouteGroup.AccessMeta.Custom) {
+            $CustomAccess = $RouteGroup.AccessMeta.Custom
         }
     }
 
@@ -1033,9 +1167,10 @@ function Add-PodeRouteGroup {
         TransferEncoding = $TransferEncoding
         ErrorContentType = $ErrorContentType
         Authentication   = $Authentication
+        Access           = $Access
         AllowAnon        = $AllowAnon
         IfExists         = $IfExists
-        Access           = @{
+        AccessMeta       = @{
             Role   = $Role
             Group  = $Group
             Scope  = $Scope
@@ -1086,6 +1221,9 @@ The content type of any error pages that may get returned.
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on the Static Routes.
 
+.PARAMETER Access
+The name of an Access method which should be used as middleware on this Route.
+
 .PARAMETER IfExists
 Specifies what action to take when a Static Route already exists. (Default: Default)
 
@@ -1094,6 +1232,18 @@ If supplied, the Static Routes will allow anonymous access for non-authenticated
 
 .PARAMETER DownloadOnly
 When supplied, all static content on the Routes will be attached as downloads - rather than rendered.
+
+.PARAMETER Role
+One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .EXAMPLE
 Add-PodeStaticRouteGroup -Path '/static' -Routes { Add-PodeStaticRoute -Path '/images' -Etc }
@@ -1144,9 +1294,29 @@ function Add-PodeStaticRouteGroup {
         $Authentication,
 
         [Parameter()]
+        [string]
+        $Access,
+
+        [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
         [string]
         $IfExists = 'Default',
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string[]]
+        $User,
 
         [switch]
         $AllowAnon,
@@ -1200,6 +1370,10 @@ function Add-PodeStaticRouteGroup {
             $Authentication = $RouteGroup.Authentication
         }
 
+        if ([string]::IsNullOrWhiteSpace($Access)) {
+            $Access = $RouteGroup.Access
+        }
+
         if (Test-PodeIsEmpty $Defaults) {
             $Defaults = $RouteGroup.Defaults
         }
@@ -1215,6 +1389,26 @@ function Add-PodeStaticRouteGroup {
         if ($RouteGroup.IfExists -ine 'default') {
             $IfExists = $RouteGroup.IfExists
         }
+
+        if ($null -ne $RouteGroup.AccessMeta.Role) {
+            $Role = $RouteGroup.AccessMeta.Role + $Role
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.Group) {
+            $Group = $RouteGroup.AccessMeta.Group + $Group
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.Scope) {
+            $Scope = $RouteGroup.AccessMeta.Scope + $Scope
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.User) {
+            $User = $RouteGroup.AccessMeta.User + $User
+        }
+
+        if ($null -ne $RouteGroup.AccessMeta.Custom) {
+            $CustomAccess = $RouteGroup.AccessMeta.Custom
+        }
     }
 
     $RouteGroup = @{
@@ -1226,10 +1420,10 @@ function Add-PodeStaticRouteGroup {
         TransferEncoding = $TransferEncoding
         Defaults         = $Defaults
         ErrorContentType = $ErrorContentType
-        Authentication   = $Authentication
-        AllowAnon        = $AllowAnon
-        DownloadOnly     = $DownloadOnly
-        IfExists         = $IfExists
+        Authentication = $Authentication
+        AllowAnon = $AllowAnon
+        DownloadOnly = $DownloadOnly
+        IfExists = $IfExists
     }
 
     # add routes
@@ -1574,6 +1768,9 @@ Like normal Routes, an array of Middleware that will be applied to all generated
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
+.PARAMETER Access
+The name of an Access method which should be used as middleware on this Route.
+
 .PARAMETER AllowAnon
 If supplied, the Route will allow anonymous access for non-authenticated users.
 
@@ -1582,6 +1779,18 @@ If supplied, the Command's Verb will not be included in the Route's path.
 
 .PARAMETER NoOpenApi
 If supplied, no OpenAPI definitions will be generated for the routes created.
+
+.PARAMETER Role
+One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .EXAMPLE
 ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Get-Host', 'Invoke-Expression') -Middleware { ... }
@@ -1623,6 +1832,26 @@ function ConvertTo-PodeRoute {
         [Alias('Auth')]
         [string]
         $Authentication,
+
+        [Parameter()]
+        [string]
+        $Access,
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string[]]
+        $User,
 
         [switch]
         $AllowAnon,
@@ -1693,8 +1922,23 @@ function ConvertTo-PodeRoute {
         $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
 
         # create the route
-        $route = (Add-PodeRoute -Method $_method -Path $_path -Middleware $Middleware -Authentication $Authentication -AllowAnon:$AllowAnon -ArgumentList $cmd -ScriptBlock {
-                param($cmd)
+        $params = @{
+            Method         = $_method
+            Path           = $_path
+            Middleware     = $Middleware
+            Authentication = $Authentication
+            Access         = $Access
+            Role           = $Role
+            Group          = $Group
+            Scope          = $Scope
+            User           = $User
+            AllowAnon      = $AllowAnon
+            ArgumentList   = $cmd
+            PassThru       = $true
+        }
+
+        $route = Add-PodeRoute @params -ScriptBlock {
+            param($cmd)
 
                 # either get params from the QueryString or Payload
                 if ($WebEvent.Method -ieq 'get') {
@@ -1706,11 +1950,11 @@ function ConvertTo-PodeRoute {
                 # invoke the function
                 $result = (. $cmd @parameters)
 
-                # if we have a result, convert it to json
-                if (!(Test-PodeIsEmpty $result)) {
-                    Write-PodeJsonResponse -Value $result -Depth 1
-                }
-            } -PassThru)
+            # if we have a result, convert it to json
+            if (!(Test-PodeIsEmpty $result)) {
+                Write-PodeJsonResponse -Value $result -Depth 1
+            }
+        } -PassThru)
 
         # set the openapi metadata of the function, unless told to skip
         if ($NoOpenApi) {
@@ -1774,11 +2018,26 @@ Like normal Routes, an array of Middleware that will be applied to all generated
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
+.PARAMETER Access
+The name of an Access method which should be used as middleware on this Route.
+
 .PARAMETER AllowAnon
 If supplied, the Page will allow anonymous access for non-authenticated users.
 
 .PARAMETER FlashMessages
 If supplied, Views will have any flash messages supplied to them for rendering.
+
+.PARAMETER Role
+One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .EXAMPLE
 Add-PodePage -Name Services -ScriptBlock { Get-Service }
@@ -1825,6 +2084,26 @@ function Add-PodePage {
         [Alias('Auth')]
         [string]
         $Authentication,
+
+        [Parameter()]
+        [string]
+        $Access,
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string[]]
+        $User,
 
         [switch]
         $AllowAnon,
@@ -1893,14 +2172,22 @@ function Add-PodePage {
     $_path = ("$($Path)/$($Name)" -replace '[/]+', '/')
 
     # create the route
-    Add-PodeRoute `
-        -Method Get `
-        -Path $_path `
-        -Middleware $Middleware `
-        -Authentication $Authentication `
-        -AllowAnon:$AllowAnon `
-        -ArgumentList $arg `
-        -ScriptBlock $logic
+    $params = @{
+        Method         = 'Get'
+        Path           = $_path
+        Middleware     = $Middleware
+        Authentication = $Authentication
+        Access         = $Access
+        Role           = $Role
+        Group          = $Group
+        Scope          = $Scope
+        User           = $User
+        AllowAnon      = $AllowAnon
+        ArgumentList   = $arg
+        ScriptBlock    = $logic
+    }
+
+    Add-PodeRoute @params
 }
 
 <#

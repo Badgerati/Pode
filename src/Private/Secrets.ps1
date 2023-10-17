@@ -1,11 +1,10 @@
-function Initialize-PodeSecretVault
-{
+function Initialize-PodeSecretVault {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock
     )
@@ -13,10 +12,9 @@ function Initialize-PodeSecretVault
     Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Splat -Arguments @($VaultConfig.Parameters)
 }
 
-function Register-PodeSecretManagementVault
-{
+function Register-PodeSecretManagementVault {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig,
 
@@ -24,7 +22,7 @@ function Register-PodeSecretManagementVault
         [string]
         $VaultName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ModuleName
     )
@@ -43,19 +41,18 @@ function Register-PodeSecretManagementVault
 
     # all is good, so set the config
     $VaultConfig['SecretManagement'] = @{
-        VaultName = $VaultName
+        VaultName  = $VaultName
         ModuleName = $ModuleName
     }
 }
 
-function Register-PodeSecretCustomVault
-{
+function Register-PodeSecretCustomVault {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -83,18 +80,17 @@ function Register-PodeSecretCustomVault
 
     # all is good, so set the config
     $VaultConfig['Custom'] = @{
-        Read = $ScriptBlock
-        Unlock = $UnlockScriptBlock
-        Remove = $RemoveScriptBlock
-        Set = $SetScriptBlock
+        Read       = $ScriptBlock
+        Unlock     = $UnlockScriptBlock
+        Remove     = $RemoveScriptBlock
+        Set        = $SetScriptBlock
         Unregister = $UnregisterScriptBlock
     }
 }
 
-function Unlock-PodeSecretManagementVault
-{
+function Unlock-PodeSecretManagementVault {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig
     )
@@ -115,10 +111,9 @@ function Unlock-PodeSecretManagementVault
     return $null
 }
 
-function Unlock-PodeSecretCustomVault
-{
+function Unlock-PodeSecretCustomVault {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig
     )
@@ -135,9 +130,9 @@ function Unlock-PodeSecretCustomVault
 
     # unlock the vault, and get back an expiry
     $expiry = (Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unlock -Splat -Return -Arguments @(
-        $VaultConfig.Parameters,
+            $VaultConfig.Parameters,
         (ConvertFrom-SecureString -SecureString $VaultConfig.Unlock.Secret -AsPlainText)
-    ))
+        ))
 
     # return expiry if given, otherwise check interval
     if ($null -ne $expiry) {
@@ -151,10 +146,9 @@ function Unlock-PodeSecretCustomVault
     return $null
 }
 
-function Unregister-PodeSecretManagementVault
-{
+function Unregister-PodeSecretManagementVault {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig
     )
@@ -168,10 +162,9 @@ function Unregister-PodeSecretManagementVault
     $null = Unregister-SecretVault -Name $VaultConfig.SecretManagement.VaultName -Confirm:$false -ErrorAction Stop
 }
 
-function Unregister-PodeSecretCustomVault
-{
+function Unregister-PodeSecretCustomVault {
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig
     )
@@ -192,14 +185,13 @@ function Unregister-PodeSecretCustomVault
     )
 }
 
-function Get-PodeSecretManagementKey
-{
+function Get-PodeSecretManagementKey {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key
     )
@@ -211,14 +203,13 @@ function Get-PodeSecretManagementKey
     return (Get-Secret -Name $Key -Vault $_vault.SecretManagement.VaultName -AsPlainText -ErrorAction Stop)
 }
 
-function Get-PodeSecretCustomKey
-{
+function Get-PodeSecretCustomKey {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
@@ -232,23 +223,22 @@ function Get-PodeSecretCustomKey
 
     # fetch the secret
     return (Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Read -Splat -Return -Arguments (@(
-        $_vault.Parameters,
-        $Key
-    ) + $ArgumentList))
+                $_vault.Parameters,
+                $Key
+            ) + $ArgumentList))
 }
 
-function Set-PodeSecretManagementKey
-{
+function Set-PodeSecretManagementKey {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [object]
         $Value,
 
@@ -264,18 +254,17 @@ function Set-PodeSecretManagementKey
     $null = Set-Secret -Name $Key -Secret $Value -Vault $_vault.SecretManagement.VaultName -Metadata $Metadata -Confirm:$false -ErrorAction Stop
 }
 
-function Set-PodeSecretCustomKey
-{
+function Set-PodeSecretCustomKey {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [object]
         $Value,
 
@@ -298,21 +287,20 @@ function Set-PodeSecretCustomKey
 
     # set the secret
     Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Set -Splat -Arguments (@(
-        $_vault.Parameters,
-        $Key,
-        $Value,
-        $Metadata
-    ) + $ArgumentList)
+            $_vault.Parameters,
+            $Key,
+            $Value,
+            $Metadata
+        ) + $ArgumentList)
 }
 
-function Remove-PodeSecretManagementKey
-{
+function Remove-PodeSecretManagementKey {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key
     )
@@ -324,14 +312,13 @@ function Remove-PodeSecretManagementKey
     $null = Remove-Secret -Name $Key -Vault $_vault.SecretManagement.VaultName -Confirm:$false -ErrorAction Stop
 }
 
-function Remove-PodeSecretCustomKey
-{
+function Remove-PodeSecretCustomKey {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
@@ -350,13 +337,12 @@ function Remove-PodeSecretCustomKey
 
     # remove the secret
     Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Remove -Splat -Arguments (@(
-        $_vault.Parameters,
-        $Key
-    ) + $ArgumentList)
+            $_vault.Parameters,
+            $Key
+        ) + $ArgumentList)
 }
 
-function Start-PodeSecretCacheHousekeeper
-{
+function Start-PodeSecretCacheHousekeeper {
     if (Test-PodeTimer -Name '__pode_secrets_cache_expiry__') {
         return
     }
@@ -375,8 +361,7 @@ function Start-PodeSecretCacheHousekeeper
     }
 }
 
-function Start-PodeSecretVaultUnlocker
-{
+function Start-PodeSecretVaultUnlocker {
     if (Test-PodeTimer -Name '__pode_secrets_vault_unlock__') {
         return
     }
@@ -394,8 +379,7 @@ function Start-PodeSecretVaultUnlocker
     }
 }
 
-function Unregister-PodeSecretVaults
-{
+function Unregister-PodeSecretVaults {
     param(
         [switch]
         $ThrowError
@@ -424,10 +408,9 @@ function Unregister-PodeSecretVaults
     }
 }
 
-function Protect-PodeSecretValueType
-{
+function Protect-PodeSecretValueType {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [object]
         $Value
     )
@@ -451,7 +434,7 @@ function Protect-PodeSecretValueType
          ($Value -is [byte[]]) -or
          ($Value -is [pscredential]) -or
          ($Value -is [System.Management.Automation.OrderedHashtable])
-       )) {
+        )) {
         throw "Value to set secret to is of an invalid type. Expected either String, SecureString, HashTable, Byte[], or PSCredential. But got: $($Value.GetType().Name)"
     }
 

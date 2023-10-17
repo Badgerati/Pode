@@ -11,11 +11,10 @@ The Name(s) of modules to export.
 .EXAMPLE
 Export-PodeModule -Name Mod1, Mod2
 #>
-function Export-PodeModule
-{
+function Export-PodeModule {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Name
     )
@@ -36,11 +35,10 @@ The Name(s) of snapins to export.
 .EXAMPLE
 Export-PodeSnapin -Name Mod1, Mod2
 #>
-function Export-PodeSnapin
-{
+function Export-PodeSnapin {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Name
     )
@@ -66,11 +64,10 @@ The Name(s) of functions to export.
 .EXAMPLE
 Export-PodeFunction -Name Mod1, Mod2
 #>
-function Export-PodeFunction
-{
+function Export-PodeFunction {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Name
     )
@@ -94,11 +91,10 @@ The Type of the Secret Vault to import - only option currently is SecretManageme
 .EXAMPLE
 Export-PodeSecretVault -Name Vault1, Vault2
 #>
-function Export-PodeSecretVault
-{
+function Export-PodeSecretVault {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Name,
 

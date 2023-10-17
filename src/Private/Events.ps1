@@ -1,7 +1,6 @@
-function Invoke-PodeEvent
-{
+function Invoke-PodeEvent {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Start', 'Terminate', 'Restart', 'Browser', 'Crash', 'Stop', 'Running')]
         [string]
         $Type

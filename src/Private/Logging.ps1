@@ -1,5 +1,4 @@
-function Get-PodeLoggingTerminalMethod
-{
+function Get-PodeLoggingTerminalMethod {
     return {
         param($item, $options)
 
@@ -18,8 +17,7 @@ function Get-PodeLoggingTerminalMethod
     }
 }
 
-function Get-PodeLoggingFileMethod
-{
+function Get-PodeLoggingFileMethod {
     return {
         param($item, $options)
 
@@ -77,8 +75,7 @@ function Get-PodeLoggingFileMethod
     }
 }
 
-function Get-PodeLoggingEventViewerMethod
-{
+function Get-PodeLoggingEventViewerMethod {
     return {
         param($item, $options, $rawItem)
 
@@ -106,13 +103,13 @@ function Get-PodeLoggingEventViewerMethod
                 $message = ($item[$i] | Protect-PodeLogItem)
                 $entryLog.WriteEvent($entryInstance, $message)
             }
-            catch {}
+            catch {
+            }
         }
     }
 }
 
-function ConvertTo-PodeEventViewerLevel
-{
+function ConvertTo-PodeEventViewerLevel {
     param(
         [Parameter()]
         [string]
@@ -134,17 +131,15 @@ function ConvertTo-PodeEventViewerLevel
     return [System.Diagnostics.EventLogEntryType]::Information
 }
 
-function Get-PodeLoggingInbuiltType
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Get-PodeLoggingInbuiltType {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Errors', 'Requests')]
         [string]
         $Type
     )
 
-    switch ($Type.ToLowerInvariant())
-    {
+    switch ($Type.ToLowerInvariant()) {
         'requests' {
             $script = {
                 param($item, $options)
@@ -204,20 +199,17 @@ function Get-PodeLoggingInbuiltType
     return $script
 }
 
-function Get-PodeRequestLoggingName
-{
+function Get-PodeRequestLoggingName {
     return '__pode_log_requests__'
 }
 
-function Get-PodeErrorLoggingName
-{
+function Get-PodeErrorLoggingName {
     return '__pode_log_errors__'
 }
 
-function Get-PodeLogger
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Get-PodeLogger {
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -225,10 +217,9 @@ function Get-PodeLogger
     return $PodeContext.Server.Logging.Types[$Name]
 }
 
-function Test-PodeLoggerEnabled
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Test-PodeLoggerEnabled {
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -236,28 +227,24 @@ function Test-PodeLoggerEnabled
     return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
-function Get-PodeErrorLoggingLevels
-{
+function Get-PodeErrorLoggingLevels {
     return (Get-PodeLogger -Name (Get-PodeErrorLoggingName)).Arguments.Levels
 }
 
-function Test-PodeErrorLoggingEnabled
-{
+function Test-PodeErrorLoggingEnabled {
     return (Test-PodeLoggerEnabled -Name (Get-PodeErrorLoggingName))
 }
 
-function Test-PodeRequestLoggingEnabled
-{
+function Test-PodeRequestLoggingEnabled {
     return (Test-PodeLoggerEnabled -Name (Get-PodeRequestLoggingName))
 }
 
-function Write-PodeRequestLog
-{
+function Write-PodeRequestLog {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         $Request,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         $Response,
 
         [Parameter()]
@@ -273,21 +260,21 @@ function Write-PodeRequestLog
 
     # build a request object
     $item = @{
-        Host = $Request.RemoteEndPoint.Address.IPAddressToString
+        Host            = $Request.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = '-'
-        User = '-'
-        Date = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
-        Request = @{
-            Method = $Request.HttpMethod.ToUpperInvariant()
+        User            = '-'
+        Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
+        Request         = @{
+            Method   = $Request.HttpMethod.ToUpperInvariant()
             Resource = $Path
             Protocol = "HTTP/$($Request.ProtocolVersion)"
             Referrer = $Request.UrlReferrer
-            Agent = $Request.UserAgent
+            Agent    = $Request.UserAgent
         }
-        Response = @{
-            StatusCode = $Response.StatusCode
+        Response        = @{
+            StatusCode        = $Response.StatusCode
             StatusDescription = $Response.StatusDescription
-            Size = '-'
+            Size              = '-'
         }
     }
 
@@ -299,25 +286,10 @@ function Write-PodeRequestLog
     # set username - dot spaces
     if (Test-PodeAuthUser -IgnoreSession) {
         $userProps = (Get-PodeLogger -Name $name).Properties.Username.Split('.')
-        $user = $null
 
-        if (!$WebEvent.Auth.Multiple) {
-            $user = $WebEvent.Auth.User
-            foreach ($atom in $userProps) {
-                $user = $user.($atom)
-            }
-        }
-        else {
-            foreach ($u in $WebEvent.Auth.User.Values) {
-                $user = $u
-                foreach ($atom in $userProps) {
-                    $user = $user.($atom)
-                }
-
-                if (![string]::IsNullOrWhiteSpace($user)) {
-                    break
-                }
-            }
+        $user = $WebEvent.Auth.User
+        foreach ($atom in $userProps) {
+            $user = $user.($atom)
         }
 
         if (![string]::IsNullOrWhiteSpace($user)) {
@@ -327,15 +299,14 @@ function Write-PodeRequestLog
 
     # add the item to be processed
     $null = $PodeContext.LogsToProcess.Add(@{
-        Name = $name
-        Item = $item
-    })
+            Name = $name
+            Item = $item
+        })
 }
 
-function Add-PodeRequestLogEndware
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Add-PodeRequestLogEndware {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         $WebEvent
     )
@@ -354,8 +325,7 @@ function Add-PodeRequestLogEndware
     }
 }
 
-function Test-PodeLoggersExist
-{
+function Test-PodeLoggersExist {
     if (($null -eq $PodeContext.Server.Logging) -or ($null -eq $PodeContext.Server.Logging.Types)) {
         return $false
     }
@@ -363,16 +333,14 @@ function Test-PodeLoggersExist
     return (($PodeContext.Server.Logging.Types.Count -gt 0) -or ($PodeContext.Server.Logging.Enabled))
 }
 
-function Start-PodeLoggingRunspace
-{
+function Start-PodeLoggingRunspace {
     # skip if there are no loggers configured, or logging is disabled
     if (!(Test-PodeLoggersExist)) {
         return
     }
 
     $script = {
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-        {
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             # if there are no logs to process, just sleep for a few seconds - but after checking the batch
             if ($PodeContext.LogsToProcess.Count -eq 0) {
                 Test-PodeLoggerBatches
@@ -382,10 +350,10 @@ function Start-PodeLoggingRunspace
 
             # safely pop off the first log from the array
             $log = (Lock-PodeObject -Return -Object $PodeContext.LogsToProcess -ScriptBlock {
-                $log = $PodeContext.LogsToProcess[0]
-                $null = $PodeContext.LogsToProcess.RemoveAt(0)
-                return $log
-            })
+                    $log = $PodeContext.LogsToProcess[0]
+                    $null = $PodeContext.LogsToProcess.RemoveAt(0)
+                    return $log
+                })
 
             # run the log item through the appropriate method
             $logger = Get-PodeLogger -Name $log.Name
@@ -428,7 +396,7 @@ function Start-PodeLoggingRunspace
 
             # send the writable log item off to the log writer
             if ($null -ne $result) {
-                $_args = @(,$result) + @($logger.Method.Arguments) + @(,$rawItems)
+                $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
                 $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.Method.UsingVariables)
                 Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -Splat
             }
@@ -441,24 +409,20 @@ function Start-PodeLoggingRunspace
     Add-PodeRunspace -Type Main -ScriptBlock $script
 }
 
-function Test-PodeLoggerBatches
-{
+function Test-PodeLoggerBatches {
     $now = [datetime]::Now
 
     # check each logger, and see if its batch needs to be written
-    foreach ($logger in $PodeContext.Server.Logging.Types.Values)
-    {
+    foreach ($logger in $PodeContext.Server.Logging.Types.Values) {
         $batch = $logger.Method.Batch
-        if (($batch.Size -gt 1) -and ($batch.Items.Length -gt 0) -and
-            ($batch.Timeout -gt 0) -and ($null -ne $batch.LastUpdate) -and ($batch.LastUpdate.AddSeconds($batch.Timeout) -le $now))
-        {
+        if (($batch.Size -gt 1) -and ($batch.Items.Length -gt 0) -and ($batch.Timeout -gt 0) -and ($null -ne $batch.LastUpdate) -and ($batch.LastUpdate.AddSeconds($batch.Timeout) -le $now)) {
             $result = $batch.Items
             $rawItems = $batch.RawItems
 
             $batch.Items = @()
             $batch.RawItems = @()
 
-            $_args = @(,$result) + @($logger.Method.Arguments) + @(,$rawItems)
+            $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
             $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.Method.UsingVariables)
             Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -Splat
         }

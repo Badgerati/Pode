@@ -1,5 +1,4 @@
-function Start-PodeFileMonitor
-{
+function Start-PodeFileMonitor {
     # don't configure if not supplied, or we're running as serverless
     if (!$PodeContext.Server.FileMonitor.Enabled -or $PodeContext.Server.IsServerless) {
         return
@@ -11,8 +10,8 @@ function Start-PodeFileMonitor
 
     # setup the file monitor
     $watcher = New-Object System.IO.FileSystemWatcher $folder, $filter -Property @{
-        IncludeSubdirectories = $true;
-        NotifyFilter = [System.IO.NotifyFilters]'FileName,LastWrite,CreationTime';
+        IncludeSubdirectories = $true
+        NotifyFilter          = [System.IO.NotifyFilters]'FileName,LastWrite,CreationTime'
     }
 
     $watcher.EnableRaisingEvents = $true
@@ -24,7 +23,7 @@ function Start-PodeFileMonitor
 
     # setup the message data for the events
     $msgData = @{
-        Timer = $timer
+        Timer    = $timer
         Settings = $PodeContext.Server.FileMonitor
     }
 
@@ -83,14 +82,13 @@ function Start-PodeFileMonitor
         $Event.MessageData.Tokens.Restart.Cancel()
         $Event.Sender.Stop()
     } -MessageData @{
-        Tokens = $PodeContext.Tokens
+        Tokens       = $PodeContext.Tokens
         FileSettings = $PodeContext.Server.FileMonitor
-        Quiet = $PodeContext.Server.Quiet
+        Quiet        = $PodeContext.Server.Quiet
     } -SupportEvent
 }
 
-function Stop-PodeFileMonitor
-{
+function Stop-PodeFileMonitor {
     if ($PodeContext.Server.IsServerless) {
         return
     }
@@ -103,10 +101,9 @@ function Stop-PodeFileMonitor
     }
 }
 
-function Get-PodeFileMonitorName
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Get-PodeFileMonitorName {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Create', 'Delete', 'Update')]
         [string]
         $Type
@@ -115,7 +112,6 @@ function Get-PodeFileMonitorName
     return "PodeFileMonitor$($Type)"
 }
 
-function Get-PodeFileMonitorTimerName
-{
+function Get-PodeFileMonitorTimerName {
     return 'PodeFileMonitorTimer'
 }

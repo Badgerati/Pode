@@ -1,6 +1,5 @@
-function Invoke-PodeEndware
-{
-    param (
+function Invoke-PodeEndware {
+    param(
         [Parameter()]
         $Endware
     )
@@ -11,8 +10,7 @@ function Invoke-PodeEndware
     }
 
     # loop through each of the endware, invoking the next if it returns true
-    foreach ($eware in @($Endware))
-    {
+    foreach ($eware in @($Endware)) {
         if (($null -eq $eware) -or ($null -eq $eware.Logic)) {
             continue
         }

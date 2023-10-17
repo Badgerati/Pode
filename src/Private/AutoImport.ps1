@@ -1,11 +1,10 @@
-function Import-PodeFunctionsIntoRunspaceState
-{
+function Import-PodeFunctionsIntoRunspaceState {
     param(
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath
     )
@@ -52,8 +51,7 @@ function Import-PodeFunctionsIntoRunspaceState
     }
 }
 
-function Import-PodeModulesIntoRunspaceState
-{
+function Import-PodeModulesIntoRunspaceState {
     # do nothing if disabled
     if (!$PodeContext.Server.AutoImport.Modules.Enabled) {
         return
@@ -72,8 +70,8 @@ function Import-PodeModulesIntoRunspaceState
 
     # work out which order the modules need to be loaded
     $modulesOrder = @(foreach ($module in $modules) {
-        Get-PodeModuleDependencies -Module $module
-    }) |
+            Get-PodeModuleDependencies -Module $module
+        }) |
         Where-Object {
             ($_.Name -inotin @('pode', 'pode.internal')) -and ($_.Name -inotlike 'microsoft.powershell.*')
         } | Select-Object -Unique
@@ -97,8 +95,7 @@ function Import-PodeModulesIntoRunspaceState
     }
 }
 
-function Import-PodeSnapinsIntoRunspaceState
-{
+function Import-PodeSnapinsIntoRunspaceState {
     # if non-windows or core, do nothing
     if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
         return
@@ -127,28 +124,27 @@ function Import-PodeSnapinsIntoRunspaceState
     }
 }
 
-function Initialize-PodeAutoImportConfiguration
-{
+function Initialize-PodeAutoImportConfiguration {
     return @{
-        Modules = @{
-            Enabled = $true
+        Modules      = @{
+            Enabled    = $true
             ExportList = @()
             ExportOnly = $false
         }
-        Snapins = @{
-            Enabled = $true
+        Snapins      = @{
+            Enabled    = $true
             ExportList = @()
             ExportOnly = $false
         }
-        Functions = @{
-            Enabled = $true
+        Functions    = @{
+            Enabled    = $true
             ExportList = @()
             ExportOnly = $false
         }
         SecretVaults = @{
-            Enabled = $true
+            Enabled          = $true
             SecretManagement = @{
-                Enabled = $false
+                Enabled    = $false
                 ExportList = @()
                 ExportOnly = $false
             }
@@ -156,8 +152,7 @@ function Initialize-PodeAutoImportConfiguration
     }
 }
 
-function Import-PodeSecretVaultsIntoRegistry
-{
+function Import-PodeSecretVaultsIntoRegistry {
     # do nothing if disabled
     if (!$PodeContext.Server.AutoImport.SecretVaults.Enabled) {
         return
@@ -166,8 +161,7 @@ function Import-PodeSecretVaultsIntoRegistry
     Import-PodeSecretManagementVaultsIntoRegistry
 }
 
-function Import-PodeSecretManagementVaultsIntoRegistry
-{
+function Import-PodeSecretManagementVaultsIntoRegistry {
     # do nothing if disabled
     if (!$PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enabled) {
         return
@@ -203,22 +197,21 @@ function Import-PodeSecretManagementVaultsIntoRegistry
 
         # register the vault
         $PodeContext.Server.Secrets.Vaults[$vault.Name] = @{
-            Name = $vault.Name
-            Type = 'secretmanagement'
-            Parameters = $vault.VaultParameters
-            AutoImported = $true
-            Unlock = $null
-            Cache = $null
+            Name             = $vault.Name
+            Type             = 'secretmanagement'
+            Parameters       = $vault.VaultParameters
+            AutoImported     = $true
+            Unlock           = $null
+            Cache            = $null
             SecretManagement = @{
-                VaultName = $vault.Name
+                VaultName  = $vault.Name
                 ModuleName = $vault.ModulePath
             }
         }
     }
 }
 
-function Read-PodeAutoImportConfiguration
-{
+function Read-PodeAutoImportConfiguration {
     param(
         [Parameter()]
         [hashtable]
@@ -231,25 +224,25 @@ function Read-PodeAutoImportConfiguration
     $impSecretVaults = $Configuration.AutoImport.SecretVaults
 
     return @{
-        Modules = @{
-            Enabled = (($null -eq $impModules.Enable) -or [bool]$impModules.Enable)
+        Modules      = @{
+            Enabled    = (($null -eq $impModules.Enable) -or [bool]$impModules.Enable)
             ExportList = @()
             ExportOnly = ([bool]$impModules.ExportOnly)
         }
-        Snapins = @{
-            Enabled = (($null -eq $impSnapins.Enable) -or [bool]$impSnapins.Enable)
+        Snapins      = @{
+            Enabled    = (($null -eq $impSnapins.Enable) -or [bool]$impSnapins.Enable)
             ExportList = @()
             ExportOnly = ([bool]$impSnapins.ExportOnly)
         }
-        Functions = @{
-            Enabled = (($null -eq $impFuncs.Enable) -or [bool]$impFuncs.Enable)
+        Functions    = @{
+            Enabled    = (($null -eq $impFuncs.Enable) -or [bool]$impFuncs.Enable)
             ExportList = @()
             ExportOnly = ([bool]$impFuncs.ExportOnly)
         }
         SecretVaults = @{
-            Enabled = (($null -eq $impSecretVaults.Enable) -or [bool]$impSecretVaults.Enable)
+            Enabled          = (($null -eq $impSecretVaults.Enable) -or [bool]$impSecretVaults.Enable)
             SecretManagement = @{
-                Enabled = ((($null -eq $impSecretVaults.Enable) -and (Test-PodeModuleInstalled -Name Microsoft.PowerShell.SecretManagement)) -or [bool]$impSecretVaults.Enable)
+                Enabled    = ((($null -eq $impSecretVaults.Enable) -and (Test-PodeModuleInstalled -Name Microsoft.PowerShell.SecretManagement)) -or [bool]$impSecretVaults.Enable)
                 ExportList = @()
                 ExportOnly = ([bool]$impSecretVaults.SecretManagement.ExportOnly)
             }
@@ -257,8 +250,7 @@ function Read-PodeAutoImportConfiguration
     }
 }
 
-function Reset-PodeAutoImportConfiguration
-{
+function Reset-PodeAutoImportConfiguration {
     $PodeContext.Server.AutoImport.Modules.ExportList = @()
     $PodeContext.Server.AutoImport.Snapins.ExportList = @()
     $PodeContext.Server.AutoImport.Functions.ExportList = @()

@@ -1,7 +1,6 @@
 using namespace Pode
 
-function Start-PodeTcpServer
-{
+function Start-PodeTcpServer {
     # work out which endpoints to listen on
     $endpoints = @()
 
@@ -13,21 +12,21 @@ function Start-PodeTcpServer
 
         # the endpoint
         $_endpoint = @{
-            Key = "$($_ip):$($_.Port)"
-            Address = $_ip
-            Hostname = $_.HostName
-            IsIPAddress = $_.IsIPAddress
-            Port = $_.Port
-            Certificate = $_.Certificate.Raw
+            Key                    = "$($_ip):$($_.Port)"
+            Address                = $_ip
+            Hostname               = $_.HostName
+            IsIPAddress            = $_.IsIPAddress
+            Port                   = $_.Port
+            Certificate            = $_.Certificate.Raw
             AllowClientCertificate = $_.Certificate.AllowClientCertificate
-            TlsMode = $_.Certificate.TlsMode
-            Url = $_.Url
-            Protocol = $_.Protocol
-            Type = $_.Type
-            Pool = $_.Runspace.PoolName
-            Acknowledge = $_.Tcp.Acknowledge
-            CRLFMessageEnd = $_.Tcp.CRLFMessageEnd
-            SslProtocols = $_.Ssl.Protocols
+            TlsMode                = $_.Certificate.TlsMode
+            Url                    = $_.Url
+            Protocol               = $_.Protocol
+            Type                   = $_.Type
+            Pool                   = $_.Runspace.PoolName
+            Acknowledge            = $_.Tcp.Acknowledge
+            CRLFMessageEnd         = $_.Tcp.CRLFMessageEnd
+            SslProtocols           = $_.Ssl.Protocols
         }
 
         # add endpoint to list
@@ -41,8 +40,7 @@ function Start-PodeTcpServer
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
-    try
-    {
+    try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
             $socket = [PodeSocket]::new($_.Address, $_.Port, $_.SslProtocols, [PodeProtocolType]::Tcp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
@@ -69,41 +67,37 @@ function Start-PodeTcpServer
 
     # script for listening out of for incoming requests
     $listenScript = {
-        param (
-            [Parameter(Mandatory=$true)]
+        param(
+            [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
             $Listener,
 
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             [int]
             $ThreadId
         )
 
-        try
-        {
-            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-            {
+        try {
+            while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # get email
                 $context = (Wait-PodeTask -Task $Listener.GetContextAsync($PodeContext.Tokens.Cancellation.Token))
 
-                try
-                {
-                    try
-                    {
+                try {
+                    try {
                         $Request = $context.Request
                         $Response = $context.Response
 
                         $TcpEvent = @{
-                            Response = $Response
-                            Request = $Request
-                            Lockable = $PodeContext.Threading.Lockables.Global
-                            Endpoint = @{
+                            Response   = $Response
+                            Request    = $Request
+                            Lockable   = $PodeContext.Threading.Lockables.Global
+                            Endpoint   = @{
                                 Protocol = $Request.Scheme
-                                Address = $Request.Address
-                                Name = $null
+                                Address  = $Request.Address
+                                Name     = $null
                             }
                             Parameters = $null
-                            Timestamp = [datetime]::UtcNow
+                            Timestamp  = [datetime]::UtcNow
                         }
 
                         # endpoint name
@@ -197,8 +191,8 @@ function Start-PodeTcpServer
 
     # script to keep tcp server listening until cancelled
     $waitScript = {
-        param (
-            [Parameter(Mandatory=$true)]
+        param(
+            [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
             $Listener
         )
@@ -223,9 +217,9 @@ function Start-PodeTcpServer
 
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {
-        @{
-            Url  = $endpoint.Url
-            Pool = $endpoint.Pool
-        }
-    })
+            @{
+                Url  = $endpoint.Url
+                Pool = $endpoint.Pool
+            }
+        })
 }

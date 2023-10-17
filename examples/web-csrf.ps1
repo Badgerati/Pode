@@ -1,4 +1,4 @@
-param (
+param(
     [Parameter()]
     [ValidateSet('Cookie', 'Session')]
     [string]
