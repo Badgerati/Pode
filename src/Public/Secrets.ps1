@@ -56,11 +56,10 @@ Register-PodeSecretVault -Name 'VaultName' -ModuleName 'Az.KeyVault' -VaultParam
 .EXAMPLE
 Register-PodeSecretVault -Name 'VaultName' -VaultParameters @{ Address = 'http://127.0.0.1:8200' } -ScriptBlock { ... }
 #>
-function Register-PodeSecretVault
-{
+function Register-PodeSecretVault {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -91,35 +90,35 @@ function Register-PodeSecretVault
         [scriptblock]
         $InitScriptBlock,
 
-        [Parameter(ParameterSetName='SecretManagement')]
+        [Parameter(ParameterSetName = 'SecretManagement')]
         [string]
         $VaultName,
 
-        [Parameter(Mandatory=$true, ParameterSetName='SecretManagement')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SecretManagement')]
         [Alias('Module')]
         [string]
         $ModuleName,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Custom')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
         [scriptblock]
         $ScriptBlock, # Read a secret
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [Alias('Unlock')]
         [scriptblock]
         $UnlockScriptBlock,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [Alias('Remove')]
         [scriptblock]
         $RemoveScriptBlock,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [Alias('Set')]
         [scriptblock]
         $SetScriptBlock,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [Alias('Unregister')]
         [scriptblock]
         $UnregisterScriptBlock
@@ -141,18 +140,18 @@ function Register-PodeSecretVault
     }
 
     $vault = @{
-        Name = $Name
-        Type = $PSCmdlet.ParameterSetName.ToLowerInvariant()
-        Parameters = $VaultParameters
+        Name         = $Name
+        Type         = $PSCmdlet.ParameterSetName.ToLowerInvariant()
+        Parameters   = $VaultParameters
         AutoImported = $false
-        Unlock = @{
-            Secret = $UnlockSecureSecret
-            Expiry = $null
+        Unlock       = @{
+            Secret   = $UnlockSecureSecret
+            Expiry   = $null
             Interval = $UnlockInterval
-            Enabled = (!(Test-PodeIsEmpty $UnlockSecureSecret))
+            Enabled  = (!(Test-PodeIsEmpty $UnlockSecureSecret))
         }
-        Cache = @{
-            Ttl = $CacheTtl
+        Cache        = @{
+            Ttl     = $CacheTtl
             Enabled = ($CacheTtl -gt 0)
         }
     }
@@ -205,11 +204,10 @@ The Name of the Secret Vault in Pode to unregister.
 .EXAMPLE
 Unregister-PodeSecretVault -Name 'VaultName'
 #>
-function Unregister-PodeSecretVault
-{
+function Unregister-PodeSecretVault {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -250,10 +248,9 @@ The Name of the Secret Vault in Pode to be unlocked.
 .EXAMPLE
 Unlock-PodeSecretVault -Name 'VaultName'
 #>
-function Unlock-PodeSecretVault
-{
+function Unlock-PodeSecretVault {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -311,11 +308,10 @@ $vault = Get-PodeSecretVault -Name 'VaultName'
 .EXAMPLE
 $vaults = Get-PodeSecretVault -Name 'VaultName1', 'VaultName2'
 #>
-function Get-PodeSecretVault
-{
+function Get-PodeSecretVault {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Name
     )
@@ -325,14 +321,14 @@ function Get-PodeSecretVault
     # further filter by vault names
     if (($null -ne $Name) -and ($Name.Length -gt 0)) {
         $vaults = @(foreach ($_name in $Name) {
-            foreach ($vault in $vaults) {
-                if ($vault.Name -ine $_name) {
-                    continue
-                }
+                foreach ($vault in $vaults) {
+                    if ($vault.Name -ine $_name) {
+                        continue
+                    }
 
-                $vault
-            }
-        })
+                    $vault
+                }
+            })
     }
 
     # return
@@ -352,11 +348,10 @@ The Name of the Secret Vault to test.
 .EXAMPLE
 if (Test-PodeSecretVault -Name 'VaultName') { ... }
 #>
-function Test-PodeSecretVault
-{
+function Test-PodeSecretVault {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -399,15 +394,14 @@ Mount-PodeSecret -Name 'SecretName' -Vault 'VaultName' -Key 'path/to/secret' -Ex
 .EXAMPLE
 Mount-PodeSecret -Name 'SecretName' -Vault 'VaultName' -Key 'key_of_secret' -CacheTtl 5
 #>
-function Mount-PodeSecret
-{
+function Mount-PodeSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
@@ -419,7 +413,7 @@ function Mount-PodeSecret
         [string]
         $ExpandProperty,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
@@ -460,16 +454,16 @@ function Mount-PodeSecret
     }
 
     $PodeContext.Server.Secrets.Keys[$Name] = @{
-        Key = $Key
+        Key        = $Key
         Properties = @{
-            Fields = $props
-            Expand = (![string]::IsNullOrWhiteSpace($ExpandProperty))
+            Fields  = $props
+            Expand  = (![string]::IsNullOrWhiteSpace($ExpandProperty))
             Enabled = (!(Test-PodeIsEmpty $props))
         }
-        Vault = $Vault
-        Arguments = $ArgumentList
-        Cache = @{
-            Ttl = $CacheTtl
+        Vault      = $Vault
+        Arguments  = $ArgumentList
+        Cache      = @{
+            Ttl     = $CacheTtl
             Enabled = ($CacheTtl -gt 0)
         }
     }
@@ -494,11 +488,10 @@ Dismount-PodeSecret -Name 'SecretName'
 .EXAMPLE
 Dismount-PodeSecret -Name 'SecretName' -Remove
 #>
-function Dismount-PodeSecret
-{
+function Dismount-PodeSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -541,11 +534,10 @@ $value = Get-PodeSecret -Name 'SecretName'
 .EXAMPLE
 $value = $secret:SecretName
 #>
-function Get-PodeSecret
-{
+function Get-PodeSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -577,7 +569,7 @@ function Get-PodeSecret
     # filter the value by any properties
     if ($secret.Properties.Enabled) {
         if ($secret.Properties.Expand) {
-            $value = Select-Object -InputObject $value -ExpandProperty $secret.Properties.Fields 
+            $value = Select-Object -InputObject $value -ExpandProperty $secret.Properties.Fields
         }
         else {
             $value = Select-Object -InputObject $value -Property $secret.Properties.Fields
@@ -607,11 +599,10 @@ The friendly Name of a Secret.
 .EXAMPLE
 if (Test-PodeSecret -Name 'SecretName') { ... }
 #>
-function Test-PodeSecret
-{
+function Test-PodeSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -645,16 +636,15 @@ Update-PodeSecret -Name 'SecretName' -InputObject 'value'
 .EXAMPLE
 $secret:SecretName = 'value'
 #>
-function Update-PodeSecret
-{
+function Update-PodeSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
         #> byte[], string, securestring, pscredential, hashtable
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]
         $InputObject,
 
@@ -718,15 +708,14 @@ An optional array of Arguments to be supplied to a custom Secret Vault's scriptb
 .EXAMPLE
 Remove-PodeSecret -Key 'path/to/secret' -Vault 'VaultName'
 #>
-function Remove-PodeSecret
-{
+function Remove-PodeSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
@@ -780,15 +769,14 @@ $value = Read-PodeSecret -Key 'path/to/secret' -Vault 'VaultName'
 .EXAMPLE
 $value = Read-PodeSecret -Key 'key_of_secret' -Vault 'VaultName' -Property prop1, prop2
 #>
-function Read-PodeSecret
-{
+function Read-PodeSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
@@ -823,7 +811,7 @@ function Read-PodeSecret
 
     # filter the value by any properties
     if (![string]::IsNullOrWhiteSpace($ExpandProperty)) {
-        $value = Select-Object -InputObject $value -ExpandProperty $ExpandProperty 
+        $value = Select-Object -InputObject $value -ExpandProperty $ExpandProperty
     }
     elseif (![string]::IsNullOrEmpty($Property)) {
         $value = Select-Object -InputObject $value -Property $Property
@@ -862,20 +850,19 @@ Set-PodeSecret -Key 'path/to/secret' -Vault 'VaultName' -InputObject 'value'
 .EXAMPLE
 Set-PodeSecret -Key 'key_of_secret' -Vault 'VaultName' -InputObject @{ key = value }
 #>
-function Set-PodeSecret
-{
+function Set-PodeSecret {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Vault,
 
         #> byte[], string, securestring, pscredential, hashtable
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]
         $InputObject,
 

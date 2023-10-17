@@ -14,8 +14,7 @@ $currentUptime = Get-PodeServerUptime
 .EXAMPLE
 $totalUptime = Get-PodeServerUptime -Total
 #>
-function Get-PodeServerUptime
-{
+function Get-PodeServerUptime {
     [CmdletBinding()]
     param(
         [switch]
@@ -40,8 +39,7 @@ Returns the number of times the server has restarted.
 .EXAMPLE
 $restarts = Get-PodeServerRestartCount
 #>
-function Get-PodeServerRestartCount
-{
+function Get-PodeServerRestartCount {
     [CmdletBinding()]
     param()
 
@@ -70,15 +68,14 @@ $statusReqs = Get-PodeServerRequestMetric
 .EXAMPLE
 $404Reqs = Get-PodeServerRequestMetric -StatusCode 404
 #>
-function Get-PodeServerRequestMetric
-{
-    [CmdletBinding(DefaultParameterSetName='StatusCode')]
+function Get-PodeServerRequestMetric {
+    [CmdletBinding(DefaultParameterSetName = 'StatusCode')]
     param(
-        [Parameter(ParameterSetName='StatusCode')]
+        [Parameter(ParameterSetName = 'StatusCode')]
         [int]
         $StatusCode = 0,
 
-        [Parameter(ParameterSetName='Total')]
+        [Parameter(ParameterSetName = 'Total')]
         [switch]
         $Total
     )
@@ -109,8 +106,7 @@ Returns the total number of Signal requests the Server has receieved.
 .EXAMPLE
 $totalReqs = Get-PodeServerSignalMetric
 #>
-function Get-PodeServerSignalMetric
-{
+function Get-PodeServerSignalMetric {
     [CmdletBinding()]
     param()
 
@@ -133,8 +129,7 @@ Get-PodeServerActiveRequestMetric
 .EXAMPLE
 Get-PodeServerActiveRequestMetric -CountType Queued
 #>
-function Get-PodeServerActiveRequestMetric
-{
+function Get-PodeServerActiveRequestMetric {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -177,8 +172,7 @@ Get-PodeServerActiveSignalMetric
 .EXAMPLE
 Get-PodeServerActiveSignalMetric -Type Client -CountType Queued
 #>
-function Get-PodeServerActiveSignalMetric
-{
+function Get-PodeServerActiveSignalMetric {
     [CmdletBinding()]
     param(
         [Parameter()]

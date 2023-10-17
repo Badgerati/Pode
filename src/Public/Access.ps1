@@ -35,33 +35,32 @@ $scope_access = New-PodeAccessScheme -Type Scope -Scriptblock { param($user) ret
 .EXAMPLE
 $custom_access = New-PodeAccessScheme -Custom -Path 'CustomProp'
 #>
-function New-PodeAccessScheme
-{
-    [CmdletBinding(DefaultParameterSetName='Type_Path')]
+function New-PodeAccessScheme {
+    [CmdletBinding(DefaultParameterSetName = 'Type_Path')]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName='Type_Scriptblock')]
-        [Parameter(Mandatory=$true, ParameterSetName='Type_Path')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Type_Scriptblock')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Type_Path')]
         [ValidateSet('Role', 'Group', 'Scope', 'User')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Custom_Scriptblock')]
-        [Parameter(Mandatory=$true, ParameterSetName='Custom_Path')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Custom_Scriptblock')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Custom_Path')]
         [switch]
         $Custom,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Custom_Scriptblock')]
-        [Parameter(ParameterSetName='Type_Scriptblock')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Custom_Scriptblock')]
+        [Parameter(ParameterSetName = 'Type_Scriptblock')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(ParameterSetName='Custom_Scriptblock')]
-        [Parameter(ParameterSetName='Type_Scriptblock')]
+        [Parameter(ParameterSetName = 'Custom_Scriptblock')]
+        [Parameter(ParameterSetName = 'Type_Scriptblock')]
         [object[]]
         $ArgumentList,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Custom_Path')]
-        [Parameter(ParameterSetName='Type_Path')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Custom_Path')]
+        [Parameter(ParameterSetName = 'Type_Path')]
         [string]
         $Path
     )
@@ -69,7 +68,7 @@ function New-PodeAccessScheme
     # for custom access a validator is mandatory
     if ($Custom) {
         if ([string]::IsNullOrWhiteSpace($Path) -and (Test-PodeIsEmpty $ScriptBlock)) {
-            throw "A Path or ScriptBlock is required for sourcing the Custom access values"
+            throw 'A Path or ScriptBlock is required for sourcing the Custom access values'
         }
     }
 
@@ -78,7 +77,7 @@ function New-PodeAccessScheme
     if (!(Test-PodeIsEmpty $ScriptBlock)) {
         $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $scriptObj = @{
-            Script = $ScriptBlock
+            Script         = $ScriptBlock
             UsingVariables = $usingScriptVars
         }
     }
@@ -95,11 +94,11 @@ function New-PodeAccessScheme
 
     # return scheme
     return @{
-        Type = $Type
-        IsCustom = $Custom.IsPresent
+        Type        = $Type
+        IsCustom    = $Custom.IsPresent
         ScriptBlock = $scriptObj
-        Arguments = $ArgumentList
-        Path = $Path
+        Arguments   = $ArgumentList
+        Path        = $Path
     }
 }
 
@@ -141,27 +140,26 @@ New-PodeAccessScheme -Type Scope -Scriptblock { param($user) return @(Get-Exampl
 .EXAMPLE
 New-PodeAccessScheme -Custom -Path 'CustomProp' | Add-PodeAccess -Name 'Example' -ScriptBlock { param($userAccess, $customAccess) return $userAccess.Country -ieq $customAccess.Country }
 #>
-function Add-PodeAccess
-{
-    [CmdletBinding(DefaultParameterSetName='Match')]
+function Add-PodeAccess {
+    [CmdletBinding(DefaultParameterSetName = 'Match')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Scheme,
 
-        [Parameter(Mandatory=$true, ParameterSetName='ScriptBlock')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptBlock')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(ParameterSetName='ScriptBlock')]
+        [Parameter(ParameterSetName = 'ScriptBlock')]
         [object[]]
         $ArgumentList,
 
-        [Parameter(ParameterSetName='Match')]
+        [Parameter(ParameterSetName = 'Match')]
         [ValidateSet('All', 'One', 'None')]
         [string]
         $Match = 'One'
@@ -177,21 +175,21 @@ function Add-PodeAccess
     if (!(Test-PodeIsEmpty $ScriptBlock)) {
         $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         $scriptObj = @{
-            Script = $ScriptBlock
+            Script         = $ScriptBlock
             UsingVariables = $usingScriptVars
         }
     }
 
     # add access object
     $PodeContext.Server.Authorisations.Methods[$Name] = @{
-        Name = $Name
-        Scheme = $Scheme
+        Name        = $Name
+        Scheme      = $Scheme
         ScriptBlock = $scriptObj
-        Arguments = $ArgumentList
-        Match = $Match.ToLowerInvariant()
-        Cache = @{}
-        Merged = $false
-        Parent = $null
+        Arguments   = $ArgumentList
+        Match       = $Match.ToLowerInvariant()
+        Cache       = @{}
+        Merged      = $false
+        Parent      = $null
     }
 }
 
@@ -216,15 +214,14 @@ How many of the Access methods are required to be valid, One or All. (Default: O
 .EXAMPLE
 Merge-PodeAccess -Name MergedAccess -Access RbacAccess, GbacAccess -Valid All
 #>
-function Merge-PodeAccess
-{
+function Merge-PodeAccess {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Access,
 
@@ -253,12 +250,12 @@ function Merge-PodeAccess
 
     # add auth method to server
     $PodeContext.Server.Authorisations.Methods[$Name] = @{
-        Name = $Name
-        Access = @($Access)
+        Name    = $Name
+        Access  = @($Access)
         PassOne = ($Valid -ieq 'one')
-        Cache = @{}
-        Merged = $true
-        Parent = $null
+        Cache   = @{}
+        Merged  = $true
+        Parent  = $null
     }
 }
 
@@ -281,19 +278,18 @@ The Custom Access Value(s)
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {} -PassThru | Add-PodeAccessCustom -Name 'Example' -Value @{ Country = 'UK' }
 #>
-function Add-PodeAccessCustom
-{
+function Add-PodeAccessCustom {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable[]]
         $Route,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [object[]]
         $Value
     )
@@ -336,8 +332,7 @@ $methods = Get-PodeAccess -Name 'Example'
 .EXAMPLE
 $methods = Get-PodeAccess -Name 'Example1', 'Example2'
 #>
-function Get-PodeAccess
-{
+function Get-PodeAccess {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -352,8 +347,8 @@ function Get-PodeAccess
 
     # return filtered
     return @(foreach ($n in $Name) {
-        $PodeContext.Server.Authorisations.Methods[$n]
-    })
+            $PodeContext.Server.Authorisations.Methods[$n]
+        })
 }
 
 <#
@@ -369,11 +364,10 @@ The Name of the Access method.
 .EXAMPLE
 if (Test-PodeAccessExists -Name 'Example') { }
 #>
-function Test-PodeAccessExists
-{
+function Test-PodeAccessExists {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -403,11 +397,10 @@ An optional array of arguments to supply to the Access Scheme's ScriptBlock for 
 .EXAMPLE
 if (Test-PodeAccess -Name 'Example' -Source 'Developer' -Destination 'Admin') { }
 #>
-function Test-PodeAccess
-{
+function Test-PodeAccess {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -443,7 +436,7 @@ function Test-PodeAccess
 
     # check for custom validator, or use default match logic
     if ($null -ne $access.ScriptBlock) {
-        $_args = @(,$Source) + @(,$Destination) + @($access.Arguments)
+        $_args = @(, $Source) + @(, $Destination) + @($access.Arguments)
         $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.ScriptBlock.UsingVariables)
         return [bool](Invoke-PodeScriptBlock -ScriptBlock $access.ScriptBlock.Script -Arguments $_args -Return -Splat)
     }
@@ -506,15 +499,14 @@ An array of access values to pass to the Access method for verification against 
 .EXAMPLE
 if (Test-PodeAccessUser -Name 'Example' -Value 'Developer', 'QA') { }
 #>
-function Test-PodeAccessUser
-{
+function Test-PodeAccessUser {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [object[]]
         $Value
     )
@@ -557,10 +549,9 @@ The Name of the Access method to use to verify the access.
 .EXAMPLE
 if (Test-PodeAccessRoute -Name 'Example') { }
 #>
-function Test-PodeAccessRoute
-{
+function Test-PodeAccessRoute {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -598,11 +589,10 @@ The Name of the Access method.
 .EXAMPLE
 Remove-PodeAccess -Name 'RBAC'
 #>
-function Remove-PodeAccess
-{
+function Remove-PodeAccess {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name
     )
@@ -620,8 +610,7 @@ Clear all defined Access methods.
 .EXAMPLE
 Clear-PodeAccess
 #>
-function Clear-PodeAccess
-{
+function Clear-PodeAccess {
     [CmdletBinding()]
     param()
 
@@ -650,15 +639,14 @@ Add-PodeAccessMiddleware -Name 'GlobalAccess' -Access AccessName
 .EXAMPLE
 Add-PodeAccessMiddleware -Name 'GlobalAccess' -Access AccessName -Route '/api/*'
 #>
-function Add-PodeAccessMiddleware
-{
+function Add-PodeAccessMiddleware {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Access,
 
@@ -692,8 +680,7 @@ Use-PodeAccess
 .EXAMPLE
 Use-PodeAccess -Path './my-access'
 #>
-function Use-PodeAccess
-{
+function Use-PodeAccess {
     [CmdletBinding()]
     param(
         [Parameter()]

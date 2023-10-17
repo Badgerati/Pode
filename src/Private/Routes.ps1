@@ -1,12 +1,11 @@
-function Test-PodeRouteFromRequest
-{
+function Test-PodeRouteFromRequest {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('CONNECT', 'DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
         $Method,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
@@ -23,15 +22,14 @@ function Test-PodeRouteFromRequest
     return ($null -ne $route)
 }
 
-function Find-PodeRoute
-{
+function Find-PodeRoute {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('CONNECT', 'DELETE', 'GET', 'HEAD', 'MERGE', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE', 'STATIC', 'SIGNAL', '*')]
         [string]
         $Method,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path,
@@ -69,11 +67,11 @@ function Find-PodeRoute
 
     # otherwise, match the path to routes on regex (first match only)
     $valid = @(foreach ($key in $_method.Keys) {
-        if ($Path -imatch "^$($key)$") {
-            $key
-            break
-        }
-    })[0]
+            if ($Path -imatch "^$($key)$") {
+                $key
+                break
+            }
+        })[0]
 
     if ($null -eq $valid) {
         return $null
@@ -88,10 +86,9 @@ function Find-PodeRoute
     return $found
 }
 
-function Find-PodePublicRoute
-{
+function Find-PodePublicRoute {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path
     )
@@ -116,10 +113,9 @@ function Find-PodePublicRoute
     return $source
 }
 
-function Find-PodeStaticRoute
-{
+function Find-PodeStaticRoute {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
@@ -145,8 +141,7 @@ function Find-PodeStaticRoute
         }
 
         # if there's no file, we need to check defaults
-        if (!$found.Download -and !(Test-PodePathIsFile $file) -and (Get-PodeCount @($found.Defaults)) -gt 0)
-        {
+        if (!$found.Download -and !(Test-PodePathIsFile $file) -and (Get-PodeCount @($found.Defaults)) -gt 0) {
             if ((Get-PodeCount @($found.Defaults)) -eq 1) {
                 $file = [System.IO.Path]::Combine($file, @($found.Defaults)[0])
             }
@@ -178,18 +173,17 @@ function Find-PodeStaticRoute
     # return the route details
     return @{
         Content = @{
-            Source = $source
+            Source     = $source
             IsDownload = $download
             IsCachable = (Test-PodeRouteValidForCaching -Path $Path)
         }
-        Route = $found
+        Route   = $found
     }
 }
 
-function Find-PodeSignalRoute
-{
+function Find-PodeSignalRoute {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
@@ -202,10 +196,9 @@ function Find-PodeSignalRoute
     return (Find-PodeRoute -Method 'signal' -Path $Path -EndpointName $EndpointName)
 }
 
-function Test-PodeRouteValidForCaching
-{
+function Test-PodeRouteValidForCaching {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path
     )
@@ -228,8 +221,7 @@ function Test-PodeRouteValidForCaching
     return $caching
 }
 
-function Get-PodeRouteByUrl
-{
+function Get-PodeRouteByUrl {
     param(
         [Parameter()]
         [hashtable[]]
@@ -249,8 +241,7 @@ function Get-PodeRouteByUrl
     return (Get-PodeRoutesByUrl -Routes $Routes -EndpointName $EndpointName)
 }
 
-function Get-PodeRoutesByUrl
-{
+function Get-PodeRoutesByUrl {
     param(
         [Parameter()]
         [hashtable[]]
@@ -280,10 +271,9 @@ function Get-PodeRoutesByUrl
     return $null
 }
 
-function ConvertTo-PodeOpenApiRoutePath
-{
+function ConvertTo-PodeOpenApiRoutePath {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path
     )
@@ -291,10 +281,9 @@ function ConvertTo-PodeOpenApiRoutePath
     return (Resolve-PodePlaceholders -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')
 }
 
-function Update-PodeRouteSlashes
-{
+function Update-PodeRouteSlashes {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
@@ -321,19 +310,17 @@ function Update-PodeRouteSlashes
     return $Path
 }
 
-function Split-PodeRouteQuery
-{
+function Split-PodeRouteQuery {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path
     )
 
-    return ($Path -isplit "\?")[0]
+    return ($Path -isplit '\?')[0]
 }
 
-function ConvertTo-PodeRouteRegex
-{
+function ConvertTo-PodeRouteRegex {
     param(
         [Parameter()]
         [string]
@@ -353,8 +340,7 @@ function ConvertTo-PodeRouteRegex
     return $Path
 }
 
-function Get-PodeStaticRouteDefaults
-{
+function Get-PodeStaticRouteDefaults {
     if (!(Test-PodeIsEmpty $PodeContext.Server.Web.Static.Defaults)) {
         return @($PodeContext.Server.Web.Static.Defaults)
     }
@@ -367,14 +353,13 @@ function Get-PodeStaticRouteDefaults
     )
 }
 
-function Test-PodeRouteInternal
-{
+function Test-PodeRouteInternal {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Method,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
@@ -427,8 +412,7 @@ function Test-PodeRouteInternal
     throw "[$($Method)] $($Path): Already defined for $($_url)"
 }
 
-function Convert-PodeFunctionVerbToHttpMethod
-{
+function Convert-PodeFunctionVerbToHttpMethod {
     param(
         [Parameter()]
         [string]
@@ -445,10 +429,9 @@ function Convert-PodeFunctionVerbToHttpMethod
     }
 }
 
-function Find-PodeRouteTransferEncoding
-{
+function Find-PodeRouteTransferEncoding {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
@@ -467,8 +450,8 @@ function Find-PodeRouteTransferEncoding
 
     # find type by pattern from settings
     $matched = ($PodeContext.Server.Web.TransferEncoding.Routes.Keys | Where-Object {
-        $Path -imatch $_
-    } | Select-Object -First 1)
+            $Path -imatch $_
+        } | Select-Object -First 1)
 
     # if we get a match, set it
     if (!(Test-PodeIsEmpty $matched)) {
@@ -478,10 +461,9 @@ function Find-PodeRouteTransferEncoding
     return $TransferEncoding
 }
 
-function Find-PodeRouteContentType
-{
+function Find-PodeRouteContentType {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
@@ -500,8 +482,8 @@ function Find-PodeRouteContentType
 
     # find type by pattern from settings
     $matched = ($PodeContext.Server.Web.ContentType.Routes.Keys | Where-Object {
-        $Path -imatch $_
-    } | Select-Object -First 1)
+            $Path -imatch $_
+        } | Select-Object -First 1)
 
     # if we get a match, set it
     if (!(Test-PodeIsEmpty $matched)) {
@@ -511,15 +493,14 @@ function Find-PodeRouteContentType
     return $ContentType
 }
 
-function ConvertTo-PodeMiddleware
-{
+function ConvertTo-PodeMiddleware {
     [OutputType([hashtable[]])]
     param(
         [Parameter()]
         [object[]]
         $Middleware,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [System.Management.Automation.SessionState]
         $PSSession
     )
@@ -545,7 +526,7 @@ function ConvertTo-PodeMiddleware
         # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
         if ($mid -is [hashtable]) {
             if ($null -eq $mid.Logic) {
-                throw "A Hashtable Middleware supplied has no Logic defined"
+                throw 'A Hashtable Middleware supplied has no Logic defined'
             }
 
             if ($mid.Logic -isnot [scriptblock]) {
@@ -556,27 +537,26 @@ function ConvertTo-PodeMiddleware
 
     # if we have middleware, convert scriptblocks to hashtables
     $converted = @(for ($i = 0; $i -lt $Middleware.Length; $i++) {
-        if ($null -eq $Middleware[$i]) {
-            continue
-        }
-
-        if ($Middleware[$i] -is [scriptblock]) {
-            $_script, $_usingVars = Convert-PodeScopedVariables -ScriptBlock $Middleware[$i] -PSSession $PSSession
-
-            $Middleware[$i] = @{
-                Logic = $_script
-                UsingVariables = $_usingVars
+            if ($null -eq $Middleware[$i]) {
+                continue
             }
-        }
 
-        $Middleware[$i]
-    })
+            if ($Middleware[$i] -is [scriptblock]) {
+                $_script, $_usingVars = Convert-PodeScopedVariables -ScriptBlock $Middleware[$i] -PSSession $PSSession
+
+                $Middleware[$i] = @{
+                    Logic          = $_script
+                    UsingVariables = $_usingVars
+                }
+            }
+
+            $Middleware[$i]
+        })
 
     return $converted
 }
 
-function Get-PodeRouteIfExistsPreference
-{
+function Get-PodeRouteIfExistsPreference {
     # from route groups
     $groupPref = $RouteGroup.IfExists
     if (![string]::IsNullOrWhiteSpace($groupPref) -and ($groupPref -ine 'default')) {

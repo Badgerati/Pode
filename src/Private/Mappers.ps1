@@ -1,6 +1,5 @@
-function Get-PodeContentType
-{
-    param (
+function Get-PodeContentType {
+    param(
         [Parameter()]
         [string]
         $Extension,
@@ -18,8 +17,7 @@ function Get-PodeContentType
     }
 
     # Sourced from https://github.com/samuelneff/MimeTypeMap
-    switch ($Extension.ToLowerInvariant())
-    {
+    switch ($Extension.ToLowerInvariant()) {
         '.323' { return 'text/h323' }
         '.3g2' { return 'video/3gpp2' }
         '.3gp' { return 'video/3gpp' }
@@ -644,16 +642,14 @@ function Get-PodeContentType
     }
 }
 
-function Get-PodeStatusDescription
-{
-    param (
+function Get-PodeStatusDescription {
+    param(
         [Parameter()]
         [int]
         $StatusCode
     )
 
-    switch ($StatusCode)
-    {
+    switch ($StatusCode) {
         100 { return 'Continue' }
         101 { return 'Switching Protocols' }
         102 { return 'Processing' }

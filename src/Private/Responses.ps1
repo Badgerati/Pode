@@ -1,5 +1,4 @@
-function Show-PodeErrorPage
-{
+function Show-PodeErrorPage {
     param(
         [Parameter()]
         [int]
@@ -38,8 +37,8 @@ function Show-PodeErrorPage
 
     # setup the data object for dynamic pages
     $data = @{
-        Url    = [System.Web.HttpUtility]::HtmlEncode((Get-PodeUrl))
-        Status = @{
+        Url         = [System.Web.HttpUtility]::HtmlEncode((Get-PodeUrl))
+        Status      = @{
             Code        = $Code
             Description = $Description
         }

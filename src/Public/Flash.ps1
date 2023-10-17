@@ -15,15 +15,14 @@ The message to append.
 .EXAMPLE
 Add-PodeFlashMessage -Name 'error' -Message 'There was an error'
 #>
-function Add-PodeFlashMessage
-{
+function Add-PodeFlashMessage {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Message
     )
@@ -56,8 +55,7 @@ Clears all of the flash messages currently stored in the session.
 .EXAMPLE
 Clear-PodeFlashMessages
 #>
-function Clear-PodeFlashMessages
-{
+function Clear-PodeFlashMessages {
     [CmdletBinding()]
     param()
 
@@ -86,12 +84,11 @@ The name of the flash messages to return.
 .EXAMPLE
 Get-PodeFlashMessage -Name 'error'
 #>
-function Get-PodeFlashMessage
-{
+function Get-PodeFlashMessage {
     [CmdletBinding()]
     [OutputType([string[]])]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -126,8 +123,7 @@ Returns all of the names for each of the messages currently being stored. This d
 .EXAMPLE
 Get-PodeFlashMessageNames
 #>
-function Get-PodeFlashMessageNames
-{
+function Get-PodeFlashMessageNames {
     [CmdletBinding()]
     [OutputType([string[]])]
     param()
@@ -158,11 +154,10 @@ The name of the flash messages to remove.
 .EXAMPLE
 Remove-PodeFlashMessage -Name 'error'
 #>
-function Remove-PodeFlashMessage
-{
+function Remove-PodeFlashMessage {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -191,12 +186,11 @@ The name of the flash message to check.
 .EXAMPLE
 Test-PodeFlashMessage -Name 'error'
 #>
-function Test-PodeFlashMessage
-{
+function Test-PodeFlashMessage {
     [CmdletBinding()]
     [OutputType([bool])]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )

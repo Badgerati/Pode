@@ -45,10 +45,9 @@ Enable-PodeSessionMiddleware -Duration 120 -Extend -Generator { return [System.I
 .EXAMPLE
 Enable-PodeSessionMiddleware -Secret 'schwifty' -Duration 120 -UseHeaders -Strict
 #>
-function Enable-PodeSessionMiddleware
-{
-    [CmdletBinding(DefaultParameterSetName='Cookies')]
-    param (
+function Enable-PodeSessionMiddleware {
+    [CmdletBinding(DefaultParameterSetName = 'Cookies')]
+    param(
         [Parameter()]
         [string]
         $Secret,
@@ -60,12 +59,12 @@ function Enable-PodeSessionMiddleware
 
         [Parameter()]
         [ValidateScript({
-            if ($_ -lt 0) {
-                throw "Duration must be 0 or greater, but got: $($_)s"
-            }
+                if ($_ -lt 0) {
+                    throw "Duration must be 0 or greater, but got: $($_)s"
+                }
 
-            return $true
-        })]
+                return $true
+            })]
         [int]
         $Duration = 0,
 
@@ -80,18 +79,18 @@ function Enable-PodeSessionMiddleware
         [switch]
         $Extend,
 
-        [Parameter(ParameterSetName='Cookies')]
+        [Parameter(ParameterSetName = 'Cookies')]
         [switch]
         $HttpOnly,
 
-        [Parameter(ParameterSetName='Cookies')]
+        [Parameter(ParameterSetName = 'Cookies')]
         [switch]
         $Secure,
 
         [switch]
         $Strict,
 
-        [Parameter(ParameterSetName='Headers')]
+        [Parameter(ParameterSetName = 'Headers')]
         [switch]
         $UseHeaders
     )
@@ -114,7 +113,7 @@ function Enable-PodeSessionMiddleware
     # verify the secret, set to guid if not supplied, or error if none and we have a storage
     if ([string]::IsNullOrEmpty($Secret)) {
         if (!(Test-PodeIsEmpty $Storage)) {
-            throw "A Secret is required when using custom session storage"
+            throw 'A Secret is required when using custom session storage'
         }
 
         $Secret = New-PodeGuid -Secure
@@ -128,16 +127,16 @@ function Enable-PodeSessionMiddleware
 
     # set options against server context
     $PodeContext.Server.Sessions = @{
-        Name = $Name
-        Secret = $Secret
+        Name       = $Name
+        Secret     = $Secret
         GenerateId = (Protect-PodeValue -Value $Generator -Default { return (New-PodeGuid) })
-        Store = $Storage
-        Info = @{
-            Duration = $Duration
-            Extend = $Extend.IsPresent
-            Secure = $Secure.IsPresent
-            Strict = $Strict.IsPresent
-            HttpOnly = $HttpOnly.IsPresent
+        Store      = $Storage
+        Info       = @{
+            Duration   = $Duration
+            Extend     = $Extend.IsPresent
+            Secure     = $Secure.IsPresent
+            Strict     = $Strict.IsPresent
+            HttpOnly   = $HttpOnly.IsPresent
             UseHeaders = $UseHeaders.IsPresent
         }
     }
@@ -157,8 +156,7 @@ Remove the current Session, logging it out. This will remove the session from St
 .EXAMPLE
 Remove-PodeSession
 #>
-function Remove-PodeSession
-{
+function Remove-PodeSession {
     [CmdletBinding()]
     param()
 
@@ -189,8 +187,7 @@ If supplied, the data will be saved even if nothing has changed.
 .EXAMPLE
 Save-PodeSession -Force
 #>
-function Save-PodeSession
-{
+function Save-PodeSession {
     [CmdletBinding()]
     param(
         [switch]
@@ -233,8 +230,7 @@ If supplied, the sessionId will be returned regardless of authentication.
 .EXAMPLE
 $sessionId = Get-PodeSessionId
 #>
-function Get-PodeSessionId
-{
+function Get-PodeSessionId {
     [CmdletBinding()]
     param(
         [switch]
@@ -282,8 +278,7 @@ Resets the current Session's expiry date, to be from the current time plus the d
 .EXAMPLE
 Reset-PodeSessionExpiry
 #>
-function Reset-PodeSessionExpiry
-{
+function Reset-PodeSessionExpiry {
     [CmdletBinding()]
     param()
 
@@ -314,8 +309,7 @@ Returns the defined Session duration that all Session are created using.
 .EXAMPLE
 $duration = Get-PodeSessionDuration
 #>
-function Get-PodeSessionDuration
-{
+function Get-PodeSessionDuration {
     [CmdletBinding()]
     param()
 
@@ -332,8 +326,7 @@ Returns the datetime on which the current Session's will expire.
 .EXAMPLE
 $expiry = Get-PodeSessionExpiry
 #>
-function Get-PodeSessionExpiry
-{
+function Get-PodeSessionExpiry {
     [CmdletBinding()]
     param()
 

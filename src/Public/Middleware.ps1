@@ -20,21 +20,20 @@ Add-PodeAccessRule -Access Allow -Type IP -Values '127.0.0.1'
 .EXAMPLE
 Add-PodeAccessRule -Access Deny -Type IP -Values @('192.168.1.1', '10.10.1.0/24')
 #>
-function Add-PodeAccessRule
-{
+function Add-PodeAccessRule {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Allow', 'Deny')]
         [string]
         $Access,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('IP')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Values
     )
@@ -43,8 +42,7 @@ function Add-PodeAccessRule
     Test-PodeIsServerless -FunctionName 'Add-PodeAccessRule' -ThrowError
 
     # call the appropriate access method
-    switch ($Type.ToLowerInvariant())
-    {
+    switch ($Type.ToLowerInvariant()) {
         'ip' {
             foreach ($ip in $Values) {
                 Add-PodeIPAccess -Access $Access -IP $ip
@@ -84,24 +82,23 @@ Add-PodeLimitRule -Type IP -Values @('192.168.1.1', '10.10.1.0/24') -Limit 50 -S
 .EXAMPLE
 Add-PodeLimitRule -Type Route -Values '/downloads' -Limit 5 -Seconds 1
 #>
-function Add-PodeLimitRule
-{
+function Add-PodeLimitRule {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateSet('IP', 'Route', 'Endpoint')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]
         $Values,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Limit,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Seconds,
 
@@ -110,10 +107,8 @@ function Add-PodeLimitRule
     )
 
     # call the appropriate limit method
-    foreach ($value in $Values)
-    {
-        switch ($Type.ToLowerInvariant())
-        {
+    foreach ($value in $Values) {
+        switch ($Type.ToLowerInvariant()) {
             'ip' {
                 Test-PodeIsServerless -FunctionName 'Add-PodeLimitRule' -ThrowError
                 Add-PodeIPLimit -IP $value -Limit $Limit -Seconds $Seconds -Group:$Group
@@ -140,8 +135,7 @@ Creates and returns a new secure token for use with CSRF.
 .EXAMPLE
 $token = New-PodeCsrfToken
 #>
-function New-PodeCsrfToken
-{
+function New-PodeCsrfToken {
     [CmdletBinding()]
     [OutputType([string])]
     param()
@@ -170,8 +164,7 @@ Returns adhoc CSRF CSRF verification Middleware, for use on Routes.
 $csrf = Get-PodeCsrfMiddleware
 Add-PodeRoute -Method Get -Path '/cpu' -Middleware $csrf -ScriptBlock { /* logic */ }
 #>
-function Get-PodeCsrfMiddleware
-{
+function Get-PodeCsrfMiddleware {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param()
@@ -189,7 +182,7 @@ function Get-PodeCsrfMiddleware
         # verify the token on the request, if invalid, throw a 403
         $token = Get-PodeCsrfToken
 
-        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
+        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)) {
             Set-PodeResponseStatus -Code 403 -Description 'Invalid CSRF Token'
             return $false
         }
@@ -223,10 +216,9 @@ Initialize-PodeCsrf -IgnoreMethods @('Get', 'Trace')
 .EXAMPLE
 Initialize-PodeCsrf -Secret 'some-secret' -UseCookies
 #>
-function Initialize-PodeCsrf
-{
+function Initialize-PodeCsrf {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter()]
         [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
         [string[]]
@@ -261,9 +253,9 @@ function Initialize-PodeCsrf
 
     # set the options against the server context
     $PodeContext.Server.Cookies.Csrf = @{
-        Name = 'pode.csrf'
-        UseCookies = $UseCookies
-        Secret = $Secret
+        Name           = 'pode.csrf'
+        UseCookies     = $UseCookies
+        Secret         = $Secret
         IgnoredMethods = $IgnoreMethods
     }
 }
@@ -290,20 +282,19 @@ Enable-PodeCsrfMiddleware -IgnoreMethods @('Get', 'Trace')
 .EXAMPLE
 Enable-PodeCsrfMiddleware -Secret 'some-secret' -UseCookies
 #>
-function Enable-PodeCsrfMiddleware
-{
+function Enable-PodeCsrfMiddleware {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter()]
         [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace')]
         [string[]]
         $IgnoreMethods = @('Get', 'Head', 'Options', 'Trace'),
 
-        [Parameter(ParameterSetName='Cookies')]
+        [Parameter(ParameterSetName = 'Cookies')]
         [string]
         $Secret,
 
-        [Parameter(ParameterSetName='Cookies')]
+        [Parameter(ParameterSetName = 'Cookies')]
         [switch]
         $UseCookies
     )
@@ -324,7 +315,7 @@ function Enable-PodeCsrfMiddleware
         # verify the token on the request, if invalid, throw a 403
         $token = Get-PodeCsrfToken
 
-        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)){
+        if (!(Test-PodeCsrfToken -Secret $secret -Token $token)) {
             Set-PodeResponseStatus -Code 403 -Description 'Invalid CSRF Token'
             return $false
         }
@@ -352,16 +343,15 @@ The ScriptBlock that will parse the body content, and return the result.
 .EXAMPLE
 Add-PodeBodyParser -ContentType 'application/json' -ScriptBlock { param($body) /* parsing logic */ }
 #>
-function Add-PodeBodyParser
-{
+function Add-PodeBodyParser {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidatePattern('^\w+\/[\w\.\+-]+$')]
         [string]
         $ContentType,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock
     )
@@ -375,7 +365,7 @@ function Add-PodeBodyParser
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     $PodeContext.Server.BodyParsers[$ContentType] = @{
-        ScriptBlock = $ScriptBlock
+        ScriptBlock    = $ScriptBlock
         UsingVariables = $usingVars
     }
 }
@@ -393,11 +383,10 @@ The ContentType of the custom body parser.
 .EXAMPLE
 Remove-PodeBodyParser -ContentType 'application/json'
 #>
-function Remove-PodeBodyParser
-{
+function Remove-PodeBodyParser {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidatePattern('^\w+\/[\w\.\+-]+$')]
         [string]
         $ContentType
@@ -442,19 +431,18 @@ Add-PodeMiddleware -Name 'BlockAgents' -ScriptBlock { /* logic */ }
 .EXAMPLE
 Add-PodeMiddleware -Name 'CheckEmailOnApi' -Route '/api/*' -ScriptBlock { /* logic */ }
 #>
-function Add-PodeMiddleware
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
+function Add-PodeMiddleware {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Input', ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Input', ValueFromPipeline = $true)]
         [hashtable]
         $InputObject,
 
@@ -475,10 +463,10 @@ function Add-PodeMiddleware
     # if it's a script - call New-PodeMiddleware
     if ($PSCmdlet.ParameterSetName -ieq 'script') {
         $InputObject = (New-PodeMiddlewareInternal `
-            -ScriptBlock $ScriptBlock `
-            -Route $Route `
-            -ArgumentList $ArgumentList `
-            -PSSession $PSCmdlet.SessionState)
+                -ScriptBlock $ScriptBlock `
+                -Route $Route `
+                -ArgumentList $ArgumentList `
+                -PSSession $PSCmdlet.SessionState)
     }
     else {
         $Route = ConvertTo-PodeRouteRegex -Path $Route
@@ -488,7 +476,7 @@ function Add-PodeMiddleware
 
     # ensure we have a script to run
     if (Test-PodeIsEmpty $InputObject.Logic) {
-        throw "[Middleware]: No logic supplied in ScriptBlock"
+        throw '[Middleware]: No logic supplied in ScriptBlock'
     }
 
     # set name, and override route/args
@@ -520,12 +508,11 @@ Boolean. ScriptBlock should return $true to continue to the next middleware/rout
 .EXAMPLE
 New-PodeMiddleware -ScriptBlock { /* logic */ } -ArgumentList 'Email' | Add-PodeMiddleware -Name 'CheckEmail'
 #>
-function New-PodeMiddleware
-{
+function New-PodeMiddleware {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -538,11 +525,11 @@ function New-PodeMiddleware
         $ArgumentList
     )
 
-    return (New-PodeMiddlewareInternal `
+    return New-PodeMiddlewareInternal `
         -ScriptBlock $ScriptBlock `
         -Route $Route `
         -ArgumentList $ArgumentList `
-        -PSSession $PSCmdlet.SessionState)
+        -PSSession $PSCmdlet.SessionState
 }
 
 <#
@@ -558,11 +545,10 @@ The Name of the Middleware to be removed.
 .EXAMPLE
 Remove-PodeMiddleware -Name 'Sessions'
 #>
-function Remove-PodeMiddleware
-{
+function Remove-PodeMiddleware {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -580,8 +566,7 @@ Removes all user defined Middleware.
 .EXAMPLE
 Clear-PodeMiddleware
 #>
-function Clear-PodeMiddleware
-{
+function Clear-PodeMiddleware {
     [CmdletBinding()]
     param()
 
@@ -604,8 +589,7 @@ Use-PodeMiddleware
 .EXAMPLE
 Use-PodeMiddleware -Path './my-middleware'
 #>
-function Use-PodeMiddleware
-{
+function Use-PodeMiddleware {
     [CmdletBinding()]
     param(
         [Parameter()]

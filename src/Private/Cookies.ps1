@@ -1,5 +1,4 @@
-function ConvertTo-PodeCookie
-{
+function ConvertTo-PodeCookie {
     param(
         [Parameter()]
         [System.Net.Cookie]
@@ -11,23 +10,22 @@ function ConvertTo-PodeCookie
     }
 
     return @{
-        Name = $Cookie.Name
-        Value = $Cookie.Value
-        Expires = $Cookie.Expires
-        Expired = $Cookie.Expired
-        Discard = $Cookie.Discard
-        HttpOnly = $Cookie.HttpOnly
-        Secure = $Cookie.Secure
-        Path = $Cookie.Path
+        Name      = $Cookie.Name
+        Value     = $Cookie.Value
+        Expires   = $Cookie.Expires
+        Expired   = $Cookie.Expired
+        Discard   = $Cookie.Discard
+        HttpOnly  = $Cookie.HttpOnly
+        Secure    = $Cookie.Secure
+        Path      = $Cookie.Path
         TimeStamp = $Cookie.TimeStamp
-        Signed = $Cookie.Value.StartsWith('s:')
+        Signed    = $Cookie.Value.StartsWith('s:')
     }
 }
 
-function ConvertTo-PodeCookieString
-{
+function ConvertTo-PodeCookieString {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         $Cookie
     )
 

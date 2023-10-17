@@ -1,5 +1,4 @@
-function Get-PodeAccessMiddlewareScript
-{
+function Get-PodeAccessMiddlewareScript {
     return {
         param($opts)
 
@@ -21,10 +20,9 @@ function Get-PodeAccessMiddlewareScript
     }
 }
 
-function Invoke-PodeAccessValidation
-{
+function Invoke-PodeAccessValidation {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )

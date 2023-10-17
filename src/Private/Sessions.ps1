@@ -1,18 +1,16 @@
-function New-PodeSession
-{
+function New-PodeSession {
     return @{
-        Name = $PodeContext.Server.Sessions.Name
-        Id = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.GenerateId -Return)
-        Extend = $PodeContext.Server.Sessions.Info.Extend
+        Name      = $PodeContext.Server.Sessions.Name
+        Id        = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.GenerateId -Return)
+        Extend    = $PodeContext.Server.Sessions.Info.Extend
         TimeStamp = [datetime]::UtcNow
-        Data = @{}
+        Data      = @{}
     }
 }
 
-function ConvertTo-PodeSessionStrictSecret
-{
+function ConvertTo-PodeSessionStrictSecret {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Secret
     )
@@ -20,8 +18,7 @@ function ConvertTo-PodeSessionStrictSecret
     return "$($Secret);$($WebEvent.Request.UserAgent);$($WebEvent.Request.RemoteEndPoint.Address.IPAddressToString)"
 }
 
-function Set-PodeSession
-{
+function Set-PodeSession {
     if ($null -eq $WebEvent.Session) {
         throw 'there is no session available to set on the response'
     }
@@ -50,8 +47,7 @@ function Set-PodeSession
     }
 }
 
-function Get-PodeSession
-{
+function Get-PodeSession {
     $secret = $PodeContext.Server.Sessions.Secret
     $value = $null
     $name = $PodeContext.Server.Sessions.Name
@@ -95,18 +91,17 @@ function Get-PodeSession
 
     # generate the session data
     $data = @{
-        Name = $name
-        Id = $value
-        Extend = $PodeContext.Server.Sessions.Info.Extend
+        Name      = $name
+        Id        = $value
+        Extend    = $PodeContext.Server.Sessions.Info.Extend
         TimeStamp = $null
-        Data = @{}
+        Data      = @{}
     }
 
     return $data
 }
 
-function Revoke-PodeSession
-{
+function Revoke-PodeSession {
     # do nothing if no current session
     if ($null -eq $WebEvent.Session) {
         return
@@ -124,8 +119,7 @@ function Revoke-PodeSession
     $WebEvent.Session.Clear()
 }
 
-function Set-PodeSessionDataHash
-{
+function Set-PodeSessionDataHash {
     if ($null -eq $WebEvent.Session) {
         throw 'No session available to calculate data hash'
     }
@@ -137,8 +131,7 @@ function Set-PodeSessionDataHash
     $WebEvent.Session.DataHash = (Invoke-PodeSHA256Hash -Value (ConvertTo-Json -InputObject $WebEvent.Session.Data.Clone() -Depth 10 -Compress))
 }
 
-function Test-PodeSessionDataHash
-{
+function Test-PodeSessionDataHash {
     if ($null -eq $WebEvent.Session) {
         return $false
     }
@@ -155,8 +148,7 @@ function Test-PodeSessionDataHash
     return ($WebEvent.Session.DataHash -eq $hash)
 }
 
-function Set-PodeSessionHelpers
-{
+function Set-PodeSessionHelpers {
     if ($null -eq $WebEvent.Session) {
         throw 'No session available to set helpers'
     }
@@ -186,7 +178,7 @@ function Set-PodeSessionHelpers
             Metadata = @{
                 TimeStamp = $session.TimeStamp
             }
-            Data = $session.Data
+            Data     = $session.Data
         }
 
         # save session data to store
@@ -209,8 +201,7 @@ function Set-PodeSessionHelpers
     }
 }
 
-function Get-PodeSessionInMemStore
-{
+function Get-PodeSessionInMemStore {
     $store = New-Object -TypeName psobject
 
     # add in-mem storage
@@ -242,7 +233,7 @@ function Get-PodeSessionInMemStore
         param($sessionId, $data, $expiry)
 
         $PodeContext.Server.Sessions.Store.Memory[$sessionId] = @{
-            Data = $data
+            Data   = $data
             Expiry = $expiry
         }
     }
@@ -250,8 +241,7 @@ function Get-PodeSessionInMemStore
     return $store
 }
 
-function Set-PodeSessionInMemClearDown
-{
+function Set-PodeSessionInMemClearDown {
     # don't setup if serverless - as memory is short lived anyway
     if ($PodeContext.Server.IsServerless) {
         return
@@ -274,18 +264,15 @@ function Set-PodeSessionInMemClearDown
     }
 }
 
-function Test-PodeSessionsConfigured
-{
+function Test-PodeSessionsConfigured {
     return (($null -ne $PodeContext.Server.Sessions) -and ($PodeContext.Server.Sessions.Count -gt 0))
 }
 
-function Test-PodeSessionsInUse
-{
+function Test-PodeSessionsInUse {
     return (($null -ne $WebEvent.Session) -and ($WebEvent.Session.Count -gt 0))
 }
 
-function Get-PodeSessionData
-{
+function Get-PodeSessionData {
     param(
         [Parameter()]
         [string]
@@ -295,16 +282,14 @@ function Get-PodeSessionData
     return (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Get -Arguments $SessionId -Return)
 }
 
-function Get-PodeSessionMiddleware
-{
+function Get-PodeSessionMiddleware {
     return {
         # if session already set, return
         if ($WebEvent.Session) {
             return $true
         }
 
-        try
-        {
+        try {
             # retrieve the current session from cookie/header
             $WebEvent.Session = Get-PodeSession
 

@@ -6,7 +6,7 @@
     "powershell.codeFormatting.alignPropertyValuePairs": true,
     "powershell.codeFormatting.autoCorrectAliases": true,
     "powershell.codeFormatting.avoidSemicolonsAsLineTerminators": true,
-    "powershell.codeFormatting.ignoreOneLineBlock": false,
+    "powershell.codeFormatting.ignoreOneLineBlock": true,
     "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
     "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
     "powershell.codeFormatting.useConstantStrings": true,
@@ -19,5 +19,6 @@
     "powershell.codeFormatting.newLineAfterCloseBrace": true,
     "powershell.codeFormatting.whitespaceBeforeOpenParen": true,
     "powershell.codeFormatting.whitespaceBetweenParameters": false,
-    "powershell.codeFormatting.whitespaceInsideBrace": false
+    "powershell.codeFormatting.whitespaceInsideBrace": true,
+    "files.trimTrailingWhitespace": true
 }

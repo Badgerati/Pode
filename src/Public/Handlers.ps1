@@ -29,24 +29,23 @@ Add-PodeHandler -Type Service -Name 'Looper' -ScriptBlock { /* logic */ }
 .EXAMPLE
 Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
 #>
-function Add-PodeHandler
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
-    param (
-        [Parameter(Mandatory=$true)]
+function Add-PodeHandler {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Service', 'Smtp')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath,
 
@@ -74,10 +73,10 @@ function Add-PodeHandler
     # add the handler
     Write-Verbose "Adding Handler: [$($Type)] $($Name)"
     $PodeContext.Server.Handlers[$Type][$Name] += @(@{
-        Logic = $ScriptBlock
-        UsingVariables = $usingVars
-        Arguments = $ArgumentList
-    })
+            Logic          = $ScriptBlock
+            UsingVariables = $usingVars
+            Arguments      = $ArgumentList
+        })
 }
 
 <#
@@ -96,16 +95,15 @@ The name of the Handler to be removed.
 .EXAMPLE
 Remove-PodeHandler -Type Smtp -Name 'Main'
 #>
-function Remove-PodeHandler
-{
+function Remove-PodeHandler {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Service', 'Smtp')]
         [string]
         $Type,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -132,10 +130,9 @@ The Type of Handlers to remove.
 .EXAMPLE
 Clear-PodeHandlers -Type Smtp
 #>
-function Clear-PodeHandlers
-{
+function Clear-PodeHandlers {
     [CmdletBinding()]
-    param (
+    param(
         [Parameter()]
         [ValidateSet('', 'Service', 'Smtp')]
         [string]
@@ -168,8 +165,7 @@ Use-PodeHandlers
 .EXAMPLE
 Use-PodeHandlers -Path './my-handlers'
 #>
-function Use-PodeHandlers
-{
+function Use-PodeHandlers {
     [CmdletBinding()]
     param(
         [Parameter()]

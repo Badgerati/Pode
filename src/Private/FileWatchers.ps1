@@ -1,20 +1,17 @@
 using namespace Pode
 
-function Test-PodeFileWatchersExist
-{
+function Test-PodeFileWatchersExist {
     return (($null -ne $PodeContext.Fim) -and (($PodeContext.Fim.Enabled) -or ($PodeContext.Fim.Items.Count -gt 0)))
 }
 
-function New-PodeFileWatcher
-{
+function New-PodeFileWatcher {
     $watcher = [PodeWatcher]::new($PodeContext.Tokens.Cancellation.Token)
     $watcher.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $watcher.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
     return $watcher
 }
 
-function Start-PodeFileWatcherRunspace
-{
+function Start-PodeFileWatcherRunspace {
     if (!(Test-PodeFileWatchersExist)) {
         return
     }
@@ -50,24 +47,20 @@ function Start-PodeFileWatcherRunspace
 
     $watchScript = {
         param(
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             $Watcher,
 
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             [int]
             $ThreadId
         )
 
-        try
-        {
-            while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-            {
+        try {
+            while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 $evt = (Wait-PodeTask -Task $Watcher.GetFileEventAsync($PodeContext.Tokens.Cancellation.Token))
 
-                try
-                {
-                    try
-                    {
+                try {
+                    try {
                         # get file watcher
                         $fileWatcher = $PodeContext.Fim.Items[$evt.FileWatcher.Name]
                         if ($null -eq $fileWatcher) {
@@ -88,16 +81,16 @@ function Start-PodeFileWatcherRunspace
 
                         # set file event object
                         $FileEvent = @{
-                            Type = $evt.ChangeType
-                            FullPath = $evt.FullPath
-                            Name = $evt.Name
-                            Old = @{
+                            Type       = $evt.ChangeType
+                            FullPath   = $evt.FullPath
+                            Name       = $evt.Name
+                            Old        = @{
                                 FullPath = $evt.OldFullPath
-                                Name = $evt.OldName
+                                Name     = $evt.OldName
                             }
                             Parameters = @{}
-                            Lockable = $PodeContext.Threading.Lockables.Global
-                            Timestamp = [datetime]::UtcNow
+                            Lockable   = $PodeContext.Threading.Lockables.Global
+                            Timestamp  = [datetime]::UtcNow
                         }
 
                         # do we have any parameters?
@@ -109,7 +102,8 @@ function Start-PodeFileWatcherRunspace
                         $_args = @(Get-PodeScriptblockArguments -ArgumentList $fileWatcher.Arguments -UsingVariables $fileWatcher.UsingVariables)
                         Invoke-PodeScriptBlock -ScriptBlock $fileWatcher.Script -Arguments $_args -Scoped -Splat
                     }
-                    catch [System.OperationCanceledException] {}
+                    catch [System.OperationCanceledException] {
+                    }
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -121,7 +115,8 @@ function Start-PodeFileWatcherRunspace
                 }
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -136,7 +131,7 @@ function Start-PodeFileWatcherRunspace
     # script to keep file watcher server alive until cancelled
     $waitScript = {
         param(
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             $Watcher
         )
 

@@ -59,40 +59,39 @@ $file_logging = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
 .EXAMPLE
 $custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
 #>
-function New-PodeLoggingMethod
-{
-    [CmdletBinding(DefaultParameterSetName='Terminal')]
+function New-PodeLoggingMethod {
+    [CmdletBinding(DefaultParameterSetName = 'Terminal')]
     [OutputType([hashtable])]
-    param (
-        [Parameter(ParameterSetName='Terminal')]
+    param(
+        [Parameter(ParameterSetName = 'Terminal')]
         [switch]
         $Terminal,
 
-        [Parameter(ParameterSetName='File')]
+        [Parameter(ParameterSetName = 'File')]
         [switch]
         $File,
 
-        [Parameter(ParameterSetName='File')]
+        [Parameter(ParameterSetName = 'File')]
         [string]
         $Path = './logs',
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $Name,
 
-        [Parameter(ParameterSetName='EventViewer')]
+        [Parameter(ParameterSetName = 'EventViewer')]
         [switch]
         $EventViewer,
 
-        [Parameter(ParameterSetName='EventViewer')]
+        [Parameter(ParameterSetName = 'EventViewer')]
         [string]
         $EventLogName = 'Application',
 
-        [Parameter(ParameterSetName='EventViewer')]
+        [Parameter(ParameterSetName = 'EventViewer')]
         [string]
         $Source = 'Pode',
 
-        [Parameter(ParameterSetName='EventViewer')]
+        [Parameter(ParameterSetName = 'EventViewer')]
         [int]
         $EventID = 0,
 
@@ -104,55 +103,55 @@ function New-PodeLoggingMethod
         [int]
         $BatchTimeout = 0,
 
-        [Parameter(ParameterSetName='File')]
+        [Parameter(ParameterSetName = 'File')]
         [ValidateScript({
-            if ($_ -lt 0) {
-                throw "MaxDays must be 0 or greater, but got: $($_)s"
-            }
+                if ($_ -lt 0) {
+                    throw "MaxDays must be 0 or greater, but got: $($_)s"
+                }
 
-            return $true
-        })]
+                return $true
+            })]
         [int]
         $MaxDays = 0,
 
-        [Parameter(ParameterSetName='File')]
+        [Parameter(ParameterSetName = 'File')]
         [ValidateScript({
-            if ($_ -lt 0) {
-                throw "MaxSize must be 0 or greater, but got: $($_)s"
-            }
+                if ($_ -lt 0) {
+                    throw "MaxSize must be 0 or greater, but got: $($_)s"
+                }
 
-            return $true
-        })]
+                return $true
+            })]
         [int]
         $MaxSize = 0,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [switch]
         $Custom,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Custom')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
         [ValidateScript({
-            if (Test-PodeIsEmpty $_) {
-                throw "A non-empty ScriptBlock is required for the Custom logging output method"
-            }
+                if (Test-PodeIsEmpty $_) {
+                    throw 'A non-empty ScriptBlock is required for the Custom logging output method'
+                }
 
-            return $true
-        })]
+                return $true
+            })]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(ParameterSetName='Custom')]
+        [Parameter(ParameterSetName = 'Custom')]
         [object[]]
         $ArgumentList
     )
 
     # batch details
     $batchInfo = @{
-        Size = $Batch
-        Timeout = $BatchTimeout
+        Size       = $Batch
+        Timeout    = $BatchTimeout
         LastUpdate = $null
-        Items = @()
-        RawItems = @()
+        Items      = @()
+        RawItems   = @()
     }
 
     # return info on appropriate logging type
@@ -160,8 +159,8 @@ function New-PodeLoggingMethod
         'terminal' {
             return @{
                 ScriptBlock = (Get-PodeLoggingTerminalMethod)
-                Batch = $batchInfo
-                Arguments = @{}
+                Batch       = $batchInfo
+                Arguments   = @{}
             }
         }
 
@@ -172,14 +171,14 @@ function New-PodeLoggingMethod
 
             return @{
                 ScriptBlock = (Get-PodeLoggingFileMethod)
-                Batch = $batchInfo
-                Arguments = @{
-                    Name = $Name
-                    Path = $Path
-                    MaxDays = $MaxDays
-                    MaxSize = $MaxSize
-                    FileId = 0
-                    Date = $null
+                Batch       = $batchInfo
+                Arguments   = @{
+                    Name          = $Name
+                    Path          = $Path
+                    MaxDays       = $MaxDays
+                    MaxSize       = $MaxSize
+                    FileId        = 0
+                    Date          = $null
                     NextClearDown = [datetime]::Now.Date
                 }
             }
@@ -188,7 +187,7 @@ function New-PodeLoggingMethod
         'eventviewer' {
             # only windows
             if (!(Test-PodeIsWindows)) {
-                throw "Event Viewer logging only supported on Windows"
+                throw 'Event Viewer logging only supported on Windows'
             }
 
             # create source
@@ -198,11 +197,11 @@ function New-PodeLoggingMethod
 
             return @{
                 ScriptBlock = (Get-PodeLoggingEventViewerMethod)
-                Batch = $batchInfo
-                Arguments = @{
+                Batch       = $batchInfo
+                Arguments   = @{
                     LogName = $EventLogName
-                    Source = $Source
-                    ID = $EventID
+                    Source  = $Source
+                    ID      = $EventID
                 }
             }
         }
@@ -211,10 +210,10 @@ function New-PodeLoggingMethod
             $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
             return @{
-                ScriptBlock = $ScriptBlock
+                ScriptBlock    = $ScriptBlock
                 UsingVariables = $usingVars
-                Batch = $batchInfo
-                Arguments = $ArgumentList
+                Batch          = $batchInfo
+                Arguments      = $ArgumentList
             }
         }
     }
@@ -240,11 +239,10 @@ If supplied, the log item returned will be the raw Request item as a hashtable a
 .EXAMPLE
 New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 #>
-function Enable-PodeRequestLogging
-{
+function Enable-PodeRequestLogging {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Method,
 
@@ -267,7 +265,7 @@ function Enable-PodeRequestLogging
 
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
-        throw "The supplied output Method for Request Logging requires a valid ScriptBlock"
+        throw 'The supplied output Method for Request Logging requires a valid ScriptBlock'
     }
 
     # username property
@@ -277,12 +275,12 @@ function Enable-PodeRequestLogging
 
     # add the request logger
     $PodeContext.Server.Logging.Types[$name] = @{
-        Method = $Method
+        Method      = $Method
         ScriptBlock = (Get-PodeLoggingInbuiltType -Type Requests)
-        Properties = @{
+        Properties  = @{
             Username = $UsernameProperty
         }
-        Arguments = @{
+        Arguments   = @{
             Raw = $Raw
         }
     }
@@ -298,8 +296,7 @@ Disables Request Logging.
 .EXAMPLE
 Disable-PodeRequestLogging
 #>
-function Disable-PodeRequestLogging
-{
+function Disable-PodeRequestLogging {
     [CmdletBinding()]
     param()
 
@@ -325,11 +322,10 @@ If supplied, the log item returned will be the raw Error item as a hashtable and
 .EXAMPLE
 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 #>
-function Enable-PodeErrorLogging
-{
+function Enable-PodeErrorLogging {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Method,
 
@@ -352,7 +348,7 @@ function Enable-PodeErrorLogging
 
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
-        throw "The supplied output Method for Error Logging requires a valid ScriptBlock"
+        throw 'The supplied output Method for Error Logging requires a valid ScriptBlock'
     }
 
     # all errors?
@@ -362,10 +358,10 @@ function Enable-PodeErrorLogging
 
     # add the error logger
     $PodeContext.Server.Logging.Types[$name] = @{
-        Method = $Method
+        Method      = $Method
         ScriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
-        Arguments = @{
-            Raw = $Raw
+        Arguments   = @{
+            Raw    = $Raw
             Levels = $Levels
         }
     }
@@ -381,8 +377,7 @@ Disables Error Logging.
 .EXAMPLE
 Disable-PodeErrorLogging
 #>
-function Disable-PodeErrorLogging
-{
+function Disable-PodeErrorLogging {
     [CmdletBinding()]
     param()
 
@@ -411,26 +406,25 @@ An array of arguments to supply to the Custom Logger's ScriptBlock.
 .EXAMPLE
 New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Main' -ScriptBlock { /* logic */ }
 #>
-function Add-PodeLogger
-{
+function Add-PodeLogger {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Method,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({
-            if (Test-PodeIsEmpty $_) {
-                throw "A non-empty ScriptBlock is required for the logging method"
-            }
+                if (Test-PodeIsEmpty $_) {
+                    throw 'A non-empty ScriptBlock is required for the logging method'
+                }
 
-            return $true
-        })]
+                return $true
+            })]
         [scriptblock]
         $ScriptBlock,
 
@@ -454,10 +448,10 @@ function Add-PodeLogger
 
     # add logging method to server
     $PodeContext.Server.Logging.Types[$Name] = @{
-        Method = $Method
-        ScriptBlock = $ScriptBlock
+        Method         = $Method
+        ScriptBlock    = $ScriptBlock
         UsingVariables = $usingVars
-        Arguments = $ArgumentList
+        Arguments      = $ArgumentList
     }
 }
 
@@ -474,11 +468,10 @@ The Name of the Logging method.
 .EXAMPLE
 Remove-PodeLogger -Name 'LogName'
 #>
-function Remove-PodeLogger
-{
+function Remove-PodeLogger {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name
     )
@@ -496,8 +489,7 @@ Clears all Logging methods that have been configured.
 .EXAMPLE
 Clear-PodeLoggers
 #>
-function Clear-PodeLoggers
-{
+function Clear-PodeLoggers {
     [CmdletBinding()]
     param()
 
@@ -529,15 +521,14 @@ try { /* logic */ } catch { $_ | Write-PodeErrorLog }
 .EXAMPLE
 [System.Exception]::new('error message') | Write-PodeErrorLog
 #>
-function Write-PodeErrorLog
-{
+function Write-PodeErrorLog {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName='Exception')]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Exception')]
         [System.Exception]
         $Exception,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName='Error')]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Error')]
         [System.Management.Automation.ErrorRecord]
         $ErrorRecord,
 
@@ -547,7 +538,7 @@ function Write-PodeErrorLog
         [string]
         $Level = 'Error',
 
-        [Parameter(ParameterSetName='Exception')]
+        [Parameter(ParameterSetName = 'Exception')]
         [switch]
         $CheckInnerException
     )
@@ -568,16 +559,16 @@ function Write-PodeErrorLog
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'exception' {
             $item = @{
-                Category = $Exception.Source
-                Message = $Exception.Message
+                Category   = $Exception.Source
+                Message    = $Exception.Message
                 StackTrace = $Exception.StackTrace
             }
         }
 
         'error' {
             $item = @{
-                Category = $ErrorRecord.CategoryInfo.ToString()
-                Message = $ErrorRecord.Exception.Message
+                Category   = $ErrorRecord.CategoryInfo.ToString()
+                Message    = $ErrorRecord.Exception.Message
                 StackTrace = $ErrorRecord.ScriptStackTrace
             }
         }
@@ -591,9 +582,9 @@ function Write-PodeErrorLog
 
     # add the item to be processed
     $null = $PodeContext.LogsToProcess.Add(@{
-        Name = $name
-        Item = $item
-    })
+            Name = $name
+            Item = $item
+        })
 
     # for exceptions, check the inner exception
     if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
@@ -617,15 +608,14 @@ The Object to write.
 .EXAMPLE
 $object | Write-PodeLog -Name 'LogName'
 #>
-function Write-PodeLog
-{
+function Write-PodeLog {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]
         $InputObject
     )
@@ -637,9 +627,9 @@ function Write-PodeLog
 
     # add the item to be processed
     $null = $PodeContext.LogsToProcess.Add(@{
-        Name = $Name
-        Item = $InputObject
-    })
+            Name = $Name
+            Item = $InputObject
+        })
 }
 
 <#
@@ -656,11 +646,10 @@ The string Item to mask values.
 .EXAMPLE
 $value = Protect-PodeLogItem -Item 'Username=Morty, Password=Hunter2'
 #>
-function Protect-PodeLogItem
-{
+function Protect-PodeLogItem {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [string]
         $Item
     )
@@ -714,8 +703,7 @@ Use-PodeLogging
 .EXAMPLE
 Use-PodeLogging -Path './my-logging'
 #>
-function Use-PodeLogging
-{
+function Use-PodeLogging {
     [CmdletBinding()]
     param(
         [Parameter()]

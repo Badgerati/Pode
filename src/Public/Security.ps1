@@ -20,11 +20,10 @@ Set-PodeSecurity -Type Simple
 .EXAMPLE
 Set-PodeSecurity -Type Strict -UseHsts
 #>
-function Set-PodeSecurity
-{
+function Set-PodeSecurity {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Simple', 'Strict')]
         [string]
         $Type,
@@ -90,8 +89,7 @@ Removes definitions for all security headers.
 .EXAMPLE
 Remove-PodeSecurity
 #>
-function Remove-PodeSecurity
-{
+function Remove-PodeSecurity {
     [CmdletBinding()]
     param()
 
@@ -115,11 +113,10 @@ The Value of the security header.
 .EXAMPLE
 Add-PodeSecurityHeader -Name 'X-Header-Name' -Value 'SomeValue'
 #>
-function Add-PodeSecurityHeader
-{
+function Add-PodeSecurityHeader {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -146,11 +143,10 @@ The Name of the security header.
 .EXAMPLE
 Remove-PodeSecurityHeader -Name 'X-Header-Name'
 #>
-function Remove-PodeSecurityHeader
-{
+function Remove-PodeSecurityHeader {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -168,8 +164,7 @@ Hide the Server HTTP Header from Responses
 .EXAMPLE
 Hide-PodeSecurityServer
 #>
-function Hide-PodeSecurityServer
-{
+function Hide-PodeSecurityServer {
     [CmdletBinding()]
     param()
 
@@ -186,8 +181,7 @@ Show the Server HTTP Header on Responses
 .EXAMPLE
 Show-PodeSecurityServer
 #>
-function Show-PodeSecurityServer
-{
+function Show-PodeSecurityServer {
     [CmdletBinding()]
     param()
 
@@ -207,11 +201,10 @@ The Type to use.
 .EXAMPLE
 Set-PodeSecurityFrameOptions -Type SameOrigin
 #>
-function Set-PodeSecurityFrameOptions
-{
+function Set-PodeSecurityFrameOptions {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Deny', 'SameOrigin')]
         [string]
         $Type
@@ -230,8 +223,7 @@ Removes definition for the X-Frame-Options header.
 .EXAMPLE
 Remove-PodeSecurityFrameOptions
 #>
-function Remove-PodeSecurityFrameOptions
-{
+function Remove-PodeSecurityFrameOptions {
     [CmdletBinding()]
     param()
 
@@ -299,8 +291,7 @@ If supplied, the X-XSS-Protection header will be set to blocking mode. (Default:
 .EXAMPLE
 Set-PodeSecurityContentSecurityPolicy -Default 'self'
 #>
-function Set-PodeSecurityContentSecurityPolicy
-{
+function Set-PodeSecurityContentSecurityPolicy {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -408,10 +399,10 @@ function Set-PodeSecurityContentSecurityPolicy
     # this is done to explicitly disable XSS auditors in modern browsers
     # as having it enabled has now been found to cause more vulnerabilities
     if ($XssBlock) {
-        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value "1; mode=block"
+        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '1; mode=block'
     }
     else {
-        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value "0"
+        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '0'
     }
 }
 
@@ -473,8 +464,7 @@ If supplied, the header will have the upgrade-insecure-requests value added.
 .EXAMPLE
 Add-PodeSecurityContentSecurityPolicy -Default '*.twitter.com' -Image 'data'
 #>
-function Add-PodeSecurityContentSecurityPolicy
-{
+function Add-PodeSecurityContentSecurityPolicy {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -587,8 +577,7 @@ Removes definition for the Content-Security-Policy and X-XSS-Protection headers.
 .EXAMPLE
 Remove-PodeSecurityContentSecurityPolicy
 #>
-function Remove-PodeSecurityContentSecurityPolicy
-{
+function Remove-PodeSecurityContentSecurityPolicy {
     [CmdletBinding()]
     param()
 
@@ -696,8 +685,7 @@ The values to use for the XrSpatialTracking portion of the header.
 .EXAMPLE
 Set-PodeSecurityPermissionsPolicy -LayoutAnimations 'none' -UnoptimisedImages 'none' -OversizedImages 'none' -SyncXhr 'none' -UnsizedMedia 'none'
 #>
-function Set-PodeSecurityPermissionsPolicy
-{
+function Set-PodeSecurityPermissionsPolicy {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -962,8 +950,7 @@ The values to add for the XrSpatialTracking portion of the header.
 .EXAMPLE
 Add-PodeSecurityPermissionsPolicy -AmbientLightSensor 'none'
 #>
-function Add-PodeSecurityPermissionsPolicy
-{
+function Add-PodeSecurityPermissionsPolicy {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -1138,8 +1125,7 @@ Removes definitions for the Permissions-Policy header.
 .EXAMPLE
 Remove-PodeSecurityPermissionsPolicy
 #>
-function Remove-PodeSecurityPermissionsPolicy
-{
+function Remove-PodeSecurityPermissionsPolicy {
     [CmdletBinding()]
     param()
 
@@ -1159,11 +1145,10 @@ The Type to use.
 .EXAMPLE
 Set-PodeSecurityReferrerPolicy -Type No-Referrer
 #>
-function Set-PodeSecurityReferrerPolicy
-{
+function Set-PodeSecurityReferrerPolicy {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('No-Referrer', 'No-Referrer-When-Downgrade', 'Same-Origin', 'Origin', 'Strict-Origin',
             'Origin-When-Cross-Origin', 'Strict-Origin-When-Cross-Origin', 'Unsafe-Url')]
         [string]
@@ -1183,8 +1168,7 @@ Removes definitions for the Referrer-Policy header.
 .EXAMPLE
 Remove-PodeSecurityReferrerPolicy
 #>
-function Remove-PodeSecurityReferrerPolicy
-{
+function Remove-PodeSecurityReferrerPolicy {
     [CmdletBinding()]
     param()
 
@@ -1201,8 +1185,7 @@ Set a value for the X-Content-Type-Options header to "nosniff".
 .EXAMPLE
 Set-PodeSecurityContentTypeOptions
 #>
-function Set-PodeSecurityContentTypeOptions
-{
+function Set-PodeSecurityContentTypeOptions {
     [CmdletBinding()]
     param()
 
@@ -1219,8 +1202,7 @@ Removes definitions for the X-Content-Type-Options header.
 .EXAMPLE
 Remove-PodeSecurityContentTypeOptions
 #>
-function Remove-PodeSecurityContentTypeOptions
-{
+function Remove-PodeSecurityContentTypeOptions {
     [CmdletBinding()]
     param()
 
@@ -1243,8 +1225,7 @@ If supplied, the header will have includeSubDomains.
 .EXAMPLE
 Set-PodeSecurityStrictTransportSecurity -Duration 86400 -IncludeSubDomains
 #>
-function Set-PodeSecurityStrictTransportSecurity
-{
+function Set-PodeSecurityStrictTransportSecurity {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -1260,9 +1241,9 @@ function Set-PodeSecurityStrictTransportSecurity
     }
 
     $value = "max-age=$($Duration)"
-    
+
     if ($IncludeSubDomains) {
-        $value += "; includeSubDomains"
+        $value += '; includeSubDomains'
     }
 
     Add-PodeSecurityHeader -Name 'Strict-Transport-Security' -Value $value
@@ -1278,8 +1259,7 @@ Removes definitions for the Strict-Transport-Security header.
 .EXAMPLE
 Remove-PodeSecurityStrictTransportSecurity
 #>
-function Remove-PodeSecurityStrictTransportSecurity
-{
+function Remove-PodeSecurityStrictTransportSecurity {
     [CmdletBinding()]
     param()
 
@@ -1305,8 +1285,7 @@ Specifies a value for Cross-Origin-Resource-Policy.
 .EXAMPLE
 Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same-Origin
 #>
-function Set-PodeSecurityCrossOrigin
-{
+function Set-PodeSecurityCrossOrigin {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -1340,8 +1319,7 @@ Removes definitions for the Cross-Origin headers: Cross-Origin-Embedder-Policy, 
 .EXAMPLE
 Remove-PodeSecurityCrossOrigin
 #>
-function Remove-PodeSecurityCrossOrigin
-{
+function Remove-PodeSecurityCrossOrigin {
     [CmdletBinding()]
     param()
 
@@ -1378,8 +1356,7 @@ If supplied, a global Options Route will be created.
 .EXAMPLE
 Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
 #>
-function Set-PodeSecurityAccessControl
-{
+function Set-PodeSecurityAccessControl {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -1459,8 +1436,7 @@ Removes definitions for the Access-Control headers: Access-Control-Allow-Origin,
 .EXAMPLE
 Remove-PodeSecurityAccessControl
 #>
-function Remove-PodeSecurityAccessControl
-{
+function Remove-PodeSecurityAccessControl {
     [CmdletBinding()]
     param()
 
