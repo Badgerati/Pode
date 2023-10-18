@@ -1097,8 +1097,8 @@ function New-PodeCron {
 .SYNOPSIS
 creates a YAML description of the data in the object
 .DESCRIPTION
-This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects 
-.PARAMETER Object 
+This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
+.PARAMETER Object
 the object that you want scripted out
 .PARAMETER Depth
 The depth that you want your object scripted to
@@ -1106,12 +1106,12 @@ The depth that you want your object scripted to
 internal use only. required for formatting
 .EXAMPLE
 $array=@()
-$array+=Get-Process wi* |  Select-Object Handles,NPM,PM,WS,VM,CPU,Id,ProcessName 
+$array+=Get-Process wi* |  Select-Object Handles,NPM,PM,WS,VM,CPU,Id,ProcessName
 ConvertTo-PodeYaml $array
 #>
 function ConvertTo-PodeYaml {
     [OutputType('System.String')]
-    
+
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
