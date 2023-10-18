@@ -116,8 +116,6 @@
         'Out-PodeVariable',
         'Test-PodeIsHosted',
         'New-PodeCron',
-        'ConvertTo-PodeYaml',
-        'Test-PodeInRunspace',
 
         # routes
         'Add-PodeRoute',
@@ -220,30 +218,16 @@
         'Add-PodeAuthUserFile',
         'ConvertTo-PodeJwt',
         'ConvertFrom-PodeJwt',
-        'Test-PodeJwt'
         'Use-PodeAuth',
         'ConvertFrom-PodeOIDCDiscovery',
         'Test-PodeAuthUser',
-        'Merge-PodeAuth',
-        'Test-PodeAuth',
-        'Test-PodeAuthExists',
-        'Get-PodeAuthUser',
-        'Add-PodeAuthSession',
-
-        # access
-        'New-PodeAccessScheme',
-        'Add-PodeAccess',
-        'Add-PodeAccessCustom',
-        'Get-PodeAccess',
-        'Test-PodeAccessExists',
-        'Test-PodeAccess',
-        'Test-PodeAccessUser',
-        'Test-PodeAccessRoute',
-        'Merge-PodeAccess',
-        'Remove-PodeAccess',
-        'Clear-PodeAccess',
-        'Add-PodeAccessMiddleware',
-        'Use-PodeAccess',
+        'Add-PodeAuthAccess',
+        'Add-PodeAuthCustomAccess',
+        'Get-PodeAuthAccess',
+        'Test-PodeAuthAccessExists',
+        'Test-PodeAuthAccess',
+        'Test-PodeAuthAccessUser',
+        'Test-PodeAuthAccessRoute',
 
         # logging
         'New-PodeLoggingMethod',
@@ -294,7 +278,7 @@
         'Add-PodeOAExternalDoc',
         'Add-PodeOATag',
         'Add-PodeOAComponentHeaderSchema',
-        'New-PodeOAOfProperty'
+	'New-PodeOAOfProperty',
 
         # Metrics
         'Get-PodeServerUptime',
