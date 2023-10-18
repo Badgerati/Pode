@@ -14,7 +14,8 @@ function ConvertFrom-PodeFile {
     # if we have data, then setup the data param
     if ($null -ne $Data -and $Data.Count -gt 0) {
         $Content = "param(`$data)`nreturn `"$($Content -replace '"', '``"')`""
-    } else {
+    }
+    else {
         $Content = "return `"$($Content -replace '"', '``"')`""
     }
 
@@ -132,7 +133,8 @@ function Test-PodeIsAdminUser {
         }
 
         return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    } catch [exception] {
+    }
+    catch [exception] {
         Write-PodeHost 'Error checking user administrator priviledges' -ForegroundColor Red
         Write-PodeHost $_.Exception.Message -ForegroundColor Red
         return $false
@@ -242,7 +244,8 @@ function Test-PodeIPAddress {
     try {
         $null = [System.Net.IPAddress]::Parse($IP)
         return $true
-    } catch [exception] {
+    }
+    catch [exception] {
         return $false
     }
 }
@@ -286,7 +289,8 @@ function Get-PodeIPAddressesForHostname {
     # get the ip addresses for the hostname
     try {
         $ips = @([System.Net.Dns]::GetHostAddresses($Hostname))
-    } catch {
+    }
+    catch {
         return '127.0.0.1'
     }
 
@@ -438,10 +442,10 @@ function Get-PodeSubnetRange {
             $count++
 
             if ($count -le $bits) {
-                $network[$i] += "1"
+                $network[$i] += '1'
             }
             else {
-                $network[$i] += "0"
+                $network[$i] += '0'
             }
         }
     }
@@ -527,7 +531,8 @@ function Add-PodeRunspace {
         # start the pipeline
         if ($null -eq $OutputStream) {
             $pipeline = $ps.BeginInvoke()
-        } else {
+        }
+        else {
             $pipeline = $ps.BeginInvoke($OutputStream, $OutputStream)
         }
 
@@ -553,7 +558,8 @@ function Add-PodeRunspace {
                 Stopped  = $false
             }
         }
-    } catch {
+    }
+    catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
     }
@@ -570,7 +576,8 @@ function Open-PodeRunspace {
         Import-PodeModules
         Add-PodePSDrives
         $PodeContext.RunspacePools[$Type].State = 'Ready'
-    } catch {
+    }
+    catch {
         if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
             $PodeContext.RunspacePools[$Type].State = 'Error'
         }
@@ -639,15 +646,15 @@ function Close-PodeRunspaces {
                         continue
                     }
 
-                try {
-                    # only do this, if the pool is in error
-                    if ($PodeContext.RunspacePools[$item.Pool].State -ieq 'error') {
-                        $item.Pipeline.EndInvoke($item.Handler)
+                    try {
+                        # only do this, if the pool is in error
+                        if ($PodeContext.RunspacePools[$item.Pool].State -ieq 'error') {
+                            $item.Pipeline.EndInvoke($item.Handler)
+                        }
                     }
-                }
-                catch {
-                    "$($item.Pool) runspace failed to load: $($_.Exception.InnerException.Message)"
-                }
+                    catch {
+                        "$($item.Pool) runspace failed to load: $($_.Exception.InnerException.Message)"
+                    }
 
                     Close-PodeDisposable -Disposable $item.Pipeline
                     $item.Stopped = $true
@@ -689,7 +696,8 @@ function Close-PodeRunspaces {
 
         # garbage collect
         [GC]::Collect()
-    } catch {
+    }
+    catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
     }
@@ -782,7 +790,8 @@ function Close-PodeServerInternal {
         Write-Verbose 'Diposing mutex and semaphores'
         Clear-PodeMutexes
         Clear-PodeSemaphores
-    } catch {
+    }
+    catch {
         $_ | Out-Default
     }
 
@@ -827,7 +836,8 @@ function New-PodePSDrive {
     # create the temp drive
     if (!(Test-PodePSDrive -Name $Name -Path $Path)) {
         $drive = (New-PSDrive -Name $Name -PSProvider FileSystem -Root $Path -Scope Global -ErrorAction Stop)
-    } else {
+    }
+    else {
         $drive = Get-PodePSDrive -Name $Name
     }
 
@@ -934,10 +944,9 @@ function Join-PodeServerRoot {
     return [System.IO.Path]::Combine($Root, $Folder, $FilePath)
 }
 
-function Remove-PodeEmptyItemsFromArray
-{
+function Remove-PodeEmptyItemsFromArray {
     param(
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         $Array
     )
 
@@ -945,13 +954,12 @@ function Remove-PodeEmptyItemsFromArray
         return @()
     }
 
-    return @(@($Array -ne ([string]::Empty)) -ne $null)
+    return @($null -ne @($Array -ne ([string]::Empty)))
 }
 
-function Remove-PodeNullKeysFromHashtable
-{
+function Remove-PodeNullKeysFromHashtable {
     param(
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $Hashtable
     )
@@ -1343,7 +1351,8 @@ function ConvertTo-PodeResponseContent {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-Json -InputObject $InputObject -Compress)
-                } else {
+                }
+                else {
                     return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
                 }
             }
@@ -1375,7 +1384,8 @@ function ConvertTo-PodeResponseContent {
 
                 if (Test-PodeIsPSCore) {
                     $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -IncludeTypeInformation:$false)
-                } else {
+                }
+                else {
                     $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -NoTypeInformation)
                 }
 
@@ -1448,7 +1458,8 @@ function ConvertFrom-PodeRequestContent {
                     $Content = $Request.RawBody
                 }
             }
-        } else {
+        }
+        else {
             # if the request is compressed, attempt to uncompress it
             if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
                 # create a compressed stream to decompress the req bytes
@@ -1459,7 +1470,8 @@ function ConvertFrom-PodeRequestContent {
 
                 # read the decompressed bytes
                 $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Request.ContentEncoding
-            } else {
+            }
+            else {
                 $Content = $Request.Body
             }
         }
@@ -1484,13 +1496,10 @@ function ConvertFrom-PodeRequestContent {
         { $_ -ilike '*/json' } {
             if (Test-PodeIsPSCore) {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
-            } else {
+            }
+            else {
                 $Result.Data = ($Content | ConvertFrom-Json)
             }
-        }
-
-        { $_ -ilike '*/yaml' } {
-            $Result.Data = ($Content | ConvertFrom-PodeYamlInternal)
         }
 
         { $_ -ilike '*/xml' } {
@@ -1521,7 +1530,8 @@ function ConvertFrom-PodeRequestContent {
                 }
 
                 $form = [PodeForm]::Parse($Content, $WebEvent.ContentType, [System.Text.Encoding]::UTF8)
-            } else {
+            }
+            else {
                 $Request.ParseFormData()
                 $form = $Request.Form
             }
@@ -1534,7 +1544,8 @@ function ConvertFrom-PodeRequestContent {
             foreach ($item in $form.Data) {
                 if ($item.IsSingular) {
                     $Result.Data.Add($item.Key, $item.Values[0])
-                } else {
+                }
+                else {
                     $Result.Data.Add($item.Key, $item.Values)
                 }
             }
@@ -1619,7 +1630,8 @@ function Test-PodePathAccess {
 
     try {
         $null = Get-Item $Path
-    } catch [System.UnauthorizedAccessException] {
+    }
+    catch [System.UnauthorizedAccessException] {
         return $false
     }
 
@@ -1837,7 +1849,8 @@ function Get-PodeModuleDetails {
         if (($usedModule | Measure-Object).Count -eq 1) {
             return (Convert-PodeModuleDetails -Module $usedModule)
         }
-    } catch {
+    }
+    catch {
     }
 
     # if there were multiple to begin with, use the newest version
@@ -2430,7 +2443,8 @@ function Convert-PodeScopedVariables {
     if ($null -eq $ScriptBlock) {
         if (($null -ne $Skip) -and ($Skip -icontains 'Using')) {
             return $ScriptBlock
-        } else {
+        }
+        else {
             return @($ScriptBlock, $null)
         }
     }
@@ -2456,7 +2470,8 @@ function Convert-PodeScopedVariables {
     # return
     if (($null -ne $Skip) -and ($Skip -icontains 'Using')) {
         return $ScriptBlock
-    } else {
+    }
+    else {
         return @($ScriptBlock, $usingVars)
     }
 }
@@ -2894,7 +2909,8 @@ function Use-PodeFolder {
     # use default, or custom path
     if ([string]::IsNullOrWhiteSpace($Path)) {
         $Path = Join-PodeServerRoot -Folder $DefaultPath
-    } else {
+    }
+    else {
         $Path = Get-PodeRelativePath -Path $Path -JoinRoot
     }
 
@@ -2940,7 +2956,8 @@ function Find-PodeModuleFile {
         # if we only want a psd1, return null
         if ($DataOnly) {
             $path = $null
-        } else {
+        }
+        else {
             $path = $Module.Path
         }
     }
@@ -2953,7 +2970,8 @@ function Find-PodeModuleFile {
         if (![version]::TryParse($data.ModuleVersion, [ref]$version)) {
             if ($DataOnly) {
                 $path = $null
-            } else {
+            }
+            else {
                 $path = $Module.Path
             }
         }
@@ -3139,7 +3157,6 @@ function Test-PodePlaceholders {
 
     return ($Path -imatch $Placeholder)
 }
-
 
 
 
