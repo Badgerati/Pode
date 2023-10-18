@@ -701,11 +701,17 @@ function New-PodeOARequestBody {
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'schema' {
-            return @{
-                required = $Required.IsPresent
-                description = $Description
-                content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+            $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas }
+
+            if ($Required.IsPresent) {
+                $param['required'] = $Required.ToBool()
             }
+
+            if ( $Description) {
+                $param['description'] = $Description
+            }
+
+            return $param
         }
 
         'reference' {
@@ -889,12 +895,17 @@ function Add-PodeOAComponentRequestBody {
         [switch]
         $Required
     )
+    $param = @{ content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema) }
 
-    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = @{
-        required = $Required.IsPresent
-        description = $Description
-        content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema)
+    if ($Required.IsPresent) {
+        $param['required'] = $Required.ToBool()
     }
+
+    if ( $Description) {
+        $param['description'] = $Description
+    }
+
+    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = $param
 }
 
 <#
@@ -913,9 +924,8 @@ The Parameter to use for the component (from ConvertTo-PodeOAParameter)
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add-PodeOAComponentParameter -Name 'UserIdParam'
 #>
-function Add-PodeOAComponentParameter
-{
-    [CmdletBinding()]
+function Add-PodeOAComponentParameter {
+    [CmdletBinding( )]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2277,9 +2287,8 @@ If supplied, controls the XML serialization behavior
 .EXAMPLE
 New-PodeOASchemaProperty -Name 'Config' -ComponentSchema "MyConfigSchema"
 #>
-function New-PodeOASchemaProperty
-{
-    [CmdletBinding()]
+function New-PodeOASchemaProperty {
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
         [Parameter(ValueFromPipeline = $true )]
@@ -2474,11 +2483,11 @@ ConvertTo-PodeOAParameter -Reference 'UserIdParam'
 ConvertTo-PodeOAParameter  -In Header -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
 
 #>
-function ConvertTo-PodeOAParameter
-{
-    [CmdletBinding(DefaultParameterSetName='Reference')]
+function ConvertTo-PodeOAParameter {
+    [CmdletBinding(DefaultParameterSetName = 'Reference')]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName='Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
         [string]
         $In,
@@ -2695,7 +2704,6 @@ function Set-PodeOARouteInfo {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
         $Route,
@@ -2782,12 +2790,12 @@ Enable-PodeOpenApiViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-u
 Enable-PodeOpenApiViewer -Type Bookmarks
 
 Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
-#> 
+#>
 function Enable-PodeOpenApiViewer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('Swagger', 'ReDoc')]
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Swagger', 'ReDoc', 'RapiDoc', 'StopLight', 'Explorer', 'RapiPdf', 'Bookmarks')]
         [string]
         $Type,
 

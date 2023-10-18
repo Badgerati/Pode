@@ -420,10 +420,6 @@ function Get-PodeOpenApiDefinitionInternal {
 
         foreach ($authName in $PodeContext.Server.Authentications.Methods.Keys) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
-            if ([string]::IsNullOrWhiteSpace($authType)) {
-                continue
-            }
-
             $_authName = ($authName -replace '\s+', '')
 
             $_authObj = @{}
@@ -435,7 +431,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
             } else {
                 $_authObj = @{
-                    type   = $authType.Scheme.ToLowerInvariant() 
+                    type   = $authType.Scheme.ToLowerInvariant()
                     scheme = $authType.Name.ToLowerInvariant()
                 }
             }
@@ -686,4 +682,4 @@ function Resolve-References ($obj, $schemas) {
             }
         }
     }
-}
+} 
