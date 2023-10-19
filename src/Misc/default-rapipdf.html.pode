@@ -56,11 +56,11 @@
                     <th>Value</th>
                 </tr>
                 <tr>
-                    <td>Color used for headings of main sections in PDF</td>
+                    <td>Colour used for headings of main sections in PDF</td>
                     <td><input type="color" id="pdf-primary-color" name="pdf-primary-color" value="#b44646"></td>
                 </tr>
                 <tr>
-                    <td>Color used for sub headings</td>
+                    <td>Colour used for sub-headings</td>
                     <td><input type="color" id="pdf-alternate-color" name="pdf-alternate-color" value="#005b96"></td>
                 </tr>
                 <tr>
@@ -107,7 +107,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Include OpenAPI-specified examples in the generated PDF?</td>
+                    <td>Include OpenAPI specified examples in the generated PDF?</td>
                     <td class="checkbox-label">
                         <input type="checkbox" id="include-example" name="include-example" value="true">
                         <label for="include-example">Yes</label>
@@ -117,7 +117,7 @@
         </form>
 
         <div class="rapipdf-container">
-            <rapi-pdf id="rapipdf" style="width:700px; height:40px; font-size:18px;" spec-url='$($data.OpenApi)'  
+            <rapi-pdf id="rapipdf" style="width:700px; height:40px; font-size:18px;" spec-url='$($data.OpenApi)'
                 hide-input="true"></rapi-pdf>
         </div>
     </div>

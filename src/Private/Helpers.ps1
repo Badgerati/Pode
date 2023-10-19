@@ -942,7 +942,7 @@ function Remove-PodeEmptyItemsFromArray {
         return @()
     }
 
-    return @($null -ne @($Array -ne ([string]::Empty)))
+    return @( @($Array -ne ([string]::Empty)) -ne $null )
 }
 
 function Remove-PodeNullKeysFromHashtable {

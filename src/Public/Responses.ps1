@@ -656,6 +656,9 @@ The Depth to generate the JSON document - the larger this value the worse perfor
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER NoCompress
+The JSON document is not compressed (Human readable form)
+
 .EXAMPLE
 Write-PodeJsonResponse -Value '{"name": "Rick"}'
 
@@ -697,13 +700,11 @@ function Write-PodeJsonResponse {
         }
 
         'value' {
-            # Determine whether to use compression
-            $compress = -not $NoCompress
             if ($Value -isnot [string]) {
                 if ($Depth -le 0) {
-                    $Value = (ConvertTo-Json -InputObject $Value -Compress:$compress)
+                    $Value = (ConvertTo-Json -InputObject $Value -Compress:(!$NoCompress))
                 } else {
-                    $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress:$compress)
+                    $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress:(!$NoCompress))
                 }
             }
         }
