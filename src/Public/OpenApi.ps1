@@ -275,7 +275,7 @@ function Get-PodeOpenApiDefinition {
             return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress
         }
         'Yaml' {
-            return ConvertTo-PodeYamlInternal -InputObject $oApi -Depth 10 -NoNewLine
+            return ConvertTo-PodeYaml -InputObject $oApi -Depth 10
         }
         Default {
             return $oApi

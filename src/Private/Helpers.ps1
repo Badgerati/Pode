@@ -3148,6 +3148,9 @@ function Test-PodePlaceholders {
 
 
 
+
+
+
 <#
 .SYNOPSIS
 creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
@@ -3157,14 +3160,27 @@ This produces YAML from any object you pass to it. It isn't suitable for the hug
 the object that you want scripted out
 .PARAMETER Depth
 The depth that you want your object scripted to
-.PARAMETER Nesting Level
-internal use only. required for formatting
-.PARAMETER NoNewLine
-avoid to create a new line
-
 .EXAMPLE
 Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
 #>
+
+function ConvertTo-PodeYaml {
+    [OutputType('System.String')]
+
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        $InputObject,
+        [parameter() ]
+        [int]$Depth = 16)
+    if ( Test-PodeModuleInstalled -Name 'psyml') {
+        return ConvertTo-Yaml -InputObject $InputObject
+    } else {
+        return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+    }
+}
+
 function ConvertTo-PodeYamlInternal {
 
     [OutputType('System.String')]
@@ -3179,10 +3195,9 @@ function ConvertTo-PodeYamlInternal {
         [parameter(Position = 2, Mandatory = $false, ValueFromPipeline = $false)]
         [int]$NestingLevel = 0,
         [parameter(Position = 3, Mandatory = $false, ValueFromPipeline = $false)]
-        [int]$XMLAsInnerXML = 0,
-        [parameter(Position = 4, Mandatory = $false, ValueFromPipeline = $false)]
         [switch] $NoNewLine
     )
+
     # if it is null return null
     If ( !($InputObject) ) {
         if ($InputObject -is [Object[]]) {

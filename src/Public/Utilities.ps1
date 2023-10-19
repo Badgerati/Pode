@@ -1092,33 +1092,3 @@ function New-PodeCron {
     # build and return
     return "$($cron.Minute) $($cron.Hour) $($cron.Date) $($cron.Month) $($cron.Day)"
 }
-
-<#
-.SYNOPSIS
-creates a YAML description of the data in the object
-.DESCRIPTION
-This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
-.PARAMETER Object
-the object that you want scripted out
-.PARAMETER Depth
-The depth that you want your object scripted to
-.PARAMETER Nesting Level
-internal use only. required for formatting
-.EXAMPLE
-$array=@()
-$array+=Get-Process wi* |  Select-Object Handles,NPM,PM,WS,VM,CPU,Id,ProcessName
-ConvertTo-PodeYaml $array
-#>
-function ConvertTo-PodeYaml {
-    [OutputType('System.String')]
-
-    [CmdletBinding()]
-    param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-        [AllowNull()]
-        $InputObject,
-        [parameter() ]
-        [int]$Depth = 16)
-
-    return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
-}
