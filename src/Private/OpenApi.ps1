@@ -207,7 +207,7 @@ function ConvertTo-PodeOAofProperty {
                     }
                     $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
                 } else {
-                    $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty
+                    $schema[$Property.type ] +=  $prop | ConvertTo-PodeOASchemaProperty
                 }
             }
         }
@@ -227,7 +227,7 @@ function ConvertTo-PodeOASchemaProperty {
         [switch]
         $NoDescription
     )
-    if ( @('allOf', 'oneOf', 'anyOf') -contains $Property.type  ) {
+    if ( @('allof', 'oneof', 'anyof') -icontains $Property.type  ) {
         $schema = ConvertTo-PodeOAofProperty -Property $Property
     } else {
         # base schema type
@@ -388,14 +388,14 @@ function Get-PodeOpenApiDefinitionInternal {
     }
 
     #overwite default values
-    if ($MetaInfo.Title){
-        $def.info.title=$MetaInfo.Title
+    if ($MetaInfo.Title) {
+        $def.info.title = $MetaInfo.Title
     }
-    if ($MetaInfo.Version){
-        $def.info.version=$MetaInfo.Version
+    if ($MetaInfo.Version) {
+        $def.info.version = $MetaInfo.Version
     }
-    if ($MetaInfo.Description){
-        $def.info.description=$MetaInfo.Description
+    if ($MetaInfo.Description) {
+        $def.info.description = $MetaInfo.Description
     }
 
     if ($PodeContext.Server.OpenAPI.externalDocs) {
@@ -670,20 +670,38 @@ function Set-PodeOAGlobalAuth {
     }
 }
 
-function Resolve-PodeOAReferences  {
+function Resolve-PodeOAReferences {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $ComponentSchema
     )
-    $Schemas=   $PodeContext.Server.OpenAPI.components.schemas
+    $Schemas = $PodeContext.Server.OpenAPI.components.schemas
     $Keys = @()
-    foreach ($item in $ComponentSchema.properties.Keys) {
-        $Keys += $item
+
+    if ($ComponentSchema.properties) {
+        foreach ($item in $ComponentSchema.properties.Keys) {
+            $Keys += $item
+        }
+    } else {
+        foreach ($item in $ComponentSchema.Keys) {
+            if ( @('allof', 'oneof', 'anyof') -icontains $item ) {
+                $Keys += $item
+            }
+        }
     }
     foreach ($key in $Keys) {
-        if ($ComponentSchema.properties[$key].type -eq 'object') {
-            Resolve-PodeOAReferences -ObjectSchema $ComponentSchema.properties[$key].properties
+        if ( @('allof', 'oneof', 'anyof') -icontains $key ) {
+            foreach ( $offKey in $ComponentSchema[$key].Keys) {
+                if ($offKey -eq '$ref') {
+                    #to be done
+                } elseif ($offKey -eq 'properties') {
+                    Resolve-PodeOAReferences -ComponentSchema $ComponentSchema[$key].properties
+                }
+
+            }
+        } elseif ($ComponentSchema.properties[$key].type -eq 'object') {
+            Resolve-PodeOAReferences -ComponentSchema $ComponentSchema.properties[$key].properties
         } elseif ($ComponentSchema.properties[$key].'$ref') {
             if (($ComponentSchema.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
                 $refName = ($ComponentSchema.properties[$key].'$ref') -replace '#/components/schemas/', ''

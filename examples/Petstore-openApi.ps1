@@ -42,7 +42,7 @@ Some useful links:
 
     Add-PodeOpenApiServerEndpoint -url '/api/v3' -Description 'default endpoint'
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs' -OpenApiVersion '3.0.3' 
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs' -OpenApiVersion '3.0.3'
     Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger' -DarkMode
     # or ReDoc at the default "/redoc"
     Enable-PodeOpenApiViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
@@ -59,24 +59,44 @@ Some useful links:
     Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
     Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc 'SwaggerDocs'
 
-    Add-PodeOAComponentSchema -Name 'Address' -Schema (
+    <#   Add-PodeOAComponentSchema -Name 'Address' -Schema (
         New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Description 'Shipping Address' -Properties (
             New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
                 New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
                 New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
                 New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required
-        ))
+        ))#>
 
-    Add-PodeOAComponentSchema -Name 'Order' -Schema (
-        New-PodeOAObjectProperty -Name 'Order' -Xml @{'name' = 'order' } -Properties (
-            New-PodeOAIntProperty -Name 'id'-Format Int64 -ReadOnly -Example 10 |
-                New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 |
-                New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 |
-                New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
-                New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
-                New-PodeOABoolProperty -Name 'complete' |
-                New-PodeOASchemaProperty -Name 'Address' -ComponentSchema 'Address'
-        ))
+
+    New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+        New-PodeOAObjectProperty -Name 'User' -Xml @{'name' = 'user' } -Properties  (
+            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
+                New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required ) |
+            New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
+            New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
+            New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+            New-PodeOAObjectProperty -Name 'test'   -PropertiesFromPipeline| Add-PodeOAComponentSchema -Name 'Test'
+
+
+
+    New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
+        New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
+        New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
+        New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
+        New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Description 'Shipping Address' -PropertiesFromPipeline |
+        Add-PodeOAComponentSchema -Name 'Address'
+
+
+    New-PodeOAIntProperty -Name 'id'-Format Int64 -ReadOnly -Example 10 |
+        New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 |
+        New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 |
+        New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
+        New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
+        New-PodeOABoolProperty -Name 'complete' |
+        New-PodeOASchemaProperty -Name 'Address' -ComponentSchema 'Address' |
+        New-PodeOAObjectProperty -Name 'Order' -Xml @{'name' = 'order' } -PropertiesFromPipeline |
+        Add-PodeOAComponentSchema -Name 'Order'
+
 
 
     Add-PodeOAComponentSchema -Name 'Category' -Schema (
@@ -126,17 +146,27 @@ Some useful links:
                         (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
         ))  #>
 
-    Add-PodeOAComponentSchema -Name 'Cat' -Schema (   New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -Properties (
+    <#    Add-PodeOAComponentSchema -Name 'Cat' -Schema (   New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -Properties (
             New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
-                New-PodeOAOfProperty  -Type AllOf -Schema @( 'Pet',
+                New-PodeOAOfProperty  -Type AllOf -Subschemas @( 'Pet',
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object)
                 )
         )
-    )
+    )#>
+
+
+    New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object |
+        New-PodeOAOfProperty  -Type AllOf  -Subschemas 'Pet' |
+        New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
+
+        New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -PropertiesFromPipeline | Add-PodeOAComponentSchema -Name 'Cat'
+
+
+
 
 
     Add-PodeOAComponentSchema -Name 'Dog' -Schema (
-        New-PodeOAOfProperty  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties (
+        New-PodeOAOfProperty  -Type AllOf -Subschemas @( 'Pet', ( New-PodeOAObjectProperty -Properties (
                     New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Dingo', 'Husky', 'Retriever', 'Shepherd') |
                         New-PodeOABoolProperty -Name 'bark'
                 ))
@@ -145,7 +175,9 @@ Some useful links:
 
 
     Add-PodeOAComponentSchema -Name 'Pets' -Schema (
-        New-PodeOAOfProperty  -Type OneOf -Schema @( 'Cat', 'Dog') -Discriminator 'petType')
+        New-PodeOAOfProperty  -Type OneOf -Subschemas @( 'Cat', 'Dog') -Discriminator 'petType')
+
+
     Add-PodeOAComponentSchema -Name 'ApiResponse' -Schema (
         New-PodeOAObjectProperty -Name 'ApiResponse' -Xml @{'name' = '##default' } -Properties  (
             New-PodeOAIntProperty -Name 'code'-Format Int32 |
@@ -153,6 +185,9 @@ Some useful links:
                 New-PodeOAStringProperty -Name 'message'
         )
     )
+
+
+
 
     Add-PodeOAComponentHeaderSchema -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
     Add-PodeOAComponentHeaderSchema -Name 'X-Expires-After' -Schema (New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires'  )

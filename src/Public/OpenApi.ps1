@@ -1072,7 +1072,7 @@ New-PodeOANumberProperty -Name 'age' -Required
 function New-PodeOAIntProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true )]
+        [Parameter(ValueFromPipeline = $true, DontShow )]
         [hashtable[]]
         $ParamsList,
 
@@ -1326,7 +1326,7 @@ New-PodeOANumberProperty -Name 'gravity' -Default 9.8
 function New-PodeOANumberProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true )]
+        [Parameter(ValueFromPipeline = $true, DontShow )]
         [hashtable[]]
         $ParamsList,
 
@@ -1584,7 +1584,7 @@ New-PodeOAStringProperty -Name 'password' -Format Password
 function New-PodeOAStringProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true )]
+        [Parameter(ValueFromPipeline = $true, DontShow )]
         [hashtable[]]
         $ParamsList,
 
@@ -1836,7 +1836,7 @@ function New-PodeOABoolProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true )]
+        [Parameter(ValueFromPipeline = $true, DontShow )]
         [hashtable[]]
         $ParamsList,
 
@@ -2046,7 +2046,7 @@ function New-PodeOAObjectProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true )]
+        [Parameter(ValueFromPipeline = $true, DontShow, Position = 0 )]
         [hashtable[]]
         $ParamsList,
 
@@ -2054,10 +2054,15 @@ function New-PodeOAObjectProperty {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+   #     [Parameter( Mandatory, ParameterSetName = 'Inbuilt')]
+ #       [Parameter( Mandatory, ParameterSetName = 'Array')]
         [hashtable[]]
         $Properties,
+
+  #      [Parameter(  ParameterSetName = 'Inbuilt_Pipeline')]
+#        [Parameter(  ParameterSetName = 'Array_Pipeline')]
+        [switch]
+        $PropertiesFromPipeline,
 
         [Parameter()]
         [string]
@@ -2088,19 +2093,23 @@ function New-PodeOAObjectProperty {
         [int]
         $MaxProperties,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+        [Parameter(  Mandatory, ParameterSetName = 'Array')]
+  #      [Parameter(  Mandatory, ParameterSetName = 'Array_Pipeline')]
         [switch]
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
+    #    [Parameter(ParameterSetName = 'Array_Pipeline')]
         [switch]
         $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
+   #     [Parameter(ParameterSetName = 'Array_Pipeline')]
         [int]
         $MinItems,
 
-        [Parameter(ParameterSetName = 'Array')]
+      [Parameter(ParameterSetName = 'Array')]
+   #     [Parameter(ParameterSetName = 'Array_Pipeline')]
         [int]
         $MaxItems,
 
@@ -2109,11 +2118,17 @@ function New-PodeOAObjectProperty {
     )
     begin {
         $param = @{
-            name       = $Name
-            type       = 'object'
-            properties = $Properties
-            meta       = @{}
+            name = $Name
+            type = 'object'
+            meta = @{}
         }
+
+        if ($Properties) {
+            $param.properties = $Properties
+        } else {
+            $param.properties = @()
+        }
+
         if ($Description ) {
             $param.description = $Description
         }
@@ -2178,12 +2193,19 @@ function New-PodeOAObjectProperty {
     }
     process {
         if ($ParamsList) {
-            $collectedInput.AddRange($ParamsList)
+            if ($PropertiesFromPipeline) {
+                $param.properties += $ParamsList
+
+            } else {
+                $collectedInput.AddRange($ParamsList)
+            }
         }
     }
 
     end {
-        if ($collectedInput) {
+        if ($PropertiesFromPipeline) {
+            return $param
+        } elseif ($collectedInput) {
             $collectedInput + $param
         } else {
             return $param
@@ -2227,7 +2249,7 @@ function New-PodeOAOfProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true )]
+        [Parameter(ValueFromPipeline = $true, DontShow )]
         [hashtable[]]
         $ParamsList,
 
@@ -2238,7 +2260,7 @@ function New-PodeOAOfProperty {
 
         [Parameter()]
         [System.Object[]]
-        $Schemas,
+        $Subschemas,
 
         [Parameter()]
         [string]
@@ -2257,30 +2279,34 @@ function New-PodeOAOfProperty {
                 $param.type = 'allOf'
             }
         }
-        if ($Properties) {
-            $param.properties = $Properties
+
+        if ($Subschemas) {
+            foreach ($schema in $Subschemas) {
+                if ($schema -is [System.Object[]]) {
+                    throw 'Multiple properties have to be part of an object or oneOf, anyOf, allOf.'
+                }
+            }
+            $param.schemas = $Subschemas
+        } else {
+            $param.schemas = @()
         }
-        if ($Schemas) {
-            $param.schemas = $Schemas
-        }
+
         if ($Discriminator ) {
             $param.discriminator = $Discriminator
         }
 
-        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
-            $collectedInput.AddRange($ParamsList)
+            if ($ParamsList.Count -gt 1 ) {
+                throw 'Multiple properties have to be part of an object or oneOf, anyOf, allOf.'
+            }
+            $param.schemas += $ParamsList
         }
     }
 
     end {
-        if ($collectedInput) {
-            $collectedInput + $param
-        } else {
-            return $param
-        }
+        return $param
     }
 }
 
@@ -2348,7 +2374,7 @@ function New-PodeOASchemaProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true )]
+        [Parameter(ValueFromPipeline = $true, DontShow )]
         [hashtable[]]
         $ParamsList,
 
