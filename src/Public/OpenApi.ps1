@@ -118,11 +118,12 @@ function Enable-PodeOpenApi {
     # initialise openapi info
     $PodeContext.Server.OpenAPI.Version = $OpenApiVersion
     $PodeContext.Server.OpenAPI.Path = $Path
+
     $meta = @{
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes
-        NoCompress     = ($MarkupLanguage -eq 'Json')
-        Mode           = (($Mode -eq 'Json-Compress')?'Json':$Mode)
+        NoCompress     = ($MarkupLanguage -ieq 'Json')
+        Mode           = $Mode
         MarkupLanguage = $MarkupLanguage
     }
     $PodeContext.Server.OpenAPI.info = @{
@@ -145,56 +146,59 @@ function Enable-PodeOpenApi {
         $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
     }
 
-    $openApiCreationScript = @'
-    param($meta)
-    $format = $WebEvent.Query['format']
-    $mode = $WebEvent.Query['mode']
+    $openApiCreationScriptBlock = {
+        param($meta)
+        $format = $WebEvent.Query['format']
+        $mode = $WebEvent.Query['mode']
 
-    if (!$mode) {
-        $mode = $meta.Mode
-    } elseif (@('download', 'view') -notcontains $mode) {
-        Write-PodeHtmlResponse -Value "Mode $mode not valid" -StatusCode 400
-    }
-    if (($mode -eq 'download')  ) {
-        #      Add-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=openapi.$format"
-        Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "attachment; filename=openapi.$format"
-    }
-
-    # generate the openapi definition
-    $def = Get-PodeOpenApiDefinitionInternal `
-        -Protocol $WebEvent.Endpoint.Protocol `
-        -Address $WebEvent.Endpoint.Address `
-        -EndpointName $WebEvent.Endpoint.Name `
-        -MetaInfo $meta
-
-    if ($WebEvent.path.EndsWith('.json')) {
-        if($format){
-            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"
+        if (!$mode) {
+            $mode = $meta.Mode
+        } elseif (@('download', 'view') -inotcontains $mode) {
+            Write-PodeHtmlResponse -Value "Mode $mode not valid" -StatusCode 400
             return
         }
-        $format = 'json'
-    } elseif ($WebEvent.path.EndsWith('.yaml')) {
-        if($format){
-            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format query not valid on this path"
+        if ($WebEvent.path -ilike '*.json') {
+            if ($format) {
+                Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description 'Format query not valid when the file extension is used'
+                return
+            }
+            $format = 'json'
+        } elseif ($WebEvent.path -ilike '*.yaml') {
+            if ($format) {
+                Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description 'Format query not valid when the file extension is used'
+                return
+            }
+            $format = 'yaml'
+        } elseif (!$format) {
+            $format = $meta.MarkupLanguage.ToLower()
+        } elseif (@('yaml', 'json') -inotcontains $format) {
+            Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"
             return
         }
-        $format = 'yaml'
-    } elseif (!$format) {
-        $format =  $meta.MarkupLanguage.ToLower()
-    } elseif (@('yaml', 'json') -notcontains $format) {
-        Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"
-        #  Write-PodeHtmlResponse -Value "Format $format not valid" -StatusCode 400
-        return
-    }
-    # write the openapi definition
-    if ($format -eq 'yaml') {
-        Write-PodeYamlResponse -Value $def
-    } else {
-        Write-PodeJsonResponse -Value $def -Depth 20 -NoCompress:$meta.NoCompress
-    }
-'@
 
-    $openApiCreationScriptBlock = [ScriptBlock]::Create( $openApiCreationScript )
+        if (($mode -ieq 'download')  ) {
+            # Set-PodeResponseAttachment -Path
+            Add-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=openapi.$format"
+        }
+
+        # generate the openapi definition
+        $def = Get-PodeOpenApiDefinitionInternal `
+            -Protocol $WebEvent.Endpoint.Protocol `
+            -Address $WebEvent.Endpoint.Address `
+            -EndpointName $WebEvent.Endpoint.Name `
+            -MetaInfo $meta
+
+        # write the openapi definition
+        if ($format -ieq 'yaml') {
+            if ($mode -ieq 'view') {
+                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth 10) -ContentType 'text/x-yaml; charset=utf-8'
+            } else {
+                Write-PodeYamlResponse -Value $def -depth 10
+            }
+        } else {
+            Write-PodeJsonResponse -Value $def -depth 10 -NoCompress:$meta.NoCompress
+        }
+    }
 
     # add the OpenAPI route
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
@@ -252,8 +256,23 @@ Gets the OpenAPI definition.
 .DESCRIPTION
 Gets the OpenAPI definition for custom use in routes, or other functions.
 
-.PARAMETER Json
-Return the definition in JSON format
+.PARAMETER Format
+Return the definition  in a specific format 'Json', 'Json-Compress', 'Yaml', 'HashTable'
+
+.PARAMETER Title
+The Title of the API. (Default: the title supplied in Enable-PodeOpenApi)
+
+.PARAMETER Version
+The Version of the API. (Default: the version supplied in Enable-PodeOpenApi)
+
+.PARAMETER Description
+A Description of the API. (Default: the description supplied into Enable-PodeOpenApi)
+
+.PARAMETER RouteFilter
+An optional route filter for routes that should be included in the definition. (Default: /*)
+
+.PARAMETER RestrictRoutes
+If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
 
 .EXAMPLE
 $defInJson = Get-PodeOpenApiDefinition -Json
@@ -264,9 +283,54 @@ function Get-PodeOpenApiDefinition {
         [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml', 'HashTable')]
         [string]
-        $format
+        $Format = 'HashTable',
+
+        [Parameter()]
+        [string]
+        $Title,
+
+        [Parameter()]
+        [string]
+        $Version,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $RouteFilter = '/*',
+
+        [Parameter()]
+        [switch]
+        $RestrictRoutes
     )
-    $oApi = Get-PodeOpenApiDefinitionInternal
+
+    $meta = @{
+        RouteFilter    = $RouteFilter
+        RestrictRoutes = $RestrictRoutes
+    }
+    if ($RestrictRoutes) {
+        $meta = @{
+            RouteFilter    = $RouteFilter
+            RestrictRoutes = $RestrictRoutes
+        }
+    } else {
+        $meta = @{}
+    }
+    if ($Title) {
+        $meta.Title = $Title
+    }
+    if ($Version) {
+        $meta.Version = $Version
+    }
+    if ($Description) {
+        $meta.Description = $Description
+    }
+
+    $oApi = Get-PodeOpenApiDefinitionInternal  -MetaInfo $meta
+
     switch ($Format) {
         'Json' {
             return ConvertTo-Json -InputObject $oApi -Depth 10
@@ -405,7 +469,7 @@ function Add-PodeOAResponse {
 
             # build any header schemas
             $headers = $null
-            if ($HeaderSchemas -is [System.Object[]]) {
+            if ($HeaderSchemas -is [System.Object[]] -or $HeaderSchemas -is [string]) {
                 if ($null -ne $HeaderSchemas) {
                     $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray
                 }
@@ -578,8 +642,8 @@ function Add-PodeOAComponentResponse {
     if ($null -ne $ContentSchemas) {
         $r.content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray
     }
-
-    if ($HeaderSchemas -is [System.Object[]]) {
+    #if HeaderSchemas is string or string[]
+    if ($HeaderSchemas -is [System.Object[]] -or $HeaderSchemas -is [string]) {
         if ($null -ne $HeaderSchemas) {
             $r.headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray
         }
@@ -752,17 +816,10 @@ function Add-PodeOAComponentSchema {
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
-        $Schema
-
+        $Schema 
     )
-
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
-
-    $json = $PodeContext.Server.OpenAPI.components.schemas[$Name] | ConvertTo-Json -Depth 20 -Compress
-    $obj = ConvertFrom-Json $json -AsHashtable
-    Resolve-References -obj $obj -schemas $PodeContext.Server.OpenAPI.components.schemas
-
-    $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = $obj | ConvertTo-Json -Depth 20
+    $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
 }
 
 
@@ -2367,7 +2424,7 @@ function New-PodeOASchemaProperty {
             schema = $ComponentSchema
             meta   = @{}
         }
-        if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'array') {
+        if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -ieq 'array') {
             if ($Description ) {
                 $param.description = $Description
             }
@@ -2602,25 +2659,25 @@ function ConvertTo-PodeOAParameter {
         if ($Style) {
             switch ($in) {
                 'Path' {
-                    if (@('Simple', 'Label', 'Matrix' ) -notcontains $Style) {
+                    if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     }
                     break
                 }
                 'Query' {
-                    if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -notcontains $Style) {
+                    if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     }
                     break
                 }
                 'Header' {
-                    if (@('Simple' ) -notcontains $Style) {
+                    if (@('Simple' ) -inotcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     }
                     break
                 }
                 'Cookie' {
-                    if (@('Form' ) -notcontains $Style) {
+                    if (@('Form' ) -inotcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     }
                     break
@@ -2654,13 +2711,13 @@ function ConvertTo-PodeOAParameter {
             }
         }
 
-        if ($In -eq 'Path') {
+        if ($In -ieq 'Path') {
             $prop['required'] = $true
         } elseif ($Property.required ) {
             $prop['required'] = $Property.required
         }
         # remove default for required parameter
-        if (!$Property.required -and $PSCmdlet.ParameterSetName -ne 'ContentSchemas') {
+        if (!$Property.required -and $PSCmdlet.ParameterSetName -ine 'ContentSchemas') {
             if ( $prop.ContainsKey('schema') -and $Property.default) {
                 $prop.schema['default'] = $Property.default
             }
@@ -2837,7 +2894,7 @@ function Enable-PodeOpenApiViewer {
         throw "No route path supplied for $($Type) page"
     }
 
-    if ($Type -eq 'Bookmarks') {
+    if ($Type -ieq 'Bookmarks') {
         # add the viewer route
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
@@ -2881,11 +2938,12 @@ function Enable-PodeOpenApiViewer {
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
             $podeRoot = Get-PodeModuleMiscPath
+            if ( $meta.DarkMode) { $Theme = 'dark' }else { $Theme = 'light' }
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
                 Title    = $meta.Title
                 OpenApi  = $meta.OpenApi
                 DarkMode = $meta.DarkMode
-                Theme    = (($meta.DarkMode)?'dark':'light')
+                Theme    = $Theme
             }
         }
     }

@@ -827,12 +827,12 @@ function Write-PodeYamlResponse {
         [ValidatePattern('^\w+\/[\w\.\+-]+$')]
         [ValidateNotNullOrEmpty()]
         [string]
-        $ContentType = 'application/yaml',
+        $ContentType = 'application/x-yaml',
 
 
         [Parameter(ParameterSetName = 'Value')]
         [int]
-        $Depth = 20,
+        $Depth = 10,
 
         [Parameter()]
         [int]

@@ -3146,11 +3146,6 @@ function Test-PodePlaceholders {
     return ($Path -imatch $Placeholder)
 }
 
-
-
-
-
-
 <#
 .SYNOPSIS
 creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml

@@ -386,6 +386,18 @@ function Get-PodeOpenApiDefinitionInternal {
     if ($PodeContext.Server.OpenAPI.info) {
         $def['info'] = $PodeContext.Server.OpenAPI.info
     }
+
+    #overwite default values
+    if ($MetaInfo.Title){
+        $def.info.title=$MetaInfo.Title
+    }
+    if ($MetaInfo.Version){
+        $def.info.version=$MetaInfo.Version
+    }
+    if ($MetaInfo.Description){
+        $def.info.description=$MetaInfo.Description
+    }
+
     if ($PodeContext.Server.OpenAPI.externalDocs) {
         $def['externalDocs'] = $PodeContext.Server.OpenAPI.externalDocs
     }
@@ -658,28 +670,34 @@ function Set-PodeOAGlobalAuth {
     }
 }
 
-function Resolve-References ($obj, $schemas) {
+function Resolve-PodeOAReferences  {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [hashtable]
+        $ComponentSchema
+    )
+    $Schemas=   $PodeContext.Server.OpenAPI.components.schemas
     $Keys = @()
-    foreach ($item in $obj.properties.Keys) {
+    foreach ($item in $ComponentSchema.properties.Keys) {
         $Keys += $item
     }
     foreach ($key in $Keys) {
-        if ($obj.properties[$key].type -eq 'object') {
-            Resolve-References -obj $obj.properties[$key].properties -schemas $schemas
-        } elseif ($obj.properties[$key].'$ref') {
-            if (($obj.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
-                $refName = ($obj.properties[$key].'$ref') -replace '#/components/schemas/', ''
-                if ($schemas.ContainsKey($refName)) {
-                    $obj.properties[$key] = $schemas[$refName]
+        if ($ComponentSchema.properties[$key].type -eq 'object') {
+            Resolve-PodeOAReferences -ObjectSchema $ComponentSchema.properties[$key].properties
+        } elseif ($ComponentSchema.properties[$key].'$ref') {
+            if (($ComponentSchema.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
+                $refName = ($ComponentSchema.properties[$key].'$ref') -replace '#/components/schemas/', ''
+                if ($Schemas.ContainsKey($refName)) {
+                    $ComponentSchema.properties[$key] = $Schemas[$refName]
                 }
             }
-        } elseif ($obj.properties[$key].items -and $obj.properties[$key].items.'$ref' ) {
-            if (($obj.properties[$key].items.'$ref').StartsWith('#/components/schemas/')) {
-                $refName = ($obj.properties[$key].items.'$ref') -replace '#/components/schemas/', ''
-                if ($schemas.ContainsKey($refName)) {
-                    $obj.properties[$key].items = $schemas[$refName]
+        } elseif ($ComponentSchema.properties[$key].items -and $ComponentSchema.properties[$key].items.'$ref' ) {
+            if (($ComponentSchema.properties[$key].items.'$ref').StartsWith('#/components/schemas/')) {
+                $refName = ($ComponentSchema.properties[$key].items.'$ref') -replace '#/components/schemas/', ''
+                if ($Schemas.ContainsKey($refName)) {
+                    $ComponentSchema.properties[$key].items = $schemas[$refName]
                 }
             }
         }
     }
-} 
+}
