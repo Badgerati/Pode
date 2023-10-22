@@ -414,7 +414,7 @@ function Add-PodeOAResponse {
         [Parameter()]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
-        [ValidateScript({ $_ -is [string] -or $_ -is [hashtable] })]
+        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] })]
         $HeaderSchemas,
 
         [Parameter(ParameterSetName = 'Schema')]
@@ -469,7 +469,7 @@ function Add-PodeOAResponse {
 
             # build any header schemas
             $headers = $null
-            if ($HeaderSchemas -is [System.Object[]] -or $HeaderSchemas -is [string]) {
+            if ($HeaderSchemas -is [System.Object[]] -or $HeaderSchemas -is [string] -or $HeaderSchemas -is [string[]]) {
                 if ($null -ne $HeaderSchemas) {
                     $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray
                 }
@@ -622,7 +622,7 @@ function Add-PodeOAComponentResponse {
         [Parameter()]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
-        [ValidateScript({ $_ -is [string] -or $_ -is [hashtable] })]
+        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] })]
         $HeaderSchemas,
 
         [Parameter(Mandatory = $true)]
@@ -643,7 +643,7 @@ function Add-PodeOAComponentResponse {
         $r.content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray
     }
     #if HeaderSchemas is string or string[]
-    if ($HeaderSchemas -is [System.Object[]] -or $HeaderSchemas -is [string]) {
+    if ($HeaderSchemas -is [System.Object[]] -or $HeaderSchemas -is [string] -or $HeaderSchemas -is [string[]]) {
         if ($null -ne $HeaderSchemas) {
             $r.headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray
         }
@@ -2054,13 +2054,13 @@ function New-PodeOAObjectProperty {
         [string]
         $Name,
 
-   #     [Parameter( Mandatory, ParameterSetName = 'Inbuilt')]
- #       [Parameter( Mandatory, ParameterSetName = 'Array')]
+        #     [Parameter( Mandatory, ParameterSetName = 'Inbuilt')]
+        #       [Parameter( Mandatory, ParameterSetName = 'Array')]
         [hashtable[]]
         $Properties,
 
-  #      [Parameter(  ParameterSetName = 'Inbuilt_Pipeline')]
-#        [Parameter(  ParameterSetName = 'Array_Pipeline')]
+        #      [Parameter(  ParameterSetName = 'Inbuilt_Pipeline')]
+        #        [Parameter(  ParameterSetName = 'Array_Pipeline')]
         [switch]
         $PropertiesFromPipeline,
 
@@ -2094,22 +2094,22 @@ function New-PodeOAObjectProperty {
         $MaxProperties,
 
         [Parameter(  Mandatory, ParameterSetName = 'Array')]
-  #      [Parameter(  Mandatory, ParameterSetName = 'Array_Pipeline')]
+        #      [Parameter(  Mandatory, ParameterSetName = 'Array_Pipeline')]
         [switch]
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
-    #    [Parameter(ParameterSetName = 'Array_Pipeline')]
+        #    [Parameter(ParameterSetName = 'Array_Pipeline')]
         [switch]
         $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
-   #     [Parameter(ParameterSetName = 'Array_Pipeline')]
+        #     [Parameter(ParameterSetName = 'Array_Pipeline')]
         [int]
         $MinItems,
 
-      [Parameter(ParameterSetName = 'Array')]
-   #     [Parameter(ParameterSetName = 'Array_Pipeline')]
+        [Parameter(ParameterSetName = 'Array')]
+        #     [Parameter(ParameterSetName = 'Array_Pipeline')]
         [int]
         $MaxItems,
 
