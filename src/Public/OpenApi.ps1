@@ -331,14 +331,14 @@ function Get-PodeOpenApiDefinition {
 
     $oApi = Get-PodeOpenApiDefinitionInternal  -MetaInfo $meta
 
-    switch ($Format) {
-        'Json' {
+    switch ($Format.ToLower()) {
+        'json' {
             return ConvertTo-Json -InputObject $oApi -Depth 10
         }
-        'Json-Compress' {
+        'json-compress' {
             return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress
         }
-        'Yaml' {
+        'yaml' {
             return ConvertTo-PodeYaml -InputObject $oApi -Depth 10
         }
         Default {
@@ -816,7 +816,7 @@ function Add-PodeOAComponentSchema {
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
-        $Schema 
+        $Schema
     )
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
     $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
