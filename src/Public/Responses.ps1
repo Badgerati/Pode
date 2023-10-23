@@ -831,6 +831,7 @@ function Write-PodeYamlResponse {
 
 
         [Parameter(ParameterSetName = 'Value')]
+        [validate]
         [int]
         $Depth = 10,
 
@@ -848,10 +849,18 @@ function Write-PodeYamlResponse {
 
         'value' {
             if ($Value -isnot [string]) {
-                $Value = ConvertTo-PodeYaml -InputObject $Value -Depth $Depth
+                if ( $Depth -gt 0) {
+                    $Value = ConvertTo-PodeYaml -InputObject $Value -Depth $Depth
+                } else {
+                    $Value = ConvertTo-PodeYaml -InputObject $Value
+                }
             }
         }
     }
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        $Value = '[]'
+    }
+
 
     Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
 }

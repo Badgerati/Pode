@@ -428,7 +428,11 @@ function New-PodeContext {
             PermissionsPolicy = @{}
         }
     }
-
+    
+    # Yaml module caching
+    $ctx.Server.Cache = @{
+        YamlModuleImported = $null
+    }
     # return the new context
     return $ctx
 }

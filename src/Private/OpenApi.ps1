@@ -25,8 +25,9 @@ function ConvertTo-PodeOAContentTypeSchema {
 
 function ConvertTo-PodeOAHeaderSchema {
     param(
-        [Parameter(ValueFromPipeline = $true, Mandatory = $true, Position = 0)]
-        [string[]]$Schemas,
+        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [string[]]
+        $Schemas,
         [Parameter(ValueFromPipeline = $false)]
         [switch]
         $Array
@@ -36,7 +37,6 @@ function ConvertTo-PodeOAHeaderSchema {
     }
     process {
         # convert each schema to openapi format
-        #  return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas)
         foreach ($schema in $Schemas) {
             if ( !(Test-PodeOAComponentHeaderSchema -Name $schema)) {
                 throw "The OpenApi component schema doesn't exist: $schema"
@@ -190,33 +190,33 @@ function Test-PodeOAComponentParameter {
 }
 
 
-function ConvertTo-PodeOAofProperty {
+function ConvertTo-PodeOAOfProperty {
     param (
         [hashtable]
         $Property
     )
-    if ( @('allOf', 'oneOf', 'anyOf') -contains $Property.type  ) {
-        $schema = [ordered]@{
-            $Property.type = @()
-        }
-        if ($Property.schemas ) {
-            foreach ($prop in $Property.schemas ) {
-                if ($prop -is [string]) {
-                    if ( !(Test-PodeOAComponentSchema -Name $prop)) {
-                        throw "The OpenApi component schema doesn't exist: $prop"
-                    }
-                    $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
-                } else {
-                    $schema[$Property.type ] +=  $prop | ConvertTo-PodeOASchemaProperty
+    if ( @('allOf', 'oneOf', 'anyOf') -inotcontains $Property.type  ) {
+        return  @{}
+    }
+    $schema = [ordered]@{
+        $Property.type = @()
+    }
+    if ($Property.schemas ) {
+        foreach ($prop in $Property.schemas ) {
+            if ($prop -is [string]) {
+                if ( !(Test-PodeOAComponentSchema -Name $prop)) {
+                    throw "The OpenApi component schema doesn't exist: $prop"
                 }
+                $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
+            } else {
+                $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty
             }
         }
-        if ($Property.discriminator) {
-            $schema['discriminator'] = @{'propertyName' = $Property.discriminator }
-        }
-        return  $schema
     }
-    return  @{}
+    if ($Property.discriminator) {
+        $schema['discriminator'] = @{'propertyName' = $Property.discriminator }
+    }
+    return  $schema
 }
 
 function ConvertTo-PodeOASchemaProperty {
@@ -246,8 +246,8 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.deprecated) {
             $schema['deprecated'] = $Property.deprecated
         }
-        if ($param.xlmName ) {
-            $schema['xlm'] = @{ 'name' = $param.xlmName }
+        if ($param.xmlName ) {
+            $schema['xlm'] = @{ 'name' = $param.xmlName }
         }
 
         if ($null -ne $Property.meta) {
@@ -456,8 +456,11 @@ function Get-PodeOpenApiDefinitionInternal {
         }
     }
 
-
-    $filter = ($MetaInfo)?"^$($MetaInfo.RouteFilter)":''
+    if ($MetaInfo) {
+        $filter = "^$($MetaInfo.RouteFilter)"
+    } else {
+        $filter = ''
+    }
 
     foreach ($method in $PodeContext.Server.Routes.Keys) {
         foreach ($path in ($PodeContext.Server.Routes[$method].Keys | Sort-Object)) {

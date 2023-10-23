@@ -329,7 +329,7 @@ function Get-PodeOpenApiDefinition {
         $meta.Description = $Description
     }
 
-    $oApi = Get-PodeOpenApiDefinitionInternal  -MetaInfo $meta
+    $oApi = Get-PodeOpenApiDefinitionInternal  -MetaInfo $meta -EndpointName $WebEvent.Endpoint.Name
 
     switch ($Format.ToLower()) {
         'json' {
@@ -984,18 +984,21 @@ New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add
 function Add-PodeOAComponentParameter {
     [CmdletBinding( )]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter( )]
         [string]
         $Name,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
-        $Parameter,
-
-        [switch]
-        $AllowEmptyValue
+        $Parameter
     )
-
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        if ($Parameter.name) {
+            $Name = $Parameter.name
+        } else {
+            throw 'The Parameter as no name. Please provide a name to this component using -name property'
+        }
+    }
     $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
 }
 
@@ -1033,7 +1036,7 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
-.PARAMETER XlmName
+.PARAMETER XmlName
 By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
 
 .PARAMETER Required
@@ -1115,7 +1118,7 @@ function New-PodeOAIntProperty {
 
         [Parameter()]
         [string]
-        $XlmName,
+        $XmlName,
 
         [switch]
         $Required,
@@ -1220,8 +1223,8 @@ function New-PodeOAIntProperty {
             $param.enum = $Enum
         }
 
-        if ($XlmName) {
-            $param.xlmName = $XlmName
+        if ($XmlName) {
+            $param.xmlName = $XmlName
         }
 
         if ($Minimum -ne [int]::MinValue) {
@@ -1246,7 +1249,7 @@ function New-PodeOAIntProperty {
 
     end {
         if ($collectedInput) {
-            $collectedInput + $param
+            return $collectedInput + $param
         } else {
             return $param
         }
@@ -1287,7 +1290,7 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
-.PARAMETER XlmName
+.PARAMETER XmlName
 By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
 
 .PARAMETER Required
@@ -1369,7 +1372,7 @@ function New-PodeOANumberProperty {
 
         [Parameter()]
         [string]
-        $XlmName,
+        $XmlName,
 
         [switch]
         $Required,
@@ -1472,8 +1475,8 @@ function New-PodeOANumberProperty {
             $param.enum = $Enum
         }
 
-        if ($XlmName) {
-            $param.xlmName = $XlmName
+        if ($XmlName) {
+            $param.xmlName = $XmlName
         }
 
         if ($Minimum -ne [double]::MinValue) {
@@ -1498,7 +1501,7 @@ function New-PodeOANumberProperty {
 
     end {
         if ($collectedInput) {
-            $collectedInput + $param
+            return $collectedInput + $param
         } else {
             return $param
         }
@@ -1536,7 +1539,7 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
-.PARAMETER XlmName
+.PARAMETER XmlName
 By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
 
 .PARAMETER Required
@@ -1625,7 +1628,7 @@ function New-PodeOAStringProperty {
 
         [Parameter()]
         [string]
-        $XlmName,
+        $XmlName,
 
         [switch]
         $Required,
@@ -1742,8 +1745,8 @@ function New-PodeOAStringProperty {
             $param.enum = $Enum
         }
 
-        if ($XlmName) {
-            $param.xlmName = $XlmName
+        if ($XmlName) {
+            $param.xmlName = $XmlName
         }
 
         if ($Pattern) {
@@ -1767,7 +1770,7 @@ function New-PodeOAStringProperty {
 
     end {
         if ($collectedInput) {
-            $collectedInput + $param
+            return $collectedInput + $param
         } else {
             return $param
         }
@@ -1796,7 +1799,7 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
-.PARAMETER XlmName
+.PARAMETER XmlName
 By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
 
 .PARAMETER Required
@@ -1862,7 +1865,7 @@ function New-PodeOABoolProperty {
 
         [Parameter()]
         [string]
-        $XlmName,
+        $XmlName,
 
         [switch]
         $Required,
@@ -1961,8 +1964,8 @@ function New-PodeOABoolProperty {
             $param.enum = $Enum
         }
 
-        if ($XlmName) {
-            $param.xlmName = $XlmName
+        if ($XmlName) {
+            $param.xmlName = $XmlName
         }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -1974,7 +1977,7 @@ function New-PodeOABoolProperty {
 
     end {
         if ($collectedInput) {
-            $collectedInput + $param
+            return $collectedInput + $param
         } else {
             return $param
         }
@@ -2206,7 +2209,7 @@ function New-PodeOAObjectProperty {
         if ($PropertiesFromPipeline) {
             return $param
         } elseif ($collectedInput) {
-            $collectedInput + $param
+            return $collectedInput + $param
         } else {
             return $param
         }
@@ -2235,17 +2238,17 @@ When request bodies or response payloads may be one of a number of different sch
 The discriminator is a specific object in a schema which is used to inform the consumer of the specification of an alternative schema based on the value associated with it.
 
 .EXAMPLE
-Add-PodeOAComponentSchema -Name 'Pets' -Schema (  New-PodeOAOf  -Type OneOf -Schema @( 'Cat','Dog') -Discriminator "petType")
+Add-PodeOAComponentSchema -Name 'Pets' -Schema (  Merge-PodeOAOfProperty  -Type OneOf -Schema @( 'Cat','Dog') -Discriminator "petType")
 
 
 .EXAMPLE
 Add-PodeOAComponentSchema -Name 'Cat' -Schema (
-        New-PodeOAOf  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
+        Merge-PodeOAOfProperty  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive'))
                 ))
         ))
 #>
-function New-PodeOAOfProperty {
+function Merge-PodeOAOfProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
@@ -2268,14 +2271,14 @@ function New-PodeOAOfProperty {
     )
     begin {
         $param = @{}
-        switch ($type) {
-            'OneOf' {
+        switch ($type.ToLower()) {
+            'oneof' {
                 $param.type = 'oneOf'
             }
-            'AnyOf' {
+            'anyof' {
                 $param.type = 'anyOf'
             }
-            'AllOf' {
+            'allof' {
                 $param.type = 'allOf'
             }
         }
@@ -2383,6 +2386,7 @@ function New-PodeOASchemaProperty {
         $Name,
 
         [Parameter(Mandatory = $true)]
+        [Alias('Reference')]
         [string]
         $ComponentSchema,
 
@@ -2520,7 +2524,7 @@ function New-PodeOASchemaProperty {
     }
     end {
         if ($collectedInput) {
-            $collectedInput + $param
+            return $collectedInput + $param
         } else {
             return $param
         }
@@ -2683,26 +2687,26 @@ function ConvertTo-PodeOAParameter {
     }
     if ($Property) {
         if ($Style) {
-            switch ($in) {
-                'Path' {
+            switch ($in.ToLower()) {
+                'path' {
                     if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     }
                     break
                 }
-                'Query' {
+                'query' {
                     if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     }
                     break
                 }
-                'Header' {
+                'header' {
                     if (@('Simple' ) -inotcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     }
                     break
                 }
-                'Cookie' {
+                'cookie' {
                     if (@('Form' ) -inotcontains $Style) {
                         throw "OpenApi request Style cannot be $Style for a $in parameter"
                     }
@@ -2925,10 +2929,11 @@ function Enable-PodeOpenApiViewer {
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
 
-            $Data = @{ Title          = $meta.Title
+            $Data = @{
+                Title                 = $meta.Title
                 OpenApi               = $meta.OpenApi
-                OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 90
-                OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 90 -NoNewLine
+                OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 10
+                OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 10 -NoNewLine
                 Swagger               = 'false'
                 ReDoc                 = 'false'
                 RapiDoc               = 'false'
@@ -3006,7 +3011,7 @@ function Add-PodeOAExternalDoc {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [ValidateScript({ $_ -match '^https?://.+' })]
+        [ValidateScript({ $_ -imatch '^https?://.+' })]
         $Url,
 
         [Parameter()]
@@ -3113,7 +3118,7 @@ New-PodeOAExtraInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 
 function New-PodeOAExtraInfo {
     param(
         [Parameter()]
-        [ValidateScript({ $_ -match '^https?://.+' })]
+        [ValidateScript({ $_ -imatch '^https?://.+' })]
         [string]
         $TermsOfService,
 
@@ -3122,7 +3127,7 @@ function New-PodeOAExtraInfo {
         $License,
 
         [Parameter(Mandatory = $true)]
-        [ValidateScript({ $_ -match '^https?://.+' })]
+        [ValidateScript({ $_ -imatch '^https?://.+' })]
         [string]
         $LicenseUrl,
 
@@ -3131,12 +3136,12 @@ function New-PodeOAExtraInfo {
         $ContactName,
 
         [Parameter()]
-        [ValidateScript({ $_ -match '^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$' })]
+        [ValidateScript({ $_ -imatch '^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$' })]
         [string]
         $ContactEmail,
 
         [Parameter()]
-        [ValidateScript({ $_ -match '^https?://.+' })]
+        [ValidateScript({ $_ -imatch '^https?://.+' })]
         [string]
         $ContactUrl
     )
