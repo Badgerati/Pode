@@ -1349,7 +1349,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_ -ilike '*/yaml' -or  $_ -ilike '*/x-yaml'} {
+        { $_ -ilike '*/yaml' -or $_ -ilike '*/x-yaml' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -3258,20 +3258,16 @@ function ConvertTo-PodeYamlInternal {
                 }
                 break
             }
-            'Boolean' {
-                "$(&{
-                            if ($InputObject -eq $true) { 'true' }
-                            else { 'false' }
-                        })"
+            'boolean' {
+                if ($InputObject -eq $true) { 'true' } else { 'false' }
             }
             'string' {
                 $String = "$InputObject"
-                if (($string -match '[\r\n]' -or $string.Length -gt 80) -and !$string.StartsWith('http')) {
-                    # right, we have to format it to YAML spec.
-                    $folded = ">`n" # signal that we are going to use the readable 'newlines-folded' format
-                    $string.Split("`n") | ForEach-Object {
-                        $workingString = $_ -replace '\r$'
-                        $length = $_.Length
+                if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -inotcontains 'http')) {
+                    $folded = [System.Text.StringBuilder]::new(">`n") # signal that we are going to use the readable 'newlines-folded' format
+                    foreach ($item in $string.Split("`n")) {
+                        $workingString = $item -replace '\r$'
+                        $length = $item.Length
                         $IndexIntoString = 0
                         $wrap = 80
                         while ($length -gt $IndexIntoString + $Wrap) {
@@ -3284,22 +3280,21 @@ function ConvertTo-PodeYamlInternal {
                                 $BreakPoint = $earliest
                             } else {
                                 $BreakPoint = $wrap + $latest
-                            }
-
+                            } 
                             if (($wrap - $earliest) + $latest -gt 30) {
                                 $BreakPoint = $wrap # in case it is a string without spaces
                             }
 
-                            $folded += $padding + $workingString.Substring($IndexIntoString, $BreakPoint).Trim() + "`n"
+                            [void] $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString, $BreakPoint).Trim())
                             $IndexIntoString += $BreakPoint
                         }
                         if ($IndexIntoString -lt $length) {
-                            $folded += $padding + $workingString.Substring($IndexIntoString).Trim() + "`n"
+                            [void] $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString).Trim())
                         } else {
-                            $folded += "`n"
+                            [void] $folded.AppendLine()
                         }
                     }
-                    $folded
+                    $folded.ToString()
                 } else {
                     if ($string.StartsWith('#')) {
                         "'$($string -replace '''', '''''')'"

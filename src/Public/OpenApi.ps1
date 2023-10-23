@@ -819,7 +819,10 @@ function Add-PodeOAComponentSchema {
         $Schema
     )
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
-    $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
+    #Test-Json has been introduced with version 6.1.0
+    if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
+        $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
+    }
 }
 
 
@@ -894,6 +897,10 @@ function Test-PodeOARequestSchema {
 
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
+    }
+    #Test-Json has been introduced with version 6.1.0
+    if ($PSVersionTable.PSVersion -lt [version]'6.1.0') {
+        return @{result = $true; message = "This version on PowerShell doesn't support Test-Json" }
     }
 
     $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$SchemaReference] -ErrorVariable jsonValidationErrors
