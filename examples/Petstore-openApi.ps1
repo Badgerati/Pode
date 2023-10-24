@@ -40,7 +40,7 @@ Some useful links:
 
     Add-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
-    Add-PodeOpenApiServerEndpoint -url '/api/v3' -Description 'default endpoint'
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
 
     Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs' -OpenApiVersion '3.0.3'
     Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger' -DarkMode

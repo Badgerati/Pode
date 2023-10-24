@@ -221,12 +221,12 @@ Server or path to local server.
 Description of the server.
 
 .EXAMPLE
-Add-PodeOpenApiServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server'
+Add-PodeOAServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server'
 
 .EXAMPLE
-Add-PodeOpenApiServerEndpoint -Url '/api' -Description 'My local server'
+Add-PodeOAServerEndpoint -Url '/api' -Description 'My local server'
 #>
-function Add-PodeOpenApiServerEndpoint {
+function Add-PodeOAServerEndpoint {
     param (
         [Parameter(Mandatory)]
         [ValidatePattern('^(https?://|/).+')]

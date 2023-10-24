@@ -75,6 +75,7 @@
         'Write-PodeHtmlResponse',
         'Write-PodeMarkdownResponse',
         'Write-PodeJsonResponse',
+        'Write-PodeYamlResponse',
         'Write-PodeXmlResponse',
         'Write-PodeViewResponse',
         'Set-PodeResponseStatus',
@@ -294,6 +295,7 @@
         'Add-PodeOATag',
         'Add-PodeOAComponentHeaderSchema',
         'Merge-PodeOAProperty',
+        'Add-PodeOAServerEndpoint',
 
         # Metrics
         'Get-PodeServerUptime',
