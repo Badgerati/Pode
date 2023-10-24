@@ -17,9 +17,9 @@ Date: TBC
 * #1163: Adds a new "Session" authentication method, useful if you need multiple authentication methods and the user can choose one
 
 ### Bugs
-* #1030: Fixes as issue with some Authentication methods when `-AsCredential` was supplied on the scheme
+* #1030: Fixes an issue with some Authentication methods when `-AsCredential` was supplied on the scheme
 * #1081: Don't attempt to parse the query string if there is no query string supplied
-* #1083: Fixes a time-zone issue when verifying exp and nbf properties (thanks @avin3sh!)
+* #1083: Fixes a time-zone issue when verifying JWT "exp" and "nbf" properties (thanks @avin3sh!)
 * #1087: Fixes an SMTP body parsing issue when multiple headers are in the request
 * #1093: Allow greater JSON depths to be used when saving/restoring State (thanks @plk!)
 * #1125: Fixes an issue where Verbs weren't being cleared down appropriately on server restart
@@ -29,7 +29,7 @@ Date: TBC
 ### Documentation
 * #1078: Adds release dates to the releases notes page
 * #1099: Adds a reference to the "Protected Users" group in the AD Authentication page
-* #1115, #1116: Fixes an incorrect port in an Example script (thanks @ArieHein!)
+* #1115, #1116: Fixes incorrect ports in Example scripts (thanks @ArieHein!)
 * #1117, #1118, #1119: Fixes markdown syntax in pages (thanks @ArieHein!)
 * #1123: Adds reference link about using the SecretManagement module in automation scenarios
 * #1133: Fixes broken links to functions (thanks @Chris--A!)
