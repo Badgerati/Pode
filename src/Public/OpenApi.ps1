@@ -1003,7 +1003,7 @@ function Add-PodeOAComponentParameter {
         if ($Parameter.name) {
             $Name = $Parameter.name
         } else {
-            throw 'The Parameter as no name. Please provide a name to this component using -name property'
+            throw 'The Parameter has no name. Please provide a name to this component using -Name property'
         }
     }
     $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
@@ -2245,17 +2245,17 @@ When request bodies or response payloads may be one of a number of different sch
 The discriminator is a specific object in a schema which is used to inform the consumer of the specification of an alternative schema based on the value associated with it.
 
 .EXAMPLE
-Add-PodeOAComponentSchema -Name 'Pets' -Schema (  Merge-PodeOAOfProperty  -Type OneOf -Schema @( 'Cat','Dog') -Discriminator "petType")
+Add-PodeOAComponentSchema -Name 'Pets' -Schema (  Merge-PodeOAProperty  -Type OneOf -Schema @( 'Cat','Dog') -Discriminator "petType")
 
 
 .EXAMPLE
 Add-PodeOAComponentSchema -Name 'Cat' -Schema (
-        Merge-PodeOAOfProperty  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
+        Merge-PodeOAProperty  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive'))
                 ))
         ))
 #>
-function Merge-PodeOAOfProperty {
+function Merge-PodeOAProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
@@ -2592,8 +2592,9 @@ function ConvertTo-PodeOAParameter {
         $Property,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [Alias('Reference')]
         [string]
-        $Reference,
+        $ComponentParameter,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
         [hashtable]
@@ -2642,12 +2643,12 @@ function ConvertTo-PodeOAParameter {
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        if (!(Test-PodeOAComponentParameter -Name $Reference)) {
-            throw "The OpenApi component request parameter doesn't exist: $($Reference)"
+        if (!(Test-PodeOAComponentParameter -Name $ComponentParameter)) {
+            throw "The OpenApi component request parameter doesn't exist: $($ComponentParameter)"
         }
 
         $prop = @{
-            '$ref' = "#/components/parameters/$($Reference)"
+            '$ref' = "#/components/parameters/$($ComponentParameter)"
         }
     } else {
         # non-object/array only
@@ -2939,6 +2940,7 @@ function Enable-PodeOpenApiViewer {
             $Data = @{
                 Title                 = $meta.Title
                 OpenApi               = $meta.OpenApi
+                OpenApiUrl            = $OpenApiUrl
                 OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 10
                 OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 10 -NoNewLine
                 Swagger               = 'false'

@@ -148,7 +148,7 @@ Some useful links:
 
     <#    Add-PodeOAComponentSchema -Name 'Cat' -Schema (   New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -Properties (
             New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
-                Merge-PodeOAOfProperty  -Type AllOf -Subschemas @( 'Pet',
+                Merge-PodeOAProperty  -Type AllOf -Subschemas @( 'Pet',
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object)
                 )
         )
@@ -156,7 +156,7 @@ Some useful links:
 
 
     New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object |
-        Merge-PodeOAOfProperty  -Type AllOf  -Subschemas 'Pet' |
+        Merge-PodeOAProperty  -Type AllOf  -Subschemas 'Pet' |
         New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
 
         New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -PropertiesFromPipeline | Add-PodeOAComponentSchema -Name 'Cat'
@@ -166,7 +166,7 @@ Some useful links:
 
 
     Add-PodeOAComponentSchema -Name 'Dog' -Schema (
-        Merge-PodeOAOfProperty  -Type AllOf -Subschemas @( 'Pet', ( New-PodeOAObjectProperty -Properties (
+        Merge-PodeOAProperty  -Type AllOf -Subschemas @( 'Pet', ( New-PodeOAObjectProperty -Properties (
                     New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Dingo', 'Husky', 'Retriever', 'Shepherd') |
                         New-PodeOABoolProperty -Name 'bark'
                 ))
@@ -175,7 +175,7 @@ Some useful links:
 
 
     Add-PodeOAComponentSchema -Name 'Pets' -Schema (
-        Merge-PodeOAOfProperty  -Type OneOf -Subschemas @( 'Cat', 'Dog') -Discriminator 'petType')
+        Merge-PodeOAProperty  -Type OneOf -Subschemas @( 'Cat', 'Dog') -Discriminator 'petType')
 
 
     Add-PodeOAComponentSchema -Name 'ApiResponse' -Schema (

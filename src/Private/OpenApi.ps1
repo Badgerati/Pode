@@ -86,14 +86,14 @@ function ConvertTo-PodeOAObjectSchema {
         }
         # add a shared component schema reference
         if ($Schemas[$type] -is [string]) {
-            if (@('string', 'integer' , 'number', 'boolean' ) -contains $Schemas[$type]) {
+            if (@('string', 'integer' , 'number', 'boolean' ) -icontains $Schemas[$type]) {
                 if ($Array) {
                     $obj[$type].schema.items = @{
-                        'type' = $Schemas[$type]
+                        'type' = $Schemas[$type].ToLower()
                     }
                 } else {
                     $obj[$type].schema = @{
-                        'type' = $Schemas[$type]
+                        'type' = $Schemas[$type].ToLower()
                     }
                 }
             } else {
@@ -321,7 +321,12 @@ function ConvertTo-PodeOASchemaProperty {
 
         if ($Property.type -ieq 'object') {
             foreach ($prop in $Property.properties) {
-                if ( @('allOf', 'oneOf', 'anyOf') -contains $prop.type  ) {
+                if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type  ) {
+                    switch ($prop.type) {
+                        'allof' { $prop.type = 'allOf' }
+                        'oneof' { $prop.type = 'oneOf' }
+                        'anyof' { $prop.type = 'anyOf' }
+                    }
                     $schema += ConvertTo-PodeOAofProperty -Property $prop
                 }
             }
@@ -351,7 +356,12 @@ function ConvertTo-PodeOASchemaObjectProperty {
     )
     $schema = @{}
     foreach ($prop in $Properties) {
-        if ( @('allOf', 'oneOf', 'anyOf') -notcontains $prop.type  ) {
+        if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type  ) {
+            switch ($prop.type) {
+                'allof' { $prop.type = 'allOf' }
+                'oneof' { $prop.type = 'oneOf' }
+                'anyof' { $prop.type = 'anyOf' }
+            } 
             $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty  )
         }
     }
