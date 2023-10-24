@@ -232,7 +232,7 @@ function ConvertTo-PodeOASchemaProperty {
     } else {
         # base schema type
         $schema = [ordered]@{
-            type = $Property.type
+            type = $Property.type.ToLower()
         }
 
         if (!$NoDescription -and $Property.description) {
@@ -313,13 +313,14 @@ function ConvertTo-PodeOASchemaProperty {
                 type       = 'object'
                 properties = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property)
             }
-
+            $Property.object = $true
             if ($Property.required) {
                 $schema['required'] = @($Property.name)
             }
         }
 
         if ($Property.type -ieq 'object') {
+            $notOfProperty = @()
             foreach ($prop in $Property.properties) {
                 if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type  ) {
                     switch ($prop.type) {
@@ -328,11 +329,13 @@ function ConvertTo-PodeOASchemaProperty {
                         'anyof' { $prop.type = 'anyOf' }
                     }
                     $schema += ConvertTo-PodeOAofProperty -Property $prop
+                } else {
+                    $notOfProperty += $prop
                 }
             }
-            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
+            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $notOfProperty)
 
-            $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
+            $RequiredList = @(($notOfProperty | Where-Object { $_.required }) )
             if ( $RequiredList.Count -gt 0) {
                 $schema['required'] = @($RequiredList.Name)
             }
@@ -361,7 +364,7 @@ function ConvertTo-PodeOASchemaObjectProperty {
                 'allof' { $prop.type = 'allOf' }
                 'oneof' { $prop.type = 'oneOf' }
                 'anyof' { $prop.type = 'anyOf' }
-            } 
+            }
             $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty  )
         }
     }
@@ -424,10 +427,7 @@ function Get-PodeOpenApiDefinitionInternal {
             })
     }
     if ($PodeContext.Server.OpenAPI.tags.Count -gt 0) {
-        $def['tags'] = @()
-        foreach ($tag in $PodeContext.Server.OpenAPI.tags.Values) {
-            $def['tags'] += $tag
-        }
+        $def['tags'] = @($PodeContext.Server.OpenAPI.tags.Values) 
     }
 
     # paths

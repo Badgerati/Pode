@@ -3172,13 +3172,13 @@ function ConvertTo-PodeYaml {
     )
 
     if ($null -eq $PodeContext.Server.Cache.YamlModuleImported) {
-        $PodeContext.Server.Cache.YamlModuleImported = ((Test-PodeModuleImported -Name 'PSYaml') -or (Test-PodeModuleImported -Name 'powershell-yaml'))
+        $PodeContext.Server.Cache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
     }
 
     if ($PodeContext.Server.YamlModuleImported) {
         return ($InputObject | ConvertTo-Yaml)
     } else {
-        return ConvertTo-PodeYamlInteral -InputObject $InputObject -Depth $Depth -NoNewLine
+        return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
     }
 }
 
@@ -3247,19 +3247,17 @@ function ConvertTo-PodeYamlInternal {
             'hashtable' {
                 if ($InputObject.Count -gt 0 ) {
                     $index = 0
-                    ("$($InputObject.GetEnumerator() | ForEach-Object {
-                        if ($_.Value.GetType().Name -eq 'String'){$increment=2} else {$Increment=1}
-                        if ($NoNewLine -and $index++ -eq 0){$NewPadding=''} else {$NewPadding="`n$padding"}
-                        "$NewPadding$($_.Name): " +
-                            (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + $increment))
-                            })")
-                } else {
-                    '{}'
-                }
+                    foreach ($item in $InputObject.Keys) {
+                        if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        "$NewPadding$($item): " + (ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment))
+                    }
+                } else { '{}' }
                 break
             }
             'boolean' {
                 if ($InputObject -eq $true) { 'true' } else { 'false' }
+                break
             }
             'string' {
                 $String = "$InputObject"
@@ -3280,7 +3278,7 @@ function ConvertTo-PodeYamlInternal {
                                 $BreakPoint = $earliest
                             } else {
                                 $BreakPoint = $wrap + $latest
-                            } 
+                            }
                             if (($wrap - $earliest) + $latest -gt 30) {
                                 $BreakPoint = $wrap # in case it is a string without spaces
                             }
@@ -3295,21 +3293,16 @@ function ConvertTo-PodeYamlInternal {
                         }
                     }
                     $folded.ToString()
+                    break
                 } else {
                     if ($string.StartsWith('#')) {
                         "'$($string -replace '''', '''''')'"
                     } else {
                         $string
                     }
+                    break
                 }
                 break
-            }
-
-            'Dictionary`2' {
-                    ("$($InputObject.GetEnumerator() | ForEach-Object {
-                                "`n$padding  $($_.Key): " +
-                                (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + 1))
-                            })")
             }
             default {
                 "'$InputObject'"

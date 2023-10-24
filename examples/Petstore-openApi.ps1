@@ -463,5 +463,5 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
 
     }
-
+Get-PodeOpenApiDefinition -Format Yaml
 }
