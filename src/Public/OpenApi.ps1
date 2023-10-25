@@ -49,6 +49,12 @@ If supplied, generate the OpenApi Json version in human readible form.
 
 .PARAMETER MarkupLanguage
 
+.PARAMETER EnableSchemaValidation
+If suplied enable Test-PodeOARequestSchema cmdlet that provide support for opeapi parameter schema validation
+
+.PARAMETER Depth
+Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
+
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
 
@@ -112,7 +118,16 @@ function Enable-PodeOpenApi {
         [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml')]
         [String]
-        $MarkupLanguage = 'Json'
+        $MarkupLanguage = 'Json',
+
+        [Parameter()]
+        [switch]
+        $EnableSchemaValidation,
+
+        [Parameter()]
+        [ValidateRange(1, 100)]
+        [int]
+        $Depth = 20
     )
 
     # initialise openapi info
@@ -144,6 +159,18 @@ function Enable-PodeOpenApi {
             throw "The ExternalDoc doesn't exist: $ExternalDoc"
         }
         $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
+    }
+    if ( $EnableSchemaValidation) {
+        #Test-Json has been introduced with version 6.1.0
+        if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
+            $PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation = $EnableSchemaValidation.ToBool()
+        } elseif ($EnableSchemaValidation.ToBool()) {
+            throw 'Schema validation required Powershell version 6.1.0 or greater'
+        }
+    }
+
+    if ( $Depth) {
+        $PodeContext.Server.OpenAPI.hiddenComponents.depth = $Depth
     }
 
     $openApiCreationScriptBlock = {
@@ -191,12 +218,12 @@ function Enable-PodeOpenApi {
         # write the openapi definition
         if ($format -ieq 'yaml') {
             if ($mode -ieq 'view') {
-                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth 100) -ContentType 'text/x-yaml; charset=utf-8'
+                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
             } else {
-                Write-PodeYamlResponse -Value $def -depth 100
+                Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
             }
         } else {
-            Write-PodeJsonResponse -Value $def -depth 100 -NoCompress:$meta.NoCompress
+            Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth -NoCompress:$meta.NoCompress
         }
     }
 
@@ -333,13 +360,13 @@ function Get-PodeOpenApiDefinition {
 
     switch ($Format.ToLower()) {
         'json' {
-            return ConvertTo-Json -InputObject $oApi -Depth 100
+            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
         }
         'json-compress' {
-            return ConvertTo-Json -InputObject $oApi -Depth 100 -Compress
+            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth -Compress
         }
         'yaml' {
-            return ConvertTo-PodeYaml -InputObject $oApi -Depth 100
+            return ConvertTo-PodeYaml -InputObject $oApi -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
         }
         Default {
             return $oApi
@@ -819,8 +846,7 @@ function Add-PodeOAComponentSchema {
         $Schema
     )
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
-    #Test-Json has been introduced with version 6.1.0
-    if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
+    if ($PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
         $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
     }
 }
@@ -895,6 +921,9 @@ function Test-PodeOARequestSchema {
         $SchemaReference
     )
 
+    if (!$PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
+        throw 'Test-PodeOARequestSchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
+    }
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
     }
@@ -2876,17 +2905,17 @@ The title of the web page. (Default is the OpenAPI title from Enable-PodeOpenApi
 If supplied, the page will be rendered using a dark theme (this is not supported for all viewers).
 
 .EXAMPLE
-Enable-PodeOpenApiViewer -Type Swagger -DarkMode
+Enable-PodeOAViewer -Type Swagger -DarkMode
 
 .EXAMPLE
-Enable-PodeOpenApiViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
+Enable-PodeOAViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
 
 .EXAMPLE
-Enable-PodeOpenApiViewer -Type Bookmarks
+Enable-PodeOAViewer -Type Bookmarks
 
 Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
 #>
-function Enable-PodeOpenApiViewer {
+function Enable-PodeOAViewer {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -2933,47 +2962,56 @@ function Enable-PodeOpenApiViewer {
     }
 
     if ($Type -ieq 'Bookmarks') {
-        # add the viewer route
+        # setup meta info
+        $meta = @{
+            Type     = $Type.ToLowerInvariant()
+            Title    = $Title
+            OpenApi  = $OpenApiUrl
+            DarkMode = $DarkMode
+        }
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
-
             $Data = @{
-                Title                 = $meta.Title
-                OpenApi               = $meta.OpenApi
-                OpenApiUrl            = $OpenApiUrl
-                OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 100
-                OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 100 -NoNewLine
-                Swagger               = 'false'
-                ReDoc                 = 'false'
-                RapiDoc               = 'false'
-                StopLight             = 'false'
-                Explorer              = 'false'
-                RapiPdf               = 'false'
+                Title   = $meta.Title
+                OpenApi = $meta.OpenApi
             }
-            foreach ($path in ($PodeContext.Server.Routes['GET'].Keys  )) {
-                # the current route
-                $_routes = @($PodeContext.Server.Routes['GET'][$path])
-                # get the first route for base definition
-                $_route = $_routes[0]
-                # check if the route has to be published
-                if ($_route.Arguments -and $_route.Arguments.OpenApiDoc   ) {
-                    $Data[$_route.Arguments.Type] = 'true'
-                    $Data["$($_route.Arguments.Type)_path"] = $_route.Path
-                }
-            }
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.swagger) {
+                $Data.swagger = 'true'
+                $data.swagger_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.swagger
+            } else { $Data.swagger = 'false' }
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.redoc) {
+                $Data.redoc = 'true'
+                $data.redoc_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.redoc
+            } else { $Data.redoc = 'false' }
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.rapidoc) {
+                $Data.rapidoc = 'true'
+                $data.rapidoc_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.rapidoc
+            } else { $Data.rapidoc = 'false' }
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.stoplight) {
+                $Data.stoplight = 'true'
+                $data.stoplight_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.stoplight
+            } else { $Data.stoplight = 'false' }
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.explorer) {
+                $Data.explorer = 'true'
+                $data.explorer_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.explorer
+            } else { $Data.explorer = 'false' }
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.rapipdf) {
+                $Data.rapipdf = 'true'
+                $data.rapipdf_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.rapipdf
+            } else { $Data.rapipdf = 'false' }
+
             $podeRoot = Get-PodeModuleMiscPath
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
         }
     } else {
         # setup meta info
         $meta = @{
-            Type       = $Type.ToLowerInvariant()
-            Title      = $Title
-            OpenApi    = $OpenApiUrl
-            DarkMode   = $DarkMode
-            OpenApiDoc = $true
+            Type     = $Type.ToLowerInvariant()
+            Title    = $Title
+            OpenApi  = $OpenApiUrl
+            DarkMode = $DarkMode
         }
-
+        $PodeContext.Server.OpenAPI.hiddenComponents.viewer[$($meta.Type)] = $Path
         # add the viewer route
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
@@ -3185,3 +3223,7 @@ function New-PodeOAExtraInfo {
     return $ExtraInfo
 
 }
+
+
+New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer
+New-Alias Enable-PodeOA -Value Enable-PodeOpenApi

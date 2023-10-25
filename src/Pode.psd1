@@ -288,7 +288,7 @@
         'New-PodeOASchemaProperty',
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
-        'Enable-PodeOpenApiViewer',
+        'Enable-PodeOAViewer',
         'Test-PodeOARequestSchema',
         'New-PodeOAExtraInfo',
         'Add-PodeOAExternalDoc',
@@ -410,6 +410,11 @@
         'Exit-PodeSemaphore',
         'Clear-PodeSemaphores'
     )
+
+
+    # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
+    AliasesToExport   = @('Enable-PodeOpenApiViewer', 'Enable-PodeOA')
+
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{

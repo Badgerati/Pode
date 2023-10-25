@@ -24,13 +24,13 @@
 
         /* Style for the responsive code block */
         .json {
-            position: relative; 
+            position: relative;
             max-height: 600px;
         }
 
         .yaml {
-            position: relative; 
-             max-height: 600px;
+            position: relative;
+            max-height: 600px;
         }
 
         /* Style the tab */
@@ -63,7 +63,7 @@
 
         /* Style the tab content */
         .tabcontent {
-            display: none; 
+            display: none;
             border-top: none;
         }
     </style>
@@ -111,10 +111,10 @@
     </div>
     <!-- Tab content -->
     <div id="JSON" class="tabcontent">
-        <pre><code id="jsonCode" class="json">$($data.OpenApiDefinition)</code></pre>
+        <pre><code id="jsonCode" class="json">Loading JSON content...<</code></pre>
     </div>
     <div id="YAML" class="tabcontent" style="display:none">
-        <pre><code id="yamlCode" class="yaml"   >$($data.OpenApiYamlDefinition)</code></pre>
+        <pre><code id="yamlCode" class="yaml">Loading YAML content...<</code></pre>
     </div>
     <footer style='text-align: center;
         width: 100%;
@@ -141,8 +141,7 @@
             document.getElementById("rapipdf-link").style.display = enableRapiPdf ? "list-item" : "none";
         }
 
-        // Call the updateLinks function when the page loads
-        window.onload = updateLinks;
+
 
         // Function to copy text to clipboard
         function copyToClipboard() {
@@ -171,7 +170,7 @@
             document.body.removeChild(textArea);
 
             // Provide user feedback (optional)
-           // alert("Copied to clipboard");
+            // alert("Copied to clipboard");
         }
 
 
@@ -201,6 +200,38 @@
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";
         }
+
+
+
+        // Function to fetch and display JSON and YAML content with syntax highlighting
+        function loadOAContent(type) {
+            // URL of the JSON file
+            var jsonUrl = '$($data.OpenApi)' + '.' + type;
+
+            // Get the <code> element by its ID
+            var jsonCodeElement = document.getElementById(type + 'Code');
+            // Fetch the JSON data
+            fetch(jsonUrl)
+                .then(response => response.text()) // Fetch as text (raw content)
+                .then(data => {
+                    // Set the content of the <code> element to the  content
+                    jsonCodeElement.textContent = data;
+
+                    // Apply syntax highlighting to the <code> element
+                    hljs.highlightBlock(jsonCodeElement);
+                })
+                .catch(error => {
+                    console.error('Error fetching ' + type + ' data:', error);
+                    // Display an error message if the fetch fails
+                    jsonCodeElement.textContent = 'Error loading ' + type + ' content';
+                });
+        }
+        // Call the functions when the page loads
+        window.onload = function () {
+            updateLinks();
+            loadOAContent('json');
+            loadOAContent('yaml');
+        };
     </script>
 </body>
 

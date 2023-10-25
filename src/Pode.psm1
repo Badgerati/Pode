@@ -31,4 +31,4 @@ Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::Ge
 $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
 
 # export the module's public functions
-Export-ModuleMember -Function ($funcs.Name)
+Export-ModuleMember -Function ($funcs.Name) -Alias Enable-PodeOA,Enable-PodeOpenApiViewer

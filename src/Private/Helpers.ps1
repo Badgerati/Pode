@@ -3238,27 +3238,7 @@ function ConvertTo-PodeYamlInternal {
             $Type = 'HashTable'
         } # for our purposes it is a hashtable
 
-        $output += switch ($Type.ToLower()) {
-            'array' {
-                "$($InputObject | ForEach-Object {
-                    "`n$padding- $(ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine)" })"
-                break
-            }
-            'hashtable' {
-                if ($InputObject.Count -gt 0 ) {
-                    $index = 0
-                    foreach ($item in $InputObject.Keys) {
-                        if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
-                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                        "$NewPadding$($item): " + (ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment))
-                    }
-                } else { '{}' }
-                break
-            }
-            'boolean' {
-                if ($InputObject -eq $true) { 'true' } else { 'false' }
-                break
-            }
+        $output += switch ($Type.ToLower()) { 
             'string' {
                 $String = "$InputObject"
                 if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -inotcontains 'http')) {
@@ -3302,6 +3282,33 @@ function ConvertTo-PodeYamlInternal {
                     }
                     break
                 }
+                break
+            }
+            'hashtable' {
+                if ($InputObject.Count -gt 0 ) {
+                    $index = 0
+                    <#   foreach ($item in $InputObject.Keys) {
+                        if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        $ht = (ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment))
+                        "$NewPadding$($item): $ht"
+                    }#>
+                    ("$($InputObject.GetEnumerator() | ForEach-Object {
+                        if ($_.Value.GetType().Name -eq 'String'){$increment=2} else {$Increment=1}
+                        if ($NoNewLine -and $index++ -eq 0){$NewPadding=''} else {$NewPadding="`n$padding"}
+                        "$NewPadding$($_.Name): " +
+                            (ConvertTo-PodeYamlInternal -InputObject $_.Value -depth $Depth -NestingLevel ($NestingLevel + $increment))
+                            })")
+                } else { '{}' }
+                break
+            }
+            'boolean' {
+                if ($InputObject -eq $true) { 'true' } else { 'false' }
+                break
+            }
+            'array' {
+                "$($InputObject | ForEach-Object {
+                    "`n$padding- $(ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine)" })"
                 break
             }
             default {

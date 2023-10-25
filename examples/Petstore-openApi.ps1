@@ -42,8 +42,8 @@ Some useful links:
 
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs' -OpenApiVersion '3.0.3'
-    Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger' -DarkMode
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs' -OpenApiVersion '3.0.3' -EnableSchemaValidation
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DarkMode
     # or ReDoc at the default "/redoc"
     Enable-PodeOpenApiViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
     Enable-PodeOpenApiViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
@@ -75,7 +75,7 @@ Some useful links:
             New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
             New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
             New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
-            New-PodeOAObjectProperty -Name 'test'   -PropertiesFromPipeline| Add-PodeOAComponentSchema -Name 'Test'
+            New-PodeOAObjectProperty -Name 'test'   -PropertiesFromPipeline | Add-PodeOAComponentSchema -Name 'Test'
 
 
 
@@ -463,5 +463,6 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
 
     }
-#Get-PodeOpenApiDefinition -Format Yaml
+    #  $yaml= Get-PodeOpenApiDefinition -Format Yaml
+    # $json=  Get-PodeOpenApiDefinition -Format Json
 }

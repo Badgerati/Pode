@@ -619,9 +619,12 @@ function Get-PodeOABaseObject {
         Security         = @()
         tags             = [ordered]@{}
         hiddenComponents = @{
+            schemaValidation=$false
+            depth         = 20
             headerSchemas = @{}
             externalDocs  = @{}
             schemaJson    = @{}
+            viewer        = @{}
         }
     }
 }
