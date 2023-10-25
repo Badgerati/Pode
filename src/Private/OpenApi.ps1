@@ -320,8 +320,6 @@ function ConvertTo-PodeOASchemaProperty {
         }
 
         if ($Property.type -ieq 'object') {
-            $notOfProperty = @()
-            $offType = $false
             foreach ($prop in $Property.properties) {
                 if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type  ) {
                     switch ($prop.type.ToLower()) {
@@ -330,21 +328,11 @@ function ConvertTo-PodeOASchemaProperty {
                         'anyof' { $prop.type = 'anyOf' }
                     }
                     $schema += ConvertTo-PodeOAofProperty -Property $prop
-                    $offType = $true
-                }
-        <#         else {
-                    if ( $schema.properties) {
-                        $schema['properties'] += $prop
-                    } else {
-                        $schema['properties'] = @($prop)
-                    }
-                }#>
-            }
-            if (!$offType) {
-                $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
-            }
 
-            $RequiredList = @(($Property.properties| Where-Object { $_.required }) )
+                }
+            }
+            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
+            $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
             if ( $RequiredList.Count -gt 0) {
                 $schema['required'] = @($RequiredList.Name)
             }
@@ -369,7 +357,7 @@ function ConvertTo-PodeOASchemaObjectProperty {
     $schema = @{}
     foreach ($prop in $Properties) {
         if ( @('allOf', 'oneOf', 'anyOf') -inotcontains $prop.type  ) {
-           <#  switch ($prop.type.ToLower()) {
+            <#  switch ($prop.type.ToLower()) {
                 'allof' { $prop.type = 'allOf' }
                 'oneof' { $prop.type = 'oneOf' }
                 'anyof' { $prop.type = 'anyOf' }
