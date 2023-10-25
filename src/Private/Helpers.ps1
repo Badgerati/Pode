@@ -3217,7 +3217,7 @@ function ConvertTo-PodeYamlInternal {
     $padding = [string]::new(' ', $NestingLevel * 2) # lets just create our left-padding for the block
     try {
         $Type = $InputObject.GetType().Name # we start by getting the object's type
-        if ($Type -ieq 'Object[]') {
+        if ($InputObject -is [object[]]) {
             #what it really is
             $Type = "$($InputObject.GetType().BaseType.Name)"
         }

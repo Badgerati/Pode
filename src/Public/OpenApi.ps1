@@ -191,12 +191,12 @@ function Enable-PodeOpenApi {
         # write the openapi definition
         if ($format -ieq 'yaml') {
             if ($mode -ieq 'view') {
-                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth 10) -ContentType 'text/x-yaml; charset=utf-8'
+                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth 100) -ContentType 'text/x-yaml; charset=utf-8'
             } else {
-                Write-PodeYamlResponse -Value $def -depth 10
+                Write-PodeYamlResponse -Value $def -depth 100
             }
         } else {
-            Write-PodeJsonResponse -Value $def -depth 10 -NoCompress:$meta.NoCompress
+            Write-PodeJsonResponse -Value $def -depth 100 -NoCompress:$meta.NoCompress
         }
     }
 
@@ -333,13 +333,13 @@ function Get-PodeOpenApiDefinition {
 
     switch ($Format.ToLower()) {
         'json' {
-            return ConvertTo-Json -InputObject $oApi -Depth 10
+            return ConvertTo-Json -InputObject $oApi -Depth 100
         }
         'json-compress' {
-            return ConvertTo-Json -InputObject $oApi -Depth 10 -Compress
+            return ConvertTo-Json -InputObject $oApi -Depth 100 -Compress
         }
         'yaml' {
-            return ConvertTo-PodeYaml -InputObject $oApi -Depth 10
+            return ConvertTo-PodeYaml -InputObject $oApi -Depth 100
         }
         Default {
             return $oApi
@@ -2941,8 +2941,8 @@ function Enable-PodeOpenApiViewer {
                 Title                 = $meta.Title
                 OpenApi               = $meta.OpenApi
                 OpenApiUrl            = $OpenApiUrl
-                OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 10
-                OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 10 -NoNewLine
+                OpenApiDefinition     = Get-PodeOpenApiDefinition | ConvertTo-Json -Depth 100
+                OpenApiYamlDefinition = Get-PodeOpenApiDefinition | ConvertTo-PodeYamlInternal -Depth 100 -NoNewLine
                 Swagger               = 'false'
                 ReDoc                 = 'false'
                 RapiDoc               = 'false'

@@ -247,7 +247,7 @@ function ConvertTo-PodeOASchemaProperty {
             $schema['deprecated'] = $Property.deprecated
         }
         if ($param.xmlName ) {
-            $schema['xlm'] = @{ 'name' = $param.xmlName }
+            $schema['xml'] = @{ 'name' = $param.xmlName }
         }
 
         if ($null -ne $Property.meta) {
@@ -321,21 +321,30 @@ function ConvertTo-PodeOASchemaProperty {
 
         if ($Property.type -ieq 'object') {
             $notOfProperty = @()
+            $offType = $false
             foreach ($prop in $Property.properties) {
                 if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type  ) {
-                    switch ($prop.type) {
+                    switch ($prop.type.ToLower()) {
                         'allof' { $prop.type = 'allOf' }
                         'oneof' { $prop.type = 'oneOf' }
                         'anyof' { $prop.type = 'anyOf' }
                     }
                     $schema += ConvertTo-PodeOAofProperty -Property $prop
-                } else {
-                    $notOfProperty += $prop
+                    $offType = $true
                 }
+        <#         else {
+                    if ( $schema.properties) {
+                        $schema['properties'] += $prop
+                    } else {
+                        $schema['properties'] = @($prop)
+                    }
+                }#>
             }
-            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $notOfProperty)
+            if (!$offType) {
+                $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
+            }
 
-            $RequiredList = @(($notOfProperty | Where-Object { $_.required }) )
+            $RequiredList = @(($Property.properties| Where-Object { $_.required }) )
             if ( $RequiredList.Count -gt 0) {
                 $schema['required'] = @($RequiredList.Name)
             }
@@ -359,12 +368,12 @@ function ConvertTo-PodeOASchemaObjectProperty {
     )
     $schema = @{}
     foreach ($prop in $Properties) {
-        if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type  ) {
-            switch ($prop.type) {
+        if ( @('allOf', 'oneOf', 'anyOf') -inotcontains $prop.type  ) {
+           <#  switch ($prop.type.ToLower()) {
                 'allof' { $prop.type = 'allOf' }
                 'oneof' { $prop.type = 'oneOf' }
                 'anyof' { $prop.type = 'anyOf' }
-            }
+            }#>
             $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty  )
         }
     }
@@ -427,7 +436,7 @@ function Get-PodeOpenApiDefinitionInternal {
             })
     }
     if ($PodeContext.Server.OpenAPI.tags.Count -gt 0) {
-        $def['tags'] = @($PodeContext.Server.OpenAPI.tags.Values) 
+        $def['tags'] = @($PodeContext.Server.OpenAPI.tags.Values)
     }
 
     # paths
@@ -705,13 +714,34 @@ function Resolve-PodeOAReferences {
     }
     foreach ($key in $Keys) {
         if ( @('allof', 'oneof', 'anyof') -icontains $key ) {
-            foreach ( $offKey in $ComponentSchema[$key].Keys) {
-                if ($offKey -eq '$ref') {
-                    #to be done
-                } elseif ($offKey -eq 'properties') {
-                    Resolve-PodeOAReferences -ComponentSchema $ComponentSchema[$key].properties
+            if ($key -ieq 'allof') {
+                $tmpProp = @()
+                foreach ( $offKey in $ComponentSchema[$key].Keys) {
+                    switch ($offKey) {
+                        '$ref' {
+                            if (($ComponentSchema.$key.'$ref').StartsWith('#/components/schemas/')) {
+                                $refName = ($ComponentSchema.$key.'$ref') -replace '#/components/schemas/', ''
+                                if ($Schemas.ContainsKey($refName)) {
+                                    $tmpProp += $Schemas[$refName]
+                                }
+                            }
+                        }
+                        'properties' {
+                            $tmpProp += $ComponentSchema.$key.properties
+                        }
+                    }
+
+                }
+                $ComponentSchema.type = 'object'
+                $ComponentSchema.remove('allOf')
+                if ($tmpProp.count -gt 0) {
+                    $ComponentSchema.properties = $tmpProp
                 }
 
+            } elseif ($key -ieq 'oneof') {
+                #TBD
+            } elseif ($key -ieq 'anyof') {
+                #TBD
             }
         } elseif ($ComponentSchema.properties[$key].type -eq 'object') {
             Resolve-PodeOAReferences -ComponentSchema $ComponentSchema.properties[$key].properties

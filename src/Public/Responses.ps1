@@ -679,6 +679,7 @@ function Write-PodeJsonResponse {
         $Path,
 
         [Parameter(ParameterSetName = 'Value')]
+        [ValidateRange(0,100)]
         [int]
         $Depth = 10,
 
@@ -831,7 +832,7 @@ function Write-PodeYamlResponse {
 
 
         [Parameter(ParameterSetName = 'Value')]
-        [validate]
+        [ValidateRange(0,100)]
         [int]
         $Depth = 10,
 
