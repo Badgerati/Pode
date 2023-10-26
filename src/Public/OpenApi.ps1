@@ -140,7 +140,7 @@ function Enable-PodeOpenApi {
         #Test-Json has been introduced with version 6.1.0
         if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
             $PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation = $EnableSchemaValidation.ToBool()
-        } elseif ($EnableSchemaValidation.ToBool()) {
+        } else {
             throw 'Schema validation required Powershell version 6.1.0 or greater'
         }
     }
@@ -3200,7 +3200,7 @@ A URL to the Terms of Service for the API. MUST be in the format of a URL.
 .PARAMETER License
 The license name used for the API.
 
-.PARAMETER LicenseUrl 
+.PARAMETER LicenseUrl
 A URL to the license used for the API. MUST be in the format of a URL.
 
 .PARAMETER ContactName
