@@ -357,11 +357,6 @@ function ConvertTo-PodeOASchemaObjectProperty {
     $schema = @{}
     foreach ($prop in $Properties) {
         if ( @('allOf', 'oneOf', 'anyOf') -inotcontains $prop.type  ) {
-            <#  switch ($prop.type.ToLower()) {
-                'allof' { $prop.type = 'allOf' }
-                'oneof' { $prop.type = 'oneOf' }
-                'anyof' { $prop.type = 'anyOf' }
-            }#>
             $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty  )
         }
     }
@@ -608,8 +603,8 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter {
 
 function Get-PodeOABaseObject {
     return @{
-        Path             = $null
-        Title            = $null
+        info             = @{}
+        Path             = $null 
         components       = @{
             schemas       = @{}
             responses     = @{}
@@ -619,12 +614,13 @@ function Get-PodeOABaseObject {
         Security         = @()
         tags             = [ordered]@{}
         hiddenComponents = @{
-            schemaValidation=$false
-            depth         = 20
-            headerSchemas = @{}
-            externalDocs  = @{}
-            schemaJson    = @{}
-            viewer        = @{}
+            enabled          = $false
+            schemaValidation = $false
+            depth            = 20
+            headerSchemas    = @{}
+            externalDocs     = @{}
+            schemaJson       = @{}
+            viewer           = @{}
         }
     }
 }
@@ -753,3 +749,4 @@ function Resolve-PodeOAReferences {
         }
     }
 }
+

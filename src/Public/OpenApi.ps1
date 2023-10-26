@@ -23,14 +23,6 @@ https://spec.commonmark.org/
 .PARAMETER OpenApiVersion
 Specify OpenApi Version (default: 3.0.3)
 
-.PARAMETER ExtraInfo
-The non-essential metadata about the API. The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
-The parameter is created by New-PodeOAExtraInfo
-
-.PARAMETER ExternalDoc
-Additional external documentation for this operation.
-The parameter is created by Add-PodeOAExternalDoc
-
 .PARAMETER RouteFilter
 An optional route filter for routes that should be included in the definition. (Default: /*)
 
@@ -90,17 +82,9 @@ function Enable-PodeOpenApi {
         $Description,
 
         [Parameter()]
-        [ValidateSet('3.0.3')]
+        [ValidateSet('3.0.3','3.0.2','3.0.1')]
         [string]
         $OpenApiVersion = '3.0.3',
-
-        [Parameter(ValueFromPipeline = $true)]
-        [hashtable]
-        $ExtraInfo,
-
-        [Parameter()]
-        [string]
-        $ExternalDoc,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -145,25 +129,13 @@ function Enable-PodeOpenApi {
         Mode           = $Mode
         MarkupLanguage = $MarkupLanguage
     }
-    $PodeContext.Server.OpenAPI.info = @{
-        title   = $Title
-        version = $Version
-    }
+    $PodeContext.Server.OpenAPI.info.title= $Title
+    $PodeContext.Server.OpenAPI.info.version=$Version
 
     if ($Description ) {
         $PodeContext.Server.OpenAPI.info.description = $Description
     }
 
-    if ($ExtraInfo) {
-        $PodeContext.Server.OpenAPI.info += $ExtraInfo
-    }
-
-    if ($ExternalDoc) {
-        if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
-            throw "The ExternalDoc doesn't exist: $ExternalDoc"
-        }
-        $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
-    }
     if ( $EnableSchemaValidation) {
         #Test-Json has been introduced with version 6.1.0
         if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
@@ -236,7 +208,11 @@ function Enable-PodeOpenApi {
     Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
     Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
 
+    $PodeContext.Server.OpenAPI.hiddenComponents.enabled = $true
 }
+
+
+
 
 <#
 .SYNOPSIS
@@ -849,6 +825,7 @@ function Add-PodeOAComponentSchema {
         [hashtable]
         $Schema
     )
+
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
     if ($PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
         $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
@@ -992,6 +969,7 @@ function Add-PodeOAComponentRequestBody {
         [switch]
         $Required
     )
+
     $param = @{ content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema) }
 
     if ($Required.IsPresent) {
@@ -1032,6 +1010,7 @@ function Add-PodeOAComponentParameter {
         [hashtable]
         $Parameter
     )
+
     if ([string]::IsNullOrWhiteSpace($Name)) {
         if ($Parameter.name) {
             $Name = $Parameter.name
@@ -1196,10 +1175,9 @@ function New-PodeOAIntProperty {
         [Parameter(ParameterSetName = 'Array')]
         [int]
         $MaxItems
-
-
     )
     begin {
+
         $param = @{
             name = $Name
             type = 'integer'
@@ -1455,6 +1433,7 @@ function New-PodeOANumberProperty {
         $MaxItems
     )
     begin {
+
         $param = @{
             name = $Name
             type = 'number'
@@ -1722,6 +1701,7 @@ function New-PodeOAStringProperty {
         $MaxItems
     )
     begin {
+
         if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
             $_format = $CustomFormat
         } elseif ($Format) {
@@ -1954,6 +1934,7 @@ function New-PodeOABoolProperty {
         $MaxItems
     )
     begin {
+
         $param = @{
             name = $Name
             type = 'boolean'
@@ -2165,6 +2146,7 @@ function New-PodeOAObjectProperty {
         $Xml
     )
     begin {
+
         $param = @{
             name = $Name
             type = 'object'
@@ -2320,6 +2302,7 @@ function Merge-PodeOAProperty {
         $Discriminator
     )
     begin {
+
         $param = @{}
         switch ($type.ToLower()) {
             'oneof' {
@@ -2501,15 +2484,18 @@ function New-PodeOASchemaProperty {
         $Xml
     )
     begin {
+
         if ( !(Test-PodeOAComponentSchema -Name $ComponentSchema)) {
             throw "The OpenApi component schema doesn't exist: $ComponentSchema"
         }
+
         $param = @{
             name   = $Name
             type   = 'schema'
             schema = $ComponentSchema
             meta   = @{}
         }
+
         if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -ieq 'array') {
             if ($Description ) {
                 $param.description = $Description
@@ -2665,6 +2651,7 @@ function ConvertTo-PodeOAParameter {
         [string]
         $Style
     )
+
     if ($PSCmdlet.ParameterSetName -ieq 'ContentSchemas') {
         if (Test-PodeIsEmpty $ContentSchemas) {
             return $null
@@ -3034,10 +3021,10 @@ function Enable-PodeOAViewer {
 
 <#
 .SYNOPSIS
-Adds an external docs reference.
+Define an external docs reference.
 
 .DESCRIPTION
-Creates a new  reference from another OpenAPI schema.
+Define an external docs reference.
 
 .PARAMETER Name
 The Name of the reference.
@@ -3048,13 +3035,15 @@ The link to the external documentation
 .PARAMETER Description
 A Description of the external documentation.
 
-.PARAMETER Array
-If supplied, the schema reference will be treated as an array.
+.EXAMPLE
+New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+Add-PodeOAExternalDoc -Name 'SwaggerDocs'
 
 .EXAMPLE
-Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http: / / swagger.io'
+New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'SwaggerDocs'
 #>
-function Add-PodeOAExternalDoc {
+function New-PodeOAExternalDoc {
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -3076,9 +3065,71 @@ function Add-PodeOAExternalDoc {
     }
     $param['url'] = $Url
     $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Name] = $param
-
 }
 
+
+
+<#
+.SYNOPSIS
+Add an external docs reference to the OpenApi document.
+
+.DESCRIPTION
+Add an external docs reference to the OpenApi document.
+
+.PARAMETER Reference
+The Name assigned to a previoulsy created External Doc reference (created by New-PodeOAExternalDoc)
+
+.PARAMETER Name
+The Name of the reference.
+
+.PARAMETER url
+The link to the external documentation
+
+.PARAMETER Description
+A Description of the external documentation.
+
+.EXAMPLE
+Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+
+.EXAMPLE
+New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+Add-PodeOAExternalDoc -Name 'SwaggerDocs'
+#>
+function Add-PodeOAExternalDoc {
+    [CmdletBinding(DefaultParameterSetName = 'Reference')]
+    param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [string]
+        $Reference,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'NewRef')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'NewRef')]
+        [ValidateScript({ $_ -imatch '^https?://.+' })]
+        $Url,
+
+        [Parameter(ParameterSetName = 'NewRef')]
+        [string]
+        $Description
+    )
+
+    if ($Reference) {
+        if ( !(Test-PodeOAExternalDoc -Name $Reference)) {
+            throw "The ExternalDoc doesn't exist: $Reference"
+        }
+        $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Reference]
+    } else {
+        $param = @{}
+        if ($Description) {
+            $param.description = $Description
+        }
+        $param['url'] = $Url
+        $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Name] = $param
+        $PodeContext.Server.OpenAPI.externalDocs = $param
+    }
+}
 
 <#
 .SYNOPSIS
@@ -3149,7 +3200,7 @@ A URL to the Terms of Service for the API. MUST be in the format of a URL.
 .PARAMETER License
 The license name used for the API.
 
-.PARAMETER LicenseUrl
+.PARAMETER LicenseUrl 
 A URL to the license used for the API. MUST be in the format of a URL.
 
 .PARAMETER ContactName
@@ -3162,10 +3213,10 @@ The email address of the contact person/organization. MUST be in the format of a
 The URL pointing to the contact information. MUST be in the format of a URL.
 
 .EXAMPLE
-New-PodeOAExtraInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
 #>
 
-function New-PodeOAExtraInfo {
+function Add-PodeOAInfo {
     param(
         [Parameter()]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
@@ -3196,7 +3247,7 @@ function New-PodeOAExtraInfo {
         $ContactUrl
     )
 
-    $ExtraInfo = @{
+    $Info = @{
         'license' = @{
             'name' = $License
             'url'  = $LicenseUrl
@@ -3204,28 +3255,30 @@ function New-PodeOAExtraInfo {
     }
 
     if ($TermsOfService) {
-        $ExtraInfo['termsOfService'] = $TermsOfService
+        $Info['termsOfService'] = $TermsOfService
     }
 
     if ($ContactName -or $ContactEmail -or $ContactUrl ) {
-        $ExtraInfo['contact'] = @{}
+        $Info['contact'] = @{}
 
         if ($ContactName) {
-            $ExtraInfo['contact'].name = $ContactName
+            $Info['contact'].name = $ContactName
         }
 
         if ($ContactEmail) {
-            $ExtraInfo['contact'].email = $ContactEmail
+            $Info['contact'].email = $ContactEmail
         }
 
         if ($ContactUrl) {
-            $ExtraInfo['contact'].url = $ContactUrl
+            $Info['contact'].url = $ContactUrl
         }
     }
 
-    return $ExtraInfo
+    $PodeContext.Server.OpenAPI.info += $Info
 
 }
+
+
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
     New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer
 }

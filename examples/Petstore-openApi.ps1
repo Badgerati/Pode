@@ -4,8 +4,7 @@ if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
 } else {
     Import-Module -Name 'Pode'
 }
-
-
+ 
 Start-PodeServer -Threads 2 -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -18,13 +17,15 @@ That way, with time, we can improve the API in general, and expose some of the n
 Some useful links:
 - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
 - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
-'@ 
+'@
 
-    Add-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
+
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription    -OpenApiVersion '3.0.3' -EnableSchemaValidation
+    New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+    Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
+    Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
-    New-PodeOAExtraInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support' |
-        Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription   -ExternalDoc 'SwaggerDocs' -OpenApiVersion '3.0.3' -EnableSchemaValidation
 
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
     Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
@@ -167,7 +168,6 @@ Some useful links:
                 New-PodeOAStringProperty -Name 'message'
         )
     )
-
 
 
 
@@ -445,6 +445,8 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
 
     }
-    #  $yaml= Get-PodeOpenApiDefinition -Format Yaml
+
+
+    # $yaml= Get-PodeOpenApiDefinition -Format Yaml
     # $json=  Get-PodeOpenApiDefinition -Format Json
 }
