@@ -125,12 +125,12 @@
     </footer>
     <script>
         // Define boolean variables (you can set these values based on your batch process)
-        var enableSwagger = $($data.swagger.toString().ToLower());
-        var enableRedoc = $($data.redoc.toString().ToLower());
-        var enableRapidoc = $($data.rapidoc.toString().ToLower());
-        var enableStopLight = $($data.stoplight.toString().ToLower());
-        var enableExplorer = $($data.explorer.toString().ToLower());
-        var enableRapiPdf = $($data.rapipdf.toString().ToLower());
+        var enableSwagger = '$($data.swagger)';
+        var enableRedoc = '$($data.redoc)';
+        var enableRapidoc = '$($data.rapidoc)';
+        var enableStopLight = '$($data.stoplight)';
+        var enableExplorer = '$($data.explorer)';
+        var enableRapiPdf = '$($data.rapipdf)';
         // Function to enable or disable links based on boolean variables
         function updateLinks() {
             document.getElementById("swagger-link").style.display = enableSwagger ? "list-item" : "none";

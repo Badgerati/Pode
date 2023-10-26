@@ -4,7 +4,7 @@ if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
 } else {
     Import-Module -Name 'Pode'
 }
- 
+
 Start-PodeServer -Threads 2 -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

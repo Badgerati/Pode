@@ -24,6 +24,9 @@ Get-ChildItem "$($root)/Private/*.ps1" | ForEach-Object { . ([System.IO.Path]::G
 # only import public functions
 $sysfuncs = Get-ChildItem Function:
 
+# only import public alias
+$sysaliases = Get-ChildItem Alias:
+
 # load public functions
 Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
 
