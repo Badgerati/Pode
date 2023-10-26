@@ -3263,13 +3263,13 @@ function ConvertTo-PodeYamlInternal {
                                 $BreakPoint = $wrap # in case it is a string without spaces
                             }
 
-                            [void] $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString, $BreakPoint).Trim())
+                            $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString, $BreakPoint).Trim())
                             $IndexIntoString += $BreakPoint
                         }
                         if ($IndexIntoString -lt $length) {
-                            [void] $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString).Trim())
+                            $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString).Trim())
                         } else {
-                            [void] $folded.AppendLine()
+                            $null = $folded.AppendLine()
                         }
                     }
                     $folded.ToString()
@@ -3291,7 +3291,7 @@ function ConvertTo-PodeYamlInternal {
                     foreach ($item in $InputObject.Keys) {
                         if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
                         if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                        [void] $string.Append( $NewPadding).Append( $item).Append(' : ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        $null = $string.Append( $NewPadding).Append( $item).Append(' : ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
                     }
                     $string.ToString()
                 } else { '{}' }
@@ -3304,7 +3304,7 @@ function ConvertTo-PodeYamlInternal {
             'array' {
                 $string = [System.Text.StringBuilder]::new()
                 foreach ($item in $InputObject ) {
-                    [void] $string.AppendLine().Append($Padding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
+                    $null = $string.AppendLine().Append($Padding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
                 }
                 $string.ToString()
                 #  "$($InputObject | ForEach-Object {
