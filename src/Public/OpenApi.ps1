@@ -20,6 +20,9 @@ https://semver.org/spec/v2.0.0.html
 A short description of the API. CommonMark syntax MAY be used for rich text representation.
 https://spec.commonmark.org/
 
+.PARAMETER OpenApiVersion
+Specify OpenApi Version (default: 3.0.3)
+
 .PARAMETER ExtraInfo
 The non-essential metadata about the API. The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
 The parameter is created by New-PodeOAExtraInfo
@@ -48,6 +51,7 @@ Define the way the OpenAPI definition file is accessed, the value can be View or
 If supplied, generate the OpenApi Json version in human readible form.
 
 .PARAMETER MarkupLanguage
+Define the default markup language for the OpenApi spec ('Json', 'Json-Compress', 'Yaml')
 
 .PARAMETER EnableSchemaValidation
 If suplied enable Test-PodeOARequestSchema cmdlet that provide support for opeapi parameter schema validation
@@ -1045,6 +1049,9 @@ Creates a new OpenAPI integer property.
 .DESCRIPTION
 Creates a new OpenAPI integer property, for Schemas or Parameters.
 
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
 .PARAMETER Name
 The Name of the property.
 
@@ -1111,7 +1118,7 @@ New-PodeOANumberProperty -Name 'age' -Required
 function New-PodeOAIntProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow )]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
         [hashtable[]]
         $ParamsList,
 
@@ -1299,6 +1306,9 @@ Creates a new OpenAPI number property.
 .DESCRIPTION
 Creates a new OpenAPI number property, for Schemas or Parameters.
 
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
 .PARAMETER Name
 The Name of the property.
 
@@ -1365,7 +1375,7 @@ New-PodeOANumberProperty -Name 'gravity' -Default 9.8
 function New-PodeOANumberProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow )]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1551,6 +1561,9 @@ Creates a new OpenAPI string property.
 .DESCRIPTION
 Creates a new OpenAPI string property, for Schemas or Parameters.
 
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
 .PARAMETER Name
 The Name of the property.
 
@@ -1623,7 +1636,7 @@ New-PodeOAStringProperty -Name 'password' -Format Password
 function New-PodeOAStringProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow )]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1820,6 +1833,9 @@ Creates a new OpenAPI boolean property.
 .DESCRIPTION
 Creates a new OpenAPI boolean property, for Schemas or Parameters.
 
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
 .PARAMETER Name
 The Name of the property.
 
@@ -1875,7 +1891,7 @@ function New-PodeOABoolProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow )]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
         [hashtable[]]
         $ParamsList,
 
@@ -2027,6 +2043,9 @@ Creates a new OpenAPI object property from other properties.
 .DESCRIPTION
 Creates a new OpenAPI object property from other properties, for Schemas or Parameters.
 
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
 .PARAMETER Name
 The Name of the property.
 
@@ -2085,7 +2104,7 @@ function New-PodeOAObjectProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow, Position = 0 )]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true , Position = 0 )]
         [hashtable[]]
         $ParamsList,
 
@@ -2093,15 +2112,9 @@ function New-PodeOAObjectProperty {
         [string]
         $Name,
 
-        #     [Parameter( Mandatory, ParameterSetName = 'Inbuilt')]
-        #       [Parameter( Mandatory, ParameterSetName = 'Array')]
+        [Parameter()]
         [hashtable[]]
         $Properties,
-
-        #      [Parameter(  ParameterSetName = 'Inbuilt_Pipeline')]
-        #        [Parameter(  ParameterSetName = 'Array_Pipeline')]
-        [switch]
-        $PropertiesFromPipeline,
 
         [Parameter()]
         [string]
@@ -2133,22 +2146,18 @@ function New-PodeOAObjectProperty {
         $MaxProperties,
 
         [Parameter(  Mandatory, ParameterSetName = 'Array')]
-        #      [Parameter(  Mandatory, ParameterSetName = 'Array_Pipeline')]
         [switch]
         $Array,
 
         [Parameter(ParameterSetName = 'Array')]
-        #    [Parameter(ParameterSetName = 'Array_Pipeline')]
         [switch]
         $UniqueItems,
 
         [Parameter(ParameterSetName = 'Array')]
-        #     [Parameter(ParameterSetName = 'Array_Pipeline')]
         [int]
         $MinItems,
 
         [Parameter(ParameterSetName = 'Array')]
-        #     [Parameter(ParameterSetName = 'Array_Pipeline')]
         [int]
         $MaxItems,
 
@@ -2164,8 +2173,10 @@ function New-PodeOAObjectProperty {
 
         if ($Properties) {
             $param.properties = $Properties
+            $PropertiesFromPipeline = $false
         } else {
             $param.properties = @()
+            $PropertiesFromPipeline = $true
         }
 
         if ($Description ) {
@@ -2260,13 +2271,16 @@ Creates a new OpenAPI object combining schemas and properties.
 .DESCRIPTION
 Creates a new OpenAPI object combining schemas and properties.
 
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
 .PARAMETER Type
 Define the type of validation between the objects
 oneOf – validates the value against exactly one of the subschemas
 allOf – validates the value against all the subschemas
 anyOf – validates the value against any (one or more) of the subschemas
 
-.PARAMETER Schemas
+.PARAMETER Subschemas
 An array of schemas or properties
 
 .PARAMETER Discriminator
@@ -2288,7 +2302,7 @@ function Merge-PodeOAProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow )]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -2357,6 +2371,9 @@ Creates a OpenAPI schema reference property.
 .DESCRIPTION
 Creates a new OpenAPI component schema reference from another OpenAPI schema.
 
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
 .PARAMETER Name
 The Name of the property.
 
@@ -2371,6 +2388,9 @@ An example of a parameter value
 
 .PARAMETER Deprecated
 If supplied, the schema will be treated as Deprecated where supported.
+
+.PARAMETER Required
+If supplied, the object will be treated as Required where supported.
 
 .PARAMETER Array
 If supplied, the schema will be treated as an array of objects.
@@ -2413,7 +2433,7 @@ function New-PodeOASchemaProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow )]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -2583,7 +2603,7 @@ Where in the Request can the parameter be found?
 .PARAMETER Property
 The Property that need converting (such as from New-PodeOAIntProperty).
 
-.PARAMETER Reference
+.PARAMETER ComponentParameter
 The name of an existing component parameter to be reused.
 
 .PARAMETER ContentSchemas
@@ -2591,6 +2611,9 @@ The content-types and the name of an existing component schema to be reused.
 
 .PARAMETER Explode
 If supplied, controls how arrays are serialized in query parameters
+
+.PARAMETER AllowEmptyValue
+If supplied, allow the parameter to be empty
 
 .PARAMETER Style
 If supplied,  defines how multiple values are delimited. Possible styles depend on the parameter location: path, query, header or cookie.
@@ -2600,7 +2623,7 @@ If supplied,  defines how multiple values are delimited. Possible styles depend 
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query
 
 .EXAMPLE
-ConvertTo-PodeOAParameter -Reference 'UserIdParam'
+ConvertTo-PodeOAParameter -ComponentParameter 'UserIdParam'
 
 .EXAMPLE
 ConvertTo-PodeOAParameter  -In Header -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
@@ -2975,30 +2998,10 @@ function Enable-PodeOAViewer {
                 Title   = $meta.Title
                 OpenApi = $meta.OpenApi
             }
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.swagger) {
-                $Data.swagger = 'true'
-                $data.swagger_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.swagger
-            } else { $Data.swagger = 'false' }
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.redoc) {
-                $Data.redoc = 'true'
-                $data.redoc_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.redoc
-            } else { $Data.redoc = 'false' }
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.rapidoc) {
-                $Data.rapidoc = 'true'
-                $data.rapidoc_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.rapidoc
-            } else { $Data.rapidoc = 'false' }
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.stoplight) {
-                $Data.stoplight = 'true'
-                $data.stoplight_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.stoplight
-            } else { $Data.stoplight = 'false' }
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.explorer) {
-                $Data.explorer = 'true'
-                $data.explorer_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.explorer
-            } else { $Data.explorer = 'false' }
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.viewer.rapipdf) {
-                $Data.rapipdf = 'true'
-                $data.rapipdf_path = $PodeContext.Server.OpenAPI.hiddenComponents.viewer.rapipdf
-            } else { $Data.rapipdf = 'false' }
+            foreach ($type in $PodeContext.Server.OpenAPI.hiddenComponents.viewer.Keys) {
+                $Data[$type] = $true
+                $Data["$($type)_path"] = $PodeContext.Server.OpenAPI.hiddenComponents.viewer[$type]
+            }
 
             $podeRoot = Get-PodeModuleMiscPath
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
@@ -3016,7 +3019,7 @@ function Enable-PodeOAViewer {
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
             $podeRoot = Get-PodeModuleMiscPath
-            if ( $meta.DarkMode) { $Theme = 'dark' }else { $Theme = 'light' }
+            if ( $meta.DarkMode) { $Theme = 'dark' } else { $Theme = 'light' }
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
                 Title    = $meta.Title
                 OpenApi  = $meta.OpenApi
@@ -3223,7 +3226,9 @@ function New-PodeOAExtraInfo {
     return $ExtraInfo
 
 }
-
-
-New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer
-New-Alias Enable-PodeOA -Value Enable-PodeOpenApi
+if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
+    New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer
+}
+if (!(Test-Path Alias:Enable-PodeOA)) {
+    New-Alias Enable-PodeOA -Value Enable-PodeOpenApi
+}

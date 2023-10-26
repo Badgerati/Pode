@@ -799,6 +799,9 @@ A String, PSObject, or HashTable value. For non-string values, they will be conv
 .PARAMETER Path
 The path to a YAML file.
 
+.PARAMETER ContentType
+Because JSON content has not yet an official content type. one custom can be specified here (Default: 'application/x-yaml' )
+
 .PARAMETER Depth
 The Depth to generate the YAML document - the larger this value the worse performance gets.
 

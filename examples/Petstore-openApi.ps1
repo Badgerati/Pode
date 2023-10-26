@@ -18,40 +18,22 @@ That way, with time, we can improve the API in general, and expose some of the n
 Some useful links:
 - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
 - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
-'@
-    <#
- # {
-    $ExtraInfo = @{
-        'termsOfService' = 'http://swagger.io/terms/'
-
-        'contact'        = @{
-            'name'  = 'API Support'
-            'email' = 'apiteam@swagger.io'
-            'url'   = 'http://example.com/support'
-        }
-        'license'        = @{
-            'name' = 'Apache 2.0'
-            'url'  = 'http://www.apache.org/licenses/LICENSE-2.0.html'
-        }
-    }:Enter a comment or description}
-#>
-
-    $ExtraInfo = New-PodeOAExtraInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+'@ 
 
     Add-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
+    New-PodeOAExtraInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support' |
+        Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription   -ExternalDoc 'SwaggerDocs' -OpenApiVersion '3.0.3' -EnableSchemaValidation
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -ExtraInfo $ExtraInfo -ExternalDoc 'SwaggerDocs' -OpenApiVersion '3.0.3' -EnableSchemaValidation
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DarkMode
-    # or ReDoc at the default "/redoc"
-    Enable-PodeOpenApiViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
-    Enable-PodeOpenApiViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
-    Enable-PodeOpenApiViewer -Type StopLight -Path '/docs/stoplight' -DarkMode
-    Enable-PodeOpenApiViewer -Type Explorer -Path '/docs/explorer' -DarkMode
-    Enable-PodeOpenApiViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
 
-    Enable-PodeOpenApiViewer -Type Bookmarks -Path '/docs'
+    Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
 
 
 
@@ -75,7 +57,7 @@ Some useful links:
             New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
             New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
             New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
-            New-PodeOAObjectProperty -Name 'test'   -PropertiesFromPipeline | Add-PodeOAComponentSchema -Name 'Test'
+            New-PodeOAObjectProperty -Name 'test' | Add-PodeOAComponentSchema -Name 'Test'
 
 
 
@@ -83,7 +65,7 @@ Some useful links:
         New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
         New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
         New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
-        New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Description 'Shipping Address' -PropertiesFromPipeline |
+        New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Description 'Shipping Address' |
         Add-PodeOAComponentSchema -Name 'Address'
 
 
@@ -94,7 +76,7 @@ Some useful links:
         New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
         New-PodeOABoolProperty -Name 'complete' |
         New-PodeOASchemaProperty -Name 'Address' -ComponentSchema 'Address' |
-        New-PodeOAObjectProperty -Name 'Order' -Xml @{'name' = 'order' } -PropertiesFromPipeline |
+        New-PodeOAObjectProperty -Name 'Order' -Xml @{'name' = 'order' } |
         Add-PodeOAComponentSchema -Name 'Order'
 
 
@@ -159,7 +141,7 @@ Some useful links:
         Merge-PodeOAProperty  -Type AllOf  -Subschemas 'Pet' |
         New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
 
-        New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -PropertiesFromPipeline | Add-PodeOAComponentSchema -Name 'Cat'
+        New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' | Add-PodeOAComponentSchema -Name 'Cat'
 
 
 
