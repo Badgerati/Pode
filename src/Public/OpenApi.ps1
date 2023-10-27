@@ -82,7 +82,7 @@ function Enable-PodeOpenApi {
         $Description,
 
         [Parameter()]
-        [ValidateSet('3.0.3','3.0.2','3.0.1')]
+        [ValidateSet('3.0.3', '3.0.2', '3.0.1')]
         [string]
         $OpenApiVersion = '3.0.3',
 
@@ -125,12 +125,12 @@ function Enable-PodeOpenApi {
     $meta = @{
         RouteFilter    = $RouteFilter
         RestrictRoutes = $RestrictRoutes
-        NoCompress     = ($MarkupLanguage -ieq 'Json')
+        NoCompress     = ($MarkupLanguage -ine 'Json-Compress')
         Mode           = $Mode
         MarkupLanguage = $MarkupLanguage
     }
-    $PodeContext.Server.OpenAPI.info.title= $Title
-    $PodeContext.Server.OpenAPI.info.version=$Version
+    $PodeContext.Server.OpenAPI.info.title = $Title
+    $PodeContext.Server.OpenAPI.info.version = $Version
 
     if ($Description ) {
         $PodeContext.Server.OpenAPI.info.description = $Description
@@ -174,7 +174,7 @@ function Enable-PodeOpenApi {
             $format = 'yaml'
         } elseif (!$format) {
             $format = $meta.MarkupLanguage.ToLower()
-        } elseif (@('yaml', 'json') -inotcontains $format) {
+        } elseif (@('yaml', 'json', 'Json-Compress') -inotcontains $format) {
             Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"
             return
         }
