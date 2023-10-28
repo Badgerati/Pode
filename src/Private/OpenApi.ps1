@@ -740,14 +740,14 @@ function Resolve-PodeOAReferences {
             if (($ComponentSchema.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
                 $refName = ($ComponentSchema.properties[$key].'$ref') -replace '#/components/schemas/', ''
                 if ($Schemas.ContainsKey($refName)) {
-                    $ComponentSchema.properties[$key] = $Schemas[$refName]
+                    $ComponentSchema.properties[$key] = $Schemas[$refName].schema
                 }
             }
         } elseif ($ComponentSchema.properties[$key].items -and $ComponentSchema.properties[$key].items.'$ref' ) {
             if (($ComponentSchema.properties[$key].items.'$ref').StartsWith('#/components/schemas/')) {
                 $refName = ($ComponentSchema.properties[$key].items.'$ref') -replace '#/components/schemas/', ''
                 if ($Schemas.ContainsKey($refName)) {
-                    $ComponentSchema.properties[$key].items = $schemas[$refName]
+                    $ComponentSchema.properties[$key].items = $schemas[$refName].schema
                 }
             }
         }
