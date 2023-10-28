@@ -115,9 +115,13 @@ function Enable-PodeOpenApi {
         [Parameter()]
         [ValidateRange(1, 100)]
         [int]
-        $Depth = 20
-    )
+        $Depth = 20,
 
+        [Parameter()]
+        [switch]
+        $DisableMinimalDefinitions
+    )
+    $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.ToBool()
     # initialise openapi info
     $PodeContext.Server.OpenAPI.Version = $OpenApiVersion
     $PodeContext.Server.OpenAPI.Path = $Path
@@ -129,6 +133,7 @@ function Enable-PodeOpenApi {
         Mode           = $Mode
         MarkupLanguage = $MarkupLanguage
     }
+
     $PodeContext.Server.OpenAPI.info.title = $Title
     $PodeContext.Server.OpenAPI.info.version = $Version
 
@@ -148,6 +153,7 @@ function Enable-PodeOpenApi {
     if ( $Depth) {
         $PodeContext.Server.OpenAPI.hiddenComponents.depth = $Depth
     }
+
 
     $openApiCreationScriptBlock = {
         param($meta)
@@ -825,10 +831,17 @@ function Add-PodeOAComponentSchema {
         [hashtable]
         $Schema
     )
-
+  #  if (!$schema.name) {
+    #    $schema.name = $name
+   # }
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
     if ($PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
-        $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
+        $modifiedSchema = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
+        #Resolve-PodeOAReferences -ComponentSchema  $modifiedSchema
+        $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = @{
+            'schema' = $modifiedSchema
+            'json'   = $modifiedSchema | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
+        }
     }
 }
 
@@ -908,14 +921,9 @@ function Test-PodeOARequestSchema {
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
     }
-    #Test-Json has been introduced with version 6.1.0
-    if ($PSVersionTable.PSVersion -lt [version]'6.1.0') {
-        return @{result = $true; message = "This version on PowerShell doesn't support Test-Json" }
-    }
-
-    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$SchemaReference] -ErrorVariable jsonValidationErrors
 
     [string[]] $message = @()
+    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
     if ($jsonValidationErrors) {
         foreach ($item in $jsonValidationErrors) {
             $message += $item
@@ -2254,7 +2262,7 @@ Creates a new OpenAPI object combining schemas and properties.
 Creates a new OpenAPI object combining schemas and properties.
 
 .PARAMETER ParamsList
-Used to pipeline multiple properties
+Used to pipeline an object definition
 
 .PARAMETER Type
 Define the type of validation between the objects
@@ -2262,8 +2270,8 @@ oneOf – validates the value against exactly one of the subschemas
 allOf – validates the value against all the subschemas
 anyOf – validates the value against any (one or more) of the subschemas
 
-.PARAMETER Subschemas
-An array of schemas or properties
+.PARAMETER ObjectDefinitions
+An array of object definitions that are used for independent validation but together compose a single object.
 
 .PARAMETER Discriminator
 When request bodies or response payloads may be one of a number of different schemas, a discriminator object can be used to aid in serialization, deserialization, and validation.
@@ -2295,7 +2303,7 @@ function Merge-PodeOAProperty {
 
         [Parameter()]
         [System.Object[]]
-        $Subschemas,
+        $ObjectDefinitions,
 
         [Parameter()]
         [string]
@@ -2316,15 +2324,14 @@ function Merge-PodeOAProperty {
             }
         }
 
-        if ($Subschemas) {
-            foreach ($schema in $Subschemas) {
-                if ($schema -is [System.Object[]]) {
-                    throw 'Multiple properties have to be part of an object or oneOf, anyOf, allOf.'
+        $param.schemas = @()
+        if ($ObjectDefinitions) {
+            foreach ($schema in $ObjectDefinitions) {
+                if ($schema -is [System.Object[]] -or ($schema -is [hashtable] -and $schema.type -ine 'object')) {
+                    throw 'Only properties of type Object can be associated with $type'
                 }
+                $param.schemas += $schema
             }
-            $param.schemas = $Subschemas
-        } else {
-            $param.schemas = @()
         }
 
         if ($Discriminator ) {
@@ -2334,8 +2341,8 @@ function Merge-PodeOAProperty {
     }
     process {
         if ($ParamsList) {
-            if ($ParamsList.Count -gt 1 ) {
-                throw 'Multiple properties have to be part of an object or oneOf, anyOf, allOf.'
+            if ($ParamsList.type -ine 'object') {
+                throw 'Only properties of type Object can be associated with $type'
             }
             $param.schemas += $ParamsList
         }

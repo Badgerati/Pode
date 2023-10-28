@@ -400,8 +400,7 @@ function Set-PodeSecurityContentSecurityPolicy {
     # as having it enabled has now been found to cause more vulnerabilities
     if ($XssBlock) {
         Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '1; mode=block'
-    }
-    else {
+    } else {
         Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '0'
     }
 }
@@ -1372,7 +1371,7 @@ function Set-PodeSecurityAccessControl {
         [string[]]
         $Headers,
 
-        [Parameter()]
+        [Parameter()] 
         [int]
         $Duration = 7200,
 
@@ -1380,7 +1379,10 @@ function Set-PodeSecurityAccessControl {
         $Credentials,
 
         [switch]
-        $WithOptions
+        $WithOptions,
+
+        [switch]
+        $AuthorizationHeader
     )
 
     # origin
@@ -1390,8 +1392,7 @@ function Set-PodeSecurityAccessControl {
     if (![string]::IsNullOrWhiteSpace($Methods)) {
         if ($Methods -icontains '*') {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value '*'
-        }
-        else {
+        } else {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value ($Methods -join ', ').ToUpperInvariant()
         }
     }
@@ -1399,10 +1400,21 @@ function Set-PodeSecurityAccessControl {
     # headers
     if (![string]::IsNullOrWhiteSpace($Headers)) {
         if ($Headers -icontains '*') {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value '*'
-        }
-        else {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value ($Headers -join ', ').ToUpperInvariant()
+            if ( $AuthorizationHeader) {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value '*,Authorization'
+            } else {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value '*'
+            }
+        } else {
+            if ( $AuthorizationHeader) {
+                if ($Headers -icontains 'Authorization') {
+                    Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value ($Headers -join ', ').ToUpperInvariant()
+                } else {
+                    Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value ('Authorization,' + ($Headers -join ', ')).ToUpperInvariant()
+                }
+            } else {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value ($Headers -join ', ').ToUpperInvariant()
+            }
         }
     }
 

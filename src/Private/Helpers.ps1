@@ -3241,7 +3241,7 @@ function ConvertTo-PodeYamlInternal {
         $output += switch ($Type.ToLower()) {
             'string' {
                 $String = "$InputObject"
-                if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -inotcontains 'http')) {
+                if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
                     $folded = [System.Text.StringBuilder]::new(">`n") # signal that we are going to use the readable 'newlines-folded' format
                     foreach ($item in $string.Split("`n")) {
                         $workingString = $item -replace '\r$'

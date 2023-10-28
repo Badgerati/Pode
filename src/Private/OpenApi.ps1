@@ -484,7 +484,7 @@ function Get-PodeOpenApiDefinitionInternal {
             # get the first route for base definition
             $_route = $_routes[0]
             # check if the route has to be published
-            if ($_route.OpenApi.Swagger) {
+            if ($_route.OpenApi.Swagger -or $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions) {
                 #remove the ServerUrl part
                 if ($MetaInfo -and $MetaInfo.ServerUrl) {
                     $_route.OpenApi.Path = $_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')
@@ -603,9 +603,9 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter {
 
 function Get-PodeOABaseObject {
     return @{
-        info             = @{}
-        Path             = $null 
-        components       = @{
+        info             = [ordered]@{}
+        Path             = $null
+        components       = [ordered]@{
             schemas       = @{}
             responses     = @{}
             requestBodies = @{}
@@ -685,44 +685,48 @@ function Resolve-PodeOAReferences {
         [hashtable]
         $ComponentSchema
     )
-    $Schemas = $PodeContext.Server.OpenAPI.components.schemas
+    #  $Schemas = $PodeContext.Server.OpenAPI.components.schemas
+    $Schemas = $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson
     $Keys = @()
 
     if ($ComponentSchema.properties) {
         foreach ($item in $ComponentSchema.properties.Keys) {
             $Keys += $item
         }
-    } else {
-        foreach ($item in $ComponentSchema.Keys) {
-            if ( @('allof', 'oneof', 'anyof') -icontains $item ) {
-                $Keys += $item
-            }
+    }
+    foreach ($item in $ComponentSchema.Keys) {
+        if ( @('allof', 'oneof', 'anyof') -icontains $item ) {
+            $Keys += $item
         }
     }
+
     foreach ($key in $Keys) {
         if ( @('allof', 'oneof', 'anyof') -icontains $key ) {
             if ($key -ieq 'allof') {
                 $tmpProp = @()
-                foreach ( $offKey in $ComponentSchema[$key].Keys) {
-                    switch ($offKey) {
-                        '$ref' {
-                            if (($ComponentSchema.$key.'$ref').StartsWith('#/components/schemas/')) {
-                                $refName = ($ComponentSchema.$key.'$ref') -replace '#/components/schemas/', ''
-                                if ($Schemas.ContainsKey($refName)) {
-                                    $tmpProp += $Schemas[$refName]
-                                }
+                foreach ( $comp in $ComponentSchema[$key] ) {
+                    if ($comp.'$ref') {
+                        if (($comp.'$ref').StartsWith('#/components/schemas/')) {
+                            $refName = ($comp.'$ref') -replace '#/components/schemas/', ''
+                            if ($Schemas.ContainsKey($refName)) {
+                                $tmpProp += $Schemas[$refName].schema
                             }
                         }
-                        'properties' {
-                            $tmpProp += $ComponentSchema.$key.properties
+                    } elseif ( $comp.properties) {
+                        if ($comp.type -eq 'object') {
+                            $tmpProp += Resolve-PodeOAReferences -ComponentSchema  $comp
+                        } else {
+                            throw 'Unsupported object'
                         }
                     }
-
                 }
+
                 $ComponentSchema.type = 'object'
                 $ComponentSchema.remove('allOf')
                 if ($tmpProp.count -gt 0) {
-                    $ComponentSchema.properties = $tmpProp
+                    foreach ($t in $tmpProp) {
+                        $ComponentSchema.properties += $t.properties
+                    }
                 }
 
             } elseif ($key -ieq 'oneof') {
@@ -731,7 +735,7 @@ function Resolve-PodeOAReferences {
                 #TBD
             }
         } elseif ($ComponentSchema.properties[$key].type -eq 'object') {
-            Resolve-PodeOAReferences -ComponentSchema $ComponentSchema.properties[$key].properties
+            $ComponentSchema.properties[$key].properties = Resolve-PodeOAReferences -ComponentSchema $ComponentSchema.properties[$key].properties
         } elseif ($ComponentSchema.properties[$key].'$ref') {
             if (($ComponentSchema.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
                 $refName = ($ComponentSchema.properties[$key].'$ref') -replace '#/components/schemas/', ''
@@ -748,5 +752,6 @@ function Resolve-PodeOAReferences {
             }
         }
     }
+    return   $ComponentSchema
 }
 
