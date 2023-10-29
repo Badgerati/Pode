@@ -51,6 +51,9 @@ If suplied enable Test-PodeOARequestSchema cmdlet that provide support for opeap
 .PARAMETER Depth
 Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
 
+.PARAMETER DisableMinimalDefinitions
+If suplied the OpenApi decument will include only the route validated by Set-PodeOARouteInfo. Any other not OpenApi route will be excluded.
+
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
 
@@ -831,9 +834,9 @@ function Add-PodeOAComponentSchema {
         [hashtable]
         $Schema
     )
-  #  if (!$schema.name) {
+    #  if (!$schema.name) {
     #    $schema.name = $name
-   # }
+    # }
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
     if ($PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
         $modifiedSchema = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
@@ -2686,6 +2689,10 @@ function ConvertTo-PodeOAParameter {
             if ($Property.description ) {
                 $prop.description = $Property.description
             }
+            if ($In -ieq 'Header' -and $PodeContext.Server.OpenAPI.hiddenComponents.autoHeaders) {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ContentSchemas[$type] -Add -Casing Lower
+                #Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $type -Add -Casing Lower
+            }
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
@@ -2696,12 +2703,17 @@ function ConvertTo-PodeOAParameter {
         $prop = @{
             '$ref' = "#/components/parameters/$($ComponentParameter)"
         }
+        if ($PodeContext.Server.OpenAPI.components.parameters.$Name.In -eq 'Header' -and $PodeContext.Server.OpenAPI.hiddenComponents.autoHeaders) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Add -Casing Lower
+        }
     } else {
         # non-object/array only
         if (@('array', 'object') -icontains $Property.type) {
             throw 'OpenApi request parameter cannot be an array of object'
         }
-
+        if ($In -ieq 'Header' -and $PodeContext.Server.OpenAPI.hiddenComponents.autoHeaders -and $Property.name) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Property.name -Add -Casing Lower
+        }
         # build the base parameter
         $prop = @{
             in   = $In.ToLowerInvariant()

@@ -352,6 +352,11 @@ function Add-PodeRoute {
             continue
         }
 
+        #add security header method if autoMethods is enabled
+        if (  $PodeContext.Server.OpenAPI.hiddenComponents.autoMethods ) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method -Casing Upper -Add
+        }
+
         # add the route(s)
         Write-Verbose "Adding Route: [$($_method)] $($Path)"
         $methodRoutes = @(foreach ($_endpoint in $endpoints) {
