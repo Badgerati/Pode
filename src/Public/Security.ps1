@@ -139,7 +139,7 @@ function Add-PodeSecurityHeader {
                 $Headers += $Value
                 $PodeContext.Server.Security.Headers[$Name] = (($Headers.trim() | Select-Object -Unique) -join ', ')
             } else {
-                $return
+                return
             }
         } else {
             $PodeContext.Server.Security.Headers[$Name] = $Value
