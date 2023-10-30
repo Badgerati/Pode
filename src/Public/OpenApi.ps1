@@ -2454,7 +2454,7 @@ function Merge-PodeOAProperty {
         if ($ObjectDefinitions) {
             foreach ($schema in $ObjectDefinitions) {
                 if ($schema -is [System.Object[]] -or ($schema -is [hashtable] -and $schema.type -ine 'object')) {
-                    throw 'Only properties of type Object can be associated with $type'
+                    throw "Only properties of type Object can be associated with $type"
                 }
                 $param.schemas += $schema
             }
@@ -2467,8 +2467,8 @@ function Merge-PodeOAProperty {
     }
     process {
         if ($ParamsList) {
-            if ($ParamsList.type -ine 'object') {
-                throw 'Only properties of type Object can be associated with $type'
+            if ($ParamsList.type -ine 'object' -and !$ParamsList.object) {
+                throw "Only properties of type Object can be associated with $type"
             }
             $param.schemas += $ParamsList
         }

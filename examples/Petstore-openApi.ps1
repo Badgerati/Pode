@@ -21,7 +21,7 @@ Some useful links:
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription    -OpenApiVersion '3.0.3' -EnableSchemaValidation
+    Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription    -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions
     New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
     Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
@@ -131,7 +131,7 @@ Some useful links:
 
     <#    Add-PodeOAComponentSchema -Name 'Cat' -Schema (   New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -Properties (
             New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
-                Merge-PodeOAProperty  -Type AllOf -Subschemas @( 'Pet',
+                Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions @( 'Pet',
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object)
                 )
         )
@@ -139,17 +139,17 @@ Some useful links:
 
 
     New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object |
-        Merge-PodeOAProperty  -Type AllOf  -Subschemas 'Pet' |
+        Merge-PodeOAProperty  -Type AllOf  -ObjectDefinitions 'Pet' |
         New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
 
-        New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' | Add-PodeOAComponentSchema -Name 'Cat'
+        New-PodeOAObjectProperty   -Description 'Type of cat' | Add-PodeOAComponentSchema -Name 'Cat'
 
 
 
 
 
     Add-PodeOAComponentSchema -Name 'Dog' -Schema (
-        Merge-PodeOAProperty  -Type AllOf -Subschemas @( 'Pet', ( New-PodeOAObjectProperty -Properties (
+        Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions @( 'Pet', ( New-PodeOAObjectProperty -Properties (
                     New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Dingo', 'Husky', 'Retriever', 'Shepherd') |
                         New-PodeOABoolProperty -Name 'bark'
                 ))
@@ -158,7 +158,7 @@ Some useful links:
 
 
     Add-PodeOAComponentSchema -Name 'Pets' -Schema (
-        Merge-PodeOAProperty  -Type OneOf -Subschemas @( 'Cat', 'Dog') -Discriminator 'petType')
+        Merge-PodeOAProperty  -Type OneOf -ObjectDefinitions @( 'Cat', 'Dog') -Discriminator 'petType')
 
 
     Add-PodeOAComponentSchema -Name 'ApiResponse' -Schema (
